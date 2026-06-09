@@ -32,9 +32,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 /* ─── Leaflet map inner component ─── */
-function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRoutes }: {
+function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRoutes, panelOpen }: {
   isDark: boolean; motos: Moto[]; activeOrders: Order[];
-  zonePolygons: ZonePolygon[]; showZones: boolean; showRoutes: boolean;
+  zonePolygons: ZonePolygon[]; showZones: boolean; showRoutes: boolean; panelOpen: boolean;
 }) {
   const [routes, setRoutes] = useState<Array<{ positions: [number, number][]; order: Order }>>([]);
   const [L, setL] = useState<any>(null);
@@ -324,7 +324,7 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
     <div id="lf-overview-container" style={{ display: 'flex', height: '100%', position: 'relative' }}>
       {/* MAP */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <MapComponent isDark={isDark} motos={motos} activeOrders={activeOrders} zonePolygons={zonePolygons} showZones={showZones} showRoutes={showRoutes} />
+        <MapComponent isDark={isDark} motos={motos} activeOrders={activeOrders} zonePolygons={zonePolygons} showZones={showZones} showRoutes={showRoutes} panelOpen={panelOpen} />
 
         {/* KPI Strip */}
         <div className="lf-kpi-strip" style={{
