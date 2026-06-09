@@ -1,0 +1,411 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Package, DollarSign, Bike, AlertTriangle, UserCheck, X,
+  ChevronRight, Plus, BarChart3,
+} from 'lucide-react';
+import { useStore, type Order, type Moto } from '@/lib/store';
+
+/* ─── Dynamic Leaflet imports (SSR-safe) ─── */
+const MapContainer = dynamic(() => import('react-leaflet').then((m) => m.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ssr: false });
+const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), { ssr: false });
+const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), { ssr: false });
+
+const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
+
+const STATUS_COLORS: Record<string, string> = {
+  available: '#16A34A',
+  'in-service': '#FF6600',
+  maintenance: '#DC2626',
+};
+const STATUS_LABELS: Record<string, string> = {
+  available: 'Disponible',
+  'in-service': 'En servicio',
+  maintenance: 'Mantenimiento',
+};
+
+/* ─── Leaflet map inner component ─── */
+function MapInner({ isDark, motos, activeOrders }: {
+  isDark: boolean; motos: Moto[]; activeOrders: Order[];
+}) {
+  const [routes, setRoutes] = useState<Array<{ positions: [number, number][]; order: Order }>>([]);
+  const [L, setL] = useState<any>(null);
+  const updateMotoPositions = useStore((s) => s.updateMotoPositions);
+
+  useEffect(() => {
+    import('leaflet').then((leaflet) => {
+      delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
+      setL(leaflet);
+    });
+    import('leaflet/dist/leaflet.css');
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => updateMotoPositions(), 8000);
+    return () => clearInterval(interval);
+  }, [updateMotoPositions]);
+
+  const fetchRoutes = useCallback(async () => {
+    const results: Array<{ positions: [number, number][]; order: Order }> = [];
+    for (const order of activeOrders) {
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${order.origenLng},${order.origenLat};${order.destinoLng},${order.destinoLat}?overview=full&geometries=geojson`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.routes?.[0]) {
+          const coords: [number, number][] = data.routes[0].geometry.coordinates.map(
+            (c: number[]) => [c[1], c[0]] as [number, number]
+          );
+          results.push({ positions: coords, order });
+        }
+      } catch {
+        results.push({
+          positions: [[order.origenLat, order.origenLng], [order.destinoLat, order.destinoLng]],
+          order,
+        });
+      }
+    }
+    setRoutes(results);
+  }, [activeOrders]);
+
+  useEffect(() => {
+    fetchRoutes();
+    const iv = setInterval(fetchRoutes, 30000);
+    return () => clearInterval(iv);
+  }, [fetchRoutes]);
+
+  if (!L) {
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lf-bg-base)' }}>
+        <div style={{ textAlign: 'center', color: 'var(--lf-text-muted)' }}>
+          <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid var(--lf-border)', borderTopColor: 'var(--lf-accent)', borderRadius: '50%', margin: '0 auto 12px' }} />
+          <div>Cargando mapa...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const createMotoIcon = (status: string) => {
+    const color = STATUS_COLORS[status] || '#6B7280';
+    const isPulse = status === 'in-service';
+    return L.divIcon({
+      className: '',
+      html: `<div style="position:relative;width:28px;height:28px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="5" cy="18" r="3"/><circle cx="19" cy="18" r="3"/>
+            <path d="M5 18h3l3-6h4l2 6h2"/><path d="M11 6l2 6"/>
+          </svg>
+        </div>
+        ${isPulse ? '<div class="lf-marker-pulse" style="position:absolute;inset:-4px;border-radius:50%;"></div>' : ''}
+      </div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+  };
+
+  const originIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:18px;height:18px;border-radius:50%;background:#16A34A;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',
+    iconSize: [18, 18], iconAnchor: [9, 9],
+  });
+
+  const destIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:18px;height:18px;border-radius:50%;background:#FF6600;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',
+    iconSize: [18, 18], iconAnchor: [9, 9],
+  });
+
+  return (
+    <div className={isDark ? 'lf-dark-map' : ''} style={{ width: '100%', height: '100%' }}>
+      <MapContainer center={MANAGUA_CENTER} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl>
+        <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {motos.map((moto) => (
+          <Marker key={moto.id} position={[moto.lat, moto.lng]} icon={createMotoIcon(moto.status)}>
+            <Popup>
+              <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 150 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{moto.nombre}</div>
+                <div style={{ fontSize: 12, color: '#6B7280' }}>{moto.modelo} ({moto.anio})</div>
+                <div style={{ fontSize: 12, color: STATUS_COLORS[moto.status], fontWeight: 600, marginTop: 4 }}>{STATUS_LABELS[moto.status]}</div>
+                {moto.repartidorAsignado && <div style={{ fontSize: 12, marginTop: 2 }}>Repartidor: {moto.repartidorAsignado}</div>}
+                <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>KM: {moto.km.toLocaleString()}</div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+        {routes.map((route) => (
+          <Polyline key={route.order.id} positions={route.positions} pathOptions={{ color: '#FF6600', weight: 4, dashArray: '8 4', opacity: 0.8 }} />
+        ))}
+        {routes.map((route) => (
+          <Marker key={`o-${route.order.id}`} position={[route.order.origenLat, route.order.origenLng]} icon={originIcon} />
+        ))}
+        {routes.map((route) => (
+          <Marker key={`d-${route.order.id}`} position={[route.order.destinoLat, route.order.destinoLng]} icon={destIcon} />
+        ))}
+      </MapContainer>
+    </div>
+  );
+}
+
+const MapComponent = dynamic(() => Promise.resolve(MapInner), { ssr: false });
+
+/* ─── Status badge helper ─── */
+const statusBadge = (status: string) => {
+  const c: Record<string, { bg: string; color: string }> = {
+    pendiente: { bg: 'rgba(251,191,36,0.1)', color: '#D97706' },
+    encamino: { bg: 'rgba(255,102,0,0.1)', color: '#FF6600' },
+    recogido: { bg: 'rgba(59,130,246,0.1)', color: '#3B82F6' },
+    entregado: { bg: 'rgba(22,163,74,0.1)', color: '#16A34A' },
+    incidencia: { bg: 'rgba(220,38,38,0.1)', color: '#DC2626' },
+  };
+  const l: Record<string, string> = { pendiente: 'Pendiente', encamino: 'En camino', recogido: 'Recogido', entregado: 'Entregado', incidencia: 'Incidencia' };
+  const s = c[status] || { bg: 'rgba(107,114,128,0.1)', color: '#6B7280' };
+  return <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: s.bg, color: s.color }}>{l[status] || status}</span>;
+};
+
+/* ─── Main ModuleOverview ─── */
+export default function ModuleOverview({ isDark }: { isDark: boolean }) {
+  const { orders, motos, riders, alerts, setActiveModule } = useStore();
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+
+  const activeOrders = orders.filter((o) => o.estado === 'encamino' || o.estado === 'recogido');
+  const todayRevenue = orders.filter((o) => o.fecha === '2026-06-10').reduce((s, o) => s + o.monto, 0);
+  const availableMotos = motos.filter((m) => m.status === 'available').length;
+  const inServiceMotos = motos.filter((m) => m.status === 'in-service').length;
+  const maintenanceMotos = motos.filter((m) => m.status === 'maintenance').length;
+  const activeRiders = riders.filter((r) => r.conectado).length;
+
+  const kpis = [
+    { icon: Package, value: String(activeOrders.length), label: 'Ordenes activas', trend: '+2', color: 'var(--lf-accent)' },
+    { icon: DollarSign, value: `C$${todayRevenue.toLocaleString()}`, label: 'Ingresos hoy', trend: '+12%', color: 'var(--lf-success)' },
+    { icon: Bike, value: String(availableMotos), label: 'Motos disp.', trend: '', color: 'var(--lf-success)' },
+    { icon: Bike, value: String(inServiceMotos), label: 'En servicio', trend: '', color: 'var(--lf-accent)' },
+    { icon: AlertTriangle, value: String(alerts.length), label: 'Alertas', trend: '', color: 'var(--lf-danger)' },
+    { icon: UserCheck, value: String(activeRiders), label: 'Repartidores', trend: '', color: 'var(--lf-primary)' },
+  ];
+
+  const topMotos = motos.filter((m) => m.status === 'in-service').sort((a, b) => b.km - a.km).slice(0, 5);
+  const recentAlerts = alerts.slice(0, 3);
+
+  const severityIcon = (sev: string) => {
+    if (sev === 'alta') return <AlertTriangle size={14} style={{ color: 'var(--lf-danger)' }} />;
+    if (sev === 'media') return <AlertTriangle size={14} style={{ color: 'var(--lf-warning)' }} />;
+    return <AlertTriangle size={14} style={{ color: 'var(--lf-info)' }} />;
+  };
+
+  return (
+    <div style={{ display: 'flex', height: '100%', position: 'relative' }}>
+      {/* MAP */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <MapComponent isDark={isDark} motos={motos} activeOrders={activeOrders} />
+
+        {/* KPI Strip */}
+        <div className="lf-kpi-strip" style={{
+          position: 'absolute', top: 12, left: 12, right: panelOpen ? 392 : 12, zIndex: 1000,
+          display: 'flex', gap: 8, flexWrap: 'wrap',
+        }}>
+          {kpis.map((kpi, i) => {
+            const Icon = kpi.icon;
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                borderRadius: 10,
+                background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
+                backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid var(--lf-border)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              }}>
+                <Icon size={13} style={{ color: kpi.color }} />
+                <span className="font-mono" style={{ fontWeight: 700, fontSize: 13, color: 'var(--lf-text-main)' }}>{kpi.value}</span>
+                <span style={{ fontSize: 10, color: 'var(--lf-text-muted)' }}>{kpi.label}</span>
+                {kpi.trend && <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--lf-success)' }}>{kpi.trend}</span>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Map Legend */}
+        <div style={{
+          position: 'absolute', bottom: 16, left: 16, zIndex: 1000, display: 'flex', gap: 12,
+          padding: '6px 12px', borderRadius: 8,
+          background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(16px)', border: '1px solid var(--lf-border)',
+        }}>
+          {[{ color: '#16A34A', label: 'Disponible' }, { color: '#FF6600', label: 'En servicio' }, { color: '#DC2626', label: 'Mantenimiento' }].map((it) => (
+            <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: it.color }} />
+              <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>{it.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Panel toggle */}
+        {!panelOpen && (
+          <button onClick={() => setPanelOpen(true)} style={{
+            position: 'absolute', top: 12, right: 12, zIndex: 1000, width: 36, height: 36,
+            borderRadius: 8, border: '1px solid var(--lf-border)', background: 'var(--lf-surface)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--lf-text-muted)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          }}><ChevronRight size={16} /></button>
+        )}
+
+        {/* Mobile FAB */}
+        <button onClick={() => setMobileSheetOpen(true)} className="lf-mobile-fab-btn" style={{
+          display: 'none', position: 'absolute', bottom: 24, right: 16, width: 52, height: 52,
+          borderRadius: '50%', background: 'var(--lf-accent)', color: '#fff', border: 'none',
+          boxShadow: '0 4px 16px rgba(255,102,0,0.4)', cursor: 'pointer', zIndex: 1000,
+          alignItems: 'center', justifyContent: 'center',
+        }}><ChevronRight size={24} /></button>
+      </div>
+
+      {/* RIGHT PANEL (desktop) */}
+      {panelOpen && (
+        <div className="lf-overview-panel-desktop" style={{
+          width: 380, flexShrink: 0, background: isDark ? 'rgba(22,27,34,0.95)' : 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(16px)', borderLeft: '1px solid var(--lf-border)',
+          overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 20,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, fontSize: 16 }}>Panel de control</span>
+            <button onClick={() => setPanelOpen(false)} style={{
+              width: 28, height: 28, borderRadius: 6, border: '1px solid var(--lf-border)',
+              background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', color: 'var(--lf-text-muted)',
+            }}><X size={14} /></button>
+          </div>
+
+          {/* Active Orders */}
+          <div>
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+              Ordenes activas ({activeOrders.length})
+            </h4>
+            {activeOrders.slice(0, 5).map((order) => (
+              <div key={order.id} onClick={() => setActiveModule('pedidos')} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '8px 10px', borderRadius: 8, background: 'var(--lf-accent-soft)',
+                cursor: 'pointer', marginBottom: 4, transition: 'all 0.2s',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="font-mono" style={{ fontWeight: 700, fontSize: 12 }}>{order.id}</span>
+                  <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{order.cliente}</span>
+                </div>
+                {statusBadge(order.estado)}
+              </div>
+            ))}
+          </div>
+
+          {/* Fleet */}
+          <div>
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Flota en mapa</h4>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+              {[{ c: '#16A34A', l: 'Disponible', n: availableMotos }, { c: '#FF6600', l: 'En servicio', n: inServiceMotos }, { c: '#DC2626', l: 'Mantenimiento', n: maintenanceMotos }].map((s) => (
+                <div key={s.l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.c }} />
+                  <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>{s.l}: <strong>{s.n}</strong></span>
+                </div>
+              ))}
+            </div>
+            {topMotos.map((moto) => (
+              <div key={moto.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--lf-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[moto.status] }} />
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{moto.nombre}</span>
+                </div>
+                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{moto.km.toLocaleString()} km</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Alerts */}
+          <div>
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Alertas recientes</h4>
+            {recentAlerts.map((alert) => (
+              <div key={alert.id} style={{
+                padding: '10px 12px', borderRadius: 10, marginBottom: 6,
+                background: alert.severidad === 'alta' ? 'rgba(220,38,38,0.06)' : 'rgba(251,191,36,0.06)',
+                border: `1px solid ${alert.severidad === 'alta' ? 'rgba(220,38,38,0.15)' : 'rgba(251,191,36,0.15)'}`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  {severityIcon(alert.severidad)}
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>{alert.titulo}</span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{alert.msg}</div>
+                <div style={{ fontSize: 11, color: 'var(--lf-text-muted)', marginTop: 2 }}>{alert.motoId} · {alert.tiempo}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick Actions */}
+          <div>
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Accesos rápidos</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                { icon: Plus, label: 'Nueva orden', action: () => setActiveModule('pedidos') },
+                { icon: Bike, label: 'Ver flota', action: () => setActiveModule('flota') },
+                { icon: UserCheck, label: 'Repartidores', action: () => setActiveModule('repartidores') },
+                { icon: BarChart3, label: 'Reportes', action: () => setActiveModule('reportes') },
+              ].map((btn) => {
+                const Icon = btn.icon;
+                return (
+                  <button key={btn.label} onClick={btn.action} style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
+                    borderRadius: 10, border: '1px solid var(--lf-border)', background: 'var(--lf-surface)',
+                    cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--lf-text-main)', transition: 'all 0.2s',
+                  }}>
+                    <Icon size={16} style={{ color: 'var(--lf-accent)' }} />{btn.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MOBILE BOTTOM SHEET */}
+      <AnimatePresence>
+        {mobileSheetOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
+            onClick={() => setMobileSheetOpen(false)}
+          >
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25 }}
+              style={{ background: 'var(--lf-surface)', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '70vh', overflowY: 'auto', padding: '20px 16px' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ width: 40, height: 4, background: 'var(--lf-border)', borderRadius: 4, margin: '0 auto 16px' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+                {kpis.map((kpi, i) => { const Icon = kpi.icon; return (
+                  <div key={i} style={{ padding: '10px 8px', borderRadius: 10, background: 'var(--lf-accent-soft)', textAlign: 'center' }}>
+                    <Icon size={16} style={{ color: kpi.color, margin: '0 auto 4px' }} />
+                    <div className="font-mono" style={{ fontWeight: 700, fontSize: 15, color: 'var(--lf-text-main)' }}>{kpi.value}</div>
+                    <div style={{ fontSize: 10, color: 'var(--lf-text-muted)' }}>{kpi.label}</div>
+                  </div>
+                ); })}
+              </div>
+              <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--lf-text-muted)', marginBottom: 8 }}>Ordenes activas</h4>
+              {activeOrders.slice(0, 3).map((order) => (
+                <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 8, background: 'var(--lf-accent-soft)', marginBottom: 4 }}>
+                  <span className="font-mono" style={{ fontWeight: 700, fontSize: 12 }}>{order.id}</span>
+                  {statusBadge(order.estado)}
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .lf-kpi-strip { right: 12px !important; flex-wrap: wrap; }
+          .lf-overview-panel-desktop { display: none !important; }
+          .lf-mobile-fab-btn { display: flex !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
