@@ -582,7 +582,7 @@ const MOCK_ZONE_POLYGONS: ZonePolygon[] = [
    ZUSTAND STORE
    ═══════════════════════════════════════════════ */
 
-export type ModuleKey = 'overview' | 'pedidos' | 'flota' | 'repartidores' | 'reportes' | 'config' | 'despacho' | 'finanzas' | 'clientes';
+export type ModuleKey = 'overview' | 'pedidos' | 'flota' | 'repartidores' | 'reportes' | 'config' | 'despacho' | 'finanzas' | 'clientes' | 'incidencias';
 
 interface AppState {
   /* Data */

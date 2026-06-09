@@ -6,7 +6,7 @@ import {
   LayoutGrid, Package, Bike, Users, BarChart3, Settings,
   Sun, Moon, LogOut, Bell, Zap, Plus, Crosshair,
   Compass, Eye, Route, Maximize2, Minimize2,
-  ChevronsUp, Search, Radio,
+  ChevronsUp, Search, Radio, Shield,
 } from 'lucide-react';
 import { useStore, type ModuleKey } from '@/lib/store';
 import ModuleOverview from './ModuleOverview';
@@ -18,6 +18,7 @@ import ModuleConfig from './ModuleConfig';
 import ModuleDespacho from './ModuleDespacho';
 import ModuleFinanzas from './ModuleFinanzas';
 import ModuleClientes from './ModuleClientes';
+import ModuleIncidencias from './ModuleIncidencias';
 import CommandPalette from './CommandPalette';
 import NotificationCenter from './NotificationCenter';
 
@@ -30,6 +31,7 @@ const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid; short
   { key: 'finanzas', label: 'Finanzas', icon: BarChart3, shortcut: '6' },
   { key: 'clientes', label: 'Clientes', icon: Users, shortcut: '7' },
   { key: 'reportes', label: 'Reportes', icon: BarChart3, shortcut: '8' },
+  { key: 'incidencias', label: 'Incidencias', icon: Shield, shortcut: '0' },
   { key: 'config', label: 'Config', icon: Settings, shortcut: '9' },
 ];
 
@@ -41,6 +43,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   despacho: 'Centro de Despacho',
   finanzas: 'Centro Financiero',
   clientes: 'Clientes',
+  incidencias: 'Incidencias',
   reportes: 'Reportes',
   config: 'Configuración',
 };
@@ -151,6 +154,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       case 'finanzas': return <ModuleFinanzas />;
       case 'clientes': return <ModuleClientes />;
       case 'reportes': return <ModuleReportes />;
+      case 'incidencias': return <ModuleIncidencias />;
       case 'config': return <ModuleConfig />;
       default: return <ModuleOverview isDark={isDark} />;
     }
