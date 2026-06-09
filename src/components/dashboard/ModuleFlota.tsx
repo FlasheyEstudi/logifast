@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -24,13 +24,13 @@ const STATUS_CONFIG: Record<MotoStatus, { label: string; color: string; bg: stri
 function FlotaMap({ motos, isDark }: { motos: Moto[]; isDark: boolean }) {
   const [L, setL] = useState<any>(null);
 
-  useState(() => {
+  useEffect(() => {
     import('leaflet').then((leaflet) => {
       delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
       setL(leaflet);
     });
     import('leaflet/dist/leaflet.css');
-  });
+  }, []);
 
   if (!L) return <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)' }}>Cargando mapa...</div>;
 
