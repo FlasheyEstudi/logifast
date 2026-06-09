@@ -343,3 +343,58 @@ Stage Summary:
 - Toast notification system for export feedback
 - Responsive design maintained across all breakpoints
 - Zero new lint errors
+
+---
+Task ID: 7
+Agent: subagent
+Task: Add Skeleton Loading States + Keyboard Shortcuts Help Overlay to LOGIFAST Dashboard
+
+Work Log:
+- Read worklog.md and DashboardShell.tsx for context
+- Created /src/components/dashboard/SkeletonLoader.tsx with:
+  - Shared shimmer CSS animation (lf-shimmer keyframe + lf-skeleton-bone class)
+  - Bone component: reusable shimmer rectangle with configurable width/height/style
+  - SkeletonOverview: KPI pills row + large map rectangle placeholder + right panel with header/lines/divider
+  - SkeletonTable: module heading + filter pills + grid-based table header + 6 rows with varying widths
+  - SkeletonCards: module heading + metric strip + auto-fill grid of 6 card placeholders (icon+title+2 lines+2 badges)
+  - getSkeletonVariant helper: maps module keys to skeleton variants (overview→overview, pedidos/flota/despacho/incidencias/config→table, repartidores/finanzas/clientes/reportes→cards)
+  - SkeletonLoader wrapper: selects the right variant with framer-motion fade transition
+- Modified DashboardShell.tsx:
+  - Added useMemo import
+  - Added SkeletonLoader, getSkeletonVariant, SkeletonVariant imports
+  - Replaced isModuleLoading boolean state with loadedModule ModuleKey state + derived isModuleLoading
+  - loadedModule lags behind activeModule for 400ms (setLoadedModule called in timeout to avoid lint error)
+  - Added skeletonVariant useMemo for current module
+  - Added showHelpOverlay state
+  - Moved handleFullscreen useCallback + fullscreenchange useEffect BEFORE keyboard shortcuts useEffect (fixes reference ordering)
+  - Removed duplicate fullscreen toggle code
+  - Updated keyboard shortcuts useEffect:
+    - Added ? key handler → toggles showHelpOverlay
+    - Added F key handler → calls handleFullscreen
+    - Added Esc key handler → also closes showHelpOverlay
+    - Added handleFullscreen to dependency array
+  - Updated AnimatePresence content area:
+    - When isModuleLoading: shows SkeletonLoader with variant based on module
+    - When not loading: shows motion.div with enhanced transition (y: 8→0 fade in, y: 0→-8 fade out)
+  - Added keyboard shortcuts help overlay:
+    - Backdrop: rgba(0,0,0,0.5) + backdrop-filter: blur(8px)
+    - Modal: centered, max-width 520px, animated scale/opacity/y entrance
+    - Header: LF logo badge (navy #002A5C) + "Atajos de teclado" serif heading + "LOGIFAST Dashboard" subtitle
+    - Module navigation section: all 10 NAV_ITEMS with icon + label + kbd shortcut badge (DM Mono font)
+    - General shortcuts section: ⌘K (Paleta de comandos), ? (Ayuda de atajos), F (Pantalla completa), Esc (Cerrar)
+    - General shortcut kbd badges use navy background (#002A5C) with orange text (#FF6600)
+    - Footer hint: "Presiona Esc o ? para cerrar" with kbd elements
+    - Click backdrop to close, stopPropagation on modal content
+  - Added .lf-skeleton-side-panel responsive CSS (hidden on mobile ≤768px)
+- Lint passes (0 errors, 1 pre-existing font warning)
+- Dev server running cleanly
+
+Stage Summary:
+- Skeleton loading states fully implemented with 3 variants (Overview, Table, Cards)
+- 400ms skeleton shown during module transitions with smooth framer-motion AnimatePresence
+- Keyboard shortcuts help overlay (? key) with full shortcut listing
+- F key for fullscreen toggle added
+- Esc key closes all overlays including help
+- Brand colors (Navy #002A5C, Orange #FF6600) used throughout
+- Responsive skeleton (side panel hidden on mobile)
+- Zero lint errors

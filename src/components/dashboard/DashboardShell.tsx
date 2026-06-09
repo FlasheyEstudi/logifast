@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, Package, Bike, Users, BarChart3, Settings,
@@ -21,6 +21,7 @@ import ModuleClientes from './ModuleClientes';
 import ModuleIncidencias from './ModuleIncidencias';
 import CommandPalette from './CommandPalette';
 import NotificationCenter from './NotificationCenter';
+import { SkeletonLoader, getSkeletonVariant, type SkeletonVariant } from './SkeletonLoader';
 
 const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid; shortcut?: string }[] = [
   { key: 'overview', label: 'Vista General', icon: LayoutGrid, shortcut: '1' },
@@ -59,8 +60,21 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showHelpOverlay, setShowHelpOverlay] = useState(false);
+  const [loadedModule, setLoadedModule] = useState<ModuleKey>(activeModule);
   const avatarRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLDivElement>(null);
+
+  // Skeleton variant for current module
+  const skeletonVariant: SkeletonVariant = useMemo(() => getSkeletonVariant(activeModule), [activeModule]);
+
+  // Show skeleton for 400ms when switching modules
+  // loadedModule lags behind activeModule for 400ms to show skeleton
+  const isModuleLoading = loadedModule !== activeModule;
+  useEffect(() => {
+    const timer = setTimeout(() => setLoadedModule(activeModule), 400);
+    return () => clearTimeout(timer);
+  }, [activeModule]);
 
   // Close avatar dropdown on outside click
   useEffect(() => {
@@ -82,6 +96,21 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     return () => document.removeEventListener('mousedown', handler);
   }, [fabOpen]);
 
+  // Fullscreen toggle
+  const handleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -100,16 +129,29 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           e.preventDefault();
           setActiveModule(NAV_ITEMS[num - 1].key);
         }
+        // ? key for help overlay
+        if (e.key === '?') {
+          e.preventDefault();
+          setShowHelpOverlay((p) => !p);
+          return;
+        }
+        // F key for fullscreen toggle
+        if (e.key === 'f' || e.key === 'F') {
+          e.preventDefault();
+          handleFullscreen();
+          return;
+        }
         if (e.key === 'Escape') {
           setCommandPaletteOpen(false);
           setAvatarOpen(false);
           setFabOpen(false);
+          setShowHelpOverlay(false);
         }
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [commandPaletteOpen, setCommandPaletteOpen, setActiveModule]);
+  }, [commandPaletteOpen, setCommandPaletteOpen, setActiveModule, handleFullscreen]);
 
   // Simulation engine
   useEffect(() => {
@@ -126,21 +168,6 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       clearInterval(deliveryInterval);
     };
   }, [simulationRunning, updateMotoPositions, simulateStatusChange, simulateNewOrder, simulateDelivery]);
-
-  // Fullscreen toggle
-  const handleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
-    }
-  }, []);
-
-  useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
-  }, []);
 
   const highAlerts = alerts.filter((a) => a.severidad === 'alta').length;
 
@@ -334,16 +361,20 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       {/* ═══ CONTENT ═══ */}
       <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeModule}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ height: '100%' }}
-          >
-            {renderModule()}
-          </motion.div>
+          {isModuleLoading ? (
+            <SkeletonLoader key={`skeleton-${activeModule}`} variant={skeletonVariant} />
+          ) : (
+            <motion.div
+              key={activeModule}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              style={{ height: '100%' }}
+            >
+              {renderModule()}
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* FAB Speed Dial */}
@@ -435,6 +466,114 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       {/* Command Palette */}
       <CommandPalette />
 
+      {/* ═══ KEYBOARD SHORTCUTS HELP OVERLAY ═══ */}
+      <AnimatePresence>
+        {showHelpOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setShowHelpOverlay(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)',
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 16 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'var(--lf-surface)', border: '1px solid var(--lf-border)',
+                borderRadius: 16, padding: '32px 36px', maxWidth: 520, width: '90%',
+                boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10, background: '#002A5C',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14, color: '#fff',
+                }}>LF</div>
+                <div>
+                  <h2 className="font-serif" style={{ fontSize: 20, fontWeight: 700, color: 'var(--lf-text-main)', margin: 0 }}>Atajos de teclado</h2>
+                  <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', margin: '2px 0 0' }}>LOGIFAST Dashboard</p>
+                </div>
+              </div>
+
+              {/* Shortcuts list */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Module navigation */}
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lf-text-muted)', padding: '8px 0 4px' }}>Navegación de módulos</div>
+                {NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Icon size={14} style={{ color: 'var(--lf-text-muted)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--lf-text-main)' }}>{item.label}</span>
+                      </div>
+                      <kbd style={{
+                        padding: '2px 8px', borderRadius: 6, fontSize: 12,
+                        fontFamily: "'DM Mono', monospace", fontWeight: 600,
+                        background: 'var(--lf-bg-base)', border: '1px solid var(--lf-border)',
+                        color: '#002A5C', minWidth: 24, textAlign: 'center',
+                      }}>{item.shortcut}</kbd>
+                    </div>
+                  );
+                })}
+
+                {/* General shortcuts */}
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lf-text-muted)', padding: '12px 0 4px' }}>General</div>
+                {[
+                  { keys: '⌘K', label: 'Paleta de comandos', desc: 'Buscar y ejecutar acciones' },
+                  { keys: '?', label: 'Ayuda de atajos', desc: 'Mostrar esta ventana' },
+                  { keys: 'F', label: 'Pantalla completa', desc: 'Alternar modo fullscreen' },
+                  { keys: 'Esc', label: 'Cerrar', desc: 'Cerrar diálogos y overlays' },
+                ].map((s) => (
+                  <div key={s.keys} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 6 }}>
+                    <div>
+                      <div style={{ fontSize: 13, color: 'var(--lf-text-main)' }}>{s.label}</div>
+                      <div style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>{s.desc}</div>
+                    </div>
+                    <kbd style={{
+                      padding: '2px 8px', borderRadius: 6, fontSize: 12,
+                      fontFamily: "'DM Mono', monospace", fontWeight: 600,
+                      background: '#002A5C', border: 'none',
+                      color: '#FF6600', minWidth: 24, textAlign: 'center',
+                    }}>{s.keys}</kbd>
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer hint */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--lf-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Presiona</span>
+                <kbd style={{
+                  padding: '2px 8px', borderRadius: 6, fontSize: 12,
+                  fontFamily: "'DM Mono', monospace", fontWeight: 600,
+                  background: 'var(--lf-bg-base)', border: '1px solid var(--lf-border)',
+                  color: '#002A5C',
+                }}>Esc</kbd>
+                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>o</span>
+                <kbd style={{
+                  padding: '2px 8px', borderRadius: 6, fontSize: 12,
+                  fontFamily: "'DM Mono', monospace", fontWeight: 600,
+                  background: 'var(--lf-bg-base)', border: '1px solid var(--lf-border)',
+                  color: '#002A5C',
+                }}>?</kbd>
+                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>para cerrar</span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Responsive styles */}
       <style jsx global>{`
         @media (max-width: 1024px) {
@@ -444,6 +583,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           .lf-dash-desktop-nav { display: none !important; }
           .lf-dash-bottom-nav { display: flex !important; }
           .lf-fab-container { bottom: 80px !important; }
+          .lf-skeleton-side-panel { display: none !important; }
         }
       `}</style>
     </div>

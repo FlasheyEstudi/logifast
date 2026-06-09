@@ -180,6 +180,15 @@ export interface ZonePolygon {
   coords: [number, number][];
 }
 
+export type ToastVariant = 'success' | 'error' | 'info';
+
+export interface ToastItem {
+  id: string;
+  message: string;
+  variant: ToastVariant;
+  timestamp: number;
+}
+
 /* ═══════════════════════════════════════════════
    MOCK DATA
    ═══════════════════════════════════════════════ */
@@ -631,6 +640,9 @@ interface AppState {
   flotaFilter: MotoStatus | 'all';
   expandedMoto: string | null;
 
+  /* Toasts */
+  toasts: ToastItem[];
+
   /* New UI State */
   commandPaletteOpen: boolean;
   notificationsOpen: boolean;
@@ -677,6 +689,10 @@ interface AppState {
   simulateStatusChange: () => void;
   dispatchOrder: (orderId: string, riderId: string) => void;
   toggleSimulation: () => void;
+
+  /* Toast Actions */
+  addToast: (message: string, variant?: ToastVariant) => void;
+  removeToast: (id: string) => void;
 }
 
 let _eventCounter = 100;
@@ -728,6 +744,9 @@ export const useStore = create<AppState>((set, get) => ({
   /* Flota */
   flotaFilter: 'all',
   expandedMoto: null,
+
+  /* Toasts */
+  toasts: [],
 
   /* New UI State */
   commandPaletteOpen: false,
