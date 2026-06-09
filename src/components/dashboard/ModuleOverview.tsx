@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,14 +10,24 @@ import {
 } from 'lucide-react';
 import { useStore, type Order, type Moto, type ZonePolygon } from '@/lib/store';
 
-/* ─── Dynamic Leaflet imports (SSR-safe) ─── */
-const MapContainer = dynamic(() => import('react-leaflet').then((m) => m.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), { ssr: false });
-const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), { ssr: false });
-const Polygon = dynamic(() => import('react-leaflet').then((m) => m.Polygon), { ssr: false });
-const Circle = dynamic(() => import('react-leaflet').then((m) => m.Circle), { ssr: false });
+/* ─── Dynamic Leaflet — load entire module at once to avoid chunk splitting issues ─── */
+type LeafletModule = typeof import('react-leaflet');
+
+let leafletModulePromise: Promise<LeafletModule> | null = null;
+function getLeafletModule(): Promise<LeafletModule> {
+  if (!leafletModulePromise) {
+    leafletModulePromise = import('react-leaflet');
+  }
+  return leafletModulePromise;
+}
+
+const MapContainer = dynamic(() => getLeafletModule().then((m) => m.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => getLeafletModule().then((m) => m.TileLayer), { ssr: false });
+const Marker = dynamic(() => getLeafletModule().then((m) => m.Marker), { ssr: false });
+const Popup = dynamic(() => getLeafletModule().then((m) => m.Popup), { ssr: false });
+const Polyline = dynamic(() => getLeafletModule().then((m) => m.Polyline), { ssr: false });
+const Polygon = dynamic(() => getLeafletModule().then((m) => m.Polygon), { ssr: false });
+const Circle = dynamic(() => getLeafletModule().then((m) => m.Circle), { ssr: false });
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
@@ -40,7 +50,6 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
 }) {
   const [routes, setRoutes] = useState<Array<{ positions: [number, number][]; order: Order }>>([]);
   const [L, setL] = useState<any>(null);
-  const [mapRef, setMapRef] = useState<any>(null);
   const updateMotoPositions = useStore((s) => s.updateMotoPositions);
 
   useEffect(() => {
@@ -85,22 +94,21 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
     return () => clearInterval(iv);
   }, [fetchRoutes]);
 
-  // Expose map reference for external controls
-  const handleMapReady = useCallback((map: any) => {
-    setMapRef(map);
-  }, []);
+  // Use a ref to store the map instance from MapContainer's whenReady
+  const mapInstanceRef = useRef<any>(null);
 
   // Center map on Managua
   const centerMap = useCallback(() => {
-    if (mapRef) mapRef.setView(MANAGUA_CENTER, 13);
-  }, [mapRef]);
+    if (mapInstanceRef.current) mapInstanceRef.current.setView(MANAGUA_CENTER, 13);
+  }, []);
 
   // Show all motos
   const showAllMotos = useCallback(() => {
-    if (!mapRef || motos.length === 0) return;
-    const bounds = L?.latLngBounds(motos.map((m: Moto) => [m.lat, m.lng]));
-    if (bounds) mapRef.fitBounds(bounds, { padding: [40, 40] });
-  }, [mapRef, motos, L]);
+    const map = mapInstanceRef.current;
+    if (!map || motos.length === 0 || !L) return;
+    const bounds = L.latLngBounds(motos.map((m: Moto) => [m.lat, m.lng]));
+    if (bounds) map.fitBounds(bounds, { padding: [40, 40] });
+  }, [motos, L]);
 
   // Satellite tile URL based on toggle state
   const tileUrl = useMemo(() => {
@@ -250,7 +258,7 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
         zoom={13}
         style={{ width: '100%', height: '100%' }}
         zoomControl={false}
-        ref={handleMapReady}
+        whenReady={(e: any) => { mapInstanceRef.current = e.target; }}
       >
         <TileLayer attribution={tileAttribution} url={tileUrl} />
 
@@ -425,7 +433,15 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
   );
 }
 
-const MapComponent = dynamic(() => Promise.resolve(MapInner), { ssr: false });
+/* ─── Wrap MapInner with dynamic ssr:false to avoid SSR issues with Leaflet ─── */
+const MapComponent = dynamic(() => Promise.resolve(MapInner), { ssr: false, loading: () => (
+  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lf-bg-base)' }}>
+    <div style={{ textAlign: 'center', color: 'var(--lf-text-muted)' }}>
+      <div className="lf-shimmer" style={{ width: 40, height: 40, borderRadius: '50%', margin: '0 auto 12px' }} />
+      <div>Cargando mapa...</div>
+    </div>
+  </div>
+) });
 
 /* ─── Status badge helper ─── */
 const statusBadge = (status: string) => {
