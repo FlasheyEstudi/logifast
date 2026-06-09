@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, Package, Bike, Users, BarChart3, Settings,
-  Sun, Moon, LogOut, Bell,
+  Sun, Moon, LogOut, Bell, Zap, Plus, Crosshair,
+  Compass, Eye, Route, Maximize2, Minimize2,
+  ChevronsUp, Search, Radio,
 } from 'lucide-react';
 import { useStore, type ModuleKey } from '@/lib/store';
 import ModuleOverview from './ModuleOverview';
@@ -13,29 +15,128 @@ import ModuleFlota from './ModuleFlota';
 import ModuleRepartidores from './ModuleRepartidores';
 import ModuleReportes from './ModuleReportes';
 import ModuleConfig from './ModuleConfig';
+import ModuleDespacho from './ModuleDespacho';
+import ModuleFinanzas from './ModuleFinanzas';
+import ModuleClientes from './ModuleClientes';
+import CommandPalette from './CommandPalette';
+import NotificationCenter from './NotificationCenter';
 
-const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid }[] = [
-  { key: 'overview', label: 'Vista General', icon: LayoutGrid },
-  { key: 'pedidos', label: 'Pedidos', icon: Package },
-  { key: 'flota', label: 'Flota', icon: Bike },
-  { key: 'repartidores', label: 'Repartidores', icon: Users },
-  { key: 'reportes', label: 'Reportes', icon: BarChart3 },
-  { key: 'config', label: 'Config', icon: Settings },
+const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid; shortcut?: string }[] = [
+  { key: 'overview', label: 'Vista General', icon: LayoutGrid, shortcut: '1' },
+  { key: 'pedidos', label: 'Pedidos', icon: Package, shortcut: '2' },
+  { key: 'flota', label: 'Flota', icon: Bike, shortcut: '3' },
+  { key: 'repartidores', label: 'Repartidores', icon: Users, shortcut: '4' },
+  { key: 'despacho', label: 'Despacho', icon: Zap, shortcut: '5' },
+  { key: 'finanzas', label: 'Finanzas', icon: BarChart3, shortcut: '6' },
+  { key: 'clientes', label: 'Clientes', icon: Users, shortcut: '7' },
+  { key: 'reportes', label: 'Reportes', icon: BarChart3, shortcut: '8' },
+  { key: 'config', label: 'Config', icon: Settings, shortcut: '9' },
 ];
 
-export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDark: boolean; toggleTheme: () => void; onLogout: () => void }) {
-  const { activeModule, setActiveModule, moduleFade, alerts } = useStore();
-  const [avatarOpen, setAvatarOpen] = useState(false);
-  const avatarRef = useRef<HTMLDivElement>(null);
+const MODULE_LABELS: Record<ModuleKey, string> = {
+  overview: 'Vista General',
+  pedidos: 'Pedidos',
+  flota: 'Flota',
+  repartidores: 'Repartidores',
+  despacho: 'Centro de Despacho',
+  finanzas: 'Centro Financiero',
+  clientes: 'Clientes',
+  reportes: 'Reportes',
+  config: 'Configuración',
+};
 
+export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDark: boolean; toggleTheme: () => void; onLogout: () => void }) {
+  const {
+    activeModule, setActiveModule, moduleFade, alerts,
+    commandPaletteOpen, setCommandPaletteOpen,
+    simulationRunning, toggleSimulation,
+    simulateNewOrder, simulateDelivery, simulateStatusChange, updateMotoPositions,
+  } = useStore();
+
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
+  const fabRef = useRef<HTMLDivElement>(null);
+
+  // Close avatar dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
-        setAvatarOpen(false);
-      }
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Close FAB on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (fabRef.current && !fabRef.current.contains(e.target as Node)) setFabOpen(false);
+    };
+    if (fabOpen) {
+      setTimeout(() => document.addEventListener('mousedown', handler), 0);
+    }
+    return () => document.removeEventListener('mousedown', handler);
+  }, [fabOpen]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Cmd+K or Ctrl+K for command palette
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(!commandPaletteOpen);
+        return;
+      }
+      // Number keys 1-9 for module navigation (only when not in input)
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= NAV_ITEMS.length) {
+          e.preventDefault();
+          setActiveModule(NAV_ITEMS[num - 1].key);
+        }
+        if (e.key === 'Escape') {
+          setCommandPaletteOpen(false);
+          setAvatarOpen(false);
+          setFabOpen(false);
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [commandPaletteOpen, setCommandPaletteOpen, setActiveModule]);
+
+  // Simulation engine
+  useEffect(() => {
+    if (!simulationRunning) return;
+    const motoInterval = setInterval(() => updateMotoPositions(), 8000);
+    const statusInterval = setInterval(() => simulateStatusChange(), 15000);
+    const orderInterval = setInterval(() => simulateNewOrder(), 60000);
+    const deliveryInterval = setInterval(() => simulateDelivery(), 120000);
+
+    return () => {
+      clearInterval(motoInterval);
+      clearInterval(statusInterval);
+      clearInterval(orderInterval);
+      clearInterval(deliveryInterval);
+    };
+  }, [simulationRunning, updateMotoPositions, simulateStatusChange, simulateNewOrder, simulateDelivery]);
+
+  // Fullscreen toggle
+  const handleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
   const highAlerts = alerts.filter((a) => a.severidad === 'alta').length;
@@ -46,11 +147,22 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       case 'pedidos': return <ModulePedidos />;
       case 'flota': return <ModuleFlota isDark={isDark} />;
       case 'repartidores': return <ModuleRepartidores />;
+      case 'despacho': return <ModuleDespacho />;
+      case 'finanzas': return <ModuleFinanzas />;
+      case 'clientes': return <ModuleClientes />;
       case 'reportes': return <ModuleReportes />;
       case 'config': return <ModuleConfig />;
       default: return <ModuleOverview isDark={isDark} />;
     }
   };
+
+  // FAB speed dial actions
+  const fabActions = [
+    { icon: Package, label: 'Nueva orden', color: '#FF6600', action: () => { setActiveModule('pedidos'); setFabOpen(false); } },
+    { icon: Zap, label: 'Despacho', color: '#8B5CF6', action: () => { setActiveModule('despacho'); setFabOpen(false); } },
+    { icon: BarChart3, label: 'Finanzas', color: '#16A34A', action: () => { setActiveModule('finanzas'); setFabOpen(false); } },
+    { icon: Search, label: 'Buscar (⌘K)', color: '#3B82F6', action: () => { setCommandPaletteOpen(true); setFabOpen(false); } },
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--lf-bg-base)' }}>
@@ -60,14 +172,23 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
         padding: '0 20px', background: 'var(--lf-surface)', borderBottom: '1px solid var(--lf-border)',
         zIndex: 100,
       }}>
-        {/* Left: Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8, background: 'var(--lf-accent)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14, color: '#fff',
-          }}>LF</div>
-          <span className="font-serif" style={{ fontSize: 20, color: 'var(--lf-text-main)', letterSpacing: '-0.02em' }}>LOGIFAST</span>
+        {/* Left: Logo + Breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 8, background: 'var(--lf-accent)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14, color: '#fff',
+            }}>LF</div>
+            <span className="font-serif" style={{ fontSize: 20, color: 'var(--lf-text-main)', letterSpacing: '-0.02em' }}>LOGIFAST</span>
+          </div>
+
+          {/* Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, paddingLeft: 12, borderLeft: '1px solid var(--lf-border)' }}>
+            <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Dashboard</span>
+            <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>›</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main)' }}>{MODULE_LABELS[activeModule]}</span>
+          </div>
         </div>
 
         {/* Center: Desktop tabs */}
@@ -79,36 +200,73 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               <button
                 key={item.key}
                 onClick={() => setActiveModule(item.key)}
+                title={`${item.label} (${item.shortcut})`}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px',
-                  borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                  borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
                   background: isActive ? 'var(--lf-accent-soft)' : 'transparent',
                   color: isActive ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
-                  transition: 'all 0.2s',
+                  transition: 'all 0.2s', position: 'relative',
                 }}
               >
-                <Icon size={16} />
-                <span>{item.label}</span>
+                <Icon size={15} />
+                <span className="lf-nav-label">{item.label}</span>
               </button>
             );
           })}
         </nav>
 
         {/* Right: Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Notification bell */}
-          <button style={{
-            width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border)',
-            background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', position: 'relative', color: 'var(--lf-text-muted)',
-          }} onClick={() => setActiveModule('overview')}>
-            <Bell size={16} />
-            {highAlerts > 0 && (
-              <span style={{
-                position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: '50%',
-                background: 'var(--lf-danger)',
-              }} />
-            )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {/* En vivo indicator */}
+          <div
+            onClick={toggleSimulation}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 8,
+              background: simulationRunning ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
+              border: `1px solid ${simulationRunning ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
+              cursor: 'pointer', transition: 'all 0.2s',
+            }}
+          >
+            <div className={simulationRunning ? 'lf-live-pulse' : ''} style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: simulationRunning ? 'var(--lf-success)' : 'var(--lf-danger)',
+            }} />
+            <span style={{
+              fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+              color: simulationRunning ? 'var(--lf-success)' : 'var(--lf-danger)',
+            }}>En vivo</span>
+          </div>
+
+          {/* Notification Center */}
+          <NotificationCenter />
+
+          {/* Command Palette trigger */}
+          <button
+            onClick={() => setCommandPaletteOpen(true)}
+            style={{
+              height: 36, padding: '0 10px', borderRadius: 8, border: '1px solid var(--lf-border)',
+              background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', gap: 6, color: 'var(--lf-text-muted)',
+              fontSize: 12, transition: 'all 0.2s',
+            }}
+          >
+            <Search size={14} />
+            <span style={{ fontSize: 12, opacity: 0.6 }}>Buscar...</span>
+            <kbd style={{ padding: '1px 5px', borderRadius: 4, border: '1px solid var(--lf-border)', fontSize: 10, fontFamily: 'inherit', background: 'var(--lf-bg-base)' }}>⌘K</kbd>
+          </button>
+
+          {/* Fullscreen toggle */}
+          <button
+            onClick={handleFullscreen}
+            style={{
+              width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border)',
+              background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
+            }}
+            title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+          >
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>
 
           {/* Theme toggle */}
@@ -121,7 +279,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
             }}
             aria-label="Cambiar tema"
           >
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
           {/* Avatar */}
@@ -137,11 +295,16 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               }}
             >AD</button>
             {avatarOpen && (
-              <div style={{
-                position: 'absolute', top: 44, right: 0, minWidth: 180,
-                background: 'var(--lf-surface)', border: '1px solid var(--lf-border)',
-                borderRadius: 12, boxShadow: 'var(--lf-shadow-lg)', overflow: 'hidden', zIndex: 200,
-              }}>
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                style={{
+                  position: 'absolute', top: 44, right: 0, minWidth: 200,
+                  background: 'var(--lf-surface)', border: '1px solid var(--lf-border)',
+                  borderRadius: 12, boxShadow: 'var(--lf-shadow-lg)', overflow: 'hidden', zIndex: 200,
+                }}
+              >
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--lf-border)' }}>
                   <div style={{ fontWeight: 600, fontSize: 14 }}>Admin Demo</div>
                   <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>admin@logifast.com</div>
@@ -151,12 +314,14 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 16px',
                     border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13,
-                    color: 'var(--lf-danger)', textAlign: 'left',
+                    color: 'var(--lf-danger)', textAlign: 'left', transition: 'background 0.15s',
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--lf-accent-soft)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   <LogOut size={14} /> Cerrar sesión
                 </button>
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
@@ -176,15 +341,73 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
             {renderModule()}
           </motion.div>
         </AnimatePresence>
+
+        {/* FAB Speed Dial */}
+        <div ref={fabRef} style={{ position: 'absolute', bottom: 24, right: 24, zIndex: 50 }} className="lf-fab-container">
+          {/* Speed dial items */}
+          <AnimatePresence>
+            {fabOpen && fabActions.map((action, i) => {
+              const Icon = action.icon;
+              return (
+                <motion.div
+                  key={action.label}
+                  initial={{ opacity: 0, scale: 0.4, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.4, y: 20 }}
+                  transition={{ duration: 0.15, delay: fabOpen ? i * 0.04 : 0 }}
+                  style={{
+                    position: 'absolute', bottom: 60 + i * 52, right: 4,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <span style={{
+                    fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main)', whiteSpace: 'nowrap',
+                    padding: '4px 10px', borderRadius: 6, background: 'var(--lf-surface)',
+                    border: '1px solid var(--lf-border)', boxShadow: 'var(--lf-shadow-md)',
+                  }}>{action.label}</span>
+                  <button
+                    onClick={action.action}
+                    className="lf-fab-action"
+                    style={{
+                      width: 44, height: 44, borderRadius: '50%', border: 'none',
+                      background: action.color, color: '#fff', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: `0 4px 12px ${action.color}44`,
+                      transition: 'transform 0.15s',
+                    }}
+                  >
+                    <Icon size={18} />
+                  </button>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+
+          {/* Main FAB button */}
+          <button
+            onClick={() => setFabOpen((p) => !p)}
+            className="lf-fab-main"
+            style={{
+              width: 52, height: 52, borderRadius: '50%', border: 'none',
+              background: fabOpen ? 'var(--lf-danger)' : 'var(--lf-accent)',
+              color: '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: fabOpen ? '0 4px 16px rgba(220,38,38,0.4)' : '0 4px 16px rgba(255,102,0,0.4)',
+              transition: 'all 0.2s', transform: fabOpen ? 'rotate(45deg)' : 'rotate(0)',
+            }}
+          >
+            <Plus size={24} />
+          </button>
+        </div>
       </div>
 
       {/* ═══ BOTTOM NAV (mobile) ═══ */}
       <nav className="lf-dash-bottom-nav" style={{
         height: 64, flexShrink: 0, display: 'none', alignItems: 'center', justifyContent: 'space-around',
         background: 'var(--lf-surface)', borderTop: '1px solid var(--lf-border)',
-        padding: '0 8px',
+        padding: '0 4px',
       }}>
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.slice(0, 5).map((item) => {
           const Icon = item.icon;
           const isActive = activeModule === item.key;
           return (
@@ -195,21 +418,28 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                 border: 'none', background: 'transparent', cursor: 'pointer',
                 color: isActive ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
-                fontSize: 10, fontWeight: 600, padding: '4px 8px',
+                fontSize: 9, fontWeight: 600, padding: '4px 6px',
               }}
             >
-              <Icon size={20} />
+              <Icon size={18} />
               <span>{item.label}</span>
             </button>
           );
         })}
       </nav>
 
+      {/* Command Palette */}
+      <CommandPalette />
+
       {/* Responsive styles */}
       <style jsx global>{`
+        @media (max-width: 1024px) {
+          .lf-nav-label { display: none; }
+        }
         @media (max-width: 768px) {
           .lf-dash-desktop-nav { display: none !important; }
           .lf-dash-bottom-nav { display: flex !important; }
+          .lf-fab-container { bottom: 80px !important; }
         }
       `}</style>
     </div>

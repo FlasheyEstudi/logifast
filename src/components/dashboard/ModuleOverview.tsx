@@ -5,9 +5,10 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, DollarSign, Bike, AlertTriangle, UserCheck, X,
-  ChevronRight, Plus, BarChart3,
+  ChevronRight, Plus, BarChart3, Layers, Crosshair,
+  Maximize2, Minimize2, Eye, EyeOff, Route,
 } from 'lucide-react';
-import { useStore, type Order, type Moto } from '@/lib/store';
+import { useStore, type Order, type Moto, type ZonePolygon } from '@/lib/store';
 
 /* ─── Dynamic Leaflet imports (SSR-safe) ─── */
 const MapContainer = dynamic(() => import('react-leaflet').then((m) => m.MapContainer), { ssr: false });
@@ -15,6 +16,7 @@ const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer)
 const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), { ssr: false });
 const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), { ssr: false });
+const Polygon = dynamic(() => import('react-leaflet').then((m) => m.Polygon), { ssr: false });
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
@@ -30,11 +32,13 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 /* ─── Leaflet map inner component ─── */
-function MapInner({ isDark, motos, activeOrders }: {
+function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRoutes }: {
   isDark: boolean; motos: Moto[]; activeOrders: Order[];
+  zonePolygons: ZonePolygon[]; showZones: boolean; showRoutes: boolean;
 }) {
   const [routes, setRoutes] = useState<Array<{ positions: [number, number][]; order: Order }>>([]);
   const [L, setL] = useState<any>(null);
+  const [mapRef, setMapRef] = useState<any>(null);
   const updateMotoPositions = useStore((s) => s.updateMotoPositions);
 
   useEffect(() => {
@@ -79,11 +83,28 @@ function MapInner({ isDark, motos, activeOrders }: {
     return () => clearInterval(iv);
   }, [fetchRoutes]);
 
+  // Expose map reference for external controls
+  const handleMapReady = useCallback((map: any) => {
+    setMapRef(map);
+  }, []);
+
+  // Center map on Managua
+  const centerMap = useCallback(() => {
+    if (mapRef) mapRef.setView(MANAGUA_CENTER, 13);
+  }, [mapRef]);
+
+  // Show all motos
+  const showAllMotos = useCallback(() => {
+    if (!mapRef || motos.length === 0) return;
+    const bounds = L?.latLngBounds(motos.map((m: Moto) => [m.lat, m.lng]));
+    if (bounds) mapRef.fitBounds(bounds, { padding: [40, 40] });
+  }, [mapRef, motos, L]);
+
   if (!L) {
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lf-bg-base)' }}>
         <div style={{ textAlign: 'center', color: 'var(--lf-text-muted)' }}>
-          <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid var(--lf-border)', borderTopColor: 'var(--lf-accent)', borderRadius: '50%', margin: '0 auto 12px' }} />
+          <div className="lf-shimmer" style={{ width: 40, height: 40, borderRadius: '50%', margin: '0 auto 12px' }} />
           <div>Cargando mapa...</div>
         </div>
       </div>
@@ -121,10 +142,56 @@ function MapInner({ isDark, motos, activeOrders }: {
     iconSize: [18, 18], iconAnchor: [9, 9],
   });
 
+  // Determine active vs planned orders for route styling
+  const activeStatuses = ['encamino', 'recogido'];
+
   return (
-    <div className={isDark ? 'lf-dark-map' : ''} style={{ width: '100%', height: '100%' }}>
-      <MapContainer center={MANAGUA_CENTER} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl>
+    <div className={isDark ? 'lf-dark-map' : ''} style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <MapContainer
+        center={MANAGUA_CENTER}
+        zoom={13}
+        style={{ width: '100%', height: '100%' }}
+        zoomControl={false}
+        ref={handleMapReady}
+      >
         <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+        {/* Zone polygons */}
+        {showZones && zonePolygons.map((zone) => (
+          <Polygon
+            key={zone.id}
+            positions={zone.coords}
+            pathOptions={{
+              color: zone.color,
+              weight: 2,
+              opacity: 0.7,
+              fillColor: zone.color,
+              fillOpacity: 0.1,
+              dashArray: '6 3',
+            }}
+          >
+            <Popup>
+              <div style={{ fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 14, color: zone.color }}>
+                {zone.nombre}
+              </div>
+            </Popup>
+          </Polygon>
+        ))}
+
+        {/* Zone labels (as invisible markers with divIcon) */}
+        {showZones && zonePolygons.map((zone) => {
+          const centerLat = zone.coords.reduce((s, c) => s + c[0], 0) / zone.coords.length;
+          const centerLng = zone.coords.reduce((s, c) => s + c[1], 0) / zone.coords.length;
+          const labelIcon = L.divIcon({
+            className: '',
+            html: `<div style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:11px;color:${zone.color};text-shadow:0 1px 3px rgba(255,255,255,0.8);white-space:nowrap;text-align:center;opacity:0.9;">${zone.nombre}</div>`,
+            iconSize: [80, 16],
+            iconAnchor: [40, 8],
+          });
+          return <Marker key={`zl-${zone.id}`} position={[centerLat, centerLng]} icon={labelIcon} interactive={false} />;
+        })}
+
+        {/* Moto markers */}
         {motos.map((moto) => (
           <Marker key={moto.id} position={[moto.lat, moto.lng]} icon={createMotoIcon(moto.status)}>
             <Popup>
@@ -138,16 +205,50 @@ function MapInner({ isDark, motos, activeOrders }: {
             </Popup>
           </Marker>
         ))}
-        {routes.map((route) => (
-          <Polyline key={route.order.id} positions={route.positions} pathOptions={{ color: '#FF6600', weight: 4, dashArray: '8 4', opacity: 0.8 }} />
-        ))}
-        {routes.map((route) => (
+
+        {/* Routes - solid orange for active, dashed for planned */}
+        {showRoutes && routes.map((route) => {
+          const isActive = activeStatuses.includes(route.order.estado);
+          return (
+            <Polyline
+              key={route.order.id}
+              positions={route.positions}
+              pathOptions={{
+                color: '#FF6600',
+                weight: isActive ? 4 : 3,
+                opacity: isActive ? 0.85 : 0.5,
+                dashArray: isActive ? undefined : '8 6',
+              }}
+            />
+          );
+        })}
+
+        {/* Origin and destination markers */}
+        {showRoutes && routes.map((route) => (
           <Marker key={`o-${route.order.id}`} position={[route.order.origenLat, route.order.origenLng]} icon={originIcon} />
         ))}
-        {routes.map((route) => (
+        {showRoutes && routes.map((route) => (
           <Marker key={`d-${route.order.id}`} position={[route.order.destinoLat, route.order.destinoLng]} icon={destIcon} />
         ))}
       </MapContainer>
+
+      {/* Custom map controls */}
+      <div style={{ position: 'absolute', top: 12, right: panelOpen ? 404 : 12, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <button onClick={centerMap} title="Centrar mapa" className="lf-map-ctrl-btn" style={{
+          width: 34, height: 34, borderRadius: 8, border: '1px solid var(--lf-border)',
+          background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(16px)', cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        }}><Crosshair size={15} /></button>
+        <button onClick={showAllMotos} title="Ver todas las motos" className="lf-map-ctrl-btn" style={{
+          width: 34, height: 34, borderRadius: 8, border: '1px solid var(--lf-border)',
+          background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(16px)', cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        }}><Bike size={15} /></button>
+      </div>
     </div>
   );
 }
@@ -170,9 +271,12 @@ const statusBadge = (status: string) => {
 
 /* ─── Main ModuleOverview ─── */
 export default function ModuleOverview({ isDark }: { isDark: boolean }) {
-  const { orders, motos, riders, alerts, setActiveModule } = useStore();
+  const { orders, motos, riders, alerts, setActiveModule, zonePolygons } = useStore();
   const [panelOpen, setPanelOpen] = useState(true);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [showZones, setShowZones] = useState(true);
+  const [showRoutes, setShowRoutes] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const activeOrders = orders.filter((o) => o.estado === 'encamino' || o.estado === 'recogido');
   const todayRevenue = orders.filter((o) => o.fecha === '2026-06-10').reduce((s, o) => s + o.monto, 0);
@@ -199,11 +303,28 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
     return <AlertTriangle size={14} style={{ color: 'var(--lf-info)' }} />;
   };
 
+  // Fullscreen toggle for the map area
+  const handleFullscreen = useCallback(() => {
+    const el = document.getElementById('lf-overview-container');
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
   return (
-    <div style={{ display: 'flex', height: '100%', position: 'relative' }}>
+    <div id="lf-overview-container" style={{ display: 'flex', height: '100%', position: 'relative' }}>
       {/* MAP */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <MapComponent isDark={isDark} motos={motos} activeOrders={activeOrders} />
+        <MapComponent isDark={isDark} motos={motos} activeOrders={activeOrders} zonePolygons={zonePolygons} showZones={showZones} showRoutes={showRoutes} />
 
         {/* KPI Strip */}
         <div className="lf-kpi-strip" style={{
@@ -229,6 +350,46 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
           })}
         </div>
 
+        {/* Map Controls - Zones and Routes toggle */}
+        <div style={{
+          position: 'absolute', top: 12, left: 12, zIndex: 1000, display: 'flex', gap: 6, marginTop: 50,
+        }}>
+          <button
+            onClick={() => setShowZones(!showZones)}
+            title={showZones ? 'Ocultar zonas' : 'Mostrar zonas'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+              borderRadius: 10,
+              background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(16px)',
+              border: `1px solid ${showZones ? 'var(--lf-accent)' : 'var(--lf-border)'}`,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              cursor: 'pointer', color: showZones ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
+              fontSize: 12, fontWeight: 600, transition: 'all 0.2s',
+            }}
+          >
+            <Layers size={13} />
+            <span>Zonas</span>
+          </button>
+          <button
+            onClick={() => setShowRoutes(!showRoutes)}
+            title={showRoutes ? 'Ocultar rutas' : 'Mostrar rutas'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+              borderRadius: 10,
+              background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(16px)',
+              border: `1px solid ${showRoutes ? 'var(--lf-accent)' : 'var(--lf-border)'}`,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              cursor: 'pointer', color: showRoutes ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
+              fontSize: 12, fontWeight: 600, transition: 'all 0.2s',
+            }}
+          >
+            <Route size={13} />
+            <span>Rutas</span>
+          </button>
+        </div>
+
         {/* Map Legend */}
         <div style={{
           position: 'absolute', bottom: 16, left: 16, zIndex: 1000, display: 'flex', gap: 12,
@@ -242,7 +403,31 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
               <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>{it.label}</span>
             </div>
           ))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 16, height: 2, background: '#FF6600' }} />
+            <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>Activa</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 16, height: 2, background: 'repeating-linear-gradient(90deg, #FF6600 0px, #FF6600 4px, transparent 4px, transparent 8px)' }} />
+            <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>Planificada</span>
+          </div>
         </div>
+
+        {/* Fullscreen toggle */}
+        <button
+          onClick={handleFullscreen}
+          title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+          style={{
+            position: 'absolute', bottom: 16, right: panelOpen ? 396 : 16, zIndex: 1000,
+            width: 34, height: 34, borderRadius: 8, border: '1px solid var(--lf-border)',
+            background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
+            backdropFilter: 'blur(16px)', cursor: 'pointer', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          }}
+        >
+          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+        </button>
 
         {/* Panel toggle */}
         {!panelOpen && (
@@ -320,6 +505,24 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
               </div>
             ))}
           </div>
+
+          {/* Zone Summary */}
+          {showZones && (
+            <div>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Zonas activas</h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {zonePolygons.map((zone) => (
+                  <div key={zone.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px',
+                    borderRadius: 6, background: `${zone.color}12`, border: `1px solid ${zone.color}30`,
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: zone.color }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: zone.color }}>{zone.nombre}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Alerts */}
           <div>
