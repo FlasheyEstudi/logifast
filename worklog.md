@@ -104,3 +104,26 @@ Stage Summary:
 - Theme toggle working across all dashboard views
 - Zero lint errors, zero console errors
 - Login → dashboard flow working (demo Admin pill)
+
+---
+Task ID: 4
+Agent: main
+Task: Fix hydration mismatch error (theme icon server/client mismatch)
+
+Work Log:
+- Diagnosed hydration error: `isDark` state was initialized with `typeof window !== 'undefined'` check in useState, causing server to render moon icon but client to render sun icon when localStorage had 'dark'
+- Replaced `useState` + `typeof window` pattern with `useSyncExternalStore` for theme state
+  - `subscribeTheme`: uses a Set of listeners stored in a ref, triggered on toggle
+  - `getThemeSnapshot`: reads from `localStorage.getItem('lf-theme')` on client
+  - `getServerSnapshot`: returns `false` (always light theme on server)
+- Removed `mounted` state that was used as a workaround — `useSyncExternalStore` handles SSR/client differences gracefully
+- Updated `toggleTheme` to write localStorage + dispatch to all listeners instead of using setState
+- Updated ThemeIcon component to simple props (`isDark: boolean` only, no `mounted`)
+- Lint passes (0 errors, only the existing font warning)
+- Verified with Agent Browser: all 8 checks pass — landing page, theme toggle, auth screen, form switching, no hydration errors
+
+Stage Summary:
+- Hydration mismatch error completely resolved
+- Theme state now uses React's `useSyncExternalStore` for proper SSR/hydration handling
+- Theme toggle works correctly with localStorage persistence
+- No console errors, no hydration warnings
