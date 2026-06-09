@@ -70,3 +70,37 @@ Stage Summary:
 - Theme toggle with localStorage persistence
 - Smooth transitions between login ↔ register forms
 - Zero lint errors, zero console errors
+
+---
+Task ID: 3
+Agent: main
+Task: Build LOGIFAST admin dashboard with 3 modules (Vista General, Pedidos, Reportes)
+
+Work Log:
+- Added dashboard CSS variables (--lf-warning, --lf-info, --lf-elevated) to both light and dark themes
+- Appended ~1300 lines of dashboard CSS to globals.css covering:
+  - Dashboard shell (header with tabs, avatar dropdown, bottom nav)
+  - Vista General (map simulation, floating stats, side panel, FAB, bottom sheet)
+  - Pedidos module (filter pills, table, mobile list, reassign modal)
+  - Reportes module (chart cards, bar charts, horizontal bar charts, line chart, cost table)
+  - Responsive breakpoints (768px, 1024px)
+- Created dashboard.tsx (~1124 lines) with:
+  - Comprehensive mock data (15 orders, 12 motos, 8 riders, 5 alerts, chart data)
+  - Module 1 - Vista General: CSS map with zones/markers/routes, floating stat pills, desktop side panel, mobile FAB + bottom sheet
+  - Module 2 - Pedidos: filter pills, search, table/list, reassign modal with rider selection, pagination
+  - Module 3 - Reportes: vertical bar chart, 2 horizontal bar charts, SVG line/area chart, cost table
+  - Desktop: tabs in header; Mobile: bottom nav with glassmorphism
+  - Theme toggle and avatar dropdown with logout
+- Updated page.tsx: imported Dashboard component, added showDashboard state, login→dashboard flow
+- Fixed modal overlay CSS (display: flex instead of display: none since it's conditionally rendered)
+- Fixed mobile tabs hiding (added !important to override Tailwind specificity)
+
+Stage Summary:
+- Complete admin dashboard with 3 fully functional modules
+- Desktop: header tabs + side panel; Mobile: bottom nav + bottom sheet
+- All charts CSS-only (no libraries): bar charts, horizontal bars, SVG line chart, cost table
+- Reassign modal with rider selection and order update
+- Filter pills with status-based coloring
+- Theme toggle working across all dashboard views
+- Zero lint errors, zero console errors
+- Login → dashboard flow working (demo Admin pill)

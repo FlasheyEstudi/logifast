@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Dashboard from './dashboard';
 
 /* ─── SVG Icons ─── */
 const IconEnvelope = () => (
@@ -197,6 +198,7 @@ export default function Home() {
 
   /* ─── Auth state ─── */
   const [showAuth, setShowAuth] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -343,6 +345,11 @@ export default function Home() {
     setTimeout(() => {
       setLoginLoading(false);
       addToast('Sesión iniciada correctamente', 'success');
+      setTimeout(() => {
+        setShowAuth(false);
+        document.body.style.overflow = '';
+        setShowDashboard(true);
+      }, 800);
     }, 1500);
   }, [loginEmail, loginPassword, addToast]);
 
@@ -377,6 +384,11 @@ export default function Home() {
     setTimeout(() => {
       setLoginLoading(false);
       addToast(`Sesión iniciada como ${role}`, 'success');
+      setTimeout(() => {
+        setShowAuth(false);
+        document.body.style.overflow = '';
+        setShowDashboard(true);
+      }, 800);
     }, 1200);
   }, [addToast]);
 
@@ -391,6 +403,21 @@ export default function Home() {
 
   const passwordStrength = getPasswordStrength(regPassword);
   const displayRegErrors = { ...regValidationErrors, ...regErrors }; // submit errors override
+
+  /* ─── Logout handler ─── */
+  const handleLogout = useCallback(() => {
+    setShowDashboard(false);
+    setLoginEmail('');
+    setLoginPassword('');
+    setLoginErrors({});
+  }, []);
+
+  /* ═══════════════════════════════════════════════
+     DASHBOARD
+     ═══════════════════════════════════════════════ */
+  if (showDashboard) {
+    return <Dashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />;
+  }
 
   /* ═══════════════════════════════════════════════
      AUTH SCREEN
