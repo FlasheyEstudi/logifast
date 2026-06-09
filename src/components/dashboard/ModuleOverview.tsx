@@ -57,7 +57,15 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
       delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
       setL(leaflet);
     });
-    import('leaflet/dist/leaflet.css');
+    // Load leaflet CSS via link tag for reliability in standalone builds
+    if (!document.querySelector('link[href*="leaflet"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+      link.crossOrigin = '';
+      document.head.appendChild(link);
+    }
   }, []);
 
   useEffect(() => {

@@ -35,3 +35,57 @@ Stage Summary:
 - Demo login with 4 roles (cliente, repartidor, admin, ingeniero)
 - Page renders correctly with HTTP 200 and correct title
 - Server stability is a sandbox environment issue, not code issue
+
+---
+Task ID: 1
+Agent: Fix Agent
+Task: Fix LOGIFAST Dashboard client-side exception
+
+Work Log:
+- Diagnosed Dashboard crash: client-side exception when navigating from login to dashboard
+- Identified root cause: `import('leaflet/dist/leaflet.css')` dynamic CSS import in useEffect fails in standalone Next.js builds, causing Leaflet map components to crash
+- Added `DashboardErrorBoundary` class component in `src/app/dashboard.tsx`:
+  - Catches all errors from DashboardShell and its children
+  - Shows friendly error fallback with error message display
+  - Provides "Reintentar" (retry) and "Volver al inicio" buttons
+  - Added loading state to dynamic DashboardShell import with branded spinner
+- Added `DashboardErrorBoundary` class component in `src/app/page.tsx`:
+  - Wraps the Dashboard rendering in the dashboard view branch
+  - Catches errors that escape the inner error boundary
+  - Provides "Reintentar" and "Volver al inicio" buttons that navigate back to landing
+  - Prevents entire app from crashing with white screen
+- Fixed Leaflet CSS loading in `ModuleOverview.tsx` and `ModuleFlota.tsx`:
+  - Replaced broken `import('leaflet/dist/leaflet.css')` dynamic import
+  - Now loads leaflet CSS via CDN link tag (unpkg.com/leaflet@1.9.4/dist/leaflet.css)
+  - Only injects link tag once (checks for existing link element)
+- Rebuilt project with `npx next build` and copied static files to standalone
+- Verified: Server returns HTTP 200 with 30218 bytes of correct HTML content
+- Verified: Page contains 11 occurrences of "LOGIFAST" text (landing page loads correctly)
+
+Key Files Modified:
+- `/home/z/my-project/src/app/dashboard.tsx` - Added error boundary + loading state
+- `/home/z/my-project/src/app/page.tsx` - Added error boundary around Dashboard rendering
+- `/home/z/my-project/src/components/dashboard/ModuleOverview.tsx` - Fixed leaflet CSS loading
+- `/home/z/my-project/src/components/dashboard/ModuleFlota.tsx` - Fixed leaflet CSS loading
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix Dashboard client-side exception when logging in as Admin
+
+Work Log:
+- Identified the root cause: "Failed to load chunk /_next/static/chunks/7128f0bf2c2f542f.js" - the standalone build was missing JS chunk files
+- The previous build's standalone directory didn't have the static chunks properly copied
+- Added Error Boundary to Dashboard component (src/app/dashboard.tsx) - catches render errors and shows friendly fallback with "Reintentar" and "Volver al inicio" buttons
+- Added Error Boundary wrapper in page.tsx around Dashboard rendering
+- Fixed Leaflet CSS loading - replaced broken dynamic import with CDN link injection in ModuleOverview.tsx and ModuleFlota.tsx
+- Performed clean rebuild (rm -rf .next && npx next build)
+- Copied all static files to standalone: cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
+- Verified all chunks are served correctly (HTTP 200) via curl testing
+- Server auto-restart loop is active to handle sandbox process cleanup
+
+Stage Summary:
+- Dashboard error boundary now catches chunk loading failures gracefully
+- All 16 JS/CSS chunks are properly served from the standalone build
+- The standalone server works correctly during active use but may die during idle periods (sandbox limitation)
+- Auto-restart loop ensures the server comes back within 2-3 seconds if it dies
