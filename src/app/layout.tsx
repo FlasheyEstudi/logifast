@@ -1,23 +1,30 @@
 import type { Metadata } from "next";
-import { DM_Sans, DM_Mono } from "next/font/google";
+import { DM_Sans, JetBrains_Mono, Syne } from "next/font/google";
 import "./globals.css";
+
+const syne = Syne({
+  variable: "--font-syne",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
-const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
   title: "LOGIFAST — Tus Envíos Seguros y Rápidos",
   description:
-    "Sistema de gestión logística con flota motociclista para envíos urbanos en Managua, Nicaragua.",
+    "Plataforma integral de gestión logística con flota motociclista. Solicita, rastrea y gestiona envíos urbanos en Managua, Nicaragua.",
   keywords: [
     "LOGIFAST",
     "logística",
@@ -31,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "LOGIFAST — Tus Envíos Seguros y Rápidos",
     description:
-      "Sistema de gestión logística con flota motociclista para envíos urbanos en Managua.",
+      "Plataforma integral de gestión logística con flota motociclista en Managua.",
     type: "website",
   },
 };
@@ -51,12 +58,12 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=DM+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
       <body
-        className={`${dmSans.variable} ${dmMono.variable} antialiased`}
+        className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
       >
         {children}
       </body>

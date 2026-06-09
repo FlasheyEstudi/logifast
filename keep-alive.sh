@@ -1,5 +1,7 @@
 #!/bin/bash
 while true; do
-  bunx next dev -p 3000
-  sleep 1
+  cd /home/z/my-project
+  PORT=3000 node .next/standalone/server.js
+  echo "Server crashed at $(date). Restarting in 2s..."
+  sleep 2
 done

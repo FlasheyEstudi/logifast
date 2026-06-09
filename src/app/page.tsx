@@ -3,231 +3,204 @@
 import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import Dashboard from './dashboard';
 
-/* ─── SVG Icons ─── */
+/* ═══════════════════════════════════════════════════════
+   SVG ICONS
+   ═══════════════════════════════════════════════════════ */
+
 const IconEnvelope = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
 );
 const IconLock = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
 );
 const IconUser = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 );
 const IconEye = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
 );
 const IconEyeOff = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+);
+const IconArrowRight = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
 );
 const IconArrowLeft = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
 );
 const IconCheck = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+);
+const IconCheckLg = () => (
+  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--exito)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+);
+const IconSun = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+);
+const IconMoon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
 );
 const IconMoto = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="18" r="3" /><circle cx="19" cy="18" r="3" /><path d="M5 18h3l3-6h4l2 6h2" /><path d="M11 6l2 6" /></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="18" r="3"/><circle cx="19" cy="18" r="3"/><path d="M5 18h3l3-6h4l2 6h2"/><path d="M11 6l2 6"/></svg>
 );
 const IconShield = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
 );
 const IconWrench = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
 );
 const IconPerson = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+);
+const IconX = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+);
+const IconCheckCircle = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--exito)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+);
+const IconXCircle = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--peligro)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+);
+const IconAlertTriangle = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+);
+const IconInfo = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--info)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+);
+const IconPlay = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+);
+const IconCheckSmall = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 );
 
-/* ─── Toast type ─── */
-type ToastVariant = 'success' | 'error' | 'default';
+/* ═══════════════════════════════════════════════════════
+   TOAST TYPES
+   ═══════════════════════════════════════════════════════ */
+
+type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 interface ToastItem {
   id: number;
-  message: string;
+  title: string;
+  desc?: string;
   variant: ToastVariant;
   leaving?: boolean;
 }
 
-/* ─── Role data ─── */
-const rolesData = [
-  {
-    id: 'cliente',
-    tab: 'Cliente',
-    title: 'Solicita y rastrea',
-    desc: 'Pide un envío en segundos, obtén tu cotización al instante y sigue cada movimiento de tu paquete en tiempo real.',
-    features: ['Autocompletado de direcciones', 'Cotización instantánea', 'GPS en tiempo real', 'Historial completo'],
-    mockupBlocks: [
-      { h: 48, cls: 'lf-mockup-block-navy', w: '60%' },
-      { h: 32, cls: 'lf-mockup-block-accent', w: '80%' },
-      { h: 24, cls: 'lf-mockup-block-muted', w: '50%' },
-      { h: 64, cls: 'lf-mockup-block-navy', w: '100%' },
-      { h: 24, cls: 'lf-mockup-block-muted', w: '40%' },
-      { h: 40, cls: 'lf-mockup-block-accent', w: '70%' },
-    ],
-  },
-  {
-    id: 'repartidor',
-    tab: 'Repartidor',
-    title: 'Entrega con confianza',
-    desc: 'Recibe asignaciones automáticas, navega rutas optimizadas y registra cada entrega sin fricción.',
-    features: ['Asignación automática', 'Contador de kilómetros', 'Mapa de ruta', 'Reporte de incidencias'],
-    mockupBlocks: [
-      { h: 64, cls: 'lf-mockup-block-accent', w: '100%' },
-      { h: 32, cls: 'lf-mockup-block-muted', w: '45%' },
-      { h: 32, cls: 'lf-mockup-block-muted', w: '45%' },
-      { h: 48, cls: 'lf-mockup-block-navy', w: '80%' },
-      { h: 24, cls: 'lf-mockup-block-accent', w: '60%' },
-      { h: 32, cls: 'lf-mockup-block-muted', w: '90%' },
-    ],
-  },
-  {
-    id: 'admin',
-    tab: 'Administrador',
-    title: 'Control total',
-    desc: 'Visualiza toda la flota, gestiona pedidos y reasigna recursos con un dashboard operativo en tiempo real.',
-    features: ['Mapa de flota en vivo', 'Gestión de pedidos', 'Reasignación inteligente', 'Reportes operativos'],
-    mockupBlocks: [
-      { h: 80, cls: 'lf-mockup-block-navy', w: '100%' },
-      { h: 32, cls: 'lf-mockup-block-accent', w: '30%' },
-      { h: 32, cls: 'lf-mockup-block-accent', w: '30%' },
-      { h: 32, cls: 'lf-mockup-block-accent', w: '30%' },
-      { h: 48, cls: 'lf-mockup-block-muted', w: '60%' },
-      { h: 24, cls: 'lf-mockup-block-navy', w: '80%' },
-    ],
-  },
-  {
-    id: 'ingeniero',
-    tab: 'Ingeniero',
-    title: 'Mantiene la flota',
-    desc: 'Monitorea el estado de cada moto, gestiona inventario de repuestos y programa mantenimientos preventivos.',
-    features: ['Alertas por kilometraje', 'Inventario de repuestos', 'Mantenimiento programado', 'Detección de anomalías'],
-    mockupBlocks: [
-      { h: 40, cls: 'lf-mockup-block-accent', w: '50%' },
-      { h: 40, cls: 'lf-mockup-block-muted', w: '45%' },
-      { h: 64, cls: 'lf-mockup-block-navy', w: '100%' },
-      { h: 24, cls: 'lf-mockup-block-accent', w: '40%' },
-      { h: 24, cls: 'lf-mockup-block-muted', w: '55%' },
-      { h: 48, cls: 'lf-mockup-block-navy', w: '70%' },
-    ],
-  },
-];
+/* ═══════════════════════════════════════════════════════
+   DEMO CREDENTIALS
+   ═══════════════════════════════════════════════════════ */
 
-/* ─── Feature data ─── */
-const featuresData = [
-  {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />
-      </svg>
-    ),
-    title: 'Rastreo GPS',
-    desc: 'Sigue cada envío en tiempo real con posición exacta, ETA actualizado y notificaciones de progreso.',
-  },
-  {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-      </svg>
-    ),
-    title: 'Alertas mantenimiento',
-    desc: 'Recibe alertas automáticas cuando una moto necesita servicio basado en kilometraje y desgaste.',
-  },
-  {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    ),
-    title: 'Cotización automática',
-    desc: 'Obtén precios instantáneos basados en distancia, zona y tipo de envío. Sin esperas, sin sorpresas.',
-  },
-  {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" />
-      </svg>
-    ),
-    title: 'Dashboard operativo',
-    desc: 'Vista consolidada de la flota, entregas activas y métricas clave para decisiones rápidas.',
-  },
-  {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
-      </svg>
-    ),
-    title: 'Inventario repuestos',
-    desc: 'Control total de piezas y repuestos con stock mínimo, alertas de reorden y trazabilidad.',
-  },
-  {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-      </svg>
-    ),
-    title: 'Reportes y análisis',
-    desc: 'Datos accionables sobre rendimiento, tiempos de entrega y eficiencia de la flota.',
-  },
-];
-
-/* ─── Theme toggle icon (outside component) ─── */
-const SunIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </svg>
-);
-const MoonIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-);
-const ThemeIcon = ({ isDark }: { isDark: boolean }) =>
-  isDark ? <SunIcon /> : <MoonIcon />;
-
-/* ─── Demo credentials ─── */
-const demoCredentials: Record<string, { email: string; password: string }> = {
-  cliente: { email: 'cliente@logifast.com', password: '123456' },
-  repartidor: { email: 'repartidor@logifast.com', password: '123456' },
-  admin: { email: 'admin@logifast.com', password: '123456' },
-  ingeniero: { email: 'ingeniero@logifast.com', password: '123456' },
+const demoCredentials: Record<string, { email: string; password: string; name: string }> = {
+  cliente: { email: 'cliente@logifast.com', password: '123456', name: 'Cliente Demo' },
+  repartidor: { email: 'repartidor@logifast.com', password: '123456', name: 'Repartidor Demo' },
+  admin: { email: 'admin@logifast.com', password: '123456', name: 'Administrador' },
+  ingeniero: { email: 'ingeniero@logifast.com', password: '123456', name: 'Ingeniero Demo' },
 };
 
+/* ═══════════════════════════════════════════════════════
+   COUNT-UP HOOK
+   ═══════════════════════════════════════════════════════ */
+
+function useCountUp(end: number, duration = 2000, start = false) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!start) return;
+    let startTime: number | null = null;
+    let raf: number;
+    const animate = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      setValue(Math.round(eased * end));
+      if (progress < 1) raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [end, duration, start]);
+  return start ? value : 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOGO COMPONENT
+   ═══════════════════════════════════════════════════════ */
+
+function Logo({ large, onClick }: { large?: boolean; onClick?: () => void }) {
+  return (
+    <div className={`lf-logo ${large ? 'lf-logo-lg' : ''}`} onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
+      <div className="lf-logo-icon">
+        <span className="lf-logo-icon-text">LF</span>
+        <div className="lf-logo-icon-line" />
+      </div>
+      <div className="lf-logo-wordmark">
+        <span className="lf-logo-logi">LOGI</span>
+        <span className="lf-logo-fast">
+          F
+          <span className="lf-logo-fast-a">A</span>
+          ST
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   STAT COMPONENT WITH COUNT-UP
+   ═══════════════════════════════════════════════════════ */
+
+function StatCounter({ value, suffix, label, started }: { value: number; suffix?: string; label: string; started: boolean }) {
+  const count = useCountUp(value, 2200, started);
+  const formatted = count.toLocaleString();
+  return (
+    <div className="lf-hero-stat">
+      <span className="lf-hero-stat-number font-mono">{formatted}{suffix || ''}</span>
+      <span className="lf-hero-stat-label">{label}</span>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════ */
+
 export default function Home() {
+  /* ─── View state ─── */
+  const [currentView, setCurrentView] = useState<'landing' | 'login' | 'register' | 'dashboard'>('landing');
+  const [viewTransition, setViewTransition] = useState<'enter' | 'exit' | null>(null);
+
   /* ─── Landing state ─── */
-  const [activeRole, setActiveRole] = useState('cliente');
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [statsVisible, setStatsVisible] = useState(false);
   const revealRef = useRef<HTMLElement>(null);
 
   /* ─── Auth state ─── */
-  const [showAuth, setShowAuth] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [isTransitioning, setIsTransitioning] = useState(false);
-
-  /* ─── Form state ─── */
+  const [authTransition, setAuthTransition] = useState<'enter' | 'exit' | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginRedirect, setLoginRedirect] = useState(false);
 
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
-  const [regRole, setRegRole] = useState('cliente');
-  const [regErrors, setRegErrors] = useState<{ name?: string; email?: string; password?: string; confirm?: string }>({});
+  const [regRole, setRegRole] = useState('');
+  const [regTerms, setRegTerms] = useState(false);
+  const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
   const [regSuccess, setRegSuccess] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
 
-  /* ─── Theme state via useSyncExternalStore ─── */
+  /* ─── Theme ─── */
   const themeListeners = useRef(new Set<() => void>());
-  const subscribeTheme = useCallback((callback: () => void) => {
-    themeListeners.current.add(callback);
-    return () => { themeListeners.current.delete(callback); };
+  const subscribeTheme = useCallback((cb: () => void) => {
+    themeListeners.current.add(cb);
+    return () => { themeListeners.current.delete(cb); };
   }, []);
-  const getThemeSnapshot = useCallback(() => localStorage.getItem('lf-theme') === 'dark', []);
+  const getThemeSnapshot = useCallback(() => localStorage.getItem('logifast-theme') === 'dark', []);
   const getThemeServerSnapshot = useCallback(() => false, []);
   const isDark = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
 
@@ -235,145 +208,126 @@ export default function Home() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastIdRef = useRef(0);
 
-  const addToast = useCallback((message: string, variant: ToastVariant = 'default') => {
+  const addToast = useCallback((title: string, desc: string, variant: ToastVariant = 'success') => {
     const id = ++toastIdRef.current;
-    setToasts((prev) => [...prev, { id, message, variant }]);
+    setToasts((prev) => [...prev, { id, title, desc, variant }]);
     setTimeout(() => {
       setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 300);
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 300);
     }, 4000);
   }, []);
 
-  /* ─── Apply theme attribute on mount ─── */
+  /* ─── Apply theme ─── */
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : '');
   }, [isDark]);
 
-  /* ─── Navbar scroll effect ─── */
+  const toggleTheme = useCallback(() => {
+    const next = !isDark;
+    localStorage.setItem('logifast-theme', next ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
+    themeListeners.current.forEach((cb) => cb());
+  }, [isDark]);
+
+  /* ─── Navbar scroll ─── */
   useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 40);
+    const onScroll = () => setNavScrolled(window.scrollY > 60);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   /* ─── Scroll reveal ─── */
   useEffect(() => {
+    if (currentView !== 'landing') return;
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) entry.target.classList.add('visible');
-        });
-      },
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); }),
       { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
     );
     const el = revealRef.current;
     if (el) el.querySelectorAll('.reveal').forEach((r) => observer.observe(r));
     return () => observer.disconnect();
-  }, [showAuth]);
+  }, [currentView]);
 
-  /* ─── Theme toggle ─── */
-  const toggleTheme = useCallback(() => {
-    const next = !isDark;
-    localStorage.setItem('lf-theme', next ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
-    themeListeners.current.forEach((cb) => cb()); // notify useSyncExternalStore
-  }, [isDark]);
+  /* ─── Stats visibility ─── */
+  useEffect(() => {
+    if (currentView !== 'landing') return;
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) setStatsVisible(true); }),
+      { threshold: 0.3 }
+    );
+    const el = document.getElementById('hero-stats');
+    if (el) observer.observe(el);
+    return () => observer.disconnect();
+  }, [currentView]);
 
-  /* ─── Smooth scroll to section ─── */
+  /* ─── Navigation helpers ─── */
   const scrollTo = useCallback((id: string) => {
     setMobileMenuOpen(false);
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  /* ─── Open auth screen ─── */
-  const openAuth = useCallback((mode: 'login' | 'register') => {
-    setAuthMode(mode);
-    setShowAuth(true);
-    document.body.style.overflow = 'hidden';
-  }, []);
-
-  /* ─── Close auth screen ─── */
-  const closeAuth = useCallback(() => {
-    setShowAuth(false);
-    document.body.style.overflow = '';
-    setLoginEmail('');
-    setLoginPassword('');
-    setLoginErrors({});
-    setRegName('');
-    setRegEmail('');
-    setRegPassword('');
-    setRegConfirm('');
-    setRegErrors({});
-    setRegSuccess(false);
-  }, []);
-
-  /* ─── Switch auth mode with transition ─── */
-  const switchAuthMode = useCallback((mode: 'login' | 'register') => {
-    if (mode === authMode || isTransitioning) return;
-    setIsTransitioning(true);
+  const navigateTo = useCallback((view: 'landing' | 'login' | 'register') => {
+    setViewTransition('exit');
     setTimeout(() => {
-      setAuthMode(mode);
-      setIsTransitioning(false);
+      setCurrentView(view);
+      setViewTransition('enter');
+      document.body.style.overflow = view === 'landing' ? '' : 'hidden';
+      setTimeout(() => setViewTransition(null), 300);
+    }, 300);
+  }, []);
+
+  const switchAuth = useCallback((mode: 'login' | 'register') => {
+    setAuthTransition('exit');
+    setTimeout(() => {
+      setCurrentView(mode);
+      setAuthTransition('enter');
       setLoginErrors({});
       setRegErrors({});
+      setTimeout(() => setAuthTransition(null), 250);
     }, 200);
-  }, [authMode, isTransitioning]);
+  }, []);
 
-  /* ─── Email validation ─── */
+  /* ─── Validation ─── */
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  /* ─── Password strength ─── */
-  const getPasswordStrength = (pw: string): 'weak' | 'medium' | 'strong' | '' => {
-    if (pw.length === 0) return '';
-    if (pw.length < 4) return 'weak';
-    if (pw.length < 8) return 'medium';
-    return 'strong';
+  const getPasswordStrength = (pw: string): { level: number; label: string; cls: string } => {
+    if (!pw) return { level: 0, label: '', cls: '' };
+    if (pw.length <= 3) return { level: 1, label: 'Débil', cls: 'weak' };
+    if (pw.length <= 5) return { level: 2, label: 'Regular', cls: 'regular' };
+    if (pw.length <= 7) return { level: 3, label: 'Buena', cls: 'buena' };
+    return { level: 4, label: 'Fuerte', cls: 'fuerte' };
   };
 
-  /* ─── Login submit ─── */
+  /* ─── Login ─── */
   const handleLogin = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    const errors: { email?: string; password?: string } = {};
-    if (!loginEmail) errors.email = 'El correo es requerido';
-    else if (!isValidEmail(loginEmail)) errors.email = 'Correo electrónico inválido';
-    if (!loginPassword) errors.password = 'La contraseña es requerida';
-    else if (loginPassword.length < 6) errors.password = 'Mínimo 6 caracteres';
+    const errors: Record<string, string> = {};
+    if (!loginEmail) errors.email = 'El correo es obligatorio';
+    else if (!isValidEmail(loginEmail)) errors.email = 'Ingresa un correo válido';
+    if (!loginPassword) errors.password = 'La contraseña es obligatoria';
     setLoginErrors(errors);
     if (Object.keys(errors).length > 0) return;
+
+    // Check demo credentials
+    const demoEntry = Object.entries(demoCredentials).find(([, v]) => v.email === loginEmail && v.password === loginPassword);
+    if (!demoEntry) {
+      addToast('Error', 'Correo o contraseña incorrectos', 'error');
+      return;
+    }
+
     setLoginLoading(true);
     setTimeout(() => {
       setLoginLoading(false);
-      addToast('Sesión iniciada correctamente', 'success');
+      addToast(`Bienvenido, ${demoEntry[1].name}`, 'Redirigiendo al dashboard...', 'success');
+      setTimeout(() => setLoginRedirect(true), 1500);
       setTimeout(() => {
-        setShowAuth(false);
+        setCurrentView('dashboard');
         document.body.style.overflow = '';
-        setShowDashboard(true);
-      }, 800);
-    }, 1500);
+        setLoginRedirect(false);
+      }, 3000);
+    }, 1200);
   }, [loginEmail, loginPassword, addToast]);
-
-  /* ─── Register submit ─── */
-  const handleRegister = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    const errors: { name?: string; email?: string; password?: string; confirm?: string } = {};
-    if (!regName.trim()) errors.name = 'El nombre es requerido';
-    if (!regEmail) errors.email = 'El correo es requerido';
-    else if (!isValidEmail(regEmail)) errors.email = 'Correo electrónico inválido';
-    if (!regPassword) errors.password = 'La contraseña es requerida';
-    else if (regPassword.length < 6) errors.password = 'Mínimo 6 caracteres';
-    if (!regConfirm) errors.confirm = 'Confirma tu contraseña';
-    else if (regPassword !== regConfirm) errors.confirm = 'Las contraseñas no coinciden';
-    setRegErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-    setRegLoading(true);
-    setTimeout(() => {
-      setRegLoading(false);
-      setRegSuccess(true);
-    }, 1500);
-  }, [regName, regEmail, regPassword, regConfirm]);
 
   /* ─── Demo quick login ─── */
   const handleDemoLogin = useCallback((role: string) => {
@@ -385,305 +339,356 @@ export default function Home() {
     setLoginLoading(true);
     setTimeout(() => {
       setLoginLoading(false);
-      addToast(`Sesión iniciada como ${role}`, 'success');
+      addToast(`Bienvenido, ${cred.name}`, 'Redirigiendo al dashboard...', 'success');
+      setTimeout(() => setLoginRedirect(true), 1500);
       setTimeout(() => {
-        setShowAuth(false);
+        setCurrentView('dashboard');
         document.body.style.overflow = '';
-        setShowDashboard(true);
-      }, 800);
+        setLoginRedirect(false);
+      }, 3000);
     }, 1200);
   }, [addToast]);
 
-  /* ─── Real-time validation for register (computed, no effect) ─── */
-  const regValidationErrors = (() => {
-    const errors: { name?: string; email?: string; password?: string; confirm?: string } = {};
-    if (regEmail && !isValidEmail(regEmail)) errors.email = 'Correo electrónico inválido';
-    if (regPassword && regPassword.length < 6) errors.password = 'Mínimo 6 caracteres';
-    if (regConfirm && regPassword !== regConfirm) errors.confirm = 'Las contraseñas no coinciden';
-    return errors;
-  })();
+  /* ─── Register ─── */
+  const handleRegister = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: Record<string, string> = {};
+    if (!regName.trim()) errors.name = 'El nombre es obligatorio';
+    if (!regEmail) errors.email = 'El correo es obligatorio';
+    else if (!isValidEmail(regEmail)) errors.email = 'Ingresa un correo válido';
+    if (!regPassword) errors.password = 'La contraseña es obligatoria';
+    else if (regPassword.length < 6) errors.password = 'Mínimo 6 caracteres';
+    if (!regConfirm) errors.confirm = 'Confirma tu contraseña';
+    else if (regPassword !== regConfirm) errors.confirm = 'Las contraseñas no coinciden';
+    if (!regRole) errors.role = 'Selecciona un tipo de cuenta';
+    if (!regTerms) errors.terms = 'Debes aceptar los términos';
+    setRegErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
-  const passwordStrength = getPasswordStrength(regPassword);
-  const displayRegErrors = { ...regValidationErrors, ...regErrors }; // submit errors override
+    setRegLoading(true);
+    setTimeout(() => {
+      setRegLoading(false);
+      setRegSuccess(true);
+    }, 1500);
+  }, [regName, regEmail, regPassword, regConfirm, regRole, regTerms]);
 
-  /* ─── Logout handler ─── */
+  /* ─── Logout ─── */
   const handleLogout = useCallback(() => {
-    setShowDashboard(false);
+    setCurrentView('landing');
     setLoginEmail('');
     setLoginPassword('');
     setLoginErrors({});
+    setRegName('');
+    setRegEmail('');
+    setRegPassword('');
+    setRegConfirm('');
+    setRegErrors({});
+    setRegSuccess(false);
+    setRegRole('');
+    setRegTerms(false);
+    document.body.style.overflow = '';
   }, []);
 
-  /* ═══════════════════════════════════════════════
-     DASHBOARD
-     ═══════════════════════════════════════════════ */
-  if (showDashboard) {
+  /* ─── Real-time validation for register ─── */
+  const regValidationErrors = (() => {
+    const errors: Record<string, string> = {};
+    if (regEmail && regEmail.length > 5 && !isValidEmail(regEmail)) errors.email = 'Ingresa un correo válido';
+    if (regConfirm && regPassword !== regConfirm) errors.confirm = 'Las contraseñas no coinciden';
+    return errors;
+  })();
+  const displayRegErrors = { ...regValidationErrors, ...regErrors };
+
+  const pwStrength = getPasswordStrength(regPassword);
+
+  /* ═══════════════════════════════════════════════════════
+     DASHBOARD VIEW
+     ═══════════════════════════════════════════════════════ */
+  if (currentView === 'dashboard') {
     return <Dashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />;
   }
 
-  /* ═══════════════════════════════════════════════
-     AUTH SCREEN
-     ═══════════════════════════════════════════════ */
-  if (showAuth) {
+  /* ═══════════════════════════════════════════════════════
+     AUTH VIEWS (Login / Register)
+     ═══════════════════════════════════════════════════════ */
+  if (currentView === 'login' || currentView === 'register') {
+    const isLogin = currentView === 'login';
+    const isExiting = authTransition === 'exit';
+    const isEntering = authTransition === 'enter';
+
     return (
       <>
-        <div className="lf-auth">
-          {/* Left panel */}
-          <div className="lf-auth-panel">
-            <div className="lf-auth-panel-content">
-              <div className="lf-auth-panel-logo">
-                <div className="lf-auth-logo-mark">LF</div>
-                <span className="lf-auth-logo-text font-serif">LOGIFAST</span>
-              </div>
-              <p className="lf-auth-panel-tagline">Tus Envíos Seguros y Rápidos</p>
-              <div className="lf-auth-panel-divider" />
-              <div className="lf-auth-panel-quote">
-                <div className="lf-auth-panel-quote-mark">&ldquo;</div>
-                <p className="lf-auth-panel-quote-text">
-                  La plataforma más confiable para envíos urbanos en Managua
-                </p>
-              </div>
-              <div className="lf-auth-panel-stats font-mono">
-                <span className="lf-auth-panel-stat">12K+ envíos</span>
-                <span className="lf-auth-panel-stat-sep">·</span>
-                <span className="lf-auth-panel-stat">98% a tiempo</span>
-                <span className="lf-auth-panel-stat-sep">·</span>
-                <span className="lf-auth-panel-stat">45 motos</span>
-              </div>
+        <div className="lf-auth-screen">
+          {/* Login redirect overlay */}
+          {loginRedirect && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 3000,
+              background: 'var(--bg)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <div className="lf-spinner" />
+              <p className="lf-redirect-text">Redirigiendo al dashboard...</p>
             </div>
-            <button className="lf-auth-panel-theme-toggle" onClick={toggleTheme} aria-label="Cambiar tema">
-              <ThemeIcon isDark={isDark} />
-            </button>
-          </div>
+          )}
 
-          {/* Right panel */}
-          <div className="lf-auth-form-side">
-            <div className="lf-auth-form-container">
-              {/* Mobile logo */}
-              <div className="lf-auth-mobile-logo">
-                <div className="lf-auth-logo-mark">LF</div>
-                <span className="lf-auth-logo-text font-serif">LOGIFAST</span>
-              </div>
+          <div className={`lf-auth-container ${!isLogin ? 'lf-auth-container-wide' : ''}`}
+            style={{ opacity: isExiting ? 0 : 1, transform: isExiting ? 'translateX(-40px)' : isEntering ? 'translateX(0)' : 'none', transition: 'all 0.25s ease' }}>
 
-              {/* Back link */}
-              <button className="lf-auth-back-link" onClick={closeAuth}>
-                <IconArrowLeft /> Volver al inicio
-              </button>
+            {/* Brand */}
+            <div className="lf-auth-brand">
+              <Logo large />
+              <span className="lf-tagline">Tus Envíos Seguros y Rápidos</span>
+            </div>
 
-              {/* ─── LOGIN FORM ─── */}
-              {authMode === 'login' && !isTransitioning && (
-                <div className="lf-form-panel slide-in">
-                  <h1 className="lf-auth-title font-serif">Bienvenido</h1>
-                  <p className="lf-auth-subtitle">Ingresa tus credenciales para continuar</p>
+            {/* ─── LOGIN ─── */}
+            {isLogin && !loginRedirect && (
+              <div style={{ animation: isEntering ? 'slideLeft 0.25s ease' : 'none' }}>
+                <h1 className="lf-auth-title font-syne">Bienvenido de nuevo</h1>
+                <p className="lf-auth-subtitle">Ingresa tus credenciales para acceder al sistema</p>
 
-                  <form onSubmit={handleLogin} noValidate>
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Correo electrónico</label>
-                      <div className="lf-input-wrapper">
-                        <span className="lf-input-icon"><IconEnvelope /></span>
-                        <input
-                          type="email"
-                          className={`lf-form-input ${loginErrors.email ? 'error' : ''}`}
-                          placeholder="tu@email.com"
-                          value={loginEmail}
-                          onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors((p) => ({ ...p, email: undefined })); }}
-                        />
-                      </div>
-                      <div className="lf-form-error">{loginErrors.email || ''}</div>
+                <form onSubmit={handleLogin} noValidate>
+                  <div className="lf-form-group">
+                    <label className="lf-form-label">Correo electrónico</label>
+                    <div className="lf-input-wrapper">
+                      <input
+                        type="email"
+                        className={`lf-form-input ${loginErrors.email ? 'error' : ''}`}
+                        placeholder="tu@email.com"
+                        value={loginEmail}
+                        onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors((p) => ({ ...p, email: undefined })); }}
+                      />
+                      <span className="lf-input-icon"><IconEnvelope /></span>
                     </div>
-
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Contraseña</label>
-                      <div className="lf-input-wrapper">
-                        <span className="lf-input-icon"><IconLock /></span>
-                        <input
-                          type={showLoginPassword ? 'text' : 'password'}
-                          className={`lf-form-input ${loginErrors.password ? 'error' : ''}`}
-                          placeholder="Tu contraseña"
-                          value={loginPassword}
-                          onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors((p) => ({ ...p, password: undefined })); }}
-                          style={{ paddingRight: 48 }}
-                        />
-                        <button type="button" className="lf-input-eye" onClick={() => setShowLoginPassword((p) => !p)}>
-                          {showLoginPassword ? <IconEyeOff /> : <IconEye />}
-                        </button>
-                      </div>
-                      <div className="lf-form-error">{loginErrors.password || ''}</div>
-                    </div>
-
-                    <button type="button" className="lf-forgot-link">¿Olvidaste tu contraseña?</button>
-
-                    <button type="submit" className="lf-auth-submit" disabled={loginLoading}>
-                      {loginLoading ? (
-                        <><span className="lf-spinner" /><span>Ingresando...</span></>
-                      ) : (
-                        'Iniciar sesión'
-                      )}
-                    </button>
-                  </form>
-
-                  <div className="lf-separator">
-                    <div className="lf-separator-line" />
-                    <span className="lf-separator-text">o</span>
-                    <div className="lf-separator-line" />
+                    <div className="lf-form-error">{loginErrors.email || ''}</div>
                   </div>
 
-                  <div className="lf-demo-pills">
-                    {['Cliente', 'Repartidor', 'Admin', 'Ingeniero'].map((role) => (
-                      <button key={role} className="lf-demo-pill" onClick={() => handleDemoLogin(role.toLowerCase())}>
-                        {role}
+                  <div className="lf-form-group">
+                    <label className="lf-form-label">Contraseña</label>
+                    <div className="lf-input-wrapper">
+                      <input
+                        type={showLoginPassword ? 'text' : 'password'}
+                        className={`lf-form-input ${loginErrors.password ? 'error' : ''}`}
+                        placeholder="Tu contraseña"
+                        value={loginPassword}
+                        onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors((p) => ({ ...p, password: undefined })); }}
+                        style={{ paddingRight: 48 }}
+                      />
+                      <span className="lf-input-icon"><IconLock /></span>
+                      <button type="button" className="lf-input-eye" onClick={() => setShowLoginPassword((p) => !p)}>
+                        {showLoginPassword ? <IconEyeOff /> : <IconEye />}
                       </button>
-                    ))}
+                    </div>
+                    <div className="lf-form-error">{loginErrors.password || ''}</div>
                   </div>
-                  <div className="lf-demo-label">Acceso rápido para demo</div>
 
-                  <div className="lf-switch-link">
-                    ¿No tienes cuenta?{' '}
-                    <button className="lf-switch-link-btn" onClick={() => switchAuthMode('register')}>
-                      Crear cuenta
-                    </button>
-                  </div>
-                </div>
-              )}
+                  <button type="button" className="lf-forgot-link">¿Olvidaste tu contraseña?</button>
 
-              {/* ─── REGISTER FORM ─── */}
-              {authMode === 'register' && !isTransitioning && !regSuccess && (
-                <div className="lf-form-panel slide-in">
-                  <h1 className="lf-auth-title font-serif">Crear cuenta</h1>
-                  <p className="lf-auth-subtitle">Completa los datos para registrarte</p>
-
-                  <form onSubmit={handleRegister} noValidate>
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Nombre completo</label>
-                      <div className="lf-input-wrapper">
-                        <span className="lf-input-icon"><IconUser /></span>
-                        <input
-                          type="text"
-                          className={`lf-form-input ${displayRegErrors.name ? 'error' : ''}`}
-                          placeholder="Tu nombre"
-                          value={regName}
-                          onChange={(e) => setRegName(e.target.value)}
-                        />
-                      </div>
-                      <div className="lf-form-error">{displayRegErrors.name || ''}</div>
-                    </div>
-
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Correo electrónico</label>
-                      <div className="lf-input-wrapper">
-                        <span className="lf-input-icon"><IconEnvelope /></span>
-                        <input
-                          type="email"
-                          className={`lf-form-input ${displayRegErrors.email ? 'error' : ''}`}
-                          placeholder="tu@email.com"
-                          value={regEmail}
-                          onChange={(e) => setRegEmail(e.target.value)}
-                        />
-                      </div>
-                      <div className="lf-form-error">{displayRegErrors.email || ''}</div>
-                    </div>
-
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Contraseña</label>
-                      <div className="lf-input-wrapper">
-                        <span className="lf-input-icon"><IconLock /></span>
-                        <input
-                          type={showRegPassword ? 'text' : 'password'}
-                          className={`lf-form-input ${displayRegErrors.password ? 'error' : ''}`}
-                          placeholder="Mínimo 6 caracteres"
-                          value={regPassword}
-                          onChange={(e) => setRegPassword(e.target.value)}
-                          style={{ paddingRight: 48 }}
-                        />
-                        <button type="button" className="lf-input-eye" onClick={() => setShowRegPassword((p) => !p)}>
-                          {showRegPassword ? <IconEyeOff /> : <IconEye />}
-                        </button>
-                      </div>
-                      <div className="lf-strength-bar">
-                        <div className={`lf-strength-bar-fill ${passwordStrength ? `lf-strength-${passwordStrength}` : ''}`} />
-                      </div>
-                      <div className="lf-form-error">{displayRegErrors.password || ''}</div>
-                    </div>
-
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Confirmar contraseña</label>
-                      <div className="lf-input-wrapper">
-                        <span className="lf-input-icon"><IconLock /></span>
-                        <input
-                          type="password"
-                          className={`lf-form-input ${displayRegErrors.confirm ? 'error' : ''}`}
-                          placeholder="Repite tu contraseña"
-                          value={regConfirm}
-                          onChange={(e) => setRegConfirm(e.target.value)}
-                        />
-                      </div>
-                      <div className="lf-form-error">{displayRegErrors.confirm || ''}</div>
-                    </div>
-
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Tipo de cuenta</label>
-                      <div className="lf-role-selector">
-                        {[
-                          { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
-                          { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
-                          { id: 'admin', label: 'Administrador', icon: <IconShield /> },
-                          { id: 'ingeniero', label: 'Ingeniero', icon: <IconWrench /> },
-                        ].map((role) => (
-                          <div
-                            key={role.id}
-                            className={`lf-role-option ${regRole === role.id ? 'selected' : ''}`}
-                            onClick={() => setRegRole(role.id)}
-                          >
-                            <div className="lf-role-option-icon">{role.icon}</div>
-                            <span className="lf-role-option-label">{role.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button type="submit" className="lf-auth-submit" disabled={regLoading}>
-                      {regLoading ? (
-                        <><span className="lf-spinner" /><span>Creando cuenta...</span></>
-                      ) : (
-                        'Crear cuenta'
-                      )}
-                    </button>
-                  </form>
-
-                  <div className="lf-switch-link" style={{ marginTop: 24 }}>
-                    ¿Ya tienes cuenta?{' '}
-                    <button className="lf-switch-link-btn" onClick={() => switchAuthMode('login')}>
-                      Iniciar sesión
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ─── REGISTER SUCCESS ─── */}
-              {authMode === 'register' && regSuccess && (
-                <div className="lf-success-overlay">
-                  <div className="lf-success-circle">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                  </div>
-                  <h2 className="lf-success-title font-serif">Cuenta creada exitosamente</h2>
-                  <p style={{ color: 'var(--lf-text-muted)', fontSize: 15 }}>Ya puedes iniciar sesión con tus credenciales</p>
-                  <button className="lf-success-btn" onClick={() => { setRegSuccess(false); switchAuthMode('login'); }}>
-                    Ir a iniciar sesión
+                  <button type="submit" className="lf-auth-submit font-syne" disabled={loginLoading}>
+                    {loginLoading ? (
+                      <>Ingresando<span className="lf-loading-dots"><span className="lf-loading-dot" /><span className="lf-loading-dot" /><span className="lf-loading-dot" /></span></>
+                    ) : 'Iniciar sesión'}
                   </button>
-                </div>
-              )}
-            </div>
+                </form>
 
-            {/* Mobile theme toggle */}
-            <button
-              className="lf-theme-toggle"
-              onClick={toggleTheme}
-              aria-label="Cambiar tema"
-              style={{ position: 'absolute', top: 24, right: 24 }}
-            >
-              <ThemeIcon isDark={isDark} />
-            </button>
+                <div className="lf-separator">
+                  <div className="lf-separator-line" />
+                  <span className="lf-separator-text">o accede rápido con</span>
+                  <div className="lf-separator-line" />
+                </div>
+
+                <div className="lf-demo-grid">
+                  {[
+                    { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
+                    { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
+                    { id: 'admin', label: 'Admin', icon: <IconShield /> },
+                    { id: 'ingeniero', label: 'Ingeniero', icon: <IconWrench /> },
+                  ].map((role) => (
+                    <button key={role.id} className="lf-demo-btn" onClick={() => handleDemoLogin(role.id)}>
+                      <span className="lf-demo-btn-icon">{role.icon}</span>
+                      <span className="lf-demo-btn-text">{role.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="lf-demo-label">Acceso rápido para demo</div>
+
+                <div className="lf-switch-link">
+                  ¿No tienes cuenta?{' '}
+                  <button className="lf-switch-link-btn" onClick={() => switchAuth('register')}>Crear cuenta</button>
+                </div>
+
+                <button className="lf-back-link" onClick={() => navigateTo('landing')}>
+                  <IconArrowLeft /> Volver al inicio
+                </button>
+              </div>
+            )}
+
+            {/* ─── REGISTER ─── */}
+            {!isLogin && !regSuccess && (
+              <div style={{ animation: isEntering ? 'slideLeft 0.25s ease' : 'none' }}>
+                <h1 className="lf-auth-title font-syne">Crea tu cuenta</h1>
+                <p className="lf-auth-subtitle">Completa los datos para empezar a usar LOGIFAST</p>
+
+                <form onSubmit={handleRegister} noValidate>
+                  <div className="lf-form-group">
+                    <label className="lf-form-label">Nombre completo</label>
+                    <div className="lf-input-wrapper">
+                      <input
+                        type="text"
+                        className={`lf-form-input ${displayRegErrors.name ? 'error' : ''}`}
+                        placeholder="Tu nombre completo"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                      />
+                      <span className="lf-input-icon"><IconUser /></span>
+                    </div>
+                    <div className="lf-form-error">{displayRegErrors.name || ''}</div>
+                  </div>
+
+                  <div className="lf-form-group">
+                    <label className="lf-form-label">Correo electrónico</label>
+                    <div className="lf-input-wrapper">
+                      <input
+                        type="email"
+                        className={`lf-form-input ${displayRegErrors.email ? 'error' : ''}`}
+                        placeholder="tu@email.com"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                      />
+                      <span className="lf-input-icon"><IconEnvelope /></span>
+                    </div>
+                    <div className="lf-form-error">{displayRegErrors.email || ''}</div>
+                  </div>
+
+                  <div className="lf-form-group">
+                    <label className="lf-form-label">Contraseña</label>
+                    <div className="lf-input-wrapper">
+                      <input
+                        type={showRegPassword ? 'text' : 'password'}
+                        className={`lf-form-input ${displayRegErrors.password ? 'error' : ''}`}
+                        placeholder="Mínimo 6 caracteres"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        style={{ paddingRight: 48 }}
+                      />
+                      <span className="lf-input-icon"><IconLock /></span>
+                      <button type="button" className="lf-input-eye" onClick={() => setShowRegPassword((p) => !p)}>
+                        {showRegPassword ? <IconEyeOff /> : <IconEye />}
+                      </button>
+                    </div>
+                    {regPassword && (
+                      <div className="lf-strength-bar">
+                        <div className="lf-strength-segments">
+                          {[1, 2, 3, 4].map((i) => (
+                            <div
+                              key={i}
+                              className={`lf-strength-segment ${i <= pwStrength.level ? `filled-${pwStrength.cls}` : ''}`}
+                            />
+                          ))}
+                        </div>
+                        {pwStrength.label && (
+                          <span className={`lf-strength-text ${pwStrength.cls}`}>{pwStrength.label}</span>
+                        )}
+                      </div>
+                    )}
+                    <div className="lf-form-error">{displayRegErrors.password || ''}</div>
+                  </div>
+
+                  <div className="lf-form-group">
+                    <label className="lf-form-label">Confirmar contraseña</label>
+                    <div className="lf-input-wrapper">
+                      <input
+                        type="password"
+                        className={`lf-form-input ${displayRegErrors.confirm ? 'error' : ''}`}
+                        placeholder="Repite tu contraseña"
+                        value={regConfirm}
+                        onChange={(e) => setRegConfirm(e.target.value)}
+                      />
+                      <span className="lf-input-icon"><IconLock /></span>
+                    </div>
+                    <div className="lf-form-error">{displayRegErrors.confirm || ''}</div>
+                  </div>
+
+                  <div className="lf-form-group">
+                    <label className="lf-form-label">Tipo de cuenta</label>
+                    <div className="lf-role-grid">
+                      {[
+                        { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
+                        { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
+                        { id: 'admin', label: 'Administrador', icon: <IconShield /> },
+                        { id: 'ingeniero', label: 'Ingeniero', icon: <IconWrench /> },
+                      ].map((role) => (
+                        <div
+                          key={role.id}
+                          className={`lf-role-card ${regRole === role.id ? 'selected' : ''}`}
+                          onClick={() => { setRegRole(role.id); setRegErrors((p) => ({ ...p, role: '' })); }}
+                        >
+                          <div className="lf-role-card-check"><IconCheckSmall /></div>
+                          <span className="lf-role-card-icon">{role.icon}</span>
+                          <span className="lf-role-card-label">{role.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="lf-form-error">{displayRegErrors.role || ''}</div>
+                  </div>
+
+                  <div className="lf-terms">
+                    <div
+                      className={`lf-terms-checkbox ${regTerms ? 'checked' : ''}`}
+                      onClick={() => { setRegTerms((p) => !p); setRegErrors((p) => ({ ...p, terms: '' })); }}
+                    >
+                      {regTerms && <IconCheckSmall />}
+                    </div>
+                    <span className="lf-terms-text">
+                      Acepto los{' '}
+                      <a href="#" className="lf-terms-link" onClick={(e) => e.preventDefault()}>Términos de Servicio</a>
+                      {' '}y la{' '}
+                      <a href="#" className="lf-terms-link" onClick={(e) => e.preventDefault()}>Política de Privacidad</a>
+                    </span>
+                  </div>
+                  {displayRegErrors.terms && <div className="lf-form-error" style={{ marginTop: -12, marginBottom: 12 }}>{displayRegErrors.terms}</div>}
+
+                  <button type="submit" className="lf-auth-submit font-syne" disabled={regLoading}>
+                    {regLoading ? (
+                      <>Creando cuenta<span className="lf-loading-dots"><span className="lf-loading-dot" /><span className="lf-loading-dot" /><span className="lf-loading-dot" /></span></>
+                    ) : 'Crear cuenta'}
+                  </button>
+                </form>
+
+                <div className="lf-switch-link">
+                  ¿Ya tienes cuenta?{' '}
+                  <button className="lf-switch-link-btn" onClick={() => switchAuth('login')}>Iniciar sesión</button>
+                </div>
+
+                <button className="lf-back-link" onClick={() => navigateTo('landing')}>
+                  <IconArrowLeft /> Volver al inicio
+                </button>
+              </div>
+            )}
+
+            {/* ─── REGISTER SUCCESS ─── */}
+            {!isLogin && regSuccess && (
+              <div className="lf-success-screen">
+                <div className="lf-success-circle">
+                  <IconCheckLg />
+                </div>
+                <h2 className="lf-success-title font-syne">Cuenta creada</h2>
+                <p className="lf-success-desc">Ya puedes iniciar sesión con tus credenciales</p>
+                <button className="lf-auth-submit font-syne" style={{ maxWidth: 240 }} onClick={() => { setRegSuccess(false); switchAuth('login'); }}>
+                  Ir a iniciar sesión
+                </button>
+              </div>
+            )}
           </div>
+
+          {/* Theme toggle in auth */}
+          <button
+            className="lf-theme-toggle"
+            onClick={toggleTheme}
+            aria-label="Cambiar tema"
+            style={{ position: 'absolute', top: 24, right: 24, zIndex: 10 }}
+          >
+            {isDark ? <IconSun /> : <IconMoon />}
+          </button>
         </div>
 
         {/* Toasts */}
@@ -691,15 +696,19 @@ export default function Home() {
           {toasts.map((t) => (
             <div key={t.id} className={`lf-toast ${t.variant} ${t.leaving ? 'leaving' : ''}`}>
               <span className="lf-toast-icon">
-                {t.variant === 'success' && <IconCheck />}
-                {t.variant === 'error' && (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                )}
-                {t.variant === 'default' && (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--lf-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                )}
+                {t.variant === 'success' && <IconCheckCircle />}
+                {t.variant === 'error' && <IconXCircle />}
+                {t.variant === 'warning' && <IconAlertTriangle />}
+                {t.variant === 'info' && <IconInfo />}
               </span>
-              <span>{t.message}</span>
+              <div className="lf-toast-content">
+                <div className="lf-toast-title">{t.title}</div>
+                {t.desc && <div className="lf-toast-desc">{t.desc}</div>}
+              </div>
+              <button className="lf-toast-close" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
+                <IconX />
+              </button>
+              <div className="lf-toast-progress" />
             </div>
           ))}
         </div>
@@ -707,31 +716,29 @@ export default function Home() {
     );
   }
 
-  /* ═══════════════════════════════════════════════
+  /* ═══════════════════════════════════════════════════════
      LANDING PAGE
-     ═══════════════════════════════════════════════ */
+     ═══════════════════════════════════════════════════════ */
   return (
-    <main className="grain-overlay" ref={revealRef}>
+    <main className="grain-overlay" ref={revealRef} style={{ opacity: viewTransition === 'exit' ? 0 : 1, transition: 'opacity 0.3s ease' }}>
       {/* ═══ NAVBAR ═══ */}
       <nav className={`lf-navbar ${navScrolled ? 'scrolled' : ''}`}>
-        <a href="#" className="lf-navbar-logo" onClick={(e) => { e.preventDefault(); scrollTo('hero'); }}>
-          <div className="lf-logo-mark">LF</div>
-          <span className="lf-logo-text font-serif">LOGIFAST</span>
-        </a>
+        <Logo onClick={() => scrollTo('hero')} />
 
         <ul className="lf-nav-links">
           <li><a href="#como-funciona" onClick={(e) => { e.preventDefault(); scrollTo('como-funciona'); }}>Cómo funciona</a></li>
-          <li><a href="#funciones" onClick={(e) => { e.preventDefault(); scrollTo('funciones'); }}>Funciones</a></li>
-          <li><a href="#roles" onClick={(e) => { e.preventDefault(); scrollTo('roles'); }}>Roles</a></li>
+          <li><a href="#caracteristicas" onClick={(e) => { e.preventDefault(); scrollTo('caracteristicas'); }}>Servicios</a></li>
+          <li><a href="#numeros" onClick={(e) => { e.preventDefault(); scrollTo('numeros'); }}>Precios</a></li>
           <li><a href="#contacto" onClick={(e) => { e.preventDefault(); scrollTo('contacto'); }}>Contacto</a></li>
         </ul>
 
         <div className="lf-nav-actions">
           <button className="lf-theme-toggle" onClick={toggleTheme} aria-label="Cambiar tema">
-            <ThemeIcon isDark={isDark} />
+            {isDark ? <IconSun /> : <IconMoon />}
           </button>
-          <button className="lf-btn-primary nav-btn" onClick={() => openAuth('login')}>Iniciar sesión</button>
-          <button className="lf-hamburger" onClick={() => setMobileMenuOpen((p) => !p)} aria-label="Menú">
+          <button className="lf-btn-ghost nav-ghost" onClick={() => navigateTo('login')}>Iniciar sesión</button>
+          <button className="lf-btn-primario" onClick={() => navigateTo('register')}>Empezar gratis</button>
+          <button className={`lf-hamburger ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen((p) => !p)} aria-label="Menú">
             <span /><span /><span />
           </button>
         </div>
@@ -740,166 +747,103 @@ export default function Home() {
       {/* Mobile nav */}
       <div className={`lf-mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
         <a href="#como-funciona" onClick={(e) => { e.preventDefault(); scrollTo('como-funciona'); }}>Cómo funciona</a>
-        <a href="#funciones" onClick={(e) => { e.preventDefault(); scrollTo('funciones'); }}>Funciones</a>
-        <a href="#roles" onClick={(e) => { e.preventDefault(); scrollTo('roles'); }}>Roles</a>
+        <a href="#caracteristicas" onClick={(e) => { e.preventDefault(); scrollTo('caracteristicas'); }}>Servicios</a>
+        <a href="#numeros" onClick={(e) => { e.preventDefault(); scrollTo('numeros'); }}>Precios</a>
         <a href="#contacto" onClick={(e) => { e.preventDefault(); scrollTo('contacto'); }}>Contacto</a>
-        <button className="lf-btn-primary" style={{ marginTop: 16, width: 'fit-content' }} onClick={() => { setMobileMenuOpen(false); openAuth('login'); }}>Iniciar sesión</button>
+        <button className="lf-btn-primario" style={{ marginTop: 24, width: 'fit-content' }} onClick={() => { setMobileMenuOpen(false); navigateTo('login'); }}>Iniciar sesión</button>
       </div>
 
       {/* ═══ HERO ═══ */}
       <section className="lf-hero" id="hero">
         <div className="lf-hero-inner">
-          <div className="lf-hero-content">
-            <div className="lf-badge reveal">
-              <span className="lf-badge-dot" />
-              Flota activa en Managua
-            </div>
-            <h1 className="lf-hero-title reveal reveal-delay-1">
-              Tus envíos,{' '}
-              <span className="accent-italic">seguros</span> y{' '}
-              <span className="accent-italic">rápidos</span>
-            </h1>
-            <p className="lf-hero-subtitle reveal reveal-delay-2">
-              Gestión logística con flota motociclista para envíos urbanos en Managua.
-              Rastreo en tiempo real, cotización automática y entregas que llegan.
+          <div className="lf-hero-badge reveal">
+            <span className="lf-hero-badge-dot" />
+            Operando en Managua, Nicaragua
+          </div>
+
+          <div className="lf-hero-title reveal reveal-delay-1">
+            <span className="lf-hero-title-line lf-hero-title-light">Tus envíos</span>
+            <span className="lf-hero-title-line lf-hero-title-bold">seguros y rápidos</span>
+          </div>
+
+          <div className="lf-hero-grid reveal reveal-delay-2">
+            <p className="lf-hero-subtitle">
+              Plataforma integral de gestión logística con flota motociclista. Solicita, rastrea y gestiona envíos urbanos con seguimiento en tiempo real, mantenimiento automático de flota y reportes operativos.
             </p>
-            <div className="lf-hero-buttons reveal reveal-delay-3">
-              <button className="lf-btn-primary" onClick={() => openAuth('register')}>
-                Solicitar envío
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+            <div className="lf-hero-actions">
+              <button className="lf-btn-hero-primary" onClick={() => navigateTo('register')}>
+                Solicitar envío ahora
+                <IconArrowRight />
               </button>
-              <button className="lf-btn-outline">Ver demo</button>
-            </div>
-            <div className="lf-hero-stats reveal reveal-delay-4">
-              <div className="lf-hero-stat">
-                <span className="lf-hero-stat-number font-mono">12K+</span>
-                <span className="lf-hero-stat-label">Envíos completados</span>
-              </div>
-              <div className="lf-hero-stat">
-                <span className="lf-hero-stat-number font-mono">98%</span>
-                <span className="lf-hero-stat-label">Entregas a tiempo</span>
-              </div>
-              <div className="lf-hero-stat">
-                <span className="lf-hero-stat-number font-mono">45</span>
-                <span className="lf-hero-stat-label">Motos en flota</span>
-              </div>
+              <button className="lf-btn-hero-outline" onClick={() => scrollTo('como-funciona')}>
+                <IconPlay /> Ver cómo funciona
+              </button>
             </div>
           </div>
 
-          <div className="lf-hero-visual reveal reveal-delay-2">
-            <div className="lf-float-card lf-float-card-1">
-              <span className="lf-float-card-dot green" />
-              <span className="lf-float-card-number font-mono">+24</span>
-              <span className="lf-float-card-label">Entregado hoy</span>
-            </div>
-            <div className="lf-phone">
-              <div className="lf-phone-notch" />
-              <div className="lf-phone-header">
-                <div>
-                  <div className="lf-phone-header-title">Seguimiento</div>
-                  <div className="lf-phone-header-order font-mono">Orden #LF-2847</div>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-              </div>
-              <div className="lf-phone-map">
-                <div className="lf-phone-map-grid" />
-                <div className="lf-phone-route">
-                  <div className="lf-phone-route-line" />
-                  <div className="lf-phone-route-line-2" />
-                </div>
-                <div className="lf-phone-pin lf-pin-pickup"><span>A</span></div>
-                <div className="lf-phone-pin lf-pin-delivery"><span>B</span></div>
-                <div className="lf-phone-pin lf-pin-rider"><span>🏍</span></div>
-              </div>
-              <div className="lf-phone-bottom">
-                <div className="lf-phone-handle" />
-                <div className="lf-phone-rider-info">
-                  <div className="lf-phone-rider-avatar">CR</div>
-                  <div>
-                    <div className="lf-phone-rider-name">Carlos Rivera</div>
-                    <div className="lf-phone-rider-vehicle">Honda Wave • Roja</div>
-                  </div>
-                </div>
-                <div className="lf-phone-eta">
-                  <div>
-                    <div className="lf-phone-eta-label">Llegada estimada</div>
-                    <div className="lf-phone-eta-time font-mono">12 min</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="lf-phone-eta-label">Hora</div>
-                    <div className="lf-phone-eta-arrival font-mono">2:35 PM</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="lf-float-card lf-float-card-2">
-              <span className="lf-float-card-dot orange" />
-              <span className="lf-float-card-number font-mono">8</span>
-              <span className="lf-float-card-label">En ruta activas</span>
+          <div className="lf-hero-stats reveal reveal-delay-3" id="hero-stats">
+            <StatCounter value={12847} label="Envíos completados" started={statsVisible} />
+            <StatCounter value={98} suffix=".2%" label="Entregas a tiempo" started={statsVisible} />
+            <StatCounter value={45} label="Motos en flota activa" started={statsVisible} />
+            <div className="lf-hero-stat">
+              <span className="lf-hero-stat-number font-mono" style={{ letterSpacing: '-1px' }}>&lt; 25 min</span>
+              <span className="lf-hero-stat-label">Tiempo promedio de entrega</span>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ═══ TRUST BAR ═══ */}
-      <section className="lf-trust-bar reveal">
-        <div className="lf-trust-label">Empresas que confían en nosotros</div>
-        <div className="lf-trust-logos">
-          <span className="lf-trust-logo">NicaCommerce</span>
-          <span className="lf-trust-logo">TecnoManagua</span>
-          <span className="lf-trust-logo">DelSur Market</span>
-          <span className="lf-trust-logo">CasaNica</span>
-          <span className="lf-trust-logo">FastCargo NI</span>
         </div>
       </section>
 
       {/* ═══ CÓMO FUNCIONA ═══ */}
       <section className="lf-how" id="como-funciona">
         <div className="lf-how-inner">
-          <div className="lf-how-header">
-            <div>
-              <span className="lf-eyebrow reveal">Cómo funciona</span>
-              <h2 className="lf-section-title reveal reveal-delay-1">De tu puerta a su destino</h2>
-            </div>
-            <p className="lf-how-desc reveal reveal-delay-2">
-              Un proceso simple y transparente. Tú pides, nosotros nos encargamos del resto.
-              Cada paso es rastreable para que siempre sepas dónde está tu envío.
-            </p>
+          <div className="lf-how-header reveal">
+            <span className="lf-eyebrow">Proceso</span>
+            <h2 className="lf-section-title font-syne">De tu puerta a la suya. Sin fricción.</h2>
           </div>
+
           <div className="lf-steps">
             {[
-              { num: '01', title: 'Solicita', desc: 'Ingresa el origen, destino y tipo de paquete. Cotización instantánea.' },
-              { num: '02', title: 'Asignamos', desc: 'El sistema asigna el repartidor más cercano de forma automática.' },
-              { num: '03', title: 'Rastrea', desc: 'Sigue tu envío en tiempo real con GPS y notificaciones.' },
-              { num: '04', title: 'Entregado', desc: 'Confirmación con foto y firma. Comprobante digital al instante.' },
+              { num: '01', title: 'Solicita tu envío', desc: 'Ingresa dirección de recogida y entrega. El sistema calcula costo y distancia automáticamente.' },
+              { num: '02', title: 'Asignamos un repartidor', desc: 'El repartidor más cercano y disponible recibe tu orden y se dirige al punto de recogida.' },
+              { num: '03', title: 'Rastrea en tiempo real', desc: 'Sigue la ubicación de tu paquete en el mapa. Actualización cada 5 segundos.' },
+              { num: '04', title: 'Entrega confirmada', desc: 'Recibes notificación al entregar, accedes al comprobante y a tu historial.' },
             ].map((step, i) => (
-              <div className="lf-step reveal" key={step.num} style={{ transitionDelay: `${i * 0.12}s` }}>
-                <div className="lf-step-number font-mono">{step.num}</div>
-                <div className="lf-step-text">
-                  <div className="lf-step-title">{step.title}</div>
-                  <div className="lf-step-desc">{step.desc}</div>
+              <div key={step.num} className={`lf-step reveal reveal-delay-${i + 1}`}>
+                <span className="lf-step-num font-syne">{step.num}</span>
+                <div className="lf-step-content">
+                  <h3 className="lf-step-title font-syne">{step.title}</h3>
+                  <p className="lf-step-desc">{step.desc}</p>
                 </div>
-                {i < 3 && <div className="lf-step-line" />}
+                {i < 3 && <div className="lf-step-connector" />}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══ FUNCIONES ═══ */}
-      <section className="lf-features" id="funciones">
+      {/* ═══ CARACTERÍSTICAS ═══ */}
+      <section className="lf-features" id="caracteristicas">
         <div className="lf-features-inner">
-          <div className="lf-features-header">
-            <span className="lf-eyebrow reveal">Funciones</span>
-            <h2 className="lf-section-title reveal reveal-delay-1">Todo lo que necesitas para operar</h2>
-            <p className="reveal reveal-delay-2">Herramientas diseñadas para cada actor de la cadena logística, desde el cliente hasta el ingeniero de mantenimiento.</p>
+          <div className="lf-features-header reveal">
+            <span className="lf-eyebrow">Capacidades</span>
+            <h2 className="lf-section-title font-syne">Todo lo que necesitas. Nada que sobre.</h2>
+            <p>Plataforma diseñada para cada rol operativo, con herramientas que realmente se usan.</p>
           </div>
+
           <div className="lf-features-grid">
-            {featuresData.map((f, i) => (
-              <div className="lf-feature-card reveal" key={f.title} style={{ transitionDelay: `${i * 0.08}s` }}>
-                <div className="lf-feature-icon">{f.icon}</div>
-                <div className="lf-feature-title">{f.title}</div>
-                <div className="lf-feature-desc">{f.desc}</div>
+            {[
+              { num: '01', title: 'Rastreo GPS en vivo', desc: 'Ubicación del repartidor actualizada cada 5 segundos con mapa interactivo y ruta calculada.' },
+              { num: '02', title: 'Mantenimiento predictivo', desc: 'Alertas automáticas basadas en kilometraje. Prevención de fallas mecánicas antes de que ocurran.' },
+              { num: '03', title: 'Multi-rol', desc: 'Interfaces optimizadas para cliente, repartidor, administrador e ingeniero. Cada uno ve lo que necesita.' },
+              { num: '04', title: 'Cotización inteligente', desc: 'Cálculo automático de costos por distancia y zona. Pagos en efectivo o transferencia.' },
+              { num: '05', title: 'Reportes operativos', desc: 'Ingresos, rendimiento por repartidor, análisis de zonas, detección de anomalías en costos.' },
+              { num: '06', title: 'Inventario de repuestos', desc: 'Control de stock, alertas de bajo inventario, registro de compras y costos unitarios.' },
+            ].map((feat, i) => (
+              <div key={feat.num} className={`lf-feature-item reveal reveal-delay-${i + 1}`}>
+                <span className="lf-feature-num font-mono">{feat.num}</span>
+                <h3 className="lf-feature-title font-syne">{feat.title}</h3>
+                <p className="lf-feature-desc">{feat.desc}</p>
+                <div className="lf-feature-line" />
               </div>
             ))}
           </div>
@@ -909,46 +853,144 @@ export default function Home() {
       {/* ═══ ROLES ═══ */}
       <section className="lf-roles" id="roles">
         <div className="lf-roles-inner">
-          <div className="lf-roles-header">
-            <span className="lf-eyebrow reveal">Para cada rol</span>
-            <h2 className="lf-section-title reveal reveal-delay-1">Una experiencia a tu medida</h2>
+          <div className="lf-roles-header reveal">
+            <span className="lf-eyebrow">Para cada rol</span>
+            <h2 className="lf-section-title font-syne">Cuatro roles. Cuatro experiencias.</h2>
           </div>
-          <div className="lf-roles-tabs reveal reveal-delay-2">
-            {rolesData.map((r) => (
-              <button key={r.id} className={`lf-role-tab ${activeRole === r.id ? 'active' : ''}`} onClick={() => setActiveRole(r.id)}>
-                {r.tab}
-              </button>
-            ))}
-          </div>
-          <div className="lf-roles-preview reveal reveal-delay-3">
-            <div className="lf-window-dots">
-              <span className="lf-window-dot red" />
-              <span className="lf-window-dot yellow" />
-              <span className="lf-window-dot green" />
+
+          {/* CLIENTE — texto izq, mockup der */}
+          <div className="lf-role-block reveal">
+            <div className="lf-role-info">
+              <h3 className="lf-role-info-title font-syne">Para clientes</h3>
+              <p className="lf-role-info-desc">Solicita envíos en segundos, obtén cotización instantánea y sigue cada movimiento de tu paquete.</p>
+              <ul className="lf-role-features">
+                {['Autocompletado de direcciones', 'Cotización instantánea', 'GPS en tiempo real', 'Historial completo'].map((f) => (
+                  <li key={f}><span className="lf-role-check"><IconCheck /></span>{f}</li>
+                ))}
+              </ul>
             </div>
-            {rolesData.map((r) => (
-              <div key={r.id} className={`lf-role-panel ${activeRole === r.id ? 'active' : ''}`}>
-                <div className="lf-roles-content">
-                  <div className="lf-roles-info">
-                    <h3 className="lf-roles-info-title font-serif">{r.title}</h3>
-                    <p className="lf-roles-info-desc">{r.desc}</p>
-                    <ul className="lf-roles-features">
-                      {r.features.map((f) => (
-                        <li key={f}>
-                          <span className="lf-check-icon">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                          </span>
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="lf-roles-mockup">
-                    {r.mockupBlocks.map((b, i) => (
-                      <div key={i} className={`lf-mockup-block ${b.cls}`} style={{ height: b.h, width: b.w }} />
-                    ))}
-                  </div>
-                </div>
+            <div className="lf-role-mockup">
+              <div className="lf-mockup-bar lf-mockup-bar-navy" style={{ height: 36, width: '60%' }} />
+              <div className="lf-mockup-map">
+                <div className="lf-mockup-map-grid" />
+                <div className="lf-mockup-map-route" />
+                <div className="lf-mockup-map-pin green" />
+                <div className="lf-mockup-map-pin orange" />
+              </div>
+              <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 20, width: '50%' }} />
+            </div>
+          </div>
+
+          <div className="lf-role-separator" />
+
+          {/* REPARTIDOR — mockup izq, texto der */}
+          <div className="lf-role-block reverse reveal">
+            <div className="lf-role-info">
+              <h3 className="lf-role-info-title font-syne">Para repartidores</h3>
+              <p className="lf-role-info-desc">Recibe asignaciones automáticas, navega rutas optimizadas y registra cada entrega sin fricción.</p>
+              <ul className="lf-role-features">
+                {['Asignación automática', 'Contador de kilómetros', 'Mapa de ruta', 'Reporte de incidencias'].map((f) => (
+                  <li key={f}><span className="lf-role-check"><IconCheck /></span>{f}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="lf-role-mockup">
+              <div className="lf-mockup-bar lf-mockup-bar-accent" style={{ height: 28, width: '70%' }} />
+              <div className="lf-mockup-progress" style={{ marginTop: 8 }}>
+                <div className="lf-mockup-progress-fill" style={{ width: '65%' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 32, width: '48%' }} />
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 32, width: '48%' }} />
+              </div>
+              <div className="lf-mockup-bar lf-mockup-bar-navy" style={{ height: 48, width: '85%', marginTop: 8 }} />
+              <div className="lf-mockup-bar lf-mockup-bar-accent" style={{ height: 24, width: '60%', marginTop: 8 }} />
+            </div>
+          </div>
+
+          <div className="lf-role-separator" />
+
+          {/* ADMIN — texto izq, mockup der */}
+          <div className="lf-role-block reveal">
+            <div className="lf-role-info">
+              <h3 className="lf-role-info-title font-syne">Para administradores</h3>
+              <p className="lf-role-info-desc">Visualiza toda la flota, gestiona pedidos y reasigna recursos con un dashboard operativo en tiempo real.</p>
+              <ul className="lf-role-features">
+                {['Mapa de flota en vivo', 'Gestión de pedidos', 'Reasignación inteligente', 'Reportes operativos'].map((f) => (
+                  <li key={f}><span className="lf-role-check"><IconCheck /></span>{f}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="lf-role-mockup">
+              <div className="lf-mockup-map" style={{ minHeight: 100 }}>
+                <div className="lf-mockup-map-grid" />
+                <div className="lf-mockup-map-route" />
+                <div className="lf-mockup-map-pin green" />
+                <div className="lf-mockup-map-pin orange" />
+              </div>
+              <div className="lf-mockup-chart">
+                {[40, 65, 35, 80, 55, 70, 45, 90, 60, 75].map((h, i) => (
+                  <div key={i} className="lf-mockup-chart-bar" style={{ height: `${h}%`, background: i % 2 === 0 ? 'var(--primario-soft)' : 'var(--border)' }} />
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 16, width: '30%' }} />
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 16, width: '30%' }} />
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 16, width: '30%' }} />
+              </div>
+            </div>
+          </div>
+
+          <div className="lf-role-separator" />
+
+          {/* INGENIERO — mockup izq, texto der */}
+          <div className="lf-role-block reverse reveal">
+            <div className="lf-role-info">
+              <h3 className="lf-role-info-title font-syne">Para ingenieros</h3>
+              <p className="lf-role-info-desc">Monitorea el estado de cada moto, gestiona inventario de repuestos y programa mantenimientos preventivos.</p>
+              <ul className="lf-role-features">
+                {['Alertas por kilometraje', 'Inventario de repuestos', 'Mantenimiento programado', 'Detección de anomalías'].map((f) => (
+                  <li key={f}><span className="lf-role-check"><IconCheck /></span>{f}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="lf-role-mockup">
+              <div className="lf-mockup-alert" style={{ background: 'rgba(255,23,68,0.05)', border: '1px solid rgba(255,23,68,0.15)' }}>
+                <span className="lf-mockup-alert-dot red" />
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 12, width: '60%' }} />
+              </div>
+              <div className="lf-mockup-alert" style={{ background: 'rgba(255,179,0,0.05)', border: '1px solid rgba(255,179,0,0.15)' }}>
+                <span className="lf-mockup-alert-dot yellow" />
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 12, width: '50%' }} />
+              </div>
+              <div className="lf-mockup-alert" style={{ background: 'rgba(0,200,83,0.05)', border: '1px solid rgba(0,200,83,0.15)' }}>
+                <span className="lf-mockup-alert-dot green" />
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 12, width: '55%' }} />
+              </div>
+              <div className="lf-mockup-bar lf-mockup-bar-navy" style={{ height: 64, width: '100%', marginTop: 8 }} />
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <div className="lf-mockup-bar lf-mockup-bar-accent" style={{ height: 20, width: '40%' }} />
+                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 20, width: '55%' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ NÚMEROS ═══ */}
+      <section className="lf-numeros" id="numeros">
+        <div className="lf-numeros-inner">
+          <div className="lf-numeros-grid reveal">
+            {[
+              { num: '12,847+', label: 'Envíos completados', desc: 'Desde nuestro lanzamiento' },
+              { num: '45', label: 'Motos activas', desc: 'Flota en constante crecimiento' },
+              { num: '98.2%', label: 'Entregas exitosas', desc: 'Compromiso con la calidad' },
+              { num: '< 25 min', label: 'Tiempo promedio', desc: 'De solicitud a entrega' },
+            ].map((item) => (
+              <div key={item.label} className="lf-numeros-item">
+                <span className="lf-numeros-number font-mono">{item.num}</span>
+                <span className="lf-numeros-label">{item.label}</span>
+                <span className="lf-numeros-desc">{item.desc}</span>
               </div>
             ))}
           </div>
@@ -957,16 +999,14 @@ export default function Home() {
 
       {/* ═══ CTA ═══ */}
       <section className="lf-cta" id="contacto">
-        <div className="lf-cta-inner">
-          <h2 className="lf-cta-title font-serif reveal">Empieza a enviar hoy</h2>
-          <p className="lf-cta-desc reveal reveal-delay-1">
-            Únete a las empresas que ya confían en LOGIFAST para sus entregas urbanas.
-            Sin contratos, sin complicaciones.
-          </p>
-          <button className="lf-cta-btn reveal reveal-delay-2" onClick={() => openAuth('register')}>
+        <div className="lf-cta-inner reveal">
+          <h2 className="lf-cta-title font-syne">Empieza a enviar hoy.</h2>
+          <p className="lf-cta-desc">Únete a la plataforma de logística más eficiente de Managua. Configura tu cuenta en minutos.</p>
+          <button className="lf-btn-cta" onClick={() => navigateTo('register')}>
             Crear cuenta gratis
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+            <IconArrowRight />
           </button>
+          <p className="lf-cta-note">Sin tarjeta de crédito. Configura en 2 minutos.</p>
         </div>
       </section>
 
@@ -975,44 +1015,65 @@ export default function Home() {
         <div className="lf-footer-inner">
           <div className="lf-footer-grid">
             <div>
-              <div className="lf-footer-brand-name font-serif">LOGIFAST</div>
-              <p className="lf-footer-brand-desc">
-                Sistema de gestión logística con flota motociclista para envíos urbanos en Managua, Nicaragua. Tus envíos seguros y rápidos.
-              </p>
+              <Logo />
+              <p className="lf-footer-brand-tagline">Tus Envíos Seguros y Rápidos</p>
+              <p className="lf-footer-brand-location">Managua, Nicaragua</p>
             </div>
             <div>
-              <div className="lf-footer-col-title">Producto</div>
+              <h4 className="lf-footer-col-title">Producto</h4>
               <ul className="lf-footer-links">
-                <li><a href="#">Rastreo GPS</a></li>
-                <li><a href="#">Cotización</a></li>
-                <li><a href="#">Dashboard</a></li>
-                <li><a href="#">Reportes</a></li>
+                <li><a href="#">Funciones</a></li>
+                <li><a href="#">Precios</a></li>
+                <li><a href="#">API</a></li>
+                <li><a href="#">Estado</a></li>
               </ul>
             </div>
             <div>
-              <div className="lf-footer-col-title">Empresa</div>
+              <h4 className="lf-footer-col-title">Empresa</h4>
               <ul className="lf-footer-links">
                 <li><a href="#">Nosotros</a></li>
                 <li><a href="#">Blog</a></li>
-                <li><a href="#">Carreras</a></li>
                 <li><a href="#">Contacto</a></li>
+                <li><a href="#">Alianzas</a></li>
               </ul>
             </div>
             <div>
-              <div className="lf-footer-col-title">Legal</div>
+              <h4 className="lf-footer-col-title">Legal</h4>
               <ul className="lf-footer-links">
-                <li><a href="#">Términos</a></li>
                 <li><a href="#">Privacidad</a></li>
+                <li><a href="#">Términos</a></li>
                 <li><a href="#">Cookies</a></li>
               </ul>
             </div>
           </div>
           <div className="lf-footer-bottom">
-            <span>© 2025 LOGIFAST. Todos los derechos reservados.</span>
-            <span>Managua, Nicaragua</span>
+            <span>LOGIFAST 2026</span>
+            <span>Hecho con precisión</span>
           </div>
         </div>
       </footer>
+
+      {/* Toasts */}
+      <div className="lf-toast-container">
+        {toasts.map((t) => (
+          <div key={t.id} className={`lf-toast ${t.variant} ${t.leaving ? 'leaving' : ''}`}>
+            <span className="lf-toast-icon">
+              {t.variant === 'success' && <IconCheckCircle />}
+              {t.variant === 'error' && <IconXCircle />}
+              {t.variant === 'warning' && <IconAlertTriangle />}
+              {t.variant === 'info' && <IconInfo />}
+            </span>
+            <div className="lf-toast-content">
+              <div className="lf-toast-title">{t.title}</div>
+              {t.desc && <div className="lf-toast-desc">{t.desc}</div>}
+            </div>
+            <button className="lf-toast-close" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
+              <IconX />
+            </button>
+            <div className="lf-toast-progress" />
+          </div>
+        ))}
+      </div>
     </main>
   );
 }
