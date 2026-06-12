@@ -30,3 +30,159 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ─── Marketing Models ───
+
+model Campana {
+  id            String    @id @default(cuid())
+  titulo        String
+  tipo          String    // push, email, sms
+  segmento      String    // todos, frecuentes, inactivos, nuevos, vip, personalizado
+  contenido     String    // JSON con titulo, cuerpo, boton, etc.
+  estado        String    @default("borrador") // borrador, programada, enviada, fallida
+  programadaPara DateTime?
+  enviadaEn     DateTime?
+  destinatarios Int       @default(0)
+  abiertos      Int       @default(0)
+  clicks        Int       @default(0)
+  creadoPor     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model CodigoPromocional {
+  id             String   @id @default(cuid())
+  codigo         String   @unique
+  tipoDescuento  String   // porcentaje, monto
+  valor          Float
+  aplicableA     String   // todos, primer_envio, envio_minimo
+  montoMinimo    Float?
+  maxUsos        Int      @default(0) // 0 = ilimitado
+  usosActuales   Int      @default(0)
+  segmento       String   @default("todos")
+  vigenciaInicio DateTime
+  vigenciaFin    DateTime
+  estado         String   @default("activo")
+  creadoPor      String
+  createdAt      DateTime @default(now())
+}
+
+model UsoCodigo {
+  id        String   @id @default(cuid())
+  codigoId  String
+  clienteId String
+  ordenId   String?
+  descuento Float
+  usadoEn   DateTime @default(now())
+}
+
+model Banner {
+  id              String   @id @default(cuid())
+  titulo          String
+  subtitulo       String?
+  tipo            String   // promo_grande, tarjeta_compacta, slider, notificacion
+  colorFondo      String   @default("#FF5722")
+  gradiente       String?  // JSON {from, to, direction}
+  colorTexto      String   @default("#FFFFFF")
+  imagenUrl       String?
+  botonTexto      String?
+  botonAccion     String?
+  botonLink       String?
+  icono           String?
+  segmento        String   @default("todos")
+  mostrarEn       String   @default("app") // app, dashboard, ambos
+  posicion        Int      @default(0)
+  estado          String   @default("activo")
+  impresiones     Int      @default(0)
+  clicks          Int      @default(0)
+  programadoDesde DateTime?
+  programadoHasta DateTime?
+  creadoPor       String
+  createdAt       DateTime @default(now())
+}
+
+model FeedItem {
+  id          String   @id @default(cuid())
+  tipo        String   // anuncio, promocion, novedad, encuesta, recordatorio
+  titulo      String
+  descripcion String
+  icono       String?
+  botonTexto  String?
+  botonLink   String?
+  codigoPromo String?
+  segmento    String   @default("todos")
+  posicion    Int      @default(0)
+  estado      String   @default("activo")
+  impresiones Int      @default(0)
+  clicks      Int      @default(0)
+  creadoPor   String
+  createdAt   DateTime @default(now())
+}
+
+model PlantillaMensaje {
+  id        String   @id @default(cuid())
+  nombre    String
+  categoria String   // orden, incidencia, promocion, general
+  contenido String
+  variables String   // JSON array string
+  esDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model MensajeDirecto {
+  id          String   @id @default(cuid())
+  emisorId    String
+  receptorId  String
+  contenido   String
+  leido       Boolean  @default(false)
+  enviadoEn   DateTime @default(now())
+}
+
+model NotificacionAutomatica {
+  id           String  @id @default(cuid())
+  evento       String  // orden_creada, orden_entregada, etc
+  etiqueta     String
+  activa       Boolean @default(true)
+  canal        String  // push, email, sms, todos
+  plantilla    String
+  destinatario String  // cliente, repartidor, admin, ingeniero
+}
+
+// ─── Config Models ───
+
+model ConfiguracionHorario {
+  id              String  @id @default(cuid())
+  dia             Int     // 0-6 (domingo a sabado)
+  horaInicio      String  // "07:00"
+  horaFin         String  // "20:00"
+  activo          Boolean @default(true)
+  recargoNocturno Float   @default(0)
+}
+
+model Feriado {
+  id      String   @id @default(cuid())
+  fecha   DateTime
+  nombre  String
+  recargo Float    @default(0)
+}
+
+// ─── SuperAdmin Models ───
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  accion      String
+  recurso     String
+  recursoId   String?
+  detalles    String?
+  ip          String?
+  dispositivo String?
+  createdAt   DateTime @default(now())
+}
+
+model FeatureFlag {
+  id          String  @id @default(cuid())
+  nombre      String
+  descripcion String
+  habilitado  Boolean @default(false)
+}

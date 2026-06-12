@@ -1,0 +1,592 @@
+     1→'use client';
+     2→
+     3→import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+     4→import { AnimatePresence, motion } from 'framer-motion';
+     5→import {
+     6→  LayoutGrid, Package, Bike, Users, BarChart3, Settings,
+     7→  Sun, Moon, LogOut, Bell, Zap, Plus, Crosshair,
+     8→  Compass, Eye, Route, Maximize2, Minimize2,
+     9→  ChevronsUp, Search, Radio, Shield,
+    10→} from 'lucide-react';
+    11→import { useStore, type ModuleKey } from '@/lib/store';
+    12→import ModuleOverview from './ModuleOverview';
+    13→import ModulePedidos from './ModulePedidos';
+    14→import ModuleFlota from './ModuleFlota';
+    15→import ModuleRepartidores from './ModuleRepartidores';
+    16→import ModuleReportes from './ModuleReportes';
+    17→import ModuleConfig from './ModuleConfig';
+    18→import ModuleDespacho from './ModuleDespacho';
+    19→import ModuleFinanzas from './ModuleFinanzas';
+    20→import ModuleClientes from './ModuleClientes';
+    21→import ModuleIncidencias from './ModuleIncidencias';
+    22→import CommandPalette from './CommandPalette';
+    23→import NotificationCenter from './NotificationCenter';
+    24→import { SkeletonLoader, getSkeletonVariant, type SkeletonVariant } from './SkeletonLoader';
+    25→
+    26→const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid; shortcut?: string }[] = [
+    27→  { key: 'overview', label: 'Vista General', icon: LayoutGrid, shortcut: '1' },
+    28→  { key: 'pedidos', label: 'Pedidos', icon: Package, shortcut: '2' },
+    29→  { key: 'flota', label: 'Flota', icon: Bike, shortcut: '3' },
+    30→  { key: 'repartidores', label: 'Repartidores', icon: Users, shortcut: '4' },
+    31→  { key: 'despacho', label: 'Despacho', icon: Zap, shortcut: '5' },
+    32→  { key: 'finanzas', label: 'Finanzas', icon: BarChart3, shortcut: '6' },
+    33→  { key: 'clientes', label: 'Clientes', icon: Users, shortcut: '7' },
+    34→  { key: 'reportes', label: 'Reportes', icon: BarChart3, shortcut: '8' },
+    35→  { key: 'incidencias', label: 'Incidencias', icon: Shield, shortcut: '0' },
+    36→  { key: 'config', label: 'Config', icon: Settings, shortcut: '9' },
+    37→];
+    38→
+    39→const MODULE_LABELS: Record<ModuleKey, string> = {
+    40→  overview: 'Vista General',
+    41→  pedidos: 'Pedidos',
+    42→  flota: 'Flota',
+    43→  repartidores: 'Repartidores',
+    44→  despacho: 'Centro de Despacho',
+    45→  finanzas: 'Centro Financiero',
+    46→  clientes: 'Clientes',
+    47→  incidencias: 'Incidencias',
+    48→  reportes: 'Reportes',
+    49→  config: 'Configuración',
+    50→};
+    51→
+    52→export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDark: boolean; toggleTheme: () => void; onLogout: () => void }) {
+    53→  const {
+    54→    activeModule, setActiveModule, moduleFade, alerts,
+    55→    commandPaletteOpen, setCommandPaletteOpen,
+    56→    simulationRunning, toggleSimulation,
+    57→    simulateNewOrder, simulateDelivery, simulateStatusChange, updateMotoPositions,
+    58→  } = useStore();
+    59→
+    60→  const [avatarOpen, setAvatarOpen] = useState(false);
+    61→  const [fabOpen, setFabOpen] = useState(false);
+    62→  const [isFullscreen, setIsFullscreen] = useState(false);
+    63→  const [showHelpOverlay, setShowHelpOverlay] = useState(false);
+    64→  const [loadedModule, setLoadedModule] = useState<ModuleKey>(activeModule);
+    65→  const avatarRef = useRef<HTMLDivElement>(null);
+    66→  const fabRef = useRef<HTMLDivElement>(null);
+    67→
+    68→  // Skeleton variant for current module
+    69→  const skeletonVariant: SkeletonVariant = useMemo(() => getSkeletonVariant(activeModule), [activeModule]);
+    70→
+    71→  // Show skeleton for 400ms when switching modules
+    72→  // loadedModule lags behind activeModule for 400ms to show skeleton
+    73→  const isModuleLoading = loadedModule !== activeModule;
+    74→  useEffect(() => {
+    75→    const timer = setTimeout(() => setLoadedModule(activeModule), 400);
+    76→    return () => clearTimeout(timer);
+    77→  }, [activeModule]);
+    78→
+    79→  // Close avatar dropdown on outside click
+    80→  useEffect(() => {
+    81→    const handler = (e: MouseEvent) => {
+    82→      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false);
+    83→    };
+    84→    document.addEventListener('mousedown', handler);
+    85→    return () => document.removeEventListener('mousedown', handler);
+    86→  }, []);
+    87→
+    88→  // Close FAB on outside click
+    89→  useEffect(() => {
+    90→    const handler = (e: MouseEvent) => {
+    91→      if (fabRef.current && !fabRef.current.contains(e.target as Node)) setFabOpen(false);
+    92→    };
+    93→    if (fabOpen) {
+    94→      setTimeout(() => document.addEventListener('mousedown', handler), 0);
+    95→    }
+    96→    return () => document.removeEventListener('mousedown', handler);
+    97→  }, [fabOpen]);
+    98→
+    99→  // Fullscreen toggle
+   100→  const handleFullscreen = useCallback(() => {
+   101→    if (!document.fullscreenElement) {
+   102→      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+   103→    } else {
+   104→      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+   105→    }
+   106→  }, []);
+   107→
+   108→  useEffect(() => {
+   109→    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+   110→    document.addEventListener('fullscreenchange', handler);
+   111→    return () => document.removeEventListener('fullscreenchange', handler);
+   112→  }, []);
+   113→
+   114→  // Keyboard shortcuts
+   115→  useEffect(() => {
+   116→    const handler = (e: KeyboardEvent) => {
+   117→      // Cmd+K or Ctrl+K for command palette
+   118→      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+   119→        e.preventDefault();
+   120→        setCommandPaletteOpen(!commandPaletteOpen);
+   121→        return;
+   122→      }
+   123→      // Number keys 1-9 for module navigation (only when not in input)
+   124→      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+   125→        const target = e.target as HTMLElement;
+   126→        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+   127→        const num = parseInt(e.key);
+   128→        if (num >= 1 && num <= NAV_ITEMS.length) {
+   129→          e.preventDefault();
+   130→          setActiveModule(NAV_ITEMS[num - 1].key);
+   131→        }
+   132→        // ? key for help overlay
+   133→        if (e.key === '?') {
+   134→          e.preventDefault();
+   135→          setShowHelpOverlay((p) => !p);
+   136→          return;
+   137→        }
+   138→        // F key for fullscreen toggle
+   139→        if (e.key === 'f' || e.key === 'F') {
+   140→          e.preventDefault();
+   141→          handleFullscreen();
+   142→          return;
+   143→        }
+   144→        if (e.key === 'Escape') {
+   145→          setCommandPaletteOpen(false);
+   146→          setAvatarOpen(false);
+   147→          setFabOpen(false);
+   148→          setShowHelpOverlay(false);
+   149→        }
+   150→      }
+   151→    };
+   152→    document.addEventListener('keydown', handler);
+   153→    return () => document.removeEventListener('keydown', handler);
+   154→  }, [commandPaletteOpen, setCommandPaletteOpen, setActiveModule, handleFullscreen]);
+   155→
+   156→  // Simulation engine
+   157→  useEffect(() => {
+   158→    if (!simulationRunning) return;
+   159→    const motoInterval = setInterval(() => updateMotoPositions(), 8000);
+   160→    const statusInterval = setInterval(() => simulateStatusChange(), 15000);
+   161→    const orderInterval = setInterval(() => simulateNewOrder(), 60000);
+   162→    const deliveryInterval = setInterval(() => simulateDelivery(), 120000);
+   163→
+   164→    return () => {
+   165→      clearInterval(motoInterval);
+   166→      clearInterval(statusInterval);
+   167→      clearInterval(orderInterval);
+   168→      clearInterval(deliveryInterval);
+   169→    };
+   170→  }, [simulationRunning, updateMotoPositions, simulateStatusChange, simulateNewOrder, simulateDelivery]);
+   171→
+   172→  const highAlerts = alerts.filter((a) => a.severidad === 'alta').length;
+   173→
+   174→  const renderModule = () => {
+   175→    switch (activeModule) {
+   176→      case 'overview': return <ModuleOverview isDark={isDark} />;
+   177→      case 'pedidos': return <ModulePedidos />;
+   178→      case 'flota': return <ModuleFlota isDark={isDark} />;
+   179→      case 'repartidores': return <ModuleRepartidores />;
+   180→      case 'despacho': return <ModuleDespacho />;
+   181→      case 'finanzas': return <ModuleFinanzas />;
+   182→      case 'clientes': return <ModuleClientes />;
+   183→      case 'reportes': return <ModuleReportes />;
+   184→      case 'incidencias': return <ModuleIncidencias />;
+   185→      case 'config': return <ModuleConfig />;
+   186→      default: return <ModuleOverview isDark={isDark} />;
+   187→    }
+   188→  };
+   189→
+   190→  // FAB speed dial actions
+   191→  const fabActions = [
+   192→    { icon: Package, label: 'Nueva orden', color: '#FF6600', action: () => { setActiveModule('pedidos'); setFabOpen(false); } },
+   193→    { icon: Zap, label: 'Despacho', color: '#8B5CF6', action: () => { setActiveModule('despacho'); setFabOpen(false); } },
+   194→    { icon: BarChart3, label: 'Finanzas', color: '#16A34A', action: () => { setActiveModule('finanzas'); setFabOpen(false); } },
+   195→    { icon: Search, label: 'Buscar (⌘K)', color: '#3B82F6', action: () => { setCommandPaletteOpen(true); setFabOpen(false); } },
+   196→  ];
+   197→
+   198→  return (
+   199→    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--lf-bg-base)' }}>
+   200→      {/* ═══ HEADER ═══ */}
+   201→      <header style={{
+   202→        height: 56, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+   203→        padding: '0 20px', background: 'var(--lf-surface)', borderBottom: '1px solid var(--lf-border)',
+   204→        zIndex: 100,
+   205→      }}>
+   206→        {/* Left: Logo + Breadcrumb */}
+   207→        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+   208→          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+   209→            <div style={{
+   210→              width: 36, height: 36, borderRadius: 8, background: 'var(--lf-accent)',
+   211→              display: 'flex', alignItems: 'center', justifyContent: 'center',
+   212→              fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14, color: '#fff',
+   213→            }}>LF</div>
+   214→            <span className="font-serif" style={{ fontSize: 20, color: 'var(--lf-text-main)', letterSpacing: '-0.02em' }}>LOGIFAST</span>
+   215→          </div>
+   216→
+   217→          {/* Breadcrumb */}
+   218→          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, paddingLeft: 12, borderLeft: '1px solid var(--lf-border)' }}>
+   219→            <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Dashboard</span>
+   220→            <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>›</span>
+   221→            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main)' }}>{MODULE_LABELS[activeModule]}</span>
+   222→          </div>
+   223→        </div>
+   224→
+   225→        {/* Center: Desktop tabs */}
+   226→        <nav style={{ display: 'flex', gap: 2 }} className="lf-dash-desktop-nav">
+   227→          {NAV_ITEMS.map((item) => {
+   228→            const Icon = item.icon;
+   229→            const isActive = activeModule === item.key;
+   230→            return (
+   231→              <button
+   232→                key={item.key}
+   233→                onClick={() => setActiveModule(item.key)}
+   234→                title={`${item.label} (${item.shortcut})`}
+   235→                style={{
+   236→                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+   237→                  borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+   238→                  background: isActive ? 'var(--lf-accent-soft)' : 'transparent',
+   239→                  color: isActive ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
+   240→                  transition: 'all 0.2s', position: 'relative',
+   241→                }}
+   242→              >
+   243→                <Icon size={15} />
+   244→                <span className="lf-nav-label">{item.label}</span>
+   245→              </button>
+   246→            );
+   247→          })}
+   248→        </nav>
+   249→
+   250→        {/* Right: Actions */}
+   251→        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   252→          {/* En vivo indicator */}
+   253→          <div
+   254→            onClick={toggleSimulation}
+   255→            style={{
+   256→              display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 8,
+   257→              background: simulationRunning ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
+   258→              border: `1px solid ${simulationRunning ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
+   259→              cursor: 'pointer', transition: 'all 0.2s',
+   260→            }}
+   261→          >
+   262→            <div className={simulationRunning ? 'lf-live-pulse' : ''} style={{
+   263→              width: 8, height: 8, borderRadius: '50%',
+   264→              background: simulationRunning ? 'var(--lf-success)' : 'var(--lf-danger)',
+   265→            }} />
+   266→            <span style={{
+   267→              fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+   268→              color: simulationRunning ? 'var(--lf-success)' : 'var(--lf-danger)',
+   269→            }}>En vivo</span>
+   270→          </div>
+   271→
+   272→          {/* Notification Center */}
+   273→          <NotificationCenter />
+   274→
+   275→          {/* Command Palette trigger */}
+   276→          <button
+   277→            onClick={() => setCommandPaletteOpen(true)}
+   278→            style={{
+   279→              height: 36, padding: '0 10px', borderRadius: 8, border: '1px solid var(--lf-border)',
+   280→              background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
+   281→              alignItems: 'center', gap: 6, color: 'var(--lf-text-muted)',
+   282→              fontSize: 12, transition: 'all 0.2s',
+   283→            }}
+   284→          >
+   285→            <Search size={14} />
+   286→            <span style={{ fontSize: 12, opacity: 0.6 }}>Buscar...</span>
+   287→            <kbd style={{ padding: '1px 5px', borderRadius: 4, border: '1px solid var(--lf-border)', fontSize: 10, fontFamily: 'inherit', background: 'var(--lf-bg-base)' }}>⌘K</kbd>
+   288→          </button>
+   289→
+   290→          {/* Fullscreen toggle */}
+   291→          <button
+   292→            onClick={handleFullscreen}
+   293→            style={{
+   294→              width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border)',
+   295→              background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
+   296→              alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
+   297→            }}
+   298→            title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+   299→          >
+   300→            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+   301→          </button>
+   302→
+   303→          {/* Theme toggle */}
+   304→          <button
+   305→            onClick={toggleTheme}
+   306→            style={{
+   307→              width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border)',
+   308→              background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
+   309→              alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
+   310→            }}
+   311→            aria-label="Cambiar tema"
+   312→          >
+   313→            {isDark ? <Sun size={15} /> : <Moon size={15} />}
+   314→          </button>
+   315→
+   316→          {/* Avatar */}
+   317→          <div ref={avatarRef} style={{ position: 'relative' }}>
+   318→            <button
+   319→              onClick={() => setAvatarOpen((p) => !p)}
+   320→              style={{
+   321→                width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border)',
+   322→                background: 'var(--lf-primary-soft)', cursor: 'pointer', display: 'flex',
+   323→                alignItems: 'center', justifyContent: 'center',
+   324→                fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 12,
+   325→                color: 'var(--lf-primary)',
+   326→              }}
+   327→            >AD</button>
+   328→            {avatarOpen && (
+   329→              <motion.div
+   330→                initial={{ opacity: 0, y: -4 }}
+   331→                animate={{ opacity: 1, y: 0 }}
+   332→                exit={{ opacity: 0, y: -4 }}
+   333→                style={{
+   334→                  position: 'absolute', top: 44, right: 0, minWidth: 200,
+   335→                  background: 'var(--lf-surface)', border: '1px solid var(--lf-border)',
+   336→                  borderRadius: 12, boxShadow: 'var(--lf-shadow-lg)', overflow: 'hidden', zIndex: 200,
+   337→                }}
+   338→              >
+   339→                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--lf-border)' }}>
+   340→                  <div style={{ fontWeight: 600, fontSize: 14 }}>Admin Demo</div>
+   341→                  <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>admin@logifast.com</div>
+   342→                </div>
+   343→                <button
+   344→                  onClick={() => { setAvatarOpen(false); onLogout(); }}
+   345→                  style={{
+   346→                    display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 16px',
+   347→                    border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13,
+   348→                    color: 'var(--lf-danger)', textAlign: 'left', transition: 'background 0.15s',
+   349→                  }}
+   350→                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--lf-accent-soft)'}
+   351→                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+   352→                >
+   353→                  <LogOut size={14} /> Cerrar sesión
+   354→                </button>
+   355→              </motion.div>
+   356→            )}
+   357→          </div>
+   358→        </div>
+   359→      </header>
+   360→
+   361→      {/* ═══ CONTENT ═══ */}
+   362→      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+   363→        <AnimatePresence mode="wait">
+   364→          {isModuleLoading ? (
+   365→            <SkeletonLoader key={`skeleton-${activeModule}`} variant={skeletonVariant} />
+   366→          ) : (
+   367→            <motion.div
+   368→              key={activeModule}
+   369→              initial={{ opacity: 0, y: 8 }}
+   370→              animate={{ opacity: 1, y: 0 }}
+   371→              exit={{ opacity: 0, y: -8 }}
+   372→              transition={{ duration: 0.2 }}
+   373→              style={{ height: '100%' }}
+   374→            >
+   375→              {renderModule()}
+   376→            </motion.div>
+   377→          )}
+   378→        </AnimatePresence>
+   379→
+   380→        {/* FAB Speed Dial */}
+   381→        <div ref={fabRef} style={{ position: 'absolute', bottom: 24, right: 24, zIndex: 50 }} className="lf-fab-container">
+   382→          {/* Speed dial items */}
+   383→          <AnimatePresence>
+   384→            {fabOpen && fabActions.map((action, i) => {
+   385→              const Icon = action.icon;
+   386→              return (
+   387→                <motion.div
+   388→                  key={action.label}
+   389→                  initial={{ opacity: 0, scale: 0.4, y: 20 }}
+   390→                  animate={{ opacity: 1, scale: 1, y: 0 }}
+   391→                  exit={{ opacity: 0, scale: 0.4, y: 20 }}
+   392→                  transition={{ duration: 0.15, delay: fabOpen ? i * 0.04 : 0 }}
+   393→                  style={{
+   394→                    position: 'absolute', bottom: 60 + i * 52, right: 4,
+   395→                    display: 'flex', alignItems: 'center', gap: 8,
+   396→                  }}
+   397→                >
+   398→                  <span style={{
+   399→                    fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main)', whiteSpace: 'nowrap',
+   400→                    padding: '4px 10px', borderRadius: 6, background: 'var(--lf-surface)',
+   401→                    border: '1px solid var(--lf-border)', boxShadow: 'var(--lf-shadow-md)',
+   402→                  }}>{action.label}</span>
+   403→                  <button
+   404→                    onClick={action.action}
+   405→                    className="lf-fab-action"
+   406→                    style={{
+   407→                      width: 44, height: 44, borderRadius: '50%', border: 'none',
+   408→                      background: action.color, color: '#fff', cursor: 'pointer',
+   409→                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+   410→                      boxShadow: `0 4px 12px ${action.color}44`,
+   411→                      transition: 'transform 0.15s',
+   412→                    }}
+   413→                  >
+   414→                    <Icon size={18} />
+   415→                  </button>
+   416→                </motion.div>
+   417→              );
+   418→            })}
+   419→          </AnimatePresence>
+   420→
+   421→          {/* Main FAB button */}
+   422→          <button
+   423→            onClick={() => setFabOpen((p) => !p)}
+   424→            className="lf-fab-main"
+   425→            style={{
+   426→              width: 52, height: 52, borderRadius: '50%', border: 'none',
+   427→              background: fabOpen ? 'var(--lf-danger)' : 'var(--lf-accent)',
+   428→              color: '#fff', cursor: 'pointer',
+   429→              display: 'flex', alignItems: 'center', justifyContent: 'center',
+   430→              boxShadow: fabOpen ? '0 4px 16px rgba(220,38,38,0.4)' : '0 4px 16px rgba(255,102,0,0.4)',
+   431→              transition: 'all 0.2s', transform: fabOpen ? 'rotate(45deg)' : 'rotate(0)',
+   432→            }}
+   433→          >
+   434→            <Plus size={24} />
+   435→          </button>
+   436→        </div>
+   437→      </div>
+   438→
+   439→      {/* ═══ BOTTOM NAV (mobile) ═══ */}
+   440→      <nav className="lf-dash-bottom-nav" style={{
+   441→        height: 64, flexShrink: 0, display: 'none', alignItems: 'center', justifyContent: 'space-around',
+   442→        background: 'var(--lf-surface)', borderTop: '1px solid var(--lf-border)',
+   443→        padding: '0 4px',
+   444→      }}>
+   445→        {NAV_ITEMS.slice(0, 5).map((item) => {
+   446→          const Icon = item.icon;
+   447→          const isActive = activeModule === item.key;
+   448→          return (
+   449→            <button
+   450→              key={item.key}
+   451→              onClick={() => setActiveModule(item.key)}
+   452→              style={{
+   453→                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+   454→                border: 'none', background: 'transparent', cursor: 'pointer',
+   455→                color: isActive ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
+   456→                fontSize: 9, fontWeight: 600, padding: '4px 6px',
+   457→              }}
+   458→            >
+   459→              <Icon size={18} />
+   460→              <span>{item.label}</span>
+   461→            </button>
+   462→          );
+   463→        })}
+   464→      </nav>
+   465→
+   466→      {/* Command Palette */}
+   467→      <CommandPalette />
+   468→
+   469→      {/* ═══ KEYBOARD SHORTCUTS HELP OVERLAY ═══ */}
+   470→      <AnimatePresence>
+   471→        {showHelpOverlay && (
+   472→          <motion.div
+   473→            initial={{ opacity: 0 }}
+   474→            animate={{ opacity: 1 }}
+   475→            exit={{ opacity: 0 }}
+   476→            transition={{ duration: 0.2 }}
+   477→            onClick={() => setShowHelpOverlay(false)}
+   478→            style={{
+   479→              position: 'fixed', inset: 0, zIndex: 9999,
+   480→              display: 'flex', alignItems: 'center', justifyContent: 'center',
+   481→              background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)',
+   482→            }}
+   483→          >
+   484→            <motion.div
+   485→              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+   486→              animate={{ opacity: 1, scale: 1, y: 0 }}
+   487→              exit={{ opacity: 0, scale: 0.92, y: 16 }}
+   488→              transition={{ duration: 0.25, ease: 'easeOut' }}
+   489→              onClick={(e) => e.stopPropagation()}
+   490→              style={{
+   491→                background: 'var(--lf-surface)', border: '1px solid var(--lf-border)',
+   492→                borderRadius: 16, padding: '32px 36px', maxWidth: 520, width: '90%',
+   493→                boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+   494→              }}
+   495→            >
+   496→              {/* Header */}
+   497→              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+   498→                <div style={{
+   499→                  width: 40, height: 40, borderRadius: 10, background: '#002A5C',
+   500→                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+   501→                  fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14, color: '#fff',
+   502→                }}>LF</div>
+   503→                <div>
+   504→                  <h2 className="font-serif" style={{ fontSize: 20, fontWeight: 700, color: 'var(--lf-text-main)', margin: 0 }}>Atajos de teclado</h2>
+   505→                  <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', margin: '2px 0 0' }}>LOGIFAST Dashboard</p>
+   506→                </div>
+   507→              </div>
+   508→
+   509→              {/* Shortcuts list */}
+   510→              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+   511→                {/* Module navigation */}
+   512→                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lf-text-muted)', padding: '8px 0 4px' }}>Navegación de módulos</div>
+   513→                {NAV_ITEMS.map((item) => {
+   514→                  const Icon = item.icon;
+   515→                  return (
+   516→                    <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 6 }}>
+   517→                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   518→                        <Icon size={14} style={{ color: 'var(--lf-text-muted)' }} />
+   519→                        <span style={{ fontSize: 13, color: 'var(--lf-text-main)' }}>{item.label}</span>
+   520→                      </div>
+   521→                      <kbd style={{
+   522→                        padding: '2px 8px', borderRadius: 6, fontSize: 12,
+   523→                        fontFamily: "'DM Mono', monospace", fontWeight: 600,
+   524→                        background: 'var(--lf-bg-base)', border: '1px solid var(--lf-border)',
+   525→                        color: '#002A5C', minWidth: 24, textAlign: 'center',
+   526→                      }}>{item.shortcut}</kbd>
+   527→                    </div>
+   528→                  );
+   529→                })}
+   530→
+   531→                {/* General shortcuts */}
+   532→                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lf-text-muted)', padding: '12px 0 4px' }}>General</div>
+   533→                {[
+   534→                  { keys: '⌘K', label: 'Paleta de comandos', desc: 'Buscar y ejecutar acciones' },
+   535→                  { keys: '?', label: 'Ayuda de atajos', desc: 'Mostrar esta ventana' },
+   536→                  { keys: 'F', label: 'Pantalla completa', desc: 'Alternar modo fullscreen' },
+   537→                  { keys: 'Esc', label: 'Cerrar', desc: 'Cerrar diálogos y overlays' },
+   538→                ].map((s) => (
+   539→                  <div key={s.keys} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: 6 }}>
+   540→                    <div>
+   541→                      <div style={{ fontSize: 13, color: 'var(--lf-text-main)' }}>{s.label}</div>
+   542→                      <div style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>{s.desc}</div>
+   543→                    </div>
+   544→                    <kbd style={{
+   545→                      padding: '2px 8px', borderRadius: 6, fontSize: 12,
+   546→                      fontFamily: "'DM Mono', monospace", fontWeight: 600,
+   547→                      background: '#002A5C', border: 'none',
+   548→                      color: '#FF6600', minWidth: 24, textAlign: 'center',
+   549→                    }}>{s.keys}</kbd>
+   550→                  </div>
+   551→                ))}
+   552→              </div>
+   553→
+   554→              {/* Footer hint */}
+   555→              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--lf-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+   556→                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Presiona</span>
+   557→                <kbd style={{
+   558→                  padding: '2px 8px', borderRadius: 6, fontSize: 12,
+   559→                  fontFamily: "'DM Mono', monospace", fontWeight: 600,
+   560→                  background: 'var(--lf-bg-base)', border: '1px solid var(--lf-border)',
+   561→                  color: '#002A5C',
+   562→                }}>Esc</kbd>
+   563→                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>o</span>
+   564→                <kbd style={{
+   565→                  padding: '2px 8px', borderRadius: 6, fontSize: 12,
+   566→                  fontFamily: "'DM Mono', monospace", fontWeight: 600,
+   567→                  background: 'var(--lf-bg-base)', border: '1px solid var(--lf-border)',
+   568→                  color: '#002A5C',
+   569→                }}>?</kbd>
+   570→                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>para cerrar</span>
+   571→              </div>
+   572→            </motion.div>
+   573→          </motion.div>
+   574→        )}
+   575→      </AnimatePresence>
+   576→
+   577→      {/* Responsive styles */}
+   578→      <style jsx global>{`
+   579→        @media (max-width: 1024px) {
+   580→          .lf-nav-label { display: none; }
+   581→        }
+   582→        @media (max-width: 768px) {
+   583→          .lf-dash-desktop-nav { display: none !important; }
+   584→          .lf-dash-bottom-nav { display: flex !important; }
+   585→          .lf-fab-container { bottom: 80px !important; }
+   586→          .lf-skeleton-side-panel { display: none !important; }
+   587→        }
+   588→      `}</style>
+   589→    </div>
+   590→  );
+   591→}
+   592→

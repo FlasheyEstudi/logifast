@@ -7,6 +7,7 @@ import {
   Sun, Moon, LogOut, Bell, Zap, Plus, Crosshair,
   Compass, Eye, Route, Maximize2, Minimize2,
   ChevronsUp, Search, Radio, Shield,
+  Megaphone, MessageCircle, ChevronDown, MoreHorizontal,
 } from 'lucide-react';
 import { useStore, type ModuleKey } from '@/lib/store';
 import ModuleOverview from './ModuleOverview';
@@ -19,22 +20,33 @@ import ModuleDespacho from './ModuleDespacho';
 import ModuleFinanzas from './ModuleFinanzas';
 import ModuleClientes from './ModuleClientes';
 import ModuleIncidencias from './ModuleIncidencias';
+import ModuleMarketing from './ModuleMarketing';
+import ModuleComunicaciones from './ModuleComunicaciones';
+import ModuleSuperAdmin from './ModuleSuperAdmin';
 import CommandPalette from './CommandPalette';
 import NotificationCenter from './NotificationCenter';
 import { SkeletonLoader, getSkeletonVariant, type SkeletonVariant } from './SkeletonLoader';
 
-const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid; shortcut?: string }[] = [
-  { key: 'overview', label: 'Vista General', icon: LayoutGrid, shortcut: '1' },
-  { key: 'pedidos', label: 'Pedidos', icon: Package, shortcut: '2' },
-  { key: 'flota', label: 'Flota', icon: Bike, shortcut: '3' },
-  { key: 'repartidores', label: 'Repartidores', icon: Users, shortcut: '4' },
-  { key: 'despacho', label: 'Despacho', icon: Zap, shortcut: '5' },
-  { key: 'finanzas', label: 'Finanzas', icon: BarChart3, shortcut: '6' },
-  { key: 'clientes', label: 'Clientes', icon: Users, shortcut: '7' },
-  { key: 'reportes', label: 'Reportes', icon: BarChart3, shortcut: '8' },
-  { key: 'incidencias', label: 'Incidencias', icon: Shield, shortcut: '0' },
-  { key: 'config', label: 'Config', icon: Settings, shortcut: '9' },
+const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid; shortcut?: string; desktop?: boolean }[] = [
+  { key: 'overview', label: 'General', icon: LayoutGrid, shortcut: '1', desktop: true },
+  { key: 'pedidos', label: 'Pedidos', icon: Package, shortcut: '2', desktop: true },
+  { key: 'flota', label: 'Flota', icon: Bike, shortcut: '3', desktop: true },
+  { key: 'repartidores', label: 'Repartidores', icon: Users, shortcut: '4', desktop: false },
+  { key: 'reportes', label: 'Reportes', icon: BarChart3, shortcut: '5', desktop: true },
+  { key: 'marketing', label: 'Marketing', icon: Megaphone, shortcut: '6', desktop: true },
+  { key: 'config', label: 'Config', icon: Settings, shortcut: '7', desktop: true },
+  { key: 'despacho', label: 'Despacho', icon: Zap, shortcut: '8', desktop: false },
+  { key: 'finanzas', label: 'Finanzas', icon: BarChart3, shortcut: '9', desktop: false },
+  { key: 'clientes', label: 'Clientes', icon: Users, shortcut: '0', desktop: false },
+  { key: 'incidencias', label: 'Incidencias', icon: Shield, shortcut: 'i', desktop: false },
+  { key: 'comunicaciones', label: 'Mensajes', icon: MessageCircle, shortcut: 'm', desktop: false },
+  { key: 'superadmin', label: 'Super Admin', icon: Shield, shortcut: 's', desktop: false },
 ];
+
+const DESKTOP_NAV = NAV_ITEMS.filter((n) => n.desktop);
+const MORE_NAV = NAV_ITEMS.filter((n) => !n.desktop);
+
+const MOBILE_NAV: ModuleKey[] = ['overview', 'pedidos', 'flota', 'marketing', 'more'];
 
 const MODULE_LABELS: Record<ModuleKey, string> = {
   overview: 'Vista General',
@@ -47,6 +59,9 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   incidencias: 'Incidencias',
   reportes: 'Reportes',
   config: 'Configuración',
+  marketing: 'Centro de Marketing',
+  comunicaciones: 'Comunicaciones',
+  superadmin: 'Super Admin',
 };
 
 export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDark: boolean; toggleTheme: () => void; onLogout: () => void }) {
@@ -61,6 +76,9 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
   const [fabOpen, setFabOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelpOverlay, setShowHelpOverlay] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
   const [loadedModule, setLoadedModule] = useState<ModuleKey>(activeModule);
   const avatarRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLDivElement>(null);
@@ -95,6 +113,15 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     }
     return () => document.removeEventListener('mousedown', handler);
   }, [fabOpen]);
+
+  // Close more menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // Fullscreen toggle
   const handleFullscreen = useCallback(() => {
@@ -183,6 +210,9 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       case 'reportes': return <ModuleReportes />;
       case 'incidencias': return <ModuleIncidencias />;
       case 'config': return <ModuleConfig />;
+      case 'marketing': return <ModuleMarketing />;
+      case 'comunicaciones': return <ModuleComunicaciones />;
+      case 'superadmin': return <ModuleSuperAdmin />;
       default: return <ModuleOverview isDark={isDark} />;
     }
   };
@@ -223,8 +253,8 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
         </div>
 
         {/* Center: Desktop tabs */}
-        <nav style={{ display: 'flex', gap: 2 }} className="lf-dash-desktop-nav">
-          {NAV_ITEMS.map((item) => {
+        <nav style={{ display: 'flex', gap: 2, alignItems: 'center' }} className="lf-dash-desktop-nav">
+          {DESKTOP_NAV.map((item) => {
             const Icon = item.icon;
             const isActive = activeModule === item.key;
             return (
@@ -245,6 +275,60 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               </button>
             );
           })}
+          {/* More dropdown */}
+          <div ref={moreRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setMoreMenuOpen((p) => !p)}
+              className={`lf-more-btn ${moreMenuOpen || MORE_NAV.some((n) => n.key === activeModule) ? 'lf-more-active' : ''}`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                background: MORE_NAV.some((n) => n.key === activeModule) ? 'var(--lf-accent-soft)' : 'transparent',
+                color: MORE_NAV.some((n) => n.key === activeModule) ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
+                transition: 'all 0.2s',
+              }}
+            >
+              <MoreHorizontal size={15} />
+              <span className="lf-nav-label">Más</span>
+              <ChevronDown size={12} style={{ transition: 'transform 0.2s', transform: moreMenuOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+            </button>
+            {moreMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                style={{
+                  position: 'absolute', top: 44, right: 0, minWidth: 200,
+                  background: 'var(--lf-surface)', border: '1px solid var(--lf-border)',
+                  borderRadius: 12, boxShadow: 'var(--lf-shadow-lg)', overflow: 'hidden', zIndex: 200,
+                }}
+              >
+                {MORE_NAV.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeModule === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => { setActiveModule(item.key); setMoreMenuOpen(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 16px',
+                        border: 'none', background: isActive ? 'var(--lf-accent-soft)' : 'transparent',
+                        cursor: 'pointer', fontSize: 13, fontWeight: isActive ? 600 : 500,
+                        color: isActive ? 'var(--lf-accent)' : 'var(--lf-text-main)',
+                        textAlign: 'left', transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--lf-accent-soft)'; }}
+                      onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <Icon size={16} />
+                      <span>{item.label}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--lf-text-muted)', fontFamily: "'DM Mono', monospace" }}>{item.shortcut}</span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </div>
         </nav>
 
         {/* Right: Actions */}
@@ -440,15 +524,35 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       <nav className="lf-dash-bottom-nav" style={{
         height: 64, flexShrink: 0, display: 'none', alignItems: 'center', justifyContent: 'space-around',
         background: 'var(--lf-surface)', borderTop: '1px solid var(--lf-border)',
-        padding: '0 4px',
+        padding: '0 4px', position: 'relative',
       }}>
-        {NAV_ITEMS.slice(0, 5).map((item) => {
+        {MOBILE_NAV.map((navKey) => {
+          if (navKey === 'more') {
+            const isMoreActive = MORE_NAV.some((n) => n.key === activeModule);
+            return (
+              <button
+                key="more"
+                onClick={() => setMobileMoreOpen((p) => !p)}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                  border: 'none', background: 'transparent', cursor: 'pointer',
+                  color: isMoreActive ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
+                  fontSize: 9, fontWeight: 600, padding: '4px 6px',
+                }}
+              >
+                <MoreHorizontal size={18} />
+                <span>Más</span>
+              </button>
+            );
+          }
+          const item = NAV_ITEMS.find((n) => n.key === navKey);
+          if (!item) return null;
           const Icon = item.icon;
           const isActive = activeModule === item.key;
           return (
             <button
               key={item.key}
-              onClick={() => setActiveModule(item.key)}
+              onClick={() => { setActiveModule(item.key); setMobileMoreOpen(false); }}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                 border: 'none', background: 'transparent', cursor: 'pointer',
@@ -461,6 +565,44 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
             </button>
           );
         })}
+
+        {/* Mobile More submenu */}
+        <AnimatePresence>
+          {mobileMoreOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              style={{
+                position: 'absolute', bottom: 68, left: 8, right: 8,
+                background: 'var(--lf-surface)', border: '1px solid var(--lf-border)',
+                borderRadius: 12, boxShadow: 'var(--lf-shadow-lg)', overflow: 'hidden', zIndex: 200,
+                display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0,
+              }}
+            >
+              {MORE_NAV.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeModule === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => { setActiveModule(item.key); setMobileMoreOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px',
+                      border: 'none', background: isActive ? 'var(--lf-accent-soft)' : 'transparent',
+                      cursor: 'pointer', fontSize: 12, fontWeight: isActive ? 600 : 500,
+                      color: isActive ? 'var(--lf-accent)' : 'var(--lf-text-main)',
+                      textAlign: 'left', transition: 'background 0.15s',
+                    }}
+                  >
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Command Palette */}

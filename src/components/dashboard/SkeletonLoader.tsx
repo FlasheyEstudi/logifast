@@ -197,11 +197,14 @@ export function getSkeletonVariant(moduleKey: string): SkeletonVariant {
     case 'despacho':
     case 'incidencias':
     case 'config':
+    case 'superadmin':
       return 'table';
     case 'repartidores':
     case 'finanzas':
     case 'clientes':
     case 'reportes':
+    case 'marketing':
+    case 'comunicaciones':
     default:
       return 'cards';
   }

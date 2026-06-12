@@ -189,6 +189,183 @@ export interface ToastItem {
   timestamp: number;
 }
 
+/* ─── Marketing Types ─── */
+
+export interface Campana {
+  id: string;
+  titulo: string;
+  tipo: 'push' | 'email' | 'sms';
+  segmento: string;
+  contenido: { titulo?: string; cuerpo: string; boton?: string };
+  estado: 'borrador' | 'programada' | 'enviada' | 'fallida';
+  programadaPara?: string;
+  enviadaEn?: string;
+  destinatarios: number;
+  abiertos: number;
+  clicks: number;
+  creadoPor: string;
+  createdAt: string;
+}
+
+export interface CodigoPromocional {
+  id: string;
+  codigo: string;
+  tipoDescuento: 'porcentaje' | 'monto';
+  valor: number;
+  aplicableA: string;
+  montoMinimo?: number;
+  maxUsos: number;
+  usosActuales: number;
+  segmento: string;
+  vigenciaInicio: string;
+  vigenciaFin: string;
+  estado: 'activo' | 'agotado' | 'expirado' | 'pausado';
+  creadoPor: string;
+  createdAt: string;
+}
+
+export interface Banner {
+  id: string;
+  titulo: string;
+  subtitulo?: string;
+  tipo: 'promo_grande' | 'tarjeta_compacta' | 'slider' | 'notificacion';
+  colorFondo: string;
+  gradiente?: { from: string; to: string; direction: string };
+  colorTexto: string;
+  imagenUrl?: string;
+  botonTexto?: string;
+  botonAccion?: string;
+  botonLink?: string;
+  icono?: string;
+  segmento: string;
+  mostrarEn: string;
+  posicion: number;
+  estado: 'activo' | 'inactivo' | 'programado';
+  impresiones: number;
+  clicks: number;
+  programadoDesde?: string;
+  programadoHasta?: string;
+  creadoPor: string;
+  createdAt: string;
+}
+
+export interface FeedItem {
+  id: string;
+  tipo: 'anuncio' | 'promocion' | 'novedad' | 'encuesta' | 'recordatorio';
+  titulo: string;
+  descripcion: string;
+  icono?: string;
+  botonTexto?: string;
+  botonLink?: string;
+  codigoPromo?: string;
+  segmento: string;
+  posicion: number;
+  estado: 'activo' | 'inactivo';
+  impresiones: number;
+  clicks: number;
+  creadoPor: string;
+  createdAt: string;
+}
+
+export interface PlantillaMensaje {
+  id: string;
+  nombre: string;
+  categoria: 'orden' | 'incidencia' | 'promocion' | 'general';
+  contenido: string;
+  variables: string[];
+  esDefault: boolean;
+  createdAt: string;
+}
+
+export interface MensajeDirecto {
+  id: string;
+  emisorId: string;
+  emisorNombre: string;
+  receptorId: string;
+  receptorNombre: string;
+  contenido: string;
+  leido: boolean;
+  enviadoEn: string;
+}
+
+export interface Conversacion {
+  id: string;
+  participanteId: string;
+  participanteNombre: string;
+  participanteRol: 'cliente' | 'repartidor';
+  ultimoMensaje: string;
+  ultimoTimestamp: string;
+  noLeidos: number;
+  mensajes: MensajeDirecto[];
+}
+
+export interface NotificacionAutomatica {
+  id: string;
+  evento: string;
+  etiqueta: string;
+  activa: boolean;
+  canal: 'push' | 'email' | 'sms' | 'todos';
+  plantilla: string;
+  destinatario: 'cliente' | 'repartidor' | 'admin' | 'ingeniero';
+}
+
+/* ─── Config Types ─── */
+
+export interface ConfiguracionHorario {
+  id: string;
+  dia: number;
+  horaInicio: string;
+  horaFin: string;
+  activo: boolean;
+  recargoNocturno: number;
+}
+
+export interface Feriado {
+  id: string;
+  fecha: string;
+  nombre: string;
+  recargo: number;
+}
+
+export interface Integracion {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  icono: string;
+  estado: 'conectado' | 'no_configurado';
+}
+
+/* ─── SuperAdmin Types ─── */
+
+export interface AuditLogEntry {
+  id: string;
+  userId: string;
+  usuario: string;
+  accion: string;
+  recurso: string;
+  recursoId?: string;
+  detalles?: string;
+  ip?: string;
+  dispositivo?: string;
+  createdAt: string;
+}
+
+export interface FeatureFlag {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  habilitado: boolean;
+}
+
+export interface MarketingKPI {
+  clientesActivosMes: number;
+  tendenciaActivos: number;
+  tasaRetencion: number;
+  frecuenciaPromedio: number;
+  valorPromedioEnvio: number;
+  costoAdquisicion: number;
+}
+
 /* ═══════════════════════════════════════════════
    MOCK DATA
    ═══════════════════════════════════════════════ */
@@ -587,11 +764,165 @@ const MOCK_ZONE_POLYGONS: ZonePolygon[] = [
   { id: 'ZP-06', nombre: 'Reparto Schick', color: '#F59E0B', coords: [[12.113, -86.245], [12.113, -86.235], [12.103, -86.235], [12.103, -86.245], [12.108, -86.247]] },
 ];
 
+/* ─── Marketing Mock Data ─── */
+
+const MOCK_CAMPANAS: Campana[] = [
+  {
+    id: 'CAMP-01', titulo: 'Promo verano', tipo: 'push', segmento: 'Todos los clientes',
+    contenido: { titulo: '¡Promo Verano! 🔥', cuerpo: '20% de descuento en tu próximo envío. Usa el código VERANO20', boton: 'Usar ahora' },
+    estado: 'enviada', enviadaEn: '2026-06-08T10:00:00', destinatarios: 120, abiertos: 85, clicks: 32,
+    creadoPor: 'admin', createdAt: '2026-06-07T15:00:00',
+  },
+  {
+    id: 'CAMP-02', titulo: 'Reactivación clientes inactivos', tipo: 'email', segmento: 'Clientes inactivos',
+    contenido: { titulo: 'Te extrañamos', cuerpo: 'Hace tiempo que no haces un envío. Tenemos una sorpresa para ti.', boton: 'Ver oferta' },
+    estado: 'programada', programadaPara: '2026-06-15T09:00:00', destinatarios: 45, abiertos: 0, clicks: 0,
+    creadoPor: 'admin', createdAt: '2026-06-10T14:00:00',
+  },
+  {
+    id: 'CAMP-03', titulo: 'Descuento fin de semana', tipo: 'sms', segmento: 'Clientes frecuentes',
+    contenido: { cuerpo: 'LOGIFAST: 15% OFF este fin de semana. Código: FINDE15' },
+    estado: 'borrador', destinatarios: 0, abiertos: 0, clicks: 0,
+    creadoPor: 'admin', createdAt: '2026-06-10T16:00:00',
+  },
+];
+
+const MOCK_CODIGOS: CodigoPromocional[] = [
+  { id: 'COD-01', codigo: 'LOGI20', tipoDescuento: 'porcentaje', valor: 20, aplicableA: 'Todos los envíos', maxUsos: 100, usosActuales: 45, segmento: 'todos', vigenciaInicio: '2026-06-01', vigenciaFin: '2026-07-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-06-01' },
+  { id: 'COD-02', codigo: 'ENVIO50', tipoDescuento: 'monto', valor: 50, aplicableA: 'Primer envío', maxUsos: 50, usosActuales: 12, segmento: 'Clientes nuevos', vigenciaInicio: '2026-05-01', vigenciaFin: '2026-08-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-05-01' },
+  { id: 'COD-03', codigo: 'RAPIDO15', tipoDescuento: 'porcentaje', valor: 15, aplicableA: 'Envíos > C$100', montoMinimo: 100, maxUsos: 200, usosActuales: 0, segmento: 'todos', vigenciaInicio: '2026-06-10', vigenciaFin: '2026-06-30', estado: 'activo', creadoPor: 'admin', createdAt: '2026-06-10' },
+  { id: 'COD-04', codigo: 'BIENVENIDO', tipoDescuento: 'porcentaje', valor: 25, aplicableA: 'Primer envío', maxUsos: 0, usosActuales: 89, segmento: 'Clientes nuevos', vigenciaInicio: '2026-01-01', vigenciaFin: '2026-12-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-01-01' },
+];
+
+const MOCK_BANNERS: Banner[] = [
+  { id: 'BAN-01', titulo: '20% en tu próximo envío', subtitulo: 'Usa el código LOGI20', tipo: 'promo_grande', colorFondo: '#FF5722', colorTexto: '#FFFFFF', botonTexto: 'Usar ahora', botonAccion: 'Ir a solicitar envío', segmento: 'todos', mostrarEn: 'app', posicion: 1, estado: 'activo', impresiones: 1540, clicks: 230, creadoPor: 'admin', createdAt: '2026-06-05' },
+  { id: 'BAN-02', titulo: 'Envíos los domingos', subtitulo: 'Ahora también los domingos', tipo: 'tarjeta_compacta', colorFondo: '#1B1B2F', colorTexto: '#FFFFFF', icono: 'calendar', segmento: 'todos', mostrarEn: 'app', posicion: 2, estado: 'activo', impresiones: 980, clicks: 67, creadoPor: 'admin', createdAt: '2026-06-08' },
+  { id: 'BAN-03', titulo: 'Nuevo: seguimiento mejorado', tipo: 'notificacion', colorFondo: '#2979FF', colorTexto: '#FFFFFF', icono: 'map', segmento: 'todos', mostrarEn: 'ambos', posicion: 3, estado: 'activo', impresiones: 2100, clicks: 145, creadoPor: 'admin', createdAt: '2026-06-01' },
+  { id: 'BAN-04', titulo: 'Refiere a un amigo y gana', subtitulo: 'Ambos obtienen C$50 de descuento', tipo: 'slider', colorFondo: '#1B1B2F', colorTexto: '#FFFFFF', gradiente: { from: '#1B1B2F', to: '#FF5722', direction: 'to right' }, botonTexto: 'Invitar', botonAccion: 'Abrir link externo', segmento: 'Clientes frecuentes', mostrarEn: 'app', posicion: 4, estado: 'inactivo', impresiones: 0, clicks: 0, creadoPor: 'admin', createdAt: '2026-06-09' },
+];
+
+const MOCK_FEED_ITEMS: FeedItem[] = [
+  { id: 'FI-01', tipo: 'anuncio', titulo: 'Horario extendido los viernes', descripcion: 'Ahora atendemos hasta las 9pm los viernes', icono: 'clock', segmento: 'todos', posicion: 1, estado: 'activo', impresiones: 890, clicks: 34, creadoPor: 'admin', createdAt: '2026-06-08' },
+  { id: 'FI-02', tipo: 'promocion', titulo: 'Usa LOGI20 y ahorra', descripcion: '20% de descuento en tu próximo envío', icono: 'tag', botonTexto: 'Copiar código', codigoPromo: 'LOGI20', segmento: 'todos', posicion: 2, estado: 'activo', impresiones: 1200, clicks: 89, creadoPor: 'admin', createdAt: '2026-06-06' },
+  { id: 'FI-03', tipo: 'novedad', titulo: 'Ahora puedes pagar con transferencia', descripcion: 'Nuevo método de pago disponible', icono: 'credit-card', segmento: 'todos', posicion: 3, estado: 'activo', impresiones: 760, clicks: 45, creadoPor: 'admin', createdAt: '2026-06-04' },
+  { id: 'FI-04', tipo: 'recordatorio', titulo: 'Hace 15 días no envías, ¡te extrañamos!', descripcion: 'Tenemos una sorpresa para ti', icono: 'heart', botonTexto: 'Ver oferta', segmento: 'Clientes inactivos', posicion: 4, estado: 'activo', impresiones: 340, clicks: 23, creadoPor: 'admin', createdAt: '2026-06-10' },
+  { id: 'FI-05', tipo: 'anuncio', titulo: 'Cobertura ampliada a Masaya', descripcion: 'Ahora también llegamos a Masaya y sus alrededores', icono: 'map-pin', segmento: 'todos', posicion: 5, estado: 'activo', impresiones: 560, clicks: 18, creadoPor: 'admin', createdAt: '2026-06-09' },
+];
+
+const MOCK_PLANTILLAS: PlantillaMensaje[] = [
+  { id: 'TPL-01', nombre: 'Confirmación de orden', categoria: 'orden', contenido: 'Hola {{nombre}}, tu orden #{{orden_id}} ha sido confirmada. Tu repartidor {{repartidor}} está en camino.', variables: ['nombre', 'orden_id', 'repartidor'], esDefault: true, createdAt: '2026-01-01' },
+  { id: 'TPL-02', nombre: 'Orden entregada', categoria: 'orden', contenido: 'Tu orden #{{orden_id}} fue entregada exitosamente. ¡Gracias por usar LOGIFAST!', variables: ['orden_id'], esDefault: true, createdAt: '2026-01-01' },
+  { id: 'TPL-03', nombre: 'Recordatorio', categoria: 'promocion', contenido: 'Hola {{nombre}}, hace {{dias}} días que no haces un envío. ¡Tenemos una promo para ti!', variables: ['nombre', 'dias'], esDefault: true, createdAt: '2026-01-01' },
+  { id: 'TPL-04', nombre: 'Incidencia', categoria: 'incidencia', contenido: 'Lamentamos informarte que tu orden #{{orden_id}} presenta una incidencia. Estamos trabajando en resolverlo.', variables: ['orden_id'], esDefault: true, createdAt: '2026-01-01' },
+  { id: 'TPL-05', nombre: 'Código promocional', categoria: 'promocion', contenido: '¡{{nombre}}, usa el código {{codigo}} y obtiene {{descuento}} en tu próximo envío!', variables: ['nombre', 'codigo', 'descuento'], esDefault: true, createdAt: '2026-01-01' },
+];
+
+const MOCK_CONVERSACIONES: Conversacion[] = [
+  {
+    id: 'CONV-01', participanteId: 'CLI-01', participanteNombre: 'María López', participanteRol: 'cliente',
+    ultimoMensaje: '¿A qué hora llegará mi envío?', ultimoTimestamp: '2026-06-10T15:30:00', noLeidos: 1,
+    mensajes: [
+      { id: 'MSG-01', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Hola, hice un envío esta mañana', leido: true, enviadoEn: '2026-06-10T10:00:00' },
+      { id: 'MSG-02', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-01', receptorNombre: 'María López', contenido: 'Hola María, tu orden LF-2847 está en camino', leido: true, enviadoEn: '2026-06-10T10:05:00' },
+      { id: 'MSG-03', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Perfecto, gracias', leido: true, enviadoEn: '2026-06-10T10:10:00' },
+      { id: 'MSG-04', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-01', receptorNombre: 'María López', contenido: 'Tu repartidor es Carlos Mendoza, llegará en aprox 20 min', leido: true, enviadoEn: '2026-06-10T14:30:00' },
+      { id: 'MSG-05', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: '¿A qué hora llegará mi envío?', leido: false, enviadoEn: '2026-06-10T15:30:00' },
+    ],
+  },
+  {
+    id: 'CONV-02', participanteId: 'RID-01', participanteNombre: 'Carlos M.', participanteRol: 'repartidor',
+    ultimoMensaje: 'Ya recogí el paquete, en camino', ultimoTimestamp: '2026-06-10T14:35:00', noLeidos: 0,
+    mensajes: [
+      { id: 'MSG-06', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'RID-01', receptorNombre: 'Carlos M.', contenido: 'Carlos, te asigné la orden LF-2847', leido: true, enviadoEn: '2026-06-10T14:30:00' },
+      { id: 'MSG-07', emisorId: 'RID-01', emisorNombre: 'Carlos M.', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Recibido, voy para allá', leido: true, enviadoEn: '2026-06-10T14:32:00' },
+      { id: 'MSG-08', emisorId: 'RID-01', emisorNombre: 'Carlos M.', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Ya recogí el paquete, en camino', leido: true, enviadoEn: '2026-06-10T14:35:00' },
+    ],
+  },
+  {
+    id: 'CONV-03', participanteId: 'CLI-04', participanteNombre: 'Pedro Ruiz', participanteRol: 'cliente',
+    ultimoMensaje: 'Necesito cambiar la dirección de entrega', ultimoTimestamp: '2026-06-10T11:00:00', noLeidos: 1,
+    mensajes: [
+      { id: 'MSG-09', emisorId: 'CLI-04', emisorNombre: 'Pedro Ruiz', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Necesito cambiar la dirección de entrega', leido: false, enviadoEn: '2026-06-10T11:00:00' },
+      { id: 'MSG-10', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-04', receptorNombre: 'Pedro Ruiz', contenido: 'Claro, ¿cuál es la nueva dirección?', leido: true, enviadoEn: '2026-06-10T11:05:00' },
+    ],
+  },
+];
+
+const MOCK_NOTIFICACIONES_AUTO: NotificacionAutomatica[] = [
+  { id: 'NA-01', evento: 'orden_creada', etiqueta: 'Orden confirmada', activa: true, canal: 'push', plantilla: 'Hola {{nombre}}, tu orden #{{orden_id}} ha sido confirmada.', destinatario: 'cliente' },
+  { id: 'NA-02', evento: 'repartidor_asignado', etiqueta: 'Repartidor asignado', activa: true, canal: 'push', plantilla: '{{repartidor}} fue asignado a tu orden #{{orden_id}}.', destinatario: 'cliente' },
+  { id: 'NA-03', evento: 'orden_encamino', etiqueta: 'Repartidor en camino', activa: true, canal: 'todos', plantilla: 'Tu repartidor está en camino. Llegará en ~15 min.', destinatario: 'cliente' },
+  { id: 'NA-04', evento: 'orden_entregada', etiqueta: 'Orden entregada', activa: true, canal: 'push', plantilla: 'Tu orden #{{orden_id}} fue entregada. ¡Gracias!', destinatario: 'cliente' },
+  { id: 'NA-05', evento: 'nueva_asignacion', etiqueta: 'Nueva asignación', activa: true, canal: 'push', plantilla: 'Nueva orden asignada: #{{orden_id}}. Origen: {{origen}}', destinatario: 'repartidor' },
+  { id: 'NA-06', evento: 'alerta_mantenimiento', etiqueta: 'Alerta de mantenimiento', activa: true, canal: 'email', plantilla: 'La moto {{moto_id}} requiere mantenimiento: {{detalle}}', destinatario: 'ingeniero' },
+  { id: 'NA-07', evento: 'incidencia_reportada', etiqueta: 'Incidencia reportada', activa: true, canal: 'todos', plantilla: 'Incidencia en orden #{{orden_id}}: {{detalle}}', destinatario: 'admin' },
+  { id: 'NA-08', evento: 'pago_recibido', etiqueta: 'Pago recibido', activa: true, canal: 'push', plantilla: 'Pago de C${{monto}} recibido por orden #{{orden_id}}.', destinatario: 'cliente' },
+];
+
+/* ─── Config Mock Data ─── */
+
+const MOCK_HORARIOS: ConfiguracionHorario[] = [
+  { id: 'H-01', dia: 1, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+  { id: 'H-02', dia: 2, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+  { id: 'H-03', dia: 3, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+  { id: 'H-04', dia: 4, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+  { id: 'H-05', dia: 5, horaInicio: '07:00', horaFin: '21:00', activo: true, recargoNocturno: 0 },
+  { id: 'H-06', dia: 6, horaInicio: '08:00', horaFin: '18:00', activo: true, recargoNocturno: 0 },
+  { id: 'H-07', dia: 0, horaInicio: '09:00', horaFin: '14:00', activo: false, recargoNocturno: 0 },
+];
+
+const MOCK_FERIADOS: Feriado[] = [
+  { id: 'FER-01', fecha: '2026-07-19', nombre: 'Día de la Revolución', recargo: 50 },
+  { id: 'FER-02', fecha: '2026-09-14', nombre: 'Batalla de San Jacinto', recargo: 30 },
+  { id: 'FER-03', fecha: '2026-09-15', nombre: 'Independencia de Centroamérica', recargo: 30 },
+  { id: 'FER-04', fecha: '2026-12-25', nombre: 'Navidad', recargo: 50 },
+  { id: 'FER-05', fecha: '2026-01-01', nombre: 'Año Nuevo', recargo: 50 },
+];
+
+const MOCK_INTEGRACIONES: Integracion[] = [
+  { id: 'INT-01', nombre: 'WhatsApp Business API', descripcion: 'Notificaciones por WhatsApp', icono: 'message-circle', estado: 'conectado' },
+  { id: 'INT-02', nombre: 'Pasarela de pago', descripcion: 'Pagos con tarjeta y transferencia', icono: 'credit-card', estado: 'conectado' },
+  { id: 'INT-03', nombre: 'Google Maps API', descripcion: 'Geocodificación y rutas', icono: 'map', estado: 'conectado' },
+  { id: 'INT-04', nombre: 'Twilio', descripcion: 'SMS masivos', icono: 'smartphone', estado: 'no_configurado' },
+  { id: 'INT-05', nombre: 'SendGrid', descripcion: 'Emails masivos', icono: 'mail', estado: 'no_configurado' },
+];
+
+/* ─── SuperAdmin Mock Data ─── */
+
+const MOCK_AUDIT_LOG: AuditLogEntry[] = [
+  { id: 'AL-01', userId: 'admin', usuario: 'Super Admin', accion: 'crear', recurso: 'campaña', recursoId: 'CAMP-01', detalles: 'Campaña "Promo verano" creada', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T15:00:00' },
+  { id: 'AL-02', userId: 'admin', usuario: 'Super Admin', accion: 'enviar', recurso: 'campaña', recursoId: 'CAMP-01', detalles: 'Campaña enviada a 120 clientes', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T15:30:00' },
+  { id: 'AL-03', userId: 'admin', usuario: 'Super Admin', accion: 'editar', recurso: 'código_promo', recursoId: 'COD-01', detalles: 'Código LOGI20 actualizado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T12:00:00' },
+  { id: 'AL-04', userId: 'U-02', usuario: 'Despachador', accion: 'despachar', recurso: 'orden', recursoId: 'LF-2847', detalles: 'Orden asignada a Carlos M.', ip: '192.168.1.101', dispositivo: 'Chrome/Win', createdAt: '2026-06-10T14:30:00' },
+  { id: 'AL-05', userId: 'admin', usuario: 'Super Admin', accion: 'crear', recurso: 'banner', recursoId: 'BAN-01', detalles: 'Banner "20% en tu próximo envío" creado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-05T10:00:00' },
+  { id: 'AL-06', userId: 'U-03', usuario: 'Ana Torres', accion: 'entregar', recurso: 'orden', recursoId: 'LF-2846', detalles: 'Orden entregada exitosamente', ip: '10.0.0.5', dispositivo: 'Android/App', createdAt: '2026-06-10T10:58:00' },
+  { id: 'AL-07', userId: 'admin', usuario: 'Super Admin', accion: 'pausar', recurso: 'código_promo', recursoId: 'COD-03', detalles: 'Código RAPIDO15 pausado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T16:00:00' },
+  { id: 'AL-08', userId: 'admin', usuario: 'Super Admin', accion: 'editar', recurso: 'horario', detalles: 'Horario viernes extendido a 21:00', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-08T09:00:00' },
+];
+
+const MOCK_FEATURE_FLAGS: FeatureFlag[] = [
+  { id: 'FF-01', nombre: 'Habilitar chat', descripcion: 'Chat en tiempo real entre admin, clientes y repartidores', habilitado: true },
+  { id: 'FF-02', nombre: 'Habilitar campañas', descripcion: 'Campañas de notificación masiva', habilitado: true },
+  { id: 'FF-03', nombre: 'Habilitar códigos promo', descripcion: 'Sistema de códigos promocionales', habilitado: true },
+  { id: 'FF-04', nombre: 'Habilitar banners', descripcion: 'Banners promocionales en la app del cliente', habilitado: true },
+  { id: 'FF-05', nombre: 'Habilitar feed', descripcion: 'Feed de contenido dinámico', habilitado: false },
+  { id: 'FF-06', nombre: 'Modo mantenimiento', descripcion: 'Bloquea el acceso para todos excepto super admin', habilitado: false },
+];
+
+const MOCK_MARKETING_KPI: MarketingKPI = {
+  clientesActivosMes: 87,
+  tendenciaActivos: 12,
+  tasaRetencion: 68,
+  frecuenciaPromedio: 3.2,
+  valorPromedioEnvio: 145,
+  costoAdquisicion: 35,
+};
+
 /* ═══════════════════════════════════════════════
    ZUSTAND STORE
    ═══════════════════════════════════════════════ */
 
-export type ModuleKey = 'overview' | 'pedidos' | 'flota' | 'repartidores' | 'reportes' | 'config' | 'despacho' | 'finanzas' | 'clientes' | 'incidencias';
+export type ModuleKey = 'overview' | 'pedidos' | 'flota' | 'repartidores' | 'reportes' | 'config' | 'despacho' | 'finanzas' | 'clientes' | 'incidencias' | 'marketing' | 'comunicaciones' | 'superadmin';
 
 interface AppState {
   /* Data */
@@ -615,6 +946,27 @@ interface AppState {
   activityEvents: ActivityEvent[];
   paymentConciliations: PaymentConciliation[];
   zonePolygons: ZonePolygon[];
+
+  /* Marketing Data */
+  campanas: Campana[];
+  codigos: CodigoPromocional[];
+  banners: Banner[];
+  feedItems: FeedItem[];
+  marketingKPI: MarketingKPI;
+
+  /* Communications Data */
+  conversaciones: Conversacion[];
+  plantillas: PlantillaMensaje[];
+  notificacionesAuto: NotificacionAutomatica[];
+
+  /* Config Data */
+  horarios: ConfiguracionHorario[];
+  feriados: Feriado[];
+  integraciones: Integracion[];
+
+  /* SuperAdmin Data */
+  auditLog: AuditLogEntry[];
+  featureFlags: FeatureFlag[];
 
   /* UI State */
   activeModule: ModuleKey;
@@ -693,6 +1045,37 @@ interface AppState {
   /* Toast Actions */
   addToast: (message: string, variant?: ToastVariant) => void;
   removeToast: (id: string) => void;
+
+  /* Marketing Actions */
+  addCampana: (campana: Campana) => void;
+  updateCampana: (id: string, updates: Partial<Campana>) => void;
+  deleteCampana: (id: string) => void;
+  addCodigo: (codigo: CodigoPromocional) => void;
+  updateCodigo: (id: string, updates: Partial<CodigoPromocional>) => void;
+  deleteCodigo: (id: string) => void;
+  addBanner: (banner: Banner) => void;
+  updateBanner: (id: string, updates: Partial<Banner>) => void;
+  deleteBanner: (id: string) => void;
+  addFeedItem: (item: FeedItem) => void;
+  updateFeedItem: (id: string, updates: Partial<FeedItem>) => void;
+  deleteFeedItem: (id: string) => void;
+
+  /* Communications Actions */
+  addMensaje: (convId: string, mensaje: MensajeDirecto) => void;
+  markConversacionLeida: (convId: string) => void;
+  addPlantilla: (plantilla: PlantillaMensaje) => void;
+  updatePlantilla: (id: string, updates: Partial<PlantillaMensaje>) => void;
+  deletePlantilla: (id: string) => void;
+  toggleNotificacionAuto: (id: string) => void;
+
+  /* Config Actions */
+  updateHorario: (id: string, updates: Partial<ConfiguracionHorario>) => void;
+  addFeriado: (feriado: Feriado) => void;
+  deleteFeriado: (id: string) => void;
+
+  /* SuperAdmin Actions */
+  toggleFeatureFlag: (id: string) => void;
+  addAuditEntry: (entry: Omit<AuditLogEntry, 'id'>) => void;
 }
 
 let _eventCounter = 100;
@@ -720,6 +1103,27 @@ export const useStore = create<AppState>((set, get) => ({
   activityEvents: MOCK_ACTIVITY_EVENTS,
   paymentConciliations: MOCK_PAYMENT_CONCILIATIONS,
   zonePolygons: MOCK_ZONE_POLYGONS,
+
+  /* Marketing Data */
+  campanas: MOCK_CAMPANAS,
+  codigos: MOCK_CODIGOS,
+  banners: MOCK_BANNERS,
+  feedItems: MOCK_FEED_ITEMS,
+  marketingKPI: MOCK_MARKETING_KPI,
+
+  /* Communications Data */
+  conversaciones: MOCK_CONVERSACIONES,
+  plantillas: MOCK_PLANTILLAS,
+  notificacionesAuto: MOCK_NOTIFICACIONES_AUTO,
+
+  /* Config Data */
+  horarios: MOCK_HORARIOS,
+  feriados: MOCK_FERIADOS,
+  integraciones: MOCK_INTEGRACIONES,
+
+  /* SuperAdmin Data */
+  auditLog: MOCK_AUDIT_LOG,
+  featureFlags: MOCK_FEATURE_FLAGS,
 
   /* UI State */
   activeModule: 'overview',
@@ -1017,4 +1421,68 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   toggleSimulation: () => set((state) => ({ simulationRunning: !state.simulationRunning })),
+
+  /* Marketing Actions */
+  addCampana: (campana) => set((state) => ({ campanas: [campana, ...state.campanas] })),
+  updateCampana: (id, updates) => set((state) => ({
+    campanas: state.campanas.map((c) => c.id === id ? { ...c, ...updates } : c),
+  })),
+  deleteCampana: (id) => set((state) => ({ campanas: state.campanas.filter((c) => c.id !== id) })),
+  addCodigo: (codigo) => set((state) => ({ codigos: [codigo, ...state.codigos] })),
+  updateCodigo: (id, updates) => set((state) => ({
+    codigos: state.codigos.map((c) => c.id === id ? { ...c, ...updates } : c),
+  })),
+  deleteCodigo: (id) => set((state) => ({ codigos: state.codigos.filter((c) => c.id !== id) })),
+  addBanner: (banner) => set((state) => ({ banners: [...state.banners, banner] })),
+  updateBanner: (id, updates) => set((state) => ({
+    banners: state.banners.map((b) => b.id === id ? { ...b, ...updates } : b),
+  })),
+  deleteBanner: (id) => set((state) => ({ banners: state.banners.filter((b) => b.id !== id) })),
+  addFeedItem: (item) => set((state) => ({ feedItems: [item, ...state.feedItems] })),
+  updateFeedItem: (id, updates) => set((state) => ({
+    feedItems: state.feedItems.map((f) => f.id === id ? { ...f, ...updates } : f),
+  })),
+  deleteFeedItem: (id) => set((state) => ({ feedItems: state.feedItems.filter((f) => f.id !== id) })),
+
+  /* Communications Actions */
+  addMensaje: (convId, mensaje) => set((state) => ({
+    conversaciones: state.conversaciones.map((c) =>
+      c.id === convId
+        ? { ...c, mensajes: [...c.mensajes, mensaje], ultimoMensaje: mensaje.contenido, ultimoTimestamp: mensaje.enviadoEn, noLeidos: mensaje.emisorId !== 'admin' ? c.noLeidos + 1 : 0 }
+        : c
+    ),
+  })),
+  markConversacionLeida: (convId) => set((state) => ({
+    conversaciones: state.conversaciones.map((c) =>
+      c.id === convId ? { ...c, noLeidos: 0, mensajes: c.mensajes.map((m) => ({ ...m, leido: true })) } : c
+    ),
+  })),
+  addPlantilla: (plantilla) => set((state) => ({ plantillas: [plantilla, ...state.plantillas] })),
+  updatePlantilla: (id, updates) => set((state) => ({
+    plantillas: state.plantillas.map((p) => p.id === id ? { ...p, ...updates } : p),
+  })),
+  deletePlantilla: (id) => set((state) => ({ plantillas: state.plantillas.filter((p) => p.id !== id) })),
+  toggleNotificacionAuto: (id) => set((state) => ({
+    notificacionesAuto: state.notificacionesAuto.map((n) =>
+      n.id === id ? { ...n, activa: !n.activa } : n
+    ),
+  })),
+
+  /* Config Actions */
+  updateHorario: (id, updates) => set((state) => ({
+    horarios: state.horarios.map((h) => h.id === id ? { ...h, ...updates } : h),
+  })),
+  addFeriado: (feriado) => set((state) => ({ feriados: [...state.feriados, feriado] })),
+  deleteFeriado: (id) => set((state) => ({ feriados: state.feriados.filter((f) => f.id !== id) })),
+
+  /* SuperAdmin Actions */
+  toggleFeatureFlag: (id) => set((state) => ({
+    featureFlags: state.featureFlags.map((f) =>
+      f.id === id ? { ...f, habilitado: !f.habilitado } : f
+    ),
+  })),
+  addAuditEntry: (entry) => {
+    const id = `AL-${Date.now()}`;
+    set((state) => ({ auditLog: [{ ...entry, id }, ...state.auditLog] }));
+  },
 }));
