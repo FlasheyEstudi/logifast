@@ -10,19 +10,22 @@ import {
   Megaphone, MessageCircle, ChevronDown, MoreHorizontal,
 } from 'lucide-react';
 import { useStore, type ModuleKey } from '@/lib/store';
-import ModuleOverview from './ModuleOverview';
-import ModulePedidos from './ModulePedidos';
-import ModuleFlota from './ModuleFlota';
-import ModuleRepartidores from './ModuleRepartidores';
-import ModuleReportes from './ModuleReportes';
-import ModuleConfig from './ModuleConfig';
-import ModuleDespacho from './ModuleDespacho';
-import ModuleFinanzas from './ModuleFinanzas';
-import ModuleClientes from './ModuleClientes';
-import ModuleIncidencias from './ModuleIncidencias';
-import ModuleMarketing from './ModuleMarketing';
-import ModuleComunicaciones from './ModuleComunicaciones';
-import ModuleSuperAdmin from './ModuleSuperAdmin';
+import dynamic from 'next/dynamic';
+
+const ModuleOverview = dynamic(() => import('./ModuleOverview'), { ssr: false });
+const ModulePedidos = dynamic(() => import('./ModulePedidos'), { ssr: false });
+const ModuleFlota = dynamic(() => import('./ModuleFlota'), { ssr: false });
+const ModuleRepartidores = dynamic(() => import('./ModuleRepartidores'), { ssr: false });
+const ModuleReportes = dynamic(() => import('./ModuleReportes'), { ssr: false });
+const ModuleConfig = dynamic(() => import('./ModuleConfig'), { ssr: false });
+const ModuleDespacho = dynamic(() => import('./ModuleDespacho'), { ssr: false });
+const ModuleFinanzas = dynamic(() => import('./ModuleFinanzas'), { ssr: false });
+const ModuleClientes = dynamic(() => import('./ModuleClientes'), { ssr: false });
+const ModuleIncidencias = dynamic(() => import('./ModuleIncidencias'), { ssr: false });
+const ModuleMarketing = dynamic(() => import('./ModuleMarketing'), { ssr: false });
+const ModuleComunicaciones = dynamic(() => import('./ModuleComunicaciones'), { ssr: false });
+const ModuleSuperAdmin = dynamic(() => import('./ModuleSuperAdmin'), { ssr: false });
+
 import CommandPalette from './CommandPalette';
 import NotificationCenter from './NotificationCenter';
 import { SkeletonLoader, getSkeletonVariant, type SkeletonVariant } from './SkeletonLoader';
