@@ -366,6 +366,54 @@ export interface MarketingKPI {
   costoAdquisicion: number;
 }
 
+/* ─── Client Experience Types ─── */
+
+export interface ClientNotificacion {
+  id: string;
+  tipo: 'orden_confirmada' | 'repartidor_asignado' | 'repartidor_camino' | 'paquete_recogido' | 'entrega_exitosa' | 'incidencia' | 'codigo_nuevo' | 'te_extranamos';
+  titulo: string;
+  descripcion: string;
+  leida: boolean;
+  relacionadoId?: string;
+  timestamp: string;
+}
+
+export interface DireccionGuardada {
+  id: string;
+  etiqueta: string;
+  direccion: string;
+  lat: number;
+  lng: number;
+}
+
+export interface SolicitudEnvio {
+  origen: string;
+  origenLat: number;
+  origenLng: number;
+  destino: string;
+  destinoLat: number;
+  destinoLng: number;
+  descripcion: string;
+  tamano: 'pequeno' | 'mediano' | 'grande';
+  fragil: boolean;
+  instrucciones: string;
+  metodoPago: 'efectivo' | 'transferencia';
+  montoPago?: number;
+  codigoPromo?: string;
+  descuento?: number;
+  terminosAceptados: boolean;
+}
+
+export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'perfil';
+
+export interface DireccionSugerencia {
+  id: string;
+  direccion: string;
+  barrio: string;
+  lat: number;
+  lng: number;
+}
+
 /* ═══════════════════════════════════════════════
    MOCK DATA
    ═══════════════════════════════════════════════ */
@@ -918,6 +966,40 @@ const MOCK_MARKETING_KPI: MarketingKPI = {
   costoAdquisicion: 35,
 };
 
+/* ─── Client Experience Mock Data ─── */
+
+const MOCK_CLIENT_NOTIFICACIONES: ClientNotificacion[] = [
+  { id: 'CN-01', tipo: 'repartidor_camino', titulo: '¡Tu envío LF-2847 está en camino!', descripcion: 'El repartidor se dirige al punto de recogida', leida: false, relacionadoId: 'LF-2847', timestamp: new Date(Date.now() - 10 * 60000).toISOString() },
+  { id: 'CN-02', tipo: 'paquete_recogido', titulo: 'Repartidor Carlos M. ha recogido tu paquete', descripcion: 'Tu paquete está en camino al destino', leida: false, relacionadoId: 'LF-2847', timestamp: new Date(Date.now() - 5 * 60000).toISOString() },
+  { id: 'CN-03', tipo: 'entrega_exitosa', titulo: 'Orden LF-2830 entregada exitosamente', descripcion: 'El paquete fue entregado en Barrio Monseñor Lezcano', leida: true, relacionadoId: 'LF-2830', timestamp: new Date(Date.now() - 24 * 3600000).toISOString() },
+  { id: 'CN-04', tipo: 'codigo_nuevo', titulo: 'Nuevo código disponible: LOGI20', descripcion: 'Usa LOGI20 y obtén 20% de descuento en tu próximo envío', leida: true, timestamp: new Date(Date.now() - 3 * 86400000).toISOString() },
+  { id: 'CN-05', tipo: 'incidencia', titulo: 'Tu envío LF-2789 presenta una incidencia', descripcion: 'Estamos trabajando para resolverlo. Te mantendremos informado.', leida: true, relacionadoId: 'LF-2789', timestamp: new Date(Date.now() - 7 * 86400000).toISOString() },
+];
+
+const MOCK_DIRECCIONES_GUARDADAS: DireccionGuardada[] = [
+  { id: 'DG-01', etiqueta: 'Casa', direccion: 'Col. Los Robles, Managua', lat: 12.1245, lng: -86.2520 },
+  { id: 'DG-02', etiqueta: 'Trabajo', direccion: 'Centro Comercial Metrocentro, Managua', lat: 12.1150, lng: -86.2362 },
+  { id: 'DG-03', etiqueta: 'Mamá', direccion: 'Barrio Monseñor Lezcano, Managua', lat: 12.0980, lng: -86.2310 },
+];
+
+const MOCK_DIRECCIONES_SUGERENCIAS: DireccionSugerencia[] = [
+  { id: 'DS-01', direccion: 'Metrocentro, Managua', barrio: 'Centro', lat: 12.1150, lng: -86.2362 },
+  { id: 'DS-02', direccion: 'Galerías Santo Domingo', barrio: 'Santo Domingo', lat: 12.0900, lng: -86.2180 },
+  { id: 'DS-03', direccion: 'Universidad Centroamericana', barrio: 'Los Robles', lat: 12.1029, lng: -86.2545 },
+  { id: 'DS-04', direccion: 'Hospital Metropolitano', barrio: 'Altamira', lat: 12.1050, lng: -86.2450 },
+  { id: 'DS-05', direccion: 'Mercado Oriental', barrio: 'Centro', lat: 12.1320, lng: -86.2220 },
+  { id: 'DS-06', direccion: 'Plaza Inter', barrio: 'Centro', lat: 12.1180, lng: -86.2650 },
+  { id: 'DS-07', direccion: 'Col. Los Robles, Managua', barrio: 'Los Robles', lat: 12.1245, lng: -86.2520 },
+  { id: 'DS-08', direccion: 'Barrio Monseñor Lezcano', barrio: 'Lezcano', lat: 12.0980, lng: -86.2310 },
+  { id: 'DS-09', direccion: 'Villa Fontana, Managua', barrio: 'Villa Fontana', lat: 12.0850, lng: -86.2070 },
+  { id: 'DS-10', direccion: 'Bello Horizonte', barrio: 'Bello Horizonte', lat: 12.1300, lng: -86.2800 },
+  { id: 'DS-11', direccion: 'Reparto Schick', barrio: 'Schick', lat: 12.1080, lng: -86.2400 },
+  { id: 'DS-12', direccion: 'Carretera a Masaya', barrio: 'Masaya', lat: 12.0950, lng: -86.2100 },
+  { id: 'DS-13', direccion: 'Centro Histórico, Managua', barrio: 'Centro', lat: 12.1360, lng: -86.2520 },
+  { id: 'DS-14', direccion: 'Col. Centroamérica', barrio: 'Centroamérica', lat: 12.1150, lng: -86.2600 },
+  { id: 'DS-15', direccion: 'Las Colinas', barrio: 'Las Colinas', lat: 12.1250, lng: -86.2480 },
+];
+
 /* ═══════════════════════════════════════════════
    ZUSTAND STORE
    ═══════════════════════════════════════════════ */
@@ -967,6 +1049,20 @@ interface AppState {
   /* SuperAdmin Data */
   auditLog: AuditLogEntry[];
   featureFlags: FeatureFlag[];
+
+  /* Client Data */
+  clientNotificaciones: ClientNotificacion[];
+  direccionesGuardadas: DireccionGuardada[];
+  direccionesSugerencias: DireccionSugerencia[];
+  clientActiveModule: ClientModuleKey;
+  clientModuleFade: boolean;
+  solicitudEnvio: SolicitudEnvio;
+  envioConfirmado: boolean;
+  envioConfirmadoId: string;
+  clientSearchQuery: string;
+  clientEnvioTab: 'activos' | 'historial';
+  clientEnvioFilter: string;
+  clientNotifOpen: boolean;
 
   /* UI State */
   activeModule: ModuleKey;
@@ -1076,6 +1172,21 @@ interface AppState {
   /* SuperAdmin Actions */
   toggleFeatureFlag: (id: string) => void;
   addAuditEntry: (entry: Omit<AuditLogEntry, 'id'>) => void;
+
+  /* Client Actions */
+  setClientActiveModule: (mod: ClientModuleKey) => void;
+  setSolicitudEnvio: (data: Partial<SolicitudEnvio>) => void;
+  resetSolicitudEnvio: () => void;
+  confirmarEnvio: (orderId: string) => void;
+  setClientSearchQuery: (q: string) => void;
+  setClientEnvioTab: (tab: 'activos' | 'historial') => void;
+  setClientEnvioFilter: (filter: string) => void;
+  setClientNotifOpen: (open: boolean) => void;
+  markClientNotifRead: (id: string) => void;
+  markAllClientNotifRead: () => void;
+  addDireccionGuardada: (dir: DireccionGuardada) => void;
+  removeDireccionGuardada: (id: string) => void;
+  validateCodigoPromo: (codigo: string) => { valid: boolean; descuento: number; tipo: string };
 }
 
 let _eventCounter = 100;
@@ -1124,6 +1235,26 @@ export const useStore = create<AppState>((set, get) => ({
   /* SuperAdmin Data */
   auditLog: MOCK_AUDIT_LOG,
   featureFlags: MOCK_FEATURE_FLAGS,
+
+  /* Client Data */
+  clientNotificaciones: MOCK_CLIENT_NOTIFICACIONES,
+  direccionesGuardadas: MOCK_DIRECCIONES_GUARDADAS,
+  direccionesSugerencias: MOCK_DIRECCIONES_SUGERENCIAS,
+  clientActiveModule: 'inicio' as ClientModuleKey,
+  clientModuleFade: false,
+  solicitudEnvio: {
+    origen: '', origenLat: 0, origenLng: 0,
+    destino: '', destinoLat: 0, destinoLng: 0,
+    descripcion: '', tamano: 'pequeno', fragil: false,
+    instrucciones: '', metodoPago: 'efectivo',
+    terminosAceptados: false,
+  },
+  envioConfirmado: false,
+  envioConfirmadoId: '',
+  clientSearchQuery: '',
+  clientEnvioTab: 'activos' as const,
+  clientEnvioFilter: 'todos',
+  clientNotifOpen: false,
 
   /* UI State */
   activeModule: 'overview',
@@ -1422,6 +1553,17 @@ export const useStore = create<AppState>((set, get) => ({
 
   toggleSimulation: () => set((state) => ({ simulationRunning: !state.simulationRunning })),
 
+  /* Toast Actions */
+  addToast: (message, variant = 'info') => {
+    const id = `T-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const toast: ToastItem = { id, message, variant, timestamp: Date.now() };
+    set((state) => ({ toasts: [...state.toasts, toast] }));
+    setTimeout(() => {
+      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+    }, 4000);
+  },
+  removeToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+
   /* Marketing Actions */
   addCampana: (campana) => set((state) => ({ campanas: [campana, ...state.campanas] })),
   updateCampana: (id, updates) => set((state) => ({
@@ -1484,5 +1626,52 @@ export const useStore = create<AppState>((set, get) => ({
   addAuditEntry: (entry) => {
     const id = `AL-${Date.now()}`;
     set((state) => ({ auditLog: [{ ...entry, id }, ...state.auditLog] }));
+  },
+
+  /* Client Actions */
+  setClientActiveModule: (mod) => {
+    const current = get().clientActiveModule;
+    if (mod === current) return;
+    set({ clientModuleFade: true });
+    setTimeout(() => set({ clientActiveModule: mod, clientModuleFade: false }), 200);
+  },
+  setSolicitudEnvio: (data) => set((state) => ({
+    solicitudEnvio: { ...state.solicitudEnvio, ...data },
+  })),
+  resetSolicitudEnvio: () => set({
+    solicitudEnvio: {
+      origen: '', origenLat: 0, origenLng: 0,
+      destino: '', destinoLat: 0, destinoLng: 0,
+      descripcion: '', tamano: 'pequeno', fragil: false,
+      instrucciones: '', metodoPago: 'efectivo',
+      terminosAceptados: false,
+    },
+    envioConfirmado: false,
+    envioConfirmadoId: '',
+  }),
+  confirmarEnvio: (orderId) => set({ envioConfirmado: true, envioConfirmadoId: orderId }),
+  setClientSearchQuery: (q) => set({ clientSearchQuery: q }),
+  setClientEnvioTab: (tab) => set({ clientEnvioTab: tab }),
+  setClientEnvioFilter: (filter) => set({ clientEnvioFilter: filter }),
+  setClientNotifOpen: (open) => set({ clientNotifOpen: open }),
+  markClientNotifRead: (id) => set((state) => ({
+    clientNotificaciones: state.clientNotificaciones.map((n) =>
+      n.id === id ? { ...n, leida: true } : n
+    ),
+  })),
+  markAllClientNotifRead: () => set((state) => ({
+    clientNotificaciones: state.clientNotificaciones.map((n) => ({ ...n, leida: true })),
+  })),
+  addDireccionGuardada: (dir) => set((state) => ({
+    direccionesGuardadas: [...state.direccionesGuardadas, dir],
+  })),
+  removeDireccionGuardada: (id) => set((state) => ({
+    direccionesGuardadas: state.direccionesGuardadas.filter((d) => d.id !== id),
+  })),
+  validateCodigoPromo: (codigo) => {
+    const found = get().codigos.find((c) => c.codigo.toUpperCase() === codigo.toUpperCase() && c.estado === 'activo');
+    if (!found) return { valid: false, descuento: 0, tipo: '' };
+    const descuento = found.tipoDescuento === 'porcentaje' ? found.valor : found.valor;
+    return { valid: true, descuento, tipo: found.tipoDescuento };
   },
 }));

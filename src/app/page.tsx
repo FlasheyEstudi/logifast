@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useSyncExternalStore, Component } from 'react';
 import Dashboard from './dashboard';
+import ClientDashboard from './client-dashboard';
 
 /* ═══════════════════════════════════════════════════════
    SVG ICONS
@@ -268,6 +269,8 @@ export default function Home() {
   /* ─── View state ─── */
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'register' | 'dashboard'>('landing');
   const [viewTransition, setViewTransition] = useState<'enter' | 'exit' | null>(null);
+  const [loginRole, setLoginRole] = useState<string>('admin');
+  const [loginUserName, setLoginUserName] = useState<string>('Administrador');
 
   /* ─── Landing state ─── */
   const [navScrolled, setNavScrolled] = useState(false);
@@ -420,6 +423,8 @@ export default function Home() {
     setLoginLoading(true);
     setTimeout(() => {
       setLoginLoading(false);
+      setLoginRole(demoEntry[0]);
+      setLoginUserName(demoEntry[1].name);
       addToast(`Bienvenido, ${demoEntry[1].name}`, 'Redirigiendo al dashboard...', 'success');
       setTimeout(() => setLoginRedirect(true), 1500);
       setTimeout(() => {
@@ -437,6 +442,8 @@ export default function Home() {
     setLoginEmail(cred.email);
     setLoginPassword(cred.password);
     setLoginErrors({});
+    setLoginRole(role);
+    setLoginUserName(cred.name);
     setLoginLoading(true);
     setTimeout(() => {
       setLoginLoading(false);
@@ -479,6 +486,8 @@ export default function Home() {
     setLoginEmail('');
     setLoginPassword('');
     setLoginErrors({});
+    setLoginRole('admin');
+    setLoginUserName('Administrador');
     setRegName('');
     setRegEmail('');
     setRegPassword('');
@@ -505,6 +514,11 @@ export default function Home() {
      DASHBOARD VIEW
      ═══════════════════════════════════════════════════════ */
   if (currentView === 'dashboard') {
+    if (loginRole === 'cliente') {
+      return (
+        <ClientDashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
+      );
+    }
     return (
       <DashboardErrorBoundary onGoHome={() => setCurrentView('landing')}>
         <Dashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
