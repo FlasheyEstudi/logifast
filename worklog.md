@@ -356,3 +356,32 @@ Stage Summary:
 - Expandable history items with full details
 - All data from store, no hardcoded data
 - Smooth animations via framer-motion
+---
+Task ID: 9
+Agent: Main
+Task: Build complete Client Experience (Rol Cliente) - Shell, 4 modules, integration
+
+Work Log:
+- Added client types to store.ts: ClientNotificacion, DireccionGuardada, SolicitudEnvio, ClientModuleKey, DireccionSugerencia
+- Added client mock data: 5 notifications, 3 saved addresses, 15 address suggestions
+- Added client store state: clientActiveModule, solicitudEnvio, envioConfirmado, searchQuery, envioTab, etc.
+- Added client store actions: setClientActiveModule, setSolicitudEnvio, resetSolicitudEnvio, confirmarEnvio, validateCodigoPromo, etc.
+- Fixed missing toast actions (addToast, removeToast) in store implementation
+- Created ClientShell.tsx (998 lines): header with notifications/avatar dropdowns, desktop pills, mobile bottom nav with elevated "Enviar" button, glassmorphism, module routing
+- Created ClientInicio.tsx (1151 lines): greeting, search, banner carousel, quick send CTA, active shipment card, feed items, recent shipment shortcut, client stats
+- Created ClientSolicitar.tsx (1812 lines): 4-step wizard (addresses with autocomplete, package details with size/fragile, payment with promo codes, confirmation with animated checkmark)
+- Created ClientEnvios.tsx (980 lines): active tab with timeline/tracking simulation, history tab with filters/search, report problem modal, client metrics
+- Created ClientPerfil.tsx (1003 lines): personal info with inline edit, Recharts bar chart, saved addresses CRUD, settings with toggles, danger zone with logout/delete account
+- Created client-dashboard.tsx: wrapper with error boundary and dynamic import
+- Updated page.tsx: added ClientDashboard import, loginRole/loginUserName state, role-based routing (cliente → ClientDashboard, others → admin Dashboard)
+- Changed demo client name from "Cliente Demo" to "María López" to match store mock data
+- Fixed TypeScript errors: ease tuple cast, toast variant 'default'→'info', onLogout prop passing
+- All client component TS errors resolved, lint passes with 0 new errors
+
+Stage Summary:
+- Complete client experience built with 6000+ lines across 6 files
+- 4 modules: Inicio (feed+CTA), Solicitar (4-step wizard), Envios (tracking), Perfil (settings)
+- App-like interface with bottom nav, glassmorphism, framer-motion animations
+- Real-time tracking simulation, promo code validation, address autocomplete
+- Role-based routing: cliente → client shell, admin/repartidor/ingeniero → admin dashboard
+- Dark mode support, responsive design, consistent with LOGIFAST design system

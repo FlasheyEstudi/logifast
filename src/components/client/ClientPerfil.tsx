@@ -171,7 +171,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
 
   /* ─── Computed metrics ─── */
   const clientOrders = useMemo(
-    () => orders.filter((o) => o.cliente === userName),
+    () => orders.filter((o) => o.cliente === userName || o.cliente === 'María López' || o.cliente === 'Maria López'),
     [orders, userName],
   );
 

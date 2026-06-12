@@ -172,6 +172,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   const renderModule = () => {
     const moduleProps = { isDark, userName, onNavigate: handleNav };
+    const perfilProps = { ...moduleProps, onLogout };
     switch (clientActiveModule) {
       case 'inicio':
         return <ClientInicio {...moduleProps} />;
@@ -180,7 +181,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       case 'envios':
         return <ClientEnvios {...moduleProps} />;
       case 'perfil':
-        return <ClientPerfil {...moduleProps} />;
+        return <ClientPerfil {...perfilProps} />;
       default:
         return <ClientInicio {...moduleProps} />;
     }

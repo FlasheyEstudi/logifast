@@ -770,12 +770,12 @@ export default function ClientEnvios({ isDark, userName, onNavigate }: ClientEnv
   }, []);
 
   const handleReportSubmit = useCallback(() => {
-    addToast(`Reporte enviado para ${reportModal.orderId}`, 'default');
+    addToast(`Reporte enviado para ${reportModal.orderId}`, 'info');
     setReportModal({ open: false, orderId: '', reason: '', description: '' });
   }, [reportModal.orderId, addToast]);
 
   const handleDownload = useCallback((orderId: string) => {
-    addToast(`Descargando comprobante de ${orderId}...`, 'default');
+    addToast(`Descargando comprobante de ${orderId}...`, 'info');
   }, [addToast]);
 
   /* ── Client metrics ── */

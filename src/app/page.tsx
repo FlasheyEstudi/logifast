@@ -93,7 +93,7 @@ interface ToastItem {
    ═══════════════════════════════════════════════════════ */
 
 const demoCredentials: Record<string, { email: string; password: string; name: string }> = {
-  cliente: { email: 'cliente@logifast.com', password: '123456', name: 'Cliente Demo' },
+  cliente: { email: 'cliente@logifast.com', password: '123456', name: 'María López' },
   repartidor: { email: 'repartidor@logifast.com', password: '123456', name: 'Repartidor Demo' },
   admin: { email: 'admin@logifast.com', password: '123456', name: 'Administrador' },
   ingeniero: { email: 'ingeniero@logifast.com', password: '123456', name: 'Ingeniero Demo' },
