@@ -1,0 +1,2002 @@
+     1→     1→import { create } from 'zustand';
+     2→     2→
+     3→     3→/* ═══════════════════════════════════════════════
+     4→     4→   TYPES
+     5→     5→   ═══════════════════════════════════════════════ */
+     6→     6→
+     7→     7→export type OrderStatus = 'pendiente' | 'encamino' | 'recogido' | 'entregado' | 'incidencia' | 'programada';
+     8→     8→export type MotoStatus = 'available' | 'in-service' | 'maintenance';
+     9→     9→export type RiderStatus = 'available' | 'in-service' | 'offline';
+    10→    10→export type PaymentMethod = 'efectivo' | 'transferencia';
+    11→    11→export type PaymentStatus = 'pendiente' | 'pagado' | 'reembolsado';
+    12→    12→
+    13→    13→export interface Order {
+    14→    14→  id: string;
+    15→    15→  cliente: string;
+    16→    16→  clienteTelefono: string;
+    17→    17→  origen: string;
+    18→    18→  destino: string;
+    19→    19→  origenLat: number;
+    20→    20→  origenLng: number;
+    21→    21→  destinoLat: number;
+    22→    22→  destinoLng: number;
+    23→    23→  repartidor: string | null;
+    24→    24→  repartidorInitials: string;
+    25→    25→  descripcion: string;
+    26→    26→  monto: number;
+    27→    27→  estado: OrderStatus;
+    28→    28→  metodoPago: PaymentMethod;
+    29→    29→  estadoPago: PaymentStatus;
+    30→    30→  fecha: string;
+    31→    31→  hora: string;
+    32→    32→  calificacion?: number;
+    33→    33→  timeline: { step: string; hora: string; completado: boolean }[];
+    34→    34→}
+    35→    35→
+    36→    36→export interface Moto {
+    37→    37→  id: string;
+    38→    38→  nombre: string;
+    39→    39→  modelo: string;
+    40→    40→  anio: number;
+    41→    41→  placa: string;
+    42→    42→  status: MotoStatus;
+    43→    43→  lat: number;
+    44→    44→  lng: number;
+    45→    45→  km: number;
+    46→    46→  repartidorAsignado: string | null;
+    47→    47→  ultimoMantenimiento: string;
+    48→    48→  proximoMantenimiento: string;
+    49→    49→  costoTotalMantenimiento: number;
+    50→    50→}
+    51→    51→
+    52→    52→export interface Rider {
+    53→    53→  id: string;
+    54→    54→  nombre: string;
+    55→    55→  email: string;
+    56→    56→  telefono: string;
+    57→    57→  initials: string;
+    58→    58→  color: string;
+    59→    59→  status: RiderStatus;
+    60→    60→  motoId: string | null;
+    61→    61→  entregasHoy: number;
+    62→    62→  kmHoy: number;
+    63→    63→  entregasTotal: number;
+    64→    64→  kmTotal: number;
+    65→    65→  calificacion: number;
+    66→    66→  conectado: boolean;
+    67→    67→}
+    68→    68→
+    69→    69→export interface Alert {
+    70→    70→  id: string;
+    71→    71→  tipo: 'mantenimiento' | 'bateria' | 'incidencia' | 'retraso';
+    72→    72→  titulo: string;
+    73→    73→  msg: string;
+    74→    74→  motoId: string;
+    75→    75→  tiempo: string;
+    76→    76→  severidad: 'alta' | 'media' | 'baja';
+    77→    77→}
+    78→    78→
+    79→    79→export interface Zone {
+    80→    80→  id: string;
+    81→    81→  nombre: string;
+    82→    82→  tarifa: number;
+    83→    83→  activa: boolean;
+    84→    84→}
+    85→    85→
+    86→    86→export interface MaintenanceRule {
+    87→    87→  id: string;
+    88→    88→  tipo: string;
+    89→    89→  umbralKm: number;
+    90→    90→  descripcion: string;
+    91→    91→}
+    92→    92→
+    93→    93→export interface CompanyData {
+    94→    94→  nombre: string;
+    95→    95→  direccion: string;
+    96→    96→  telefono: string;
+    97→    97→  email: string;
+    98→    98→}
+    99→    99→
+   100→   100→export interface SystemUser {
+   101→   101→  id: string;
+   102→   102→  nombre: string;
+   103→   103→  email: string;
+   104→   104→  rol: string;
+   105→   105→  activo: boolean;
+   106→   106→}
+   107→   107→
+   108→   108→export interface DailyRevenue {
+   109→   109→  dia: string;
+   110→   110→  monto: number;
+   111→   111→}
+   112→   112→
+   113→   113→export interface MonthlyRevenue {
+   114→   114→  mes: string;
+   115→   115→  monto: number;
+   116→   116→}
+   117→   117→
+   118→   118→export interface ZoneOrder {
+   119→   119→  zona: string;
+   120→   120→  cantidad: number;
+   121→   121→}
+   122→   122→
+   123→   123→export interface RiderPerformance {
+   124→   124→  nombre: string;
+   125→   125→  entregas: number;
+   126→   126→}
+   127→   127→
+   128→   128→/* ─── New Types ─── */
+   129→   129→
+   130→   130→export interface Incident {
+   131→   131→  id: string;
+   132→   132→  orderId: string;
+   133→   133→  tipo: 'falla_mecanica' | 'problema_cliente' | 'accidente' | 'retraso' | 'paquete_danado';
+   134→   134→  titulo: string;
+   135→   135→  descripcion: string;
+   136→   136→  repartidor: string;
+   137→   137→  motoId: string;
+   138→   138→  gravedad: 'alta' | 'media' | 'baja';
+   139→   139→  estado: 'activa' | 'resuelta';
+   140→   140→  lat: number;
+   141→   141→  lng: number;
+   142→   142→  timestamp: string;
+   143→   143→  resolucion?: string;
+   144→   144→  tiempoResolucion?: string;
+   145→   145→}
+   146→   146→
+   147→   147→export interface Client {
+   148→   148→  id: string;
+   149→   149→  nombre: string;
+   150→   150→  email: string;
+   151→   151→  telefono: string;
+   152→   152→  direccion: string;
+   153→   153→  totalEnvios: number;
+   154→   154→  montoTotal: number;
+   155→   155→  ultimoEnvio: string;
+   156→   156→  zonaFrecuente: string;
+   157→   157→}
+   158→   158→
+   159→   159→export interface ActivityEvent {
+   160→   160→  id: string;
+   161→   161→  tipo: 'orden' | 'flota' | 'repartidor' | 'incidencia' | 'config' | 'finanzas';
+   162→   162→  titulo: string;
+   163→   163→  detalle: string;
+   164→   164→  timestamp: string;
+   165→   165→  leido: boolean;
+   166→   166→}
+   167→   167→
+   168→   168→export interface PaymentConciliation {
+   169→   169→  id: string;
+   170→   170→  repartidor: string;
+   171→   171→  monto: number;
+   172→   172→  fecha: string;
+   173→   173→  estado: 'pendiente' | 'conciliado';
+   174→   174→}
+   175→   175→
+   176→   176→export interface ZonePolygon {
+   177→   177→  id: string;
+   178→   178→  nombre: string;
+   179→   179→  color: string;
+   180→   180→  coords: [number, number][];
+   181→   181→}
+   182→   182→
+   183→   183→export type ToastVariant = 'success' | 'error' | 'info';
+   184→   184→
+   185→   185→export interface ToastItem {
+   186→   186→  id: string;
+   187→   187→  message: string;
+   188→   188→  variant: ToastVariant;
+   189→   189→  timestamp: number;
+   190→   190→}
+   191→   191→
+   192→   192→/* ─── Marketing Types ─── */
+   193→   193→
+   194→   194→export interface Campana {
+   195→   195→  id: string;
+   196→   196→  titulo: string;
+   197→   197→  tipo: 'push' | 'email' | 'sms';
+   198→   198→  segmento: string;
+   199→   199→  contenido: { titulo?: string; cuerpo: string; boton?: string };
+   200→   200→  estado: 'borrador' | 'programada' | 'enviada' | 'fallida';
+   201→   201→  programadaPara?: string;
+   202→   202→  enviadaEn?: string;
+   203→   203→  destinatarios: number;
+   204→   204→  abiertos: number;
+   205→   205→  clicks: number;
+   206→   206→  creadoPor: string;
+   207→   207→  createdAt: string;
+   208→   208→}
+   209→   209→
+   210→   210→export interface CodigoPromocional {
+   211→   211→  id: string;
+   212→   212→  codigo: string;
+   213→   213→  tipoDescuento: 'porcentaje' | 'monto';
+   214→   214→  valor: number;
+   215→   215→  aplicableA: string;
+   216→   216→  montoMinimo?: number;
+   217→   217→  maxUsos: number;
+   218→   218→  usosActuales: number;
+   219→   219→  segmento: string;
+   220→   220→  vigenciaInicio: string;
+   221→   221→  vigenciaFin: string;
+   222→   222→  estado: 'activo' | 'agotado' | 'expirado' | 'pausado';
+   223→   223→  creadoPor: string;
+   224→   224→  createdAt: string;
+   225→   225→}
+   226→   226→
+   227→   227→export interface Banner {
+   228→   228→  id: string;
+   229→   229→  titulo: string;
+   230→   230→  subtitulo?: string;
+   231→   231→  tipo: 'promo_grande' | 'tarjeta_compacta' | 'slider' | 'notificacion';
+   232→   232→  colorFondo: string;
+   233→   233→  gradiente?: { from: string; to: string; direction: string };
+   234→   234→  colorTexto: string;
+   235→   235→  imagenUrl?: string;
+   236→   236→  botonTexto?: string;
+   237→   237→  botonAccion?: string;
+   238→   238→  botonLink?: string;
+   239→   239→  icono?: string;
+   240→   240→  segmento: string;
+   241→   241→  mostrarEn: string;
+   242→   242→  posicion: number;
+   243→   243→  estado: 'activo' | 'inactivo' | 'programado';
+   244→   244→  impresiones: number;
+   245→   245→  clicks: number;
+   246→   246→  programadoDesde?: string;
+   247→   247→  programadoHasta?: string;
+   248→   248→  creadoPor: string;
+   249→   249→  createdAt: string;
+   250→   250→}
+   251→   251→
+   252→   252→export interface FeedItem {
+   253→   253→  id: string;
+   254→   254→  tipo: 'anuncio' | 'promocion' | 'novedad' | 'encuesta' | 'recordatorio';
+   255→   255→  titulo: string;
+   256→   256→  descripcion: string;
+   257→   257→  icono?: string;
+   258→   258→  botonTexto?: string;
+   259→   259→  botonLink?: string;
+   260→   260→  codigoPromo?: string;
+   261→   261→  segmento: string;
+   262→   262→  posicion: number;
+   263→   263→  estado: 'activo' | 'inactivo';
+   264→   264→  impresiones: number;
+   265→   265→  clicks: number;
+   266→   266→  creadoPor: string;
+   267→   267→  createdAt: string;
+   268→   268→}
+   269→   269→
+   270→   270→export interface PlantillaMensaje {
+   271→   271→  id: string;
+   272→   272→  nombre: string;
+   273→   273→  categoria: 'orden' | 'incidencia' | 'promocion' | 'general';
+   274→   274→  contenido: string;
+   275→   275→  variables: string[];
+   276→   276→  esDefault: boolean;
+   277→   277→  createdAt: string;
+   278→   278→}
+   279→   279→
+   280→   280→export interface MensajeDirecto {
+   281→   281→  id: string;
+   282→   282→  emisorId: string;
+   283→   283→  emisorNombre: string;
+   284→   284→  receptorId: string;
+   285→   285→  receptorNombre: string;
+   286→   286→  contenido: string;
+   287→   287→  leido: boolean;
+   288→   288→  enviadoEn: string;
+   289→   289→}
+   290→   290→
+   291→   291→export interface Conversacion {
+   292→   292→  id: string;
+   293→   293→  participanteId: string;
+   294→   294→  participanteNombre: string;
+   295→   295→  participanteRol: 'cliente' | 'repartidor';
+   296→   296→  ultimoMensaje: string;
+   297→   297→  ultimoTimestamp: string;
+   298→   298→  noLeidos: number;
+   299→   299→  mensajes: MensajeDirecto[];
+   300→   300→}
+   301→   301→
+   302→   302→export interface NotificacionAutomatica {
+   303→   303→  id: string;
+   304→   304→  evento: string;
+   305→   305→  etiqueta: string;
+   306→   306→  activa: boolean;
+   307→   307→  canal: 'push' | 'email' | 'sms' | 'todos';
+   308→   308→  plantilla: string;
+   309→   309→  destinatario: 'cliente' | 'repartidor' | 'admin' | 'ingeniero';
+   310→   310→}
+   311→   311→
+   312→   312→/* ─── Config Types ─── */
+   313→   313→
+   314→   314→export interface ConfiguracionHorario {
+   315→   315→  id: string;
+   316→   316→  dia: number;
+   317→   317→  horaInicio: string;
+   318→   318→  horaFin: string;
+   319→   319→  activo: boolean;
+   320→   320→  recargoNocturno: number;
+   321→   321→}
+   322→   322→
+   323→   323→export interface Feriado {
+   324→   324→  id: string;
+   325→   325→  fecha: string;
+   326→   326→  nombre: string;
+   327→   327→  recargo: number;
+   328→   328→}
+   329→   329→
+   330→   330→export interface Integracion {
+   331→   331→  id: string;
+   332→   332→  nombre: string;
+   333→   333→  descripcion: string;
+   334→   334→  icono: string;
+   335→   335→  estado: 'conectado' | 'no_configurado';
+   336→   336→}
+   337→   337→
+   338→   338→/* ─── SuperAdmin Types ─── */
+   339→   339→
+   340→   340→export interface AuditLogEntry {
+   341→   341→  id: string;
+   342→   342→  userId: string;
+   343→   343→  usuario: string;
+   344→   344→  accion: string;
+   345→   345→  recurso: string;
+   346→   346→  recursoId?: string;
+   347→   347→  detalles?: string;
+   348→   348→  ip?: string;
+   349→   349→  dispositivo?: string;
+   350→   350→  createdAt: string;
+   351→   351→}
+   352→   352→
+   353→   353→export interface FeatureFlag {
+   354→   354→  id: string;
+   355→   355→  nombre: string;
+   356→   356→  descripcion: string;
+   357→   357→  habilitado: boolean;
+   358→   358→}
+   359→   359→
+   360→   360→export interface MarketingKPI {
+   361→   361→  clientesActivosMes: number;
+   362→   362→  tendenciaActivos: number;
+   363→   363→  tasaRetencion: number;
+   364→   364→  frecuenciaPromedio: number;
+   365→   365→  valorPromedioEnvio: number;
+   366→   366→  costoAdquisicion: number;
+   367→   367→}
+   368→   368→
+   369→   369→/* ─── Client Experience Types ─── */
+   370→   370→
+   371→   371→export interface ClientNotificacion {
+   372→   372→  id: string;
+   373→   373→  tipo: 'orden_confirmada' | 'repartidor_asignado' | 'repartidor_camino' | 'paquete_recogido' | 'entrega_exitosa' | 'incidencia' | 'codigo_nuevo' | 'te_extranamos';
+   374→   374→  titulo: string;
+   375→   375→  descripcion: string;
+   376→   376→  leida: boolean;
+   377→   377→  relacionadoId?: string;
+   378→   378→  timestamp: string;
+   379→   379→}
+   380→   380→
+   381→   381→export interface DireccionGuardada {
+   382→   382→  id: string;
+   383→   383→  etiqueta: string;
+   384→   384→  direccion: string;
+   385→   385→  lat: number;
+   386→   386→  lng: number;
+   387→   387→}
+   388→   388→
+   389→   389→export interface SolicitudEnvio {
+   390→   390→  origen: string;
+   391→   391→  origenLat: number;
+   392→   392→  origenLng: number;
+   393→   393→  destino: string;
+   394→   394→  destinoLat: number;
+   395→   395→  destinoLng: number;
+   396→   396→  descripcion: string;
+   397→   397→  tamano: 'pequeno' | 'mediano' | 'grande';
+   398→   398→  fragil: boolean;
+   399→   399→  instrucciones: string;
+   400→   400→  metodoPago: 'efectivo' | 'transferencia';
+   401→   401→  montoPago?: number;
+   402→   402→  codigoPromo?: string;
+   403→   403→  descuento?: number;
+   404→   404→  terminosAceptados: boolean;
+   405→   405→}
+   406→   406→
+   407→   407→export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'perfil';
+   408→   408→
+   409→   409→export interface DireccionSugerencia {
+   410→   410→  id: string;
+   411→   411→  direccion: string;
+   412→   412→  barrio: string;
+   413→   413→  lat: number;
+   414→   414→  lng: number;
+   415→   415→}
+   416→   416→
+   417→   417→/* ─── V2 Types: Tracking, Chat, Ratings, Loyalty, Referrals ─── */
+   418→   418→
+   419→   419→export interface TrackingStep {
+   420→   420→  id: string;
+   421→   421→  label: string;
+   422→   422→  timestamp: string; // '—' if pending
+   423→   423→  status: 'completed' | 'current' | 'pending';
+   424→   424→}
+   425→   425→
+   426→   426→export const TRACKING_STEPS_TEMPLATE: TrackingStep[] = [
+   427→   427→  { id: 's1', label: 'Orden creada', timestamp: '—', status: 'pending' },
+   428→   428→  { id: 's2', label: 'Repartidor asignado', timestamp: '—', status: 'pending' },
+   429→   429→  { id: 's3', label: 'Repartidor en camino a recoger', timestamp: '—', status: 'pending' },
+   430→   430→  { id: 's4', label: 'Repartidor en punto de recogida', timestamp: '—', status: 'pending' },
+   431→   431→  { id: 's5', label: 'Paquete recogido', timestamp: '—', status: 'pending' },
+   432→   432→  { id: 's6', label: 'En camino a destino', timestamp: '—', status: 'pending' },
+   433→   433→  { id: 's7', label: 'Repartidor en punto de entrega', timestamp: '—', status: 'pending' },
+   434→   434→  { id: 's8', label: 'Entrega confirmada', timestamp: '—', status: 'pending' },
+   435→   435→];
+   436→   436→
+   437→   437→export interface RepartidorInfo {
+   438→   438→  id: string;
+   439→   439→  nombre: string;
+   440→   440→  initials: string;
+   441→   441→  color: string;
+   442→   442→  calificacion: number;
+   443→   443→  totalEntregas: number;
+   444→   444→  moto: string;
+   445→   445→  telefono: string;
+   446→   446→  lat: number;
+   447→   447→  lng: number;
+   448→   448→}
+   449→   449→
+   450→   450→export interface ChatMessage {
+   451→   451→  id: string;
+   452→   452→  senderId: string;
+   453→   453→  senderName: string;
+   454→   454→  senderType: 'cliente' | 'repartidor' | 'sistema';
+   455→   455→  content: string;
+   456→   456→  timestamp: string;
+   457→   457→  read: boolean;
+   458→   458→}
+   459→   459→
+   460→   460→export interface ChatConversation {
+   461→   461→  id: string;
+   462→   462→  orderId: string;
+   463→   463→  repartidor: RepartidorInfo;
+   464→   464→  messages: ChatMessage[];
+   465→   465→  active: boolean;
+   466→   466→  closedAt?: string;
+   467→   467→}
+   468→   468→
+   469→   469→export interface Calificacion {
+   470→   470→  id: string;
+   471→   471→  orderId: string;
+   472→   472→  repartidorId: string;
+   473→   473→  repartidorNombre: string;
+   474→   474→  estrellas: number;
+   475→   475→  etiquetas: string[];
+   476→   476→  comentario: string;
+   477→   477→  favorito: boolean;
+   478→   478→  fecha: string;
+   479→   479→  editable: boolean; // within 24h
+   480→   480→}
+   481→   481→
+   482→   482→export type NivelFidelizacion = 'bronce' | 'plata' | 'oro' | 'platino';
+   483→   483→
+   484→   484→export interface PuntosHistorial {
+   485→   485→  id: string;
+   486→   486→  fecha: string;
+   487→   487→  accion: string;
+   488→   488→  puntos: number; // positive = earned, negative = spent
+   489→   489→}
+   490→   490→
+   491→   491→export interface DatosFidelizacion {
+   492→   492→  puntos: number;
+   493→   493→  nivel: NivelFidelizacion;
+   494→   494→  historial: PuntosHistorial[];
+   495→   495→}
+   496→   496→
+   497→   497→export interface Referido {
+   498→   498→  id: string;
+   499→   499→  nombre: string;
+   500→   500→  fechaRegistro: string;
+   501→   501→  primerEnvio: boolean;
+   502→   502→}
+   503→   503→
+   504→   504→export interface DatosReferidos {
+   505→   505→  codigo: string;
+   506→   506→  link: string;
+   507→   507→  referidos: Referido[];
+   508→   508→  puntosGanados: number;
+   509→   509→}
+   510→   510→
+   511→   511→export interface DireccionGuardadaV2 {
+   512→   512→  id: string;
+   513→   513→  etiqueta: 'casa' | 'trabajo' | 'novia' | 'mama' | 'otro';
+   514→   514→  etiquetaCustom?: string;
+   515→   515→  direccion: string;
+   516→   516→  lat: number;
+   517→   517→  lng: number;
+   518→   518→  instrucciones: string;
+   519→   519→  horarioPreferido: string;
+   520→   520→}
+   521→   521→
+   522→   522→/* ═══════════════════════════════════════════════
+   523→   523→   MOCK DATA
+   524→   524→   ═══════════════════════════════════════════════ */
+   525→   525→
+   526→   526→const MANAGUA_ORDERS: Order[] = [
+   527→   527→  {
+   528→   528→    id: 'LF-2847', cliente: 'María López', clienteTelefono: '+505 8888-1234',
+   529→   529→    origen: 'Metrocentro, Managua', destino: 'Col. Los Robles, Managua',
+   530→   530→    origenLat: 12.1150, origenLng: -86.2362, destinoLat: 12.1245, destinoLng: -86.2520,
+   531→   531→    repartidor: 'Carlos Mendoza', repartidorInitials: 'CM',
+   532→   532→    descripcion: 'Sobre documentos importantes', monto: 120, estado: 'encamino',
+   533→   533→    metodoPago: 'transferencia', estadoPago: 'pagado', fecha: '2026-06-10', hora: '14:30',
+   534→   534→    calificacion: undefined,
+   535→   535→    timeline: [
+   536→   536→      { step: 'Orden creada', hora: '14:30', completado: true },
+   537→   537→      { step: 'En camino', hora: '14:35', completado: true },
+   538→   538→      { step: 'Recogida', hora: '—', completado: false },
+   539→   539→      { step: 'Entregada', hora: '—', completado: false },
+   540→   540→    ],
+   541→   541→  },
+   542→   542→  {
+   543→   543→    id: 'LF-2846', cliente: 'Pedro Ruiz', clienteTelefono: '+505 8888-5678',
+   544→   544→    origen: 'Universidad Centroamericana', destino: 'Barrio Monseñor Lezcano',
+   545→   545→    origenLat: 12.1029, origenLng: -86.2545, destinoLat: 12.0980, destinoLng: -86.2310,
+   546→   546→    repartidor: 'Ana Torres', repartidorInitials: 'AT',
+   547→   547→    descripcion: 'Paquete mediano, fragil', monto: 85, estado: 'entregado',
+   548→   548→    metodoPago: 'efectivo', estadoPago: 'pagado', fecha: '2026-06-10', hora: '10:15',
+   549→   549→    calificacion: 5,
+   550→   550→    timeline: [
+   551→   551→      { step: 'Orden creada', hora: '10:15', completado: true },
+   552→   552→      { step: 'En camino', hora: '10:20', completado: true },
+   553→   553→      { step: 'Recogida', hora: '10:32', completado: true },
+   554→   554→      { step: 'Entregada', hora: '10:58', completado: true },
+   555→   555→    ],
+   556→   556→  },
+   557→   557→  {
+   558→   558→    id: 'LF-2845', cliente: 'Sofía Chamorro', clienteTelefono: '+505 8888-9012',
+   559→   559→    origen: 'Galerías Santo Domingo', destino: 'Villa Fontana, Managua',
+   560→   560→    origenLat: 12.0900, origenLng: -86.2180, destinoLat: 12.0850, destinoLng: -86.2070,
+   561→   561→    repartidor: null, repartidorInitials: '',
+   562→   562→    descripcion: 'Compras de tienda', monto: 200, estado: 'pendiente',
+   563→   563→    metodoPago: 'transferencia', estadoPago: 'pendiente', fecha: '2026-06-10', hora: '15:00',
+   564→   564→    timeline: [
+   565→   565→      { step: 'Orden creada', hora: '15:00', completado: true },
+   566→   566→      { step: 'En camino', hora: '—', completado: false },
+   567→   567→      { step: 'Recogida', hora: '—', completado: false },
+   568→   568→      { step: 'Entregada', hora: '—', completado: false },
+   569→   569→    ],
+   570→   570→  },
+   571→   571→  {
+   572→   572→    id: 'LF-2844', cliente: 'Diego Soto', clienteTelefono: '+505 8888-3456',
+   573→   573→    origen: 'Plaza Inter', destino: 'Bello Horizonte',
+   574→   574→    origenLat: 12.1180, origenLng: -86.2650, destinoLat: 12.1300, destinoLng: -86.2800,
+   575→   575→    repartidor: 'Luis Ramos', repartidorInitials: 'LR',
+   576→   576→    descripcion: 'Documentos legales', monto: 150, estado: 'recogido',
+   577→   577→    metodoPago: 'efectivo', estadoPago: 'pagado', fecha: '2026-06-10', hora: '13:45',
+   578→   578→    timeline: [
+   579→   579→      { step: 'Orden creada', hora: '13:45', completado: true },
+   580→   580→      { step: 'En camino', hora: '13:50', completado: true },
+   581→   581→      { step: 'Recogida', hora: '14:05', completado: true },
+   582→   582→      { step: 'Entregada', hora: '—', completado: false },
+   583→   583→    ],
+   584→   584→  },
+   585→   585→  {
+   586→   586→    id: 'LF-2843', cliente: 'Laura Vega', clienteTelefono: '+505 8888-7890',
+   587→   587→    origen: 'Mercado Oriental', destino: 'Centro Histórico, Managua',
+   588→   588→    origenLat: 12.1320, origenLng: -86.2220, destinoLat: 12.1360, destinoLng: -86.2520,
+   589→   589→    repartidor: 'Carlos Mendoza', repartidorInitials: 'CM',
+   590→   590→    descripcion: 'Productos varios', monto: 95, estado: 'entregado',
+   591→   591→    metodoPago: 'efectivo', estadoPago: 'pagado', fecha: '2026-06-09', hora: '16:20',
+   592→   592→    calificacion: 4,
+   593→   593→    timeline: [
+   594→   594→      { step: 'Orden creada', hora: '16:20', completado: true },
+   595→   595→      { step: 'En camino', hora: '16:25', completado: true },
+   596→   596→      { step: 'Recogida', hora: '16:40', completado: true },
+   597→   597→      { step: 'Entregada', hora: '17:05', completado: true },
+   598→   598→    ],
+   599→   599→  },
+   600→   600→  {
+   601→   601→    id: 'LF-2842', cliente: 'Roberto Martínez', clienteTelefono: '+505 8888-2345',
+   602→   602→    origen: 'Reparto Schick', destino: 'Col. Centroamérica',
+   603→   603→    origenLat: 12.1080, origenLng: -86.2400, destinoLat: 12.1150, destinoLng: -86.2600,
+   604→   604→    repartidor: 'Ana Torres', repartidorInitials: 'AT',
+   605→   605→    descripcion: 'Equipo electrónico', monto: 175, estado: 'incidencia',
+   606→   606→    metodoPago: 'transferencia', estadoPago: 'reembolsado', fecha: '2026-06-09', hora: '11:00',
+   607→   607→    timeline: [
+   608→   608→      { step: 'Orden creada', hora: '11:00', completado: true },
+   609→   609→      { step: 'En camino', hora: '11:05', completado: true },
+   610→   610→      { step: 'Recogida', hora: '11:20', completado: true },
+   611→   611→      { step: 'Entregada', hora: '—', completado: false },
+   612→   612→    ],
+   613→   613→  },
+   614→   614→  {
+   615→   615→    id: 'LF-2841', cliente: 'Carmen Ríos', clienteTelefono: '+505 8888-6789',
+   616→   616→    origen: 'Hospital Metropolitano', destino: 'Altamira, Managua',
+   617→   617→    origenLat: 12.1050, origenLng: -86.2450, destinoLat: 12.1200, destinoLng: -86.2700,
+   618→   618→    repartidor: 'Jorge Pérez', repartidorInitials: 'JP',
+   619→   619→    descripcion: 'Medicamentos', monto: 110, estado: 'entregado',
+   620→   620→    metodoPago: 'efectivo', estadoPago: 'pagado', fecha: '2026-06-09', hora: '09:30',
+   621→   621→    calificacion: 5,
+   622→   622→    timeline: [
+   623→   623→      { step: 'Orden creada', hora: '09:30', completado: true },
+   624→   624→      { step: 'En camino', hora: '09:35', completado: true },
+   625→   625→      { step: 'Recogida', hora: '09:48', completado: true },
+   626→   626→      { step: 'Entregada', hora: '10:10', completado: true },
+   627→   627→    ],
+   628→   628→  },
+   629→   629→  {
+   630→   630→    id: 'LF-2840', cliente: 'Andrés Cruz', clienteTelefono: '+505 8888-0123',
+   631→   631→    origen: 'Carretera a Masaya', destino: 'Santo Domingo, Managua',
+   632→   632→    origenLat: 12.0950, origenLng: -86.2100, destinoLat: 12.0880, destinoLng: -86.1950,
+   633→   633→    repartidor: 'Luis Ramos', repartidorInitials: 'LR',
+   634→   634→    descripcion: 'Caja grande, 15kg', monto: 230, estado: 'encamino',
+   635→   635→    metodoPago: 'transferencia', estadoPago: 'pagado', fecha: '2026-06-09', hora: '15:45',
+   636→   636→    timeline: [
+   637→   637→      { step: 'Orden creada', hora: '15:45', completado: true },
+   638→   638→      { step: 'En camino', hora: '15:52', completado: true },
+   639→   639→      { step: 'Recogida', hora: '—', completado: false },
+   640→   640→      { step: 'Entregada', hora: '—', completado: false },
+   641→   641→    ],
+   642→   642→  },
+   643→   643→  {
+   644→   644→    id: 'LF-2839', cliente: 'Isabel Torres', clienteTelefono: '+505 8888-4567',
+   645→   645→    origen: 'Las Colinas', destino: 'Col. Los Robles',
+   646→   646→    origenLat: 12.1250, origenLng: -86.2480, destinoLat: 12.1245, destinoLng: -86.2520,
+   647→   647→    repartidor: null, repartidorInitials: '',
+   648→   648→    descripcion: 'Invitaciones impresión', monto: 65, estado: 'pendiente',
+   649→   649→    metodoPago: 'efectivo', estadoPago: 'pendiente', fecha: '2026-06-08', hora: '12:00',
+   650→   650→    timeline: [
+   651→   651→      { step: 'Orden creada', hora: '12:00', completado: true },
+   652→   652→      { step: 'En camino', hora: '—', completado: false },
+   653→   653→      { step: 'Recogida', hora: '—', completado: false },
+   654→   654→      { step: 'Entregada', hora: '—', completado: false },
+   655→   655→    ],
+   656→   656→  },
+   657→   657→  {
+   658→   658→    id: 'LF-2838', cliente: 'Felipe Reyes', clienteTelefono: '+505 8888-8901',
+   659→   659→    origen: 'Carretera Sur', destino: 'Reparto Schick',
+   660→   660→    origenLat: 12.0800, origenLng: -86.2300, destinoLat: 12.1080, destinoLng: -86.2400,
+   661→   661→    repartidor: 'Jorge Pérez', repartidorInitials: 'JP',
+   662→   662→    descripcion: 'Repuestos automotriz', monto: 180, estado: 'entregado',
+   663→   663→    metodoPago: 'transferencia', estadoPago: 'pagado', fecha: '2026-06-08', hora: '08:20',
+   664→   664→    calificacion: 4,
+   665→   665→    timeline: [
+   666→   666→      { step: 'Orden creada', hora: '08:20', completado: true },
+   667→   667→      { step: 'En camino', hora: '08:28', completado: true },
+   668→   668→      { step: 'Recogida', hora: '08:42', completado: true },
+   669→   669→      { step: 'Entregada', hora: '09:15', completado: true },
+   670→   670→    ],
+   671→   671→  },
+   672→   672→  {
+   673→   673→    id: 'LF-2837', cliente: 'Gabriela Navarro', clienteTelefono: '+505 8888-2468',
+   674→   674→    origen: 'Col. Los Robles', destino: 'Villa Fontana',
+   675→   675→    origenLat: 12.1245, origenLng: -86.2520, destinoLat: 12.0850, destinoLng: -86.2070,
+   676→   676→    repartidor: 'Carlos Mendoza', repartidorInitials: 'CM',
+   677→   677→    descripcion: 'Ropa de boutique', monto: 145, estado: 'entregado',
+   678→   678→    metodoPago: 'efectivo', estadoPago: 'pagado', fecha: '2026-06-08', hora: '17:00',
+   679→   679→    calificacion: 5,
+   680→   680→    timeline: [
+   681→   681→      { step: 'Orden creada', hora: '17:00', completado: true },
+   682→   682→      { step: 'En camino', hora: '17:08', completado: true },
+   683→   683→      { step: 'Recogida', hora: '17:22', completado: true },
+   684→   684→      { step: 'Entregada', hora: '17:50', completado: true },
+   685→   685→    ],
+   686→   686→  },
+   687→   687→  {
+   688→   688→    id: 'LF-2836', cliente: 'Miguel Ángel', clienteTelefono: '+505 8888-1357',
+   689→   689→    origen: 'Villa Fontana', destino: 'Bello Horizonte',
+   690→   690→    origenLat: 12.0850, origenLng: -86.2070, destinoLat: 12.1300, destinoLng: -86.2800,
+   691→   691→    repartidor: 'Ana Torres', repartidorInitials: 'AT',
+   692→   692→    descripcion: 'Comida restaurante', monto: 90, estado: 'encamino',
+   693→   693→    metodoPago: 'efectivo', estadoPago: 'pendiente', fecha: '2026-06-07', hora: '19:30',
+   694→   694→    timeline: [
+   695→   695→      { step: 'Orden creada', hora: '19:30', completado: true },
+   696→   696→      { step: 'En camino', hora: '19:35', completado: true },
+   697→   697→      { step: 'Recogida', hora: '—', completado: false },
+   698→   698→      { step: 'Entregada', hora: '—', completado: false },
+   699→   699→    ],
+   700→   700→  },
+   701→   701→  {
+   702→   702→    id: 'LF-2835', cliente: 'Patricia Herrera', clienteTelefono: '+505 8888-9753',
+   703→   703→    origen: 'Bello Horizonte', destino: 'Centro Histórico',
+   704→   704→    origenLat: 12.1300, origenLng: -86.2800, destinoLat: 12.1360, destinoLng: -86.2520,
+   705→   705→    repartidor: null, repartidorInitials: '',
+   706→   706→    descripcion: 'Artículos de oficina', monto: 160, estado: 'pendiente',
+   707→   707→    metodoPago: 'transferencia', estadoPago: 'pendiente', fecha: '2026-06-07', hora: '10:00',
+   708→   708→    timeline: [
+   709→   709→      { step: 'Orden creada', hora: '10:00', completado: true },
+   710→   710→      { step: 'En camino', hora: '—', completado: false },
+   711→   711→      { step: 'Recogida', hora: '—', completado: false },
+   712→   712→      { step: 'Entregada', hora: '—', completado: false },
+   713→   713→    ],
+   714→   714→  },
+   715→   715→  {
+   716→   716→    id: 'LF-2834', cliente: 'Raúl Castillo', clienteTelefono: '+505 8888-8642',
+   717→   717→    origen: 'Monseñor Lezcano', destino: 'Reparto Schick',
+   718→   718→    origenLat: 12.0980, origenLng: -86.2310, destinoLat: 12.1080, destinoLng: -86.2400,
+   719→   719→    repartidor: 'Rosa Díaz', repartidorInitials: 'RD',
+   720→   720→    descripcion: 'Libros y material escolar', monto: 75, estado: 'entregado',
+   721→   721→    metodoPago: 'efectivo', estadoPago: 'pagado', fecha: '2026-06-07', hora: '14:15',
+   722→   722→    calificacion: 3,
+   723→   723→    timeline: [
+   724→   724→      { step: 'Orden creada', hora: '14:15', completado: true },
+   725→   725→      { step: 'En camino', hora: '14:22', completado: true },
+   726→   726→      { step: 'Recogida', hora: '14:35', completado: true },
+   727→   727→      { step: 'Entregada', hora: '14:58', completado: true },
+   728→   728→    ],
+   729→   729→  },
+   730→   730→  {
+   731→   731→    id: 'LF-2833', cliente: 'Daniela Mendoza', clienteTelefono: '+505 8888-7531',
+   732→   732→    origen: 'Galerías Santo Domingo', destino: 'Monseñor Lezcano',
+   733→   733→    origenLat: 12.0900, origenLng: -86.2180, destinoLat: 12.0980, destinoLng: -86.2310,
+   734→   734→    repartidor: 'Miguel Sevilla', repartidorInitials: 'MS',
+   735→   735→    descripcion: 'Regalo de cumpleaños', monto: 195, estado: 'recogido',
+   736→   736→    metodoPago: 'transferencia', estadoPago: 'pagado', fecha: '2026-06-06', hora: '11:30',
+   737→   737→    timeline: [
+   738→   738→      { step: 'Orden creada', hora: '11:30', completado: true },
+   739→   739→      { step: 'En camino', hora: '11:38', completado: true },
+   740→   740→      { step: 'Recogida', hora: '11:52', completado: true },
+   741→   741→      { step: 'Entregada', hora: '—', completado: false },
+   742→   742→    ],
+   743→   743→  },
+   744→   744→];
+   745→   745→
+   746→   746→const MOCK_MOTOS: Moto[] = [
+   747→   747→  { id: 'Moto-01', nombre: 'Moto-01', modelo: 'Honda Wave 110', anio: 2022, placa: 'M-1234', status: 'available', lat: 12.1140, lng: -86.2350, km: 3200, repartidorAsignado: 'Luis Ramos', ultimoMantenimiento: '2026-05-15', proximoMantenimiento: '2026-07-15', costoTotalMantenimiento: 4500 },
+   748→   748→  { id: 'Moto-02', nombre: 'Moto-02', modelo: 'Yamaha NMAX 155', anio: 2023, placa: 'M-2345', status: 'in-service', lat: 12.1250, lng: -86.2500, km: 2800, repartidorAsignado: 'Rosa Díaz', ultimoMantenimiento: '2026-05-20', proximoMantenimiento: '2026-07-20', costoTotalMantenimiento: 6200 },
+   749→   749→  { id: 'Moto-03', nombre: 'Moto-03', modelo: 'Honda Wave 110', anio: 2021, placa: 'M-3456', status: 'in-service', lat: 12.1050, lng: -86.2400, km: 3100, repartidorAsignado: 'Carlos Mendoza', ultimoMantenimiento: '2026-04-10', proximoMantenimiento: '2026-06-10', costoTotalMantenimiento: 3800 },
+   750→   750→  { id: 'Moto-04', nombre: 'Moto-04', modelo: 'Suzuki Address 155', anio: 2023, placa: 'M-4567', status: 'available', lat: 12.1300, lng: -86.2600, km: 2600, repartidorAsignado: 'María García', ultimoMantenimiento: '2026-05-28', proximoMantenimiento: '2026-07-28', costoTotalMantenimiento: 5100 },
+   751→   751→  { id: 'Moto-05', nombre: 'Moto-05', modelo: 'Honda Wave 125', anio: 2020, placa: 'M-5678', status: 'maintenance', lat: 12.0950, lng: -86.2300, km: 3500, repartidorAsignado: null, ultimoMantenimiento: '2026-06-01', proximoMantenimiento: '2026-06-15', costoTotalMantenimiento: 7200 },
+   752→   752→  { id: 'Moto-06', nombre: 'Moto-06', modelo: 'Yamaha FZ-S V3', anio: 2022, placa: 'M-6789', status: 'in-service', lat: 12.1100, lng: -86.2200, km: 4200, repartidorAsignado: 'Elena Vargas', ultimoMantenimiento: '2026-05-10', proximoMantenimiento: '2026-07-10', costoTotalMantenimiento: 5600 },
+   753→   753→  { id: 'Moto-07', nombre: 'Moto-07', modelo: 'Honda Wave 110', anio: 2023, placa: 'M-7890', status: 'available', lat: 12.1200, lng: -86.2700, km: 1800, repartidorAsignado: 'Jorge Pérez', ultimoMantenimiento: '2026-06-05', proximoMantenimiento: '2026-08-05', costoTotalMantenimiento: 2200 },
+   754→   754→  { id: 'Moto-08', nombre: 'Moto-08', modelo: 'Suzuki Burgman 125', anio: 2022, placa: 'M-8901', status: 'available', lat: 12.1000, lng: -86.2550, km: 2100, repartidorAsignado: 'Miguel Sevilla', ultimoMantenimiento: '2026-05-22', proximoMantenimiento: '2026-07-22', costoTotalMantenimiento: 3400 },
+   755→   755→  { id: 'Moto-09', nombre: 'Moto-09', modelo: 'Honda PCX 160', anio: 2024, placa: 'M-9012', status: 'in-service', lat: 12.0900, lng: -86.2150, km: 1200, repartidorAsignado: 'Ana Torres', ultimoMantenimiento: '2026-06-01', proximoMantenimiento: '2026-08-01', costoTotalMantenimiento: 1800 },
+   756→   756→  { id: 'Moto-10', nombre: 'Moto-10', modelo: 'Yamaha NMAX 155', anio: 2021, placa: 'M-0123', status: 'maintenance', lat: 12.1150, lng: -86.2450, km: 8500, repartidorAsignado: null, ultimoMantenimiento: '2026-06-08', proximoMantenimiento: '2026-06-20', costoTotalMantenimiento: 9500 },
+   757→   757→  { id: 'Moto-11', nombre: 'Moto-11', modelo: 'Honda Wave 125', anio: 2023, placa: 'M-1122', status: 'available', lat: 12.1350, lng: -86.2350, km: 1500, repartidorAsignado: null, ultimoMantenimiento: '2026-05-30', proximoMantenimiento: '2026-07-30', costoTotalMantenimiento: 2000 },
+   758→   758→  { id: 'Moto-12', nombre: 'Moto-12', modelo: 'Suzuki Address 110', anio: 2022, placa: 'M-2233', status: 'available', lat: 12.1080, lng: -86.2100, km: 2800, repartidorAsignado: null, ultimoMantenimiento: '2026-05-18', proximoMantenimiento: '2026-07-18', costoTotalMantenimiento: 4200 },
+   759→   759→];
+   760→   760→
+   761→   761→const MOCK_RIDERS: Rider[] = [
+   762→   762→  { id: 'R-01', nombre: 'Carlos Mendoza', email: 'carlos@logifast.com', telefono: '+505 8888-1001', initials: 'CM', color: '#002A5C', status: 'in-service', motoId: 'Moto-03', entregasHoy: 5, kmHoy: 28, entregasTotal: 342, kmTotal: 12400, calificacion: 4.8, conectado: true },
+   763→   763→  { id: 'R-02', nombre: 'Ana Torres', email: 'ana@logifast.com', telefono: '+505 8888-1002', initials: 'AT', color: '#FF6600', status: 'in-service', motoId: 'Moto-09', entregasHoy: 4, kmHoy: 22, entregasTotal: 298, kmTotal: 10800, calificacion: 4.9, conectado: true },
+   764→   764→  { id: 'R-03', nombre: 'Luis Ramos', email: 'luis@logifast.com', telefono: '+505 8888-1003', initials: 'LR', color: '#002A5C', status: 'available', motoId: 'Moto-01', entregasHoy: 3, kmHoy: 15, entregasTotal: 267, kmTotal: 9600, calificacion: 4.5, conectado: true },
+   765→   765→  { id: 'R-04', nombre: 'María García', email: 'maria@logifast.com', telefono: '+505 8888-1004', initials: 'MG', color: '#FF6600', status: 'available', motoId: 'Moto-04', entregasHoy: 2, kmHoy: 10, entregasTotal: 215, kmTotal: 8200, calificacion: 4.7, conectado: true },
+   766→   766→  { id: 'R-05', nombre: 'Jorge Pérez', email: 'jorge@logifast.com', telefono: '+505 8888-1005', initials: 'JP', color: '#002A5C', status: 'available', motoId: 'Moto-07', entregasHoy: 3, kmHoy: 18, entregasTotal: 189, kmTotal: 7400, calificacion: 4.3, conectado: true },
+   767→   767→  { id: 'R-06', nombre: 'Rosa Díaz', email: 'rosa@logifast.com', telefono: '+505 8888-1006', initials: 'RD', color: '#FF6600', status: 'in-service', motoId: 'Moto-02', entregasHoy: 4, kmHoy: 25, entregasTotal: 312, kmTotal: 11200, calificacion: 4.6, conectado: true },
+   768→   768→  { id: 'R-07', nombre: 'Miguel Sevilla', email: 'miguel@logifast.com', telefono: '+505 8888-1007', initials: 'MS', color: '#002A5C', status: 'available', motoId: 'Moto-08', entregasHoy: 1, kmHoy: 8, entregasTotal: 156, kmTotal: 6800, calificacion: 4.4, conectado: true },
+   769→   769→  { id: 'R-08', nombre: 'Elena Vargas', email: 'elena@logifast.com', telefono: '+505 8888-1008', initials: 'EV', color: '#FF6600', status: 'in-service', motoId: 'Moto-06', entregasHoy: 3, kmHoy: 20, entregasTotal: 203, kmTotal: 7900, calificacion: 4.2, conectado: true },
+   770→   770→];
+   771→   771→
+   772→   772→const MOCK_ALERTS: Alert[] = [
+   773→   773→  { id: 'A-01', tipo: 'mantenimiento', titulo: 'Mantenimiento vencido', msg: 'Kilometraje excedido en 500km', motoId: 'Moto-05', tiempo: 'Hace 2h', severidad: 'alta' },
+   774→   774→  { id: 'A-02', tipo: 'bateria', titulo: 'Batería baja', msg: 'Nivel de batería al 12%', motoId: 'Moto-10', tiempo: 'Hace 45min', severidad: 'media' },
+   775→   775→  { id: 'A-03', tipo: 'incidencia', titulo: 'Incidencia reportada', msg: 'Accidente menor, sin heridos', motoId: 'Moto-06', tiempo: 'Hace 30min', severidad: 'alta' },
+   776→   776→  { id: 'A-04', tipo: 'retraso', titulo: 'Entrega retrasada', msg: '15 min sobre ETA estimada', motoId: 'Moto-03', tiempo: 'Hace 10min', severidad: 'baja' },
+   777→   777→  { id: 'A-05', tipo: 'mantenimiento', titulo: 'Próximo mantenimiento', msg: 'Programar servicio para 15 Jun', motoId: 'Moto-09', tiempo: 'Hace 1h', severidad: 'media' },
+   778→   778→];
+   779→   779→
+   780→   780→const DAILY_REVENUE: DailyRevenue[] = [
+   781→   781→  { dia: 'Lun', monto: 5200 }, { dia: 'Mar', monto: 7800 },
+   782→   782→  { dia: 'Mié', monto: 6100 }, { dia: 'Jue', monto: 9200 },
+   783→   783→  { dia: 'Vie', monto: 8450 }, { dia: 'Sáb', monto: 7100 },
+   784→   784→  { dia: 'Dom', monto: 4400 },
+   785→   785→];
+   786→   786→
+   787→   787→const MONTHLY_REVENUE: MonthlyRevenue[] = [
+   788→   788→  { mes: 'Ene', monto: 12000 }, { mes: 'Feb', monto: 14500 },
+   789→   789→  { mes: 'Mar', monto: 13200 }, { mes: 'Abr', monto: 16800 },
+   790→   790→  { mes: 'May', monto: 15400 }, { mes: 'Jun', monto: 18200 },
+   791→   791→  { mes: 'Jul', monto: 17500 }, { mes: 'Ago', monto: 19800 },
+   792→   792→  { mes: 'Sep', monto: 21000 }, { mes: 'Oct', monto: 19500 },
+   793→   793→  { mes: 'Nov', monto: 22000 }, { mes: 'Dic', monto: 24500 },
+   794→   794→];
+   795→   795→
+   796→   796→const ZONE_ORDERS: ZoneOrder[] = [
+   797→   797→  { zona: 'Centro', cantidad: 45 },
+   798→   798→  { zona: 'Villa Fontana', cantidad: 32 },
+   799→   799→  { zona: 'Los Robles', cantidad: 28 },
+   800→   800→  { zona: 'Bello Horizonte', cantidad: 21 },
+   801→   801→  { zona: 'Monseñor Lezcano', cantidad: 15 },
+   802→   802→  { zona: 'Reparto Schick', cantidad: 12 },
+   803→   803→];
+   804→   804→
+   805→   805→const RIDER_PERFORMANCE: RiderPerformance[] = [
+   806→   806→  { nombre: 'Carlos M.', entregas: 28 },
+   807→   807→  { nombre: 'Ana T.', entregas: 24 },
+   808→   808→  { nombre: 'Luis R.', entregas: 21 },
+   809→   809→  { nombre: 'María G.', entregas: 19 },
+   810→   810→  { nombre: 'Jorge P.', entregas: 16 },
+   811→   811→  { nombre: 'Rosa D.', entregas: 14 },
+   812→   812→  { nombre: 'Miguel S.', entregas: 12 },
+   813→   813→  { nombre: 'Elena V.', entregas: 10 },
+   814→   814→];
+   815→   815→
+   816→   816→const ORDER_STATUS_DISTRIBUTION = [
+   817→   817→  { name: 'Pendiente', value: 2, color: '#FBBF24' },
+   818→   818→  { name: 'En camino', value: 3, color: '#FF6600' },
+   819→   819→  { name: 'Recogido', value: 2, color: '#3B82F6' },
+   820→   820→  { name: 'Entregado', value: 6, color: '#16A34A' },
+   821→   821→  { name: 'Incidencia', value: 2, color: '#DC2626' },
+   822→   822→];
+   823→   823→
+   824→   824→const MOCK_ZONES: Zone[] = [
+   825→   825→  { id: 'Z-01', nombre: 'Centro Managua', tarifa: 50, activa: true },
+   826→   826→  { id: 'Z-02', nombre: 'Villa Fontana', tarifa: 65, activa: true },
+   827→   827→  { id: 'Z-03', nombre: 'Los Robles', tarifa: 60, activa: true },
+   828→   828→  { id: 'Z-04', nombre: 'Bello Horizonte', tarifa: 75, activa: true },
+   829→   829→  { id: 'Z-05', nombre: 'Monseñor Lezcano', tarifa: 55, activa: true },
+   830→   830→  { id: 'Z-06', nombre: 'Reparto Schick', tarifa: 60, activa: false },
+   831→   831→];
+   832→   832→
+   833→   833→const MOCK_MAINTENANCE_RULES: MaintenanceRule[] = [
+   834→   834→  { id: 'MR-01', tipo: 'Cambio de aceite', umbralKm: 2000, descripcion: 'Cambiar aceite del motor y filtro' },
+   835→   835→  { id: 'MR-02', tipo: 'Revisión de frenos', umbralKm: 5000, descripcion: 'Inspeccionar pastillas y disco de freno' },
+   836→   836→  { id: 'MR-03', tipo: 'Cambio de llantas', umbralKm: 8000, descripcion: 'Revisar y cambiar llantas si es necesario' },
+   837→   837→  { id: 'MR-04', tipo: 'Afinación mayor', umbralKm: 10000, descripcion: 'Afinación completa del motor' },
+   838→   838→  { id: 'MR-05', tipo: 'Revisión eléctrica', umbralKm: 6000, descripcion: 'Revisar sistema eléctrico y batería' },
+   839→   839→  { id: 'MR-06', tipo: 'Cambio de cadena', umbralKm: 12000, descripcion: 'Reemplazar cadena y piñón' },
+   840→   840→];
+   841→   841→
+   842→   842→const COMPANY_DATA: CompanyData = {
+   843→   843→  nombre: 'LOGIFAST S.A.',
+   844→   844→  direccion: 'Centro Comercial Managua, Local 204',
+   845→   845→  telefono: '+505 2266-0000',
+   846→   846→  email: 'info@logifast.com',
+   847→   847→};
+   848→   848→
+   849→   849→const MOCK_USERS: SystemUser[] = [
+   850→   850→  { id: 'U-01', nombre: 'Admin Demo', email: 'admin@logifast.com', rol: 'Administrador', activo: true },
+   851→   851→  { id: 'U-02', nombre: 'Carlos Mendoza', email: 'carlos@logifast.com', rol: 'Repartidor', activo: true },
+   852→   852→  { id: 'U-03', nombre: 'Ana Torres', email: 'ana@logifast.com', rol: 'Repartidor', activo: true },
+   853→   853→  { id: 'U-04', nombre: 'Luis Ramos', email: 'luis@logifast.com', rol: 'Repartidor', activo: true },
+   854→   854→  { id: 'U-05', nombre: 'María García', email: 'maria@logifast.com', rol: 'Repartidor', activo: true },
+   855→   855→  { id: 'U-06', nombre: 'Roberto Ing.', email: 'ingeniero@logifast.com', rol: 'Ingeniero', activo: true },
+   856→   856→  { id: 'U-07', nombre: 'María López', email: 'maria.lopez@gmail.com', rol: 'Cliente', activo: true },
+   857→   857→  { id: 'U-08', nombre: 'Pedro Ruiz', email: 'pedro.ruiz@gmail.com', rol: 'Cliente', activo: true },
+   858→   858→  { id: 'U-09', nombre: 'Jorge Pérez', email: 'jorge@logifast.com', rol: 'Repartidor', activo: false },
+   859→   859→];
+   860→   860→
+   861→   861→/* ─── New Mock Data ─── */
+   862→   862→
+   863→   863→const MOCK_INCIDENTS: Incident[] = [
+   864→   864→  { id: 'INC-01', orderId: 'LF-2842', tipo: 'falla_mecanica', titulo: 'Falla mecánica en ruta', descripcion: 'Moto se detuvo en carretera Sur', repartidor: 'Ana Torres', motoId: 'Moto-02', gravedad: 'alta', estado: 'activa', lat: 12.0950, lng: -86.2300, timestamp: '2026-06-10T14:30:00' },
+   865→   865→  { id: 'INC-02', orderId: 'LF-2842', tipo: 'problema_cliente', titulo: 'Cliente no responde', descripcion: 'No se puede confirmar dirección de entrega', repartidor: 'Ana Torres', motoId: 'Moto-02', gravedad: 'media', estado: 'activa', lat: 12.1000, lng: -86.2400, timestamp: '2026-06-10T13:15:00' },
+   866→   866→  { id: 'INC-03', orderId: 'LF-2840', tipo: 'retraso', titulo: 'Entrega retrasada', descripcion: 'Tráfico pesado en Carretera a Masaya', repartidor: 'Luis Ramos', motoId: 'Moto-01', gravedad: 'baja', estado: 'activa', lat: 12.0900, lng: -86.2100, timestamp: '2026-06-10T16:20:00' },
+   867→   867→  { id: 'INC-04', orderId: 'LF-2836', tipo: 'paquete_danado', titulo: 'Paquete con daño', descripcion: 'Comida derramada durante transporte', repartidor: 'Ana Torres', motoId: 'Moto-09', gravedad: 'media', estado: 'resuelta', lat: 12.1100, lng: -86.2400, timestamp: '2026-06-09T19:45:00', resolucion: 'Reembolso parcial al cliente', tiempoResolucion: '35 min' },
+   868→   868→  { id: 'INC-05', orderId: 'LF-2834', tipo: 'accidente', titulo: 'Accidente menor', descripcion: 'Colisión leve en intersección', repartidor: 'Rosa Díaz', motoId: 'Moto-02', gravedad: 'alta', estado: 'resuelta', lat: 12.1050, lng: -86.2350, timestamp: '2026-06-07T14:30:00', resolucion: 'Repartidor atendido, moto en taller', tiempoResolucion: '2h 15min' },
+   869→   869→  { id: 'INC-06', orderId: 'LF-2847', tipo: 'retraso', titulo: 'Retraso por lluvia', descripcion: 'Lluvia fuerte impide avance', repartidor: 'Carlos Mendoza', motoId: 'Moto-03', gravedad: 'baja', estado: 'activa', lat: 12.1150, lng: -86.2450, timestamp: '2026-06-10T15:00:00' },
+   870→   870→];
+   871→   871→
+   872→   872→const MOCK_CLIENTS: Client[] = [
+   873→   873→  { id: 'CL-01', nombre: 'María López', email: 'maria.lopez@gmail.com', telefono: '+505 8888-1234', direccion: 'Col. Los Robles, Managua', totalEnvios: 24, montoTotal: 3450, ultimoEnvio: '2026-06-10', zonaFrecuente: 'Los Robles' },
+   874→   874→  { id: 'CL-02', nombre: 'Pedro Ruiz', email: 'pedro.ruiz@gmail.com', telefono: '+505 8888-5678', direccion: 'Barrio Monseñor Lezcano', totalEnvios: 18, montoTotal: 2100, ultimoEnvio: '2026-06-10', zonaFrecuente: 'Monseñor Lezcano' },
+   875→   875→  { id: 'CL-03', nombre: 'Sofía Chamorro', email: 'sofia.chamorro@gmail.com', telefono: '+505 8888-9012', direccion: 'Villa Fontana, Managua', totalEnvios: 12, montoTotal: 1800, ultimoEnvio: '2026-06-10', zonaFrecuente: 'Villa Fontana' },
+   876→   876→  { id: 'CL-04', nombre: 'Diego Soto', email: 'diego.soto@gmail.com', telefono: '+505 8888-3456', direccion: 'Bello Horizonte', totalEnvios: 8, montoTotal: 1200, ultimoEnvio: '2026-06-10', zonaFrecuente: 'Bello Horizonte' },
+   877→   877→  { id: 'CL-05', nombre: 'Laura Vega', email: 'laura.vega@gmail.com', telefono: '+505 8888-7890', direccion: 'Centro Histórico, Managua', totalEnvios: 32, montoTotal: 4800, ultimoEnvio: '2026-06-09', zonaFrecuente: 'Centro' },
+   878→   878→  { id: 'CL-06', nombre: 'Roberto Martínez', email: 'roberto.martinez@gmail.com', telefono: '+505 8888-2345', direccion: 'Col. Centroamérica', totalEnvios: 15, montoTotal: 2625, ultimoEnvio: '2026-06-09', zonaFrecuente: 'Centro' },
+   879→   879→  { id: 'CL-07', nombre: 'Carmen Ríos', email: 'carmen.rios@gmail.com', telefono: '+505 8888-6789', direccion: 'Altamira, Managua', totalEnvios: 4, montoTotal: 440, ultimoEnvio: '2026-06-09', zonaFrecuente: 'Los Robles' },
+   880→   880→  { id: 'CL-08', nombre: 'Andrés Cruz', email: 'andres.cruz@gmail.com', telefono: '+505 8888-0123', direccion: 'Santo Domingo, Managua', totalEnvios: 22, montoTotal: 5060, ultimoEnvio: '2026-06-09', zonaFrecuente: 'Villa Fontana' },
+   881→   881→  { id: 'CL-09', nombre: 'Felipe Reyes', email: 'felipe.reyes@gmail.com', telefono: '+505 8888-8901', direccion: 'Carretera Sur', totalEnvios: 3, montoTotal: 540, ultimoEnvio: '2026-06-08', zonaFrecuente: 'Centro' },
+   882→   882→  { id: 'CL-10', nombre: 'Gabriela Navarro', email: 'gabriela.navarro@gmail.com', telefono: '+505 8888-2468', direccion: 'Col. Los Robles', totalEnvios: 7, montoTotal: 1015, ultimoEnvio: '2026-06-08', zonaFrecuente: 'Los Robles' },
+   883→   883→];
+   884→   884→
+   885→   885→const MOCK_ACTIVITY_EVENTS: ActivityEvent[] = [
+   886→   886→  { id: 'E-01', tipo: 'orden', titulo: 'Orden LF-2847 creada', detalle: 'Envío a Col. Los Robles · C$ 120 · Asignada a Carlos M.', timestamp: '2026-06-10T14:30:00', leido: false },
+   887→   887→  { id: 'E-02', tipo: 'repartidor', titulo: 'Carlos M. en camino', detalle: 'Recogiendo paquete en Metrocentro', timestamp: '2026-06-10T14:35:00', leido: false },
+   888→   888→  { id: 'E-03', tipo: 'incidencia', titulo: 'Falla mecánica reportada', detalle: 'Moto-02 detenida en Carretera Sur · Ana Torres', timestamp: '2026-06-10T14:30:00', leido: false },
+   889→   889→  { id: 'E-04', tipo: 'orden', titulo: 'Orden LF-2846 entregada', detalle: 'Barrio Monseñor Lezcano · Ana Torres · C$ 85', timestamp: '2026-06-10T10:58:00', leido: true },
+   890→   890→  { id: 'E-05', tipo: 'flota', titulo: 'Moto-05 en mantenimiento', detalle: 'Kilometraje excedido, enviada a taller', timestamp: '2026-06-10T09:00:00', leido: true },
+   891→   891→  { id: 'E-06', tipo: 'orden', titulo: 'Orden LF-2845 creada', detalle: 'Envío a Villa Fontana · C$ 200 · Sin asignar', timestamp: '2026-06-10T15:00:00', leido: false },
+   892→   892→  { id: 'E-07', tipo: 'finanzas', titulo: 'Pago recibido', detalle: 'C$ 175 transferencia · Roberto Martínez', timestamp: '2026-06-10T11:00:00', leido: true },
+   893→   893→  { id: 'E-08', tipo: 'repartidor', titulo: 'Jorge Pérez conectado', detalle: 'Disponible con Moto-07', timestamp: '2026-06-10T08:30:00', leido: true },
+   894→   894→  { id: 'E-09', tipo: 'incidencia', titulo: 'Cliente no responde', detalle: 'Orden LF-2842 · Ana Torres intentó contacto 3 veces', timestamp: '2026-06-10T13:15:00', leido: false },
+   895→   895→  { id: 'E-10', tipo: 'config', titulo: 'Tarifa actualizada', detalle: 'Zona Bello Horizonte: C$ 65 → C$ 75', timestamp: '2026-06-09T16:00:00', leido: true },
+   896→   896→  { id: 'E-11', tipo: 'orden', titulo: 'Orden LF-2844 recogida', detalle: 'Plaza Inter → Bello Horizonte · Luis Ramos', timestamp: '2026-06-10T14:05:00', leido: false },
+   897→   897→  { id: 'E-12', tipo: 'flota', titulo: 'Moto-10 batería baja', detalle: 'Nivel al 12%, requiere carga inmediata', timestamp: '2026-06-10T12:30:00', leido: true },
+   898→   898→  { id: 'E-13', tipo: 'repartidor', titulo: 'Rosa Díaz completó 4 entregas', detalle: 'Hoy: 25 km recorridos · C$ 620 cobrados', timestamp: '2026-06-10T17:00:00', leido: true },
+   899→   899→  { id: 'E-14', tipo: 'finanzas', titulo: 'Conciliación pendiente', detalle: 'C$ 340 en efectivo por cobrar · Carlos M.', timestamp: '2026-06-10T18:00:00', leido: false },
+   900→   900→  { id: 'E-15', tipo: 'incidencia', titulo: 'Retraso por lluvia', detalle: 'Orden LF-2847 · Carlos M. reporta lluvia fuerte', timestamp: '2026-06-10T15:00:00', leido: false },
+   901→   901→];
+   902→   902→
+   903→   903→const MOCK_PAYMENT_CONCILIATIONS: PaymentConciliation[] = [
+   904→   904→  { id: 'PC-01', repartidor: 'Carlos Mendoza', monto: 340, fecha: '2026-06-10', estado: 'pendiente' },
+   905→   905→  { id: 'PC-02', repartidor: 'Ana Torres', monto: 195, fecha: '2026-06-10', estado: 'pendiente' },
+   906→   906→  { id: 'PC-03', repartidor: 'Luis Ramos', monto: 280, fecha: '2026-06-09', estado: 'conciliado' },
+   907→   907→  { id: 'PC-04', repartidor: 'Rosa Díaz', monto: 620, fecha: '2026-06-10', estado: 'pendiente' },
+   908→   908→  { id: 'PC-05', repartidor: 'Jorge Pérez', monto: 150, fecha: '2026-06-09', estado: 'conciliado' },
+   909→   909→];
+   910→   910→
+   911→   911→const MOCK_ZONE_POLYGONS: ZonePolygon[] = [
+   912→   912→  { id: 'ZP-01', nombre: 'Centro', color: '#002A5C', coords: [[12.140, -86.260], [12.140, -86.244], [12.132, -86.244], [12.132, -86.260], [12.136, -86.262]] },
+   913→   913→  { id: 'ZP-02', nombre: 'Villa Fontana', color: '#FF6600', coords: [[12.090, -86.215], [12.090, -86.199], [12.080, -86.199], [12.080, -86.215], [12.085, -86.217]] },
+   914→   914→  { id: 'ZP-03', nombre: 'Los Robles', color: '#16A34A', coords: [[12.128, -86.258], [12.128, -86.246], [12.120, -86.246], [12.120, -86.258], [12.124, -86.260]] },
+   915→   915→  { id: 'ZP-04', nombre: 'Bello Horizonte', color: '#8B5CF6', coords: [[12.135, -86.286], [12.135, -86.274], [12.125, -86.274], [12.125, -86.286], [12.130, -86.288]] },
+   916→   916→  { id: 'ZP-05', nombre: 'Monseñor Lezcano', color: '#3B82F6', coords: [[12.103, -86.237], [12.103, -86.225], [12.093, -86.225], [12.093, -86.237], [12.098, -86.239]] },
+   917→   917→  { id: 'ZP-06', nombre: 'Reparto Schick', color: '#F59E0B', coords: [[12.113, -86.245], [12.113, -86.235], [12.103, -86.235], [12.103, -86.245], [12.108, -86.247]] },
+   918→   918→];
+   919→   919→
+   920→   920→/* ─── Marketing Mock Data ─── */
+   921→   921→
+   922→   922→const MOCK_CAMPANAS: Campana[] = [
+   923→   923→  {
+   924→   924→    id: 'CAMP-01', titulo: 'Promo verano', tipo: 'push', segmento: 'Todos los clientes',
+   925→   925→    contenido: { titulo: '¡Promo Verano! 🔥', cuerpo: '20% de descuento en tu próximo envío. Usa el código VERANO20', boton: 'Usar ahora' },
+   926→   926→    estado: 'enviada', enviadaEn: '2026-06-08T10:00:00', destinatarios: 120, abiertos: 85, clicks: 32,
+   927→   927→    creadoPor: 'admin', createdAt: '2026-06-07T15:00:00',
+   928→   928→  },
+   929→   929→  {
+   930→   930→    id: 'CAMP-02', titulo: 'Reactivación clientes inactivos', tipo: 'email', segmento: 'Clientes inactivos',
+   931→   931→    contenido: { titulo: 'Te extrañamos', cuerpo: 'Hace tiempo que no haces un envío. Tenemos una sorpresa para ti.', boton: 'Ver oferta' },
+   932→   932→    estado: 'programada', programadaPara: '2026-06-15T09:00:00', destinatarios: 45, abiertos: 0, clicks: 0,
+   933→   933→    creadoPor: 'admin', createdAt: '2026-06-10T14:00:00',
+   934→   934→  },
+   935→   935→  {
+   936→   936→    id: 'CAMP-03', titulo: 'Descuento fin de semana', tipo: 'sms', segmento: 'Clientes frecuentes',
+   937→   937→    contenido: { cuerpo: 'LOGIFAST: 15% OFF este fin de semana. Código: FINDE15' },
+   938→   938→    estado: 'borrador', destinatarios: 0, abiertos: 0, clicks: 0,
+   939→   939→    creadoPor: 'admin', createdAt: '2026-06-10T16:00:00',
+   940→   940→  },
+   941→   941→];
+   942→   942→
+   943→   943→const MOCK_CODIGOS: CodigoPromocional[] = [
+   944→   944→  { id: 'COD-01', codigo: 'LOGI20', tipoDescuento: 'porcentaje', valor: 20, aplicableA: 'Todos los envíos', maxUsos: 100, usosActuales: 45, segmento: 'todos', vigenciaInicio: '2026-06-01', vigenciaFin: '2026-07-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-06-01' },
+   945→   945→  { id: 'COD-02', codigo: 'ENVIO50', tipoDescuento: 'monto', valor: 50, aplicableA: 'Primer envío', maxUsos: 50, usosActuales: 12, segmento: 'Clientes nuevos', vigenciaInicio: '2026-05-01', vigenciaFin: '2026-08-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-05-01' },
+   946→   946→  { id: 'COD-03', codigo: 'RAPIDO15', tipoDescuento: 'porcentaje', valor: 15, aplicableA: 'Envíos > C$100', montoMinimo: 100, maxUsos: 200, usosActuales: 0, segmento: 'todos', vigenciaInicio: '2026-06-10', vigenciaFin: '2026-06-30', estado: 'activo', creadoPor: 'admin', createdAt: '2026-06-10' },
+   947→   947→  { id: 'COD-04', codigo: 'BIENVENIDO', tipoDescuento: 'porcentaje', valor: 25, aplicableA: 'Primer envío', maxUsos: 0, usosActuales: 89, segmento: 'Clientes nuevos', vigenciaInicio: '2026-01-01', vigenciaFin: '2026-12-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-01-01' },
+   948→   948→];
+   949→   949→
+   950→   950→const MOCK_BANNERS: Banner[] = [
+   951→   951→  { id: 'BAN-01', titulo: '20% en tu próximo envío', subtitulo: 'Usa el código LOGI20', tipo: 'promo_grande', colorFondo: '#FF5722', colorTexto: '#FFFFFF', botonTexto: 'Usar ahora', botonAccion: 'Ir a solicitar envío', segmento: 'todos', mostrarEn: 'app', posicion: 1, estado: 'activo', impresiones: 1540, clicks: 230, creadoPor: 'admin', createdAt: '2026-06-05' },
+   952→   952→  { id: 'BAN-02', titulo: 'Envíos los domingos', subtitulo: 'Ahora también los domingos', tipo: 'tarjeta_compacta', colorFondo: '#1B1B2F', colorTexto: '#FFFFFF', icono: 'calendar', segmento: 'todos', mostrarEn: 'app', posicion: 2, estado: 'activo', impresiones: 980, clicks: 67, creadoPor: 'admin', createdAt: '2026-06-08' },
+   953→   953→  { id: 'BAN-03', titulo: 'Nuevo: seguimiento mejorado', tipo: 'notificacion', colorFondo: '#2979FF', colorTexto: '#FFFFFF', icono: 'map', segmento: 'todos', mostrarEn: 'ambos', posicion: 3, estado: 'activo', impresiones: 2100, clicks: 145, creadoPor: 'admin', createdAt: '2026-06-01' },
+   954→   954→  { id: 'BAN-04', titulo: 'Refiere a un amigo y gana', subtitulo: 'Ambos obtienen C$50 de descuento', tipo: 'slider', colorFondo: '#1B1B2F', colorTexto: '#FFFFFF', gradiente: { from: '#1B1B2F', to: '#FF5722', direction: 'to right' }, botonTexto: 'Invitar', botonAccion: 'Abrir link externo', segmento: 'Clientes frecuentes', mostrarEn: 'app', posicion: 4, estado: 'inactivo', impresiones: 0, clicks: 0, creadoPor: 'admin', createdAt: '2026-06-09' },
+   955→   955→];
+   956→   956→
+   957→   957→const MOCK_FEED_ITEMS: FeedItem[] = [
+   958→   958→  { id: 'FI-01', tipo: 'anuncio', titulo: 'Horario extendido los viernes', descripcion: 'Ahora atendemos hasta las 9pm los viernes', icono: 'clock', segmento: 'todos', posicion: 1, estado: 'activo', impresiones: 890, clicks: 34, creadoPor: 'admin', createdAt: '2026-06-08' },
+   959→   959→  { id: 'FI-02', tipo: 'promocion', titulo: 'Usa LOGI20 y ahorra', descripcion: '20% de descuento en tu próximo envío', icono: 'tag', botonTexto: 'Copiar código', codigoPromo: 'LOGI20', segmento: 'todos', posicion: 2, estado: 'activo', impresiones: 1200, clicks: 89, creadoPor: 'admin', createdAt: '2026-06-06' },
+   960→   960→  { id: 'FI-03', tipo: 'novedad', titulo: 'Ahora puedes pagar con transferencia', descripcion: 'Nuevo método de pago disponible', icono: 'credit-card', segmento: 'todos', posicion: 3, estado: 'activo', impresiones: 760, clicks: 45, creadoPor: 'admin', createdAt: '2026-06-04' },
+   961→   961→  { id: 'FI-04', tipo: 'recordatorio', titulo: 'Hace 15 días no envías, ¡te extrañamos!', descripcion: 'Tenemos una sorpresa para ti', icono: 'heart', botonTexto: 'Ver oferta', segmento: 'Clientes inactivos', posicion: 4, estado: 'activo', impresiones: 340, clicks: 23, creadoPor: 'admin', createdAt: '2026-06-10' },
+   962→   962→  { id: 'FI-05', tipo: 'anuncio', titulo: 'Cobertura ampliada a Masaya', descripcion: 'Ahora también llegamos a Masaya y sus alrededores', icono: 'map-pin', segmento: 'todos', posicion: 5, estado: 'activo', impresiones: 560, clicks: 18, creadoPor: 'admin', createdAt: '2026-06-09' },
+   963→   963→];
+   964→   964→
+   965→   965→const MOCK_PLANTILLAS: PlantillaMensaje[] = [
+   966→   966→  { id: 'TPL-01', nombre: 'Confirmación de orden', categoria: 'orden', contenido: 'Hola {{nombre}}, tu orden #{{orden_id}} ha sido confirmada. Tu repartidor {{repartidor}} está en camino.', variables: ['nombre', 'orden_id', 'repartidor'], esDefault: true, createdAt: '2026-01-01' },
+   967→   967→  { id: 'TPL-02', nombre: 'Orden entregada', categoria: 'orden', contenido: 'Tu orden #{{orden_id}} fue entregada exitosamente. ¡Gracias por usar LOGIFAST!', variables: ['orden_id'], esDefault: true, createdAt: '2026-01-01' },
+   968→   968→  { id: 'TPL-03', nombre: 'Recordatorio', categoria: 'promocion', contenido: 'Hola {{nombre}}, hace {{dias}} días que no haces un envío. ¡Tenemos una promo para ti!', variables: ['nombre', 'dias'], esDefault: true, createdAt: '2026-01-01' },
+   969→   969→  { id: 'TPL-04', nombre: 'Incidencia', categoria: 'incidencia', contenido: 'Lamentamos informarte que tu orden #{{orden_id}} presenta una incidencia. Estamos trabajando en resolverlo.', variables: ['orden_id'], esDefault: true, createdAt: '2026-01-01' },
+   970→   970→  { id: 'TPL-05', nombre: 'Código promocional', categoria: 'promocion', contenido: '¡{{nombre}}, usa el código {{codigo}} y obtiene {{descuento}} en tu próximo envío!', variables: ['nombre', 'codigo', 'descuento'], esDefault: true, createdAt: '2026-01-01' },
+   971→   971→];
+   972→   972→
+   973→   973→const MOCK_CONVERSACIONES: Conversacion[] = [
+   974→   974→  {
+   975→   975→    id: 'CONV-01', participanteId: 'CLI-01', participanteNombre: 'María López', participanteRol: 'cliente',
+   976→   976→    ultimoMensaje: '¿A qué hora llegará mi envío?', ultimoTimestamp: '2026-06-10T15:30:00', noLeidos: 1,
+   977→   977→    mensajes: [
+   978→   978→      { id: 'MSG-01', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Hola, hice un envío esta mañana', leido: true, enviadoEn: '2026-06-10T10:00:00' },
+   979→   979→      { id: 'MSG-02', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-01', receptorNombre: 'María López', contenido: 'Hola María, tu orden LF-2847 está en camino', leido: true, enviadoEn: '2026-06-10T10:05:00' },
+   980→   980→      { id: 'MSG-03', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Perfecto, gracias', leido: true, enviadoEn: '2026-06-10T10:10:00' },
+   981→   981→      { id: 'MSG-04', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-01', receptorNombre: 'María López', contenido: 'Tu repartidor es Carlos Mendoza, llegará en aprox 20 min', leido: true, enviadoEn: '2026-06-10T14:30:00' },
+   982→   982→      { id: 'MSG-05', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: '¿A qué hora llegará mi envío?', leido: false, enviadoEn: '2026-06-10T15:30:00' },
+   983→   983→    ],
+   984→   984→  },
+   985→   985→  {
+   986→   986→    id: 'CONV-02', participanteId: 'RID-01', participanteNombre: 'Carlos M.', participanteRol: 'repartidor',
+   987→   987→    ultimoMensaje: 'Ya recogí el paquete, en camino', ultimoTimestamp: '2026-06-10T14:35:00', noLeidos: 0,
+   988→   988→    mensajes: [
+   989→   989→      { id: 'MSG-06', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'RID-01', receptorNombre: 'Carlos M.', contenido: 'Carlos, te asigné la orden LF-2847', leido: true, enviadoEn: '2026-06-10T14:30:00' },
+   990→   990→      { id: 'MSG-07', emisorId: 'RID-01', emisorNombre: 'Carlos M.', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Recibido, voy para allá', leido: true, enviadoEn: '2026-06-10T14:32:00' },
+   991→   991→      { id: 'MSG-08', emisorId: 'RID-01', emisorNombre: 'Carlos M.', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Ya recogí el paquete, en camino', leido: true, enviadoEn: '2026-06-10T14:35:00' },
+   992→   992→    ],
+   993→   993→  },
+   994→   994→  {
+   995→   995→    id: 'CONV-03', participanteId: 'CLI-04', participanteNombre: 'Pedro Ruiz', participanteRol: 'cliente',
+   996→   996→    ultimoMensaje: 'Necesito cambiar la dirección de entrega', ultimoTimestamp: '2026-06-10T11:00:00', noLeidos: 1,
+   997→   997→    mensajes: [
+   998→   998→      { id: 'MSG-09', emisorId: 'CLI-04', emisorNombre: 'Pedro Ruiz', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Necesito cambiar la dirección de entrega', leido: false, enviadoEn: '2026-06-10T11:00:00' },
+   999→   999→      { id: 'MSG-10', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-04', receptorNombre: 'Pedro Ruiz', contenido: 'Claro, ¿cuál es la nueva dirección?', leido: true, enviadoEn: '2026-06-10T11:05:00' },
+  1000→  1000→    ],
+  1001→  1001→  },
+  1002→  1002→];
+  1003→  1003→
+  1004→  1004→const MOCK_NOTIFICACIONES_AUTO: NotificacionAutomatica[] = [
+  1005→  1005→  { id: 'NA-01', evento: 'orden_creada', etiqueta: 'Orden confirmada', activa: true, canal: 'push', plantilla: 'Hola {{nombre}}, tu orden #{{orden_id}} ha sido confirmada.', destinatario: 'cliente' },
+  1006→  1006→  { id: 'NA-02', evento: 'repartidor_asignado', etiqueta: 'Repartidor asignado', activa: true, canal: 'push', plantilla: '{{repartidor}} fue asignado a tu orden #{{orden_id}}.', destinatario: 'cliente' },
+  1007→  1007→  { id: 'NA-03', evento: 'orden_encamino', etiqueta: 'Repartidor en camino', activa: true, canal: 'todos', plantilla: 'Tu repartidor está en camino. Llegará en ~15 min.', destinatario: 'cliente' },
+  1008→  1008→  { id: 'NA-04', evento: 'orden_entregada', etiqueta: 'Orden entregada', activa: true, canal: 'push', plantilla: 'Tu orden #{{orden_id}} fue entregada. ¡Gracias!', destinatario: 'cliente' },
+  1009→  1009→  { id: 'NA-05', evento: 'nueva_asignacion', etiqueta: 'Nueva asignación', activa: true, canal: 'push', plantilla: 'Nueva orden asignada: #{{orden_id}}. Origen: {{origen}}', destinatario: 'repartidor' },
+  1010→  1010→  { id: 'NA-06', evento: 'alerta_mantenimiento', etiqueta: 'Alerta de mantenimiento', activa: true, canal: 'email', plantilla: 'La moto {{moto_id}} requiere mantenimiento: {{detalle}}', destinatario: 'ingeniero' },
+  1011→  1011→  { id: 'NA-07', evento: 'incidencia_reportada', etiqueta: 'Incidencia reportada', activa: true, canal: 'todos', plantilla: 'Incidencia en orden #{{orden_id}}: {{detalle}}', destinatario: 'admin' },
+  1012→  1012→  { id: 'NA-08', evento: 'pago_recibido', etiqueta: 'Pago recibido', activa: true, canal: 'push', plantilla: 'Pago de C${{monto}} recibido por orden #{{orden_id}}.', destinatario: 'cliente' },
+  1013→  1013→];
+  1014→  1014→
+  1015→  1015→/* ─── Config Mock Data ─── */
+  1016→  1016→
+  1017→  1017→const MOCK_HORARIOS: ConfiguracionHorario[] = [
+  1018→  1018→  { id: 'H-01', dia: 1, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+  1019→  1019→  { id: 'H-02', dia: 2, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+  1020→  1020→  { id: 'H-03', dia: 3, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+  1021→  1021→  { id: 'H-04', dia: 4, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+  1022→  1022→  { id: 'H-05', dia: 5, horaInicio: '07:00', horaFin: '21:00', activo: true, recargoNocturno: 0 },
+  1023→  1023→  { id: 'H-06', dia: 6, horaInicio: '08:00', horaFin: '18:00', activo: true, recargoNocturno: 0 },
+  1024→  1024→  { id: 'H-07', dia: 0, horaInicio: '09:00', horaFin: '14:00', activo: false, recargoNocturno: 0 },
+  1025→  1025→];
+  1026→  1026→
+  1027→  1027→const MOCK_FERIADOS: Feriado[] = [
+  1028→  1028→  { id: 'FER-01', fecha: '2026-07-19', nombre: 'Día de la Revolución', recargo: 50 },
+  1029→  1029→  { id: 'FER-02', fecha: '2026-09-14', nombre: 'Batalla de San Jacinto', recargo: 30 },
+  1030→  1030→  { id: 'FER-03', fecha: '2026-09-15', nombre: 'Independencia de Centroamérica', recargo: 30 },
+  1031→  1031→  { id: 'FER-04', fecha: '2026-12-25', nombre: 'Navidad', recargo: 50 },
+  1032→  1032→  { id: 'FER-05', fecha: '2026-01-01', nombre: 'Año Nuevo', recargo: 50 },
+  1033→  1033→];
+  1034→  1034→
+  1035→  1035→const MOCK_INTEGRACIONES: Integracion[] = [
+  1036→  1036→  { id: 'INT-01', nombre: 'WhatsApp Business API', descripcion: 'Notificaciones por WhatsApp', icono: 'message-circle', estado: 'conectado' },
+  1037→  1037→  { id: 'INT-02', nombre: 'Pasarela de pago', descripcion: 'Pagos con tarjeta y transferencia', icono: 'credit-card', estado: 'conectado' },
+  1038→  1038→  { id: 'INT-03', nombre: 'Google Maps API', descripcion: 'Geocodificación y rutas', icono: 'map', estado: 'conectado' },
+  1039→  1039→  { id: 'INT-04', nombre: 'Twilio', descripcion: 'SMS masivos', icono: 'smartphone', estado: 'no_configurado' },
+  1040→  1040→  { id: 'INT-05', nombre: 'SendGrid', descripcion: 'Emails masivos', icono: 'mail', estado: 'no_configurado' },
+  1041→  1041→];
+  1042→  1042→
+  1043→  1043→/* ─── SuperAdmin Mock Data ─── */
+  1044→  1044→
+  1045→  1045→const MOCK_AUDIT_LOG: AuditLogEntry[] = [
+  1046→  1046→  { id: 'AL-01', userId: 'admin', usuario: 'Super Admin', accion: 'crear', recurso: 'campaña', recursoId: 'CAMP-01', detalles: 'Campaña "Promo verano" creada', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T15:00:00' },
+  1047→  1047→  { id: 'AL-02', userId: 'admin', usuario: 'Super Admin', accion: 'enviar', recurso: 'campaña', recursoId: 'CAMP-01', detalles: 'Campaña enviada a 120 clientes', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T15:30:00' },
+  1048→  1048→  { id: 'AL-03', userId: 'admin', usuario: 'Super Admin', accion: 'editar', recurso: 'código_promo', recursoId: 'COD-01', detalles: 'Código LOGI20 actualizado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T12:00:00' },
+  1049→  1049→  { id: 'AL-04', userId: 'U-02', usuario: 'Despachador', accion: 'despachar', recurso: 'orden', recursoId: 'LF-2847', detalles: 'Orden asignada a Carlos M.', ip: '192.168.1.101', dispositivo: 'Chrome/Win', createdAt: '2026-06-10T14:30:00' },
+  1050→  1050→  { id: 'AL-05', userId: 'admin', usuario: 'Super Admin', accion: 'crear', recurso: 'banner', recursoId: 'BAN-01', detalles: 'Banner "20% en tu próximo envío" creado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-05T10:00:00' },
+  1051→  1051→  { id: 'AL-06', userId: 'U-03', usuario: 'Ana Torres', accion: 'entregar', recurso: 'orden', recursoId: 'LF-2846', detalles: 'Orden entregada exitosamente', ip: '10.0.0.5', dispositivo: 'Android/App', createdAt: '2026-06-10T10:58:00' },
+  1052→  1052→  { id: 'AL-07', userId: 'admin', usuario: 'Super Admin', accion: 'pausar', recurso: 'código_promo', recursoId: 'COD-03', detalles: 'Código RAPIDO15 pausado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T16:00:00' },
+  1053→  1053→  { id: 'AL-08', userId: 'admin', usuario: 'Super Admin', accion: 'editar', recurso: 'horario', detalles: 'Horario viernes extendido a 21:00', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-08T09:00:00' },
+  1054→  1054→];
+  1055→  1055→
+  1056→  1056→const MOCK_FEATURE_FLAGS: FeatureFlag[] = [
+  1057→  1057→  { id: 'FF-01', nombre: 'Habilitar chat', descripcion: 'Chat en tiempo real entre admin, clientes y repartidores', habilitado: true },
+  1058→  1058→  { id: 'FF-02', nombre: 'Habilitar campañas', descripcion: 'Campañas de notificación masiva', habilitado: true },
+  1059→  1059→  { id: 'FF-03', nombre: 'Habilitar códigos promo', descripcion: 'Sistema de códigos promocionales', habilitado: true },
+  1060→  1060→  { id: 'FF-04', nombre: 'Habilitar banners', descripcion: 'Banners promocionales en la app del cliente', habilitado: true },
+  1061→  1061→  { id: 'FF-05', nombre: 'Habilitar feed', descripcion: 'Feed de contenido dinámico', habilitado: false },
+  1062→  1062→  { id: 'FF-06', nombre: 'Modo mantenimiento', descripcion: 'Bloquea el acceso para todos excepto super admin', habilitado: false },
+  1063→  1063→];
+  1064→  1064→
+  1065→  1065→const MOCK_MARKETING_KPI: MarketingKPI = {
+  1066→  1066→  clientesActivosMes: 87,
+  1067→  1067→  tendenciaActivos: 12,
+  1068→  1068→  tasaRetencion: 68,
+  1069→  1069→  frecuenciaPromedio: 3.2,
+  1070→  1070→  valorPromedioEnvio: 145,
+  1071→  1071→  costoAdquisicion: 35,
+  1072→  1072→};
+  1073→  1073→
+  1074→  1074→/* ─── Client Experience Mock Data ─── */
+  1075→  1075→
+  1076→  1076→const MOCK_CLIENT_NOTIFICACIONES: ClientNotificacion[] = [
+  1077→  1077→  { id: 'CN-01', tipo: 'repartidor_camino', titulo: '¡Tu envío LF-2847 está en camino!', descripcion: 'El repartidor se dirige al punto de recogida', leida: false, relacionadoId: 'LF-2847', timestamp: new Date(Date.now() - 10 * 60000).toISOString() },
+  1078→  1078→  { id: 'CN-02', tipo: 'paquete_recogido', titulo: 'Repartidor Carlos M. ha recogido tu paquete', descripcion: 'Tu paquete está en camino al destino', leida: false, relacionadoId: 'LF-2847', timestamp: new Date(Date.now() - 5 * 60000).toISOString() },
+  1079→  1079→  { id: 'CN-03', tipo: 'entrega_exitosa', titulo: 'Orden LF-2830 entregada exitosamente', descripcion: 'El paquete fue entregado en Barrio Monseñor Lezcano', leida: true, relacionadoId: 'LF-2830', timestamp: new Date(Date.now() - 24 * 3600000).toISOString() },
+  1080→  1080→  { id: 'CN-04', tipo: 'codigo_nuevo', titulo: 'Nuevo código disponible: LOGI20', descripcion: 'Usa LOGI20 y obtén 20% de descuento en tu próximo envío', leida: true, timestamp: new Date(Date.now() - 3 * 86400000).toISOString() },
+  1081→  1081→  { id: 'CN-05', tipo: 'incidencia', titulo: 'Tu envío LF-2789 presenta una incidencia', descripcion: 'Estamos trabajando para resolverlo. Te mantendremos informado.', leida: true, relacionadoId: 'LF-2789', timestamp: new Date(Date.now() - 7 * 86400000).toISOString() },
+  1082→  1082→];
+  1083→  1083→
+  1084→  1084→const MOCK_DIRECCIONES_GUARDADAS: DireccionGuardada[] = [
+  1085→  1085→  { id: 'DG-01', etiqueta: 'Casa', direccion: 'Col. Los Robles, Managua', lat: 12.1245, lng: -86.2520 },
+  1086→  1086→  { id: 'DG-02', etiqueta: 'Trabajo', direccion: 'Centro Comercial Metrocentro, Managua', lat: 12.1150, lng: -86.2362 },
+  1087→  1087→  { id: 'DG-03', etiqueta: 'Mamá', direccion: 'Barrio Monseñor Lezcano, Managua', lat: 12.0980, lng: -86.2310 },
+  1088→  1088→];
+  1089→  1089→
+  1090→  1090→const MOCK_DIRECCIONES_SUGERENCIAS: DireccionSugerencia[] = [
+  1091→  1091→  { id: 'DS-01', direccion: 'Metrocentro, Managua', barrio: 'Centro', lat: 12.1150, lng: -86.2362 },
+  1092→  1092→  { id: 'DS-02', direccion: 'Galerías Santo Domingo', barrio: 'Santo Domingo', lat: 12.0900, lng: -86.2180 },
+  1093→  1093→  { id: 'DS-03', direccion: 'Universidad Centroamericana', barrio: 'Los Robles', lat: 12.1029, lng: -86.2545 },
+  1094→  1094→  { id: 'DS-04', direccion: 'Hospital Metropolitano', barrio: 'Altamira', lat: 12.1050, lng: -86.2450 },
+  1095→  1095→  { id: 'DS-05', direccion: 'Mercado Oriental', barrio: 'Centro', lat: 12.1320, lng: -86.2220 },
+  1096→  1096→  { id: 'DS-06', direccion: 'Plaza Inter', barrio: 'Centro', lat: 12.1180, lng: -86.2650 },
+  1097→  1097→  { id: 'DS-07', direccion: 'Col. Los Robles, Managua', barrio: 'Los Robles', lat: 12.1245, lng: -86.2520 },
+  1098→  1098→  { id: 'DS-08', direccion: 'Barrio Monseñor Lezcano', barrio: 'Lezcano', lat: 12.0980, lng: -86.2310 },
+  1099→  1099→  { id: 'DS-09', direccion: 'Villa Fontana, Managua', barrio: 'Villa Fontana', lat: 12.0850, lng: -86.2070 },
+  1100→  1100→  { id: 'DS-10', direccion: 'Bello Horizonte', barrio: 'Bello Horizonte', lat: 12.1300, lng: -86.2800 },
+  1101→  1101→  { id: 'DS-11', direccion: 'Reparto Schick', barrio: 'Schick', lat: 12.1080, lng: -86.2400 },
+  1102→  1102→  { id: 'DS-12', direccion: 'Carretera a Masaya', barrio: 'Masaya', lat: 12.0950, lng: -86.2100 },
+  1103→  1103→  { id: 'DS-13', direccion: 'Centro Histórico, Managua', barrio: 'Centro', lat: 12.1360, lng: -86.2520 },
+  1104→  1104→  { id: 'DS-14', direccion: 'Col. Centroamérica', barrio: 'Centroamérica', lat: 12.1150, lng: -86.2600 },
+  1105→  1105→  { id: 'DS-15', direccion: 'Las Colinas', barrio: 'Las Colinas', lat: 12.1250, lng: -86.2480 },
+  1106→  1106→];
+  1107→  1107→
+  1108→  1108→/* ─── V2 Mock Data ─── */
+  1109→  1109→
+  1110→  1110→const MOCK_REPARTIDORES_INFO: Record<string, RepartidorInfo> = {
+  1111→  1111→  'CM': { id: 'r1', nombre: 'Carlos Mendoza', initials: 'CM', color: '#4CAF50', calificacion: 4.8, totalEntregas: 287, moto: 'Honda Wave 125', telefono: '+505 8888-1111', lat: 12.1120, lng: -86.2400 },
+  1112→  1112→  'AT': { id: 'r2', nombre: 'Ana Torres', initials: 'AT', color: '#E91E63', calificacion: 4.9, totalEntregas: 312, moto: 'Yamaha NMAX', telefono: '+505 8888-2222', lat: 12.1080, lng: -86.2480 },
+  1113→  1113→  'LR': { id: 'r3', nombre: 'Luis Ramos', initials: 'LR', color: '#2196F3', calificacion: 4.6, totalEntregas: 195, moto: 'Suzuki AX4', telefono: '+505 8888-3333', lat: 12.1200, lng: -86.2600 },
+  1114→  1114→  'JP': { id: 'r4', nombre: 'Jorge Pérez', initials: 'JP', color: '#FF9800', calificacion: 4.7, totalEntregas: 256, moto: 'Honda PCX', telefono: '+505 8888-4444', lat: 12.0950, lng: -86.2300 },
+  1115→  1115→  'RD': { id: 'r5', nombre: 'Rosa Díaz', initials: 'RD', color: '#9C27B0', calificacion: 4.5, totalEntregas: 143, moto: 'TVS Ntorq', telefono: '+505 8888-5555', lat: 12.1100, lng: -86.2350 },
+  1116→  1116→  'MS': { id: 'r6', nombre: 'Miguel Sevilla', initials: 'MS', color: '#00BCD4', calificacion: 4.4, totalEntregas: 98, moto: 'Honda Click', telefono: '+505 8888-6666', lat: 12.1300, lng: -86.2700 },
+  1117→  1117→};
+  1118→  1118→
+  1119→  1119→const MOCK_CHAT_CONVERSATIONS: ChatConversation[] = [
+  1120→  1120→  {
+  1121→  1121→    id: 'chat-2847',
+  1122→  1122→    orderId: 'LF-2847',
+  1123→  1123→    repartidor: MOCK_REPARTIDORES_INFO['CM'],
+  1124→  1124→    active: true,
+  1125→  1125→    messages: [
+  1126→  1126→      { id: 'm1', senderId: 'sistema', senderName: 'Sistema', senderType: 'sistema', content: 'Orden asignada a Carlos M.', timestamp: '14:21', read: true },
+  1127→  1127→      { id: 'm2', senderId: 'r1', senderName: 'Carlos M.', senderType: 'repartidor', content: 'Hola! Ya voy en camino a recoger tu paquete 🏍️', timestamp: '14:22', read: true },
+  1128→  1128→      { id: 'm3', senderId: 'cliente', senderName: 'María', senderType: 'cliente', content: 'Genial, te espero en la entrada principal de Metrocentro', timestamp: '14:23', read: true },
+  1129→  1129→      { id: 'm4', senderId: 'sistema', senderName: 'Sistema', senderType: 'sistema', content: 'Carlos M. está en camino a recoger', timestamp: '14:25', read: true },
+  1130→  1130→    ],
+  1131→  1131→  },
+  1132→  1132→];
+  1133→  1133→
+  1134→  1134→const MOCK_CALIFICACIONES: Calificacion[] = [
+  1135→  1135→  { id: 'cal-1', orderId: 'LF-2846', repartidorId: 'r2', repartidorNombre: 'Ana Torres', estrellas: 5, etiquetas: ['Rápido', 'Cuidadoso'], comentario: 'Excelente servicio, llegó antes de lo esperado', favorito: true, fecha: '2026-06-10', editable: false },
+  1136→  1136→  { id: 'cal-2', orderId: 'LF-2841', repartidorId: 'r4', repartidorNombre: 'Jorge Pérez', estrellas: 5, etiquetas: ['Amable', 'Excelente servicio'], comentario: '', favorito: false, fecha: '2026-06-09', editable: false },
+  1137→  1137→  { id: 'cal-3', orderId: 'LF-2838', repartidorId: 'r3', repartidorNombre: 'Luis Ramos', estrellas: 4, etiquetas: ['Rápido'], comentario: 'Bien pero tardó un poco', favorito: false, fecha: '2026-06-08', editable: false },
+  1138→  1138→];
+  1139→  1139→
+  1140→  1140→const MOCK_FIDELIZACION: DatosFidelizacion = {
+  1141→  1141→  puntos: 245,
+  1142→  1142→  nivel: 'plata',
+  1143→  1143→  historial: [
+  1144→  1144→    { id: 'fh1', fecha: '2026-06-10', accion: 'Envío completado LF-2846', puntos: 10 },
+  1145→  1145→    { id: 'fh2', fecha: '2026-06-10', accion: 'Calificación 5 estrellas', puntos: 5 },
+  1146→  1146→    { id: 'fh3', fecha: '2026-06-10', accion: 'Gasto C$200 (5 pts/C$100)', puntos: 10 },
+  1147→  1147→    { id: 'fh4', fecha: '2026-06-09', accion: 'Envío completado LF-2841', puntos: 10 },
+  1148→  1148→    { id: 'fh5', fecha: '2026-06-09', accion: 'Calificación 5 estrellas', puntos: 5 },
+  1149→  1149→    { id: 'fh6', fecha: '2026-06-09', accion: 'Gasto C$110 (5 pts/C$100)', puntos: 5 },
+  1150→  1150→    { id: 'fh7', fecha: '2026-06-08', accion: 'Envío completado LF-2838', puntos: 10 },
+  1151→  1151→    { id: 'fh8', fecha: '2026-06-08', accion: 'Gasto C$175 (5 pts/C$100)', puntos: 5 },
+  1152→  1152→    { id: 'fh9', fecha: '2026-06-08', accion: 'Primer envío bonus', puntos: 20 },
+  1153→  1153→    { id: 'fh10', fecha: '2026-06-07', accion: 'Referido: Pedro R. se registró', puntos: 50 },
+  1154→  1154→    { id: 'fh11', fecha: '2026-06-07', accion: 'Canje: C$50 descuento', puntos: -200 },
+  1155→  1155→    { id: 'fh12', fecha: '2026-06-05', accion: 'Envío completado LF-2830', puntos: 10 },
+  1156→  1156→  ],
+  1157→  1157→};
+  1158→  1158→
+  1159→  1159→const MOCK_REFERIDOS: DatosReferidos = {
+  1160→  1160→  codigo: 'MARIA-LF',
+  1161→  1161→  link: 'logifast.com/r/MARIA-LF',
+  1162→  1162→  referidos: [
+  1163→  1163→    { id: 'ref1', nombre: 'Pedro R.', fechaRegistro: '2026-06-07', primerEnvio: true },
+  1164→  1164→    { id: 'ref2', nombre: 'Sofía C.', fechaRegistro: '2026-06-09', primerEnvio: false },
+  1165→  1165→  ],
+  1166→  1166→  puntosGanados: 50,
+  1167→  1167→};
+  1168→  1168→
+  1169→  1169→/* ═══════════════════════════════════════════════
+  1170→  1170→   ZUSTAND STORE
+  1171→  1171→   ═══════════════════════════════════════════════ */
+  1172→  1172→
+  1173→  1173→export type ModuleKey = 'overview' | 'pedidos' | 'flota' | 'repartidores' | 'reportes' | 'config' | 'despacho' | 'finanzas' | 'clientes' | 'incidencias' | 'marketing' | 'comunicaciones' | 'superadmin';
+  1174→  1174→
+  1175→  1175→interface AppState {
+  1176→  1176→  /* Data */
+  1177→  1177→  orders: Order[];
+  1178→  1178→  motos: Moto[];
+  1179→  1179→  riders: Rider[];
+  1180→  1180→  alerts: Alert[];
+  1181→  1181→  zones: Zone[];
+  1182→  1182→  maintenanceRules: MaintenanceRule[];
+  1183→  1183→  companyData: CompanyData;
+  1184→  1184→  users: SystemUser[];
+  1185→  1185→  dailyRevenue: DailyRevenue[];
+  1186→  1186→  monthlyRevenue: MonthlyRevenue[];
+  1187→  1187→  zoneOrders: ZoneOrder[];
+  1188→  1188→  riderPerformance: RiderPerformance[];
+  1189→  1189→  orderStatusDistribution: { name: string; value: number; color: string }[];
+  1190→  1190→
+  1191→  1191→  /* New Data */
+  1192→  1192→  incidents: Incident[];
+  1193→  1193→  clients: Client[];
+  1194→  1194→  activityEvents: ActivityEvent[];
+  1195→  1195→  paymentConciliations: PaymentConciliation[];
+  1196→  1196→  zonePolygons: ZonePolygon[];
+  1197→  1197→
+  1198→  1198→  /* Marketing Data */
+  1199→  1199→  campanas: Campana[];
+  1200→  1200→  codigos: CodigoPromocional[];
+  1201→  1201→  banners: Banner[];
+  1202→  1202→  feedItems: FeedItem[];
+  1203→  1203→  marketingKPI: MarketingKPI;
+  1204→  1204→
+  1205→  1205→  /* Communications Data */
+  1206→  1206→  conversaciones: Conversacion[];
+  1207→  1207→  plantillas: PlantillaMensaje[];
+  1208→  1208→  notificacionesAuto: NotificacionAutomatica[];
+  1209→  1209→
+  1210→  1210→  /* Config Data */
+  1211→  1211→  horarios: ConfiguracionHorario[];
+  1212→  1212→  feriados: Feriado[];
+  1213→  1213→  integraciones: Integracion[];
+  1214→  1214→
+  1215→  1215→  /* SuperAdmin Data */
+  1216→  1216→  auditLog: AuditLogEntry[];
+  1217→  1217→  featureFlags: FeatureFlag[];
+  1218→  1218→
+  1219→  1219→  /* Client Data */
+  1220→  1220→  clientNotificaciones: ClientNotificacion[];
+  1221→  1221→  direccionesGuardadas: DireccionGuardada[];
+  1222→  1222→  direccionesSugerencias: DireccionSugerencia[];
+  1223→  1223→  clientActiveModule: ClientModuleKey;
+  1224→  1224→  clientModuleFade: boolean;
+  1225→  1225→  solicitudEnvio: SolicitudEnvio;
+  1226→  1226→  envioConfirmado: boolean;
+  1227→  1227→  envioConfirmadoId: string;
+  1228→  1228→  clientSearchQuery: string;
+  1229→  1229→  clientEnvioTab: 'activos' | 'historial';
+  1230→  1230→  clientEnvioFilter: string;
+  1231→  1231→  clientNotifOpen: boolean;
+  1232→  1232→
+  1233→  1233→  /* V2 Client Data */
+  1234→  1234→  trackingOrderId: string | null;
+  1235→  1235→  trackingSteps: TrackingStep[];
+  1236→  1236→  trackingETA: number; // minutes
+  1237→  1237→  chatConversations: ChatConversation[];
+  1238→  1238→  chatOpen: boolean;
+  1239→  1239→  chatOrderId: string | null;
+  1240→  1240→  calificaciones: Calificacion[];
+  1241→  1241→  ratingModalOpen: boolean;
+  1242→  1242→  ratingOrderId: string | null;
+  1243→  1243→  fidelizacion: DatosFidelizacion;
+  1244→  1244→  referidos: DatosReferidos;
+  1245→  1245→  scheduleMode: 'ahora' | 'programar';
+  1246→  1246→  scheduleDate: string | null;
+  1247→  1247→  scheduleTime: string | null;
+  1248→  1248→
+  1249→  1249→  /* UI State */
+  1250→  1250→  activeModule: ModuleKey;
+  1251→  1251→  moduleFade: boolean;
+  1252→  1252→
+  1253→  1253→  /* Pedidos */
+  1254→  1254→  filterStatus: OrderStatus | 'todos';
+  1255→  1255→  searchQuery: string;
+  1256→  1256→  currentPage: number;
+  1257→  1257→  dateFilter: string;
+  1258→  1258→
+  1259→  1259→  /* Modals */
+  1260→  1260→  createOrderOpen: boolean;
+  1261→  1261→  detailOrder: Order | null;
+  1262→  1262→  reassignOrder: Order | null;
+  1263→  1263→  addMotoOpen: boolean;
+  1264→  1264→  editMoto: Moto | null;
+  1265→  1265→  addRiderOpen: boolean;
+  1266→  1266→  editRider: Rider | null;
+  1267→  1267→  riderDetail: Rider | null;
+  1268→  1268→
+  1269→  1269→  /* Flota */
+  1270→  1270→  flotaFilter: MotoStatus | 'all';
+  1271→  1271→  expandedMoto: string | null;
+  1272→  1272→
+  1273→  1273→  /* Toasts */
+  1274→  1274→  toasts: ToastItem[];
+  1275→  1275→
+  1276→  1276→  /* New UI State */
+  1277→  1277→  commandPaletteOpen: boolean;
+  1278→  1278→  notificationsOpen: boolean;
+  1279→  1279→  simulationRunning: boolean;
+  1280→  1280→  lastSimulationUpdate: number;
+  1281→  1281→
+  1282→  1282→  /* Actions */
+  1283→  1283→  setActiveModule: (mod: ModuleKey) => void;
+  1284→  1284→  setFilterStatus: (status: OrderStatus | 'todos') => void;
+  1285→  1285→  setSearchQuery: (q: string) => void;
+  1286→  1286→  setCurrentPage: (p: number) => void;
+  1287→  1287→  setDateFilter: (f: string) => void;
+  1288→  1288→  setCreateOrderOpen: (open: boolean) => void;
+  1289→  1289→  setDetailOrder: (order: Order | null) => void;
+  1290→  1290→  setReassignOrder: (order: Order | null) => void;
+  1291→  1291→  setAddMotoOpen: (open: boolean) => void;
+  1292→  1292→  setEditMoto: (moto: Moto | null) => void;
+  1293→  1293→  setAddRiderOpen: (open: boolean) => void;
+  1294→  1294→  setEditRider: (rider: Rider | null) => void;
+  1295→  1295→  setRiderDetail: (rider: Rider | null) => void;
+  1296→  1296→  setFlotaFilter: (filter: MotoStatus | 'all') => void;
+  1297→  1297→  setExpandedMoto: (id: string | null) => void;
+  1298→  1298→
+  1299→  1299→  reassignRider: (orderId: string, riderName: string, riderInitials: string) => void;
+  1300→  1300→  addOrder: (order: Order) => void;
+  1301→  1301→  cancelOrder: (orderId: string) => void;
+  1302→  1302→  addMoto: (moto: Moto) => void;
+  1303→  1303→  updateMoto: (moto: Moto) => void;
+  1304→  1304→  addRider: (rider: Rider) => void;
+  1305→  1305→  updateRider: (rider: Rider) => void;
+  1306→  1306→  toggleRiderConnection: (riderId: string) => void;
+  1307→  1307→  updateMotoPositions: () => void;
+  1308→  1308→
+  1309→  1309→  /* New Actions */
+  1310→  1310→  setCommandPaletteOpen: (open: boolean) => void;
+  1311→  1311→  setNotificationsOpen: (open: boolean) => void;
+  1312→  1312→  addIncident: (incident: Incident) => void;
+  1313→  1313→  resolveIncident: (id: string, resolucion: string) => void;
+  1314→  1314→  addActivityEvent: (event: Omit<ActivityEvent, 'id'>) => void;
+  1315→  1315→  markEventsAsRead: () => void;
+  1316→  1316→  conciliatePayment: (id: string) => void;
+  1317→  1317→  simulateNewOrder: () => void;
+  1318→  1318→  simulateDelivery: () => void;
+  1319→  1319→  simulateStatusChange: () => void;
+  1320→  1320→  dispatchOrder: (orderId: string, riderId: string) => void;
+  1321→  1321→  toggleSimulation: () => void;
+  1322→  1322→
+  1323→  1323→  /* Toast Actions */
+  1324→  1324→  addToast: (message: string, variant?: ToastVariant) => void;
+  1325→  1325→  removeToast: (id: string) => void;
+  1326→  1326→
+  1327→  1327→  /* Marketing Actions */
+  1328→  1328→  addCampana: (campana: Campana) => void;
+  1329→  1329→  updateCampana: (id: string, updates: Partial<Campana>) => void;
+  1330→  1330→  deleteCampana: (id: string) => void;
+  1331→  1331→  addCodigo: (codigo: CodigoPromocional) => void;
+  1332→  1332→  updateCodigo: (id: string, updates: Partial<CodigoPromocional>) => void;
+  1333→  1333→  deleteCodigo: (id: string) => void;
+  1334→  1334→  addBanner: (banner: Banner) => void;
+  1335→  1335→  updateBanner: (id: string, updates: Partial<Banner>) => void;
+  1336→  1336→  deleteBanner: (id: string) => void;
+  1337→  1337→  addFeedItem: (item: FeedItem) => void;
+  1338→  1338→  updateFeedItem: (id: string, updates: Partial<FeedItem>) => void;
+  1339→  1339→  deleteFeedItem: (id: string) => void;
+  1340→  1340→
+  1341→  1341→  /* Communications Actions */
+  1342→  1342→  addMensaje: (convId: string, mensaje: MensajeDirecto) => void;
+  1343→  1343→  markConversacionLeida: (convId: string) => void;
+  1344→  1344→  addPlantilla: (plantilla: PlantillaMensaje) => void;
+  1345→  1345→  updatePlantilla: (id: string, updates: Partial<PlantillaMensaje>) => void;
+  1346→  1346→  deletePlantilla: (id: string) => void;
+  1347→  1347→  toggleNotificacionAuto: (id: string) => void;
+  1348→  1348→
+  1349→  1349→  /* Config Actions */
+  1350→  1350→  updateHorario: (id: string, updates: Partial<ConfiguracionHorario>) => void;
+  1351→  1351→  addFeriado: (feriado: Feriado) => void;
+  1352→  1352→  deleteFeriado: (id: string) => void;
+  1353→  1353→
+  1354→  1354→  /* SuperAdmin Actions */
+  1355→  1355→  toggleFeatureFlag: (id: string) => void;
+  1356→  1356→  addAuditEntry: (entry: Omit<AuditLogEntry, 'id'>) => void;
+  1357→  1357→
+  1358→  1358→  /* Client Actions */
+  1359→  1359→  setClientActiveModule: (mod: ClientModuleKey) => void;
+  1360→  1360→  setSolicitudEnvio: (data: Partial<SolicitudEnvio>) => void;
+  1361→  1361→  resetSolicitudEnvio: () => void;
+  1362→  1362→  confirmarEnvio: (orderId: string) => void;
+  1363→  1363→  setClientSearchQuery: (q: string) => void;
+  1364→  1364→  setClientEnvioTab: (tab: 'activos' | 'historial') => void;
+  1365→  1365→  setClientEnvioFilter: (filter: string) => void;
+  1366→  1366→  setClientNotifOpen: (open: boolean) => void;
+  1367→  1367→  markClientNotifRead: (id: string) => void;
+  1368→  1368→  markAllClientNotifRead: () => void;
+  1369→  1369→  addDireccionGuardada: (dir: DireccionGuardada) => void;
+  1370→  1370→  removeDireccionGuardada: (id: string) => void;
+  1371→  1371→  validateCodigoPromo: (codigo: string) => { valid: boolean; descuento: number; tipo: string };
+  1372→  1372→
+  1373→  1373→  /* V2 Client Actions */
+  1374→  1374→  setTrackingOrder: (orderId: string | null) => void;
+  1375→  1375→  advanceTrackingStep: () => void;
+  1376→  1376→  updateTrackingETA: () => void;
+  1377→  1377→  setChatOpen: (open: boolean) => void;
+  1378→  1378→  setChatOrderId: (orderId: string | null) => void;
+  1379→  1379→  sendChatMessage: (orderId: string, content: string, senderType: 'cliente' | 'repartidor' | 'sistema') => void;
+  1380→  1380→  addSystemChatMessage: (orderId: string, content: string) => void;
+  1381→  1381→  setRatingModalOpen: (open: boolean) => void;
+  1382→  1382→  setRatingOrderId: (orderId: string | null) => void;
+  1383→  1383→  submitCalificacion: (cal: Omit<Calificacion, 'id'>) => void;
+  1384→  1384→  addFidelizacionPuntos: (accion: string, puntos: number) => void;
+  1385→  1385→  canjearPuntos: (puntos: number) => boolean;
+  1386→  1386→  setScheduleMode: (mode: 'ahora' | 'programar') => void;
+  1387→  1387→  setScheduleDate: (date: string | null) => void;
+  1388→  1388→  setScheduleTime: (time: string | null) => void;
+  1389→  1389→}
+  1390→  1390→
+  1391→  1391→let _eventCounter = 100;
+  1392→  1392→let _orderCounter = 2860;
+  1393→  1393→
+  1394→  1394→export const useStore = create<AppState>((set, get) => ({
+  1395→  1395→  /* Data */
+  1396→  1396→  orders: MANAGUA_ORDERS,
+  1397→  1397→  motos: MOCK_MOTOS,
+  1398→  1398→  riders: MOCK_RIDERS,
+  1399→  1399→  alerts: MOCK_ALERTS,
+  1400→  1400→  zones: MOCK_ZONES,
+  1401→  1401→  maintenanceRules: MOCK_MAINTENANCE_RULES,
+  1402→  1402→  companyData: COMPANY_DATA,
+  1403→  1403→  users: MOCK_USERS,
+  1404→  1404→  dailyRevenue: DAILY_REVENUE,
+  1405→  1405→  monthlyRevenue: MONTHLY_REVENUE,
+  1406→  1406→  zoneOrders: ZONE_ORDERS,
+  1407→  1407→  riderPerformance: RIDER_PERFORMANCE,
+  1408→  1408→  orderStatusDistribution: ORDER_STATUS_DISTRIBUTION,
+  1409→  1409→
+  1410→  1410→  /* New Data */
+  1411→  1411→  incidents: MOCK_INCIDENTS,
+  1412→  1412→  clients: MOCK_CLIENTS,
+  1413→  1413→  activityEvents: MOCK_ACTIVITY_EVENTS,
+  1414→  1414→  paymentConciliations: MOCK_PAYMENT_CONCILIATIONS,
+  1415→  1415→  zonePolygons: MOCK_ZONE_POLYGONS,
+  1416→  1416→
+  1417→  1417→  /* Marketing Data */
+  1418→  1418→  campanas: MOCK_CAMPANAS,
+  1419→  1419→  codigos: MOCK_CODIGOS,
+  1420→  1420→  banners: MOCK_BANNERS,
+  1421→  1421→  feedItems: MOCK_FEED_ITEMS,
+  1422→  1422→  marketingKPI: MOCK_MARKETING_KPI,
+  1423→  1423→
+  1424→  1424→  /* Communications Data */
+  1425→  1425→  conversaciones: MOCK_CONVERSACIONES,
+  1426→  1426→  plantillas: MOCK_PLANTILLAS,
+  1427→  1427→  notificacionesAuto: MOCK_NOTIFICACIONES_AUTO,
+  1428→  1428→
+  1429→  1429→  /* Config Data */
+  1430→  1430→  horarios: MOCK_HORARIOS,
+  1431→  1431→  feriados: MOCK_FERIADOS,
+  1432→  1432→  integraciones: MOCK_INTEGRACIONES,
+  1433→  1433→
+  1434→  1434→  /* SuperAdmin Data */
+  1435→  1435→  auditLog: MOCK_AUDIT_LOG,
+  1436→  1436→  featureFlags: MOCK_FEATURE_FLAGS,
+  1437→  1437→
+  1438→  1438→  /* Client Data */
+  1439→  1439→  clientNotificaciones: MOCK_CLIENT_NOTIFICACIONES,
+  1440→  1440→  direccionesGuardadas: MOCK_DIRECCIONES_GUARDADAS,
+  1441→  1441→  direccionesSugerencias: MOCK_DIRECCIONES_SUGERENCIAS,
+  1442→  1442→  clientActiveModule: 'inicio' as ClientModuleKey,
+  1443→  1443→  clientModuleFade: false,
+  1444→  1444→  solicitudEnvio: {
+  1445→  1445→    origen: '', origenLat: 0, origenLng: 0,
+  1446→  1446→    destino: '', destinoLat: 0, destinoLng: 0,
+  1447→  1447→    descripcion: '', tamano: 'pequeno', fragil: false,
+  1448→  1448→    instrucciones: '', metodoPago: 'efectivo',
+  1449→  1449→    terminosAceptados: false,
+  1450→  1450→  },
+  1451→  1451→  envioConfirmado: false,
+  1452→  1452→  envioConfirmadoId: '',
+  1453→  1453→  clientSearchQuery: '',
+  1454→  1454→  clientEnvioTab: 'activos' as const,
+  1455→  1455→  clientEnvioFilter: 'todos',
+  1456→  1456→  clientNotifOpen: false,
+  1457→  1457→
+  1458→  1458→  /* V2 Client Data */
+  1459→  1459→  trackingOrderId: null,
+  1460→  1460→  trackingSteps: [...TRACKING_STEPS_TEMPLATE],
+  1461→  1461→  trackingETA: 12,
+  1462→  1462→  chatConversations: MOCK_CHAT_CONVERSATIONS,
+  1463→  1463→  chatOpen: false,
+  1464→  1464→  chatOrderId: null,
+  1465→  1465→  calificaciones: MOCK_CALIFICACIONES,
+  1466→  1466→  ratingModalOpen: false,
+  1467→  1467→  ratingOrderId: null,
+  1468→  1468→  fidelizacion: MOCK_FIDELIZACION,
+  1469→  1469→  referidos: MOCK_REFERIDOS,
+  1470→  1470→  scheduleMode: 'ahora' as const,
+  1471→  1471→  scheduleDate: null,
+  1472→  1472→  scheduleTime: null,
+  1473→  1473→
+  1474→  1474→  /* UI State */
+  1475→  1475→  activeModule: 'overview',
+  1476→  1476→  moduleFade: false,
+  1477→  1477→
+  1478→  1478→  /* Pedidos */
+  1479→  1479→  filterStatus: 'todos',
+  1480→  1480→  searchQuery: '',
+  1481→  1481→  currentPage: 1,
+  1482→  1482→  dateFilter: 'hoy',
+  1483→  1483→
+  1484→  1484→  /* Modals */
+  1485→  1485→  createOrderOpen: false,
+  1486→  1486→  detailOrder: null,
+  1487→  1487→  reassignOrder: null,
+  1488→  1488→  addMotoOpen: false,
+  1489→  1489→  editMoto: null,
+  1490→  1490→  addRiderOpen: false,
+  1491→  1491→  editRider: null,
+  1492→  1492→  riderDetail: null,
+  1493→  1493→
+  1494→  1494→  /* Flota */
+  1495→  1495→  flotaFilter: 'all',
+  1496→  1496→  expandedMoto: null,
+  1497→  1497→
+  1498→  1498→  /* Toasts */
+  1499→  1499→  toasts: [],
+  1500→  1500→
+  1501→  1501→  /* New UI State */
+  1502→  1502→  commandPaletteOpen: false,
+  1503→  1503→  notificationsOpen: false,
+  1504→  1504→  simulationRunning: true,
+  1505→  1505→  lastSimulationUpdate: Date.now(),
+  1506→  1506→
+  1507→  1507→  /* Actions */
+  1508→  1508→  setActiveModule: (mod) => {
+  1509→  1509→    const current = get().activeModule;
+  1510→  1510→    if (mod === current) return;
+  1511→  1511→    set({ moduleFade: true });
+  1512→  1512→    setTimeout(() => set({ activeModule: mod, moduleFade: false, currentPage: 1 }), 200);
+  1513→  1513→  },
+  1514→  1514→
+  1515→  1515→  setFilterStatus: (status) => set({ filterStatus: status, currentPage: 1 }),
+  1516→  1516→  setSearchQuery: (q) => set({ searchQuery: q, currentPage: 1 }),
+  1517→  1517→  setCurrentPage: (p) => set({ currentPage: p }),
+  1518→  1518→  setDateFilter: (f) => set({ dateFilter: f }),
+  1519→  1519→  setCreateOrderOpen: (open) => set({ createOrderOpen: open }),
+  1520→  1520→  setDetailOrder: (order) => set({ detailOrder: order }),
+  1521→  1521→  setReassignOrder: (order) => set({ reassignOrder: order }),
+  1522→  1522→  setAddMotoOpen: (open) => set({ addMotoOpen: open }),
+  1523→  1523→  setEditMoto: (moto) => set({ editMoto: moto }),
+  1524→  1524→  setAddRiderOpen: (open) => set({ addRiderOpen: open }),
+  1525→  1525→  setEditRider: (rider) => set({ editRider: rider }),
+  1526→  1526→  setRiderDetail: (rider) => set({ riderDetail: rider }),
+  1527→  1527→  setFlotaFilter: (filter) => set({ flotaFilter: filter }),
+  1528→  1528→  setExpandedMoto: (id) => set({ expandedMoto: id }),
+  1529→  1529→
+  1530→  1530→  reassignRider: (orderId, riderName, riderInitials) =>
+  1531→  1531→    set((state) => ({
+  1532→  1532→      orders: state.orders.map((o) =>
+  1533→  1533→        o.id === orderId ? { ...o, repartidor: riderName, repartidorInitials: riderInitials } : o
+  1534→  1534→      ),
+  1535→  1535→    })),
+  1536→  1536→
+  1537→  1537→  addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
+  1538→  1538→
+  1539→  1539→  cancelOrder: (orderId) =>
+  1540→  1540→    set((state) => ({
+  1541→  1541→      orders: state.orders.map((o) =>
+  1542→  1542→        o.id === orderId ? { ...o, estado: 'incidencia' as OrderStatus } : o
+  1543→  1543→      ),
+  1544→  1544→    })),
+  1545→  1545→
+  1546→  1546→  addMoto: (moto) => set((state) => ({ motos: [...state.motos, moto] })),
+  1547→  1547→
+  1548→  1548→  updateMoto: (moto) =>
+  1549→  1549→    set((state) => ({
+  1550→  1550→      motos: state.motos.map((m) => (m.id === moto.id ? moto : m)),
+  1551→  1551→    })),
+  1552→  1552→
+  1553→  1553→  addRider: (rider) => set((state) => ({ riders: [...state.riders, rider] })),
+  1554→  1554→
+  1555→  1555→  updateRider: (rider) =>
+  1556→  1556→    set((state) => ({
+  1557→  1557→      riders: state.riders.map((r) => (r.id === rider.id ? rider : r)),
+  1558→  1558→    })),
+  1559→  1559→
+  1560→  1560→  toggleRiderConnection: (riderId) =>
+  1561→  1561→    set((state) => ({
+  1562→  1562→      riders: state.riders.map((r) =>
+  1563→  1563→        r.id === riderId
+  1564→  1564→          ? { ...r, conectado: !r.conectado, status: !r.conectado ? 'available' as RiderStatus : 'offline' as RiderStatus }
+  1565→  1565→          : r
+  1566→  1566→      ),
+  1567→  1567→    })),
+  1568→  1568→
+  1569→  1569→  updateMotoPositions: () =>
+  1570→  1570→    set((state) => ({
+  1571→  1571→      motos: state.motos.map((m) => {
+  1572→  1572→        if (m.status === 'in-service') {
+  1573→  1573→          return {
+  1574→  1574→            ...m,
+  1575→  1575→            lat: m.lat + (Math.random() - 0.5) * 0.002,
+  1576→  1576→            lng: m.lng + (Math.random() - 0.5) * 0.002,
+  1577→  1577→          };
+  1578→  1578→        }
+  1579→  1579→        return m;
+  1580→  1580→      }),
+  1581→  1581→    })),
+  1582→  1582→
+  1583→  1583→  /* New Actions */
+  1584→  1584→  setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+  1585→  1585→  setNotificationsOpen: (open) => set({ notificationsOpen: open }),
+  1586→  1586→
+  1587→  1587→  addIncident: (incident) => set((state) => ({
+  1588→  1588→    incidents: [incident, ...state.incidents],
+  1589→  1589→  })),
+  1590→  1590→
+  1591→  1591→  resolveIncident: (id, resolucion) => set((state) => ({
+  1592→  1592→    incidents: state.incidents.map((inc) =>
+  1593→  1593→      inc.id === id ? { ...inc, estado: 'resuelta' as const, resolucion, tiempoResolucion: '15min' } : inc
+  1594→  1594→    ),
+  1595→  1595→  })),
+  1596→  1596→
+  1597→  1597→  addActivityEvent: (event) => {
+  1598→  1598→    _eventCounter++;
+  1599→  1599→    const newEvent: ActivityEvent = {
+  1600→  1600→      ...event,
+  1601→  1601→      id: `E-${_eventCounter}`,
+  1602→  1602→    };
+  1603→  1603→    set((state) => ({ activityEvents: [newEvent, ...state.activityEvents] }));
+  1604→  1604→  },
+  1605→  1605→
+  1606→  1606→  markEventsAsRead: () => set((state) => ({
+  1607→  1607→    activityEvents: state.activityEvents.map((e) => ({ ...e, leido: true })),
+  1608→  1608→  })),
+  1609→  1609→
+  1610→  1610→  conciliatePayment: (id) => set((state) => ({
+  1611→  1611→    paymentConciliations: state.paymentConciliations.map((p) =>
+  1612→  1612→      p.id === id ? { ...p, estado: 'conciliado' as const } : p
+  1613→  1613→    ),
+  1614→  1614→  })),
+  1615→  1615→
+  1616→  1616→  simulateNewOrder: () => {
+  1617→  1617→    const state = get();
+  1618→  1618→    _orderCounter++;
+  1619→  1619→    const clients = state.clients;
+  1620→  1620→    const client = clients[Math.floor(Math.random() * clients.length)];
+  1621→  1621→    const zones = ['Centro', 'Villa Fontana', 'Los Robles', 'Bello Horizonte', 'Monseñor Lezcano', 'Reparto Schick'];
+  1622→  1622→    const origins = ['Metrocentro', 'Galerías Santo Domingo', 'Mercado Oriental', 'Plaza Inter', 'Hospital Metropolitano'];
+  1623→  1623→    const newOrder: Order = {
+  1624→  1624→      id: `LF-${_orderCounter}`,
+  1625→  1625→      cliente: client.nombre,
+  1626→  1626→      clienteTelefono: client.telefono,
+  1627→  1627→      origen: origins[Math.floor(Math.random() * origins.length)],
+  1628→  1628→      destino: `${zones[Math.floor(Math.random() * zones.length)]}, Managua`,
+  1629→  1629→      origenLat: 12.11 + (Math.random() - 0.5) * 0.04,
+  1630→  1630→      origenLng: -86.24 + (Math.random() - 0.5) * 0.04,
+  1631→  1631→      destinoLat: 12.11 + (Math.random() - 0.5) * 0.04,
+  1632→  1632→      destinoLng: -86.24 + (Math.random() - 0.5) * 0.04,
+  1633→  1633→      repartidor: null, repartidorInitials: '',
+  1634→  1634→      descripcion: 'Envío simulado',
+  1635→  1635→      monto: Math.floor(50 + Math.random() * 200),
+  1636→  1636→      estado: 'pendiente',
+  1637→  1637→      metodoPago: Math.random() > 0.5 ? 'efectivo' : 'transferencia',
+  1638→  1638→      estadoPago: 'pendiente',
+  1639→  1639→      fecha: '2026-06-10',
+  1640→  1640→      hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
+  1641→  1641→      timeline: [
+  1642→  1642→        { step: 'Orden creada', hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true },
+  1643→  1643→        { step: 'En camino', hora: '—', completado: false },
+  1644→  1644→        { step: 'Recogida', hora: '—', completado: false },
+  1645→  1645→        { step: 'Entregada', hora: '—', completado: false },
+  1646→  1646→      ],
+  1647→  1647→    };
+  1648→  1648→    set((state) => ({
+  1649→  1649→      orders: [newOrder, ...state.orders],
+  1650→  1650→      lastSimulationUpdate: Date.now(),
+  1651→  1651→    }));
+  1652→  1652→    get().addActivityEvent({
+  1653→  1653→      tipo: 'orden',
+  1654→  1654→      titulo: 'Nueva orden simulada',
+  1655→  1655→      detalle: `${newOrder.id} - ${newOrder.cliente}`,
+  1656→  1656→      timestamp: new Date().toISOString(),
+  1657→  1657→      leido: false,
+  1658→  1658→    });
+  1659→  1659→  },
+  1660→  1660→
+  1661→  1661→  simulateDelivery: () => {
+  1662→  1662→    const state = get();
+  1663→  1663→    const activeOrders = state.orders.filter((o) => o.estado === 'encamino' || o.estado === 'recogido');
+  1664→  1664→    if (activeOrders.length === 0) return;
+  1665→  1665→    const order = activeOrders[Math.floor(Math.random() * activeOrders.length)];
+  1666→  1666→    set((state) => ({
+  1667→  1667→      orders: state.orders.map((o) =>
+  1668→  1668→        o.id === order.id
+  1669→  1669→          ? {
+  1670→  1670→              ...o,
+  1671→  1671→              estado: 'entregado' as OrderStatus,
+  1672→  1672→              calificacion: Math.floor(3 + Math.random() * 3),
+  1673→  1673→              timeline: o.timeline.map((t) => ({ ...t, completado: true, hora: t.hora === '—' ? new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : t.hora })),
+  1674→  1674→            }
+  1675→  1675→          : o
+  1676→  1676→      ),
+  1677→  1677→      lastSimulationUpdate: Date.now(),
+  1678→  1678→    }));
+  1679→  1679→    // Set rider back to available
+  1680→  1680→    if (order.repartidor) {
+  1681→  1681→      set((state) => ({
+  1682→  1682→        riders: state.riders.map((r) =>
+  1683→  1683→          r.nombre === order.repartidor ? { ...r, status: 'available' as RiderStatus, entregasHoy: r.entregasHoy + 1, entregasTotal: r.entregasTotal + 1 } : r
+  1684→  1684→        ),
+  1685→  1685→      }));
+  1686→  1686→    }
+  1687→  1687→    get().addActivityEvent({
+  1688→  1688→      tipo: 'orden',
+  1689→  1689→      titulo: 'Orden entregada',
+  1690→  1690→      detalle: `${order.id} entregada`,
+  1691→  1691→      timestamp: new Date().toISOString(),
+  1692→  1692→      leido: false,
+  1693→  1693→    });
+  1694→  1694→  },
+  1695→  1695→
+  1696→  1696→  simulateStatusChange: () => {
+  1697→  1697→    const state = get();
+  1698→  1698→    const statusFlow: Record<string, OrderStatus> = {
+  1699→  1699→      pendiente: 'encamino',
+  1700→  1700→      encamino: 'recogido',
+  1701→  1701→      recogido: 'entregado',
+  1702→  1702→    };
+  1703→  1703→    const changeable = state.orders.filter((o) => o.estado in statusFlow);
+  1704→  1704→    if (changeable.length === 0) return;
+  1705→  1705→    const order = changeable[Math.floor(Math.random() * changeable.length)];
+  1706→  1706→    const newStatus = statusFlow[order.estado];
+  1707→  1707→    const now = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+  1708→  1708→    set((state) => ({
+  1709→  1709→      orders: state.orders.map((o) =>
+  1710→  1710→        o.id === order.id
+  1711→  1711→          ? {
+  1712→  1712→              ...o,
+  1713→  1713→              estado: newStatus,
+  1714→  1714→              timeline: o.timeline.map((t, i) => {
+  1715→  1715→                const stepMap = ['Orden creada', 'En camino', 'Recogida', 'Entregada'];
+  1716→  1716→                if (stepMap[i] === 'En camino' && newStatus === 'encamino') return { ...t, completado: true, hora: now };
+  1717→  1717→                if (stepMap[i] === 'Recogida' && newStatus === 'recogido') return { ...t, completado: true, hora: now };
+  1718→  1718→                if (stepMap[i] === 'Entregada' && newStatus === 'entregado') return { ...t, completado: true, hora: now };
+  1719→  1719→                return t;
+  1720→  1720→              }),
+  1721→  1721→            }
+  1722→  1722→          : o
+  1723→  1723→      ),
+  1724→  1724→      lastSimulationUpdate: Date.now(),
+  1725→  1725→    }));
+  1726→  1726→    const statusLabels: Record<string, string> = { encamino: 'En camino', recogido: 'Recogido', entregado: 'Entregado' };
+  1727→  1727→    get().addActivityEvent({
+  1728→  1728→      tipo: 'orden',
+  1729→  1729→      titulo: `Orden ${statusLabels[newStatus]}`,
+  1730→  1730→      detalle: `${order.id} → ${statusLabels[newStatus]}`,
+  1731→  1731→      timestamp: new Date().toISOString(),
+  1732→  1732→      leido: false,
+  1733→  1733→    });
+  1734→  1734→  },
+  1735→  1735→
+  1736→  1736→  dispatchOrder: (orderId, riderId) => {
+  1737→  1737→    const state = get();
+  1738→  1738→    const rider = state.riders.find((r) => r.id === riderId);
+  1739→  1739→    if (!rider) return;
+  1740→  1740→    const now = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+  1741→  1741→    set((state) => ({
+  1742→  1742→      orders: state.orders.map((o) =>
+  1743→  1743→        o.id === orderId
+  1744→  1744→          ? {
+  1745→  1745→              ...o,
+  1746→  1746→              estado: 'encamino' as OrderStatus,
+  1747→  1747→              repartidor: rider.nombre,
+  1748→  1748→              repartidorInitials: rider.initials,
+  1749→  1749→              timeline: o.timeline.map((t) => {
+  1750→  1750→                if (t.step === 'En camino') return { ...t, completado: true, hora: now };
+  1751→  1751→                return t;
+  1752→  1752→              }),
+  1753→  1753→            }
+  1754→  1754→          : o
+  1755→  1755→      ),
+  1756→  1756→      riders: state.riders.map((r) =>
+  1757→  1757→        r.id === riderId ? { ...r, status: 'in-service' as RiderStatus } : r
+  1758→  1758→      ),
+  1759→  1759→    }));
+  1760→  1760→    get().addActivityEvent({
+  1761→  1761→      tipo: 'orden',
+  1762→  1762→      titulo: 'Orden despachada',
+  1763→  1763→      detalle: `${orderId} asignada a ${rider.nombre}`,
+  1764→  1764→      timestamp: new Date().toISOString(),
+  1765→  1765→      leido: false,
+  1766→  1766→    });
+  1767→  1767→  },
+  1768→  1768→
+  1769→  1769→  toggleSimulation: () => set((state) => ({ simulationRunning: !state.simulationRunning })),
+  1770→  1770→
+  1771→  1771→  /* Toast Actions */
+  1772→  1772→  addToast: (message, variant = 'info') => {
+  1773→  1773→    const id = `T-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  1774→  1774→    const toast: ToastItem = { id, message, variant, timestamp: Date.now() };
+  1775→  1775→    set((state) => ({ toasts: [...state.toasts, toast] }));
+  1776→  1776→    setTimeout(() => {
+  1777→  1777→      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+  1778→  1778→    }, 4000);
+  1779→  1779→  },
+  1780→  1780→  removeToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+  1781→  1781→
+  1782→  1782→  /* Marketing Actions */
+  1783→  1783→  addCampana: (campana) => set((state) => ({ campanas: [campana, ...state.campanas] })),
+  1784→  1784→  updateCampana: (id, updates) => set((state) => ({
+  1785→  1785→    campanas: state.campanas.map((c) => c.id === id ? { ...c, ...updates } : c),
+  1786→  1786→  })),
+  1787→  1787→  deleteCampana: (id) => set((state) => ({ campanas: state.campanas.filter((c) => c.id !== id) })),
+  1788→  1788→  addCodigo: (codigo) => set((state) => ({ codigos: [codigo, ...state.codigos] })),
+  1789→  1789→  updateCodigo: (id, updates) => set((state) => ({
+  1790→  1790→    codigos: state.codigos.map((c) => c.id === id ? { ...c, ...updates } : c),
+  1791→  1791→  })),
+  1792→  1792→  deleteCodigo: (id) => set((state) => ({ codigos: state.codigos.filter((c) => c.id !== id) })),
+  1793→  1793→  addBanner: (banner) => set((state) => ({ banners: [...state.banners, banner] })),
+  1794→  1794→  updateBanner: (id, updates) => set((state) => ({
+  1795→  1795→    banners: state.banners.map((b) => b.id === id ? { ...b, ...updates } : b),
+  1796→  1796→  })),
+  1797→  1797→  deleteBanner: (id) => set((state) => ({ banners: state.banners.filter((b) => b.id !== id) })),
+  1798→  1798→  addFeedItem: (item) => set((state) => ({ feedItems: [item, ...state.feedItems] })),
+  1799→  1799→  updateFeedItem: (id, updates) => set((state) => ({
+  1800→  1800→    feedItems: state.feedItems.map((f) => f.id === id ? { ...f, ...updates } : f),
+  1801→  1801→  })),
+  1802→  1802→  deleteFeedItem: (id) => set((state) => ({ feedItems: state.feedItems.filter((f) => f.id !== id) })),
+  1803→  1803→
+  1804→  1804→  /* Communications Actions */
+  1805→  1805→  addMensaje: (convId, mensaje) => set((state) => ({
+  1806→  1806→    conversaciones: state.conversaciones.map((c) =>
+  1807→  1807→      c.id === convId
+  1808→  1808→        ? { ...c, mensajes: [...c.mensajes, mensaje], ultimoMensaje: mensaje.contenido, ultimoTimestamp: mensaje.enviadoEn, noLeidos: mensaje.emisorId !== 'admin' ? c.noLeidos + 1 : 0 }
+  1809→  1809→        : c
+  1810→  1810→    ),
+  1811→  1811→  })),
+  1812→  1812→  markConversacionLeida: (convId) => set((state) => ({
+  1813→  1813→    conversaciones: state.conversaciones.map((c) =>
+  1814→  1814→      c.id === convId ? { ...c, noLeidos: 0, mensajes: c.mensajes.map((m) => ({ ...m, leido: true })) } : c
+  1815→  1815→    ),
+  1816→  1816→  })),
+  1817→  1817→  addPlantilla: (plantilla) => set((state) => ({ plantillas: [plantilla, ...state.plantillas] })),
+  1818→  1818→  updatePlantilla: (id, updates) => set((state) => ({
+  1819→  1819→    plantillas: state.plantillas.map((p) => p.id === id ? { ...p, ...updates } : p),
+  1820→  1820→  })),
+  1821→  1821→  deletePlantilla: (id) => set((state) => ({ plantillas: state.plantillas.filter((p) => p.id !== id) })),
+  1822→  1822→  toggleNotificacionAuto: (id) => set((state) => ({
+  1823→  1823→    notificacionesAuto: state.notificacionesAuto.map((n) =>
+  1824→  1824→      n.id === id ? { ...n, activa: !n.activa } : n
+  1825→  1825→    ),
+  1826→  1826→  })),
+  1827→  1827→
+  1828→  1828→  /* Config Actions */
+  1829→  1829→  updateHorario: (id, updates) => set((state) => ({
+  1830→  1830→    horarios: state.horarios.map((h) => h.id === id ? { ...h, ...updates } : h),
+  1831→  1831→  })),
+  1832→  1832→  addFeriado: (feriado) => set((state) => ({ feriados: [...state.feriados, feriado] })),
+  1833→  1833→  deleteFeriado: (id) => set((state) => ({ feriados: state.feriados.filter((f) => f.id !== id) })),
+  1834→  1834→
+  1835→  1835→  /* SuperAdmin Actions */
+  1836→  1836→  toggleFeatureFlag: (id) => set((state) => ({
+  1837→  1837→    featureFlags: state.featureFlags.map((f) =>
+  1838→  1838→      f.id === id ? { ...f, habilitado: !f.habilitado } : f
+  1839→  1839→    ),
+  1840→  1840→  })),
+  1841→  1841→  addAuditEntry: (entry) => {
+  1842→  1842→    const id = `AL-${Date.now()}`;
+  1843→  1843→    set((state) => ({ auditLog: [{ ...entry, id }, ...state.auditLog] }));
+  1844→  1844→  },
+  1845→  1845→
+  1846→  1846→  /* Client Actions */
+  1847→  1847→  setClientActiveModule: (mod) => {
+  1848→  1848→    const current = get().clientActiveModule;
+  1849→  1849→    if (mod === current) return;
+  1850→  1850→    set({ clientModuleFade: true });
+  1851→  1851→    setTimeout(() => set({ clientActiveModule: mod, clientModuleFade: false }), 200);
+  1852→  1852→  },
+  1853→  1853→  setSolicitudEnvio: (data) => set((state) => ({
+  1854→  1854→    solicitudEnvio: { ...state.solicitudEnvio, ...data },
+  1855→  1855→  })),
+  1856→  1856→  resetSolicitudEnvio: () => set({
+  1857→  1857→    solicitudEnvio: {
+  1858→  1858→      origen: '', origenLat: 0, origenLng: 0,
+  1859→  1859→      destino: '', destinoLat: 0, destinoLng: 0,
+  1860→  1860→      descripcion: '', tamano: 'pequeno', fragil: false,
+  1861→  1861→      instrucciones: '', metodoPago: 'efectivo',
+  1862→  1862→      terminosAceptados: false,
+  1863→  1863→    },
+  1864→  1864→    envioConfirmado: false,
+  1865→  1865→    envioConfirmadoId: '',
+  1866→  1866→  }),
+  1867→  1867→  confirmarEnvio: (orderId) => set({ envioConfirmado: true, envioConfirmadoId: orderId }),
+  1868→  1868→  setClientSearchQuery: (q) => set({ clientSearchQuery: q }),
+  1869→  1869→  setClientEnvioTab: (tab) => set({ clientEnvioTab: tab }),
+  1870→  1870→  setClientEnvioFilter: (filter) => set({ clientEnvioFilter: filter }),
+  1871→  1871→  setClientNotifOpen: (open) => set({ clientNotifOpen: open }),
+  1872→  1872→  markClientNotifRead: (id) => set((state) => ({
+  1873→  1873→    clientNotificaciones: state.clientNotificaciones.map((n) =>
+  1874→  1874→      n.id === id ? { ...n, leida: true } : n
+  1875→  1875→    ),
+  1876→  1876→  })),
+  1877→  1877→  markAllClientNotifRead: () => set((state) => ({
+  1878→  1878→    clientNotificaciones: state.clientNotificaciones.map((n) => ({ ...n, leida: true })),
+  1879→  1879→  })),
+  1880→  1880→  addDireccionGuardada: (dir) => set((state) => ({
+  1881→  1881→    direccionesGuardadas: [...state.direccionesGuardadas, dir],
+  1882→  1882→  })),
+  1883→  1883→  removeDireccionGuardada: (id) => set((state) => ({
+  1884→  1884→    direccionesGuardadas: state.direccionesGuardadas.filter((d) => d.id !== id),
+  1885→  1885→  })),
+  1886→  1886→  validateCodigoPromo: (codigo) => {
+  1887→  1887→    const found = get().codigos.find((c) => c.codigo.toUpperCase() === codigo.toUpperCase() && c.estado === 'activo');
+  1888→  1888→    if (!found) return { valid: false, descuento: 0, tipo: '' };
+  1889→  1889→    const descuento = found.tipoDescuento === 'porcentaje' ? found.valor : found.valor;
+  1890→  1890→    return { valid: true, descuento, tipo: found.tipoDescuento };
+  1891→  1891→  },
+  1892→  1892→
+  1893→  1893→  /* V2 Client Actions */
+  1894→  1894→  setTrackingOrder: (orderId) => {
+  1895→  1895→    if (!orderId) {
+  1896→  1896→      set({ trackingOrderId: null, trackingSteps: [...TRACKING_STEPS_TEMPLATE], trackingETA: 12 });
+  1897→  1897→      return;
+  1898→  1898→    }
+  1899→  1899→    const order = get().orders.find((o) => o.id === orderId);
+  1900→  1900→    if (!order) return;
+  1901→  1901→    // Build tracking steps based on order status
+  1902→  1902→    const now = new Date();
+  1903→  1903→    const fmt = (d: Date) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+  1904→  1904→    const steps = TRACKING_STEPS_TEMPLATE.map((s, i) => ({ ...s }));
+  1905→  1905→    // Determine which steps are completed based on order estado
+  1906→  1906→    const statusIndex: Record<string, number> = {
+  1907→  1907→      pendiente: 0, encamino: 3, recogido: 5, entregado: 7, incidencia: 3, programada: 0,
+  1908→  1908→    };
+  1909→  1909→    const completedUpTo = statusIndex[order.estado] ?? 0;
+  1910→  1910→    for (let i = 0; i < steps.length; i++) {
+  1911→  1911→      if (i < completedUpTo) {
+  1912→  1912→        steps[i].status = 'completed';
+  1913→  1913→        steps[i].timestamp = fmt(new Date(now.getTime() - (completedUpTo - i) * 180000));
+  1914→  1914→      } else if (i === completedUpTo) {
+  1915→  1915→        steps[i].status = 'current';
+  1916→  1916→        steps[i].timestamp = fmt(now);
+  1917→  1917→      } else {
+  1918→  1918→        steps[i].status = 'pending';
+  1919→  1919→      }
+  1920→  1920→    }
+  1921→  1921→    // For programada, show first step completed
+  1922→  1922→    if (order.estado === 'programada') {
+  1923→  1923→      steps[0].status = 'completed';
+  1924→  1924→      steps[0].timestamp = order.hora;
+  1925→  1925→    }
+  1926→  1926→    // For entregado, mark all completed
+  1927→  1927→    if (order.estado === 'entregado') {
+  1928→  1928→      steps.forEach((s, i) => { s.status = 'completed'; s.timestamp = fmt(new Date(now.getTime() - (7 - i) * 180000)); });
+  1929→  1929→    }
+  1930→  1930→    const eta = order.estado === 'entregado' ? 0 : order.estado === 'programada' ? -1 : Math.max(3, Math.floor(12 - completedUpTo * 1.5));
+  1931→  1931→    set({ trackingOrderId: orderId, trackingSteps: steps, trackingETA: eta });
+  1932→  1932→  },
+  1933→  1933→
+  1934→  1934→  advanceTrackingStep: () => {
+  1935→  1935→    const steps = [...get().trackingSteps];
+  1936→  1936→    const now = new Date();
+  1937→  1937→    const fmt = () => now.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+  1938→  1938→    const currentIdx = steps.findIndex((s) => s.status === 'current');
+  1939→  1939→    if (currentIdx >= 0) {
+  1940→  1940→      steps[currentIdx] = { ...steps[currentIdx], status: 'completed', timestamp: fmt() };
+  1941→  1941→      if (currentIdx + 1 < steps.length) {
+  1942→  1942→        steps[currentIdx + 1] = { ...steps[currentIdx + 1], status: 'current', timestamp: fmt() };
+  1943→  1943→      }
+  1944→  1944→    } else {
+  1945→  1945→      const pendingIdx = steps.findIndex((s) => s.status === 'pending');
+  1946→  1946→      if (pendingIdx >= 0) {
+  1947→  1947→        steps[pendingIdx] = { ...steps[pendingIdx], status: 'current', timestamp: fmt() };
+  1948→  1948→      }
+  1949→  1949→    }
+  1950→  1950→    set((state) => ({ trackingSteps: steps, trackingETA: Math.max(0, state.trackingETA - 2) }));
+  1951→  1951→  },
+  1952→  1952→
+  1953→  1953→  updateTrackingETA: () => set((state) => ({
+  1954→  1954→    trackingETA: Math.max(0, state.trackingETA - 1),
+  1955→  1955→  })),
+  1956→  1956→
+  1957→  1957→  setChatOpen: (open) => set({ chatOpen: open }),
+  1958→  1958→  setChatOrderId: (orderId) => set({ chatOrderId: orderId }),
+  1959→  1959→
+  1960→  1960→  sendChatMessage: (orderId, content, senderType) => {
+  1961→  1961→    const id = `msg-${Date.now()}`;
+  1962→  1962→    const now = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+  1963→  1963→    const senderName = senderType === 'cliente' ? 'María' : senderType === 'sistema' ? 'Sistema' : 'Repartidor';
+  1964→  1964→    const msg: ChatMessage = { id, senderId: senderType === 'cliente' ? 'cliente' : 'r1', senderName, senderType, content, timestamp: now, read: senderType !== 'cliente' };
+  1965→  1965→    set((state) => ({
+  1966→  1966→      chatConversations: state.chatConversations.map((c) =>
+  1967→  1967→        c.orderId === orderId ? { ...c, messages: [...c.messages, msg] } : c
+  1968→  1968→      ),
+  1969→  1969→    }));
+  1970→  1970→  },
+  1971→  1971→
+  1972→  1972→  addSystemChatMessage: (orderId, content) => {
+  1973→  1973→    get().sendChatMessage(orderId, content, 'sistema');
+  1974→  1974→  },
+  1975→  1975→
+  1976→  1976→  setRatingModalOpen: (open) => set({ ratingModalOpen: open }),
+  1977→  1977→  setRatingOrderId: (orderId) => set({ ratingOrderId: orderId }),
+  1978→  1978→
+  1979→  1979→  submitCalificacion: (cal) => {
+  1980→  1980→    const id = `cal-${Date.now()}`;
+  1981→  1981→    set((state) => ({
+  1982→  1982→      calificaciones: [{ ...cal, id }, ...state.calificaciones],
+  1983→  1983→      ratingModalOpen: false,
+  1984→  1984→      ratingOrderId: null,
+  1985→  1985→    }));
+  1986→  1986→  },
+  1987→  1987→
+  1988→  1988→  addFidelizacionPuntos: (accion, puntos) => set((state) => {
+  1989→  1989→    const newPuntos = state.fidelizacion.puntos + puntos;
+  1990→  1990→    let nivel: NivelFidelizacion = 'bronce';
+  1991→  1991→    if (newPuntos >= 600) nivel = 'platino';
+  1992→  1992→    else if (newPuntos >= 300) nivel = 'oro';
+  1993→  1993→    else if (newPuntos >= 100) nivel = 'plata';
+  1994→  1994→    const entry: PuntosHistorial = { id: `fh-${Date.now()}`, fecha: new Date().toISOString().split('T')[0], accion, puntos };
+  1995→  1995→    return {
+  1996→  1996→      fidelizacion: { ...state.fidelizacion, puntos: newPuntos, nivel, historial: [entry, ...state.fidelizacion.historial] },
+  1997→  1997→    };
+  1998→  1998→  }),
+  1999→  1999→
+  2000→  2000→  canjearPuntos: (puntos) => {
+
+[showing lines 1-2000 of 2002; use offset=2001 with limit to continue reading]

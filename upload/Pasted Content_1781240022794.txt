@@ -1,0 +1,711 @@
+PROMPT SUPER ADMIN v4 — MARKETPLACE + FEED TIPO PEDIDOYA
+
+CONTEXTO:
+LOGIFAST ya tiene el dashboard del Super Administrador con todos los modulos de operaciones, flota, pedidos, reportes, marketing, comunicaciones, configuracion (v1 + v2 + v3). El cliente ahora tiene la capacidad de COMPRAR en tiendas y recibir en casa ademas de enviar paquetes (Cliente v3). El admin necesita TODAS las herramientas para gestionar este marketplace + controlar el feed que ve el cliente (estilo PedidosYa/Hugo/Rappi).
+
+Este prompt es UNICO y AUTOCONTENIDO. Cubre:
+1. Modulo de GESTION DE TIENDAS para el admin
+2. Modulo de GESTION DE PRODUCTOS para el admin
+3. Modulo de PEDIDOS DE COMPRA para el admin
+4. Modulo de EDITOR DE FEED (tipo PedidosYa) para el admin
+5. Modulo de ANALITICA DEL MARKETPLACE para el admin
+6. Todas las mejoras necesarias en modulos existentes
+
+Dependencias existentes, no se necesitan nuevas. Mismos tokens, paleta, tipografia.
+
+=====================================================
+A. NUEVAS TABS EN EL HEADER DEL ADMIN
+=====================================================
+
+El header del admin ahora tiene 10 tabs (desktop):
+
+"General" / "Pedidos" / "Flota" / "Repartidores" / "Tiendas" / "Marketplace" / "Reportes" / "Marketing" / "Config" / "Mas..."
+
+En mobile bottom nav: General / Pedidos / Tiendas / Marketing / Mas
+
+Los modulos nuevos son:
+- "Tiendas" — gestion de tiendas y productos
+- "Marketplace" — pedidos de compra + editor de feed + analitica de marketplace
+
+=====================================================
+MODULO 10: GESTION DE TIENDAS
+=====================================================
+
+El admin controla absolutamente todo sobre las tiendas que aparecen en la app del cliente.
+
+10A. LISTA DE TIENDAS:
+
+HEADER: "Gestion de Tiendas" Syne 32px + "X tiendas activas" muted + boton "Nueva tienda" (primario, icono +)
+
+BARRA DE HERRAMIENTAS:
+- Filtros por categoria: pills "Todas" / "Comida" / "Tiendas" / "Farmacias" / "Regalos" / "Supermercado" / "Tecnologia" / "Deportes"
+- Filtros por estado: "Activas" / "Inactivas" / "Cerradas"
+- Busqueda: "Buscar tienda por nombre..."
+- Ordenar: "Mas pedidos" / "Mejor calificadas" / "Mas recientes" / "A-Z"
+- Vista: toggle lista/grid (iconos)
+
+LISTA DE TIENDAS (vista lista — default):
+Cada tienda como fila expandible:
+- Layout:
+  Logo (circulo 44px, color de fondo de la tienda + iniciales) | Nombre 16px bold | Categoria badge | Calificacion ★4.7 | Pedidos totales mono | Estado badge (Activa verde, Inactiva gris, Cerrada roja) | Zonas de cobertura (chips pequenos) | Boton expandir
+- Al expandir:
+  Grid 3 columnas:
+    Col 1 — Info basica:
+      Direccion + mapa pequeno (Leaflet 120px)
+      Telefono + email
+      Horario: tabla Lun-Dom con horas de apertura/cierre
+      Zonas de cobertura: lista de zonas
+      Pedido minimo, costo de envio, tiempo estimado
+    Col 2 — Metricas:
+      Total pedidos
+      Ingresos generados
+      Calificacion promedio
+      Productos activos
+      Pedidos este mes
+      Grafico pequeno (Recharts BarChart, 100px): pedidos por semana, ultimas 4 semanas
+    Col 3 — Acciones:
+      "Editar tienda" (abre modal de edicion)
+      "Gestionar productos" (va al modulo de productos de esa tienda)
+      "Ver pedidos" (filtra pedidos de compra por esta tienda)
+      "Desactivar tienda" / "Activar tienda" (toggle)
+      "Eliminar tienda" (modal destructivo)
+
+VISTA GRID (alternativa):
+- Tarjetas de tienda 280px ancho:
+  Portada: area 120px con color de la tienda
+  Logo: 48x48 circulo superpuesto
+  Nombre + categoria + calificacion
+  Stats: pedidos, ingresos
+  Badge de estado
+  Acciones rapidas: editar / productos / desactivar
+
+MODAL CREAR/EDITAR TIENDA:
+- Max-width 600px, scroll interno si es necesario
+- Secciones:
+
+  PASO 1 — Informacion basica:
+    Nombre de la tienda: input
+    Categoria: select con las 8 categorias
+    Descripcion: textarea, max 300 chars
+    Telefono: input
+    Email: input
+    Direccion: input con autocompletado de Managua (GET /api/direcciones)
+    Mapa: al seleccionar direccion, marcador aparece en Leaflet, se puede ajustar arrastrando
+    Lat/Lng: se llenan automaticamente desde la direccion (o manual)
+
+  PASO 2 — Identidad visual:
+    Color de portada: selector de color con presets (8 colores de la paleta + custom)
+    Color del logo: selector de color
+    Iniciales del logo: input 2 chars, preview en vivo del circulo con esas iniciales
+    Preview del card de tienda: como se vera en la app del cliente
+
+  PASO 3 — Operacion:
+    Horario por dia: grid con Lun-Dom, selector de hora apertura y cierre por dia
+    Toggle "Abierto ahora" por dia
+    "Copiar horario a todos los dias" boton
+    Zonas de cobertura: checkboxes de las zonas de Managua (Centro, Villa Fontana, Los Robles, Bello Horizonte, Monseñor Lezcano, Reparto Schick, Masaya)
+    Pedido minimo: input numerico (C$)
+    Costo de envio: input numerico (C$)
+    Tiempo estimado de entrega: input texto ("25-35 min")
+
+  PASO 4 — Configuracion:
+    Estado: "Activa" / "Inactiva" / "Cerrada"
+    "Destacada" toggle: si esta activa, aparece en "Populares cerca de ti" en el feed del cliente
+    "Verificada" toggle: muestra badge azul de verificada
+    "Popular" toggle: muestra badge naranja
+    Propietario (opcional): select de usuarios si se quiere asignar un dueño de tienda
+
+  Botones: "Cancelar" / "Guardar tienda"
+
+=====================================================
+10B. GESTION DE PRODUCTOS
+=====================================================
+
+Accesible desde "Gestionar productos" en una tienda, o como sub-modulo dentro de Tiendas.
+
+HEADER: "[Nombre Tienda] — Productos" Syne 24px + "X productos activos" muted + boton "Nuevo producto" + boton "Volver a tiendas"
+
+FILTROS:
+- Por categoria de producto (de la tienda): tabs internos
+- Por estado: "Todos" / "Disponibles" / "Agotados"
+- Busqueda: "Buscar producto..."
+
+LISTA DE PRODUCTOS:
+Cada producto como tarjeta:
+- Layout horizontal:
+  Imagen (cuadrado 72px, border-radius 14px, color de fondo) | Nombre 15px bold | Categoria 12px muted | Precio mono 16px bold | Precio original tachado (si hay descuento) | Stock (numero o "Ilimitado") | Badges: "Nuevo" / "Popular" / "Agotado" | Switch disponible/desponible | Botones: editar / eliminar
+- Si el stock es <= 3: badge "Bajo stock" con pulso
+- Si no esta disponible: fila atenuada (opacidad 0.5)
+
+MODAL CREAR/EDITAR PRODUCTO:
+- Max-width 500px
+- Campos:
+  Nombre: input
+  Descripcion: textarea, max 200 chars
+  Precio: input numerico (C$)
+  Precio original (opcional): input numerico — si se llena, muestra tachado en la app
+  Imagen: selector de color de fondo (simulado, 8 presets + custom)
+  Categoria de producto: select de categorias de la tienda (si no hay, crear inline)
+  Disponible: toggle
+  Nuevo: toggle (muestra badge "Nuevo")
+  Popular: toggle (muestra badge "Popular")
+  Stock: input numerico o toggle "Ilimitado"
+  Posicion: input numerico (para ordenar dentro de la categoria)
+  Variantes (expandible):
+    "Agregar variante" boton
+    Cada variante: nombre ("Talla", "Extras") + opciones (dinamicas, agregar/quitar):
+      Cada opcion: nombre + precio extra
+    Ejemplo: Variante "Tamano" → ["Grande +C$30", "Mediana +C$0", "Pequena -C$10"]
+  Botones: "Cancelar" / "Guardar producto"
+
+ACCIONES MASIVAS:
+- Checkboxes para seleccion multiple
+- Barra flotante: "Desactivar seleccionados" / "Eliminar seleccionados" / "Cambiar categoria"
+
+GESTION DE CATEGORIAS DE PRODUCTO:
+- Dentro de la vista de productos de una tienda
+- Boton "Gestionar categorias"
+- Modal: lista de categorias con drag & drop para reordenar
+- Agregar/editar/eliminar categorias inline
+
+=====================================================
+MODULO 11: MARKETPLACE (Pedidos + Feed + Analitica)
+=====================================================
+
+Es el modulo mas grande nuevo. Combina: pedidos de compra, editor de feed, y analitica del marketplace. Accesible como tab "Marketplace" en el header.
+
+SUB-TABS INTERNOS:
+- "Pedidos de compra" — gestion de pedidos de tiendas
+- "Editor de Feed" — controlar que ve el cliente (tipo PedidosYa)
+- "Analitica" — metricas del marketplace
+- "Configuracion" — parametros del marketplace
+
+=====================================================
+11A. PEDIDOS DE COMPRA
+=====================================================
+
+Igual al modulo de Pedidos de envio, pero para compras en tiendas.
+
+HEADER: "Pedidos de Compra" Syne 28px + "X pedidos hoy · C$ X,XXX en ventas" + boton "Ver pedidos de envio" (link al modulo de Pedidos original)
+
+FILTROS:
+- Estado: pills "Todos" / "Recibido" / "Preparando" / "Listo" / "En camino" / "Entregado" / "Cancelado"
+- Tienda: select con todas las tiendas
+- Repartidor: select con todos los repartidores
+- Periodo: "Hoy" / "Esta semana" / "Este mes" / "Personalizado"
+- Busqueda: "Buscar por ID, cliente, tienda..."
+
+TABLA DE PEDIDOS (desktop):
+Headers: ID | Cliente | Tienda | Productos | Total | Repartidor | Estado | Hora | Acciones
+
+Cada fila:
+- ID: mono 13px
+- Cliente: avatar + nombre
+- Tienda: logo (iniciales en circulo) + nombre
+- Productos: "3 items" con tooltip que muestra la lista
+- Total: mono bold
+- Repartidor: avatar + nombre (o "Sin asignar" muted)
+- Estado: badge con color correspondiente:
+  Recibido = azul
+  Preparando = amarillo/naranja
+  Listo = violeta
+  En camino = azul
+  Entregado = verde
+  Cancelado = rojo
+- Hora: "14:32"
+- Acciones dropdown:
+  "Ver detalle"
+  "Asignar repartidor"
+  "Cambiar estado" (submenu con los estados siguientes)
+  "Cancelar pedido"
+  "Contactar tienda" (simulado)
+
+En mobile — lista apilada igual que Pedidos de envio
+
+MODAL DETALLE DE PEDIDO DE COMPRA:
+- Max-width 520px
+- Contenido:
+  Header: ID + estado badge + hora
+  Seccion tienda: logo + nombre + direccion + telefono
+  Seccion productos: lista de cada producto con cantidad, nombre, variante, precio unitario, subtotal por item
+  Seccion entrega: direccion + instrucciones + mapa pequeno
+  Seccion repartidor: avatar + nombre + moto (o "Sin asignar")
+  Seccion pago: subtotal + envio + descuento + codigo + total + metodo
+  Seccion timeline: 5 pasos (Recibido → Preparando → Listo → En camino → Entregado)
+  Botones: "Asignar repartidor" / "Cambiar estado" / "Cancelar"
+
+CAMBIO DE ESTADO POR EL ADMIN:
+- El admin puede avanzar el estado manualmente:
+  Recibido → Preparando → Listo → En camino → Entregado
+- Cada cambio: toast de confirmacion + se notifica al cliente
+- "Forzar estado" para situaciones especiales (con confirmacion)
+
+ASIGNACION DE REPARTIDOR:
+- Igual que el modulo de Pedidos de envio
+- Lista de repartidores disponibles con su ubicacion actual
+- Muestra distancia del repartidor a la tienda
+
+=====================================================
+11B. EDITOR DE FEED (ESTILO PEDIDOYA)
+=====================================================
+
+ESTE ES EL MODULO MAS IMPORTANTE DE ESTE PROMPT. El admin controla COMPLETAMENTE lo que el cliente ve en su pantalla de Inicio y Explorar, como un editor de contenido de PedidosYa.
+
+SUB-SECCIONES DEL EDITOR:
+
+11B.1 — SECCIONES DEL FEED:
+
+El feed del cliente se compone de SECCIONES que el admin puede crear, ordenar, activar/desactivar. Cada seccion es un bloque vertical en la pantalla del cliente.
+
+LISTA DE SECCIONES DEL FEED:
+- Cada seccion como item draggable (drag & drop para reordenar):
+  - Handle de arrastre (6 puntos verticales)
+  - Nombre de la seccion 15px bold
+  - Tipo de seccion: badge
+  - Cantidad de items dentro
+  - Estado: toggle activar/desactivar
+  - Vista previa: mini thumbnail de como se ve
+  - Acciones: editar, duplicar, eliminar
+
+SECCIONES DISPONIBLES (el admin puede crear multiples instancias de cada tipo):
+
+TIPO 1 — "Carrusel de Banners":
+- Nombre editable: "Promos del dia" / "Ofertas destacadas" / etc.
+- Layout en el cliente: scroll horizontal de banners full-width
+- Contenido: los banners que el admin ya creo en Marketing v3
+- Configuracion: max items visibles, auto-slide on/off, intervalo de slide
+
+TIPO 2 — "Categorias de Tiendas":
+- Nombre editable: "Explora por categoria"
+- Layout en el cliente: scroll horizontal de pills/iconos de categoria
+- Contenido: categorias de tiendas con iconos
+- Configuracion: que categorias mostrar, orden
+
+TIPO 3 — "Tiendas Destacadas":
+- Nombre editable: "Populares cerca de ti" / "Nuevas tiendas" / "Tus favoritas"
+- Layout en el cliente: scroll horizontal de tarjetas de tienda
+- Contenido: seleccion de tiendas (manual o automatica)
+- Configuracion:
+  Fuente: "Manual" (admin selecciona tiendas) / "Automatica" (por calificacion, pedidos, recientes)
+  Max items: 5-20
+  Mostrar: calificacion, tiempo, envio, badges
+
+TIPO 4 — "Productos Destacados":
+- Nombre editable: "Lo mas pedido" / "Novedades" / "Ofertas especiales"
+- Layout en el cliente: scroll horizontal de tarjetas de producto
+- Contenido: seleccion de productos de cualquier tienda
+- Configuracion:
+  Fuente: "Manual" / "Mas vendidos" / "Mejor calificados" / "Con descuento"
+  Max items
+  Mostrar: precio, tienda, descuento
+
+TIPO 5 — "Ofertas Relampago":
+- Nombre editable: "Ofertas de hoy" / "Descuentos exclusivos"
+- Layout en el cliente: tarjeta grande con timer de cuenta regresiva
+- Contenido: producto o tienda con oferta limitada + porcentaje de descuento + tiempo restante
+- Configuracion: producto/tienda, descuento %, duracion de la oferta, codigo asociado
+
+TIPO 6 — "Feed de Contenido":
+- Nombre editable: "Novedades" / "Avisos importantes"
+- Layout en el cliente: lista vertical de items (anuncios, promociones, novedades)
+- Contenido: los items de feed que el admin creo en Marketing v3
+- Configuracion: max items visibles, orden (cronologico o manual)
+
+TIPO 7 — "Recomendaciones Personalizadas":
+- Nombre editable: "Para ti" / "Basado en tus pedidos"
+- Layout en el cliente: mixto (tiendas + productos basados en historial)
+- Contenido: automatico, algoritmo simple basado en historial del cliente
+- Configuracion: mostrar tiendas, productos, o ambos
+
+TIPO 8 — "Separador Visual":
+- Nombre editable: cualquier texto
+- Layout en el cliente: linea horizontal con texto centrado (ej: "—— Populares ——")
+- Configuracion: texto, estilo (linea, puntos, gradiente)
+
+TIPO 9 — "Acceso Rapido Dual":
+- Nombre editable: "Enviar o Comprar"
+- Layout en el cliente: las 2 tarjetas lado a lado (Enviar paquete / Comprar y recibir)
+- Configuracion: textos, colores, iconos de cada tarjeta
+
+TIPO 10 — "Buscador":
+- Nombre editable: "Buscar"
+- Layout en el cliente: barra de busqueda prominente
+- Configuracion: placeholder del input
+
+EDITOR DE SECCION (al crear/editar):
+- Panel lateral (desktop) o pantalla (mobile)
+- Campos:
+  Nombre de la seccion: input
+  Tipo de seccion: selector visual con thumbnails de cada tipo
+  Configuracion especifica segun tipo (campos dinamicos)
+  Visibilidad: "Mostrar a todos" / "Solo clientes nuevos" / "Solo clientes frecuentes" / "Solo clientes VIP"
+  Programacion: "Visible ahora" / "Desde fecha" / "Hasta fecha" / "Permanente"
+- Preview en tiempo real: a la derecha del editor, un mockup de telefono mostrando como se vera esa seccion
+
+VISTA PREVIA DEL FEED COMPLETO:
+- Panel o modal que muestra un mockup de telefono (320px ancho) con TODO el feed del cliente renderizado
+- Las secciones aparecen en el orden configurado
+- Se puede scroll vertical dentro del mockup
+- Actualizado en tiempo real mientras el admin edita
+- Boton "Vista previa" siempre visible en la esquina
+
+11B.2 — GESTION DE BANNERS (expandir Marketing existente):
+
+Los banners ya existen en Marketing v3. Ahora se expanden para el marketplace:
+
+NUEVOS TIPOS DE BANNER:
+- "Banner de tienda": enlaza directamente a una tienda, muestra logo + nombre + "Pedir ahora"
+- "Banner de producto": enlaza a un producto, muestra imagen + nombre + precio + "Agregar al carrito"
+- "Banner de categoria": enlaza a una categoria en Explorar, muestra icono + nombre
+- "Banner de codigo": aplica codigo automaticamente al tocar, muestra codigo + descuento + "Usar ahora"
+
+EDITOR DE BANNER MEJORADO:
+- Todos los campos de v3 + nuevos:
+  Enlace tipo: "Tienda" / "Producto" / "Categoria" / "Codigo" / "URL externa" / "Solicitar envio"
+  Segun el tipo seleccionado:
+    Tienda: select de tiendas
+    Producto: select de tiendas → select de productos de esa tienda
+    Categoria: select de categorias
+    Codigo: select de codigos promocionales
+    URL: input de URL
+  Preview del banner en formato app: como se vera en el carrusel del cliente
+
+11B.3 — GESTION DE FEED ITEMS (expandir Marketing existente):
+
+Los items de feed ya existen en Marketing v3. Expandir:
+
+NUEVOS TIPOS DE FEED ITEM:
+- "Tienda nueva": "Nueva tienda en tu zona: Pizza Express" + boton "Visitar"
+- "Producto nuevo": "Nuevo en Farmacia San Pablo: Protector Solar" + boton "Ver"
+- "Oferta de tienda": "20% OFF en Pizza Express hoy" + boton "Pedir ahora"
+- "Recordatorio de compra": "Repite tu pedido de Pizza Express de ayer" + boton "Reordenar"
+- "Evento": "Viernes de pizza: 2x1 en todas las pizzas" + boton "Ver ofertas"
+
+EDITOR DE FEED ITEM MEJORADO:
+- Todos los campos de v3 + nuevos:
+  Enlace: igual que banners (tienda, producto, categoria, codigo, etc.)
+  Icono: selector de iconos Lucide expandido (mas opciones relevantes a marketplace)
+  Segmento: "Todos" / "Clientes nuevos" / "Frecuentes" / "Inactivos" / "VIP" / "Zona especifica"
+  Si es "Zona especifica": select de zonas de Managua
+
+11B.4 — PLANTILLAS DE FEED:
+
+El admin puede guardar configuraciones completas del feed como plantillas para reusar:
+- "Feed normal" — configuracion estandar
+- "Feed promocional" — muchas ofertas y banners
+- "Feed navidad" — tematico con ofertas especiales
+- "Feed nuevo cliente" — onboarding con tiendas populares
+- Guardar / cargar plantilla
+
+=====================================================
+11C. ANALITICA DEL MARKETPLACE
+=====================================================
+
+Dashboard de metricas especifico del marketplace.
+
+HEADER: "Analitica del Marketplace" + selector de periodo
+
+KPIs EN HEADER (6 pills):
+1. "Pedidos de compra hoy" — numero + tendencia
+2. "Ventas del dia" — C$ + tendencia
+3. "Ticket promedio" — C$ mono
+4. "Tiendas activas" — numero
+5. "Tiempo promedio de entrega" — minutos
+6. "Calificacion promedio" — ★ numero
+
+GRAFICOS (Recharts):
+
+1. Ventas por dia (AreaChart, ancho completo):
+   - 30 dias, area con gradiente naranja
+   - Linea + puntos
+   - Tooltip con monto y cantidad de pedidos
+
+2. Pedidos por tienda (BarChart horizontal):
+   - Top 10 tiendas por cantidad de pedidos
+   - Barras naranjas con nombre de tienda a la izquierda
+   - Valor a la derecha
+
+3. Categorias mas vendidas (DonutChart):
+   - Porcentaje de pedidos por categoria
+   - Centro: total de pedidos
+   - Leyenda con colores
+
+4. Tiempo promedio de entrega por tienda (BarChart):
+   - 10 tiendas
+   - Barras con gradiente de color: verde (<20min), amarillo (20-35min), rojo (>35min)
+   - Linea de referencia: "Objetivo: 30 min"
+
+5. Productos mas vendidos (BarChart horizontal):
+   - Top 10 productos por cantidad vendida
+   - Con nombre de tienda al lado
+
+6. Mapa de calor de pedidos:
+   - Leaflet con circulos proporcionales a la cantidad de pedidos por zona
+   - Zonas mas activas: circulos mas grandes y mas oscuros
+
+7. Horas pico (BarChart):
+   - 24 barras (una por hora del dia)
+   - Muestra a que hora hay mas pedidos
+   - Barras naranjas, las horas pico mas oscuras
+
+8. Conversion del feed:
+   - "Impresiones de banner" → "Clicks" → "Pedidos"
+   - Grafico de embudo (funnel) con 3 niveles
+
+TABLA DE RANKING:
+- Top tiendas: nombre, pedidos, ventas, calificacion, tiempo promedio
+- Top productos: nombre, tienda, cantidad vendida, ingreso
+- Top repartidores de marketplace: nombre, entregas, calificacion, tiempo promedio
+- Peores performers: tiendas con calificacion < 3.5, productos con muchas quejas
+
+=====================================================
+11D. CONFIGURACION DEL MARKETPLACE
+=====================================================
+
+Parametros globales del marketplace.
+
+SECCIONES:
+
+1. "Zonas de cobertura del marketplace":
+   - Mapa Leaflet con las zonas dibujadas (poligonos)
+   - Toggle por zona para habilitar/deshabilitar marketplace
+   - Configurar costo de envio base por zona
+   - Radio de cobertura por zona (en km)
+
+2. "Categorias de tienda":
+   - Lista de categorias disponibles (Comida, Farmacia, etc.)
+   - Agregar/editar/eliminar categorias
+   - Reordenar con drag & drop
+   - Icono asignado por categoria
+   - Color de la categoria
+
+3. "Comisiones y tarifas":
+   - Comision por pedido: % que cobra LOGIFAST a la tienda
+   - Tarifa minima de envio
+   - Tarifa por distancia (C$/km adicional)
+   - Recargo nocturno (%)
+   - Recargo por zona lejana (%)
+   - Pedido minimo global (C$)
+
+4. "Politicas":
+   - Tiempo maximo de preparacion (minutos)
+   - Tiempo maximo para cancelar pedido sin cargo
+   - Maximo de productos por pedido
+   - Maximo de tiendas por pedido (carrito multi-tienda)
+
+5. "Configuracion de la app del cliente":
+   - Secciones default del feed (plantilla que se carga para nuevos clientes)
+   - Banner de bienvenida para nuevos clientes
+   - Feed para clientes nuevos vs frecuentes
+
+=====================================================
+MODIFICACIONES A MODULOS EXISTENTES
+=====================================================
+
+MODULO "PEDIDOS" (existente):
+- Renombrar a "Pedidos de Envio" internamente
+- Agregar tab arriba: "Envios de paquetes" / "Compras en tiendas"
+- El tab de compras muestra los pedidos de marketplace
+- Unificar la busqueda: buscar en ambos tipos
+
+MODULO "REPARTIDORES" (existente):
+- Expandir stats de cada repartidor:
+  "Entregas de envio" vs "Entregas de compra"
+  "Tiempo promedio de entrega de compra" (separado del envio)
+  "Tiendas asignadas frecuentemente"
+- En asignacion: el admin puede filtrar repartidores por tipo de servicio
+
+MODULO "REPORTES" (existente):
+- Agregar seccion "Reportes de Marketplace" con los graficos del modulo 11C
+- Agregar comparativa: "Envios vs Compras" (dos areas superpuestas)
+- Agregar: "Ingresos por fuente" (envios vs marketplace)
+
+MODULO "MARKETING" (existente):
+- Los banners y feed items ahora tienen los nuevos tipos de enlace (tienda, producto, categoria)
+- Los codigos promocionales pueden ser especificos para tiendas
+- Agregar metricas de conversion de marketplace en la analitica de marketing
+
+MODULO "CONFIGURACION" (existente):
+- Agregar seccion "Marketplace" con los parametros de 11D
+
+MODULO "GENERAL" (existente):
+- Los KPIs del strip ahora incluyen:
+  "Pedidos de compra activos" (nuevo)
+  "Ventas del dia" (nuevo, separado de envios)
+- En el panel derecho:
+  Agregar seccion "Pedidos de compra recientes" debajo de "Ordenes recientes"
+- En el mapa: los marcadores de tiendas aparecen como iconos de tienda (edificio)
+
+=====================================================
+MODELO DE DATOS NUEVO (Prisma Additions)
+=====================================================
+
+model FeedSeccion {
+  id            String   @id @default(cuid())
+  nombre        String
+  tipo          String   // carrusel_banners, categorias, tiendas_destacadas, productos_destacados, ofertas_relampago, feed_contenido, recomendaciones, separador, acceso_rapido, buscador
+  configuracion String   // JSON con toda la config especifica del tipo
+  posicion      Int      @default(0)
+  estado        String   @default("activo") // activo, inactivo
+  segmento      String   @default("todos")
+  programadoDesde DateTime?
+  programadoHasta DateTime?
+  creadoPor     String
+  createdAt     DateTime @default(now())
+}
+
+model OfertaRelampago {
+  id            String   @id @default(cuid())
+  tiendaId      String?
+  productoId    String?
+  titulo        String
+  descuento     Float    // porcentaje
+  codigoAsociado String?
+  duracionHoras Int
+  inicioEn      DateTime
+  finEn         DateTime
+  estado        String   @default("programada")
+  impresiones   Int      @default(0)
+  clicks        Int      @default(0)
+  conversiones  Int      @default(0)
+  createdAt     DateTime @default(now())
+}
+
+model PlantillaFeed {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  secciones   String   // JSON array con IDs de secciones en orden
+  esDefault   Boolean  @default(false)
+  creadoPor   String
+  createdAt   DateTime @default(now())
+}
+
+model ComisionTienda {
+  id          String @id @default(cuid())
+  tiendaId    String
+  porcentaje  Float  @default(10)
+  fijaMonto   Float  @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+// Nota: Los modelos de Tienda, Producto, CategoriaTienda, ItemCarrito,
+// OrdenCompra, ItemOrdenCompra, FavoritoTienda, FavoritoProducto,
+// ResenaTienda ya estan definidos en el prompt Cliente v3
+
+=====================================================
+API ENDPOINTS NUEVOS
+=====================================================
+
+// Tiendas (admin)
+GET    /api/admin/tiendas                — listar tiendas con filtros admin
+POST   /api/admin/tiendas                — crear tienda
+PATCH  /api/admin/tiendas/:id            — editar tienda
+DELETE /api/admin/tiendas/:id            — eliminar tienda
+PATCH  /api/admin/tiendas/:id/estado     — cambiar estado
+
+// Productos (admin)
+GET    /api/admin/productos?tiendaId=X   — listar productos de tienda
+POST   /api/admin/productos              — crear producto
+PATCH  /api/admin/productos/:id          — editar producto
+DELETE /api/admin/productos/:id          — eliminar producto
+PATCH  /api/admin/productos/:id/disponible — toggle disponibilidad
+
+// Categorias de producto (admin)
+GET    /api/admin/categorias-producto?tiendaId=X
+POST   /api/admin/categorias-producto
+PATCH  /api/admin/categorias-producto/:id
+DELETE /api/admin/categorias-producto/:id
+
+// Pedidos de compra (admin)
+GET    /api/admin/ordenes-compra         — listar pedidos con filtros
+GET    /api/admin/ordenes-compra/:id     — detalle
+PATCH  /api/admin/ordenes-compra/:id/estado — cambiar estado
+PATCH  /api/admin/ordenes-compra/:id/repartidor — asignar repartidor
+
+// Feed secciones (admin)
+GET    /api/admin/feed-secciones         — listar secciones
+POST   /api/admin/feed-secciones         — crear seccion
+PATCH  /api/admin/feed-secciones/:id     — editar seccion
+PATCH  /api/admin/feed-secciones/orden   — reordenar secciones
+DELETE /api/admin/feed-secciones/:id     — eliminar seccion
+
+// Ofertas relampago (admin)
+GET    /api/admin/ofertas                — listar ofertas
+POST   /api/admin/ofertas                — crear oferta
+PATCH  /api/admin/ofertas/:id            — editar oferta
+DELETE /api/admin/ofertas/:id            — eliminar oferta
+
+// Plantillas de feed (admin)
+GET    /api/admin/plantillas-feed
+POST   /api/admin/plantillas-feed
+PATCH  /api/admin/plantillas-feed/:id
+DELETE /api/admin/plantillas-feed/:id
+POST   /api/admin/plantillas-feed/:id/aplicar — aplicar plantilla al feed
+
+// Analitica marketplace (admin)
+GET    /api/admin/marketplace/stats      — KPIs del marketplace
+GET    /api/admin/marketplace/ventas     — ventas por dia
+GET    /api/admin/marketplace/ranking    — rankings de tiendas/productos/repartidores
+GET    /api/admin/marketplace/conversion — metricas de conversion del feed
+
+// Configuracion marketplace (admin)
+GET    /api/admin/marketplace/config
+PATCH  /api/admin/marketplace/config
+
+=====================================================
+DATOS MOCK NUEVOS
+=====================================================
+
+SECCIONES DEL FEED (8 secciones configuradas):
+1. Tipo: "Buscador" | Nombre: "Buscar" | Posicion: 1 | Activa
+2. Tipo: "Carrusel banners" | Nombre: "Promos del dia" | Posicion: 2 | Activa | 3 banners
+3. Tipo: "Acceso rapido dual" | Nombre: "Enviar o Comprar" | Posicion: 3 | Activa
+4. Tipo: "Categorias" | Nombre: "Explora por categoria" | Posicion: 4 | Activa | 8 categorias
+5. Tipo: "Tiendas destacadas" | Nombre: "Populares cerca de ti" | Posicion: 5 | Activa | 6 tiendas
+6. Tipo: "Ofertas relampago" | Nombre: "Ofertas de hoy" | Posicion: 6 | Activa | 2 ofertas activas
+7. Tipo: "Productos destacados" | Nombre: "Lo mas pedido" | Posicion: 7 | Activa | 5 productos
+8. Tipo: "Feed contenido" | Nombre: "Novedades" | Posicion: 8 | Activa | 3 items
+
+OFERTAS RELAMPAGO (2):
+1. Pizza Express — Pizza Margarita — 30% OFF — Codigo PIZZA30 — 4 horas — activa
+2. Farmacia San Pablo — Vitamina C — 25% OFF — Sin codigo — 6 horas — activa
+
+PEDIDOS DE COMPRA MOCK (8):
+1. LF-C001 | Maria Lopez | Pizza Express | Pizza + Refresco | C$225 | Carlos M. | Entregado | Hoy 12:30
+2. LF-C002 | Pedro Ruiz | Farmacia San Pablo | Acetaminofen + Vitamina | C$120 | Ana T. | En camino | Hoy 14:15
+3. LF-C003 | Laura M. | Mini Market | Leche + Arroz + Aceite | C$151 | Luis R. | Preparando | Hoy 14:45
+4. LF-C004 | Carlos A. | Pizza Express | Combo Familiar | C$380 | — | Recibido | Hoy 14:50
+5. LF-C005 | Maria Lopez | TechZone | Cable USB + Audifonos | C$450 | Pedro G. | Entregado | Ayer
+6. LF-C006 | Ana R. | Floristeria | Ramo de rosas | C$280 | Carlos M. | Entregado | Ayer
+7. LF-C007 | Pedro Ruiz | Super Abarrotes | Despensa semanal | C$520 | Ana T. | Entregado | Hace 2 dias
+8. LF-C008 | Laura M. | Pizza Express | Pizza Pepperoni | C$220 | Luis R. | Cancelado | Hace 3 dias
+
+COMISIONES CONFIGURADAS:
+- Pizza Express: 12% por pedido
+- Farmacia San Pablo: 10%
+- Mini Market: 8%
+- TechZone: 15%
+- Floristeria: 10%
+- Super Abarrotes: 8%
+
+PLANTILLAS DE FEED (2):
+1. "Feed normal" — plantilla default con 8 secciones
+2. "Feed promocional" — mas banners y ofertas, menos contenido regular
+
+=====================================================
+IMPORTANTE
+=====================================================
+
+1. El Editor de Feed es la herramienta MAS poderosa del admin para el marketplace. Controla cada pixel que el cliente ve. Sin tocar codigo.
+2. Las secciones del feed son modulares — el admin puede crear cualquier combinacion de bloques.
+3. Las ofertas relampago crean urgencia — timer visible, descuento grande, tiempo limitado.
+4. Los banners ahora pueden enlazar a tiendas y productos, no solo a envios.
+5. La analitica del marketplace separa metricas de envios vs compras — el admin ve ambos mundos.
+6. Las comisiones por tienda son configurables — el admin controla la monetizacion.
+7. Los pedidos de compra tienen un flujo de estados diferente a los envios (Recibido → Preparando → Listo → En camino → Entregado).
+8. El feed se adapta por segmento: un cliente nuevo ve un feed, un cliente frecuente ve otro.
+9. Las plantillas de feed permiten cambiar toda la experiencia del cliente en 1 click (ej: feed navidad).
+10. Todo se conecta: Marketing crea banners/codigos → Feed los posiciona → Cliente los ve → Compra → Admin monitorea → Analitica mide.
+11. Las tiendas con baja calificacion o alto tiempo de entrega aparecen en "Peores performers" — el admin puede intervenir.
+12. El marketplace funciona como PedidosYa: el cliente descubre, compra, rastrea, califica. El admin controla toda la experiencia.

@@ -19,9 +19,12 @@ import {
   Tag,
   Heart,
   X,
+  Search,
+  ShoppingBag,
 } from 'lucide-react';
 import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
+import { useMarketplaceStore } from '@/lib/marketplace-store';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC MODULE IMPORTS
@@ -31,6 +34,13 @@ const ClientInicio = dynamic(() => import('./ClientInicio'), { ssr: false });
 const ClientSolicitar = dynamic(() => import('./ClientSolicitar'), { ssr: false });
 const ClientEnvios = dynamic(() => import('./ClientEnvios'), { ssr: false });
 const ClientPerfil = dynamic(() => import('./ClientPerfil'), { ssr: false });
+const ClientTracking = dynamic(() => import('./ClientTracking'), { ssr: false });
+const ClientChat = dynamic(() => import('./ClientChat'), { ssr: false });
+const ClientRating = dynamic(() => import('./ClientRating'), { ssr: false });
+const ClientExplorar = dynamic(() => import('./ClientExplorar'), { ssr: false });
+const ClientTienda = dynamic(() => import('./ClientTienda'), { ssr: false });
+const ClientCarrito = dynamic(() => import('./ClientCarrito'), { ssr: false });
+const ClientPedidos = dynamic(() => import('./ClientPedidos'), { ssr: false });
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -109,8 +119,9 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: <Home size={20} /> },
+  { key: 'explorar', label: 'Explorar', icon: <Search size={20} /> },
   { key: 'solicitar', label: 'Enviar', icon: <PlusCircle size={20} /> },
-  { key: 'envios', label: 'Envíos', icon: <Package size={20} /> },
+  { key: 'pedidos', label: 'Pedidos', icon: <Package size={20} /> },
   { key: 'perfil', label: 'Perfil', icon: <User size={20} /> },
 ];
 
@@ -128,7 +139,17 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     setClientNotifOpen,
     markClientNotifRead,
     markAllClientNotifRead,
+    trackingOrderId,
+    chatOpen,
+    ratingModalOpen,
+    setTrackingOrder,
+    setChatOpen,
+    setChatOrderId,
+    setRatingModalOpen,
+    setRatingOrderId,
   } = useStore();
+
+  const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount } = useMarketplaceStore();
 
   const [avatarOpen, setAvatarOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -166,20 +187,56 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   const handleNav = useCallback(
     (mod: ClientModuleKey) => {
       setClientActiveModule(mod);
+      setTrackingOrder(null); // Close tracking overlay when navigating
+      // Only close tienda overlay when navigating AWAY from explorar
+      // (clicking a store card on explorar calls onNavigate('explorar') which should NOT close the tienda)
+      if (mod !== 'explorar') {
+        setTiendaSeleccionada(null);
+      }
     },
-    [setClientActiveModule]
+    [setClientActiveModule, setTrackingOrder, setTiendaSeleccionada]
+  );
+
+  const handleOpenTracking = useCallback(
+    (orderId: string) => {
+      setTrackingOrder(orderId);
+    },
+    [setTrackingOrder]
+  );
+
+  const handleCloseTracking = useCallback(
+    () => setTrackingOrder(null),
+    [setTrackingOrder]
+  );
+
+  const handleOpenChat = useCallback(
+    (orderId: string) => {
+      setChatOrderId(orderId);
+      setChatOpen(true);
+    },
+    [setChatOrderId, setChatOpen]
+  );
+
+  const handleOpenRating = useCallback(
+    (orderId: string) => {
+      setRatingOrderId(orderId);
+      setRatingModalOpen(true);
+    },
+    [setRatingOrderId, setRatingModalOpen]
   );
 
   const renderModule = () => {
-    const moduleProps = { isDark, userName, onNavigate: handleNav };
+    const moduleProps = { isDark, userName, onNavigate: handleNav, onOpenTracking: handleOpenTracking, onOpenChat: handleOpenChat };
     const perfilProps = { ...moduleProps, onLogout };
     switch (clientActiveModule) {
       case 'inicio':
         return <ClientInicio {...moduleProps} />;
       case 'solicitar':
         return <ClientSolicitar {...moduleProps} />;
-      case 'envios':
-        return <ClientEnvios {...moduleProps} />;
+      case 'explorar':
+        return <ClientExplorar {...moduleProps} />;
+      case 'pedidos':
+        return <ClientPedidos {...moduleProps} />;
       case 'perfil':
         return <ClientPerfil {...perfilProps} />;
       default:
@@ -319,7 +376,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           })}
         </nav>
 
-        {/* Right: Theme + Notif + Avatar */}
+        {/* Right: Theme + Notif + Cart + Avatar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {/* Theme Toggle */}
           <button
@@ -633,6 +690,19 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             </AnimatePresence>
           </div>
 
+          {/* Cart Badge (desktop) */}
+          <button
+            onClick={() => setCarritoOpen(true)}
+            style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: carritoOpen ? 'color-mix(in srgb, var(--primario) 10%, transparent)' : 'transparent', color: carritoOpen ? 'var(--primario)' : 'var(--text-muted)', cursor: 'pointer', display: 'none', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'color 0.2s ease, background 0.2s ease' }}
+            className="lf-cart-desktop-btn"
+            aria-label="Carrito"
+          >
+            <ShoppingBag size={18} />
+            {getCartItemCount() > 0 && (
+              <span style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, borderRadius: '50%', background: 'var(--peligro)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'JetBrains Mono', monospace" }}>{getCartItemCount() > 9 ? '9+' : getCartItemCount()}</span>
+            )}
+          </button>
+
           {/* Avatar */}
           <div ref={avatarRef} style={{ position: 'relative' }}>
             <button
@@ -942,7 +1012,33 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 maxWidth: 80,
               }}
             >
-              {item.icon}
+              <span style={{ position: 'relative' }}>
+                {item.icon}
+                {/* Cart count badge on Explorar tab */}
+                {item.key === 'explorar' && getCartItemCount() > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -8,
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      background: 'var(--peligro)',
+                      color: '#fff',
+                      fontSize: 9,
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
+                  </span>
+                )}
+              </span>
               <span>{item.label}</span>
               {isActive && (
                 <motion.div
@@ -962,6 +1058,57 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           );
         })}
       </nav>
+
+      {/* ─── V2 OVERLAYS ─── */}
+      <AnimatePresence>
+        {trackingOrderId && (
+          <ClientTracking
+            isDark={isDark}
+            onBack={handleCloseTracking}
+            onOpenChat={handleOpenChat}
+            onRate={handleOpenRating}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {chatOpen && (
+          <ClientChat
+            isDark={isDark}
+            onClose={() => setChatOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {ratingModalOpen && (
+          <ClientRating
+            isDark={isDark}
+            onClose={() => setRatingModalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Tienda Profile Overlay */}
+      {tiendaSeleccionada && (
+        <ClientTienda
+          isDark={isDark}
+          tiendaId={tiendaSeleccionada}
+          onBack={() => setTiendaSeleccionada(null)}
+          onOpenCart={() => setCarritoOpen(true)}
+        />
+      )}
+
+      {/* Cart Overlay */}
+      <AnimatePresence>
+        {carritoOpen && (
+          <ClientCarrito
+            isDark={isDark}
+            onClose={() => setCarritoOpen(false)}
+            onBackToTienda={() => setCarritoOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ─── RESPONSIVE STYLES ─── */}
       <style>{`
@@ -987,6 +1134,10 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             padding-right: 32px !important;
           }
         }
+
+        /* Cart desktop button */
+        .lf-cart-desktop-btn { display: none !important; }
+        @media (min-width: 1024px) { .lf-cart-desktop-btn { display: flex !important; } }
 
         /* Notification list custom scrollbar */
         .lf-client-bottom-nav {

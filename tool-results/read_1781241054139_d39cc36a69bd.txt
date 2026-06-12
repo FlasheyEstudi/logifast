@@ -1,0 +1,515 @@
+     1→     1→import { create } from 'zustand';
+     2→     2→
+     3→     3→/* ═══════════════════════════════════════════════
+     4→     4→   MARKETPLACE TYPES
+     5→     5→   ═══════════════════════════════════════════════ */
+     6→     6→
+     7→     7→export type TiendaCategoria = 'comida' | 'tienda' | 'farmacia' | 'regalos' | 'supermercado' | 'tecnologia' | 'deportes';
+     8→     8→
+     9→     9→export interface Tienda {
+    10→    10→  id: string;
+    11→    11→  nombre: string;
+    12→    12→  descripcion: string;
+    13→    13→  categoria: TiendaCategoria;
+    14→    14→  logoColor: string;
+    15→    15→  logoIniciales: string;
+    16→    16→  portadaColor: string;
+    17→    17→  direccion: string;
+    18→    18→  lat: number;
+    19→    19→  lng: number;
+    20→    20→  telefono: string;
+    21→    21→  email: string;
+    22→    22→  calificacion: number;
+    23→    23→  totalPedidos: number;
+    24→    24→  tiempoEstimado: string;
+    25→    25→  costoEnvio: number;
+    26→    26→  pedidoMinimo: number;
+    27→    27→  horario: Record<string, { abre: string; cierra: string }>;
+    28→    28→  zonaCobertura: string[];
+    29→    29→  verificado: boolean;
+    30→    30→  popular: boolean;
+    31→    31→  estado: 'activo' | 'inactivo' | 'cerrado';
+    32→    32→  badges: string[]; // "Nuevo", "Popular", "Promo"
+    33→    33→}
+    34→    34→
+    35→    35→export interface Producto {
+    36→    36→  id: string;
+    37→    37→  tiendaId: string;
+    38→    38→  categoriaNombre: string;
+    39→    39→  nombre: string;
+    40→    40→  descripcion: string;
+    41→    41→  precio: number;
+    42→    42→  precioOriginal?: number;
+    43→    43→  imagenColor: string;
+    44→    44→  disponible: boolean;
+    45→    45→  esNuevo: boolean;
+    46→    46→  esPopular: boolean;
+    47→    47→  stock: number | null;
+    48→    48→}
+    49→    49→
+    50→    50→export interface CartItem {
+    51→    51→  id: string;
+    52→    52→  productoId: string;
+    53→    53→  tiendaId: string;
+    54→    54→  nombreProducto: string;
+    55→    55→  precioUnitario: number;
+    56→    56→  cantidad: number;
+    57→    57→  imagenColor: string;
+    58→    58→  notas: string;
+    59→    59→}
+    60→    60→
+    61→    61→export interface OrdenCompra {
+    62→    62→  id: string;
+    63→    63→  clienteId: string;
+    64→    64→  tiendaId: string;
+    65→    65→  tiendaNombre: string;
+    66→    66→  tiendaLogo: string;
+    67→    67→  tiendaColor: string;
+    68→    68→  estado: 'recibido' | 'preparando' | 'listo' | 'en_camino' | 'entregado';
+    69→    69→  direccionEntrega: string;
+    70→    70→  metodoPago: 'efectivo' | 'transferencia';
+    71→    71→  items: { nombreProducto: string; cantidad: number; precioUnitario: number }[];
+    72→    72→  subtotal: number;
+    73→    73→  costoEnvio: number;
+    74→    74→  descuento: number;
+    75→    75→  total: number;
+    76→    76→  codigoUsado?: string;
+    77→    77→  repartidorNombre: string;
+    78→    78→  repartidorInitials: string;
+    79→    79→  fecha: string;
+    80→    80→  hora: string;
+    81→    81→  calificacion?: number;
+    82→    82→}
+    83→    83→
+    84→    84→export interface FavoritoTienda {
+    85→    85→  tiendaId: string;
+    86→    86→}
+    87→    87→
+    88→    88→export interface FavoritoProducto {
+    89→    89→  productoId: string;
+    90→    90→}
+    91→    91→
+    92→    92→export interface ResenaTienda {
+    93→    93→  id: string;
+    94→    94→  tiendaId: string;
+    95→    95→  clienteNombre: string;
+    96→    96→  estrellas: number;
+    97→    97→  comentario: string;
+    98→    98→  fecha: string;
+    99→    99→}
+   100→   100→
+   101→   101→export interface CategoriaInfo {
+   102→   102→  key: TiendaCategoria;
+   103→   103→  icon: string;
+   104→   104→  label: string;
+   105→   105→}
+   106→   106→
+   107→   107→/* ═══════════════════════════════════════════════
+   108→   108→   CATEGORIES
+   109→   109→   ═══════════════════════════════════════════════ */
+   110→   110→
+   111→   111→export const CATEGORIAS: CategoriaInfo[] = [
+   112→   112→  { key: 'comida', icon: '🍕', label: 'Comida rápida' },
+   113→   113→  { key: 'tienda', icon: '🏪', label: 'Tiendas' },
+   114→   114→  { key: 'farmacia', icon: '💊', label: 'Farmacias' },
+   115→   115→  { key: 'regalos', icon: '🎁', label: 'Regalos / Flores' },
+   116→   116→  { key: 'supermercado', icon: '🛒', label: 'Supermercado' },
+   117→   117→  { key: 'tecnologia', icon: '📱', label: 'Tecnología' },
+   118→   118→  { key: 'deportes', icon: '🏋️', label: 'Deportes' },
+   119→   119→];
+   120→   120→
+   121→   121→/* ═══════════════════════════════════════════════
+   122→   122→   MOCK DATA
+   123→   123→   ═══════════════════════════════════════════════ */
+   124→   124→
+   125→   125→export const MOCK_TIENDAS: Tienda[] = [
+   126→   126→  {
+   127→   127→    id: 't1', nombre: 'Pizza Express', descripcion: 'La mejor pizza de Managua, hecha al momento con ingredientes frescos', categoria: 'comida',
+   128→   128→    logoColor: '#FF5722', logoIniciales: 'PE', portadaColor: '#BF360C',
+   129→   129→    direccion: 'Centro Comercial Managua, Local 12', lat: 12.1150, lng: -86.2362,
+   130→   130→    telefono: '+505 2222-1111', email: 'pedidos@pizzaexpress.com',
+   131→   131→    calificacion: 4.7, totalPedidos: 287, tiempoEstimado: '20-30 min',
+   132→   132→    costoEnvio: 20, pedidoMinimo: 80,
+   133→   133→    horario: { lun: { abre: '10:00', cierra: '22:00' }, mar: { abre: '10:00', cierra: '22:00' }, mie: { abre: '10:00', cierra: '22:00' }, jue: { abre: '10:00', cierra: '22:00' }, vie: { abre: '10:00', cierra: '23:00' }, sab: { abre: '11:00', cierra: '23:00' }, dom: { abre: '12:00', cierra: '21:00' } },
+   134→   134→    zonaCobertura: ['Centro', 'Villa Fontana', 'Los Robles', 'Altamira'],
+   135→   135→    verificado: true, popular: true, estado: 'activo', badges: ['Popular'],
+   136→   136→  },
+   137→   137→  {
+   138→   138→    id: 't2', nombre: 'Farmacia San Pablo', descripcion: 'Medicamentos y productos de salud a domicilio', categoria: 'farmacia',
+   139→   139→    logoColor: '#4CAF50', logoIniciales: 'FS', portadaColor: '#1B5E20',
+   140→   140→    direccion: 'Villa Fontana, Managua', lat: 12.0850, lng: -86.2070,
+   141→   141→    telefono: '+505 2222-2222', email: 'ventas@farmaciasanpablo.com',
+   142→   142→    calificacion: 4.8, totalPedidos: 156, tiempoEstimado: '15-25 min',
+   143→   143→    costoEnvio: 15, pedidoMinimo: 30,
+   144→   144→    horario: { lun: { abre: '07:00', cierra: '21:00' }, mar: { abre: '07:00', cierra: '21:00' }, mie: { abre: '07:00', cierra: '21:00' }, jue: { abre: '07:00', cierra: '21:00' }, vie: { abre: '07:00', cierra: '21:00' }, sab: { abre: '08:00', cierra: '20:00' }, dom: { abre: '08:00', cierra: '18:00' } },
+   145→   145→    zonaCobertura: ['Villa Fontana', 'Los Robles', 'Centro', 'Bello Horizonte'],
+   146→   146→    verificado: true, popular: false, estado: 'activo', badges: [],
+   147→   147→  },
+   148→   148→  {
+   149→   149→    id: 't3', nombre: 'Mini Market Don Carlos', descripcion: 'Todo lo que necesitas, a la puerta de tu casa', categoria: 'tienda',
+   150→   150→    logoColor: '#FF9800', logoIniciales: 'MD', portadaColor: '#E65100',
+   151→   151→    direccion: 'Col. Los Robles, Managua', lat: 12.1245, lng: -86.2520,
+   152→   152→    telefono: '+505 2222-3333', email: 'pedidos@minimarketdoncarlos.com',
+   153→   153→    calificacion: 4.5, totalPedidos: 412, tiempoEstimado: '20-35 min',
+   154→   154→    costoEnvio: 25, pedidoMinimo: 50,
+   155→   155→    horario: { lun: { abre: '06:00', cierra: '21:00' }, mar: { abre: '06:00', cierra: '21:00' }, mie: { abre: '06:00', cierra: '21:00' }, jue: { abre: '06:00', cierra: '21:00' }, vie: { abre: '06:00', cierra: '22:00' }, sab: { abre: '06:00', cierra: '22:00' }, dom: { abre: '07:00', cierra: '20:00' } },
+   156→   156→    zonaCobertura: ['Los Robles', 'Centro', 'Altamira', 'Schick'],
+   157→   157→    verificado: false, popular: true, estado: 'activo', badges: ['Popular'],
+   158→   158→  },
+   159→   159→  {
+   160→   160→    id: 't4', nombre: 'TechZone Managua', descripcion: 'Accesorios y gadgets de tecnología con entrega rápida', categoria: 'tecnologia',
+   161→   161→    logoColor: '#2196F3', logoIniciales: 'TZ', portadaColor: '#0D47A1',
+   162→   162→    direccion: 'Galerías Santo Domingo', lat: 12.0900, lng: -86.2180,
+   163→   163→    telefono: '+505 2222-4444', email: 'info@techzone.com',
+   164→   164→    calificacion: 4.6, totalPedidos: 89, tiempoEstimado: '30-45 min',
+   165→   165→    costoEnvio: 30, pedidoMinimo: 200,
+   166→   166→    horario: { lun: { abre: '09:00', cierra: '19:00' }, mar: { abre: '09:00', cierra: '19:00' }, mie: { abre: '09:00', cierra: '19:00' }, jue: { abre: '09:00', cierra: '19:00' }, vie: { abre: '09:00', cierra: '19:00' }, sab: { abre: '09:00', cierra: '17:00' }, dom: { abre: '', cierra: '' } },
+   167→   167→    zonaCobertura: ['Centro', 'Santo Domingo', 'Villa Fontana'],
+   168→   168→    verificado: true, popular: false, estado: 'activo', badges: ['Nuevo'],
+   169→   169→  },
+   170→   170→  {
+   171→   171→    id: 't5', nombre: 'Floristería Rosas', descripcion: 'Arreglos florales y regalos para toda ocasión', categoria: 'regalos',
+   172→   172→    logoColor: '#E91E63', logoIniciales: 'FR', portadaColor: '#880E4F',
+   173→   173→    direccion: 'Bello Horizonte, Managua', lat: 12.1300, lng: -86.2800,
+   174→   174→    telefono: '+505 2222-5555', email: 'pedidos@rosas.com',
+   175→   175→    calificacion: 4.9, totalPedidos: 67, tiempoEstimado: '25-40 min',
+   176→   176→    costoEnvio: 35, pedidoMinimo: 150,
+   177→   177→    horario: { lun: { abre: '08:00', cierra: '18:00' }, mar: { abre: '08:00', cierra: '18:00' }, mie: { abre: '08:00', cierra: '18:00' }, jue: { abre: '08:00', cierra: '18:00' }, vie: { abre: '08:00', cierra: '20:00' }, sab: { abre: '08:00', cierra: '20:00' }, dom: { abre: '09:00', cierra: '14:00' } },
+   178→   178→    zonaCobertura: ['Bello Horizonte', 'Centro', 'Los Robles'],
+   179→   179→    verificado: true, popular: true, estado: 'activo', badges: ['Popular'],
+   180→   180→  },
+   181→   181→  {
+   182→   182→    id: 't6', nombre: 'Super Abarrotes', descripcion: 'Tu supermercado a domicilio, precios justos siempre', categoria: 'supermercado',
+   183→   183→    logoColor: '#9C27B0', logoIniciales: 'SA', portadaColor: '#4A148C',
+   184→   184→    direccion: 'Monseñor Lezcano, Managua', lat: 12.0980, lng: -86.2310,
+   185→   185→    telefono: '+505 2222-6666', email: 'ventas@superabarrotes.com',
+   186→   186→    calificacion: 4.4, totalPedidos: 523, tiempoEstimado: '25-35 min',
+   187→   187→    costoEnvio: 20, pedidoMinimo: 100,
+   188→   188→    horario: { lun: { abre: '06:00', cierra: '21:00' }, mar: { abre: '06:00', cierra: '21:00' }, mie: { abre: '06:00', cierra: '21:00' }, jue: { abre: '06:00', cierra: '21:00' }, vie: { abre: '06:00', cierra: '22:00' }, sab: { abre: '06:00', cierra: '22:00' }, dom: { abre: '07:00', cierra: '20:00' } },
+   189→   189→    zonaCobertura: ['Lezcano', 'Centro', 'Schick', 'Centroamérica'],
+   190→   190→    verificado: false, popular: true, estado: 'activo', badges: ['Popular'],
+   191→   191→  },
+   192→   192→];
+   193→   193→
+   194→   194→export const MOCK_PRODUCTOS: Producto[] = [
+   195→   195→  // Pizza Express
+   196→   196→  { id: 'p1', tiendaId: 't1', categoriaNombre: 'Pizzas', nombre: 'Pizza Margarita', descripcion: 'Salsa de tomate, mozzarella y albahaca fresca', precio: 180, imagenColor: '#FF8A65', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   197→   197→  { id: 'p2', tiendaId: 't1', categoriaNombre: 'Pizzas', nombre: 'Pizza Pepperoni', descripcion: 'Clásica pizza con pepperoni y queso derretido', precio: 220, imagenColor: '#EF5350', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   198→   198→  { id: 'p3', tiendaId: 't1', categoriaNombre: 'Pizzas', nombre: 'Pizza Hawaiana', descripcion: 'Jamón, piña y mozzarella', precio: 200, imagenColor: '#FFD54F', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   199→   199→  { id: 'p4', tiendaId: 't1', categoriaNombre: 'Complementos', nombre: 'Alitas BBQ (6 pzas)', descripcion: 'Alitas marinadas en salsa BBQ con dip ranch', precio: 150, imagenColor: '#8D6E63', disponible: true, esNuevo: true, esPopular: false, stock: null },
+   200→   200→  { id: 'p5', tiendaId: 't1', categoriaNombre: 'Bebidas', nombre: 'Refresco 2L', descripcion: 'Coca-Cola, Pepsi o Sprite', precio: 45, imagenColor: '#424242', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   201→   201→  { id: 'p6', tiendaId: 't1', categoriaNombre: 'Postres', nombre: 'Postre Tres Leches', descripcion: 'Porción individual de tres leches', precio: 80, imagenColor: '#FFE0B2', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   202→   202→  { id: 'p7', tiendaId: 't1', categoriaNombre: 'Combos', nombre: 'Combo Pizza + Alitas + Refresco', descripcion: 'Pizza Margarita + Alitas BBQ + Refresco 2L', precio: 320, precioOriginal: 375, imagenColor: '#FF7043', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   203→   203→
+   204→   204→  // Farmacia San Pablo
+   205→   205→  { id: 'p8', tiendaId: 't2', categoriaNombre: 'Medicamentos', nombre: 'Acetaminofén x12', descripcion: 'Tabletas 500mg', precio: 35, imagenColor: '#A5D6A7', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   206→   206→  { id: 'p9', tiendaId: 't2', categoriaNombre: 'Medicamentos', nombre: 'Ibuprofeno x10', descripcion: 'Tabletas 400mg', precio: 42, imagenColor: '#81C784', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   207→   207→  { id: 'p10', tiendaId: 't2', categoriaNombre: 'Vitaminas', nombre: 'Vitamina C x30', descripcion: 'Tabletas efervescentes 1000mg', precio: 85, imagenColor: '#FFF176', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   208→   208→  { id: 'p11', tiendaId: 't2', categoriaNombre: 'Cuidado personal', nombre: 'Protector Solar SPF50', descripcion: 'Frasco 120ml', precio: 190, imagenColor: '#FFE082', disponible: true, esNuevo: true, esPopular: false, stock: null },
+   209→   209→  { id: 'p12', tiendaId: 't2', categoriaNombre: 'Cuidado personal', nombre: 'Mascarillas x50', descripcion: 'Mascarillas KN95 desechables', precio: 120, imagenColor: '#B0BEC5', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   210→   210→  { id: 'p13', tiendaId: 't2', categoriaNombre: 'Cuidado personal', nombre: 'Alcohol Gel 500ml', descripcion: 'Gel antibacterial 70%', precio: 65, imagenColor: '#80CBC4', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   211→   211→
+   212→   212→  // Mini Market Don Carlos
+   213→   213→  { id: 'p14', tiendaId: 't3', categoriaNombre: 'Lácteos', nombre: 'Leche 1L', descripcion: 'Leche entera pasteurizada', precio: 38, imagenColor: '#F5F5F5', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   214→   214→  { id: 'p15', tiendaId: 't3', categoriaNombre: 'Panadería', nombre: 'Pan Bimbo', descripcion: 'Pan de caja blanco', precio: 52, imagenColor: '#FFE0B2', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   215→   215→  { id: 'p16', tiendaId: 't3', categoriaNombre: 'Granos', nombre: 'Arroz 1kg', descripcion: 'Arroz de primera calidad', precio: 45, imagenColor: '#FFF9C4', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   216→   216→  { id: 'p17', tiendaId: 't3', categoriaNombre: 'Aceites', nombre: 'Aceite 1L', descripcion: 'Aceite vegetal comestible', precio: 68, imagenColor: '#FFF176', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   217→   217→  { id: 'p18', tiendaId: 't3', categoriaNombre: 'Limpieza', nombre: 'Jabón en barra', descripcion: 'Jabón de lavar 400g', precio: 28, imagenColor: '#B3E5FC', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   218→   218→  { id: 'p19', tiendaId: 't3', categoriaNombre: 'Bebidas', nombre: 'Agua botella x6', descripcion: 'Agua purificada 500ml x6', precio: 55, imagenColor: '#B3E5FC', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   219→   219→  { id: 'p20', tiendaId: 't3', categoriaNombre: 'Snacks', nombre: 'Papas fritas', descripcion: 'Bolsa grande 170g', precio: 35, imagenColor: '#FFD54F', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   220→   220→
+   221→   221→  // TechZone
+   222→   222→  { id: 'p21', tiendaId: 't4', categoriaNombre: 'Audio', nombre: 'Audífonos Bluetooth', descripcion: 'Audífonos inalámbricos con micrófono', precio: 450, imagenColor: '#37474F', disponible: true, esNuevo: true, esPopular: true, stock: 15 },
+   223→   223→  { id: 'p22', tiendaId: 't4', categoriaNombre: 'Cables', nombre: 'Cable USB-C 2m', descripcion: 'Cable de carga rápida USB-C', precio: 120, imagenColor: '#263238', disponible: true, esNuevo: false, esPopular: true, stock: 50 },
+   224→   224→  { id: 'p23', tiendaId: 't4', categoriaNombre: 'Cargadores', nombre: 'Cargador 20W', descripcion: 'Cargador rápido USB-C PD 20W', precio: 350, imagenColor: '#455A64', disponible: true, esNuevo: false, esPopular: false, stock: 20 },
+   225→   225→  { id: 'p24', tiendaId: 't4', categoriaNombre: 'Fundas', nombre: 'Funda iPhone 15', descripcion: 'Funda silicona premium', precio: 200, imagenColor: '#78909C', disponible: true, esNuevo: true, esPopular: false, stock: 30 },
+   226→   226→
+   227→   227→  // Floristería Rosas
+   228→   228→  { id: 'p25', tiendaId: 't5', categoriaNombre: 'Ramos', nombre: 'Ramo de Rosas Rojas', descripcion: '12 rosas rojas con follaje', precio: 450, imagenColor: '#C62828', disponible: true, esNuevo: false, esPopular: true, stock: 5 },
+   229→   229→  { id: 'p26', tiendaId: 't5', categoriaNombre: 'Ramos', nombre: 'Ramo Mixto Tropical', descripcion: 'Flores tropicales coloridas', precio: 380, imagenColor: '#FF6F00', disponible: true, esNuevo: true, esPopular: false, stock: null },
+   230→   230→  { id: 'p27', tiendaId: 't5', categoriaNombre: 'Arreglos', nombre: 'Arreglo con Globo', descripcion: 'Arreglo floral con globo de felicitación', precio: 520, imagenColor: '#E040FB', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   231→   231→  { id: 'p28', tiendaId: 't5', categoriaNombre: 'Cajas', nombre: 'Caja de Rosas', descripcion: 'Caja elegante con 8 rosas', precio: 350, imagenColor: '#AD1457', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   232→   232→
+   233→   233→  // Super Abarrotes
+   234→   234→  { id: 'p29', tiendaId: 't6', categoriaNombre: 'Granos', nombre: 'Frijoles 1kg', descripcion: 'Frijoles rojos de primera', precio: 55, imagenColor: '#795548', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   235→   235→  { id: 'p30', tiendaId: 't6', categoriaNombre: 'Granos', nombre: 'Azúcar 1kg', descripcion: 'Azúcar refinada', precio: 42, imagenColor: '#FAFAFA', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   236→   236→  { id: 'p31', tiendaId: 't6', categoriaNombre: 'Lácteos', nombre: 'Huevos x12', descripcion: 'Huevos de gallina frescos', precio: 65, imagenColor: '#FFF8E1', disponible: true, esNuevo: false, esPopular: true, stock: null },
+   237→   237→  { id: 'p32', tiendaId: 't6', categoriaNombre: 'Carnes', nombre: 'Pechuga pollo 1kg', descripcion: 'Pechuga de pollo fresca', precio: 120, imagenColor: '#FFCCBC', disponible: true, esNuevo: false, esPopular: false, stock: null },
+   238→   238→];
+   239→   239→
+   240→   240→export const MOCK_ORDENES_COMPRA: OrdenCompra[] = [
+   241→   241→  {
+   242→   242→    id: 'LF-C001', clienteId: 'cliente-1', tiendaId: 't1', tiendaNombre: 'Pizza Express', tiendaLogo: 'PE', tiendaColor: '#FF5722',
+   243→   243→    estado: 'entregado', direccionEntrega: 'Col. Los Robles, Managua', metodoPago: 'efectivo',
+   244→   244→    items: [{ nombreProducto: 'Pizza Margarita', cantidad: 1, precioUnitario: 180 }, { nombreProducto: 'Refresco 2L', cantidad: 1, precioUnitario: 45 }],
+   245→   245→    subtotal: 225, costoEnvio: 20, descuento: 0, total: 245,
+   246→   246→    repartidorNombre: 'Carlos Mendoza', repartidorInitials: 'CM', fecha: '2026-06-09', hora: '19:30', calificacion: 5,
+   247→   247→  },
+   248→   248→  {
+   249→   249→    id: 'LF-C002', clienteId: 'cliente-1', tiendaId: 't2', tiendaNombre: 'Farmacia San Pablo', tiendaLogo: 'FS', tiendaColor: '#4CAF50',
+   250→   250→    estado: 'en_camino', direccionEntrega: 'Col. Los Robles, Managua', metodoPago: 'transferencia',
+   251→   251→    items: [{ nombreProducto: 'Acetaminofén x12', cantidad: 1, precioUnitario: 35 }, { nombreProducto: 'Vitamina C x30', cantidad: 1, precioUnitario: 85 }],
+   252→   252→    subtotal: 120, costoEnvio: 15, descuento: 0, total: 135,
+   253→   253→    repartidorNombre: 'Ana Torres', repartidorInitials: 'AT', fecha: '2026-06-10', hora: '14:45',
+   254→   254→  },
+   255→   255→  {
+   256→   256→    id: 'LF-C003', clienteId: 'cliente-1', tiendaId: 't3', tiendaNombre: 'Mini Market Don Carlos', tiendaLogo: 'MD', tiendaColor: '#FF9800',
+   257→   257→    estado: 'entregado', direccionEntrega: 'Col. Los Robles, Managua', metodoPago: 'efectivo',
+   258→   258→    items: [{ nombreProducto: 'Leche 1L', cantidad: 2, precioUnitario: 38 }, { nombreProducto: 'Arroz 1kg', cantidad: 1, precioUnitario: 45 }, { nombreProducto: 'Aceite 1L', cantidad: 1, precioUnitario: 68 }],
+   259→   259→    subtotal: 189, costoEnvio: 25, descuento: 36, total: 178, codigoUsado: 'LOGI20',
+   260→   260→    repartidorNombre: 'Luis Ramos', repartidorInitials: 'LR', fecha: '2026-06-07', hora: '10:15', calificacion: 4,
+   261→   261→  },
+   262→   262→];
+   263→   263→
+   264→   264→export const MOCK_RESENAS: ResenaTienda[] = [
+   265→   265→  { id: 'r1', tiendaId: 't1', clienteNombre: 'María L.', estrellas: 5, comentario: 'La mejor pizza de Managua, siempre llega caliente!', fecha: '2026-06-08' },
+   266→   266→  { id: 'r2', tiendaId: 't1', clienteNombre: 'Pedro R.', estrellas: 4, comentario: 'Muy rica pero tardaron un poco más de lo esperado', fecha: '2026-06-07' },
+   267→   267→  { id: 'r3', tiendaId: 't1', clienteNombre: 'Sofía C.', estrellas: 5, comentario: 'Mi pizza favorita, nunca me ha fallado', fecha: '2026-06-05' },
+   268→   268→  { id: 'r4', tiendaId: 't2', clienteNombre: 'María L.', estrellas: 5, comentario: 'Llegó súper rápido, muy profesional', fecha: '2026-06-09' },
+   269→   269→  { id: 'r5', tiendaId: 't2', clienteNombre: 'Andrés C.', estrellas: 4, comentario: 'Buen servicio y precios justos', fecha: '2026-06-06' },
+   270→   270→  { id: 'r6', tiendaId: 't3', clienteNombre: 'María L.', estrellas: 4, comentario: 'Todo fresco y buen precio', fecha: '2026-06-07' },
+   271→   271→  { id: 'r7', tiendaId: 't5', clienteNombre: 'Carla M.', estrellas: 5, comentario: 'Las rosas más hermosas, perfecto para el aniversario', fecha: '2026-06-04' },
+   272→   272→  { id: 'r8', tiendaId: 't5', clienteNombre: 'Diego S.', estrellas: 5, comentario: 'Llegaron justo a tiempo, excelentes arreglos', fecha: '2026-06-03' },
+   273→   273→  { id: 'r9', tiendaId: 't6', clienteNombre: 'Roberto M.', estrellas: 4, comentario: 'Buen surtido y precios competitivos', fecha: '2026-06-05' },
+   274→   274→  { id: 'r10', tiendaId: 't6', clienteNombre: 'María L.', estrellas: 5, comentario: 'Todo siempre fresco, mi super de confianza', fecha: '2026-06-02' },
+   275→   275→];
+   276→   276→
+   277→   277→/* ═══════════════════════════════════════════════
+   278→   278→   ZUSTAND CART STORE
+   279→   279→   ═══════════════════════════════════════════════ */
+   280→   280→
+   281→   281→interface MarketplaceState {
+   282→   282→  /* Data */
+   283→   283→  tiendas: Tienda[];
+   284→   284→  productos: Producto[];
+   285→   285→  ordenesCompra: OrdenCompra[];
+   286→   286→  resenas: ResenaTienda[];
+   287→   287→  favoritosTiendas: FavoritoTienda[];
+   288→   288→  favoritosProductos: FavoritoProducto[];
+   289→   289→
+   290→   290→  /* Cart */
+   291→   291→  cartItems: CartItem[];
+   292→   292→  cartCodigoPromo: string;
+   293→   293→  cartDescuento: number;
+   294→   294→  cartDireccionEntrega: string;
+   295→   295→  cartInstrucciones: string;
+   296→   296→  cartMetodoPago: 'efectivo' | 'transferencia';
+   297→   297→  cartScheduleMode: 'ahora' | 'programar';
+   298→   298→  cartScheduleDate: string | null;
+   299→   299→  cartScheduleTime: string | null;
+   300→   300→
+   301→   301→  /* UI State */
+   302→   302→  explorarCategoria: TiendaCategoria | 'todos';
+   303→   303→  explorarFiltros: string[];
+   304→   304→  explorarSearch: string;
+   305→   305→  tiendaSeleccionada: string | null;
+   306→   306→  productoDetalleId: string | null;
+   307→   307→  carritoOpen: boolean;
+   308→   308→  compraConfirmada: boolean;
+   309→   309→  compraConfirmadaId: string;
+   310→   310→
+   311→   311→  /* Actions */
+   312→   312→  setExplorarCategoria: (cat: TiendaCategoria | 'todos') => void;
+   313→   313→  toggleExplorarFiltro: (filtro: string) => void;
+   314→   314→  setExplorarSearch: (q: string) => void;
+   315→   315→  setTiendaSeleccionada: (id: string | null) => void;
+   316→   316→  setProductoDetalleId: (id: string | null) => void;
+   317→   317→  setCarritoOpen: (open: boolean) => void;
+   318→   318→
+   319→   319→  /* Cart Actions */
+   320→   320→  addToCart: (producto: Producto, tienda: Tienda) => void;
+   321→   321→  removeFromCart: (itemId: string) => void;
+   322→   322→  updateCartItemQty: (itemId: string, qty: number) => void;
+   323→   323→  clearCart: () => void;
+   324→   324→  setCartCodigoPromo: (code: string) => void;
+   325→   325→  setCartDescuento: (desc: number) => void;
+   326→   326→  setCartDireccionEntrega: (dir: string) => void;
+   327→   327→  setCartInstrucciones: (instr: string) => void;
+   328→   328→  setCartMetodoPago: (met: 'efectivo' | 'transferencia') => void;
+   329→   329→  setCartScheduleMode: (mode: 'ahora' | 'programar') => void;
+   330→   330→  setCartScheduleDate: (date: string | null) => void;
+   331→   331→  setCartScheduleTime: (time: string | null) => void;
+   332→   332→  confirmarCompra: () => void;
+   333→   333→  getCartSubtotal: () => number;
+   334→   334→  getCartTotal: () => number;
+   335→   335→  getCartItemCount: () => number;
+   336→   336→  getCartTiendas: () => string[];
+   337→   337→  getCartItemsByTienda: (tiendaId: string) => CartItem[];
+   338→   338→
+   339→   339→  /* Favorites */
+   340→   340→  toggleFavoritoTienda: (tiendaId: string) => void;
+   341→   341→  toggleFavoritoProducto: (productoId: string) => void;
+   342→   342→  isFavoritoTienda: (tiendaId: string) => boolean;
+   343→   343→  isFavoritoProducto: (productoId: string) => boolean;
+   344→   344→}
+   345→   345→
+   346→   346→let _cartIdCounter = 100;
+   347→   347→
+   348→   348→export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
+   349→   349→  /* Data */
+   350→   350→  tiendas: MOCK_TIENDAS,
+   351→   351→  productos: MOCK_PRODUCTOS,
+   352→   352→  ordenesCompra: MOCK_ORDENES_COMPRA,
+   353→   353→  resenas: MOCK_RESENAS,
+   354→   354→  favoritosTiendas: [{ tiendaId: 't1' }, { tiendaId: 't2' }],
+   355→   355→  favoritosProductos: [{ productoId: 'p1' }, { productoId: 'p8' }],
+   356→   356→
+   357→   357→  /* Cart */
+   358→   358→  cartItems: [],
+   359→   359→  cartCodigoPromo: '',
+   360→   360→  cartDescuento: 0,
+   361→   361→  cartDireccionEntrega: 'Col. Los Robles, Managua',
+   362→   362→  cartInstrucciones: '',
+   363→   363→  cartMetodoPago: 'efectivo',
+   364→   364→  cartScheduleMode: 'ahora',
+   365→   365→  cartScheduleDate: null,
+   366→   366→  cartScheduleTime: null,
+   367→   367→
+   368→   368→  /* UI State */
+   369→   369→  explorarCategoria: 'todos',
+   370→   370→  explorarFiltros: [],
+   371→   371→  explorarSearch: '',
+   372→   372→  tiendaSeleccionada: null,
+   373→   373→  productoDetalleId: null,
+   374→   374→  carritoOpen: false,
+   375→   375→  compraConfirmada: false,
+   376→   376→  compraConfirmadaId: '',
+   377→   377→
+   378→   378→  /* Actions */
+   379→   379→  setExplorarCategoria: (cat) => set({ explorarCategoria: cat }),
+   380→   380→  toggleExplorarFiltro: (filtro) => set((state) => ({
+   381→   381→    explorarFiltros: state.explorarFiltros.includes(filtro)
+   382→   382→      ? state.explorarFiltros.filter((f) => f !== filtro)
+   383→   383→      : [...state.explorarFiltros, filtro],
+   384→   384→  })),
+   385→   385→  setExplorarSearch: (q) => set({ explorarSearch: q }),
+   386→   386→  setTiendaSeleccionada: (id) => set({ tiendaSeleccionada: id }),
+   387→   387→  setProductoDetalleId: (id) => set({ productoDetalleId: id }),
+   388→   388→  setCarritoOpen: (open) => set({ carritoOpen: open }),
+   389→   389→
+   390→   390→  /* Cart Actions */
+   391→   391→  addToCart: (producto, tienda) => set((state) => {
+   392→   392→    const existing = state.cartItems.find((i) => i.productoId === producto.id);
+   393→   393→    if (existing) {
+   394→   394→      return {
+   395→   395→        cartItems: state.cartItems.map((i) =>
+   396→   396→          i.id === existing.id ? { ...i, cantidad: i.cantidad + 1 } : i
+   397→   397→        ),
+   398→   398→      };
+   399→   399→    }
+   400→   400→    _cartIdCounter++;
+   401→   401→    const newItem: CartItem = {
+   402→   402→      id: `ci-${_cartIdCounter}`,
+   403→   403→      productoId: producto.id,
+   404→   404→      tiendaId: producto.tiendaId,
+   405→   405→      nombreProducto: producto.nombre,
+   406→   406→      precioUnitario: producto.precio,
+   407→   407→      cantidad: 1,
+   408→   408→      imagenColor: producto.imagenColor,
+   409→   409→      notas: '',
+   410→   410→    };
+   411→   411→    return { cartItems: [...state.cartItems, newItem] };
+   412→   412→  }),
+   413→   413→
+   414→   414→  removeFromCart: (itemId) => set((state) => ({
+   415→   415→    cartItems: state.cartItems.filter((i) => i.id !== itemId),
+   416→   416→  })),
+   417→   417→
+   418→   418→  updateCartItemQty: (itemId, qty) => {
+   419→   419→    if (qty <= 0) {
+   420→   420→      get().removeFromCart(itemId);
+   421→   421→      return;
+   422→   422→    }
+   423→   423→    set((state) => ({
+   424→   424→      cartItems: state.cartItems.map((i) =>
+   425→   425→        i.id === itemId ? { ...i, cantidad: qty } : i
+   426→   426→      ),
+   427→   427→    }));
+   428→   428→  },
+   429→   429→
+   430→   430→  clearCart: () => set({ cartItems: [], cartCodigoPromo: '', cartDescuento: 0 }),
+   431→   431→
+   432→   432→  setCartCodigoPromo: (code) => set({ cartCodigoPromo: code }),
+   433→   433→  setCartDescuento: (desc) => set({ cartDescuento: desc }),
+   434→   434→  setCartDireccionEntrega: (dir) => set({ cartDireccionEntrega: dir }),
+   435→   435→  setCartInstrucciones: (instr) => set({ cartInstrucciones: instr }),
+   436→   436→  setCartMetodoPago: (met) => set({ cartMetodoPago: met }),
+   437→   437→  setCartScheduleMode: (mode) => set({ cartScheduleMode: mode }),
+   438→   438→  setCartScheduleDate: (date) => set({ cartScheduleDate: date }),
+   439→   439→  setCartScheduleTime: (time) => set({ cartScheduleTime: time }),
+   440→   440→
+   441→   441→  confirmarCompra: () => {
+   442→   442→    const state = get();
+   443→   443→    const subtotal = state.getCartSubtotal();
+   444→   444→    const tiendas = state.getCartTiendas();
+   445→   445→    const firstTienda = state.tiendas.find((t) => t.id === tiendas[0]);
+   446→   446→    const costoEnvio = firstTienda?.costoEnvio ?? 20;
+   447→   447→    const total = subtotal + costoEnvio - state.cartDescuento;
+   448→   448→    const orderId = `LF-C${Date.now().toString().slice(-4)}`;
+   449→   449→    const newOrder: OrdenCompra = {
+   450→   450→      id: orderId,
+   451→   451→      clienteId: 'cliente-1',
+   452→   452→      tiendaId: tiendas[0],
+   453→   453→      tiendaNombre: firstTienda?.nombre ?? 'Tienda',
+   454→   454→      tiendaLogo: firstTienda?.logoIniciales ?? 'T',
+   455→   455→      tiendaColor: firstTienda?.logoColor ?? '#FF5722',
+   456→   456→      estado: 'recibido',
+   457→   457→      direccionEntrega: state.cartDireccionEntrega,
+   458→   458→      metodoPago: state.cartMetodoPago,
+   459→   459→      items: state.cartItems.map((i) => ({ nombreProducto: i.nombreProducto, cantidad: i.cantidad, precioUnitario: i.precioUnitario })),
+   460→   460→      subtotal,
+   461→   461→      costoEnvio,
+   462→   462→      descuento: state.cartDescuento,
+   463→   463→      total,
+   464→   464→      codigoUsado: state.cartCodigoPromo || undefined,
+   465→   465→      repartidorNombre: 'Carlos Mendoza',
+   466→   466→      repartidorInitials: 'CM',
+   467→   467→      fecha: new Date().toISOString().split('T')[0],
+   468→   468→      hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
+   469→   469→    };
+   470→   470→    set((state) => ({
+   471→   471→      ordenesCompra: [newOrder, ...state.ordenesCompra],
+   472→   472→      cartItems: [],
+   473→   473→      cartCodigoPromo: '',
+   474→   474→      cartDescuento: 0,
+   475→   475→      compraConfirmada: true,
+   476→   476→      compraConfirmadaId: orderId,
+   477→   477→    }));
+   478→   478→  },
+   479→   479→
+   480→   480→  getCartSubtotal: () => {
+   481→   481→    return get().cartItems.reduce((sum, i) => sum + i.precioUnitario * i.cantidad, 0);
+   482→   482→  },
+   483→   483→
+   484→   484→  getCartTotal: () => {
+   485→   485→    const state = get();
+   486→   486→    const subtotal = state.getCartSubtotal();
+   487→   487→    const tiendas = state.getCartTiendas();
+   488→   488→    const firstTienda = state.tiendas.find((t) => t.id === tiendas[0]);
+   489→   489→    const costoEnvio = firstTienda?.costoEnvio ?? 20;
+   490→   490→    return subtotal + costoEnvio - state.cartDescuento;
+   491→   491→  },
+   492→   492→
+   493→   493→  getCartItemCount: () => get().cartItems.reduce((sum, i) => sum + i.cantidad, 0),
+   494→   494→
+   495→   495→  getCartTiendas: () => [...new Set(get().cartItems.map((i) => i.tiendaId))],
+   496→   496→
+   497→   497→  getCartItemsByTienda: (tiendaId) => get().cartItems.filter((i) => i.tiendaId === tiendaId),
+   498→   498→
+   499→   499→  /* Favorites */
+   500→   500→  toggleFavoritoTienda: (tiendaId) => set((state) => ({
+   501→   501→    favoritosTiendas: state.favoritosTiendas.some((f) => f.tiendaId === tiendaId)
+   502→   502→      ? state.favoritosTiendas.filter((f) => f.tiendaId !== tiendaId)
+   503→   503→      : [...state.favoritosTiendas, { tiendaId }],
+   504→   504→  })),
+   505→   505→
+   506→   506→  toggleFavoritoProducto: (productoId) => set((state) => ({
+   507→   507→    favoritosProductos: state.favoritosProductos.some((f) => f.productoId === productoId)
+   508→   508→      ? state.favoritosProductos.filter((f) => f.productoId !== productoId)
+   509→   509→      : [...state.favoritosProductos, { productoId }],
+   510→   510→  })),
+   511→   511→
+   512→   512→  isFavoritoTienda: (tiendaId) => get().favoritosTiendas.some((f) => f.tiendaId === tiendaId),
+   513→   513→  isFavoritoProducto: (productoId) => get().favoritosProductos.some((f) => f.productoId === productoId),
+   514→   514→}));
+   515→   515→

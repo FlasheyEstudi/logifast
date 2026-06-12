@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
   LogOut, Shield, Bell, Moon, Sun, Globe, ChevronRight, AlertTriangle,
+  Star,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -20,6 +21,8 @@ interface ClientPerfilProps {
   userName: string;
   onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
   onLogout: () => void;
+  onOpenTracking?: (orderId: string) => void;
+  onOpenChat?: (orderId: string) => void;
 }
 
 /* ═══════════════════════════════════════════════
@@ -141,6 +144,10 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     removeDireccionGuardada,
     direccionesSugerencias,
     orders,
+    fidelizacion,
+    referidos,
+    calificaciones,
+    canjearPuntos,
   } = useStore();
 
   /* ─── Edit profile state ─── */
@@ -261,6 +268,112 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
     // Dispatch storage event for parent
     window.dispatchEvent(new Event('storage'));
+  };
+
+  /* ─── Loyalty computations ─── */
+  const nivelColor = useMemo(() => {
+    switch (fidelizacion.nivel) {
+      case 'bronce': return '#CD7F32';
+      case 'plata': return '#C0C0C0';
+      case 'oro': return '#FFD700';
+      case 'platino': return '#E5E4E2';
+      default: return '#CD7F32';
+    }
+  }, [fidelizacion.nivel]);
+
+  const nivelIcon = useMemo(() => {
+    switch (fidelizacion.nivel) {
+      case 'bronce': return '🥉';
+      case 'plata': return '🥈';
+      case 'oro': return '🥇';
+      case 'platino': return '💎';
+      default: return '🥉';
+    }
+  }, [fidelizacion.nivel]);
+
+  const capitalizedNivel = fidelizacion.nivel.charAt(0).toUpperCase() + fidelizacion.nivel.slice(1);
+
+  const { progressPercent, pointsToNext } = useMemo(() => {
+    const thresholds = { bronce: 0, plata: 100, oro: 300, platino: 600 };
+    const levelOrder: Array<'bronce' | 'plata' | 'oro' | 'platino'> = ['bronce', 'plata', 'oro', 'platino'];
+    const currentIdx = levelOrder.indexOf(fidelizacion.nivel);
+    const currentThreshold = thresholds[fidelizacion.nivel];
+    const nextIdx = currentIdx + 1;
+
+    if (nextIdx >= levelOrder.length) {
+      // Already at max level
+      return { progressPercent: 100, pointsToNext: 0 };
+    }
+
+    const nextLevel = levelOrder[nextIdx];
+    const nextThreshold = thresholds[nextLevel];
+    const range = nextThreshold - currentThreshold;
+    const progress = fidelizacion.puntos - currentThreshold;
+    const pct = Math.min(Math.max((progress / range) * 100, 0), 100);
+    const remaining = Math.max(nextThreshold - fidelizacion.puntos, 0);
+
+    return { progressPercent: pct, pointsToNext: remaining };
+  }, [fidelizacion.nivel, fidelizacion.puntos]);
+
+  const benefitsText = useMemo(() => {
+    switch (fidelizacion.nivel) {
+      case 'bronce': return '🥉 Bronce: 1 punto por cada C$100 gastados. Gana 10 puntos por envío completado.';
+      case 'plata': return '🥈 Plata: 2 puntos por cada C$100 gastados. Gana 15 puntos por envío completado. Envío prioritario.';
+      case 'oro': return '🥇 Oro: 3 puntos por cada C$100 gastados. Gana 20 puntos por envío completado. Envío prioritario + soporte VIP.';
+      case 'platino': return '💎 Platino: 5 puntos por cada C$100 gastados. Gana 25 puntos por envío completado. Envío prioritario + soporte VIP + descuentos exclusivos.';
+      default: return '';
+    }
+  }, [fidelizacion.nivel]);
+
+  const pillButtonStyle: React.CSSProperties = {
+    padding: '6px 14px',
+    borderRadius: 20,
+    border: '1px solid var(--primario)',
+    background: 'var(--primario-soft, rgba(255,87,34,0.12))',
+    color: 'var(--primario)',
+    fontWeight: 600,
+    fontSize: 12,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+  };
+
+  const handleCanjear = (puntos: number) => {
+    const ok = canjearPuntos(puntos);
+    if (ok) {
+      // Simple toast via alert for now
+      alert(`✅ Se canjearon ${puntos} puntos correctamente`);
+    } else {
+      alert('❌ No tienes suficientes puntos');
+    }
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(referidos.codigo).then(() => {
+      alert('📋 Código copiado: ' + referidos.codigo);
+    }).catch(() => {
+      alert('📋 Código: ' + referidos.codigo);
+    });
+  };
+
+  const handleShare = () => {
+    const shareData = {
+      title: 'LOGIFAST - Envíos en moto',
+      text: `¡Únete a LOGIFAST con mi código ${referidos.codigo} y gana 20 puntos en tu primer envío!`,
+      url: referidos.link,
+    };
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator.share(shareData).catch(() => {
+        navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
+          alert('🔗 Enlace copiado al portapapeles');
+        });
+      });
+    } else {
+      navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
+        alert('🔗 Enlace copiado al portapapeles');
+      }).catch(() => {
+        alert('Código: ' + referidos.codigo + ' | Link: ' + referidos.link);
+      });
+    }
   };
 
   /* ═══════════════════════════════════════════════
@@ -499,7 +612,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
         </h3>
 
         {/* Bar chart */}
-        <div style={{ height: 120, marginBottom: 20 }}>
+        <div style={{ height: 120, marginBottom: 20, minWidth: 0, minHeight: 120 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={MONTHLY_DATA} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
               <XAxis
@@ -526,6 +639,169 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
           <StatCard label="Total gastado" value={`C$${metrics.totalSpent.toLocaleString()}`} />
           <StatCard label="Promedio/envío" value={`C$${metrics.avg}`} />
           <StatCard label="Zona frecuente" value={metrics.topZone} />
+        </div>
+      </div>
+
+      {/* ─── Puntos LOGIFAST ─── */}
+      <div style={{ marginTop: 24 }}>
+        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
+          Puntos LOGIFAST
+        </h3>
+        <div style={{ padding: 20, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)' }}>
+          {/* Level card */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+            <div style={{ 
+              width: 48, height: 48, borderRadius: 12, 
+              background: nivelColor, 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 22
+            }}>
+              {nivelIcon}
+            </div>
+            <div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--text)' }}>
+                Nivel {capitalizedNivel}
+              </div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700, color: 'var(--primario)' }}>
+                {fidelizacion.puntos} puntos
+              </div>
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-alt)', overflow: 'hidden', marginBottom: 8 }}>
+            <div style={{ 
+              height: '100%', borderRadius: 4, 
+              background: 'linear-gradient(90deg, var(--primario), var(--primario-hover))',
+              width: `${progressPercent}%`,
+              transition: 'width 0.5s ease'
+            }} />
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+            {pointsToNext} puntos para el siguiente nivel
+          </div>
+          {/* Benefits */}
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            {benefitsText}
+          </div>
+          {/* Points history */}
+          <div style={{ marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
+              Historial de puntos
+            </div>
+            <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+              {fidelizacion.historial.slice(0, 8).map(h => (
+                <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: 'var(--text)' }}>{h.accion}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{h.fecha}</div>
+                  </div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: h.puntos > 0 ? 'var(--exito)' : 'var(--peligro)' }}>
+                    {h.puntos > 0 ? '+' : ''}{h.puntos}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Canjear puntos */}
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => handleCanjear(100)} disabled={fidelizacion.puntos < 100}
+              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 100 ? 0.5 : 1 }}>
+              100 pts = C$20
+            </button>
+            <button onClick={() => handleCanjear(200)} disabled={fidelizacion.puntos < 200}
+              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 200 ? 0.5 : 1 }}>
+              200 pts = C$50
+            </button>
+            <button onClick={() => handleCanjear(500)} disabled={fidelizacion.puntos < 500}
+              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 500 ? 0.5 : 1 }}>
+              500 pts = Envío gratis
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Invitar Amigos ─── */}
+      <div style={{ marginTop: 24 }}>
+        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
+          Invitar amigos
+        </h3>
+        <div style={{ 
+          padding: 20, borderRadius: 16, 
+          background: 'linear-gradient(135deg, var(--primario), #FF8A65)',
+          color: '#FFFFFF' 
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+            Invita a un amigo, gana 50 puntos
+          </div>
+          <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 16 }}>
+            Tu amigo también recibe 20 puntos en su primer envío
+          </div>
+          {/* Referral code */}
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            background: 'rgba(255,255,255,0.15)', borderRadius: 10, 
+            padding: '8px 12px', marginBottom: 12 
+          }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700, letterSpacing: '1px' }}>
+              {referidos.codigo}
+            </span>
+            <button onClick={handleCopyCode} style={{ 
+              padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.3)',
+              background: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 12, cursor: 'pointer' 
+            }}>
+              Copiar
+            </button>
+          </div>
+          {/* Share button */}
+          <button onClick={handleShare} style={{
+            padding: '10px 20px', borderRadius: 10, border: 'none',
+            background: '#FFFFFF', color: 'var(--primario)', fontSize: 14, fontWeight: 600, cursor: 'pointer'
+          }}>
+            Compartir
+          </button>
+          {/* Stats */}
+          <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.referidos.length}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Invitados</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>
+                {referidos.referidos.filter(r => r.primerEnvio).length}
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Registrados</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.puntosGanados}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Pts ganados</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Mis Calificaciones ─── */}
+      <div style={{ marginTop: 24 }}>
+        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
+          Mis calificaciones
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {calificaciones.map(cal => (
+            <div key={cal.id} style={{ 
+              padding: '12px 16px', background: 'var(--surface)', borderRadius: 12, 
+              border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
+            }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{cal.repartidorNombre}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{cal.fecha} · {cal.orderId}</div>
+                {cal.comentario && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>{cal.comentario}</div>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={14} fill={i < cal.estrellas ? 'var(--primario)' : 'none'} color={i < cal.estrellas ? 'var(--primario)' : 'var(--border)'} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -976,9 +1252,11 @@ function SettingsRow({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <div
       onClick={onClick}
-      disabled={disabled}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -987,7 +1265,7 @@ function SettingsRow({
         border: 'none',
         background: 'transparent',
         width: '100%',
-        cursor: disabled ? 'default' : 'pointer',
+        cursor: disabled ? 'default' : onClick ? 'pointer' : 'default',
         textAlign: 'left',
         borderBottom: '1px solid var(--border)',
         fontFamily: "'DM Sans', sans-serif",
@@ -998,6 +1276,6 @@ function SettingsRow({
         <span style={{ fontSize: 14, color: disabled ? 'var(--text-muted)' : 'var(--text)' }}>{label}</span>
       </div>
       {right}
-    </button>
+    </div>
   );
 }

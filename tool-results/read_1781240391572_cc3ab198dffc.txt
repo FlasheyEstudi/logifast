@@ -1,0 +1,1242 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→import {
+     6→     6→  Search,
+     7→     7→  Package,
+     8→     8→  MapPin,
+     9→     9→  Clock,
+    10→    10→  Megaphone,
+    11→    11→  Tag,
+    12→    12→  Star,
+    13→    13→  Bell,
+    14→    14→  ChevronRight,
+    15→    15→  ArrowRight,
+    16→    16→  Plus,
+    17→    17→  Navigation,
+    18→    18→  MessageCircle,
+    19→    19→} from 'lucide-react';
+    20→    20→import { useStore, type Order, type Banner, type FeedItem } from '@/lib/store';
+    21→    21→
+    22→    22→/* ═══════════════════════════════════════════════
+    23→    23→   PROPS
+    24→    24→   ═══════════════════════════════════════════════ */
+    25→    25→
+    26→    26→interface ClientInicioProps {
+    27→    27→  isDark: boolean;
+    28→    28→  userName: string;
+    29→    29→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+    30→    30→  onOpenTracking: (orderId: string) => void;
+    31→    31→  onOpenChat: (orderId: string) => void;
+    32→    32→}
+    33→    33→
+    34→    34→/* ═══════════════════════════════════════════════
+    35→    35→   HELPERS
+    36→    36→   ═══════════════════════════════════════════════ */
+    37→    37→
+    38→    38→const CLIENT_NAME = 'María López';
+    39→    39→
+    40→    40→function statusColor(estado: string) {
+    41→    41→  switch (estado) {
+    42→    42→    case 'pendiente': return 'var(--warning, #FFB300)';
+    43→    43→    case 'encamino': return 'var(--info, #2979FF)';
+    44→    44→    case 'recogido': return 'var(--info, #2979FF)';
+    45→    45→    case 'entregado': return 'var(--exito, #00C853)';
+    46→    46→    case 'incidencia': return 'var(--peligro, #FF1744)';
+    47→    47→    default: return 'var(--text-muted, #999)';
+    48→    48→  }
+    49→    49→}
+    50→    50→
+    51→    51→function statusLabel(estado: string) {
+    52→    52→  switch (estado) {
+    53→    53→    case 'pendiente': return 'Pendiente';
+    54→    54→    case 'encamino': return 'En camino';
+    55→    55→    case 'recogido': return 'Recogido';
+    56→    56→    case 'entregado': return 'Entregado';
+    57→    57→    case 'incidencia': return 'Incidencia';
+    58→    58→    default: return estado;
+    59→    59→  }
+    60→    60→}
+    61→    61→
+    62→    62→function relativeTime(dateStr: string) {
+    63→    63→  const d = new Date(dateStr);
+    64→    64→  const now = new Date();
+    65→    65→  const diffMs = now.getTime() - d.getTime();
+    66→    66→  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    67→    67→  if (diffDays <= 0) return 'Hoy';
+    68→    68→  if (diffDays === 1) return 'Ayer';
+    69→    69→  if (diffDays < 7) return `Hace ${diffDays} días`;
+    70→    70→  if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
+    71→    71→  return `Hace ${Math.floor(diffDays / 30)} meses`;
+    72→    72→}
+    73→    73→
+    74→    74→function feedIcon(tipo: string) {
+    75→    75→  switch (tipo) {
+    76→    76→    case 'anuncio': return Megaphone;
+    77→    77→    case 'promocion': return Tag;
+    78→    78→    case 'novedad': return Star;
+    79→    79→    case 'recordatorio': return Clock;
+    80→    80→    case 'encuesta': return Plus;
+    81→    81→    default: return Bell;
+    82→    82→  }
+    83→    83→}
+    84→    84→
+    85→    85→function feedBadge(tipo: string) {
+    86→    86→  switch (tipo) {
+    87→    87→    case 'promocion': return { label: 'Promo', bg: 'var(--primario, #FF5722)', color: '#fff' };
+    88→    88→    case 'novedad': return { label: 'Nuevo', bg: 'var(--info, #2979FF)', color: '#fff' };
+    89→    89→    case 'anuncio': return { label: 'Aviso', bg: 'var(--text-muted, #999)', color: '#fff' };
+    90→    90→    case 'recordatorio': return { label: 'Aviso', bg: 'var(--text-muted, #999)', color: '#fff' };
+    91→    91→    default: return { label: 'Info', bg: 'var(--text-muted, #999)', color: '#fff' };
+    92→    92→  }
+    93→    93→}
+    94→    94→
+    95→    95→/* ═══════════════════════════════════════════════
+    96→    96→   ANIMATION VARIANTS
+    97→    97→   ═══════════════════════════════════════════════ */
+    98→    98→
+    99→    99→const fadeUp = {
+   100→   100→  hidden: { opacity: 0, y: 18 },
+   101→   101→  visible: (i: number) => ({
+   102→   102→    opacity: 1,
+   103→   103→    y: 0,
+   104→   104→    transition: { delay: i * 0.07, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
+   105→   105→  }),
+   106→   106→};
+   107→   107→
+   108→   108→/* ═══════════════════════════════════════════════
+   109→   109→   MAIN COMPONENT
+   110→   110→   ═══════════════════════════════════════════════ */
+   111→   111→
+   112→   112→export default function ClientInicio({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientInicioProps) {
+   113→   113→  const orders = useStore((s) => s.orders);
+   114→   114→  const banners = useStore((s) => s.banners);
+   115→   115→  const feedItems = useStore((s) => s.feedItems);
+   116→   116→  const clientSearchQuery = useStore((s) => s.clientSearchQuery);
+   117→   117→  const setClientSearchQuery = useStore((s) => s.setClientSearchQuery);
+   118→   118→  const setSolicitudEnvio = useStore((s) => s.setSolicitudEnvio);
+   119→   119→  const fidelizacion = useStore((s) => s.fidelizacion);
+   120→   120→
+   121→   121→  /* ─── Loyalty calculations ─── */
+   122→   122→  const nivelThresholds = { bronce: 100, plata: 300, oro: 600, platino: 9999 };
+   123→   123→  const nextLevelPoints = nivelThresholds[fidelizacion.nivel];
+   124→   124→  const pointsToNext = Math.max(0, nextLevelPoints - fidelizacion.puntos);
+   125→   125→
+   126→   126→  /* ─── Client orders ─── */
+   127→   127→  const clientOrders = useMemo(
+   128→   128→    () => orders.filter((o) => o.cliente === CLIENT_NAME || o.cliente === 'Maria López'),
+   129→   129→    [orders]
+   130→   130→  );
+   131→   131→
+   132→   132→  const activeOrder = useMemo(
+   133→   133→    () =>
+   134→   134→      clientOrders.find((o) =>
+   135→   135→        ['pendiente', 'encamino', 'recogido'].includes(o.estado)
+   136→   136→      ) ?? null,
+   137→   137→    [clientOrders]
+   138→   138→  );
+   139→   139→
+   140→   140→  const recentCompleted = useMemo(
+   141→   141→    () => clientOrders.filter((o) => o.estado === 'entregado'),
+   142→   142→    [clientOrders]
+   143→   143→  );
+   144→   144→
+   145→   145→  const lastCompleted = useMemo(
+   146→   146→    () => (recentCompleted.length > 0 ? recentCompleted[recentCompleted.length - 1] : null),
+   147→   147→    [recentCompleted]
+   148→   148→  );
+   149→   149→
+   150→   150→  /* ─── Stats ─── */
+   151→   151→  const totalEnvios = clientOrders.length;
+   152→   152→  const totalGastado = clientOrders.reduce((s, o) => s + o.monto, 0);
+   153→   153→  const enviosEsteMes = useMemo(() => {
+   154→   154→    const now = new Date();
+   155→   155→    return clientOrders.filter((o) => {
+   156→   156→      const d = new Date(o.fecha);
+   157→   157→      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+   158→   158→    }).length;
+   159→   159→  }, [clientOrders]);
+   160→   160→
+   161→   161→  /* ─── Search ─── */
+   162→   162→  const [searchFocused, setSearchFocused] = useState(false);
+   163→   163→
+   164→   164→  const filteredOrders = useMemo(() => {
+   165→   165→    const q = clientSearchQuery.trim().toLowerCase();
+   166→   166→    if (!q) return [];
+   167→   167→    return clientOrders.filter(
+   168→   168→      (o) =>
+   169→   169→        o.id.toLowerCase().includes(q) ||
+   170→   170→        o.destino.toLowerCase().includes(q) ||
+   171→   171→        o.origen.toLowerCase().includes(q)
+   172→   172→    );
+   173→   173→  }, [clientSearchQuery, clientOrders]);
+   174→   174→
+   175→   175→  /* ─── Banners ─── */
+   176→   176→  const clientBanners = useMemo(
+   177→   177→    () =>
+   178→   178→      banners
+   179→   179→        .filter(
+   180→   180→          (b) =>
+   181→   181→            b.estado === 'activo' &&
+   182→   182→            (b.segmento === 'todos' || b.segmento.toLowerCase().includes('cliente'))
+   183→   183→        )
+   184→   184→        .sort((a, b) => a.posicion - b.posicion),
+   185→   185→    [banners]
+   186→   186→  );
+   187→   187→
+   188→   188→  const [bannerIdx, setBannerIdx] = useState(0);
+   189→   189→  const [bannerPaused, setBannerPaused] = useState(false);
+   190→   190→  const bannerTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+   191→   191→
+   192→   192→  useEffect(() => {
+   193→   193→    if (clientBanners.length <= 1 || bannerPaused) return;
+   194→   194→    bannerTimer.current = setInterval(() => {
+   195→   195→      setBannerIdx((i) => (i + 1) % clientBanners.length);
+   196→   196→    }, 5000);
+   197→   197→    return () => {
+   198→   198→      if (bannerTimer.current) clearInterval(bannerTimer.current);
+   199→   199→    };
+   200→   200→  }, [clientBanners.length, bannerPaused]);
+   201→   201→
+   202→   202→  /* ─── Feed ─── */
+   203→   203→  const clientFeed = useMemo(
+   204→   204→    () =>
+   205→   205→      feedItems
+   206→   206→        .filter(
+   207→   207→          (f) =>
+   208→   208→            f.estado === 'activo' &&
+   209→   209→            (f.segmento === 'todos' || f.segmento.toLowerCase().includes('cliente'))
+   210→   210→        )
+   211→   211→        .sort((a, b) => a.posicion - b.posicion),
+   212→   212→    [feedItems]
+   213→   213→  );
+   214→   214→
+   215→   215→  const [feedVisible, setFeedVisible] = useState(5);
+   216→   216→
+   217→   217→  /* ─── Show more feed ─── */
+   218→   218→  const showMoreFeed = useCallback(() => {
+   219→   219→    setFeedVisible((v) => Math.min(v + 5, clientFeed.length));
+   220→   220→  }, [clientFeed.length]);
+   221→   221→
+   222→   222→  /* ─── Banner CTA handler ─── */
+   223→   223→  const handleBannerCTA = useCallback(
+   224→   224→    (banner: Banner) => {
+   225→   225→      if (banner.botonLink === 'solicitar') {
+   226→   226→        onNavigate('solicitar');
+   227→   227→      }
+   228→   228→    },
+   229→   229→    [onNavigate]
+   230→   230→  );
+   231→   231→
+   232→   232→  /* ─── Feed CTA handler ─── */
+   233→   233→  const handleFeedCTA = useCallback(
+   234→   234→    (item: FeedItem) => {
+   235→   235→      if (item.botonLink === 'solicitar') {
+   236→   236→        onNavigate('solicitar');
+   237→   237→      }
+   238→   238→    },
+   239→   239→    [onNavigate]
+   240→   240→  );
+   241→   241→
+   242→   242→  /* ─── Re-send to same address ─── */
+   243→   243→  const handleResend = useCallback(() => {
+   244→   244→    if (lastCompleted) {
+   245→   245→      setSolicitudEnvio({
+   246→   246→        destino: lastCompleted.destino,
+   247→   247→        destinoLat: lastCompleted.destinoLat,
+   248→   248→        destinoLng: lastCompleted.destinoLng,
+   249→   249→      });
+   250→   250→    }
+   251→   251→    onNavigate('solicitar');
+   252→   252→  }, [lastCompleted, onNavigate, setSolicitudEnvio]);
+   253→   253→
+   254→   254→  /* ═══════════════════════════════════════════════
+   255→   255→     RENDER
+   256→   256→     ═══════════════════════════════════════════════ */
+   257→   257→
+   258→   258→  return (
+   259→   259→    <div className="w-full max-w-3xl mx-auto px-4 pb-8 space-y-6">
+   260→   260→      {/* ─── 1. PERSONALIZED GREETING ─── */}
+   261→   261→      <motion.div
+   262→   262→        variants={fadeUp}
+   263→   263→        initial="hidden"
+   264→   264→        animate="visible"
+   265→   265→        custom={0}
+   266→   266→        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2"
+   267→   267→      >
+   268→   268→        <div>
+   269→   269→          <h1
+   270→   270→            style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 26, color: 'var(--text)' }}
+   271→   271→          >
+   272→   272→            Hola, {userName}
+   273→   273→          </h1>
+   274→   274→          <p
+   275→   275→            style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: 'var(--text-secondary)' }}
+   276→   276→          >
+   277→   277→            ¿Qué envío haremos hoy?
+   278→   278→          </p>
+   279→   279→        </div>
+   280→   280→        <div
+   281→   281→          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full self-start sm:self-center"
+   282→   282→          style={{
+   283→   283→            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+   284→   284→            fontFamily: "'DM Sans', sans-serif",
+   285→   285→            fontSize: 13,
+   286→   286→            color: 'var(--text-secondary)',
+   287→   287→          }}
+   288→   288→        >
+   289→   289→          <MapPin size={14} style={{ color: 'var(--primario, #FF5722)' }} />
+   290→   290→          Managua · 28°C
+   291→   291→        </div>
+   292→   292→      </motion.div>
+   293→   293→
+   294→   294→      {/* Loyalty Points Card */}
+   295→   295→      <motion.div
+   296→   296→        variants={fadeUp}
+   297→   297→        initial="hidden"
+   298→   298→        animate="visible"
+   299→   299→        custom={0}
+   300→   300→      >
+   301→   301→        <div style={{ 
+   302→   302→          padding: '14px 16px', 
+   303→   303→          background: 'var(--surface)', 
+   304→   304→          borderRadius: 16, 
+   305→   305→          border: '1px solid var(--border)',
+   306→   306→          marginBottom: 16 
+   307→   307→        }}>
+   308→   308→          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>
+   309→   309→            Puntos LOGIFAST
+   310→   310→          </div>
+   311→   311→          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+   312→   312→            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 24, fontWeight: 700, color: 'var(--primario)' }}>
+   313→   313→              {fidelizacion.puntos}
+   314→   314→            </span>
+   315→   315→            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>puntos</span>
+   316→   316→          </div>
+   317→   317→          {/* Progress bar to next level */}
+   318→   318→          <div style={{ marginTop: 8, height: 6, borderRadius: 3, background: 'var(--bg-alt)', overflow: 'hidden' }}>
+   319→   319→            <div style={{ 
+   320→   320→              height: '100%', 
+   321→   321→              borderRadius: 3, 
+   322→   322→              background: 'linear-gradient(90deg, var(--primario), var(--primario-hover))',
+   323→   323→              width: `${Math.min(100, (fidelizacion.puntos / nextLevelPoints) * 100)}%`,
+   324→   324→              transition: 'width 0.5s ease'
+   325→   325→            }} />
+   326→   326→          </div>
+   327→   327→          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+   328→   328→            {pointsToNext} puntos para tu próximo descuento
+   329→   329→          </div>
+   330→   330→        </div>
+   331→   331→      </motion.div>
+   332→   332→
+   333→   333→      {/* ─── 2. QUICK SEARCH ─── */}
+   334→   334→      <motion.div
+   335→   335→        variants={fadeUp}
+   336→   336→        initial="hidden"
+   337→   337→        animate="visible"
+   338→   338→        custom={1}
+   339→   339→        className="relative"
+   340→   340→      >
+   341→   341→        <div className="relative">
+   342→   342→          <Search
+   343→   343→            size={20}
+   344→   344→            className="absolute left-4 top-1/2 -translate-y-1/2"
+   345→   345→            style={{ color: 'var(--text-muted)' }}
+   346→   346→          />
+   347→   347→          <input
+   348→   348→            type="text"
+   349→   349→            placeholder="Buscar envío por ID, destino..."
+   350→   350→            value={clientSearchQuery}
+   351→   351→            onChange={(e) => setClientSearchQuery(e.target.value)}
+   352→   352→            onFocus={() => setSearchFocused(true)}
+   353→   353→            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+   354→   354→            className="w-full outline-none transition-shadow"
+   355→   355→            style={{
+   356→   356→              background: 'var(--bg-alt)',
+   357→   357→              border: `1.5px solid ${searchFocused ? 'var(--primario, #FF5722)' : 'var(--border)'}`,
+   358→   358→              borderRadius: 16,
+   359→   359→              padding: '16px 20px 16px 48px',
+   360→   360→              fontFamily: "'DM Sans', sans-serif",
+   361→   361→              fontSize: 15,
+   362→   362→              color: 'var(--text)',
+   363→   363→              boxShadow: searchFocused
+   364→   364→                ? '0 0 0 3px rgba(255,87,34,0.12)'
+   365→   365→                : 'none',
+   366→   366→            }}
+   367→   367→          />
+   368→   368→        </div>
+   369→   369→        {/* Search results dropdown */}
+   370→   370→        <AnimatePresence>
+   371→   371→          {clientSearchQuery.trim().length > 0 && searchFocused && (
+   372→   372→            <motion.div
+   373→   373→              initial={{ opacity: 0, y: -8 }}
+   374→   374→              animate={{ opacity: 1, y: 0 }}
+   375→   375→              exit={{ opacity: 0, y: -8 }}
+   376→   376→              transition={{ duration: 0.2 }}
+   377→   377→              className="absolute left-0 right-0 top-full mt-2 z-30 rounded-2xl overflow-hidden"
+   378→   378→              style={{
+   379→   379→                background: 'var(--surface)',
+   380→   380→                border: '1px solid var(--border)',
+   381→   381→                boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+   382→   382→              }}
+   383→   383→            >
+   384→   384→              {filteredOrders.length > 0 ? (
+   385→   385→                <div className="max-h-64 overflow-y-auto">
+   386→   386→                  {filteredOrders.map((o) => (
+   387→   387→                    <button
+   388→   388→                      key={o.id}
+   389→   389→                      className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:opacity-80"
+   390→   390→                      style={{ borderBottom: '1px solid var(--border)' }}
+   391→   391→                      onClick={() => {
+   392→   392→                        setClientSearchQuery('');
+   393→   393→                        onNavigate('envios');
+   394→   394→                      }}
+   395→   395→                    >
+   396→   396→                      <Package size={18} style={{ color: 'var(--primario, #FF5722)', flexShrink: 0 }} />
+   397→   397→                      <div className="min-w-0 flex-1">
+   398→   398→                        <div
+   399→   399→                          style={{
+   400→   400→                            fontFamily: "'JetBrains Mono', monospace",
+   401→   401→                            fontSize: 13,
+   402→   402→                            color: 'var(--text)',
+   403→   403→                          }}
+   404→   404→                        >
+   405→   405→                          {o.id}
+   406→   406→                        </div>
+   407→   407→                        <div
+   408→   408→                          className="truncate"
+   409→   409→                          style={{
+   410→   410→                            fontFamily: "'DM Sans', sans-serif",
+   411→   411→                            fontSize: 13,
+   412→   412→                            color: 'var(--text-secondary)',
+   413→   413→                          }}
+   414→   414→                        >
+   415→   415→                          {o.origen} → {o.destino}
+   416→   416→                        </div>
+   417→   417→                      </div>
+   418→   418→                      <span
+   419→   419→                        className="px-2 py-0.5 rounded-full text-xs font-medium shrink-0"
+   420→   420→                        style={{
+   421→   421→                          background: statusColor(o.estado) + '22',
+   422→   422→                          color: statusColor(o.estado),
+   423→   423→                        }}
+   424→   424→                      >
+   425→   425→                        {statusLabel(o.estado)}
+   426→   426→                      </span>
+   427→   427→                    </button>
+   428→   428→                  ))}
+   429→   429→                </div>
+   430→   430→              ) : (
+   431→   431→                <div
+   432→   432→                  className="px-4 py-6 text-center"
+   433→   433→                  style={{
+   434→   434→                    fontFamily: "'DM Sans', sans-serif",
+   435→   435→                    fontSize: 14,
+   436→   436→                    color: 'var(--text-muted)',
+   437→   437→                  }}
+   438→   438→                >
+   439→   439→                  No se encontraron envíos
+   440→   440→                </div>
+   441→   441→              )}
+   442→   442→            </motion.div>
+   443→   443→          )}
+   444→   444→        </AnimatePresence>
+   445→   445→      </motion.div>
+   446→   446→
+   447→   447→      {/* ─── 3. PROMOTIONAL BANNERS ─── */}
+   448→   448→      {clientBanners.length > 0 && (
+   449→   449→        <motion.div
+   450→   450→          variants={fadeUp}
+   451→   451→          initial="hidden"
+   452→   452→          animate="visible"
+   453→   453→          custom={2}
+   454→   454→          onMouseEnter={() => setBannerPaused(true)}
+   455→   455→          onMouseLeave={() => setBannerPaused(false)}
+   456→   456→        >
+   457→   457→          <div className="relative overflow-hidden" style={{ borderRadius: 20 }}>
+   458→   458→            <AnimatePresence mode="wait">
+   459→   459→              <motion.div
+   460→   460→                key={clientBanners[bannerIdx].id}
+   461→   461→                initial={{ opacity: 0, x: 40 }}
+   462→   462→                animate={{ opacity: 1, x: 0 }}
+   463→   463→                exit={{ opacity: 0, x: -40 }}
+   464→   464→                transition={{ duration: 0.35 }}
+   465→   465→              >
+   466→   466→                <BannerCard
+   467→   467→                  banner={clientBanners[bannerIdx]}
+   468→   468→                  isDark={isDark}
+   469→   469→                  onCTA={handleBannerCTA}
+   470→   470→                />
+   471→   471→              </motion.div>
+   472→   472→            </AnimatePresence>
+   473→   473→          </div>
+   474→   474→          {/* Dot indicators */}
+   475→   475→          {clientBanners.length > 1 && (
+   476→   476→            <div className="flex items-center justify-center gap-2 mt-3">
+   477→   477→              {clientBanners.map((b, i) => (
+   478→   478→                <button
+   479→   479→                  key={b.id}
+   480→   480→                  onClick={() => setBannerIdx(i)}
+   481→   481→                  className="rounded-full transition-all"
+   482→   482→                  style={{
+   483→   483→                    width: i === bannerIdx ? 20 : 8,
+   484→   484→                    height: 8,
+   485→   485→                    background:
+   486→   486→                      i === bannerIdx
+   487→   487→                        ? 'var(--primario, #FF5722)'
+   488→   488→                        : isDark
+   489→   489→                          ? 'rgba(255,255,255,0.2)'
+   490→   490→                          : 'rgba(0,0,0,0.12)',
+   491→   491→                  }}
+   492→   492→                />
+   493→   493→              ))}
+   494→   494→            </div>
+   495→   495→          )}
+   496→   496→        </motion.div>
+   497→   497→      )}
+   498→   498→
+   499→   499→      {/* ─── 4. QUICK SEND ─── */}
+   500→   500→      <motion.div
+   501→   501→        variants={fadeUp}
+   502→   502→        initial="hidden"
+   503→   503→        animate="visible"
+   504→   504→        custom={3}
+   505→   505→      >
+   506→   506→        <button
+   507→   507→          onClick={() => onNavigate('solicitar')}
+   508→   508→          className="w-full text-left group relative overflow-hidden"
+   509→   509→          style={{
+   510→   510→            background: isDark
+   511→   511→              ? 'rgba(255,87,34,0.85)'
+   512→   512→              : 'var(--primario, #FF5722)',
+   513→   513→            borderRadius: 20,
+   514→   514→            padding: 24,
+   515→   515→            border: isDark ? '1.5px solid rgba(255,255,255,0.1)' : 'none',
+   516→   516→            transition: 'transform 0.2s, box-shadow 0.2s',
+   517→   517→          }}
+   518→   518→          onMouseEnter={(e) => {
+   519→   519→            e.currentTarget.style.transform = 'translateY(-2px)';
+   520→   520→            e.currentTarget.style.boxShadow = '0 8px 30px rgba(255,87,34,0.3)';
+   521→   521→          }}
+   522→   522→          onMouseLeave={(e) => {
+   523→   523→            e.currentTarget.style.transform = 'translateY(0)';
+   524→   524→            e.currentTarget.style.boxShadow = 'none';
+   525→   525→          }}
+   526→   526→        >
+   527→   527→          <div className="flex items-start gap-4">
+   528→   528→            <div
+   529→   529→              className="flex items-center justify-center shrink-0"
+   530→   530→              style={{
+   531→   531→                width: 48,
+   532→   532→                height: 48,
+   533→   533→                borderRadius: 14,
+   534→   534→                background: 'rgba(255,255,255,0.2)',
+   535→   535→              }}
+   536→   536→            >
+   537→   537→              <Package size={24} color="#fff" />
+   538→   538→            </div>
+   539→   539→            <div className="flex-1 min-w-0">
+   540→   540→              <div
+   541→   541→                style={{
+   542→   542→                  fontFamily: "'Syne', sans-serif",
+   543→   543→                  fontWeight: 700,
+   544→   544→                  fontSize: 20,
+   545→   545→                  color: '#fff',
+   546→   546→                }}
+   547→   547→              >
+   548→   548→                Solicita tu envío
+   549→   549→              </div>
+   550→   550→              <div
+   551→   551→                className="mt-1"
+   552→   552→                style={{
+   553→   553→                  fontFamily: "'DM Sans', sans-serif",
+   554→   554→                  fontSize: 14,
+   555→   555→                  color: 'rgba(255,255,255,0.7)',
+   556→   556→                }}
+   557→   557→              >
+   558→   558→                Entrega rápida y segura a cualquier punto de Managua
+   559→   559→              </div>
+   560→   560→            </div>
+   561→   561→            <div
+   562→   562→              className="shrink-0 self-center flex items-center gap-1.5 px-5 py-3 rounded-xl font-bold transition-transform group-hover:scale-105"
+   563→   563→              style={{
+   564→   564→                fontFamily: "'Syne', sans-serif",
+   565→   565→                fontSize: 15,
+   566→   566→                fontWeight: 700,
+   567→   567→                background: '#fff',
+   568→   568→                color: 'var(--primario, #FF5722)',
+   569→   569→              }}
+   570→   570→            >
+   571→   571→              Enviar ahora
+   572→   572→              <ArrowRight size={16} />
+   573→   573→            </div>
+   574→   574→          </div>
+   575→   575→          {/* Decorative circles */}
+   576→   576→          <div
+   577→   577→            className="absolute -right-8 -bottom-8 rounded-full pointer-events-none"
+   578→   578→            style={{ width: 120, height: 120, background: 'rgba(255,255,255,0.06)' }}
+   579→   579→          />
+   580→   580→          <div
+   581→   581→            className="absolute -right-4 -top-6 rounded-full pointer-events-none"
+   582→   582→            style={{ width: 80, height: 80, background: 'rgba(255,255,255,0.04)' }}
+   583→   583→          />
+   584→   584→        </button>
+   585→   585→      </motion.div>
+   586→   586→
+   587→   587→      {/* ─── 5. ACTIVE SHIPMENT ─── */}
+   588→   588→      {activeOrder && (
+   589→   589→        <motion.div
+   590→   590→          variants={fadeUp}
+   591→   591→          initial="hidden"
+   592→   592→          animate="visible"
+   593→   593→          custom={4}
+   594→   594→          className="relative overflow-hidden"
+   595→   595→          style={{
+   596→   596→            background: 'var(--surface)',
+   597→   597→            border: '1px solid var(--border)',
+   598→   598→            borderRadius: 20,
+   599→   599→            padding: 20,
+   600→   600→            cursor: 'pointer',
+   601→   601→            transition: 'box-shadow 0.2s, transform 0.2s',
+   602→   602→          }}
+   603→   603→          onClick={() => onOpenTracking(activeOrder.id)}
+   604→   604→          onMouseEnter={(e) => {
+   605→   605→            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+   606→   606→            e.currentTarget.style.transform = 'translateY(-1px)';
+   607→   607→          }}
+   608→   608→          onMouseLeave={(e) => {
+   609→   609→            e.currentTarget.style.boxShadow = 'none';
+   610→   610→            e.currentTarget.style.transform = 'translateY(0)';
+   611→   611→          }}
+   612→   612→        >
+   613→   613→          {/* Header */}
+   614→   614→          <div className="flex items-center justify-between mb-3">
+   615→   615→            <span
+   616→   616→              style={{
+   617→   617→                fontFamily: "'DM Sans', sans-serif",
+   618→   618→                fontWeight: 700,
+   619→   619→                fontSize: 16,
+   620→   620→                color: 'var(--text)',
+   621→   621→              }}
+   622→   622→            >
+   623→   623→              Tu envío activo
+   624→   624→            </span>
+   625→   625→            <span
+   626→   626→              className="px-2.5 py-1 rounded-full text-xs font-semibold"
+   627→   627→              style={{
+   628→   628→                background: statusColor(activeOrder.estado) + '1A',
+   629→   629→                color: statusColor(activeOrder.estado),
+   630→   630→              }}
+   631→   631→            >
+   632→   632→              {statusLabel(activeOrder.estado)}
+   633→   633→            </span>
+   634→   634→          </div>
+   635→   635→
+   636→   636→          {/* Order ID */}
+   637→   637→          <div
+   638→   638→            style={{
+   639→   639→              fontFamily: "'JetBrains Mono', monospace",
+   640→   640→              fontSize: 13,
+   641→   641→              color: 'var(--text-secondary)',
+   642→   642→            }}
+   643→   643→          >
+   644→   644→            {activeOrder.id}
+   645→   645→          </div>
+   646→   646→
+   647→   647→          {/* Route */}
+   648→   648→          <div
+   649→   649→            className="flex items-center gap-2 mt-2"
+   650→   650→            style={{
+   651→   651→              fontFamily: "'DM Sans', sans-serif",
+   652→   652→              fontSize: 14,
+   653→   653→              color: 'var(--text)',
+   654→   654→            }}
+   655→   655→          >
+   656→   656→            <MapPin size={14} style={{ color: 'var(--primario, #FF5722)', flexShrink: 0 }} />
+   657→   657→            <span className="truncate">De: {activeOrder.origen}</span>
+   658→   658→            <ArrowRight size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+   659→   659→            <span className="truncate">A: {activeOrder.destino}</span>
+   660→   660→          </div>
+   661→   661→
+   662→   662→          {/* Rider */}
+   663→   663→          {activeOrder.repartidor && (
+   664→   664→            <div className="flex items-center gap-2.5 mt-3">
+   665→   665→              <div
+   666→   666→                className="flex items-center justify-center shrink-0"
+   667→   667→                style={{
+   668→   668→                  width: 32,
+   669→   669→                  height: 32,
+   670→   670→                  borderRadius: '50%',
+   671→   671→                  background: 'var(--primario, #FF5722)',
+   672→   672→                  color: '#fff',
+   673→   673→                  fontFamily: "'DM Sans', sans-serif",
+   674→   674→                  fontWeight: 700,
+   675→   675→                  fontSize: 12,
+   676→   676→                }}
+   677→   677→              >
+   678→   678→                {activeOrder.repartidorInitials}
+   679→   679→              </div>
+   680→   680→              <span
+   681→   681→                style={{
+   682→   682→                  fontFamily: "'DM Sans', sans-serif",
+   683→   683→                  fontSize: 14,
+   684→   684→                  color: 'var(--text)',
+   685→   685→                }}
+   686→   686→              >
+   687→   687→                {activeOrder.repartidor}
+   688→   688→              </span>
+   689→   689→            </div>
+   690→   690→          )}
+   691→   691→
+   692→   692→          {/* ETA */}
+   693→   693→          <div className="mt-3">
+   694→   694→            <span
+   695→   695→              style={{
+   696→   696→                fontFamily: "'Syne', sans-serif",
+   697→   697→                fontWeight: 700,
+   698→   698→                fontSize: 20,
+   699→   699→                color: 'var(--primario, #FF5722)',
+   700→   700→              }}
+   701→   701→            >
+   702→   702→              Llega en ~15 min
+   703→   703→            </span>
+   704→   704→          </div>
+   705→   705→
+   706→   706→          {/* Mini map placeholder */}
+   707→   707→          <div
+   708→   708→            className="mt-3 flex items-center justify-center"
+   709→   709→            style={{
+   710→   710→              height: 160,
+   711→   711→              borderRadius: 14,
+   712→   712→              background: 'var(--bg-alt)',
+   713→   713→              border: '1px dashed var(--border)',
+   714→   714→            }}
+   715→   715→          >
+   716→   716→            <div className="flex flex-col items-center gap-1.5">
+   717→   717→              <MapPin size={20} style={{ color: 'var(--text-muted)' }} />
+   718→   718→              <span
+   719→   719→                style={{
+   720→   720→                  fontFamily: "'DM Sans', sans-serif",
+   721→   721→                  fontSize: 13,
+   722→   722→                  color: 'var(--text-muted)',
+   723→   723→                }}
+   724→   724→              >
+   725→   725→                Mapa en tiempo real
+   726→   726→              </span>
+   727→   727→            </div>
+   728→   728→          </div>
+   729→   729→
+   730→   730→          {/* Action buttons */}
+   731→   731→          <div className="flex items-center gap-3 mt-4">
+   732→   732→            <button
+   733→   733→              onClick={(e) => { e.stopPropagation(); onOpenTracking(activeOrder.id); }}
+   734→   734→              style={{
+   735→   735→                padding: '6px 14px',
+   736→   736→                borderRadius: 8,
+   737→   737→                border: 'none',
+   738→   738→                background: 'var(--primario)',
+   739→   739→                color: '#FFFFFF',
+   740→   740→                fontSize: 12,
+   741→   741→                fontWeight: 600,
+   742→   742→                cursor: 'pointer',
+   743→   743→                fontFamily: "'DM Sans', sans-serif",
+   744→   744→                display: 'flex',
+   745→   745→                alignItems: 'center',
+   746→   746→                gap: 4,
+   747→   747→              }}
+   748→   748→            >
+   749→   749→              <Navigation size={14} />
+   750→   750→              Seguimiento
+   751→   751→            </button>
+   752→   752→            {activeOrder.repartidor && (
+   753→   753→              <button
+   754→   754→                onClick={(e) => { e.stopPropagation(); onOpenChat(activeOrder.id); }}
+   755→   755→                style={{
+   756→   756→                  padding: '6px 14px',
+   757→   757→                  borderRadius: 8,
+   758→   758→                  border: '1px solid var(--border)',
+   759→   759→                  background: 'transparent',
+   760→   760→                  color: 'var(--text)',
+   761→   761→                  fontSize: 12,
+   762→   762→                  fontWeight: 500,
+   763→   763→                  cursor: 'pointer',
+   764→   764→                  fontFamily: "'DM Sans', sans-serif",
+   765→   765→                  display: 'flex',
+   766→   766→                  alignItems: 'center',
+   767→   767→                  gap: 4,
+   768→   768→                }}
+   769→   769→              >
+   770→   770→                <MessageCircle size={14} />
+   771→   771→                Mensaje
+   772→   772→              </button>
+   773→   773→            )}
+   774→   774→          </div>
+   775→   775→        </motion.div>
+   776→   776→      )}
+   777→   777→
+   778→   778→      {/* ─── 6. CLIENT FEED ─── */}
+   779→   779→      {clientFeed.length > 0 && (
+   780→   780→        <motion.div
+   781→   781→          variants={fadeUp}
+   782→   782→          initial="hidden"
+   783→   783→          animate="visible"
+   784→   784→          custom={5}
+   785→   785→        >
+   786→   786→          <div className="space-y-3">
+   787→   787→            {clientFeed.slice(0, feedVisible).map((item) => {
+   788→   788→              const IconComp = feedIcon(item.tipo);
+   789→   789→              const badge = feedBadge(item.tipo);
+   790→   790→              return (
+   791→   791→                <div
+   792→   792→                  key={item.id}
+   793→   793→                  className="relative overflow-hidden"
+   794→   794→                  style={{
+   795→   795→                    background: 'var(--surface)',
+   796→   796→                    border: '1px solid var(--border)',
+   797→   797→                    borderRadius: 16,
+   798→   798→                    padding: 16,
+   799→   799→                  }}
+   800→   800→                >
+   801→   801→                  <div className="flex items-start gap-3">
+   802→   802→                    {/* Icon */}
+   803→   803→                    <div
+   804→   804→                      className="flex items-center justify-center shrink-0"
+   805→   805→                      style={{
+   806→   806→                        width: 36,
+   807→   807→                        height: 36,
+   808→   808→                        borderRadius: 10,
+   809→   809→                        background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+   810→   810→                      }}
+   811→   811→                    >
+   812→   812→                      <IconComp size={18} style={{ color: 'var(--primario, #FF5722)' }} />
+   813→   813→                    </div>
+   814→   814→
+   815→   815→                    {/* Content */}
+   816→   816→                    <div className="flex-1 min-w-0">
+   817→   817→                      <div className="flex items-start justify-between gap-2">
+   818→   818→                        <span
+   819→   819→                          className="font-semibold"
+   820→   820→                          style={{
+   821→   821→                            fontFamily: "'DM Sans', sans-serif",
+   822→   822→                            fontSize: 15,
+   823→   823→                            color: 'var(--text)',
+   824→   824→                          }}
+   825→   825→                        >
+   826→   826→                          {item.titulo}
+   827→   827→                        </span>
+   828→   828→                        <span
+   829→   829→                          className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
+   830→   830→                          style={{ background: badge.bg, color: badge.color }}
+   831→   831→                        >
+   832→   832→                          {badge.label}
+   833→   833→                        </span>
+   834→   834→                      </div>
+   835→   835→                      <p
+   836→   836→                        className="mt-0.5"
+   837→   837→                        style={{
+   838→   838→                          fontFamily: "'DM Sans', sans-serif",
+   839→   839→                          fontSize: 14,
+   840→   840→                          color: 'var(--text-muted)',
+   841→   841→                          lineHeight: 1.5,
+   842→   842→                        }}
+   843→   843→                      >
+   844→   844→                        {item.descripcion}
+   845→   845→                      </p>
+   846→   846→
+   847→   847→                      <div className="flex items-center gap-3 mt-2">
+   848→   848→                        {item.botonTexto && (
+   849→   849→                          <button
+   850→   850→                            onClick={() => handleFeedCTA(item)}
+   851→   851→                            className="flex items-center gap-1 font-semibold transition-opacity hover:opacity-80"
+   852→   852→                            style={{
+   853→   853→                              fontFamily: "'DM Sans', sans-serif",
+   854→   854→                              fontSize: 13,
+   855→   855→                              color: 'var(--primario, #FF5722)',
+   856→   856→                            }}
+   857→   857→                          >
+   858→   858→                            {item.botonTexto}
+   859→   859→                            <ChevronRight size={14} />
+   860→   860→                          </button>
+   861→   861→                        )}
+   862→   862→                        <span
+   863→   863→                          style={{
+   864→   864→                            fontFamily: "'DM Sans', sans-serif",
+   865→   865→                            fontSize: 12,
+   866→   866→                            color: 'var(--text-muted)',
+   867→   867→                          }}
+   868→   868→                        >
+   869→   869→                          {relativeTime(item.createdAt)}
+   870→   870→                        </span>
+   871→   871→                      </div>
+   872→   872→                    </div>
+   873→   873→                  </div>
+   874→   874→                </div>
+   875→   875→              );
+   876→   876→            })}
+   877→   877→
+   878→   878→            {clientFeed.length > feedVisible && (
+   879→   879→              <button
+   880→   880→                onClick={showMoreFeed}
+   881→   881→                className="w-full py-3 rounded-xl text-center font-semibold transition-opacity hover:opacity-80"
+   882→   882→                style={{
+   883→   883→                  fontFamily: "'DM Sans', sans-serif",
+   884→   884→                  fontSize: 14,
+   885→   885→                  color: 'var(--primario, #FF5722)',
+   886→   886→                  background: isDark ? 'rgba(255,87,34,0.08)' : 'rgba(255,87,34,0.05)',
+   887→   887→                }}
+   888→   888→              >
+   889→   889→                Ver más
+   890→   890→              </button>
+   891→   891→            )}
+   892→   892→          </div>
+   893→   893→        </motion.div>
+   894→   894→      )}
+   895→   895→
+   896→   896→      {/* ─── 7. RECENT SHIPMENT SHORTCUT ─── */}
+   897→   897→      {!activeOrder && lastCompleted && (
+   898→   898→        <motion.div
+   899→   899→          variants={fadeUp}
+   900→   900→          initial="hidden"
+   901→   901→          animate="visible"
+   902→   902→          custom={6}
+   903→   903→          style={{
+   904→   904→            background: 'var(--surface)',
+   905→   905→            border: '1px solid var(--border)',
+   906→   906→            borderRadius: 16,
+   907→   907→            padding: 16,
+   908→   908→          }}
+   909→   909→        >
+   910→   910→          <div className="flex items-center justify-between mb-2">
+   911→   911→            <span
+   912→   912→              style={{
+   913→   913→                fontFamily: "'DM Sans', sans-serif",
+   914→   914→                fontWeight: 700,
+   915→   915→                fontSize: 14,
+   916→   916→                color: 'var(--text)',
+   917→   917→              }}
+   918→   918→            >
+   919→   919→              Tu último envío
+   920→   920→            </span>
+   921→   921→            <span
+   922→   922→              className="px-2 py-0.5 rounded-full text-xs font-semibold"
+   923→   923→              style={{
+   924→   924→                background: 'rgba(0,200,83,0.12)',
+   925→   925→                color: 'var(--exito, #00C853)',
+   926→   926→              }}
+   927→   927→            >
+   928→   928→              Entregado
+   929→   929→            </span>
+   930→   930→          </div>
+   931→   931→
+   932→   932→          <div className="flex items-center gap-3">
+   933→   933→            <div
+   934→   934→              style={{
+   935→   935→                fontFamily: "'JetBrains Mono', monospace",
+   936→   936→                fontSize: 13,
+   937→   937→                color: 'var(--text-secondary)',
+   938→   938→              }}
+   939→   939→            >
+   940→   940→              {lastCompleted.id}
+   941→   941→            </div>
+   942→   942→            <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>·</span>
+   943→   943→            <span
+   944→   944→              className="truncate"
+   945→   945→              style={{
+   946→   946→                fontFamily: "'DM Sans', sans-serif",
+   947→   947→                fontSize: 13,
+   948→   948→                color: 'var(--text-secondary)',
+   949→   949→              }}
+   950→   950→            >
+   951→   951→              {lastCompleted.destino}
+   952→   952→            </span>
+   953→   953→            <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>·</span>
+   954→   954→            <span
+   955→   955→              style={{
+   956→   956→                fontFamily: "'DM Sans', sans-serif",
+   957→   957→                fontSize: 13,
+   958→   958→                color: 'var(--text-muted)',
+   959→   959→              }}
+   960→   960→            >
+   961→   961→              {lastCompleted.fecha}
+   962→   962→            </span>
+   963→   963→            <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>·</span>
+   964→   964→            <span
+   965→   965→              style={{
+   966→   966→                fontFamily: "'JetBrains Mono', monospace",
+   967→   967→                fontSize: 13,
+   968→   968→                color: 'var(--text)',
+   969→   969→              }}
+   970→   970→            >
+   971→   971→              C$ {lastCompleted.monto}
+   972→   972→            </span>
+   973→   973→          </div>
+   974→   974→
+   975→   975→          <button
+   976→   976→            onClick={handleResend}
+   977→   977→            className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold transition-opacity hover:opacity-80"
+   978→   978→            style={{
+   979→   979→              fontFamily: "'DM Sans', sans-serif",
+   980→   980→              fontSize: 13,
+   981→   981→              color: 'var(--primario, #FF5722)',
+   982→   982→              background: isDark ? 'rgba(255,87,34,0.12)' : 'rgba(255,87,34,0.08)',
+   983→   983→            }}
+   984→   984→          >
+   985→   985→            <Plus size={15} />
+   986→   986→            Volver a enviar a la misma dirección
+   987→   987→          </button>
+   988→   988→        </motion.div>
+   989→   989→      )}
+   990→   990→
+   991→   991→      {/* ─── 8. CLIENT STATS ─── */}
+   992→   992→      <motion.div
+   993→   993→        variants={fadeUp}
+   994→   994→        initial="hidden"
+   995→   995→        animate="visible"
+   996→   996→        custom={7}
+   997→   997→        className="grid grid-cols-3 gap-3 pt-2"
+   998→   998→      >
+   999→   999→        <StatBox value={totalEnvios} label="envíos totales" isDark={isDark} />
+  1000→  1000→        <StatBox value={`C$ ${totalGastado}`} label="gastados" isDark={isDark} />
+  1001→  1001→        <StatBox value={enviosEsteMes} label="envíos este mes" isDark={isDark} />
+  1002→  1002→      </motion.div>
+  1003→  1003→    </div>
+  1004→  1004→  );
+  1005→  1005→}
+  1006→  1006→
+  1007→  1007→/* ═══════════════════════════════════════════════
+  1008→  1008→   SUB-COMPONENTS
+  1009→  1009→   ═══════════════════════════════════════════════ */
+  1010→  1010→
+  1011→  1011→/* ─── Banner Card ─── */
+  1012→  1012→function BannerCard({
+  1013→  1013→  banner,
+  1014→  1014→  isDark,
+  1015→  1015→  onCTA,
+  1016→  1016→}: {
+  1017→  1017→  banner: Banner;
+  1018→  1018→  isDark: boolean;
+  1019→  1019→  onCTA: (b: Banner) => void;
+  1020→  1020→}) {
+  1021→  1021→  const bgStyle: React.CSSProperties = banner.gradiente
+  1022→  1022→    ? {
+  1023→  1023→        background: `linear-gradient(${banner.gradiente.direction}, ${banner.gradiente.from}, ${banner.gradiente.to})`,
+  1024→  1024→      }
+  1025→  1025→    : {
+  1026→  1026→        background: banner.colorFondo,
+  1027→  1027→      };
+  1028→  1028→
+  1029→  1029→  if (banner.tipo === 'notificacion') {
+  1030→  1030→    return (
+  1031→  1031→      <div
+  1032→  1032→        className="flex items-center gap-3 px-5 py-4"
+  1033→  1033→        style={{ ...bgStyle, borderRadius: 14, color: banner.colorTexto }}
+  1034→  1034→      >
+  1035→  1035→        <Bell size={18} style={{ flexShrink: 0 }} />
+  1036→  1036→        <span
+  1037→  1037→          className="flex-1 font-medium"
+  1038→  1038→          style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}
+  1039→  1039→        >
+  1040→  1040→          {banner.titulo}
+  1041→  1041→        </span>
+  1042→  1042→        {banner.botonTexto && (
+  1043→  1043→          <button
+  1044→  1044→            onClick={() => onCTA(banner)}
+  1045→  1045→            className="shrink-0 px-3 py-1.5 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90"
+  1046→  1046→            style={{ background: 'rgba(255,255,255,0.2)', color: banner.colorTexto }}
+  1047→  1047→          >
+  1048→  1048→            {banner.botonTexto}
+  1049→  1049→          </button>
+  1050→  1050→        )}
+  1051→  1051→      </div>
+  1052→  1052→    );
+  1053→  1053→  }
+  1054→  1054→
+  1055→  1055→  if (banner.tipo === 'tarjeta_compacta') {
+  1056→  1056→    return (
+  1057→  1057→      <div
+  1058→  1058→        className="relative overflow-hidden"
+  1059→  1059→        style={{ ...bgStyle, borderRadius: 16, padding: 20, color: banner.colorTexto }}
+  1060→  1060→      >
+  1061→  1061→        <div
+  1062→  1062→          style={{
+  1063→  1063→            fontFamily: "'Syne', sans-serif",
+  1064→  1064→            fontWeight: 700,
+  1065→  1065→            fontSize: 17,
+  1066→  1066→          }}
+  1067→  1067→        >
+  1068→  1068→          {banner.titulo}
+  1069→  1069→        </div>
+  1070→  1070→        {banner.subtitulo && (
+  1071→  1071→          <div
+  1072→  1072→            className="mt-1"
+  1073→  1073→            style={{
+  1074→  1074→              fontFamily: "'DM Sans', sans-serif",
+  1075→  1075→              fontSize: 13,
+  1076→  1076→              opacity: 0.8,
+  1077→  1077→            }}
+  1078→  1078→          >
+  1079→  1079→            {banner.subtitulo}
+  1080→  1080→          </div>
+  1081→  1081→        )}
+  1082→  1082→        {banner.botonTexto && (
+  1083→  1083→          <button
+  1084→  1084→            onClick={() => onCTA(banner)}
+  1085→  1085→            className="mt-3 flex items-center gap-1 font-semibold transition-opacity hover:opacity-90"
+  1086→  1086→            style={{
+  1087→  1087→              fontFamily: "'DM Sans', sans-serif",
+  1088→  1088→              fontSize: 13,
+  1089→  1089→              color: banner.colorTexto,
+  1090→  1090→              textDecoration: 'underline',
+  1091→  1091→              textUnderlineOffset: 3,
+  1092→  1092→            }}
+  1093→  1093→          >
+  1094→  1094→            {banner.botonTexto}
+  1095→  1095→            <ChevronRight size={14} />
+  1096→  1096→          </button>
+  1097→  1097→        )}
+  1098→  1098→        <div
+  1099→  1099→          className="absolute -right-6 -bottom-6 rounded-full pointer-events-none"
+  1100→  1100→          style={{ width: 80, height: 80, background: 'rgba(255,255,255,0.07)' }}
+  1101→  1101→        />
+  1102→  1102→      </div>
+  1103→  1103→    );
+  1104→  1104→  }
+  1105→  1105→
+  1106→  1106→  if (banner.tipo === 'slider') {
+  1107→  1107→    return (
+  1108→  1108→      <div
+  1109→  1109→        className="flex items-center gap-4"
+  1110→  1110→        style={{ ...bgStyle, borderRadius: 16, padding: '16px 20px', color: banner.colorTexto }}
+  1111→  1111→      >
+  1112→  1112→        <div className="flex-1 min-w-0">
+  1113→  1113→          <div
+  1114→  1114→            style={{
+  1115→  1115→              fontFamily: "'Syne', sans-serif",
+  1116→  1116→              fontWeight: 700,
+  1117→  1117→              fontSize: 16,
+  1118→  1118→            }}
+  1119→  1119→          >
+  1120→  1120→            {banner.titulo}
+  1121→  1121→          </div>
+  1122→  1122→          {banner.subtitulo && (
+  1123→  1123→            <div
+  1124→  1124→              className="mt-0.5"
+  1125→  1125→              style={{
+  1126→  1126→                fontFamily: "'DM Sans', sans-serif",
+  1127→  1127→                fontSize: 13,
+  1128→  1128→                opacity: 0.8,
+  1129→  1129→              }}
+  1130→  1130→            >
+  1131→  1131→              {banner.subtitulo}
+  1132→  1132→            </div>
+  1133→  1133→          )}
+  1134→  1134→        </div>
+  1135→  1135→        {banner.botonTexto && (
+  1136→  1136→          <button
+  1137→  1137→            onClick={() => onCTA(banner)}
+  1138→  1138→            className="shrink-0 px-4 py-2 rounded-lg font-semibold text-sm transition-transform hover:scale-105"
+  1139→  1139→            style={{ background: 'rgba(255,255,255,0.2)', color: banner.colorTexto }}
+  1140→  1140→          >
+  1141→  1141→            {banner.botonTexto}
+  1142→  1142→          </button>
+  1143→  1143→        )}
+  1144→  1144→      </div>
+  1145→  1145→    );
+  1146→  1146→  }
+  1147→  1147→
+  1148→  1148→  /* promo_grande (default) */
+  1149→  1149→  return (
+  1150→  1150→    <div
+  1151→  1151→      className="relative overflow-hidden"
+  1152→  1152→      style={{ ...bgStyle, borderRadius: 20, padding: 28, color: banner.colorTexto }}
+  1153→  1153→    >
+  1154→  1154→      <div
+  1155→  1155→        style={{
+  1156→  1156→          fontFamily: "'Syne', sans-serif",
+  1157→  1157→          fontWeight: 700,
+  1158→  1158→          fontSize: 22,
+  1159→  1159→        }}
+  1160→  1160→      >
+  1161→  1161→        {banner.titulo}
+  1162→  1162→      </div>
+  1163→  1163→      {banner.subtitulo && (
+  1164→  1164→        <div
+  1165→  1165→          className="mt-1.5"
+  1166→  1166→          style={{
+  1167→  1167→            fontFamily: "'DM Sans', sans-serif",
+  1168→  1168→            fontSize: 15,
+  1169→  1169→            opacity: 0.85,
+  1170→  1170→          }}
+  1171→  1171→        >
+  1172→  1172→          {banner.subtitulo}
+  1173→  1173→        </div>
+  1174→  1174→      )}
+  1175→  1175→      {banner.botonTexto && (
+  1176→  1176→        <button
+  1177→  1177→          onClick={() => onCTA(banner)}
+  1178→  1178→          className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl font-bold text-sm transition-transform hover:scale-105"
+  1179→  1179→          style={{
+  1180→  1180→            fontFamily: "'Syne', sans-serif",
+  1181→  1181→            background: '#fff',
+  1182→  1182→            color: 'var(--primario, #FF5722)',
+  1183→  1183→          }}
+  1184→  1184→        >
+  1185→  1185→          {banner.botonTexto}
+  1186→  1186→          <ArrowRight size={15} />
+  1187→  1187→        </button>
+  1188→  1188→      )}
+  1189→  1189→      {/* Decorative elements */}
+  1190→  1190→      <div
+  1191→  1191→        className="absolute -right-10 -bottom-10 rounded-full pointer-events-none"
+  1192→  1192→        style={{ width: 140, height: 140, background: 'rgba(255,255,255,0.06)' }}
+  1193→  1193→      />
+  1194→  1194→      <div
+  1195→  1195→        className="absolute right-16 -top-8 rounded-full pointer-events-none"
+  1196→  1196→        style={{ width: 100, height: 100, background: 'rgba(255,255,255,0.04)' }}
+  1197→  1197→      />
+  1198→  1198→    </div>
+  1199→  1199→  );
+  1200→  1200→}
+  1201→  1201→
+  1202→  1202→/* ─── Stat Box ─── */
+  1203→  1203→function StatBox({
+  1204→  1204→  value,
+  1205→  1205→  label,
+  1206→  1206→  isDark,
+  1207→  1207→}: {
+  1208→  1208→  value: string | number;
+  1209→  1209→  label: string;
+  1210→  1210→  isDark: boolean;
+  1211→  1211→}) {
+  1212→  1212→  return (
+  1213→  1213→    <div
+  1214→  1214→      className="text-center py-3 px-2 rounded-xl"
+  1215→  1215→      style={{
+  1216→  1216→        background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+  1217→  1217→      }}
+  1218→  1218→    >
+  1219→  1219→      <div
+  1220→  1220→        style={{
+  1221→  1221→          fontFamily: "'JetBrains Mono', monospace",
+  1222→  1222→          fontSize: 16,
+  1223→  1223→          fontWeight: 700,
+  1224→  1224→          color: 'var(--text)',
+  1225→  1225→        }}
+  1226→  1226→      >
+  1227→  1227→        {value}
+  1228→  1228→      </div>
+  1229→  1229→      <div
+  1230→  1230→        className="mt-0.5"
+  1231→  1231→        style={{
+  1232→  1232→          fontFamily: "'DM Sans', sans-serif",
+  1233→  1233→          fontSize: 12,
+  1234→  1234→          color: 'var(--text-muted)',
+  1235→  1235→        }}
+  1236→  1236→      >
+  1237→  1237→        {label}
+  1238→  1238→      </div>
+  1239→  1239→    </div>
+  1240→  1240→  );
+  1241→  1241→}
+  1242→  1242→

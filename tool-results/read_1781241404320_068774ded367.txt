@@ -1,0 +1,1581 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useMemo } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import { ArrowLeft, Heart, Share2, Phone, Star, Clock, MapPin, Truck, Plus, Minus, Check, ChevronRight, X, ShoppingBag, MessageCircle } from 'lucide-react';
+     6→import { useMarketplaceStore, type Tienda, type Producto, CATEGORIAS, MOCK_PRODUCTOS, MOCK_RESENAS } from '@/lib/marketplace-store';
+     7→import { useStore } from '@/lib/store';
+     8→
+     9→/* ═══════════════════════════════════════════════
+    10→   PROPS
+    11→   ═══════════════════════════════════════════════ */
+    12→
+    13→interface ClientTiendaProps {
+    14→  isDark: boolean;
+    15→  tiendaId: string;
+    16→  onBack: () => void;
+    17→  onOpenCart: () => void;
+    18→}
+    19→
+    20→/* ═══════════════════════════════════════════════
+    21→   HELPERS
+    22→   ═══════════════════════════════════════════════ */
+    23→
+    24→function categoriaLabel(key: string): string {
+    25→  const found = CATEGORIAS.find((c) => c.key === key);
+    26→  return found ? `${found.icon} ${found.label}` : key;
+    27→}
+    28→
+    29→function isStoreOpen(horario: Record<string, { abre: string; cierra: string }>): { open: boolean; text: string } {
+    30→  const days = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
+    31→  const now = new Date();
+    32→  const dayKey = days[now.getDay()];
+    33→  const dayHorario = horario[dayKey];
+    34→  if (!dayHorario || !dayHorario.abre || !dayHorario.cierra) {
+    35→    return { open: false, text: 'Cerrado hoy' };
+    36→  }
+    37→  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    38→  const [abreH, abreM] = dayHorario.abre.split(':').map(Number);
+    39→  const [cierraH, cierraM] = dayHorario.cierra.split(':').map(Number);
+    40→  const abreMinutes = abreH * 60 + abreM;
+    41→  const cierraMinutes = cierraH * 60 + cierraM;
+    42→  if (currentMinutes >= abreMinutes && currentMinutes <= cierraMinutes) {
+    43→    const cierraFormatted = dayHorario.cierra;
+    44→    return { open: true, text: `Abierto hasta ${cierraFormatted}` };
+    45→  }
+    46→  if (currentMinutes < abreMinutes) {
+    47→    return { open: false, text: `Abre a las ${dayHorario.abre}` };
+    48→  }
+    49→  return { open: false, text: 'Cerrado' };
+    50→}
+    51→
+    52→function formatHorarioDisplay(h: { abre: string; cierra: string }): string {
+    53→  if (!h.abre && !h.cierra) return 'Cerrado';
+    54→  return `${h.abre} - ${h.cierra}`;
+    55→}
+    56→
+    57→const DAY_LABELS: Record<string, string> = {
+    58→  lun: 'Lunes',
+    59→  mar: 'Martes',
+    60→  mie: 'Miércoles',
+    61→  jue: 'Jueves',
+    62→  vie: 'Viernes',
+    63→  sab: 'Sábado',
+    64→  dom: 'Domingo',
+    65→};
+    66→
+    67→const DAY_ORDER = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
+    68→
+    69→/* ═══════════════════════════════════════════════
+    70→   STAR DISPLAY
+    71→   ═══════════════════════════════════════════════ */
+    72→
+    73→function StarsDisplay({ rating, size = 14 }: { rating: number; size?: number }) {
+    74→  const full = Math.floor(rating);
+    75→  const hasHalf = rating - full >= 0.3;
+    76→  const empty = 5 - full - (hasHalf ? 1 : 0);
+    77→  return (
+    78→    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+    79→      {Array.from({ length: full }).map((_, i) => (
+    80→        <Star key={`f${i}`} size={size} fill="#FFB300" color="#FFB300" />
+    81→      ))}
+    82→      {hasHalf && (
+    83→        <span style={{ position: 'relative', width: size, height: size, display: 'inline-flex' }}>
+    84→          <Star size={size} color="var(--border)" style={{ position: 'absolute', left: 0 }} />
+    85→          <span style={{ position: 'absolute', left: 0, overflow: 'hidden', width: size / 2 }}>
+    86→            <Star size={size} fill="#FFB300" color="#FFB300" />
+    87→          </span>
+    88→        </span>
+    89→      )}
+    90→      {Array.from({ length: empty }).map((_, i) => (
+    91→        <Star key={`e${i}`} size={size} color="var(--border)" />
+    92→      ))}
+    93→    </span>
+    94→  );
+    95→}
+    96→
+    97→/* ═══════════════════════════════════════════════
+    98→   MAIN COMPONENT
+    99→   ═══════════════════════════════════════════════ */
+   100→
+   101→export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: ClientTiendaProps) {
+   102→  /* ─── Store ─── */
+   103→  const {
+   104→    tiendas,
+   105→    productos,
+   106→    resenas,
+   107→    cartItems,
+   108→    addToCart,
+   109→    toggleFavoritoTienda,
+   110→    isFavoritoTienda,
+   111→    updateCartItemQty,
+   112→    removeFromCart,
+   113→    getCartItemCount,
+   114→    getCartItemsByTienda,
+   115→  } = useMarketplaceStore();
+   116→
+   117→  /* ─── Local state ─── */
+   118→  const [activeTab, setActiveTab] = useState<'productos' | 'info' | 'resenas'>('productos');
+   119→  const [searchQuery, setSearchQuery] = useState('');
+   120→  const [activeCategory, setActiveCategory] = useState<string>('Todos');
+   121→  const [favAnimating, setFavAnimating] = useState(false);
+   122→  const [addedProductIds, setAddedProductIds] = useState<Set<string>>(new Set());
+   123→
+   124→  /* ─── Derived data ─── */
+   125→  const tienda = useMemo(() => tiendas.find((t) => t.id === tiendaId), [tiendas, tiendaId]);
+   126→
+   127→  const tiendaProductos = useMemo(
+   128→    () => productos.filter((p) => p.tiendaId === tiendaId && p.disponible),
+   129→    [productos, tiendaId]
+   130→  );
+   131→
+   132→  const tiendaResenas = useMemo(
+   133→    () => resenas.filter((r) => r.tiendaId === tiendaId),
+   134→    [resenas, tiendaId]
+   135→  );
+   136→
+   137→  const productCategories = useMemo(() => {
+   138→    const cats = Array.from(new Set(tiendaProductos.map((p) => p.categoriaNombre)));
+   139→    return ['Todos', ...cats];
+   140→  }, [tiendaProductos]);
+   141→
+   142→  const filteredProducts = useMemo(() => {
+   143→    let filtered = tiendaProductos;
+   144→    if (activeCategory !== 'Todos') {
+   145→      filtered = filtered.filter((p) => p.categoriaNombre === activeCategory);
+   146→    }
+   147→    if (searchQuery.trim()) {
+   148→      const q = searchQuery.toLowerCase();
+   149→      filtered = filtered.filter(
+   150→        (p) => p.nombre.toLowerCase().includes(q) || p.descripcion.toLowerCase().includes(q)
+   151→      );
+   152→    }
+   153→    return filtered;
+   154→  }, [tiendaProductos, activeCategory, searchQuery]);
+   155→
+   156→  const groupedProducts = useMemo(() => {
+   157→    const groups: Record<string, Producto[]> = {};
+   158→    filteredProducts.forEach((p) => {
+   159→      if (!groups[p.categoriaNombre]) groups[p.categoriaNombre] = [];
+   160→      groups[p.categoriaNombre].push(p);
+   161→    });
+   162→    return groups;
+   163→  }, [filteredProducts]);
+   164→
+   165→  const averageRating = useMemo(() => {
+   166→    if (tiendaResenas.length === 0) return tienda?.calificacion ?? 0;
+   167→    const sum = tiendaResenas.reduce((s, r) => s + r.estrellas, 0);
+   168→    return sum / tiendaResenas.length;
+   169→  }, [tiendaResenas, tienda]);
+   170→
+   171→  const ratingDistribution = useMemo(() => {
+   172→    const dist = [0, 0, 0, 0, 0]; // index 0 = 1 star, index 4 = 5 stars
+   173→    tiendaResenas.forEach((r) => {
+   174→      if (r.estrellas >= 1 && r.estrellas <= 5) dist[r.estrellas - 1]++;
+   175→    });
+   176→    return dist;
+   177→  }, [tiendaResenas]);
+   178→
+   179→  const cartItemCount = getCartItemCount();
+   180→  const isFavorite = tienda ? isFavoritoTienda(tienda.id) : false;
+   181→
+   182→  /* ─── Handlers ─── */
+   183→  const handleAddToCart = (producto: Producto) => {
+   184→    if (!tienda) return;
+   185→    addToCart(producto, tienda);
+   186→    setAddedProductIds((prev) => new Set(prev).add(producto.id));
+   187→    setTimeout(() => {
+   188→      setAddedProductIds((prev) => {
+   189→        const next = new Set(prev);
+   190→        next.delete(producto.id);
+   191→        return next;
+   192→      });
+   193→    }, 1200);
+   194→  };
+   195→
+   196→  const handleToggleFavorite = () => {
+   197→    if (!tienda) return;
+   198→    toggleFavoritoTienda(tienda.id);
+   199→    setFavAnimating(true);
+   200→    setTimeout(() => setFavAnimating(false), 400);
+   201→  };
+   202→
+   203→  const getCartItemForProduct = (productoId: string) => {
+   204→    return cartItems.find((ci) => ci.productoId === productoId);
+   205→  };
+   206→
+   207→  /* ─── No store found ─── */
+   208→  if (!tienda) {
+   209→    return (
+   210→      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24 }}>
+   211→        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 16, color: 'var(--text-muted)' }}>
+   212→          Tienda no encontrada
+   213→        </p>
+   214→        <button
+   215→          onClick={onBack}
+   216→          style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: 'var(--primario)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}
+   217→        >
+   218→          Volver
+   219→        </button>
+   220→      </div>
+   221→    );
+   222→  }
+   223→
+   224→  const storeOpenInfo = isStoreOpen(tienda.horario);
+   225→
+   226→  /* ═══════════════════════════════════════════════
+   227→     RENDER
+   228→     ═══════════════════════════════════════════════ */
+   229→  return (
+   230→    <div style={{ minHeight: '100vh', background: 'var(--bg)', position: 'relative' }}>
+   231→      {/* ─── STORE HEADER ─── */}
+   232→      <div style={{ position: 'relative' }}>
+   233→        {/* Cover */}
+   234→        <div
+   235→          style={{
+   236→            height: 200,
+   237→            background: `linear-gradient(135deg, ${tienda.portadaColor}, ${tienda.logoColor})`,
+   238→            position: 'relative',
+   239→          }}
+   240→        >
+   241→          {/* Dark overlay */}
+   242→          <div
+   243→            style={{
+   244→              position: 'absolute',
+   245→              inset: 0,
+   246→              background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 100%)',
+   247→            }}
+   248→          />
+   249→          {/* Back button */}
+   250→          <button
+   251→            onClick={onBack}
+   252→            style={{
+   253→              position: 'absolute',
+   254→              top: 16,
+   255→              left: 16,
+   256→              width: 40,
+   257→              height: 40,
+   258→              borderRadius: '50%',
+   259→              background: 'rgba(0,0,0,0.35)',
+   260→              backdropFilter: 'blur(8px)',
+   261→              border: 'none',
+   262→              color: '#fff',
+   263→              display: 'flex',
+   264→              alignItems: 'center',
+   265→              justifyContent: 'center',
+   266→              cursor: 'pointer',
+   267→              zIndex: 2,
+   268→            }}
+   269→          >
+   270→            <ArrowLeft size={20} />
+   271→          </button>
+   272→        </div>
+   273→
+   274→        {/* Logo circle overlapping */}
+   275→        <motion.div
+   276→          initial={{ scale: 0.5, opacity: 0 }}
+   277→          animate={{ scale: 1, opacity: 1 }}
+   278→          transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+   279→          style={{
+   280→            position: 'absolute',
+   281→            top: 164,
+   282→            left: 20,
+   283→            width: 72,
+   284→            height: 72,
+   285→            borderRadius: '50%',
+   286→            background: tienda.logoColor,
+   287→            display: 'flex',
+   288→            alignItems: 'center',
+   289→            justifyContent: 'center',
+   290→            color: '#fff',
+   291→            fontFamily: "'Syne', sans-serif",
+   292→            fontWeight: 700,
+   293→            fontSize: 22,
+   294→            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+   295→            border: '3px solid var(--surface)',
+   296→            zIndex: 2,
+   297→          }}
+   298→        >
+   299→          {tienda.logoIniciales}
+   300→        </motion.div>
+   301→      </div>
+   302→
+   303→      {/* ─── Store Info Section ─── */}
+   304→      <div style={{ padding: '48px 20px 16px 20px' }}>
+   305→        {/* Name */}
+   306→        <h1
+   307→          style={{
+   308→            fontFamily: "'Syne', sans-serif",
+   309→            fontWeight: 700,
+   310→            fontSize: 24,
+   311→            color: 'var(--text)',
+   312→            margin: 0,
+   313→            lineHeight: 1.2,
+   314→          }}
+   315→        >
+   316→          {tienda.nombre}
+   317→        </h1>
+   318→
+   319→        {/* Category + rating + orders + time */}
+   320→        <div
+   321→          style={{
+   322→            display: 'flex',
+   323→            alignItems: 'center',
+   324→            gap: 10,
+   325→            marginTop: 8,
+   326→            flexWrap: 'wrap',
+   327→          }}
+   328→        >
+   329→          <span
+   330→            style={{
+   331→              fontFamily: "'DM Sans', sans-serif",
+   332→              fontSize: 13,
+   333→              color: 'var(--text-secondary)',
+   334→            }}
+   335→          >
+   336→            {categoriaLabel(tienda.categoria)}
+   337→          </span>
+   338→          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+   339→            <StarsDisplay rating={tienda.calificacion} size={13} />
+   340→            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600, color: 'var(--text)', marginLeft: 2 }}>
+   341→              {tienda.calificacion}
+   342→            </span>
+   343→          </span>
+   344→          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--text-muted)' }}>
+   345→            {tienda.totalPedidos} pedidos
+   346→          </span>
+   347→          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+   348→            <Clock size={12} style={{ color: 'var(--text-muted)' }} />
+   349→            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--text-muted)' }}>
+   350→              {tienda.tiempoEstimado}
+   351→            </span>
+   352→          </span>
+   353→        </div>
+   354→
+   355→        {/* Badges */}
+   356→        {tienda.badges.length > 0 && (
+   357→          <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+   358→            {tienda.verificado && (
+   359→              <span
+   360→                style={{
+   361→                  display: 'inline-flex',
+   362→                  alignItems: 'center',
+   363→                  gap: 4,
+   364→                  padding: '3px 10px',
+   365→                  borderRadius: 20,
+   366→                  background: 'rgba(0, 200, 83, 0.1)',
+   367→                  color: 'var(--exito)',
+   368→                  fontFamily: "'DM Sans', sans-serif",
+   369→                  fontSize: 11,
+   370→                  fontWeight: 600,
+   371→                }}
+   372→              >
+   373→                <Check size={11} /> Verificado
+   374→              </span>
+   375→            )}
+   376→            {tienda.badges.map((badge) => {
+   377→              let bgColor = 'var(--primario-soft)';
+   378→              let textColor = 'var(--primario)';
+   379→              if (badge === 'Popular') {
+   380→                bgColor = 'rgba(255, 87, 34, 0.08)';
+   381→                textColor = 'var(--primario)';
+   382→              } else if (badge === 'Nuevo') {
+   383→                bgColor = 'rgba(41, 121, 255, 0.08)';
+   384→                textColor = 'var(--info)';
+   385→              }
+   386→              return (
+   387→                <span
+   388→                  key={badge}
+   389→                  style={{
+   390→                    display: 'inline-flex',
+   391→                    alignItems: 'center',
+   392→                    gap: 3,
+   393→                    padding: '3px 10px',
+   394→                    borderRadius: 20,
+   395→                    background: bgColor,
+   396→                    color: textColor,
+   397→                    fontFamily: "'DM Sans', sans-serif",
+   398→                    fontSize: 11,
+   399→                    fontWeight: 600,
+   400→                  }}
+   401→                >
+   402→                  {badge === 'Popular' && <Star size={10} fill={textColor} color={textColor} />}
+   403→                  {badge === 'Nuevo' && <span style={{ fontSize: 10 }}>✨</span>}
+   404→                  {badge}
+   405→                </span>
+   406→              );
+   407→            })}
+   408→          </div>
+   409→        )}
+   410→
+   411→        {/* Address + Distance */}
+   412→        <div
+   413→          style={{
+   414→            display: 'flex',
+   415→            alignItems: 'center',
+   416→            gap: 6,
+   417→            marginTop: 12,
+   418→          }}
+   419→        >
+   420→          <MapPin size={14} style={{ color: 'var(--primario)', flexShrink: 0 }} />
+   421→          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text-secondary)' }}>
+   422→            {tienda.direccion}
+   423→          </span>
+   424→          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--primario)', fontWeight: 600, marginLeft: 4 }}>
+   425→            1.2 km de ti
+   426→          </span>
+   427→        </div>
+   428→
+   429→        {/* Horario */}
+   430→        <div
+   431→          style={{
+   432→            display: 'inline-flex',
+   433→            alignItems: 'center',
+   434→            gap: 6,
+   435→            marginTop: 8,
+   436→            padding: '4px 10px',
+   437→            borderRadius: 8,
+   438→            background: storeOpenInfo.open ? 'rgba(0, 200, 83, 0.08)' : 'rgba(255, 23, 68, 0.08)',
+   439→          }}
+   440→        >
+   441→          <div
+   442→            style={{
+   443→              width: 7,
+   444→              height: 7,
+   445→              borderRadius: '50%',
+   446→              background: storeOpenInfo.open ? 'var(--exito)' : 'var(--peligro)',
+   447→            }}
+   448→          />
+   449→          <span
+   450→            style={{
+   451→              fontFamily: "'DM Sans', sans-serif",
+   452→              fontSize: 12,
+   453→              fontWeight: 600,
+   454→              color: storeOpenInfo.open ? 'var(--exito)' : 'var(--peligro)',
+   455→            }}
+   456→          >
+   457→            {storeOpenInfo.text}
+   458→          </span>
+   459→        </div>
+   460→
+   461→        {/* Action buttons row */}
+   462→        <div
+   463→          style={{
+   464→            display: 'flex',
+   465→            gap: 8,
+   466→            marginTop: 16,
+   467→          }}
+   468→        >
+   469→          {/* Hacer pedido */}
+   470→          <button
+   471→            onClick={() => setActiveTab('productos')}
+   472→            style={{
+   473→              flex: 1,
+   474→              padding: '12px 16px',
+   475→              borderRadius: 14,
+   476→              background: 'var(--primario)',
+   477→              color: '#fff',
+   478→              border: 'none',
+   479→              cursor: 'pointer',
+   480→              fontFamily: "'DM Sans', sans-serif",
+   481→              fontWeight: 700,
+   482→              fontSize: 14,
+   483→              display: 'flex',
+   484→              alignItems: 'center',
+   485→              justifyContent: 'center',
+   486→              gap: 8,
+   487→              boxShadow: 'var(--shadow-primario)',
+   488→            }}
+   489→          >
+   490→            <ShoppingBag size={16} />
+   491→            Hacer pedido
+   492→          </button>
+   493→
+   494→          {/* Favorito */}
+   495→          <motion.button
+   496→            whileTap={{ scale: 0.85 }}
+   497→            onClick={handleToggleFavorite}
+   498→            style={{
+   499→              width: 48,
+   500→              height: 48,
+   501→              borderRadius: 14,
+   502→              background: isFavorite ? 'rgba(255, 23, 68, 0.1)' : 'var(--surface)',
+   503→              border: `1.5px solid ${isFavorite ? 'var(--peligro)' : 'var(--border)'}`,
+   504→              color: isFavorite ? 'var(--peligro)' : 'var(--text-muted)',
+   505→              display: 'flex',
+   506→              alignItems: 'center',
+   507→              justifyContent: 'center',
+   508→              cursor: 'pointer',
+   509→              position: 'relative',
+   510→            }}
+   511→          >
+   512→            <Heart size={20} fill={isFavorite ? 'var(--peligro)' : 'none'} />
+   513→            {favAnimating && (
+   514→              <motion.span
+   515→                initial={{ scale: 0, opacity: 1 }}
+   516→                animate={{ scale: 2, opacity: 0 }}
+   517→                transition={{ duration: 0.4 }}
+   518→                style={{
+   519→                  position: 'absolute',
+   520→                  width: 20,
+   521→                  height: 20,
+   522→                  borderRadius: '50%',
+   523→                  background: 'var(--peligro)',
+   524→                }}
+   525→              />
+   526→            )}
+   527→          </motion.button>
+   528→
+   529→          {/* Compartir */}
+   530→          <button
+   531→            style={{
+   532→              width: 48,
+   533→              height: 48,
+   534→              borderRadius: 14,
+   535→              background: 'var(--surface)',
+   536→              border: '1.5px solid var(--border)',
+   537→              color: 'var(--text-muted)',
+   538→              display: 'flex',
+   539→              alignItems: 'center',
+   540→              justifyContent: 'center',
+   541→              cursor: 'pointer',
+   542→            }}
+   543→          >
+   544→            <Share2 size={20} />
+   545→          </button>
+   546→
+   547→          {/* Llamar */}
+   548→          <button
+   549→            style={{
+   550→              width: 48,
+   551→              height: 48,
+   552→              borderRadius: 14,
+   553→              background: 'var(--surface)',
+   554→              border: '1.5px solid var(--border)',
+   555→              color: 'var(--text-muted)',
+   556→              display: 'flex',
+   557→              alignItems: 'center',
+   558→              justifyContent: 'center',
+   559→              cursor: 'pointer',
+   560→            }}
+   561→          >
+   562→            <Phone size={20} />
+   563→          </button>
+   564→        </div>
+   565→      </div>
+   566→
+   567→      {/* ─── TABS ─── */}
+   568→      <div
+   569→        style={{
+   570→          display: 'flex',
+   571→          gap: 6,
+   572→          padding: '0 20px',
+   573→          marginTop: 8,
+   574→        }}
+   575→      >
+   576→        {(['productos', 'info', 'resenas'] as const).map((tab) => {
+   577→          const isActive = activeTab === tab;
+   578→          const labels = { productos: 'Productos', info: 'Info', resenas: 'Reseñas' };
+   579→          return (
+   580→            <button
+   581→              key={tab}
+   582→              onClick={() => setActiveTab(tab)}
+   583→              style={{
+   584→                padding: '8px 18px',
+   585→                borderRadius: 24,
+   586→                border: 'none',
+   587→                background: isActive ? 'var(--primario)' : 'var(--surface)',
+   588→                color: isActive ? '#fff' : 'var(--text-secondary)',
+   589→                fontFamily: "'DM Sans', sans-serif",
+   590→                fontWeight: 600,
+   591→                fontSize: 13,
+   592→                cursor: 'pointer',
+   593→                transition: 'all 0.2s',
+   594→                boxShadow: isActive ? '0 2px 8px rgba(255,87,34,0.25)' : 'var(--shadow-sm)',
+   595→              }}
+   596→            >
+   597→              {labels[tab]}
+   598→            </button>
+   599→          );
+   600→        })}
+   601→      </div>
+   602→
+   603→      {/* ─── TAB CONTENT ─── */}
+   604→      <div style={{ padding: '16px 20px 120px 20px' }}>
+   605→        <AnimatePresence mode="wait">
+   606→          {/* ════════════ PRODUCTS TAB ════════════ */}
+   607→          {activeTab === 'productos' && (
+   608→            <motion.div
+   609→              key="productos"
+   610→              initial={{ opacity: 0, y: 10 }}
+   611→              animate={{ opacity: 1, y: 0 }}
+   612→              exit={{ opacity: 0, y: -10 }}
+   613→              transition={{ duration: 0.2 }}
+   614→            >
+   615→              {/* Search */}
+   616→              <div
+   617→                style={{
+   618→                  position: 'relative',
+   619→                  marginBottom: 12,
+   620→                }}
+   621→              >
+   622→                <input
+   623→                  type="text"
+   624→                  placeholder={`Buscar en ${tienda.nombre}...`}
+   625→                  value={searchQuery}
+   626→                  onChange={(e) => setSearchQuery(e.target.value)}
+   627→                  style={{
+   628→                    width: '100%',
+   629→                    padding: '11px 16px 11px 40px',
+   630→                    borderRadius: 12,
+   631→                    border: '1.5px solid var(--border)',
+   632→                    background: 'var(--surface)',
+   633→                    color: 'var(--text)',
+   634→                    fontFamily: "'DM Sans', sans-serif",
+   635→                    fontSize: 14,
+   636→                    outline: 'none',
+   637→                    transition: 'border-color 0.2s',
+   638→                  }}
+   639→                  onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--primario)')}
+   640→                  onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+   641→                />
+   642→                <SearchIcon
+   643→                  style={{
+   644→                    position: 'absolute',
+   645→                    left: 14,
+   646→                    top: '50%',
+   647→                    transform: 'translateY(-50%)',
+   648→                    color: 'var(--text-muted)',
+   649→                  }}
+   650→                />
+   651→                {searchQuery && (
+   652→                  <button
+   653→                    onClick={() => setSearchQuery('')}
+   654→                    style={{
+   655→                      position: 'absolute',
+   656→                      right: 10,
+   657→                      top: '50%',
+   658→                      transform: 'translateY(-50%)',
+   659→                      background: 'none',
+   660→                      border: 'none',
+   661→                      cursor: 'pointer',
+   662→                      color: 'var(--text-muted)',
+   663→                      display: 'flex',
+   664→                    }}
+   665→                  >
+   666→                    <X size={16} />
+   667→                  </button>
+   668→                )}
+   669→              </div>
+   670→
+   671→              {/* Category sticky tabs */}
+   672→              <div
+   673→                style={{
+   674→                  display: 'flex',
+   675→                  gap: 6,
+   676→                  overflowX: 'auto',
+   677→                  paddingBottom: 8,
+   678→                  marginBottom: 8,
+   679→                  scrollbarWidth: 'none',
+   680→                  msOverflowStyle: 'none',
+   681→                  WebkitOverflowScrolling: 'touch',
+   682→                  position: 'sticky',
+   683→                  top: 0,
+   684→                  zIndex: 10,
+   685→                  background: 'var(--bg)',
+   686→                  paddingTop: 4,
+   687→                }}
+   688→              >
+   689→                {productCategories.map((cat) => {
+   690→                  const isActive = activeCategory === cat;
+   691→                  return (
+   692→                    <button
+   693→                      key={cat}
+   694→                      onClick={() => setActiveCategory(cat)}
+   695→                      style={{
+   696→                        padding: '6px 14px',
+   697→                        borderRadius: 20,
+   698→                        border: '1.5px solid',
+   699→                        borderColor: isActive ? 'var(--primario)' : 'var(--border)',
+   700→                        background: isActive ? 'var(--primario-soft)' : 'var(--surface)',
+   701→                        color: isActive ? 'var(--primario)' : 'var(--text-secondary)',
+   702→                        fontFamily: "'DM Sans', sans-serif",
+   703→                        fontWeight: 600,
+   704→                        fontSize: 12,
+   705→                        cursor: 'pointer',
+   706→                        whiteSpace: 'nowrap',
+   707→                        transition: 'all 0.2s',
+   708→                      }}
+   709→                    >
+   710→                      {cat}
+   711→                    </button>
+   712→                  );
+   713→                })}
+   714→              </div>
+   715→
+   716→              {/* Products grouped by category */}
+   717→              {Object.keys(groupedProducts).length === 0 && (
+   718→                <div
+   719→                  style={{
+   720→                    textAlign: 'center',
+   721→                    padding: '40px 0',
+   722→                    color: 'var(--text-muted)',
+   723→                    fontFamily: "'DM Sans', sans-serif",
+   724→                    fontSize: 14,
+   725→                  }}
+   726→                >
+   727→                  No se encontraron productos
+   728→                </div>
+   729→              )}
+   730→
+   731→              {Object.entries(groupedProducts).map(([catName, prods]) => (
+   732→                <div key={catName} style={{ marginBottom: 20 }}>
+   733→                  {/* Category header */}
+   734→                  <h3
+   735→                    style={{
+   736→                      fontFamily: "'Syne', sans-serif",
+   737→                      fontWeight: 700,
+   738→                      fontSize: 16,
+   739→                      color: 'var(--text)',
+   740→                      marginBottom: 4,
+   741→                    }}
+   742→                  >
+   743→                    {catName}
+   744→                  </h3>
+   745→
+   746→                  {/* Product cards */}
+   747→                  {prods.map((producto) => {
+   748→                    const cartItem = getCartItemForProduct(producto.id);
+   749→                    const justAdded = addedProductIds.has(producto.id);
+   750→                    const qtyInCart = cartItem ? cartItem.cantidad : 0;
+   751→
+   752→                    return (
+   753→                      <div
+   754→                        key={producto.id}
+   755→                        style={{
+   756→                          display: 'flex',
+   757→                          gap: 12,
+   758→                          padding: '12px 0',
+   759→                          borderBottom: '1px solid var(--border)',
+   760→                          alignItems: 'center',
+   761→                        }}
+   762→                      >
+   763→                        {/* Info */}
+   764→                        <div style={{ flex: 1, minWidth: 0 }}>
+   765→                          <div
+   766→                            style={{
+   767→                              fontSize: 15,
+   768→                              fontWeight: 600,
+   769→                              color: 'var(--text)',
+   770→                              fontFamily: "'DM Sans', sans-serif",
+   771→                            }}
+   772→                          >
+   773→                            {producto.nombre}
+   774→                          </div>
+   775→                          <div
+   776→                            style={{
+   777→                              fontSize: 13,
+   778→                              color: 'var(--text-muted)',
+   779→                              marginTop: 2,
+   780→                              lineClamp: 2,
+   781→                              overflow: 'hidden',
+   782→                              display: '-webkit-box',
+   783→                              WebkitLineClamp: 2,
+   784→                              WebkitBoxOrient: 'vertical',
+   785→                              fontFamily: "'DM Sans', sans-serif",
+   786→                            }}
+   787→                          >
+   788→                            {producto.descripcion}
+   789→                          </div>
+   790→                          <div
+   791→                            style={{
+   792→                              display: 'flex',
+   793→                              alignItems: 'center',
+   794→                              gap: 8,
+   795→                              marginTop: 4,
+   796→                            }}
+   797→                          >
+   798→                            {producto.precioOriginal && (
+   799→                              <span
+   800→                                style={{
+   801→                                  textDecoration: 'line-through',
+   802→                                  fontSize: 13,
+   803→                                  color: 'var(--text-muted)',
+   804→                                  fontFamily: "'DM Sans', sans-serif",
+   805→                                }}
+   806→                              >
+   807→                                C${producto.precioOriginal}
+   808→                              </span>
+   809→                            )}
+   810→                            <span
+   811→                              style={{
+   812→                                fontFamily: "'JetBrains Mono', monospace",
+   813→                                fontSize: 16,
+   814→                                fontWeight: 700,
+   815→                                color: producto.precioOriginal ? 'var(--primario)' : 'var(--text)',
+   816→                              }}
+   817→                            >
+   818→                              C${producto.precio}
+   819→                            </span>
+   820→                          </div>
+   821→
+   822→                          {/* Product badges */}
+   823→                          <div style={{ display: 'flex', gap: 5, marginTop: 6 }}>
+   824→                            {producto.esNuevo && (
+   825→                              <span
+   826→                                style={{
+   827→                                  padding: '2px 7px',
+   828→                                  borderRadius: 6,
+   829→                                  background: 'rgba(41, 121, 255, 0.08)',
+   830→                                  color: 'var(--info)',
+   831→                                  fontFamily: "'DM Sans', sans-serif",
+   832→                                  fontSize: 10,
+   833→                                  fontWeight: 700,
+   834→                                }}
+   835→                              >
+   836→                                Nuevo
+   837→                              </span>
+   838→                            )}
+   839→                            {producto.esPopular && (
+   840→                              <span
+   841→                                style={{
+   842→                                  padding: '2px 7px',
+   843→                                  borderRadius: 6,
+   844→                                  background: 'var(--primario-soft)',
+   845→                                  color: 'var(--primario)',
+   846→                                  fontFamily: "'DM Sans', sans-serif",
+   847→                                  fontSize: 10,
+   848→                                  fontWeight: 700,
+   849→                                }}
+   850→                              >
+   851→                                Popular
+   852→                              </span>
+   853→                            )}
+   854→                            {producto.stock !== null && producto.stock <= 5 && (
+   855→                              <span
+   856→                                style={{
+   857→                                  padding: '2px 7px',
+   858→                                  borderRadius: 6,
+   859→                                  background: 'rgba(255, 179, 0, 0.1)',
+   860→                                  color: 'var(--warning)',
+   861→                                  fontFamily: "'DM Sans', sans-serif",
+   862→                                  fontSize: 10,
+   863→                                  fontWeight: 700,
+   864→                                }}
+   865→                              >
+   866→                                Últimas unidades
+   867→                              </span>
+   868→                            )}
+   869→                          </div>
+   870→                        </div>
+   871→
+   872→                        {/* Image + Add button */}
+   873→                        <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
+   874→                          <div
+   875→                            style={{
+   876→                              width: 90,
+   877→                              height: 90,
+   878→                              borderRadius: 14,
+   879→                              background: producto.imagenColor,
+   880→                            }}
+   881→                          />
+   882→                          {qtyInCart === 0 ? (
+   883→                            <motion.button
+   884→                              whileTap={{ scale: 0.85 }}
+   885→                              onClick={() => handleAddToCart(producto)}
+   886→                              style={{
+   887→                                position: 'absolute',
+   888→                                bottom: -8,
+   889→                                right: -8,
+   890→                                width: 32,
+   891→                                height: 32,
+   892→                                borderRadius: '50%',
+   893→                                background: 'var(--primario)',
+   894→                                border: '2px solid var(--surface)',
+   895→                                color: '#fff',
+   896→                                display: 'flex',
+   897→                                alignItems: 'center',
+   898→                                justifyContent: 'center',
+   899→                                cursor: 'pointer',
+   900→                                boxShadow: 'var(--shadow-md)',
+   901→                              }}
+   902→                            >
+   903→                              <Plus size={16} />
+   904→                            </motion.button>
+   905→                          ) : (
+   906→                            <div
+   907→                              style={{
+   908→                                position: 'absolute',
+   909→                                bottom: -8,
+   910→                                right: -8,
+   911→                                display: 'flex',
+   912→                                alignItems: 'center',
+   913→                                gap: 0,
+   914→                                borderRadius: 20,
+   915→                                background: 'var(--primario)',
+   916→                                border: '2px solid var(--surface)',
+   917→                                boxShadow: 'var(--shadow-md)',
+   918→                                overflow: 'hidden',
+   919→                              }}
+   920→                            >
+   921→                              <button
+   922→                                onClick={() => {
+   923→                                  if (cartItem) updateCartItemQty(cartItem.id, cartItem.cantidad - 1);
+   924→                                }}
+   925→                                style={{
+   926→                                  width: 28,
+   927→                                  height: 28,
+   928→                                  border: 'none',
+   929→                                  background: 'transparent',
+   930→                                  color: '#fff',
+   931→                                  display: 'flex',
+   932→                                  alignItems: 'center',
+   933→                                  justifyContent: 'center',
+   934→                                  cursor: 'pointer',
+   935→                                }}
+   936→                              >
+   937→                                <Minus size={13} />
+   938→                              </button>
+   939→                              <span
+   940→                                style={{
+   941→                                  fontFamily: "'JetBrains Mono', monospace",
+   942→                                  fontSize: 13,
+   943→                                  fontWeight: 700,
+   944→                                  color: '#fff',
+   945→                                  minWidth: 20,
+   946→                                  textAlign: 'center',
+   947→                                }}
+   948→                              >
+   949→                                {qtyInCart}
+   950→                              </span>
+   951→                              <button
+   952→                                onClick={() => {
+   953→                                  if (cartItem) updateCartItemQty(cartItem.id, cartItem.cantidad + 1);
+   954→                                }}
+   955→                                style={{
+   956→                                  width: 28,
+   957→                                  height: 28,
+   958→                                  border: 'none',
+   959→                                  background: 'transparent',
+   960→                                  color: '#fff',
+   961→                                  display: 'flex',
+   962→                                  alignItems: 'center',
+   963→                                  justifyContent: 'center',
+   964→                                  cursor: 'pointer',
+   965→                                }}
+   966→                              >
+   967→                                <Plus size={13} />
+   968→                              </button>
+   969→                            </div>
+   970→                          )}
+   971→                          {/* Just added check animation */}
+   972→                          <AnimatePresence>
+   973→                            {justAdded && (
+   974→                              <motion.div
+   975→                                initial={{ scale: 0, opacity: 0 }}
+   976→                                animate={{ scale: 1, opacity: 1 }}
+   977→                                exit={{ scale: 0, opacity: 0 }}
+   978→                                transition={{ duration: 0.3 }}
+   979→                                style={{
+   980→                                  position: 'absolute',
+   981→                                  top: -4,
+   982→                                  right: -4,
+   983→                                  width: 22,
+   984→                                  height: 22,
+   985→                                  borderRadius: '50%',
+   986→                                  background: 'var(--exito)',
+   987→                                  display: 'flex',
+   988→                                  alignItems: 'center',
+   989→                                  justifyContent: 'center',
+   990→                                  boxShadow: 'var(--shadow-sm)',
+   991→                                }}
+   992→                              >
+   993→                                <Check size={12} color="#fff" />
+   994→                              </motion.div>
+   995→                            )}
+   996→                          </AnimatePresence>
+   997→                        </div>
+   998→                      </div>
+   999→                    );
+  1000→                  })}
+  1001→                </div>
+  1002→              ))}
+  1003→            </motion.div>
+  1004→          )}
+  1005→
+  1006→          {/* ════════════ INFO TAB ════════════ */}
+  1007→          {activeTab === 'info' && (
+  1008→            <motion.div
+  1009→              key="info"
+  1010→              initial={{ opacity: 0, y: 10 }}
+  1011→              animate={{ opacity: 1, y: 0 }}
+  1012→              exit={{ opacity: 0, y: -10 }}
+  1013→              transition={{ duration: 0.2 }}
+  1014→            >
+  1015→              {/* Map placeholder */}
+  1016→              <div
+  1017→                style={{
+  1018→                  width: '100%',
+  1019→                  height: 160,
+  1020→                  borderRadius: 16,
+  1021→                  background: `linear-gradient(135deg, ${tienda.logoColor}22, ${tienda.portadaColor}22)`,
+  1022→                  border: '1.5px solid var(--border)',
+  1023→                  display: 'flex',
+  1024→                  flexDirection: 'column',
+  1025→                  alignItems: 'center',
+  1026→                  justifyContent: 'center',
+  1027→                  gap: 8,
+  1028→                  marginBottom: 20,
+  1029→                }}
+  1030→              >
+  1031→                <MapPin size={28} style={{ color: 'var(--primario)' }} />
+  1032→                <span
+  1033→                  style={{
+  1034→                    fontFamily: "'DM Sans', sans-serif",
+  1035→                    fontSize: 13,
+  1036→                    color: 'var(--text-secondary)',
+  1037→                    textAlign: 'center',
+  1038→                    padding: '0 24px',
+  1039→                  }}
+  1040→                >
+  1041→                  {tienda.direccion}
+  1042→                </span>
+  1043→              </div>
+  1044→
+  1045→              {/* Address */}
+  1046→              <InfoRow icon={<MapPin size={16} style={{ color: 'var(--primario)' }} />} label="Dirección" value={tienda.direccion} />
+  1047→
+  1048→              {/* Hours */}
+  1049→              <div style={{ marginBottom: 20 }}>
+  1050→                <div
+  1051→                  style={{
+  1052→                    display: 'flex',
+  1053→                    alignItems: 'center',
+  1054→                    gap: 8,
+  1055→                    marginBottom: 10,
+  1056→                  }}
+  1057→                >
+  1058→                  <Clock size={16} style={{ color: 'var(--primario)' }} />
+  1059→                  <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+  1060→                    Horario
+  1061→                  </span>
+  1062→                </div>
+  1063→                <div
+  1064→                  style={{
+  1065→                    background: 'var(--surface)',
+  1066→                    borderRadius: 12,
+  1067→                    border: '1px solid var(--border)',
+  1068→                    overflow: 'hidden',
+  1069→                  }}
+  1070→                >
+  1071→                  {DAY_ORDER.map((day, idx) => {
+  1072→                    const h = tienda.horario[day];
+  1073→                    const isToday = day === ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'][new Date().getDay()];
+  1074→                    return (
+  1075→                      <div
+  1076→                        key={day}
+  1077→                        style={{
+  1078→                          display: 'flex',
+  1079→                          justifyContent: 'space-between',
+  1080→                          alignItems: 'center',
+  1081→                          padding: '10px 14px',
+  1082→                          background: isToday ? 'var(--primario-soft)' : 'transparent',
+  1083→                          borderBottom: idx < DAY_ORDER.length - 1 ? '1px solid var(--border)' : 'none',
+  1084→                        }}
+  1085→                      >
+  1086→                        <span
+  1087→                          style={{
+  1088→                            fontFamily: "'DM Sans', sans-serif",
+  1089→                            fontSize: 13,
+  1090→                            fontWeight: isToday ? 600 : 400,
+  1091→                            color: isToday ? 'var(--primario)' : 'var(--text-secondary)',
+  1092→                          }}
+  1093→                        >
+  1094→                          {DAY_LABELS[day]} {isToday && '(Hoy)'}
+  1095→                        </span>
+  1096→                        <span
+  1097→                          style={{
+  1098→                            fontFamily: "'JetBrains Mono', monospace",
+  1099→                            fontSize: 12,
+  1100→                            fontWeight: isToday ? 600 : 400,
+  1101→                            color: h && h.abre ? (isToday ? 'var(--primario)' : 'var(--text)') : 'var(--text-muted)',
+  1102→                          }}
+  1103→                        >
+  1104→                          {h ? formatHorarioDisplay(h) : 'Cerrado'}
+  1105→                        </span>
+  1106→                      </div>
+  1107→                    );
+  1108→                  })}
+  1109→                </div>
+  1110→              </div>
+  1111→
+  1112→              {/* Phone */}
+  1113→              <InfoRow icon={<Phone size={16} style={{ color: 'var(--primario)' }} />} label="Teléfono" value={tienda.telefono} />
+  1114→
+  1115→              {/* Email */}
+  1116→              <InfoRow
+  1117→                icon={<MessageCircle size={16} style={{ color: 'var(--primario)' }} />}
+  1118→                label="Email"
+  1119→                value={tienda.email}
+  1120→              />
+  1121→
+  1122→              {/* Description */}
+  1123→              <div style={{ marginBottom: 20 }}>
+  1124→                <div
+  1125→                  style={{
+  1126→                    fontFamily: "'DM Sans', sans-serif",
+  1127→                    fontSize: 14,
+  1128→                    fontWeight: 600,
+  1129→                    color: 'var(--text)',
+  1130→                    marginBottom: 6,
+  1131→                  }}
+  1132→                >
+  1133→                  Descripción
+  1134→                </div>
+  1135→                <p
+  1136→                  style={{
+  1137→                    fontFamily: "'DM Sans', sans-serif",
+  1138→                    fontSize: 13,
+  1139→                    color: 'var(--text-secondary)',
+  1140→                    lineHeight: 1.6,
+  1141→                    margin: 0,
+  1142→                  }}
+  1143→                >
+  1144→                  {tienda.descripcion}
+  1145→                </p>
+  1146→              </div>
+  1147→
+  1148→              {/* Policies */}
+  1149→              <div style={{ marginBottom: 16 }}>
+  1150→                <div
+  1151→                  style={{
+  1152→                    fontFamily: "'DM Sans', sans-serif",
+  1153→                    fontSize: 14,
+  1154→                    fontWeight: 600,
+  1155→                    color: 'var(--text)',
+  1156→                    marginBottom: 10,
+  1157→                  }}
+  1158→                >
+  1159→                  Políticas de pedido
+  1160→                </div>
+  1161→                <div
+  1162→                  style={{
+  1163→                    background: 'var(--surface)',
+  1164→                    borderRadius: 12,
+  1165→                    border: '1px solid var(--border)',
+  1166→                    overflow: 'hidden',
+  1167→                  }}
+  1168→                >
+  1169→                  <PolicyRow
+  1170→                    icon={<ShoppingBag size={16} style={{ color: 'var(--primario)' }} />}
+  1171→                    label="Pedido mínimo"
+  1172→                    value={`C$${tienda.pedidoMinimo}`}
+  1173→                  />
+  1174→                  <PolicyRow
+  1175→                    icon={<Truck size={16} style={{ color: 'var(--primario)' }} />}
+  1176→                    label="Costo de envío"
+  1177→                    value={`C$${tienda.costoEnvio}`}
+  1178→                  />
+  1179→                  <PolicyRow
+  1180→                    icon={<Clock size={16} style={{ color: 'var(--primario)' }} />}
+  1181→                    label="Tiempo estimado"
+  1182→                    value={tienda.tiempoEstimado}
+  1183→                  />
+  1184→                </div>
+  1185→              </div>
+  1186→
+  1187→              {/* Coverage zones */}
+  1188→              <div style={{ marginBottom: 16 }}>
+  1189→                <div
+  1190→                  style={{
+  1191→                    fontFamily: "'DM Sans', sans-serif",
+  1192→                    fontSize: 14,
+  1193→                    fontWeight: 600,
+  1194→                    color: 'var(--text)',
+  1195→                    marginBottom: 8,
+  1196→                  }}
+  1197→                >
+  1198→                  Zonas de cobertura
+  1199→                </div>
+  1200→                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+  1201→                  {tienda.zonaCobertura.map((zona) => (
+  1202→                    <span
+  1203→                      key={zona}
+  1204→                      style={{
+  1205→                        padding: '4px 12px',
+  1206→                        borderRadius: 20,
+  1207→                        background: 'var(--primario-soft)',
+  1208→                        color: 'var(--primario)',
+  1209→                        fontFamily: "'DM Sans', sans-serif",
+  1210→                        fontSize: 12,
+  1211→                        fontWeight: 600,
+  1212→                      }}
+  1213→                    >
+  1214→                      {zona}
+  1215→                    </span>
+  1216→                  ))}
+  1217→                </div>
+  1218→              </div>
+  1219→            </motion.div>
+  1220→          )}
+  1221→
+  1222→          {/* ════════════ REVIEWS TAB ════════════ */}
+  1223→          {activeTab === 'resenas' && (
+  1224→            <motion.div
+  1225→              key="resenas"
+  1226→              initial={{ opacity: 0, y: 10 }}
+  1227→              animate={{ opacity: 1, y: 0 }}
+  1228→              exit={{ opacity: 0, y: -10 }}
+  1229→              transition={{ duration: 0.2 }}
+  1230→            >
+  1231→              {/* Average rating */}
+  1232→              <div
+  1233→                style={{
+  1234→                  display: 'flex',
+  1235→                  alignItems: 'center',
+  1236→                  gap: 16,
+  1237→                  padding: 20,
+  1238→                  background: 'var(--surface)',
+  1239→                  borderRadius: 16,
+  1240→                  border: '1px solid var(--border)',
+  1241→                  marginBottom: 16,
+  1242→                }}
+  1243→              >
+  1244→                <div style={{ textAlign: 'center' }}>
+  1245→                  <div
+  1246→                    style={{
+  1247→                      fontFamily: "'Syne', sans-serif",
+  1248→                      fontWeight: 700,
+  1249→                      fontSize: 48,
+  1250→                      color: 'var(--text)',
+  1251→                      lineHeight: 1,
+  1252→                    }}
+  1253→                  >
+  1254→                    {averageRating.toFixed(1)}
+  1255→                  </div>
+  1256→                  <StarsDisplay rating={averageRating} size={16} />
+  1257→                  <div
+  1258→                    style={{
+  1259→                      fontFamily: "'DM Sans', sans-serif",
+  1260→                      fontSize: 12,
+  1261→                      color: 'var(--text-muted)',
+  1262→                      marginTop: 4,
+  1263→                    }}
+  1264→                  >
+  1265→                    ({tiendaResenas.length} reseñas)
+  1266→                  </div>
+  1267→                </div>
+  1268→
+  1269→                {/* Distribution bars */}
+  1270→                <div style={{ flex: 1 }}>
+  1271→                  {[5, 4, 3, 2, 1].map((star) => {
+  1272→                    const count = ratingDistribution[star - 1];
+  1273→                    const maxCount = Math.max(...ratingDistribution, 1);
+  1274→                    const pct = (count / maxCount) * 100;
+  1275→                    return (
+  1276→                      <div
+  1277→                        key={star}
+  1278→                        style={{
+  1279→                          display: 'flex',
+  1280→                          alignItems: 'center',
+  1281→                          gap: 8,
+  1282→                          marginBottom: 4,
+  1283→                        }}
+  1284→                      >
+  1285→                        <span
+  1286→                          style={{
+  1287→                            fontFamily: "'DM Sans', sans-serif",
+  1288→                            fontSize: 12,
+  1289→                            color: 'var(--text-secondary)',
+  1290→                            width: 12,
+  1291→                            textAlign: 'right',
+  1292→                          }}
+  1293→                        >
+  1294→                          {star}
+  1295→                        </span>
+  1296→                        <Star size={11} fill="#FFB300" color="#FFB300" />
+  1297→                        <div
+  1298→                          style={{
+  1299→                            flex: 1,
+  1300→                            height: 8,
+  1301→                            borderRadius: 4,
+  1302→                            background: 'var(--border)',
+  1303→                            overflow: 'hidden',
+  1304→                          }}
+  1305→                        >
+  1306→                          <motion.div
+  1307→                            initial={{ width: 0 }}
+  1308→                            animate={{ width: `${pct}%` }}
+  1309→                            transition={{ duration: 0.5, delay: (5 - star) * 0.08 }}
+  1310→                            style={{
+  1311→                              height: '100%',
+  1312→                              borderRadius: 4,
+  1313→                              background: star >= 4 ? 'var(--exito)' : star === 3 ? 'var(--warning)' : 'var(--peligro)',
+  1314→                            }}
+  1315→                          />
+  1316→                        </div>
+  1317→                        <span
+  1318→                          style={{
+  1319→                            fontFamily: "'JetBrains Mono', monospace",
+  1320→                            fontSize: 11,
+  1321→                            color: 'var(--text-muted)',
+  1322→                            width: 20,
+  1323→                          }}
+  1324→                        >
+  1325→                          {count}
+  1326→                        </span>
+  1327→                      </div>
+  1328→                    );
+  1329→                  })}
+  1330→                </div>
+  1331→              </div>
+  1332→
+  1333→              {/* Reviews list */}
+  1334→              <div>
+  1335→                {tiendaResenas.length === 0 && (
+  1336→                  <div
+  1337→                    style={{
+  1338→                      textAlign: 'center',
+  1339→                      padding: '40px 0',
+  1340→                      color: 'var(--text-muted)',
+  1341→                      fontFamily: "'DM Sans', sans-serif",
+  1342→                      fontSize: 14,
+  1343→                    }}
+  1344→                  >
+  1345→                    Aún no hay reseñas para esta tienda
+  1346→                  </div>
+  1347→                )}
+  1348→                {tiendaResenas.map((resena, idx) => (
+  1349→                  <motion.div
+  1350→                    key={resena.id}
+  1351→                    initial={{ opacity: 0, y: 8 }}
+  1352→                    animate={{ opacity: 1, y: 0 }}
+  1353→                    transition={{ duration: 0.25, delay: idx * 0.05 }}
+  1354→                    style={{
+  1355→                      padding: '14px 0',
+  1356→                      borderBottom: '1px solid var(--border)',
+  1357→                    }}
+  1358→                  >
+  1359→                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1360→                      {/* Avatar */}
+  1361→                      <div
+  1362→                        style={{
+  1363→                          width: 36,
+  1364→                          height: 36,
+  1365→                          borderRadius: '50%',
+  1366→                          background: `hsl(${resena.clienteNombre.charCodeAt(0) * 7 % 360}, 55%, 55%)`,
+  1367→                          display: 'flex',
+  1368→                          alignItems: 'center',
+  1369→                          justifyContent: 'center',
+  1370→                          color: '#fff',
+  1371→                          fontFamily: "'Syne', sans-serif",
+  1372→                          fontWeight: 700,
+  1373→                          fontSize: 13,
+  1374→                          flexShrink: 0,
+  1375→                        }}
+  1376→                      >
+  1377→                        {resena.clienteNombre.charAt(0)}
+  1378→                      </div>
+  1379→                      <div style={{ flex: 1, minWidth: 0 }}>
+  1380→                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+  1381→                          <span
+  1382→                            style={{
+  1383→                              fontFamily: "'DM Sans', sans-serif",
+  1384→                              fontSize: 13,
+  1385→                              fontWeight: 600,
+  1386→                              color: 'var(--text)',
+  1387→                            }}
+  1388→                          >
+  1389→                            {resena.clienteNombre}
+  1390→                          </span>
+  1391→                          <span
+  1392→                            style={{
+  1393→                              fontFamily: "'JetBrains Mono', monospace",
+  1394→                              fontSize: 11,
+  1395→                              color: 'var(--text-muted)',
+  1396→                            }}
+  1397→                          >
+  1398→                            {resena.fecha}
+  1399→                          </span>
+  1400→                        </div>
+  1401→                        <div style={{ marginTop: 2 }}>
+  1402→                          <StarsDisplay rating={resena.estrellas} size={12} />
+  1403→                        </div>
+  1404→                      </div>
+  1405→                    </div>
+  1406→                    <p
+  1407→                      style={{
+  1408→                        fontFamily: "'DM Sans', sans-serif",
+  1409→                        fontSize: 13,
+  1410→                        color: 'var(--text-secondary)',
+  1411→                        lineHeight: 1.5,
+  1412→                        margin: '8px 0 0 46px',
+  1413→                      }}
+  1414→                    >
+  1415→                      {resena.comentario}
+  1416→                    </p>
+  1417→                  </motion.div>
+  1418→                ))}
+  1419→              </div>
+  1420→            </motion.div>
+  1421→          )}
+  1422→        </AnimatePresence>
+  1423→      </div>
+  1424→
+  1425→      {/* ─── FLOATING CART BUTTON ─── */}
+  1426→      <AnimatePresence>
+  1427→        {cartItemCount > 0 && (
+  1428→          <motion.button
+  1429→            key="floating-cart"
+  1430→            initial={{ scale: 0, opacity: 0 }}
+  1431→            animate={{ scale: 1, opacity: 1 }}
+  1432→            exit={{ scale: 0, opacity: 0 }}
+  1433→            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+  1434→            onClick={onOpenCart}
+  1435→            style={{
+  1436→              position: 'fixed',
+  1437→              bottom: 24,
+  1438→              right: 24,
+  1439→              width: 56,
+  1440→              height: 56,
+  1441→              borderRadius: '50%',
+  1442→              background: 'var(--primario)',
+  1443→              border: 'none',
+  1444→              color: '#fff',
+  1445→              display: 'flex',
+  1446→              alignItems: 'center',
+  1447→              justifyContent: 'center',
+  1448→              cursor: 'pointer',
+  1449→              boxShadow: 'var(--shadow-primario)',
+  1450→              zIndex: 50,
+  1451→            }}
+  1452→          >
+  1453→            <ShoppingBag size={24} />
+  1454→            {/* Badge */}
+  1455→            <span
+  1456→              style={{
+  1457→                position: 'absolute',
+  1458→                top: -4,
+  1459→                right: -4,
+  1460→                minWidth: 20,
+  1461→                height: 20,
+  1462→                borderRadius: 10,
+  1463→                background: 'var(--peligro)',
+  1464→                color: '#fff',
+  1465→                fontFamily: "'JetBrains Mono', monospace",
+  1466→                fontSize: 11,
+  1467→                fontWeight: 700,
+  1468→                display: 'flex',
+  1469→                alignItems: 'center',
+  1470→                justifyContent: 'center',
+  1471→                padding: '0 5px',
+  1472→                border: '2px solid var(--surface)',
+  1473→              }}
+  1474→            >
+  1475→              {cartItemCount}
+  1476→            </span>
+  1477→          </motion.button>
+  1478→        )}
+  1479→      </AnimatePresence>
+  1480→    </div>
+  1481→  );
+  1482→}
+  1483→
+  1484→/* ═══════════════════════════════════════════════
+  1485→   SUB-COMPONENTS
+  1486→   ═══════════════════════════════════════════════ */
+  1487→
+  1488→function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  1489→  return (
+  1490→    <div
+  1491→      style={{
+  1492→        display: 'flex',
+  1493→        alignItems: 'center',
+  1494→        gap: 10,
+  1495→        marginBottom: 12,
+  1496→      }}
+  1497→    >
+  1498→      {icon}
+  1499→      <div>
+  1500→        <div
+  1501→          style={{
+  1502→            fontFamily: "'DM Sans', sans-serif",
+  1503→            fontSize: 11,
+  1504→            color: 'var(--text-muted)',
+  1505→            textTransform: 'uppercase',
+  1506→            letterSpacing: '0.3px',
+  1507→          }}
+  1508→        >
+  1509→          {label}
+  1510→        </div>
+  1511→        <div
+  1512→          style={{
+  1513→            fontFamily: "'DM Sans', sans-serif",
+  1514→            fontSize: 14,
+  1515→            color: 'var(--text)',
+  1516→            fontWeight: 500,
+  1517→          }}
+  1518→        >
+  1519→          {value}
+  1520→        </div>
+  1521→      </div>
+  1522→    </div>
+  1523→  );
+  1524→}
+  1525→
+  1526→function PolicyRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  1527→  return (
+  1528→    <div
+  1529→      style={{
+  1530→        display: 'flex',
+  1531→        alignItems: 'center',
+  1532→        justifyContent: 'space-between',
+  1533→        padding: '12px 14px',
+  1534→        borderBottom: '1px solid var(--border)',
+  1535→      }}
+  1536→    >
+  1537→      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1538→        {icon}
+  1539→        <span
+  1540→          style={{
+  1541→            fontFamily: "'DM Sans', sans-serif",
+  1542→            fontSize: 13,
+  1543→            color: 'var(--text-secondary)',
+  1544→          }}
+  1545→        >
+  1546→          {label}
+  1547→        </span>
+  1548→      </div>
+  1549→      <span
+  1550→        style={{
+  1551→          fontFamily: "'JetBrains Mono', monospace",
+  1552→          fontSize: 13,
+  1553→          fontWeight: 700,
+  1554→          color: 'var(--text)',
+  1555→        }}
+  1556→      >
+  1557→        {value}
+  1558→      </span>
+  1559→    </div>
+  1560→  );
+  1561→}
+  1562→
+  1563→function SearchIcon({ style }: { style?: React.CSSProperties }) {
+  1564→  return (
+  1565→    <svg
+  1566→      width={16}
+  1567→      height={16}
+  1568→      viewBox="0 0 24 24"
+  1569→      fill="none"
+  1570→      stroke="currentColor"
+  1571→      strokeWidth={2.5}
+  1572→      strokeLinecap="round"
+  1573→      strokeLinejoin="round"
+  1574→      style={style}
+  1575→    >
+  1576→      <circle cx="11" cy="11" r="8" />
+  1577→      <path d="m21 21-4.3-4.3" />
+  1578→    </svg>
+  1579→  );
+  1580→}
+  1581→

@@ -12,10 +12,17 @@ import {
   Star,
   Bell,
   ChevronRight,
+  ChevronDown,
   ArrowRight,
   Plus,
+  Navigation,
+  MessageCircle,
+  ShoppingBag,
+  Store,
+  Zap,
 } from 'lucide-react';
 import { useStore, type Order, type Banner, type FeedItem } from '@/lib/store';
+import { useMarketplaceStore, CATEGORIAS, MOCK_TIENDAS } from '@/lib/marketplace-store';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -24,7 +31,9 @@ import { useStore, type Order, type Banner, type FeedItem } from '@/lib/store';
 interface ClientInicioProps {
   isDark: boolean;
   userName: string;
-  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+  onOpenTracking: (orderId: string) => void;
+  onOpenChat: (orderId: string) => void;
 }
 
 /* ═══════════════════════════════════════════════
@@ -51,6 +60,28 @@ function statusLabel(estado: string) {
     case 'recogido': return 'Recogido';
     case 'entregado': return 'Entregado';
     case 'incidencia': return 'Incidencia';
+    default: return estado;
+  }
+}
+
+function compraStatusColor(estado: string) {
+  switch (estado) {
+    case 'recibido': return '#FFB300';
+    case 'preparando': return '#FF9800';
+    case 'listo': return '#2196F3';
+    case 'en_camino': return '#2979FF';
+    case 'entregado': return '#00C853';
+    default: return '#999';
+  }
+}
+
+function compraStatusLabel(estado: string) {
+  switch (estado) {
+    case 'recibido': return 'Recibido';
+    case 'preparando': return 'Preparando';
+    case 'listo': return 'Listo';
+    case 'en_camino': return 'En camino';
+    case 'entregado': return 'Entregado';
     default: return estado;
   }
 }
@@ -105,13 +136,22 @@ const fadeUp = {
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
-export default function ClientInicio({ isDark, userName, onNavigate }: ClientInicioProps) {
+export default function ClientInicio({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientInicioProps) {
   const orders = useStore((s) => s.orders);
   const banners = useStore((s) => s.banners);
   const feedItems = useStore((s) => s.feedItems);
   const clientSearchQuery = useStore((s) => s.clientSearchQuery);
   const setClientSearchQuery = useStore((s) => s.setClientSearchQuery);
   const setSolicitudEnvio = useStore((s) => s.setSolicitudEnvio);
+  const fidelizacion = useStore((s) => s.fidelizacion);
+
+  /* ─── Marketplace store ─── */
+  const ordenesCompra = useMarketplaceStore((s) => s.ordenesCompra);
+
+  /* ─── Loyalty calculations ─── */
+  const nivelThresholds = { bronce: 100, plata: 300, oro: 600, platino: 9999 };
+  const nextLevelPoints = nivelThresholds[fidelizacion.nivel];
+  const pointsToNext = Math.max(0, nextLevelPoints - fidelizacion.puntos);
 
   /* ─── Client orders ─── */
   const clientOrders = useMemo(
@@ -135,6 +175,12 @@ export default function ClientInicio({ isDark, userName, onNavigate }: ClientIni
   const lastCompleted = useMemo(
     () => (recentCompleted.length > 0 ? recentCompleted[recentCompleted.length - 1] : null),
     [recentCompleted]
+  );
+
+  /* ─── Active purchase order ─── */
+  const activeCompra = useMemo(
+    () => ordenesCompra.find((oc) => oc.estado !== 'entregado') ?? null,
+    [ordenesCompra]
   );
 
   /* ─── Stats ─── */
@@ -247,6 +293,16 @@ export default function ClientInicio({ isDark, userName, onNavigate }: ClientIni
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 pb-8 space-y-6">
+      {/* ─── LOCATION HEADER ─── */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Entregar en:</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <MapPin size={16} style={{ color: 'var(--primario)' }} />
+          <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Col. Los Robles, Managua</span>
+          <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+        </div>
+      </div>
+
       {/* ─── 1. PERSONALIZED GREETING ─── */}
       <motion.div
         variants={fadeUp}
@@ -280,6 +336,80 @@ export default function ClientInicio({ isDark, userName, onNavigate }: ClientIni
           Managua · 28°C
         </div>
       </motion.div>
+
+      {/* Loyalty Points Card */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={0}
+      >
+        <div style={{ 
+          padding: '14px 16px', 
+          background: 'var(--surface)', 
+          borderRadius: 16, 
+          border: '1px solid var(--border)',
+          marginBottom: 16 
+        }}>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>
+            Puntos LOGIFAST
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 24, fontWeight: 700, color: 'var(--primario)' }}>
+              {fidelizacion.puntos}
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>puntos</span>
+          </div>
+          {/* Progress bar to next level */}
+          <div style={{ marginTop: 8, height: 6, borderRadius: 3, background: 'var(--bg-alt)', overflow: 'hidden' }}>
+            <div style={{ 
+              height: '100%', 
+              borderRadius: 3, 
+              background: 'linear-gradient(90deg, var(--primario), var(--primario-hover))',
+              width: `${Math.min(100, (fidelizacion.puntos / nextLevelPoints) * 100)}%`,
+              transition: 'width 0.5s ease'
+            }} />
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+            {pointsToNext} puntos para tu próximo descuento
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ─── DUAL ACTION CARDS ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+        {/* Enviar Paquete */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onNavigate('solicitar')}
+          style={{
+            padding: 20, borderRadius: 18, cursor: 'pointer',
+            background: 'linear-gradient(135deg, #FF5722, #FF8A65)',
+            color: '#fff', position: 'relative', overflow: 'hidden',
+          }}
+        >
+          <Package size={28} style={{ marginBottom: 8, opacity: 0.9 }} />
+          <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20 }}>Enviar</div>
+          <div style={{ fontSize: 13, opacity: 0.75, marginTop: 2 }}>Paquetes y documentos</div>
+        </motion.div>
+
+        {/* Comprar y Recibir */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onNavigate('explorar')}
+          style={{
+            padding: 20, borderRadius: 18, cursor: 'pointer',
+            background: 'linear-gradient(135deg, #1B1B2F, #3D3D5C)',
+            color: '#fff', position: 'relative', overflow: 'hidden',
+          }}
+        >
+          <ShoppingBag size={28} style={{ marginBottom: 8, opacity: 0.9 }} />
+          <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20 }}>Comprar</div>
+          <div style={{ fontSize: 13, opacity: 0.75, marginTop: 2 }}>Tiendas y productos locales</div>
+        </motion.div>
+      </div>
 
       {/* ─── 2. QUICK SEARCH ─── */}
       <motion.div
@@ -548,6 +678,17 @@ export default function ClientInicio({ isDark, userName, onNavigate }: ClientIni
             border: '1px solid var(--border)',
             borderRadius: 20,
             padding: 20,
+            cursor: 'pointer',
+            transition: 'box-shadow 0.2s, transform 0.2s',
+          }}
+          onClick={() => onOpenTracking(activeOrder.id)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
           {/* Header */}
@@ -667,22 +808,258 @@ export default function ClientInicio({ isDark, userName, onNavigate }: ClientIni
             </div>
           </div>
 
-          {/* Tracking button */}
-          <button
-            onClick={() => onNavigate('envios')}
-            className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-xl transition-opacity hover:opacity-85"
-            style={{
-              background: isDark ? 'rgba(255,87,34,0.12)' : 'rgba(255,87,34,0.08)',
-              fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 600,
-              fontSize: 14,
-              color: 'var(--primario, #FF5722)',
-            }}
-          >
-            Ver seguimiento completo
-            <ChevronRight size={16} />
-          </button>
+          {/* Action buttons */}
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenTracking(activeOrder.id); }}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'var(--primario)',
+                color: '#FFFFFF',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <Navigation size={14} />
+              Seguimiento
+            </button>
+            {activeOrder.repartidor && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onOpenChat(activeOrder.id); }}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <MessageCircle size={14} />
+                Mensaje
+              </button>
+            )}
+          </div>
         </motion.div>
+      )}
+
+      {/* ─── ACTIVE PURCHASE CARD ─── */}
+      {activeCompra && (
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={4.5}
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 20,
+            padding: 20,
+            cursor: 'pointer',
+            transition: 'box-shadow 0.2s, transform 0.2s',
+          }}
+          onClick={() => onNavigate('pedidos')}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <ShoppingBag size={18} style={{ color: 'var(--primario, #FF5722)' }} />
+              <span
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 16,
+                  color: 'var(--text)',
+                }}
+              >
+                Tu compra activa
+              </span>
+            </div>
+            <span
+              className="px-2.5 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: compraStatusColor(activeCompra.estado) + '1A',
+                color: compraStatusColor(activeCompra.estado),
+              }}
+            >
+              {compraStatusLabel(activeCompra.estado)}
+            </span>
+          </div>
+
+          {/* Store info */}
+          <div className="flex items-center gap-3">
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: activeCompra.tiendaColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontFamily: "'Syne', sans-serif",
+                fontWeight: 700,
+                fontSize: 12,
+                flexShrink: 0,
+              }}
+            >
+              {activeCompra.tiendaLogo}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+                {activeCompra.tiendaNombre}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+                {activeCompra.items.length} productos · C${activeCompra.total}
+              </div>
+            </div>
+          </div>
+
+          {/* Rider info */}
+          <div className="flex items-center gap-2.5 mt-3">
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'var(--primario, #FF5722)',
+                color: '#fff',
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: 10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {activeCompra.repartidorInitials}
+            </div>
+            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text)' }}>
+              {activeCompra.repartidorNombre}
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ marginTop: 12, height: 4, borderRadius: 2, background: 'var(--bg-alt)', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              borderRadius: 2,
+              background: compraStatusColor(activeCompra.estado),
+              width: activeCompra.estado === 'recibido' ? '15%' : activeCompra.estado === 'preparando' ? '40%' : activeCompra.estado === 'listo' ? '65%' : activeCompra.estado === 'en_camino' ? '85%' : '100%',
+              transition: 'width 0.5s ease',
+            }} />
+          </div>
+        </motion.div>
+      )}
+
+      {/* ─── CATEGORIES ─── */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>Explora por categoría</h3>
+        </div>
+        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }} className="lf-scrollbar">
+          {CATEGORIAS.map(cat => (
+            <motion.button
+              key={cat.key}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onNavigate('explorar')}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                padding: '14px 18px', borderRadius: 14, border: '1px solid var(--border)',
+                background: 'var(--surface)', cursor: 'pointer', minWidth: 80, flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 28 }}>{cat.icon}</span>
+              <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>{cat.label}</span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── FEATURED STORES ─── */}
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>Populares cerca de ti</h3>
+        <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }} className="lf-scrollbar">
+          {MOCK_TIENDAS.filter(t => t.popular).map(tienda => (
+            <motion.div
+              key={tienda.id}
+              whileHover={{ y: -4 }}
+              onClick={() => onNavigate('explorar')}
+              style={{
+                width: 260, borderRadius: 18, border: '1px solid var(--border)', overflow: 'hidden',
+                background: 'var(--surface)', cursor: 'pointer', flexShrink: 0,
+              }}
+            >
+              {/* Cover */}
+              <div style={{ height: 100, background: `linear-gradient(135deg, ${tienda.portadaColor}, ${tienda.logoColor})` }} />
+              {/* Logo */}
+              <div style={{ marginTop: -24, marginLeft: 16, width: 48, height: 48, borderRadius: '50%', background: tienda.logoColor, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid var(--surface)' }}>
+                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: '#fff' }}>{tienda.logoIniciales}</span>
+              </div>
+              {/* Info */}
+              <div style={{ padding: '8px 16px 16px' }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{tienda.nombre}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                  {CATEGORIAS.find(c => c.key === tienda.categoria)?.label} · {tienda.calificacion} ★
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {tienda.tiempoEstimado} · Envío C${tienda.costoEnvio}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── REORDER SECTION ─── */}
+      {ordenesCompra.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>Volver a pedir</h3>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }} className="lf-scrollbar">
+            {ordenesCompra.filter(oc => oc.estado === 'entregado').slice(0, 3).map(oc => (
+              <motion.div
+                key={oc.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{ padding: 14, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--surface)', minWidth: 220, flexShrink: 0, cursor: 'pointer' }}
+                onClick={() => onNavigate('explorar')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: oc.tiendaColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 11 }}>{oc.tiendaLogo}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{oc.tiendaNombre}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{oc.items.length} productos · C${oc.total}</div>
+                  </div>
+                </div>
+                <button style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--primario)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Reordenar</button>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ─── 6. CLIENT FEED ─── */}

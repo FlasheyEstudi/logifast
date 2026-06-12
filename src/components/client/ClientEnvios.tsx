@@ -17,6 +17,8 @@ import {
   CheckCircle,
   XCircle,
   Bike,
+  Navigation,
+  MessageCircle,
 } from 'lucide-react';
 import { useStore, type Order } from '@/lib/store';
 
@@ -28,6 +30,8 @@ interface ClientEnviosProps {
   isDark: boolean;
   userName: string;
   onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+  onOpenTracking: (orderId: string) => void;
+  onOpenChat: (orderId: string) => void;
 }
 
 interface ReportModalState {
@@ -47,6 +51,7 @@ const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> 
   recogido: { bg: 'bg-violet-100 dark:bg-violet-900/40', text: 'text-violet-700 dark:text-violet-400', label: 'Recogido' },
   entregado: { bg: 'bg-green-100 dark:bg-green-900/40', text: 'text-green-700 dark:text-green-400', label: 'Entregado' },
   incidencia: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-400', label: 'Incidencia' },
+  programada: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', label: 'Programada' },
 };
 
 const STATUS_CIRCLE_COLOR: Record<string, string> = {
@@ -55,6 +60,7 @@ const STATUS_CIRCLE_COLOR: Record<string, string> = {
   recogido: '#7C3AED',
   entregado: 'var(--exito)',
   incidencia: 'var(--peligro)',
+  programada: 'var(--info)',
 };
 
 const TIMELINE_STEPS = ['Orden creada', 'En camino', 'Recogida', 'Entregada'];
@@ -381,10 +387,14 @@ function ActiveOrderCard({
   order,
   eta,
   onReport,
+  onOpenTracking,
+  onOpenChat,
 }: {
   order: Order;
   eta: number;
   onReport: (orderId: string) => void;
+  onOpenTracking: (orderId: string) => void;
+  onOpenChat: (orderId: string) => void;
 }) {
   const [lastUpdate, setLastUpdate] = useState(Date.now());
 
@@ -401,8 +411,9 @@ function ActiveOrderCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden cursor-pointer transition-colors duration-200 hover:bg-[var(--bg-alt)]"
       style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      onClick={() => onOpenTracking(order.id)}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 pb-2">
@@ -472,11 +483,53 @@ function ActiveOrderCard({
         </span>
       </div>
 
-      {/* Report button */}
-      <div className="px-4 pb-4">
+      {/* Action buttons */}
+      <div className="px-4 pb-4 flex flex-wrap gap-2">
         <button
-          onClick={() => onReport(order.id)}
-          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+          onClick={(e) => { e.stopPropagation(); onOpenTracking(order.id); }}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 10,
+            border: 'none',
+            background: 'var(--primario)',
+            color: '#FFFFFF',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <Navigation size={16} />
+          Ver seguimiento
+        </button>
+        {order.repartidor && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onOpenChat(order.id); }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 10,
+              border: '1px solid var(--border)',
+              background: 'transparent',
+              color: 'var(--text)',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <MessageCircle size={16} />
+            Mensaje
+          </button>
+        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); onReport(order.id); }}
+          className="py-2.5 px-4 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
           style={{
             background: 'transparent',
             color: 'var(--peligro)',
@@ -666,7 +719,7 @@ function HistoryOrderItem({
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
-export default function ClientEnvios({ isDark, userName, onNavigate }: ClientEnviosProps) {
+export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientEnviosProps) {
   const {
     orders,
     clientEnvioTab,
@@ -852,6 +905,8 @@ export default function ClientEnvios({ isDark, userName, onNavigate }: ClientEnv
                     order={order}
                     eta={etaMap[order.id] ?? 12}
                     onReport={handleReport}
+                    onOpenTracking={onOpenTracking}
+                    onOpenChat={onOpenChat}
                   />
                 ))}
               </div>

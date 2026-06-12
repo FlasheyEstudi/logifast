@@ -4,7 +4,7 @@ import { create } from 'zustand';
    TYPES
    ═══════════════════════════════════════════════ */
 
-export type OrderStatus = 'pendiente' | 'encamino' | 'recogido' | 'entregado' | 'incidencia';
+export type OrderStatus = 'pendiente' | 'encamino' | 'recogido' | 'entregado' | 'incidencia' | 'programada';
 export type MotoStatus = 'available' | 'in-service' | 'maintenance';
 export type RiderStatus = 'available' | 'in-service' | 'offline';
 export type PaymentMethod = 'efectivo' | 'transferencia';
@@ -404,7 +404,7 @@ export interface SolicitudEnvio {
   terminosAceptados: boolean;
 }
 
-export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'perfil';
+export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil';
 
 export interface DireccionSugerencia {
   id: string;
@@ -412,6 +412,111 @@ export interface DireccionSugerencia {
   barrio: string;
   lat: number;
   lng: number;
+}
+
+/* ─── V2 Types: Tracking, Chat, Ratings, Loyalty, Referrals ─── */
+
+export interface TrackingStep {
+  id: string;
+  label: string;
+  timestamp: string; // '—' if pending
+  status: 'completed' | 'current' | 'pending';
+}
+
+export const TRACKING_STEPS_TEMPLATE: TrackingStep[] = [
+  { id: 's1', label: 'Orden creada', timestamp: '—', status: 'pending' },
+  { id: 's2', label: 'Repartidor asignado', timestamp: '—', status: 'pending' },
+  { id: 's3', label: 'Repartidor en camino a recoger', timestamp: '—', status: 'pending' },
+  { id: 's4', label: 'Repartidor en punto de recogida', timestamp: '—', status: 'pending' },
+  { id: 's5', label: 'Paquete recogido', timestamp: '—', status: 'pending' },
+  { id: 's6', label: 'En camino a destino', timestamp: '—', status: 'pending' },
+  { id: 's7', label: 'Repartidor en punto de entrega', timestamp: '—', status: 'pending' },
+  { id: 's8', label: 'Entrega confirmada', timestamp: '—', status: 'pending' },
+];
+
+export interface RepartidorInfo {
+  id: string;
+  nombre: string;
+  initials: string;
+  color: string;
+  calificacion: number;
+  totalEntregas: number;
+  moto: string;
+  telefono: string;
+  lat: number;
+  lng: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderType: 'cliente' | 'repartidor' | 'sistema';
+  content: string;
+  timestamp: string;
+  read: boolean;
+}
+
+export interface ChatConversation {
+  id: string;
+  orderId: string;
+  repartidor: RepartidorInfo;
+  messages: ChatMessage[];
+  active: boolean;
+  closedAt?: string;
+}
+
+export interface Calificacion {
+  id: string;
+  orderId: string;
+  repartidorId: string;
+  repartidorNombre: string;
+  estrellas: number;
+  etiquetas: string[];
+  comentario: string;
+  favorito: boolean;
+  fecha: string;
+  editable: boolean; // within 24h
+}
+
+export type NivelFidelizacion = 'bronce' | 'plata' | 'oro' | 'platino';
+
+export interface PuntosHistorial {
+  id: string;
+  fecha: string;
+  accion: string;
+  puntos: number; // positive = earned, negative = spent
+}
+
+export interface DatosFidelizacion {
+  puntos: number;
+  nivel: NivelFidelizacion;
+  historial: PuntosHistorial[];
+}
+
+export interface Referido {
+  id: string;
+  nombre: string;
+  fechaRegistro: string;
+  primerEnvio: boolean;
+}
+
+export interface DatosReferidos {
+  codigo: string;
+  link: string;
+  referidos: Referido[];
+  puntosGanados: number;
+}
+
+export interface DireccionGuardadaV2 {
+  id: string;
+  etiqueta: 'casa' | 'trabajo' | 'novia' | 'mama' | 'otro';
+  etiquetaCustom?: string;
+  direccion: string;
+  lat: number;
+  lng: number;
+  instrucciones: string;
+  horarioPreferido: string;
 }
 
 /* ═══════════════════════════════════════════════
@@ -1000,6 +1105,67 @@ const MOCK_DIRECCIONES_SUGERENCIAS: DireccionSugerencia[] = [
   { id: 'DS-15', direccion: 'Las Colinas', barrio: 'Las Colinas', lat: 12.1250, lng: -86.2480 },
 ];
 
+/* ─── V2 Mock Data ─── */
+
+const MOCK_REPARTIDORES_INFO: Record<string, RepartidorInfo> = {
+  'CM': { id: 'r1', nombre: 'Carlos Mendoza', initials: 'CM', color: '#4CAF50', calificacion: 4.8, totalEntregas: 287, moto: 'Honda Wave 125', telefono: '+505 8888-1111', lat: 12.1120, lng: -86.2400 },
+  'AT': { id: 'r2', nombre: 'Ana Torres', initials: 'AT', color: '#E91E63', calificacion: 4.9, totalEntregas: 312, moto: 'Yamaha NMAX', telefono: '+505 8888-2222', lat: 12.1080, lng: -86.2480 },
+  'LR': { id: 'r3', nombre: 'Luis Ramos', initials: 'LR', color: '#2196F3', calificacion: 4.6, totalEntregas: 195, moto: 'Suzuki AX4', telefono: '+505 8888-3333', lat: 12.1200, lng: -86.2600 },
+  'JP': { id: 'r4', nombre: 'Jorge Pérez', initials: 'JP', color: '#FF9800', calificacion: 4.7, totalEntregas: 256, moto: 'Honda PCX', telefono: '+505 8888-4444', lat: 12.0950, lng: -86.2300 },
+  'RD': { id: 'r5', nombre: 'Rosa Díaz', initials: 'RD', color: '#9C27B0', calificacion: 4.5, totalEntregas: 143, moto: 'TVS Ntorq', telefono: '+505 8888-5555', lat: 12.1100, lng: -86.2350 },
+  'MS': { id: 'r6', nombre: 'Miguel Sevilla', initials: 'MS', color: '#00BCD4', calificacion: 4.4, totalEntregas: 98, moto: 'Honda Click', telefono: '+505 8888-6666', lat: 12.1300, lng: -86.2700 },
+};
+
+const MOCK_CHAT_CONVERSATIONS: ChatConversation[] = [
+  {
+    id: 'chat-2847',
+    orderId: 'LF-2847',
+    repartidor: MOCK_REPARTIDORES_INFO['CM'],
+    active: true,
+    messages: [
+      { id: 'm1', senderId: 'sistema', senderName: 'Sistema', senderType: 'sistema', content: 'Orden asignada a Carlos M.', timestamp: '14:21', read: true },
+      { id: 'm2', senderId: 'r1', senderName: 'Carlos M.', senderType: 'repartidor', content: 'Hola! Ya voy en camino a recoger tu paquete 🏍️', timestamp: '14:22', read: true },
+      { id: 'm3', senderId: 'cliente', senderName: 'María', senderType: 'cliente', content: 'Genial, te espero en la entrada principal de Metrocentro', timestamp: '14:23', read: true },
+      { id: 'm4', senderId: 'sistema', senderName: 'Sistema', senderType: 'sistema', content: 'Carlos M. está en camino a recoger', timestamp: '14:25', read: true },
+    ],
+  },
+];
+
+const MOCK_CALIFICACIONES: Calificacion[] = [
+  { id: 'cal-1', orderId: 'LF-2846', repartidorId: 'r2', repartidorNombre: 'Ana Torres', estrellas: 5, etiquetas: ['Rápido', 'Cuidadoso'], comentario: 'Excelente servicio, llegó antes de lo esperado', favorito: true, fecha: '2026-06-10', editable: false },
+  { id: 'cal-2', orderId: 'LF-2841', repartidorId: 'r4', repartidorNombre: 'Jorge Pérez', estrellas: 5, etiquetas: ['Amable', 'Excelente servicio'], comentario: '', favorito: false, fecha: '2026-06-09', editable: false },
+  { id: 'cal-3', orderId: 'LF-2838', repartidorId: 'r3', repartidorNombre: 'Luis Ramos', estrellas: 4, etiquetas: ['Rápido'], comentario: 'Bien pero tardó un poco', favorito: false, fecha: '2026-06-08', editable: false },
+];
+
+const MOCK_FIDELIZACION: DatosFidelizacion = {
+  puntos: 245,
+  nivel: 'plata',
+  historial: [
+    { id: 'fh1', fecha: '2026-06-10', accion: 'Envío completado LF-2846', puntos: 10 },
+    { id: 'fh2', fecha: '2026-06-10', accion: 'Calificación 5 estrellas', puntos: 5 },
+    { id: 'fh3', fecha: '2026-06-10', accion: 'Gasto C$200 (5 pts/C$100)', puntos: 10 },
+    { id: 'fh4', fecha: '2026-06-09', accion: 'Envío completado LF-2841', puntos: 10 },
+    { id: 'fh5', fecha: '2026-06-09', accion: 'Calificación 5 estrellas', puntos: 5 },
+    { id: 'fh6', fecha: '2026-06-09', accion: 'Gasto C$110 (5 pts/C$100)', puntos: 5 },
+    { id: 'fh7', fecha: '2026-06-08', accion: 'Envío completado LF-2838', puntos: 10 },
+    { id: 'fh8', fecha: '2026-06-08', accion: 'Gasto C$175 (5 pts/C$100)', puntos: 5 },
+    { id: 'fh9', fecha: '2026-06-08', accion: 'Primer envío bonus', puntos: 20 },
+    { id: 'fh10', fecha: '2026-06-07', accion: 'Referido: Pedro R. se registró', puntos: 50 },
+    { id: 'fh11', fecha: '2026-06-07', accion: 'Canje: C$50 descuento', puntos: -200 },
+    { id: 'fh12', fecha: '2026-06-05', accion: 'Envío completado LF-2830', puntos: 10 },
+  ],
+};
+
+const MOCK_REFERIDOS: DatosReferidos = {
+  codigo: 'MARIA-LF',
+  link: 'logifast.com/r/MARIA-LF',
+  referidos: [
+    { id: 'ref1', nombre: 'Pedro R.', fechaRegistro: '2026-06-07', primerEnvio: true },
+    { id: 'ref2', nombre: 'Sofía C.', fechaRegistro: '2026-06-09', primerEnvio: false },
+  ],
+  puntosGanados: 50,
+};
+
 /* ═══════════════════════════════════════════════
    ZUSTAND STORE
    ═══════════════════════════════════════════════ */
@@ -1063,6 +1229,22 @@ interface AppState {
   clientEnvioTab: 'activos' | 'historial';
   clientEnvioFilter: string;
   clientNotifOpen: boolean;
+
+  /* V2 Client Data */
+  trackingOrderId: string | null;
+  trackingSteps: TrackingStep[];
+  trackingETA: number; // minutes
+  chatConversations: ChatConversation[];
+  chatOpen: boolean;
+  chatOrderId: string | null;
+  calificaciones: Calificacion[];
+  ratingModalOpen: boolean;
+  ratingOrderId: string | null;
+  fidelizacion: DatosFidelizacion;
+  referidos: DatosReferidos;
+  scheduleMode: 'ahora' | 'programar';
+  scheduleDate: string | null;
+  scheduleTime: string | null;
 
   /* UI State */
   activeModule: ModuleKey;
@@ -1187,6 +1369,23 @@ interface AppState {
   addDireccionGuardada: (dir: DireccionGuardada) => void;
   removeDireccionGuardada: (id: string) => void;
   validateCodigoPromo: (codigo: string) => { valid: boolean; descuento: number; tipo: string };
+
+  /* V2 Client Actions */
+  setTrackingOrder: (orderId: string | null) => void;
+  advanceTrackingStep: () => void;
+  updateTrackingETA: () => void;
+  setChatOpen: (open: boolean) => void;
+  setChatOrderId: (orderId: string | null) => void;
+  sendChatMessage: (orderId: string, content: string, senderType: 'cliente' | 'repartidor' | 'sistema') => void;
+  addSystemChatMessage: (orderId: string, content: string) => void;
+  setRatingModalOpen: (open: boolean) => void;
+  setRatingOrderId: (orderId: string | null) => void;
+  submitCalificacion: (cal: Omit<Calificacion, 'id'>) => void;
+  addFidelizacionPuntos: (accion: string, puntos: number) => void;
+  canjearPuntos: (puntos: number) => boolean;
+  setScheduleMode: (mode: 'ahora' | 'programar') => void;
+  setScheduleDate: (date: string | null) => void;
+  setScheduleTime: (time: string | null) => void;
 }
 
 let _eventCounter = 100;
@@ -1255,6 +1454,22 @@ export const useStore = create<AppState>((set, get) => ({
   clientEnvioTab: 'activos' as const,
   clientEnvioFilter: 'todos',
   clientNotifOpen: false,
+
+  /* V2 Client Data */
+  trackingOrderId: null,
+  trackingSteps: [...TRACKING_STEPS_TEMPLATE],
+  trackingETA: 12,
+  chatConversations: MOCK_CHAT_CONVERSATIONS,
+  chatOpen: false,
+  chatOrderId: null,
+  calificaciones: MOCK_CALIFICACIONES,
+  ratingModalOpen: false,
+  ratingOrderId: null,
+  fidelizacion: MOCK_FIDELIZACION,
+  referidos: MOCK_REFERIDOS,
+  scheduleMode: 'ahora' as const,
+  scheduleDate: null,
+  scheduleTime: null,
 
   /* UI State */
   activeModule: 'overview',
@@ -1674,4 +1889,128 @@ export const useStore = create<AppState>((set, get) => ({
     const descuento = found.tipoDescuento === 'porcentaje' ? found.valor : found.valor;
     return { valid: true, descuento, tipo: found.tipoDescuento };
   },
+
+  /* V2 Client Actions */
+  setTrackingOrder: (orderId) => {
+    if (!orderId) {
+      set({ trackingOrderId: null, trackingSteps: [...TRACKING_STEPS_TEMPLATE], trackingETA: 12 });
+      return;
+    }
+    const order = get().orders.find((o) => o.id === orderId);
+    if (!order) return;
+    // Build tracking steps based on order status
+    const now = new Date();
+    const fmt = (d: Date) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+    const steps = TRACKING_STEPS_TEMPLATE.map((s, i) => ({ ...s }));
+    // Determine which steps are completed based on order estado
+    const statusIndex: Record<string, number> = {
+      pendiente: 0, encamino: 3, recogido: 5, entregado: 7, incidencia: 3, programada: 0,
+    };
+    const completedUpTo = statusIndex[order.estado] ?? 0;
+    for (let i = 0; i < steps.length; i++) {
+      if (i < completedUpTo) {
+        steps[i].status = 'completed';
+        steps[i].timestamp = fmt(new Date(now.getTime() - (completedUpTo - i) * 180000));
+      } else if (i === completedUpTo) {
+        steps[i].status = 'current';
+        steps[i].timestamp = fmt(now);
+      } else {
+        steps[i].status = 'pending';
+      }
+    }
+    // For programada, show first step completed
+    if (order.estado === 'programada') {
+      steps[0].status = 'completed';
+      steps[0].timestamp = order.hora;
+    }
+    // For entregado, mark all completed
+    if (order.estado === 'entregado') {
+      steps.forEach((s, i) => { s.status = 'completed'; s.timestamp = fmt(new Date(now.getTime() - (7 - i) * 180000)); });
+    }
+    const eta = order.estado === 'entregado' ? 0 : order.estado === 'programada' ? -1 : Math.max(3, Math.floor(12 - completedUpTo * 1.5));
+    set({ trackingOrderId: orderId, trackingSteps: steps, trackingETA: eta });
+  },
+
+  advanceTrackingStep: () => {
+    const steps = [...get().trackingSteps];
+    const now = new Date();
+    const fmt = () => now.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+    const currentIdx = steps.findIndex((s) => s.status === 'current');
+    if (currentIdx >= 0) {
+      steps[currentIdx] = { ...steps[currentIdx], status: 'completed', timestamp: fmt() };
+      if (currentIdx + 1 < steps.length) {
+        steps[currentIdx + 1] = { ...steps[currentIdx + 1], status: 'current', timestamp: fmt() };
+      }
+    } else {
+      const pendingIdx = steps.findIndex((s) => s.status === 'pending');
+      if (pendingIdx >= 0) {
+        steps[pendingIdx] = { ...steps[pendingIdx], status: 'current', timestamp: fmt() };
+      }
+    }
+    set((state) => ({ trackingSteps: steps, trackingETA: Math.max(0, state.trackingETA - 2) }));
+  },
+
+  updateTrackingETA: () => set((state) => ({
+    trackingETA: Math.max(0, state.trackingETA - 1),
+  })),
+
+  setChatOpen: (open) => set({ chatOpen: open }),
+  setChatOrderId: (orderId) => set({ chatOrderId: orderId }),
+
+  sendChatMessage: (orderId, content, senderType) => {
+    const id = `msg-${Date.now()}`;
+    const now = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+    const senderName = senderType === 'cliente' ? 'María' : senderType === 'sistema' ? 'Sistema' : 'Repartidor';
+    const msg: ChatMessage = { id, senderId: senderType === 'cliente' ? 'cliente' : 'r1', senderName, senderType, content, timestamp: now, read: senderType !== 'cliente' };
+    set((state) => ({
+      chatConversations: state.chatConversations.map((c) =>
+        c.orderId === orderId ? { ...c, messages: [...c.messages, msg] } : c
+      ),
+    }));
+  },
+
+  addSystemChatMessage: (orderId, content) => {
+    get().sendChatMessage(orderId, content, 'sistema');
+  },
+
+  setRatingModalOpen: (open) => set({ ratingModalOpen: open }),
+  setRatingOrderId: (orderId) => set({ ratingOrderId: orderId }),
+
+  submitCalificacion: (cal) => {
+    const id = `cal-${Date.now()}`;
+    set((state) => ({
+      calificaciones: [{ ...cal, id }, ...state.calificaciones],
+      ratingModalOpen: false,
+      ratingOrderId: null,
+    }));
+  },
+
+  addFidelizacionPuntos: (accion, puntos) => set((state) => {
+    const newPuntos = state.fidelizacion.puntos + puntos;
+    let nivel: NivelFidelizacion = 'bronce';
+    if (newPuntos >= 600) nivel = 'platino';
+    else if (newPuntos >= 300) nivel = 'oro';
+    else if (newPuntos >= 100) nivel = 'plata';
+    const entry: PuntosHistorial = { id: `fh-${Date.now()}`, fecha: new Date().toISOString().split('T')[0], accion, puntos };
+    return {
+      fidelizacion: { ...state.fidelizacion, puntos: newPuntos, nivel, historial: [entry, ...state.fidelizacion.historial] },
+    };
+  }),
+
+  canjearPuntos: (puntos) => {
+    const state = get();
+    if (state.fidelizacion.puntos < puntos) return false;
+    const entry: PuntosHistorial = { id: `fh-${Date.now()}`, fecha: new Date().toISOString().split('T')[0], accion: `Canje: ${puntos} puntos`, puntos: -puntos };
+    let nivel: NivelFidelizacion = 'bronce';
+    const newPuntos = state.fidelizacion.puntos - puntos;
+    if (newPuntos >= 600) nivel = 'platino';
+    else if (newPuntos >= 300) nivel = 'oro';
+    else if (newPuntos >= 100) nivel = 'plata';
+    set({ fidelizacion: { ...state.fidelizacion, puntos: newPuntos, nivel, historial: [entry, ...state.fidelizacion.historial] } });
+    return true;
+  },
+
+  setScheduleMode: (mode) => set({ scheduleMode: mode }),
+  setScheduleDate: (date) => set({ scheduleDate: date }),
+  setScheduleTime: (time) => set({ scheduleTime: time }),
 }));

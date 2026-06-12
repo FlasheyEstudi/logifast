@@ -21,6 +21,9 @@ import {
   ShieldCheck,
   Map,
   X,
+  Zap,
+  Calendar,
+  ChevronUp,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
@@ -33,6 +36,8 @@ interface ClientSolicitarProps {
   isDark: boolean;
   userName: string;
   onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+  onOpenTracking?: (orderId: string) => void;
+  onOpenChat?: (orderId: string) => void;
 }
 
 type WizardStep = 1 | 2 | 3 | 4;
@@ -93,6 +98,38 @@ function useCountUp(end: number, duration = 800, start = true) {
 function formatCordobas(n: number): string {
   return `C$ ${n.toLocaleString('es-NI')}`;
 }
+
+const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const MESES_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+const DIAS_COMPLETOS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+function formatSpanishDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  const diaSemana = DIAS_COMPLETOS[d.getDay()];
+  const dia = d.getDate();
+  const mes = MESES_ES[d.getMonth()];
+  return `${diaSemana} ${dia} de ${mes}`;
+}
+
+function generateTimeSlots(): string[] {
+  const slots: string[] = [];
+  for (let h = 7; h <= 20; h++) {
+    for (const m of [0, 30]) {
+      if (h === 20 && m === 30) break;
+      const hour12 = h > 12 ? h - 12 : h;
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const hh = hour12 === 0 ? 12 : hour12;
+      const mm = m === 0 ? '00' : '30';
+      slots.push(`${hh}:${mm} ${ampm}`);
+    }
+  }
+  return slots;
+}
+
+const TIME_SLOTS = generateTimeSlots();
 
 /* ═══════════════════════════════════════════════
    STEP LABELS
@@ -541,6 +578,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     validateCodigoPromo,
     addOrder,
     orders,
+    scheduleMode,
+    scheduleDate,
+    scheduleTime,
+    setScheduleMode,
+    setScheduleDate,
+    setScheduleTime,
   } = useStore();
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
@@ -562,6 +605,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
 
   // Change calculation
   const [montoPagoInput, setMontoPagoInput] = useState('');
+
+  // Calendar navigation state
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
 
   const showToast = useCallback((message: string, variant: 'success' | 'error' | 'info') => {
     setToast({ message, variant });
@@ -620,7 +669,9 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   const canContinue = useCallback((): boolean => {
     switch (currentStep) {
       case 1:
-        return solicitudEnvio.origen.length > 0 && solicitudEnvio.destino.length > 0;
+        if (solicitudEnvio.origen.length === 0 || solicitudEnvio.destino.length === 0) return false;
+        if (scheduleMode === 'programar' && (!scheduleDate || !scheduleTime)) return false;
+        return true;
       case 2:
         return solicitudEnvio.descripcion.length > 0;
       case 3:
@@ -630,7 +681,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       default:
         return false;
     }
-  }, [currentStep, solicitudEnvio]);
+  }, [currentStep, solicitudEnvio, scheduleMode, scheduleDate, scheduleTime]);
 
   /* ─── Swap addresses ─── */
   const handleSwap = useCallback(() => {
@@ -694,6 +745,11 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       const fecha = now.toISOString().split('T')[0];
       const hora = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
+      const isScheduled = scheduleMode === 'programar' && scheduleDate && scheduleTime;
+      const scheduleNote = isScheduled
+        ? ` [Programado: ${formatSpanishDate(scheduleDate)} a las ${scheduleTime}]`
+        : '';
+
       const newOrder: Order = {
         id: newId,
         cliente: userName,
@@ -706,15 +762,15 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         destinoLng: solicitudEnvio.destinoLng,
         repartidor: null,
         repartidorInitials: '',
-        descripcion: solicitudEnvio.descripcion,
+        descripcion: solicitudEnvio.descripcion + scheduleNote,
         monto: costBreakdown.total,
-        estado: 'pendiente' as OrderStatus,
+        estado: isScheduled ? 'programada' as OrderStatus : 'pendiente' as OrderStatus,
         metodoPago: solicitudEnvio.metodoPago as PaymentMethod,
         estadoPago: solicitudEnvio.metodoPago === 'transferencia' ? ('pendiente' as PaymentStatus) : ('pendiente' as PaymentStatus),
-        fecha,
-        hora,
+        fecha: isScheduled ? scheduleDate! : fecha,
+        hora: isScheduled ? scheduleTime! : hora,
         timeline: [
-          { step: 'Orden creada', hora, completado: true },
+          { step: isScheduled ? 'Programada' : 'Orden creada', hora: isScheduled ? scheduleTime! : hora, completado: true },
           { step: 'En camino', hora: '—', completado: false },
           { step: 'Recogida', hora: '—', completado: false },
           { step: 'Entregada', hora: '—', completado: false },
@@ -727,7 +783,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       setConfirming(false);
       setConfirmed(true);
     }, 2000);
-  }, [orders, userName, solicitudEnvio, costBreakdown.total, addOrder, confirmarEnvio]);
+  }, [orders, userName, solicitudEnvio, costBreakdown.total, addOrder, confirmarEnvio, scheduleMode, scheduleDate, scheduleTime]);
 
   /* ─── Slide animation variants ─── */
   const slideVariants = {
@@ -841,6 +897,308 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 </>
               )}
             </div>
+
+            {/* Schedule Toggle */}
+            <div style={{ marginTop: 24, marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+                ¿Cuándo?
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => setScheduleMode('ahora')}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    borderRadius: 10,
+                    border: scheduleMode === 'ahora' ? '2px solid var(--primario)' : '1px solid var(--border)',
+                    background: scheduleMode === 'ahora' ? 'var(--primario-soft)' : 'transparent',
+                    color: scheduleMode === 'ahora' ? 'var(--primario)' : 'var(--text-muted)',
+                    fontSize: 14,
+                    fontWeight: scheduleMode === 'ahora' ? 600 : 500,
+                    cursor: 'pointer',
+                    fontFamily: "'DM Sans', sans-serif",
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <Zap size={16} />
+                  Ahora
+                </button>
+                <button
+                  onClick={() => setScheduleMode('programar')}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    borderRadius: 10,
+                    border: scheduleMode === 'programar' ? '2px solid var(--primario)' : '1px solid var(--border)',
+                    background: scheduleMode === 'programar' ? 'var(--primario-soft)' : 'transparent',
+                    color: scheduleMode === 'programar' ? 'var(--primario)' : 'var(--text-muted)',
+                    fontSize: 14,
+                    fontWeight: scheduleMode === 'programar' ? 600 : 500,
+                    cursor: 'pointer',
+                    fontFamily: "'DM Sans', sans-serif",
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <Calendar size={16} />
+                  Programar para después
+                </button>
+              </div>
+            </div>
+
+            {/* Schedule Calendar & Time - only when programar */}
+            {scheduleMode === 'programar' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+              >
+                {/* Calendar */}
+                <div
+                  style={{
+                    background: 'var(--surface)',
+                    borderRadius: 14,
+                    border: '1.5px solid var(--border)',
+                    padding: 16,
+                  }}
+                >
+                  {/* Month navigation */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <button
+                      onClick={() => {
+                        const m = calendarMonth.month === 0 ? 11 : calendarMonth.month - 1;
+                        const y = calendarMonth.month === 0 ? calendarMonth.year - 1 : calendarMonth.year;
+                        setCalendarMonth({ year: y, month: m });
+                      }}
+                      style={{
+                        background: 'none',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        color: 'var(--text)',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+                      {MESES_ES[calendarMonth.month]} {calendarMonth.year}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const m = calendarMonth.month === 11 ? 0 : calendarMonth.month + 1;
+                        const y = calendarMonth.month === 11 ? calendarMonth.year + 1 : calendarMonth.year;
+                        setCalendarMonth({ year: y, month: m });
+                      }}
+                      style={{
+                        background: 'none',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        color: 'var(--text)',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+
+                  {/* Day headers */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+                    {DIAS_SEMANA.map((d) => (
+                      <div
+                        key={d}
+                        style={{
+                          textAlign: 'center',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: 'var(--text-muted)',
+                          fontFamily: "'DM Sans', sans-serif",
+                          padding: '4px 0',
+                        }}
+                      >
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Day grid */}
+                  {(() => {
+                    const firstDay = new Date(calendarMonth.year, calendarMonth.month, 1);
+                    let startDow = firstDay.getDay(); // 0=Sun
+                    startDow = startDow === 0 ? 6 : startDow - 1; // convert to Mon=0
+                    const daysInMonth = new Date(calendarMonth.year, calendarMonth.month + 1, 0).getDate();
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const maxDate = new Date(today);
+                    maxDate.setDate(maxDate.getDate() + 30);
+
+                    const cells: React.ReactNode[] = [];
+                    // Empty cells before first day
+                    for (let i = 0; i < startDow; i++) {
+                      cells.push(<div key={`empty-${i}`} />);
+                    }
+                    // Day cells
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const dateObj = new Date(calendarMonth.year, calendarMonth.month, day);
+                      dateObj.setHours(0, 0, 0, 0);
+                      const dateStr = `${calendarMonth.year}-${String(calendarMonth.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const isSunday = dateObj.getDay() === 0;
+                      const isPast = dateObj < today;
+                      const isAfterMax = dateObj > maxDate;
+                      const isDisabled = isSunday || isPast || isAfterMax;
+                      const isToday = dateObj.getTime() === today.getTime();
+                      const isSelected = scheduleDate === dateStr;
+
+                      cells.push(
+                        <button
+                          key={dateStr}
+                          disabled={isDisabled}
+                          onClick={() => !isDisabled && setScheduleDate(dateStr)}
+                          style={{
+                            width: '100%',
+                            aspectRatio: '1',
+                            borderRadius: '50%',
+                            border: isSelected
+                              ? 'none'
+                              : isToday
+                                ? '1.5px solid var(--primario)'
+                                : 'none',
+                            background: isSelected ? 'var(--primario)' : 'transparent',
+                            color: isSelected
+                              ? 'white'
+                              : isDisabled
+                                ? 'var(--text-muted)'
+                                : 'var(--text)',
+                            fontSize: 13,
+                            fontWeight: isSelected ? 600 : 400,
+                            fontFamily: "'DM Sans', sans-serif",
+                            cursor: isDisabled ? 'default' : 'pointer',
+                            opacity: isDisabled ? 0.35 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {day}
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                        {cells}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Time selector */}
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+                    Hora de recogida
+                  </label>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: 6,
+                      maxHeight: 180,
+                      overflowY: 'auto',
+                      padding: '4px 0',
+                    }}
+                  >
+                    {(() => {
+                      const now = new Date();
+                      const isToday = scheduleDate === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                      return TIME_SLOTS.map((slot) => {
+                        const isSelected = scheduleTime === slot;
+                        let isDisabled = false;
+
+                        if (isToday && scheduleDate) {
+                          // Parse slot time to compare
+                          const parts = slot.match(/(\d+):(\d+)\s*(AM|PM)/);
+                          if (parts) {
+                            let h = parseInt(parts[1]);
+                            const m = parseInt(parts[2]);
+                            if (parts[3] === 'PM' && h !== 12) h += 12;
+                            if (parts[3] === 'AM' && h === 12) h = 0;
+                            const slotMinutes = h * 60 + m;
+                            const nowMinutes = now.getHours() * 60 + now.getMinutes();
+                            isDisabled = slotMinutes <= nowMinutes;
+                          }
+                        }
+
+                        return (
+                          <button
+                            key={slot}
+                            disabled={isDisabled}
+                            onClick={() => !isDisabled && setScheduleTime(slot)}
+                            style={{
+                              padding: '8px 4px',
+                              borderRadius: 8,
+                              border: isSelected
+                                ? '2px solid var(--primario)'
+                                : '1px solid var(--border)',
+                              background: isSelected ? 'var(--primario-soft)' : 'transparent',
+                              color: isSelected
+                                ? 'var(--primario)'
+                                : isDisabled
+                                  ? 'var(--text-muted)'
+                                  : 'var(--text)',
+                              fontSize: 12,
+                              fontWeight: isSelected ? 600 : 500,
+                              fontFamily: "'JetBrains Mono', monospace",
+                              cursor: isDisabled ? 'default' : 'pointer',
+                              opacity: isDisabled ? 0.35 : 1,
+                              textAlign: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Preview card */}
+                {scheduleDate && scheduleTime && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      marginTop: 4,
+                      padding: '12px 16px',
+                      background: 'var(--bg-alt)',
+                      borderRadius: 12,
+                      fontSize: 13,
+                      color: 'var(--text)',
+                      fontFamily: "'DM Sans', sans-serif",
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    Tu envío será recogido el <strong>{formatSpanishDate(scheduleDate)}</strong> a las <strong>{scheduleTime}</strong>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
 
             {/* Auto quote */}
             {solicitudEnvio.origen && solicitudEnvio.destino && costBreakdown.distanceKm > 0 && (
@@ -1419,6 +1777,53 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 </div>
               </div>
 
+              {/* Schedule section - only when programar */}
+              {scheduleMode === 'programar' && scheduleDate && scheduleTime && (
+                <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+                    Programación
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: 'var(--primario-soft)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <Calendar size={16} style={{ color: 'var(--primario)' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+                        {formatSpanishDate(scheduleDate)}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+                        {scheduleTime}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{
+                    marginTop: 10,
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    background: 'rgba(255,179,0,0.08)',
+                    border: '1px solid rgba(255,179,0,0.2)',
+                    fontSize: 12,
+                    color: 'var(--warning)',
+                    fontFamily: "'DM Sans', sans-serif",
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}>
+                    <Info size={14} />
+                    Envío programado — se asignará repartidor en la fecha indicada
+                  </div>
+                </div>
+              )}
+
               {/* Package section */}
               <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
@@ -1547,11 +1952,41 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         >
           <CheckAnimation />
           <h2 style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--exito)', margin: 0 }}>
-            ¡Envío confirmado!
+            {scheduleMode === 'programar' && scheduleDate && scheduleTime ? '¡Envío programado!' : '¡Envío confirmado!'}
           </h2>
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>
-            Orden <span style={{ fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>#{confirmedOrderId}</span> creada exitosamente
+            Orden <span style={{ fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>#{confirmedOrderId}</span> {scheduleMode === 'programar' ? 'programada exitosamente' : 'creada exitosamente'}
           </p>
+
+          {/* Schedule info in confirmation */}
+          {scheduleMode === 'programar' && scheduleDate && scheduleTime && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '14px 18px',
+                borderRadius: 12,
+                background: 'var(--primario-soft)',
+                border: '1px solid rgba(255,87,34,0.2)',
+                width: '100%',
+                textAlign: 'left',
+              }}
+            >
+              <Calendar size={20} style={{ color: 'var(--primario)', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--primario)', fontFamily: "'DM Sans', sans-serif" }}>
+                  Recogida programada
+                </div>
+                <div style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+                  {formatSpanishDate(scheduleDate)} a las {scheduleTime}
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Quick details */}
           <div

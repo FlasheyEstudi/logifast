@@ -1,0 +1,1813 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  MapPin,
+     7→  Package,
+     8→  ArrowUpDown,
+     9→  ChevronLeft,
+    10→  ChevronRight,
+    11→  CreditCard,
+    12→  Banknote,
+    13→  Tag,
+    14→  Check,
+    15→  Info,
+    16→  AlertCircle,
+    17→  Copy,
+    18→  FileText,
+    19→  Box,
+    20→  Truck,
+    21→  ShieldCheck,
+    22→  Map,
+    23→  X,
+    24→} from 'lucide-react';
+    25→import { useStore } from '@/lib/store';
+    26→import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
+    27→
+    28→/* ═══════════════════════════════════════════════
+    29→   TYPES
+    30→   ═══════════════════════════════════════════════ */
+    31→
+    32→interface ClientSolicitarProps {
+    33→  isDark: boolean;
+    34→  userName: string;
+    35→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+    36→}
+    37→
+    38→type WizardStep = 1 | 2 | 3 | 4;
+    39→
+    40→interface CostBreakdown {
+    41→  base: number;
+    42→  distance: number;
+    43→  distanceKm: number;
+    44→  size: number;
+    45→  fragile: number;
+    46→  subtotal: number;
+    47→  promoDiscount: number;
+    48→  total: number;
+    49→  estimatedTime: string;
+    50→}
+    51→
+    52→/* ═══════════════════════════════════════════════
+    53→   HELPERS
+    54→   ═══════════════════════════════════════════════ */
+    55→
+    56→function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    57→  const R = 6371;
+    58→  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    59→  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    60→  const a =
+    61→    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    62→    Math.cos((lat1 * Math.PI) / 180) *
+    63→      Math.cos((lat2 * Math.PI) / 180) *
+    64→      Math.sin(dLng / 2) *
+    65→      Math.sin(dLng / 2);
+    66→  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    67→  return R * c;
+    68→}
+    69→
+    70→function useCountUp(end: number, duration = 800, start = true) {
+    71→  const [value, setValue] = useState(0);
+    72→  const rafRef = useRef<number>(0);
+    73→
+    74→  useEffect(() => {
+    75→    if (!start) return;
+    76→    let startTime: number | null = null;
+    77→    const from = value;
+    78→    const animate = (ts: number) => {
+    79→      if (!startTime) startTime = ts;
+    80→      const progress = Math.min((ts - startTime) / duration, 1);
+    81→      const eased = 1 - Math.pow(1 - progress, 3);
+    82→      const nextVal = Math.round(from + (end - from) * eased);
+    83→      setValue(nextVal);
+    84→      if (progress < 1) rafRef.current = requestAnimationFrame(animate);
+    85→    };
+    86→    rafRef.current = requestAnimationFrame(animate);
+    87→    return () => cancelAnimationFrame(rafRef.current);
+    88→  }, [end, duration, start]);
+    89→
+    90→  return start ? value : 0;
+    91→}
+    92→
+    93→function formatCordobas(n: number): string {
+    94→  return `C$ ${n.toLocaleString('es-NI')}`;
+    95→}
+    96→
+    97→/* ═══════════════════════════════════════════════
+    98→   STEP LABELS
+    99→   ═══════════════════════════════════════════════ */
+   100→
+   101→const STEP_LABELS = ['Dirección', 'Detalles', 'Pago', 'Confirmar'] as const;
+   102→
+   103→/* ═══════════════════════════════════════════════
+   104→   SIZE OPTIONS
+   105→   ═══════════════════════════════════════════════ */
+   106→
+   107→const SIZE_OPTIONS = [
+   108→  { key: 'pequeno' as const, label: 'Pequeño', desc: 'Hasta 1 kg', icon: FileText, surcharge: 0 },
+   109→  { key: 'mediano' as const, label: 'Mediano', desc: 'Hasta 5 kg', icon: Package, surcharge: 15 },
+   110→  { key: 'grande' as const, label: 'Grande', desc: 'Hasta 15 kg', icon: Box, surcharge: 35 },
+   111→];
+   112→
+   113→/* ═══════════════════════════════════════════════
+   114→   PROGRESS BAR
+   115→   ═══════════════════════════════════════════════ */
+   116→
+   117→function ProgressBar({ currentStep }: { currentStep: WizardStep }) {
+   118→  return (
+   119→    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 0, padding: '0 16px', marginBottom: 32 }}>
+   120→      {STEP_LABELS.map((label, idx) => {
+   121→        const stepNum = (idx + 1) as WizardStep;
+   122→        const isCompleted = stepNum < currentStep;
+   123→        const isCurrent = stepNum === currentStep;
+   124→
+   125→        return (
+   126→          <React.Fragment key={label}>
+   127→            {/* Connector line before (not for first) */}
+   128→            {idx > 0 && (
+   129→              <div style={{ flex: 1, height: 2, marginTop: 17, position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
+   130→                <div
+   131→                  style={{
+   132→                    position: 'absolute',
+   133→                    inset: 0,
+   134→                    background: 'var(--border)',
+   135→                    borderRadius: 1,
+   136→                  }}
+   137→                />
+   138→                <motion.div
+   139→                  initial={{ scaleX: 0 }}
+   140→                  animate={{ scaleX: isCompleted || isCurrent ? 1 : 0 }}
+   141→                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+   142→                  style={{
+   143→                    position: 'absolute',
+   144→                    inset: 0,
+   145→                    background: 'var(--primario)',
+   146→                    borderRadius: 1,
+   147→                    transformOrigin: 'left',
+   148→                  }}
+   149→                />
+   150→              </div>
+   151→            )}
+   152→
+   153→            {/* Circle + label */}
+   154→            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 56 }}>
+   155→              <div
+   156→                style={{
+   157→                  width: 36,
+   158→                  height: 36,
+   159→                  borderRadius: '50%',
+   160→                  display: 'flex',
+   161→                  alignItems: 'center',
+   162→                  justifyContent: 'center',
+   163→                  background: isCompleted ? 'var(--primario)' : 'transparent',
+   164→                  border: `2px solid ${isCompleted || isCurrent ? 'var(--primario)' : 'var(--border)'}`,
+   165→                  transition: 'all 0.3s ease',
+   166→                  position: 'relative',
+   167→                }}
+   168→              >
+   169→                {isCompleted ? (
+   170→                  <Check size={18} strokeWidth={2.5} color="white" />
+   171→                ) : isCurrent ? (
+   172→                  <motion.div
+   173→                    animate={{ scale: [1, 1.3, 1] }}
+   174→                    transition={{ duration: 1.5, repeat: Infinity }}
+   175→                    style={{
+   176→                      width: 10,
+   177→                      height: 10,
+   178→                      borderRadius: '50%',
+   179→                      background: 'var(--primario)',
+   180→                    }}
+   181→                  />
+   182→                ) : (
+   183→                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   184→                    {stepNum}
+   185→                  </span>
+   186→                )}
+   187→              </div>
+   188→              <span
+   189→                style={{
+   190→                  fontSize: 11,
+   191→                  fontWeight: isCurrent ? 600 : 400,
+   192→                  color: isCurrent ? 'var(--primario)' : isCompleted ? 'var(--text)' : 'var(--text-muted)',
+   193→                  fontFamily: "'DM Sans', sans-serif",
+   194→                  whiteSpace: 'nowrap',
+   195→                }}
+   196→              >
+   197→                {label}
+   198→              </span>
+   199→            </div>
+   200→          </React.Fragment>
+   201→        );
+   202→      })}
+   203→    </div>
+   204→  );
+   205→}
+   206→
+   207→/* ═══════════════════════════════════════════════
+   208→   AUTOCOMPLETE INPUT
+   209→   ═══════════════════════════════════════════════ */
+   210→
+   211→function AddressInput({
+   212→  label,
+   213→  value,
+   214→  onChange,
+   215→  onSelect,
+   216→  dotColor,
+   217→  suggestions,
+   218→  placeholder,
+   219→}: {
+   220→  label: string;
+   221→  value: string;
+   222→  onChange: (v: string) => void;
+   223→  onSelect: (s: DireccionSugerencia) => void;
+   224→  dotColor: string;
+   225→  suggestions: DireccionSugerencia[];
+   226→  placeholder: string;
+   227→}) {
+   228→  const [showDropdown, setShowDropdown] = useState(false);
+   229→  const containerRef = useRef<HTMLDivElement>(null);
+   230→
+   231→  const filtered = useMemo(() => {
+   232→    if (value.length < 2) return [];
+   233→    const q = value.toLowerCase();
+   234→    return suggestions.filter(
+   235→      (s) =>
+   236→        s.direccion.toLowerCase().includes(q) ||
+   237→        s.barrio.toLowerCase().includes(q)
+   238→    );
+   239→  }, [value, suggestions]);
+   240→
+   241→  // Close dropdown when clicking outside
+   242→  const handleBlur = useCallback((e: React.FocusEvent) => {
+   243→    // Use setTimeout to allow click events on dropdown items to fire first
+   244→    setTimeout(() => {
+   245→      if (containerRef.current && !containerRef.current.contains(document.activeElement)) {
+   246→        setShowDropdown(false);
+   247→      }
+   248→    }, 150);
+   249→  }, []);
+   250→
+   251→  return (
+   252→    <div ref={containerRef} style={{ position: 'relative' }}>
+   253→      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+   254→        {label}
+   255→      </label>
+   256→      <div style={{ position: 'relative' }}>
+   257→        <div
+   258→          style={{
+   259→            position: 'absolute',
+   260→            left: 16,
+   261→            top: '50%',
+   262→            transform: 'translateY(-50%)',
+   263→            width: 12,
+   264→            height: 12,
+   265→            borderRadius: '50%',
+   266→            background: dotColor,
+   267→            boxShadow: `0 0 0 3px ${dotColor}33`,
+   268→          }}
+   269→        />
+   270→        <input
+   271→          type="text"
+   272→          value={value}
+   273→          onChange={(e) => { onChange(e.target.value); setShowDropdown(true); }}
+   274→          onFocus={() => {
+   275→            if (filtered.length > 0) setShowDropdown(true);
+   276→          }}
+   277→          onBlur={handleBlur}
+   278→          placeholder={placeholder}
+   279→          style={{
+   280→            width: '100%',
+   281→            padding: '16px 20px 16px 48px',
+   282→            borderRadius: 14,
+   283→            border: `1.5px solid var(--border)`,
+   284→            background: 'var(--surface)',
+   285→            color: 'var(--text)',
+   286→            fontSize: 15,
+   287→            fontFamily: "'DM Sans', sans-serif",
+   288→            outline: 'none',
+   289→            transition: 'border-color 0.2s',
+   290→          }}
+   291→          onFocusCapture={(e) => {
+   292→            (e.target as HTMLInputElement).style.borderColor = 'var(--primario)';
+   293→          }}
+   294→          onBlurCapture={(e) => {
+   295→            (e.target as HTMLInputElement).style.borderColor = 'var(--border)';
+   296→          }}
+   297→        />
+   298→        {value && (
+   299→          <button
+   300→            onClick={() => { onChange(''); setShowDropdown(false); }}
+   301→            style={{
+   302→              position: 'absolute',
+   303→              right: 12,
+   304→              top: '50%',
+   305→              transform: 'translateY(-50%)',
+   306→              background: 'none',
+   307→              border: 'none',
+   308→              cursor: 'pointer',
+   309→              color: 'var(--text-muted)',
+   310→              padding: 4,
+   311→              display: 'flex',
+   312→            }}
+   313→          >
+   314→            <X size={16} />
+   315→          </button>
+   316→        )}
+   317→      </div>
+   318→      <AnimatePresence>
+   319→        {showDropdown && (
+   320→          <motion.div
+   321→            initial={{ opacity: 0, y: -4 }}
+   322→            animate={{ opacity: 1, y: 0 }}
+   323→            exit={{ opacity: 0, y: -4 }}
+   324→            transition={{ duration: 0.15 }}
+   325→            style={{
+   326→              position: 'absolute',
+   327→              top: '100%',
+   328→              left: 0,
+   329→              right: 0,
+   330→              zIndex: 50,
+   331→              background: 'var(--surface)',
+   332→              border: '1.5px solid var(--border)',
+   333→              borderRadius: 12,
+   334→              marginTop: 4,
+   335→              maxHeight: 200,
+   336→              overflowY: 'auto',
+   337→              boxShadow: 'var(--shadow-lg)',
+   338→            }}
+   339→          >
+   340→            {filtered.map((s) => (
+   341→              <button
+   342→                key={s.id}
+   343→                onClick={() => {
+   344→                  onSelect(s);
+   345→                  setShowDropdown(false);
+   346→                }}
+   347→                style={{
+   348→                  display: 'flex',
+   349→                  alignItems: 'center',
+   350→                  gap: 10,
+   351→                  padding: '10px 14px',
+   352→                  width: '100%',
+   353→                  border: 'none',
+   354→                  background: 'transparent',
+   355→                  cursor: 'pointer',
+   356→                  textAlign: 'left',
+   357→                  color: 'var(--text)',
+   358→                  fontFamily: "'DM Sans', sans-serif",
+   359→                  borderBottom: '1px solid var(--border)',
+   360→                  transition: 'background 0.15s',
+   361→                }}
+   362→                onMouseEnter={(e) => {
+   363→                  (e.currentTarget as HTMLElement).style.background = 'var(--primario-soft)';
+   364→                }}
+   365→                onMouseLeave={(e) => {
+   366→                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+   367→                }}
+   368→              >
+   369→                <MapPin size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+   370→                <div>
+   371→                  <div style={{ fontSize: 14, fontWeight: 500 }}>{s.direccion}</div>
+   372→                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.barrio}</div>
+   373→                </div>
+   374→              </button>
+   375→            ))}
+   376→          </motion.div>
+   377→        )}
+   378→      </AnimatePresence>
+   379→    </div>
+   380→  );
+   381→}
+   382→
+   383→/* ═══════════════════════════════════════════════
+   384→   TOGGLE SWITCH
+   385→   ═══════════════════════════════════════════════ */
+   386→
+   387→function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+   388→  return (
+   389→    <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => onChange(!checked)}>
+   390→      <div
+   391→        style={{
+   392→          width: 48,
+   393→          height: 26,
+   394→          borderRadius: 13,
+   395→          background: checked ? 'var(--primario)' : 'var(--border)',
+   396→          position: 'relative',
+   397→          transition: 'background 0.3s ease',
+   398→          flexShrink: 0,
+   399→        }}
+   400→      >
+   401→        <motion.div
+   402→          animate={{ x: checked ? 22 : 2 }}
+   403→          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+   404→          style={{
+   405→            width: 22,
+   406→            height: 22,
+   407→            borderRadius: '50%',
+   408→            background: 'white',
+   409→            position: 'absolute',
+   410→            top: 2,
+   411→            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+   412→          }}
+   413→        />
+   414→      </div>
+   415→      <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+   416→    </div>
+   417→  );
+   418→}
+   419→
+   420→/* ═══════════════════════════════════════════════
+   421→   COST BREAKDOWN CARD
+   422→   ═══════════════════════════════════════════════ */
+   423→
+   424→function CostCard({ breakdown, showPromo }: { breakdown: CostBreakdown; showPromo?: boolean }) {
+   425→  const animatedDistance = useCountUp(Math.round(breakdown.distanceKm * 10) / 10, 600, breakdown.distanceKm > 0);
+   426→  const animatedTotal = useCountUp(breakdown.total, 600, breakdown.total > 0);
+   427→  const animatedSubtotal = useCountUp(breakdown.subtotal, 600, breakdown.subtotal > 0);
+   428→
+   429→  return (
+   430→    <div
+   431→      style={{
+   432→        background: 'var(--bg-alt)',
+   433→        borderRadius: 14,
+   434→        padding: 20,
+   435→        border: '1px solid var(--border)',
+   436→      }}
+   437→    >
+   438→      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+   439→        <div>
+   440→          <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>Distancia</div>
+   441→          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   442→            {animatedDistance.toFixed(1)} km
+   443→          </div>
+   444→        </div>
+   445→        <div>
+   446→          <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>Tiempo estimado</div>
+   447→          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   448→            {breakdown.estimatedTime}
+   449→          </div>
+   450→        </div>
+   451→      </div>
+   452→
+   453→      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginBottom: 8 }}>
+   454→        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   455→          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Tarifa base</span>
+   456→          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>{formatCordobas(breakdown.base)}</span>
+   457→        </div>
+   458→        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   459→          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Distancia ({breakdown.distanceKm.toFixed(1)} km × C$ 8)</span>
+   460→          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>{formatCordobas(breakdown.distance)}</span>
+   461→        </div>
+   462→        {breakdown.size > 0 && (
+   463→          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   464→            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Tamaño del paquete</span>
+   465→            <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>+{formatCordobas(breakdown.size)}</span>
+   466→          </div>
+   467→        )}
+   468→        {breakdown.fragile > 0 && (
+   469→          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   470→            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Cargo por fragilidad</span>
+   471→            <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>+{formatCordobas(breakdown.fragile)}</span>
+   472→          </div>
+   473→        )}
+   474→        {showPromo && breakdown.promoDiscount > 0 && (
+   475→          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   476→            <span style={{ fontSize: 13, color: 'var(--exito)', fontFamily: "'DM Sans', sans-serif" }}>Descuento promocional</span>
+   477→            <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--exito)' }}>-{formatCordobas(breakdown.promoDiscount)}</span>
+   478→          </div>
+   479→        )}
+   480→      </div>
+   481→
+   482→      <div style={{ borderTop: '1.5px solid var(--border)', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+   483→        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+   484→          {showPromo ? 'Total' : 'Costo estimado'}
+   485→        </span>
+   486→        <span style={{ fontSize: 24, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+   487→          {formatCordobas(animatedTotal)}
+   488→        </span>
+   489→      </div>
+   490→    </div>
+   491→  );
+   492→}
+   493→
+   494→/* ═══════════════════════════════════════════════
+   495→   CHECK ANIMATION (SVG for confirmation)
+   496→   ═══════════════════════════════════════════════ */
+   497→
+   498→function CheckAnimation() {
+   499→  return (
+   500→    <div style={{ width: 80, height: 80, position: 'relative' }}>
+   501→      <svg viewBox="0 0 80 80" style={{ width: '100%', height: '100%' }}>
+   502→        <motion.circle
+   503→          cx="40"
+   504→          cy="40"
+   505→          r="36"
+   506→          fill="none"
+   507→          stroke="var(--exito)"
+   508→          strokeWidth="3"
+   509→          strokeLinecap="round"
+   510→          initial={{ pathLength: 0 }}
+   511→          animate={{ pathLength: 1 }}
+   512→          transition={{ duration: 0.6, ease: 'easeInOut' }}
+   513→        />
+   514→        <motion.path
+   515→          d="M24 42 L34 52 L56 30"
+   516→          fill="none"
+   517→          stroke="var(--exito)"
+   518→          strokeWidth="3.5"
+   519→          strokeLinecap="round"
+   520→          strokeLinejoin="round"
+   521→          initial={{ pathLength: 0 }}
+   522→          animate={{ pathLength: 1 }}
+   523→          transition={{ duration: 0.4, delay: 0.5, ease: 'easeOut' }}
+   524→        />
+   525→      </svg>
+   526→    </div>
+   527→  );
+   528→}
+   529→
+   530→/* ═══════════════════════════════════════════════
+   531→   MAIN COMPONENT
+   532→   ═══════════════════════════════════════════════ */
+   533→
+   534→export default function ClientSolicitar({ isDark, userName, onNavigate }: ClientSolicitarProps) {
+   535→  const {
+   536→    solicitudEnvio,
+   537→    setSolicitudEnvio,
+   538→    resetSolicitudEnvio,
+   539→    confirmarEnvio,
+   540→    direccionesSugerencias,
+   541→    validateCodigoPromo,
+   542→    addOrder,
+   543→    orders,
+   544→  } = useStore();
+   545→
+   546→  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+   547→  const [direction, setDirection] = useState<1 | -1>(1);
+   548→  const [confirmed, setConfirmed] = useState(false);
+   549→  const [confirming, setConfirming] = useState(false);
+   550→  const [confirmedOrderId, setConfirmedOrderId] = useState('');
+   551→
+   552→  // Promo code state
+   553→  const [promoInput, setPromoInput] = useState('');
+   554→  const [promoExpanded, setPromoExpanded] = useState(false);
+   555→  const [promoStatus, setPromoStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
+   556→  const [promoMessage, setPromoMessage] = useState('');
+   557→  const [promoDiscount, setPromoDiscount] = useState(0);
+   558→  const [promoTipo, setPromoTipo] = useState('');
+   559→
+   560→  // Toast state
+   561→  const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' | 'info' } | null>(null);
+   562→
+   563→  // Change calculation
+   564→  const [montoPagoInput, setMontoPagoInput] = useState('');
+   565→
+   566→  const showToast = useCallback((message: string, variant: 'success' | 'error' | 'info') => {
+   567→    setToast({ message, variant });
+   568→    setTimeout(() => setToast(null), 3000);
+   569→  }, []);
+   570→
+   571→  /* ─── Cost calculation ─── */
+   572→  const costBreakdown = useMemo<CostBreakdown>(() => {
+   573→    const BASE = 50;
+   574→    const PER_KM = 8;
+   575→
+   576→    const distKm =
+   577→      solicitudEnvio.origenLat && solicitudEnvio.destinoLat
+   578→        ? haversineKm(solicitudEnvio.origenLat, solicitudEnvio.origenLng, solicitudEnvio.destinoLat, solicitudEnvio.destinoLng)
+   579→        : 0;
+   580→
+   581→    const distanceCost = Math.round(distKm * PER_KM);
+   582→    const sizeSurcharge = SIZE_OPTIONS.find((s) => s.key === solicitudEnvio.tamano)?.surcharge ?? 0;
+   583→    const fragileSurcharge = solicitudEnvio.fragil ? 10 : 0;
+   584→    const subtotal = BASE + distanceCost + sizeSurcharge + fragileSurcharge;
+   585→
+   586→    let discount = 0;
+   587→    if (promoDiscount > 0) {
+   588→      if (promoTipo === 'porcentaje') {
+   589→        discount = Math.round((subtotal * promoDiscount) / 100);
+   590→      } else {
+   591→        discount = Math.min(promoDiscount, subtotal);
+   592→      }
+   593→    }
+   594→
+   595→    const total = Math.max(0, subtotal - discount);
+   596→    const estimatedMinutes = Math.max(8, Math.round(distKm * 4));
+   597→
+   598→    return {
+   599→      base: BASE,
+   600→      distance: distanceCost,
+   601→      distanceKm: distKm,
+   602→      size: sizeSurcharge,
+   603→      fragile: fragileSurcharge,
+   604→      subtotal,
+   605→      promoDiscount: discount,
+   606→      total,
+   607→      estimatedTime: `~${estimatedMinutes} min`,
+   608→    };
+   609→  }, [solicitudEnvio, promoDiscount, promoTipo]);
+   610→
+   611→  /* ─── Step navigation ─── */
+   612→  const goToStep = useCallback(
+   613→    (step: WizardStep) => {
+   614→      setDirection(step > currentStep ? 1 : -1);
+   615→      setCurrentStep(step);
+   616→    },
+   617→    [currentStep]
+   618→  );
+   619→
+   620→  const canContinue = useCallback((): boolean => {
+   621→    switch (currentStep) {
+   622→      case 1:
+   623→        return solicitudEnvio.origen.length > 0 && solicitudEnvio.destino.length > 0;
+   624→      case 2:
+   625→        return solicitudEnvio.descripcion.length > 0;
+   626→      case 3:
+   627→        return true;
+   628→      case 4:
+   629→        return solicitudEnvio.terminosAceptados;
+   630→      default:
+   631→        return false;
+   632→    }
+   633→  }, [currentStep, solicitudEnvio]);
+   634→
+   635→  /* ─── Swap addresses ─── */
+   636→  const handleSwap = useCallback(() => {
+   637→    const newOrigen = solicitudEnvio.destino;
+   638→    const newDestino = solicitudEnvio.origen;
+   639→    const newOrigenLat = solicitudEnvio.destinoLat;
+   640→    const newOrigenLng = solicitudEnvio.destinoLng;
+   641→    const newDestinoLat = solicitudEnvio.origenLat;
+   642→    const newDestinoLng = solicitudEnvio.origenLng;
+   643→    setSolicitudEnvio({
+   644→      origen: newOrigen,
+   645→      destino: newDestino,
+   646→      origenLat: newOrigenLat,
+   647→      origenLng: newOrigenLng,
+   648→      destinoLat: newDestinoLat,
+   649→      destinoLng: newDestinoLng,
+   650→    });
+   651→  }, [solicitudEnvio, setSolicitudEnvio]);
+   652→
+   653→  /* ─── Apply promo code ─── */
+   654→  const handleApplyPromo = useCallback(() => {
+   655→    if (!promoInput.trim()) return;
+   656→    const result = validateCodigoPromo(promoInput.trim());
+   657→    if (result.valid) {
+   658→      setPromoDiscount(result.descuento);
+   659→      setPromoTipo(result.tipo);
+   660→      setPromoStatus('valid');
+   661→      setSolicitudEnvio({ codigoPromo: promoInput.trim().toUpperCase(), descuento: result.descuento });
+   662→      setPromoMessage(
+   663→        result.tipo === 'porcentaje'
+   664→          ? `¡${result.descuento}% de descuento aplicado!`
+   665→          : `¡C$ ${result.descuento} de descuento aplicado!`
+   666→      );
+   667→      showToast('¡Código promocional aplicado!', 'success');
+   668→    } else {
+   669→      setPromoDiscount(0);
+   670→      setPromoTipo('');
+   671→      setPromoStatus('invalid');
+   672→      setPromoMessage('Código no válido o expirado');
+   673→      showToast('Código no válido', 'error');
+   674→    }
+   675→  }, [promoInput, validateCodigoPromo, setSolicitudEnvio, showToast]);
+   676→
+   677→  /* ─── Copy bank details ─── */
+   678→  const handleCopyBank = useCallback(() => {
+   679→    const bankDetails = 'Banco BAC - Cta: 1234-5678-90 - LOGIFAST S.A.';
+   680→    navigator.clipboard.writeText(bankDetails).then(() => {
+   681→      showToast('Datos bancarios copiados al portapapeles', 'success');
+   682→    });
+   683→  }, [showToast]);
+   684→
+   685→  /* ─── Confirm shipping ─── */
+   686→  const handleConfirm = useCallback(() => {
+   687→    setConfirming(true);
+   688→    // Generate new order ID
+   689→    const lastId = orders.length > 0 ? parseInt(orders[0].id.replace('LF-', ''), 10) : 2860;
+   690→    const newId = `LF-${lastId + 1}`;
+   691→
+   692→    setTimeout(() => {
+   693→      const now = new Date();
+   694→      const fecha = now.toISOString().split('T')[0];
+   695→      const hora = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+   696→
+   697→      const newOrder: Order = {
+   698→        id: newId,
+   699→        cliente: userName,
+   700→        clienteTelefono: '+505 8888-0000',
+   701→        origen: solicitudEnvio.origen,
+   702→        destino: solicitudEnvio.destino,
+   703→        origenLat: solicitudEnvio.origenLat,
+   704→        origenLng: solicitudEnvio.origenLng,
+   705→        destinoLat: solicitudEnvio.destinoLat,
+   706→        destinoLng: solicitudEnvio.destinoLng,
+   707→        repartidor: null,
+   708→        repartidorInitials: '',
+   709→        descripcion: solicitudEnvio.descripcion,
+   710→        monto: costBreakdown.total,
+   711→        estado: 'pendiente' as OrderStatus,
+   712→        metodoPago: solicitudEnvio.metodoPago as PaymentMethod,
+   713→        estadoPago: solicitudEnvio.metodoPago === 'transferencia' ? ('pendiente' as PaymentStatus) : ('pendiente' as PaymentStatus),
+   714→        fecha,
+   715→        hora,
+   716→        timeline: [
+   717→          { step: 'Orden creada', hora, completado: true },
+   718→          { step: 'En camino', hora: '—', completado: false },
+   719→          { step: 'Recogida', hora: '—', completado: false },
+   720→          { step: 'Entregada', hora: '—', completado: false },
+   721→        ],
+   722→      };
+   723→
+   724→      addOrder(newOrder);
+   725→      confirmarEnvio(newId);
+   726→      setConfirmedOrderId(newId);
+   727→      setConfirming(false);
+   728→      setConfirmed(true);
+   729→    }, 2000);
+   730→  }, [orders, userName, solicitudEnvio, costBreakdown.total, addOrder, confirmarEnvio]);
+   731→
+   732→  /* ─── Slide animation variants ─── */
+   733→  const slideVariants = {
+   734→    enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
+   735→    center: { x: 0, opacity: 1 },
+   736→    exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
+   737→  };
+   738→
+   739→  /* ─── Render step content ─── */
+   740→  const renderStep = () => {
+   741→    switch (currentStep) {
+   742→      /* ═══ STEP 1: DIRECCIONES ═══ */
+   743→      case 1:
+   744→        return (
+   745→          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+   746→            <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+   747→              ¿Dónde recogemos y entregamos?
+   748→            </h2>
+   749→
+   750→            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 12 }}>
+   751→              <AddressInput
+   752→                label="Dirección de recogida"
+   753→                value={solicitudEnvio.origen}
+   754→                onChange={(v) => setSolicitudEnvio({ origen: v })}
+   755→                onSelect={(s) =>
+   756→                  setSolicitudEnvio({ origen: s.direccion, origenLat: s.lat, origenLng: s.lng })
+   757→                }
+   758→                dotColor="var(--exito)"
+   759→                suggestions={direccionesSugerencias}
+   760→                placeholder="Ej: Metrocentro, Managua"
+   761→              />
+   762→
+   763→              {/* Swap button */}
+   764→              <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 0, zIndex: 10 }}>
+   765→                <motion.button
+   766→                  whileTap={{ rotate: 180 }}
+   767→                  transition={{ duration: 0.3 }}
+   768→                  onClick={handleSwap}
+   769→                  disabled={!solicitudEnvio.origen && !solicitudEnvio.destino}
+   770→                  style={{
+   771→                    width: 36,
+   772→                    height: 36,
+   773→                    borderRadius: '50%',
+   774→                    border: '1.5px solid var(--border)',
+   775→                    background: 'var(--surface)',
+   776→                    cursor: solicitudEnvio.origen || solicitudEnvio.destino ? 'pointer' : 'default',
+   777→                    display: 'flex',
+   778→                    alignItems: 'center',
+   779→                    justifyContent: 'center',
+   780→                    position: 'absolute',
+   781→                    top: -18,
+   782→                    boxShadow: 'var(--shadow-sm)',
+   783→                    opacity: solicitudEnvio.origen || solicitudEnvio.destino ? 1 : 0.4,
+   784→                  }}
+   785→                >
+   786→                  <ArrowUpDown size={16} style={{ color: 'var(--text-secondary)' }} />
+   787→                </motion.button>
+   788→              </div>
+   789→
+   790→              <AddressInput
+   791→                label="Dirección de entrega"
+   792→                value={solicitudEnvio.destino}
+   793→                onChange={(v) => setSolicitudEnvio({ destino: v })}
+   794→                onSelect={(s) =>
+   795→                  setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng })
+   796→                }
+   797→                dotColor="var(--primario)"
+   798→                suggestions={direccionesSugerencias}
+   799→                placeholder="Ej: Col. Los Robles, Managua"
+   800→              />
+   801→            </div>
+   802→
+   803→            {/* Map preview */}
+   804→            <div
+   805→              style={{
+   806→                height: 240,
+   807→                borderRadius: 16,
+   808→                border: '1.5px solid var(--border)',
+   809→                overflow: 'hidden',
+   810→                background: 'var(--bg-alt)',
+   811→                display: 'flex',
+   812→                flexDirection: 'column',
+   813→                alignItems: 'center',
+   814→                justifyContent: 'center',
+   815→                gap: 8,
+   816→              }}
+   817→            >
+   818→              {solicitudEnvio.origen && solicitudEnvio.destino ? (
+   819→                <div style={{ textAlign: 'center', padding: '0 20px' }}>
+   820→                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+   821→                    <MapPin size={16} style={{ color: 'var(--exito)' }} />
+   822→                    <span style={{ fontSize: 13, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   823→                      {solicitudEnvio.origen}
+   824→                    </span>
+   825→                    <span style={{ color: 'var(--text-muted)' }}>→</span>
+   826→                    <MapPin size={16} style={{ color: 'var(--primario)' }} />
+   827→                    <span style={{ fontSize: 13, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   828→                      {solicitudEnvio.destino}
+   829→                    </span>
+   830→                  </div>
+   831→                  <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   832→                    {costBreakdown.distanceKm.toFixed(1)} km • {costBreakdown.estimatedTime}
+   833→                  </div>
+   834→                </div>
+   835→              ) : (
+   836→                <>
+   837→                  <Map size={32} style={{ color: 'var(--text-muted)' }} />
+   838→                  <span style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   839→                    Vista previa del recorrido
+   840→                  </span>
+   841→                </>
+   842→              )}
+   843→            </div>
+   844→
+   845→            {/* Auto quote */}
+   846→            {solicitudEnvio.origen && solicitudEnvio.destino && costBreakdown.distanceKm > 0 && (
+   847→              <motion.div
+   848→                initial={{ opacity: 0, y: 10 }}
+   849→                animate={{ opacity: 1, y: 0 }}
+   850→                transition={{ duration: 0.3 }}
+   851→              >
+   852→                <CostCard breakdown={costBreakdown} />
+   853→              </motion.div>
+   854→            )}
+   855→          </div>
+   856→        );
+   857→
+   858→      /* ═══ STEP 2: DETALLES ═══ */
+   859→      case 2:
+   860→        return (
+   861→          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+   862→            <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+   863→              ¿Qué envías?
+   864→            </h2>
+   865→
+   866→            {/* Descripción */}
+   867→            <div>
+   868→              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+   869→                Descripción del paquete
+   870→              </label>
+   871→              <div style={{ position: 'relative' }}>
+   872→                <input
+   873→                  type="text"
+   874→                  value={solicitudEnvio.descripcion}
+   875→                  onChange={(e) => {
+   876→                    if (e.target.value.length <= 100) {
+   877→                      setSolicitudEnvio({ descripcion: e.target.value });
+   878→                    }
+   879→                  }}
+   880→                  placeholder="Ej: Documentos legales, caja mediana..."
+   881→                  style={{
+   882→                    width: '100%',
+   883→                    padding: '14px 16px',
+   884→                    borderRadius: 12,
+   885→                    border: '1.5px solid var(--border)',
+   886→                    background: 'var(--surface)',
+   887→                    color: 'var(--text)',
+   888→                    fontSize: 15,
+   889→                    fontFamily: "'DM Sans', sans-serif",
+   890→                    outline: 'none',
+   891→                    transition: 'border-color 0.2s',
+   892→                    paddingRight: 56,
+   893→                  }}
+   894→                  onFocus={(e) => { e.target.style.borderColor = 'var(--primario)'; }}
+   895→                  onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+   896→                />
+   897→                <span
+   898→                  style={{
+   899→                    position: 'absolute',
+   900→                    right: 14,
+   901→                    top: '50%',
+   902→                    transform: 'translateY(-50%)',
+   903→                    fontSize: 12,
+   904→                    fontFamily: "'JetBrains Mono', monospace",
+   905→                    color: solicitudEnvio.descripcion.length >= 90 ? 'var(--peligro)' : 'var(--text-muted)',
+   906→                  }}
+   907→                >
+   908→                  {solicitudEnvio.descripcion.length}/100
+   909→                </span>
+   910→              </div>
+   911→            </div>
+   912→
+   913→            {/* Tamaño */}
+   914→            <div>
+   915→              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+   916→                Tamaño del paquete
+   917→              </label>
+   918→              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+   919→                {SIZE_OPTIONS.map((opt) => {
+   920→                  const isSelected = solicitudEnvio.tamano === opt.key;
+   921→                  const Icon = opt.icon;
+   922→                  return (
+   923→                    <motion.button
+   924→                      key={opt.key}
+   925→                      whileTap={{ scale: 0.97 }}
+   926→                      onClick={() => setSolicitudEnvio({ tamano: opt.key })}
+   927→                      style={{
+   928→                        display: 'flex',
+   929→                        flexDirection: 'column',
+   930→                        alignItems: 'center',
+   931→                        gap: 8,
+   932→                        padding: '16px 8px',
+   933→                        borderRadius: 14,
+   934→                        border: `2px solid ${isSelected ? 'var(--primario)' : 'var(--border)'}`,
+   935→                        background: isSelected ? 'var(--primario-soft)' : 'var(--surface)',
+   936→                        cursor: 'pointer',
+   937→                        transition: 'all 0.2s ease',
+   938→                        textAlign: 'center',
+   939→                      }}
+   940→                    >
+   941→                      <Icon
+   942→                        size={24}
+   943→                        style={{
+   944→                          color: isSelected ? 'var(--primario)' : 'var(--text-muted)',
+   945→                          transition: 'color 0.2s',
+   946→                        }}
+   947→                      />
+   948→                      <span
+   949→                        style={{
+   950→                          fontSize: 14,
+   951→                          fontWeight: 600,
+   952→                          color: isSelected ? 'var(--primario)' : 'var(--text)',
+   953→                          fontFamily: "'DM Sans', sans-serif",
+   954→                          transition: 'color 0.2s',
+   955→                        }}
+   956→                      >
+   957→                        {opt.label}
+   958→                      </span>
+   959→                      <span
+   960→                        style={{
+   961→                          fontSize: 12,
+   962→                          color: 'var(--text-muted)',
+   963→                          fontFamily: "'DM Sans', sans-serif",
+   964→                        }}
+   965→                      >
+   966→                        {opt.desc}
+   967→                      </span>
+   968→                      {opt.surcharge > 0 && (
+   969→                        <span
+   970→                          style={{
+   971→                            fontSize: 11,
+   972→                            fontFamily: "'JetBrains Mono', monospace",
+   973→                            color: 'var(--text-secondary)',
+   974→                          }}
+   975→                        >
+   976→                          +C$ {opt.surcharge}
+   977→                        </span>
+   978→                      )}
+   979→                    </motion.button>
+   980→                  );
+   981→                })}
+   982→              </div>
+   983→            </div>
+   984→
+   985→            {/* Instrucciones */}
+   986→            <div>
+   987→              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+   988→                Instrucciones especiales (opcional)
+   989→              </label>
+   990→              <textarea
+   991→                value={solicitudEnvio.instrucciones}
+   992→                onChange={(e) => {
+   993→                  if (e.target.value.length <= 200) {
+   994→                    setSolicitudEnvio({ instrucciones: e.target.value });
+   995→                  }
+   996→                }}
+   997→                placeholder="Ej: Tocar timbre dos veces, dejar con el portero..."
+   998→                rows={3}
+   999→                style={{
+  1000→                  width: '100%',
+  1001→                  padding: '14px 16px',
+  1002→                  borderRadius: 12,
+  1003→                  border: '1.5px solid var(--border)',
+  1004→                  background: 'var(--surface)',
+  1005→                  color: 'var(--text)',
+  1006→                  fontSize: 15,
+  1007→                  fontFamily: "'DM Sans', sans-serif",
+  1008→                  outline: 'none',
+  1009→                  resize: 'none',
+  1010→                  transition: 'border-color 0.2s',
+  1011→                }}
+  1012→                onFocus={(e) => { e.target.style.borderColor = 'var(--primario)'; }}
+  1013→                onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+  1014→              />
+  1015→              <div style={{ textAlign: 'right', marginTop: 4 }}>
+  1016→                <span
+  1017→                  style={{
+  1018→                    fontSize: 11,
+  1019→                    fontFamily: "'JetBrains Mono', monospace",
+  1020→                    color: solicitudEnvio.instrucciones.length >= 180 ? 'var(--peligro)' : 'var(--text-muted)',
+  1021→                  }}
+  1022→                >
+  1023→                  {solicitudEnvio.instrucciones.length}/200
+  1024→                </span>
+  1025→              </div>
+  1026→            </div>
+  1027→
+  1028→            {/* Frágil */}
+  1029→            <div
+  1030→              style={{
+  1031→                display: 'flex',
+  1032→                justifyContent: 'space-between',
+  1033→                alignItems: 'center',
+  1034→                padding: '14px 16px',
+  1035→                borderRadius: 12,
+  1036→                border: '1.5px solid var(--border)',
+  1037→                background: 'var(--surface)',
+  1038→              }}
+  1039→            >
+  1040→              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1041→                <ShieldCheck size={20} style={{ color: solicitudEnvio.fragil ? 'var(--warning)' : 'var(--text-muted)' }} />
+  1042→                <div>
+  1043→                  <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>Paquete frágil</span>
+  1044→                  <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginLeft: 8 }}>+C$ 10</span>
+  1045→                </div>
+  1046→              </div>
+  1047→              <ToggleSwitch
+  1048→                checked={solicitudEnvio.fragil}
+  1049→                onChange={(v) => setSolicitudEnvio({ fragil: v })}
+  1050→                label=""
+  1051→              />
+  1052→            </div>
+  1053→
+  1054→            {/* Updated quote */}
+  1055→            {costBreakdown.total > 0 && <CostCard breakdown={costBreakdown} />}
+  1056→          </div>
+  1057→        );
+  1058→
+  1059→      /* ═══ STEP 3: PAGO ═══ */
+  1060→      case 3:
+  1061→        return (
+  1062→          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+  1063→            <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+  1064→              ¿Cómo pagas?
+  1065→            </h2>
+  1066→
+  1067→            {/* Payment method cards */}
+  1068→            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+  1069→              {[
+  1070→                {
+  1071→                  key: 'efectivo' as const,
+  1072→                  label: 'Efectivo',
+  1073→                  desc: 'Paga al repartidor al recibir',
+  1074→                  icon: Banknote,
+  1075→                },
+  1076→                {
+  1077→                  key: 'transferencia' as const,
+  1078→                  label: 'Transferencia',
+  1079→                  desc: 'Transfiere antes de la entrega',
+  1080→                  icon: CreditCard,
+  1081→                },
+  1082→              ].map((method) => {
+  1083→                const isSelected = solicitudEnvio.metodoPago === method.key;
+  1084→                const Icon = method.icon;
+  1085→                return (
+  1086→                  <motion.button
+  1087→                    key={method.key}
+  1088→                    whileTap={{ scale: 0.97 }}
+  1089→                    onClick={() => setSolicitudEnvio({ metodoPago: method.key })}
+  1090→                    style={{
+  1091→                      display: 'flex',
+  1092→                      flexDirection: 'column',
+  1093→                      alignItems: 'center',
+  1094→                      gap: 10,
+  1095→                      padding: '20px 12px',
+  1096→                      borderRadius: 14,
+  1097→                      border: `2px solid ${isSelected ? 'var(--primario)' : 'var(--border)'}`,
+  1098→                      background: isSelected ? 'var(--primario-soft)' : 'var(--surface)',
+  1099→                      cursor: 'pointer',
+  1100→                      transition: 'all 0.2s ease',
+  1101→                      textAlign: 'center',
+  1102→                    }}
+  1103→                  >
+  1104→                    <Icon
+  1105→                      size={28}
+  1106→                      style={{
+  1107→                        color: isSelected ? 'var(--primario)' : 'var(--text-muted)',
+  1108→                        transition: 'color 0.2s',
+  1109→                      }}
+  1110→                    />
+  1111→                    <span
+  1112→                      style={{
+  1113→                        fontSize: 15,
+  1114→                        fontWeight: 600,
+  1115→                        color: isSelected ? 'var(--primario)' : 'var(--text)',
+  1116→                        fontFamily: "'DM Sans', sans-serif",
+  1117→                      }}
+  1118→                    >
+  1119→                      {method.label}
+  1120→                    </span>
+  1121→                    <span
+  1122→                      style={{
+  1123→                        fontSize: 12,
+  1124→                        color: 'var(--text-muted)',
+  1125→                        fontFamily: "'DM Sans', sans-serif",
+  1126→                        lineHeight: 1.3,
+  1127→                      }}
+  1128→                    >
+  1129→                      {method.desc}
+  1130→                    </span>
+  1131→                  </motion.button>
+  1132→                );
+  1133→              })}
+  1134→            </div>
+  1135→
+  1136→            {/* Conditional content for payment method */}
+  1137→            {solicitudEnvio.metodoPago === 'efectivo' && (
+  1138→              <motion.div
+  1139→                initial={{ opacity: 0, y: 8 }}
+  1140→                animate={{ opacity: 1, y: 0 }}
+  1141→                style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+  1142→              >
+  1143→                {/* Info box */}
+  1144→                <div
+  1145→                  style={{
+  1146→                    display: 'flex',
+  1147→                    alignItems: 'center',
+  1148→                    gap: 10,
+  1149→                    padding: '12px 16px',
+  1150→                    borderRadius: 12,
+  1151→                    background: 'rgba(255, 179, 0, 0.08)',
+  1152→                    border: '1px solid rgba(255, 179, 0, 0.2)',
+  1153→                  }}
+  1154→                >
+  1155→                  <Info size={18} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+  1156→                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+  1157→                    Recuerda tener el monto exacto
+  1158→                  </span>
+  1159→                </div>
+  1160→
+  1161→                {/* Change calculator */}
+  1162→                <div>
+  1163→                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+  1164→                    ¿Con cuánto vas a pagar? (opcional)
+  1165→                  </label>
+  1166→                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+  1167→                    <span style={{ fontSize: 15, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>C$</span>
+  1168→                    <input
+  1169→                      type="number"
+  1170→                      value={montoPagoInput}
+  1171→                      onChange={(e) => setMontoPagoInput(e.target.value)}
+  1172→                      placeholder="0"
+  1173→                      min={0}
+  1174→                      style={{
+  1175→                        flex: 1,
+  1176→                        padding: '12px 14px',
+  1177→                        borderRadius: 10,
+  1178→                        border: '1.5px solid var(--border)',
+  1179→                        background: 'var(--surface)',
+  1180→                        color: 'var(--text)',
+  1181→                        fontSize: 15,
+  1182→                        fontFamily: "'JetBrains Mono', monospace",
+  1183→                        outline: 'none',
+  1184→                      }}
+  1185→                    />
+  1186→                  </div>
+  1187→                  {montoPagoInput && parseInt(montoPagoInput) > costBreakdown.total && (
+  1188→                    <motion.div
+  1189→                      initial={{ opacity: 0 }}
+  1190→                      animate={{ opacity: 1 }}
+  1191→                      style={{
+  1192→                        marginTop: 8,
+  1193→                        padding: '10px 14px',
+  1194→                        borderRadius: 10,
+  1195→                        background: 'var(--bg-alt)',
+  1196→                        fontSize: 13,
+  1197→                        fontFamily: "'DM Sans', sans-serif",
+  1198→                        color: 'var(--text-secondary)',
+  1199→                      }}
+  1200→                    >
+  1201→                      Tu cambio:{' '}
+  1202→                      <span style={{ fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--exito)' }}>
+  1203→                        C$ {parseInt(montoPagoInput) - costBreakdown.total}
+  1204→                      </span>
+  1205→                    </motion.div>
+  1206→                  )}
+  1207→                  {montoPagoInput && parseInt(montoPagoInput) < costBreakdown.total && parseInt(montoPagoInput) > 0 && (
+  1208→                    <motion.div
+  1209→                      initial={{ opacity: 0 }}
+  1210→                      animate={{ opacity: 1 }}
+  1211→                      style={{
+  1212→                        marginTop: 8,
+  1213→                        padding: '10px 14px',
+  1214→                        borderRadius: 10,
+  1215→                        background: 'rgba(255,23,68,0.06)',
+  1216→                        border: '1px solid rgba(255,23,68,0.15)',
+  1217→                        fontSize: 13,
+  1218→                        fontFamily: "'DM Sans', sans-serif",
+  1219→                        color: 'var(--peligro)',
+  1220→                        display: 'flex',
+  1221→                        alignItems: 'center',
+  1222→                        gap: 8,
+  1223→                      }}
+  1224→                    >
+  1225→                      <AlertCircle size={14} />
+  1226→                      Monto insuficiente
+  1227→                    </motion.div>
+  1228→                  )}
+  1229→                </div>
+  1230→              </motion.div>
+  1231→            )}
+  1232→
+  1233→            {solicitudEnvio.metodoPago === 'transferencia' && (
+  1234→              <motion.div
+  1235→                initial={{ opacity: 0, y: 8 }}
+  1236→                animate={{ opacity: 1, y: 0 }}
+  1237→                style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+  1238→              >
+  1239→                {/* Info box with bank details */}
+  1240→                <div
+  1241→                  style={{
+  1242→                    padding: '16px',
+  1243→                    borderRadius: 12,
+  1244→                    background: 'rgba(41,121,255,0.06)',
+  1245→                    border: '1px solid rgba(41,121,255,0.15)',
+  1246→                  }}
+  1247→                >
+  1248→                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+  1249→                    <CreditCard size={16} style={{ color: 'var(--info)' }} />
+  1250→                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>Datos bancarios</span>
+  1251→                  </div>
+  1252→                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7 }}>
+  1253→                    <div><strong>Banco:</strong> BAC</div>
+  1254→                    <div><strong>Cuenta:</strong> 1234-5678-90</div>
+  1255→                    <div><strong>Titular:</strong> LOGIFAST S.A.</div>
+  1256→                  </div>
+  1257→                </div>
+  1258→
+  1259→                <button
+  1260→                  onClick={handleCopyBank}
+  1261→                  style={{
+  1262→                    display: 'flex',
+  1263→                    alignItems: 'center',
+  1264→                    justifyContent: 'center',
+  1265→                    gap: 8,
+  1266→                    padding: '12px 16px',
+  1267→                    borderRadius: 10,
+  1268→                    border: '1.5px solid var(--border)',
+  1269→                    background: 'var(--surface)',
+  1270→                    color: 'var(--text)',
+  1271→                    fontSize: 14,
+  1272→                    fontFamily: "'DM Sans', sans-serif",
+  1273→                    fontWeight: 500,
+  1274→                    cursor: 'pointer',
+  1275→                    transition: 'all 0.2s',
+  1276→                  }}
+  1277→                >
+  1278→                  <Copy size={16} />
+  1279→                  Copiar datos bancarios
+  1280→                </button>
+  1281→              </motion.div>
+  1282→            )}
+  1283→
+  1284→            {/* Promo code section */}
+  1285→            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+  1286→              {!promoExpanded ? (
+  1287→                <button
+  1288→                  onClick={() => setPromoExpanded(true)}
+  1289→                  style={{
+  1290→                    display: 'flex',
+  1291→                    alignItems: 'center',
+  1292→                    gap: 8,
+  1293→                    border: 'none',
+  1294→                    background: 'none',
+  1295→                    cursor: 'pointer',
+  1296→                    color: 'var(--primario)',
+  1297→                    fontSize: 14,
+  1298→                    fontWeight: 500,
+  1299→                    fontFamily: "'DM Sans', sans-serif",
+  1300→                    padding: 0,
+  1301→                  }}
+  1302→                >
+  1303→                  <Tag size={16} />
+  1304→                  ¿Tienes un código promocional?
+  1305→                </button>
+  1306→              ) : (
+  1307→                <motion.div
+  1308→                  initial={{ opacity: 0, height: 0 }}
+  1309→                  animate={{ opacity: 1, height: 'auto' }}
+  1310→                  style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+  1311→                >
+  1312→                  <div style={{ display: 'flex', gap: 8 }}>
+  1313→                    <input
+  1314→                      type="text"
+  1315→                      value={promoInput}
+  1316→                      onChange={(e) => {
+  1317→                        setPromoInput(e.target.value.toUpperCase());
+  1318→                        setPromoStatus('idle');
+  1319→                        setPromoMessage('');
+  1320→                      }}
+  1321→                      placeholder="Código promocional"
+  1322→                      style={{
+  1323→                        flex: 1,
+  1324→                        padding: '12px 14px',
+  1325→                        borderRadius: 10,
+  1326→                        border: '1.5px solid var(--border)',
+  1327→                        background: 'var(--surface)',
+  1328→                        color: 'var(--text)',
+  1329→                        fontSize: 14,
+  1330→                        fontFamily: "'JetBrains Mono', monospace",
+  1331→                        outline: 'none',
+  1332→                        textTransform: 'uppercase' as const,
+  1333→                      }}
+  1334→                    />
+  1335→                    <button
+  1336→                      onClick={handleApplyPromo}
+  1337→                      disabled={!promoInput.trim()}
+  1338→                      style={{
+  1339→                        padding: '12px 20px',
+  1340→                        borderRadius: 10,
+  1341→                        border: 'none',
+  1342→                        background: promoInput.trim() ? 'var(--primario)' : 'var(--border)',
+  1343→                        color: promoInput.trim() ? 'white' : 'var(--text-muted)',
+  1344→                        fontSize: 14,
+  1345→                        fontWeight: 600,
+  1346→                        fontFamily: "'DM Sans', sans-serif",
+  1347→                        cursor: promoInput.trim() ? 'pointer' : 'default',
+  1348→                        transition: 'all 0.2s',
+  1349→                      }}
+  1350→                    >
+  1351→                      Aplicar
+  1352→                    </button>
+  1353→                  </div>
+  1354→                  {promoMessage && (
+  1355→                    <motion.div
+  1356→                      initial={{ opacity: 0, y: -4 }}
+  1357→                      animate={{ opacity: 1, y: 0 }}
+  1358→                      style={{
+  1359→                        display: 'flex',
+  1360→                        alignItems: 'center',
+  1361→                        gap: 8,
+  1362→                        padding: '10px 14px',
+  1363→                        borderRadius: 10,
+  1364→                        background: promoStatus === 'valid' ? 'rgba(0,200,83,0.08)' : 'rgba(255,23,68,0.06)',
+  1365→                        border: `1px solid ${promoStatus === 'valid' ? 'rgba(0,200,83,0.2)' : 'rgba(255,23,68,0.15)'}`,
+  1366→                        fontSize: 13,
+  1367→                        fontFamily: "'DM Sans', sans-serif",
+  1368→                        color: promoStatus === 'valid' ? 'var(--exito)' : 'var(--peligro)',
+  1369→                      }}
+  1370→                    >
+  1371→                      {promoStatus === 'valid' ? <Check size={14} /> : <AlertCircle size={14} />}
+  1372→                      {promoMessage}
+  1373→                    </motion.div>
+  1374→                  )}
+  1375→                </motion.div>
+  1376→              )}
+  1377→            </div>
+  1378→
+  1379→            {/* Final cost summary */}
+  1380→            <CostCard breakdown={costBreakdown} showPromo />
+  1381→          </div>
+  1382→        );
+  1383→
+  1384→      /* ═══ STEP 4: CONFIRMAR ═══ */
+  1385→      case 4:
+  1386→        return (
+  1387→          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+  1388→            <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+  1389→              Confirma tu envío
+  1390→            </h2>
+  1391→
+  1392→            {/* Summary card */}
+  1393→            <div
+  1394→              style={{
+  1395→                background: 'var(--surface)',
+  1396→                borderRadius: 16,
+  1397→                border: '1.5px solid var(--border)',
+  1398→                overflow: 'hidden',
+  1399→              }}
+  1400→            >
+  1401→              {/* Route section */}
+  1402→              <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
+  1403→                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12, fontFamily: "'DM Sans', sans-serif" }}>
+  1404→                  Ruta
+  1405→                </div>
+  1406→                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+  1407→                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1408→                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--exito)', boxShadow: '0 0 0 3px rgba(0,200,83,0.2)', flexShrink: 0 }} />
+  1409→                    <span style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>{solicitudEnvio.origen}</span>
+  1410→                  </div>
+  1411→                  <div style={{ width: 1, height: 12, background: 'var(--border)', marginLeft: 5.5 }} />
+  1412→                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1413→                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--primario)', boxShadow: '0 0 0 3px rgba(255,87,34,0.2)', flexShrink: 0 }} />
+  1414→                    <span style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>{solicitudEnvio.destino}</span>
+  1415→                  </div>
+  1416→                </div>
+  1417→                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+  1418→                  {costBreakdown.distanceKm.toFixed(1)} km • {costBreakdown.estimatedTime}
+  1419→                </div>
+  1420→              </div>
+  1421→
+  1422→              {/* Package section */}
+  1423→              <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
+  1424→                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+  1425→                  Paquete
+  1426→                </div>
+  1427→                <div style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>
+  1428→                  {solicitudEnvio.descripcion}
+  1429→                </div>
+  1430→                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+  1431→                  <span
+  1432→                    style={{
+  1433→                      padding: '4px 10px',
+  1434→                      borderRadius: 6,
+  1435→                      background: 'var(--bg-alt)',
+  1436→                      fontSize: 12,
+  1437→                      fontWeight: 500,
+  1438→                      fontFamily: "'DM Sans', sans-serif",
+  1439→                      color: 'var(--text-secondary)',
+  1440→                    }}
+  1441→                  >
+  1442→                    {SIZE_OPTIONS.find((s) => s.key === solicitudEnvio.tamano)?.label}
+  1443→                  </span>
+  1444→                  {solicitudEnvio.fragil && (
+  1445→                    <span
+  1446→                      style={{
+  1447→                        padding: '4px 10px',
+  1448→                        borderRadius: 6,
+  1449→                        background: 'rgba(255,179,0,0.1)',
+  1450→                        fontSize: 12,
+  1451→                        fontWeight: 500,
+  1452→                        fontFamily: "'DM Sans', sans-serif",
+  1453→                        color: 'var(--warning)',
+  1454→                      }}
+  1455→                    >
+  1456→                      Frágil
+  1457→                    </span>
+  1458→                  )}
+  1459→                </div>
+  1460→              </div>
+  1461→
+  1462→              {/* Payment section */}
+  1463→              <div style={{ padding: 20 }}>
+  1464→                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+  1465→                  Pago
+  1466→                </div>
+  1467→                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+  1468→                  {solicitudEnvio.metodoPago === 'efectivo' ? (
+  1469→                    <Banknote size={16} style={{ color: 'var(--exito)' }} />
+  1470→                  ) : (
+  1471→                    <CreditCard size={16} style={{ color: 'var(--info)' }} />
+  1472→                  )}
+  1473→                  <span style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+  1474→                    {solicitudEnvio.metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+  1475→                  </span>
+  1476→                </div>
+  1477→                {solicitudEnvio.codigoPromo && (
+  1478→                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+  1479→                    <Tag size={14} style={{ color: 'var(--exito)' }} />
+  1480→                    <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--exito)' }}>
+  1481→                      {solicitudEnvio.codigoPromo}
+  1482→                    </span>
+  1483→                  </div>
+  1484→                )}
+  1485→                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1.5px solid var(--border)' }}>
+  1486→                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>Total</span>
+  1487→                  <span style={{ fontSize: 20, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+  1488→                    {formatCordobas(costBreakdown.total)}
+  1489→                  </span>
+  1490→                </div>
+  1491→              </div>
+  1492→            </div>
+  1493→
+  1494→            {/* Terms checkbox */}
+  1495→            <div
+  1496→              onClick={() => setSolicitudEnvio({ terminosAceptados: !solicitudEnvio.terminosAceptados })}
+  1497→              style={{
+  1498→                display: 'flex',
+  1499→                alignItems: 'flex-start',
+  1500→                gap: 10,
+  1501→                cursor: 'pointer',
+  1502→                padding: '12px 14px',
+  1503→                borderRadius: 12,
+  1504→                border: solicitudEnvio.terminosAceptados ? '1.5px solid var(--primario)' : '1.5px solid var(--border)',
+  1505→                background: solicitudEnvio.terminosAceptados ? 'var(--primario-soft)' : 'transparent',
+  1506→                transition: 'all 0.2s',
+  1507→              }}
+  1508→            >
+  1509→              <div
+  1510→                style={{
+  1511→                  width: 22,
+  1512→                  height: 22,
+  1513→                  borderRadius: 6,
+  1514→                  border: `2px solid ${solicitudEnvio.terminosAceptados ? 'var(--primario)' : 'var(--border)'}`,
+  1515→                  background: solicitudEnvio.terminosAceptados ? 'var(--primario)' : 'transparent',
+  1516→                  display: 'flex',
+  1517→                  alignItems: 'center',
+  1518→                  justifyContent: 'center',
+  1519→                  flexShrink: 0,
+  1520→                  marginTop: 1,
+  1521→                  transition: 'all 0.2s',
+  1522→                }}
+  1523→              >
+  1524→                {solicitudEnvio.terminosAceptados && <Check size={14} strokeWidth={3} color="white" />}
+  1525→              </div>
+  1526→              <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>
+  1527→                Acepto los términos de servicio del envío
+  1528→              </span>
+  1529→            </div>
+  1530→          </div>
+  1531→        );
+  1532→
+  1533→      default:
+  1534→        return null;
+  1535→    }
+  1536→  };
+  1537→
+  1538→  /* ═══ CONFIRMATION SCREEN ═══ */
+  1539→  if (confirmed) {
+  1540→    return (
+  1541→      <div style={{ maxWidth: 480, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
+  1542→        <motion.div
+  1543→          initial={{ scale: 0.5, opacity: 0 }}
+  1544→          animate={{ scale: 1, opacity: 1 }}
+  1545→          transition={{ duration: 0.5, ease: 'easeOut' }}
+  1546→          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}
+  1547→        >
+  1548→          <CheckAnimation />
+  1549→          <h2 style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--exito)', margin: 0 }}>
+  1550→            ¡Envío confirmado!
+  1551→          </h2>
+  1552→          <p style={{ fontSize: 15, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>
+  1553→            Orden <span style={{ fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>#{confirmedOrderId}</span> creada exitosamente
+  1554→          </p>
+  1555→
+  1556→          {/* Quick details */}
+  1557→          <div
+  1558→            style={{
+  1559→              background: 'var(--surface)',
+  1560→              borderRadius: 14,
+  1561→              border: '1.5px solid var(--border)',
+  1562→              padding: 20,
+  1563→              width: '100%',
+  1564→              textAlign: 'left',
+  1565→            }}
+  1566→          >
+  1567→            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+  1568→              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+  1569→                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--exito)' }} />
+  1570→                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{solicitudEnvio.origen}</span>
+  1571→              </div>
+  1572→            </div>
+  1573→            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+  1574→              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+  1575→                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primario)' }} />
+  1576→                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{solicitudEnvio.destino}</span>
+  1577→              </div>
+  1578→            </div>
+  1579→            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  1580→              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+  1581→                {solicitudEnvio.metodoPago === 'efectivo' ? <Banknote size={14} style={{ color: 'var(--exito)' }} /> : <CreditCard size={14} style={{ color: 'var(--info)' }} />}
+  1582→                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+  1583→                  {solicitudEnvio.metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+  1584→                </span>
+  1585→              </div>
+  1586→              <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+  1587→                {formatCordobas(costBreakdown.total)}
+  1588→              </span>
+  1589→            </div>
+  1590→          </div>
+  1591→
+  1592→          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 8 }}>
+  1593→            <button
+  1594→              onClick={() => onNavigate('envios')}
+  1595→              style={{
+  1596→                width: '100%',
+  1597→                padding: '14px 20px',
+  1598→                borderRadius: 12,
+  1599→                border: 'none',
+  1600→                background: 'var(--primario)',
+  1601→                color: 'white',
+  1602→                fontSize: 15,
+  1603→                fontWeight: 600,
+  1604→                fontFamily: "'DM Sans', sans-serif",
+  1605→                cursor: 'pointer',
+  1606→                transition: 'background 0.2s',
+  1607→                display: 'flex',
+  1608→                alignItems: 'center',
+  1609→                justifyContent: 'center',
+  1610→                gap: 8,
+  1611→              }}
+  1612→              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--primario-hover)'; }}
+  1613→              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--primario)'; }}
+  1614→            >
+  1615→              <Truck size={18} />
+  1616→              Rastrear envío
+  1617→            </button>
+  1618→            <button
+  1619→              onClick={() => {
+  1620→                resetSolicitudEnvio();
+  1621→                onNavigate('inicio');
+  1622→              }}
+  1623→              style={{
+  1624→                width: '100%',
+  1625→                padding: '14px 20px',
+  1626→                borderRadius: 12,
+  1627→                border: '1.5px solid var(--border)',
+  1628→                background: 'transparent',
+  1629→                color: 'var(--text-secondary)',
+  1630→                fontSize: 15,
+  1631→                fontWeight: 500,
+  1632→                fontFamily: "'DM Sans', sans-serif",
+  1633→                cursor: 'pointer',
+  1634→                transition: 'all 0.2s',
+  1635→              }}
+  1636→            >
+  1637→              Volver al inicio
+  1638→            </button>
+  1639→          </div>
+  1640→        </motion.div>
+  1641→      </div>
+  1642→    );
+  1643→  }
+  1644→
+  1645→  /* ═══ MAIN WIZARD ═══ */
+  1646→  return (
+  1647→    <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 16px 24px', position: 'relative' }}>
+  1648→      {/* Progress Bar */}
+  1649→      <ProgressBar currentStep={currentStep} />
+  1650→
+  1651→      {/* Step Content with animation */}
+  1652→      <AnimatePresence mode="wait" custom={direction}>
+  1653→        <motion.div
+  1654→          key={currentStep}
+  1655→          custom={direction}
+  1656→          variants={slideVariants}
+  1657→          initial="enter"
+  1658→          animate="center"
+  1659→          exit="exit"
+  1660→          transition={{ duration: 0.3, ease: 'easeInOut' }}
+  1661→        >
+  1662→          {renderStep()}
+  1663→        </motion.div>
+  1664→      </AnimatePresence>
+  1665→
+  1666→      {/* Navigation Buttons */}
+  1667→      <div
+  1668→        style={{
+  1669→          display: 'flex',
+  1670→          justifyContent: 'space-between',
+  1671→          alignItems: 'center',
+  1672→          marginTop: 28,
+  1673→          gap: 12,
+  1674→        }}
+  1675→      >
+  1676→        {currentStep > 1 ? (
+  1677→          <button
+  1678→            onClick={() => goToStep((currentStep - 1) as WizardStep)}
+  1679→            style={{
+  1680→              display: 'flex',
+  1681→              alignItems: 'center',
+  1682→              gap: 6,
+  1683→              padding: '12px 20px',
+  1684→              borderRadius: 12,
+  1685→              border: '1.5px solid var(--border)',
+  1686→              background: 'transparent',
+  1687→              color: 'var(--text-secondary)',
+  1688→              fontSize: 14,
+  1689→              fontWeight: 500,
+  1690→              fontFamily: "'DM Sans', sans-serif",
+  1691→              cursor: 'pointer',
+  1692→              transition: 'all 0.2s',
+  1693→            }}
+  1694→          >
+  1695→            <ChevronLeft size={18} />
+  1696→            {currentStep === 4 ? 'Modificar' : 'Anterior'}
+  1697→          </button>
+  1698→        ) : (
+  1699→          <div />
+  1700→        )}
+  1701→
+  1702→        {currentStep < 4 ? (
+  1703→          <motion.button
+  1704→            whileTap={{ scale: canContinue() ? 0.97 : 1 }}
+  1705→            onClick={() => canContinue() && goToStep((currentStep + 1) as WizardStep)}
+  1706→            disabled={!canContinue()}
+  1707→            style={{
+  1708→              display: 'flex',
+  1709→              alignItems: 'center',
+  1710→              gap: 6,
+  1711→              padding: '12px 24px',
+  1712→              borderRadius: 12,
+  1713→              border: 'none',
+  1714→              background: canContinue() ? 'var(--primario)' : 'var(--border)',
+  1715→              color: canContinue() ? 'white' : 'var(--text-muted)',
+  1716→              fontSize: 14,
+  1717→              fontWeight: 600,
+  1718→              fontFamily: "'DM Sans', sans-serif",
+  1719→              cursor: canContinue() ? 'pointer' : 'default',
+  1720→              transition: 'all 0.2s',
+  1721→            }}
+  1722→          >
+  1723→            Continuar
+  1724→            <ChevronRight size={18} />
+  1725→          </motion.button>
+  1726→        ) : (
+  1727→          <motion.button
+  1728→            whileTap={{ scale: canContinue() ? 0.97 : 1 }}
+  1729→            onClick={canContinue() ? handleConfirm : undefined}
+  1730→            disabled={!canContinue() || confirming}
+  1731→            style={{
+  1732→              display: 'flex',
+  1733→              alignItems: 'center',
+  1734→              justifyContent: 'center',
+  1735→              gap: 8,
+  1736→              padding: '14px 28px',
+  1737→              borderRadius: 12,
+  1738→              border: 'none',
+  1739→              background: canContinue() && !confirming ? 'var(--primario)' : 'var(--border)',
+  1740→              color: canContinue() && !confirming ? 'white' : 'var(--text-muted)',
+  1741→              fontSize: 15,
+  1742→              fontWeight: 700,
+  1743→              fontFamily: "'DM Sans', sans-serif",
+  1744→              cursor: canContinue() && !confirming ? 'pointer' : 'default',
+  1745→              transition: 'all 0.2s',
+  1746→              minWidth: 160,
+  1747→            }}
+  1748→          >
+  1749→            {confirming ? (
+  1750→              <motion.div
+  1751→                animate={{ rotate: 360 }}
+  1752→                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+  1753→                style={{
+  1754→                  width: 20,
+  1755→                  height: 20,
+  1756→                  border: '2.5px solid rgba(255,255,255,0.3)',
+  1757→                  borderTopColor: 'white',
+  1758→                  borderRadius: '50%',
+  1759→                }}
+  1760→              />
+  1761→            ) : (
+  1762→              <>
+  1763→                <Check size={18} />
+  1764→                Confirmar envío
+  1765→              </>
+  1766→            )}
+  1767→          </motion.button>
+  1768→        )}
+  1769→      </div>
+  1770→
+  1771→      {/* Toast notification */}
+  1772→      <AnimatePresence>
+  1773→        {toast && (
+  1774→          <motion.div
+  1775→            initial={{ opacity: 0, y: 20 }}
+  1776→            animate={{ opacity: 1, y: 0 }}
+  1777→            exit={{ opacity: 0, y: 20 }}
+  1778→            style={{
+  1779→              position: 'fixed',
+  1780→              bottom: 24,
+  1781→              left: '50%',
+  1782→              transform: 'translateX(-50%)',
+  1783→              padding: '12px 20px',
+  1784→              borderRadius: 12,
+  1785→              background:
+  1786→                toast.variant === 'success'
+  1787→                  ? 'var(--exito)'
+  1788→                  : toast.variant === 'error'
+  1789→                    ? 'var(--peligro)'
+  1790→                    : 'var(--info)',
+  1791→              color: 'white',
+  1792→              fontSize: 14,
+  1793→              fontWeight: 500,
+  1794→              fontFamily: "'DM Sans', sans-serif",
+  1795→              boxShadow: 'var(--shadow-lg)',
+  1796→              zIndex: 9999,
+  1797→              display: 'flex',
+  1798→              alignItems: 'center',
+  1799→              gap: 8,
+  1800→              maxWidth: '90vw',
+  1801→            }}
+  1802→          >
+  1803→            {toast.variant === 'success' && <Check size={16} />}
+  1804→            {toast.variant === 'error' && <AlertCircle size={16} />}
+  1805→            {toast.variant === 'info' && <Info size={16} />}
+  1806→            {toast.message}
+  1807→          </motion.div>
+  1808→        )}
+  1809→      </AnimatePresence>
+  1810→    </div>
+  1811→  );
+  1812→}
+  1813→

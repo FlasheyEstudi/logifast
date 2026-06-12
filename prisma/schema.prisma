@@ -186,3 +186,129 @@ model FeatureFlag {
   descripcion String
   habilitado  Boolean @default(false)
 }
+
+// ─── Marketplace Models ───
+
+model Tienda {
+  id            String   @id @default(cuid())
+  nombre        String
+  descripcion   String?
+  categoria     String   // comida, tienda, farmacia, regalos, supermercado, tecnologia, deportes
+  logoColor     String   @default("#FF5722")
+  logoIniciales String
+  portadaColor  String   @default("#1B1B2F")
+  direccion     String
+  lat           Float
+  lng           Float
+  telefono      String?
+  email         String?
+  calificacion  Float    @default(0)
+  totalPedidos  Int      @default(0)
+  tiempoEstimado String  @default("25-35 min")
+  costoEnvio    Float    @default(20)
+  pedidoMinimo  Float    @default(50)
+  horario       String   // JSON
+  zonaCobertura String   @default("[]") // JSON array
+  verificado    Boolean  @default(false)
+  popular       Boolean  @default(false)
+  estado        String   @default("activo")
+  propietarioId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  productos     Producto[]
+  resenas       ResenaTienda[]
+  favoritos     FavoritoTienda[]
+  ordenes       OrdenCompra[]
+}
+
+model Producto {
+  id             String   @id @default(cuid())
+  tiendaId       String
+  categoriaNombre String? // "Entradas", "Platos fuertes", etc.
+  nombre         String
+  descripcion    String?
+  precio         Float
+  precioOriginal Float?
+  imagenColor    String   @default("#E8E4DE")
+  disponible     Boolean  @default(true)
+  esNuevo        Boolean  @default(false)
+  esPopular      Boolean  @default(false)
+  stock          Int?
+  posicion       Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  tienda         Tienda  @relation(fields: [tiendaId], references: [id])
+  favoritos      FavoritoProducto[]
+  itemsOrden     ItemOrdenCompra[]
+}
+
+model OrdenCompra {
+  id              String   @id @default(cuid())
+  clienteId       String
+  tiendaId        String
+  repartidorId    String?
+  estado          String   @default("recibido")
+  direccionEntrega String
+  lat             Float    @default(0)
+  lng             Float    @default(0)
+  instrucciones   String?
+  metodoPago      String   @default("efectivo")
+  subtotal        Float
+  costoEnvio      Float
+  descuento       Float    @default(0)
+  codigoUsado     String?
+  total           Float
+  programadoPara  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tienda          Tienda            @relation(fields: [tiendaId], references: [id])
+  items           ItemOrdenCompra[]
+  resenas         ResenaTienda[]
+}
+
+model ItemOrdenCompra {
+  id             String  @id @default(cuid())
+  ordenId        String
+  productoId     String
+  nombreProducto String
+  cantidad       Int
+  precioUnitario Float
+  variante       String?
+  notas          String?
+
+  orden          OrdenCompra @relation(fields: [ordenId], references: [id])
+  producto       Producto   @relation(fields: [productoId], references: [id])
+}
+
+model FavoritoTienda {
+  id        String   @id @default(cuid())
+  clienteId String
+  tiendaId  String
+  createdAt DateTime @default(now())
+
+  tienda    Tienda @relation(fields: [tiendaId], references: [id])
+}
+
+model FavoritoProducto {
+  id         String   @id @default(cuid())
+  clienteId  String
+  productoId String
+  createdAt  DateTime @default(now())
+
+  producto   Producto @relation(fields: [productoId], references: [id])
+}
+
+model ResenaTienda {
+  id         String   @id @default(cuid())
+  tiendaId   String
+  clienteId  String
+  ordenId    String?
+  estrellas  Int
+  comentario String?
+  createdAt  DateTime @default(now())
+
+  tienda     Tienda @relation(fields: [tiendaId], references: [id])
+  orden      OrdenCompra? @relation(fields: [ordenId], references: [id])
+}

@@ -1,0 +1,402 @@
+   600→    repartidor: null, repartidorInitials: '',
+   601→    descripcion: 'Artículos de oficina', monto: 160, estado: 'pendiente',
+   602→    metodoPago: 'transferencia', estadoPago: 'pendiente', fecha: '2026-06-07', hora: '10:00',
+   603→    timeline: [
+   604→      { step: 'Orden creada', hora: '10:00', completado: true },
+   605→      { step: 'En camino', hora: '—', completado: false },
+   606→      { step: 'Recogida', hora: '—', completado: false },
+   607→      { step: 'Entregada', hora: '—', completado: false },
+   608→    ],
+   609→  },
+   610→  {
+   611→    id: 'LF-2834', cliente: 'Raúl Castillo', clienteTelefono: '+505 8888-8642',
+   612→    origen: 'Monseñor Lezcano', destino: 'Reparto Schick',
+   613→    origenLat: 12.0980, origenLng: -86.2310, destinoLat: 12.1080, destinoLng: -86.2400,
+   614→    repartidor: 'Rosa Díaz', repartidorInitials: 'RD',
+   615→    descripcion: 'Libros y material escolar', monto: 75, estado: 'entregado',
+   616→    metodoPago: 'efectivo', estadoPago: 'pagado', fecha: '2026-06-07', hora: '14:15',
+   617→    calificacion: 3,
+   618→    timeline: [
+   619→      { step: 'Orden creada', hora: '14:15', completado: true },
+   620→      { step: 'En camino', hora: '14:22', completado: true },
+   621→      { step: 'Recogida', hora: '14:35', completado: true },
+   622→      { step: 'Entregada', hora: '14:58', completado: true },
+   623→    ],
+   624→  },
+   625→  {
+   626→    id: 'LF-2833', cliente: 'Daniela Mendoza', clienteTelefono: '+505 8888-7531',
+   627→    origen: 'Galerías Santo Domingo', destino: 'Monseñor Lezcano',
+   628→    origenLat: 12.0900, origenLng: -86.2180, destinoLat: 12.0980, destinoLng: -86.2310,
+   629→    repartidor: 'Miguel Sevilla', repartidorInitials: 'MS',
+   630→    descripcion: 'Regalo de cumpleaños', monto: 195, estado: 'recogido',
+   631→    metodoPago: 'transferencia', estadoPago: 'pagado', fecha: '2026-06-06', hora: '11:30',
+   632→    timeline: [
+   633→      { step: 'Orden creada', hora: '11:30', completado: true },
+   634→      { step: 'En camino', hora: '11:38', completado: true },
+   635→      { step: 'Recogida', hora: '11:52', completado: true },
+   636→      { step: 'Entregada', hora: '—', completado: false },
+   637→    ],
+   638→  },
+   639→];
+   640→
+   641→const MOCK_MOTOS: Moto[] = [
+   642→  { id: 'Moto-01', nombre: 'Moto-01', modelo: 'Honda Wave 110', anio: 2022, placa: 'M-1234', status: 'available', lat: 12.1140, lng: -86.2350, km: 3200, repartidorAsignado: 'Luis Ramos', ultimoMantenimiento: '2026-05-15', proximoMantenimiento: '2026-07-15', costoTotalMantenimiento: 4500 },
+   643→  { id: 'Moto-02', nombre: 'Moto-02', modelo: 'Yamaha NMAX 155', anio: 2023, placa: 'M-2345', status: 'in-service', lat: 12.1250, lng: -86.2500, km: 2800, repartidorAsignado: 'Rosa Díaz', ultimoMantenimiento: '2026-05-20', proximoMantenimiento: '2026-07-20', costoTotalMantenimiento: 6200 },
+   644→  { id: 'Moto-03', nombre: 'Moto-03', modelo: 'Honda Wave 110', anio: 2021, placa: 'M-3456', status: 'in-service', lat: 12.1050, lng: -86.2400, km: 3100, repartidorAsignado: 'Carlos Mendoza', ultimoMantenimiento: '2026-04-10', proximoMantenimiento: '2026-06-10', costoTotalMantenimiento: 3800 },
+   645→  { id: 'Moto-04', nombre: 'Moto-04', modelo: 'Suzuki Address 155', anio: 2023, placa: 'M-4567', status: 'available', lat: 12.1300, lng: -86.2600, km: 2600, repartidorAsignado: 'María García', ultimoMantenimiento: '2026-05-28', proximoMantenimiento: '2026-07-28', costoTotalMantenimiento: 5100 },
+   646→  { id: 'Moto-05', nombre: 'Moto-05', modelo: 'Honda Wave 125', anio: 2020, placa: 'M-5678', status: 'maintenance', lat: 12.0950, lng: -86.2300, km: 3500, repartidorAsignado: null, ultimoMantenimiento: '2026-06-01', proximoMantenimiento: '2026-06-15', costoTotalMantenimiento: 7200 },
+   647→  { id: 'Moto-06', nombre: 'Moto-06', modelo: 'Yamaha FZ-S V3', anio: 2022, placa: 'M-6789', status: 'in-service', lat: 12.1100, lng: -86.2200, km: 4200, repartidorAsignado: 'Elena Vargas', ultimoMantenimiento: '2026-05-10', proximoMantenimiento: '2026-07-10', costoTotalMantenimiento: 5600 },
+   648→  { id: 'Moto-07', nombre: 'Moto-07', modelo: 'Honda Wave 110', anio: 2023, placa: 'M-7890', status: 'available', lat: 12.1200, lng: -86.2700, km: 1800, repartidorAsignado: 'Jorge Pérez', ultimoMantenimiento: '2026-06-05', proximoMantenimiento: '2026-08-05', costoTotalMantenimiento: 2200 },
+   649→  { id: 'Moto-08', nombre: 'Moto-08', modelo: 'Suzuki Burgman 125', anio: 2022, placa: 'M-8901', status: 'available', lat: 12.1000, lng: -86.2550, km: 2100, repartidorAsignado: 'Miguel Sevilla', ultimoMantenimiento: '2026-05-22', proximoMantenimiento: '2026-07-22', costoTotalMantenimiento: 3400 },
+   650→  { id: 'Moto-09', nombre: 'Moto-09', modelo: 'Honda PCX 160', anio: 2024, placa: 'M-9012', status: 'in-service', lat: 12.0900, lng: -86.2150, km: 1200, repartidorAsignado: 'Ana Torres', ultimoMantenimiento: '2026-06-01', proximoMantenimiento: '2026-08-01', costoTotalMantenimiento: 1800 },
+   651→  { id: 'Moto-10', nombre: 'Moto-10', modelo: 'Yamaha NMAX 155', anio: 2021, placa: 'M-0123', status: 'maintenance', lat: 12.1150, lng: -86.2450, km: 8500, repartidorAsignado: null, ultimoMantenimiento: '2026-06-08', proximoMantenimiento: '2026-06-20', costoTotalMantenimiento: 9500 },
+   652→  { id: 'Moto-11', nombre: 'Moto-11', modelo: 'Honda Wave 125', anio: 2023, placa: 'M-1122', status: 'available', lat: 12.1350, lng: -86.2350, km: 1500, repartidorAsignado: null, ultimoMantenimiento: '2026-05-30', proximoMantenimiento: '2026-07-30', costoTotalMantenimiento: 2000 },
+   653→  { id: 'Moto-12', nombre: 'Moto-12', modelo: 'Suzuki Address 110', anio: 2022, placa: 'M-2233', status: 'available', lat: 12.1080, lng: -86.2100, km: 2800, repartidorAsignado: null, ultimoMantenimiento: '2026-05-18', proximoMantenimiento: '2026-07-18', costoTotalMantenimiento: 4200 },
+   654→];
+   655→
+   656→const MOCK_RIDERS: Rider[] = [
+   657→  { id: 'R-01', nombre: 'Carlos Mendoza', email: 'carlos@logifast.com', telefono: '+505 8888-1001', initials: 'CM', color: '#002A5C', status: 'in-service', motoId: 'Moto-03', entregasHoy: 5, kmHoy: 28, entregasTotal: 342, kmTotal: 12400, calificacion: 4.8, conectado: true },
+   658→  { id: 'R-02', nombre: 'Ana Torres', email: 'ana@logifast.com', telefono: '+505 8888-1002', initials: 'AT', color: '#FF6600', status: 'in-service', motoId: 'Moto-09', entregasHoy: 4, kmHoy: 22, entregasTotal: 298, kmTotal: 10800, calificacion: 4.9, conectado: true },
+   659→  { id: 'R-03', nombre: 'Luis Ramos', email: 'luis@logifast.com', telefono: '+505 8888-1003', initials: 'LR', color: '#002A5C', status: 'available', motoId: 'Moto-01', entregasHoy: 3, kmHoy: 15, entregasTotal: 267, kmTotal: 9600, calificacion: 4.5, conectado: true },
+   660→  { id: 'R-04', nombre: 'María García', email: 'maria@logifast.com', telefono: '+505 8888-1004', initials: 'MG', color: '#FF6600', status: 'available', motoId: 'Moto-04', entregasHoy: 2, kmHoy: 10, entregasTotal: 215, kmTotal: 8200, calificacion: 4.7, conectado: true },
+   661→  { id: 'R-05', nombre: 'Jorge Pérez', email: 'jorge@logifast.com', telefono: '+505 8888-1005', initials: 'JP', color: '#002A5C', status: 'available', motoId: 'Moto-07', entregasHoy: 3, kmHoy: 18, entregasTotal: 189, kmTotal: 7400, calificacion: 4.3, conectado: true },
+   662→  { id: 'R-06', nombre: 'Rosa Díaz', email: 'rosa@logifast.com', telefono: '+505 8888-1006', initials: 'RD', color: '#FF6600', status: 'in-service', motoId: 'Moto-02', entregasHoy: 4, kmHoy: 25, entregasTotal: 312, kmTotal: 11200, calificacion: 4.6, conectado: true },
+   663→  { id: 'R-07', nombre: 'Miguel Sevilla', email: 'miguel@logifast.com', telefono: '+505 8888-1007', initials: 'MS', color: '#002A5C', status: 'available', motoId: 'Moto-08', entregasHoy: 1, kmHoy: 8, entregasTotal: 156, kmTotal: 6800, calificacion: 4.4, conectado: true },
+   664→  { id: 'R-08', nombre: 'Elena Vargas', email: 'elena@logifast.com', telefono: '+505 8888-1008', initials: 'EV', color: '#FF6600', status: 'in-service', motoId: 'Moto-06', entregasHoy: 3, kmHoy: 20, entregasTotal: 203, kmTotal: 7900, calificacion: 4.2, conectado: true },
+   665→];
+   666→
+   667→const MOCK_ALERTS: Alert[] = [
+   668→  { id: 'A-01', tipo: 'mantenimiento', titulo: 'Mantenimiento vencido', msg: 'Kilometraje excedido en 500km', motoId: 'Moto-05', tiempo: 'Hace 2h', severidad: 'alta' },
+   669→  { id: 'A-02', tipo: 'bateria', titulo: 'Batería baja', msg: 'Nivel de batería al 12%', motoId: 'Moto-10', tiempo: 'Hace 45min', severidad: 'media' },
+   670→  { id: 'A-03', tipo: 'incidencia', titulo: 'Incidencia reportada', msg: 'Accidente menor, sin heridos', motoId: 'Moto-06', tiempo: 'Hace 30min', severidad: 'alta' },
+   671→  { id: 'A-04', tipo: 'retraso', titulo: 'Entrega retrasada', msg: '15 min sobre ETA estimada', motoId: 'Moto-03', tiempo: 'Hace 10min', severidad: 'baja' },
+   672→  { id: 'A-05', tipo: 'mantenimiento', titulo: 'Próximo mantenimiento', msg: 'Programar servicio para 15 Jun', motoId: 'Moto-09', tiempo: 'Hace 1h', severidad: 'media' },
+   673→];
+   674→
+   675→const DAILY_REVENUE: DailyRevenue[] = [
+   676→  { dia: 'Lun', monto: 5200 }, { dia: 'Mar', monto: 7800 },
+   677→  { dia: 'Mié', monto: 6100 }, { dia: 'Jue', monto: 9200 },
+   678→  { dia: 'Vie', monto: 8450 }, { dia: 'Sáb', monto: 7100 },
+   679→  { dia: 'Dom', monto: 4400 },
+   680→];
+   681→
+   682→const MONTHLY_REVENUE: MonthlyRevenue[] = [
+   683→  { mes: 'Ene', monto: 12000 }, { mes: 'Feb', monto: 14500 },
+   684→  { mes: 'Mar', monto: 13200 }, { mes: 'Abr', monto: 16800 },
+   685→  { mes: 'May', monto: 15400 }, { mes: 'Jun', monto: 18200 },
+   686→  { mes: 'Jul', monto: 17500 }, { mes: 'Ago', monto: 19800 },
+   687→  { mes: 'Sep', monto: 21000 }, { mes: 'Oct', monto: 19500 },
+   688→  { mes: 'Nov', monto: 22000 }, { mes: 'Dic', monto: 24500 },
+   689→];
+   690→
+   691→const ZONE_ORDERS: ZoneOrder[] = [
+   692→  { zona: 'Centro', cantidad: 45 },
+   693→  { zona: 'Villa Fontana', cantidad: 32 },
+   694→  { zona: 'Los Robles', cantidad: 28 },
+   695→  { zona: 'Bello Horizonte', cantidad: 21 },
+   696→  { zona: 'Monseñor Lezcano', cantidad: 15 },
+   697→  { zona: 'Reparto Schick', cantidad: 12 },
+   698→];
+   699→
+   700→const RIDER_PERFORMANCE: RiderPerformance[] = [
+   701→  { nombre: 'Carlos M.', entregas: 28 },
+   702→  { nombre: 'Ana T.', entregas: 24 },
+   703→  { nombre: 'Luis R.', entregas: 21 },
+   704→  { nombre: 'María G.', entregas: 19 },
+   705→  { nombre: 'Jorge P.', entregas: 16 },
+   706→  { nombre: 'Rosa D.', entregas: 14 },
+   707→  { nombre: 'Miguel S.', entregas: 12 },
+   708→  { nombre: 'Elena V.', entregas: 10 },
+   709→];
+   710→
+   711→const ORDER_STATUS_DISTRIBUTION = [
+   712→  { name: 'Pendiente', value: 2, color: '#FBBF24' },
+   713→  { name: 'En camino', value: 3, color: '#FF6600' },
+   714→  { name: 'Recogido', value: 2, color: '#3B82F6' },
+   715→  { name: 'Entregado', value: 6, color: '#16A34A' },
+   716→  { name: 'Incidencia', value: 2, color: '#DC2626' },
+   717→];
+   718→
+   719→const MOCK_ZONES: Zone[] = [
+   720→  { id: 'Z-01', nombre: 'Centro Managua', tarifa: 50, activa: true },
+   721→  { id: 'Z-02', nombre: 'Villa Fontana', tarifa: 65, activa: true },
+   722→  { id: 'Z-03', nombre: 'Los Robles', tarifa: 60, activa: true },
+   723→  { id: 'Z-04', nombre: 'Bello Horizonte', tarifa: 75, activa: true },
+   724→  { id: 'Z-05', nombre: 'Monseñor Lezcano', tarifa: 55, activa: true },
+   725→  { id: 'Z-06', nombre: 'Reparto Schick', tarifa: 60, activa: false },
+   726→];
+   727→
+   728→const MOCK_MAINTENANCE_RULES: MaintenanceRule[] = [
+   729→  { id: 'MR-01', tipo: 'Cambio de aceite', umbralKm: 2000, descripcion: 'Cambiar aceite del motor y filtro' },
+   730→  { id: 'MR-02', tipo: 'Revisión de frenos', umbralKm: 5000, descripcion: 'Inspeccionar pastillas y disco de freno' },
+   731→  { id: 'MR-03', tipo: 'Cambio de llantas', umbralKm: 8000, descripcion: 'Revisar y cambiar llantas si es necesario' },
+   732→  { id: 'MR-04', tipo: 'Afinación mayor', umbralKm: 10000, descripcion: 'Afinación completa del motor' },
+   733→  { id: 'MR-05', tipo: 'Revisión eléctrica', umbralKm: 6000, descripcion: 'Revisar sistema eléctrico y batería' },
+   734→  { id: 'MR-06', tipo: 'Cambio de cadena', umbralKm: 12000, descripcion: 'Reemplazar cadena y piñón' },
+   735→];
+   736→
+   737→const COMPANY_DATA: CompanyData = {
+   738→  nombre: 'LOGIFAST S.A.',
+   739→  direccion: 'Centro Comercial Managua, Local 204',
+   740→  telefono: '+505 2266-0000',
+   741→  email: 'info@logifast.com',
+   742→};
+   743→
+   744→const MOCK_USERS: SystemUser[] = [
+   745→  { id: 'U-01', nombre: 'Admin Demo', email: 'admin@logifast.com', rol: 'Administrador', activo: true },
+   746→  { id: 'U-02', nombre: 'Carlos Mendoza', email: 'carlos@logifast.com', rol: 'Repartidor', activo: true },
+   747→  { id: 'U-03', nombre: 'Ana Torres', email: 'ana@logifast.com', rol: 'Repartidor', activo: true },
+   748→  { id: 'U-04', nombre: 'Luis Ramos', email: 'luis@logifast.com', rol: 'Repartidor', activo: true },
+   749→  { id: 'U-05', nombre: 'María García', email: 'maria@logifast.com', rol: 'Repartidor', activo: true },
+   750→  { id: 'U-06', nombre: 'Roberto Ing.', email: 'ingeniero@logifast.com', rol: 'Ingeniero', activo: true },
+   751→  { id: 'U-07', nombre: 'María López', email: 'maria.lopez@gmail.com', rol: 'Cliente', activo: true },
+   752→  { id: 'U-08', nombre: 'Pedro Ruiz', email: 'pedro.ruiz@gmail.com', rol: 'Cliente', activo: true },
+   753→  { id: 'U-09', nombre: 'Jorge Pérez', email: 'jorge@logifast.com', rol: 'Repartidor', activo: false },
+   754→];
+   755→
+   756→/* ─── New Mock Data ─── */
+   757→
+   758→const MOCK_INCIDENTS: Incident[] = [
+   759→  { id: 'INC-01', orderId: 'LF-2842', tipo: 'falla_mecanica', titulo: 'Falla mecánica en ruta', descripcion: 'Moto se detuvo en carretera Sur', repartidor: 'Ana Torres', motoId: 'Moto-02', gravedad: 'alta', estado: 'activa', lat: 12.0950, lng: -86.2300, timestamp: '2026-06-10T14:30:00' },
+   760→  { id: 'INC-02', orderId: 'LF-2842', tipo: 'problema_cliente', titulo: 'Cliente no responde', descripcion: 'No se puede confirmar dirección de entrega', repartidor: 'Ana Torres', motoId: 'Moto-02', gravedad: 'media', estado: 'activa', lat: 12.1000, lng: -86.2400, timestamp: '2026-06-10T13:15:00' },
+   761→  { id: 'INC-03', orderId: 'LF-2840', tipo: 'retraso', titulo: 'Entrega retrasada', descripcion: 'Tráfico pesado en Carretera a Masaya', repartidor: 'Luis Ramos', motoId: 'Moto-01', gravedad: 'baja', estado: 'activa', lat: 12.0900, lng: -86.2100, timestamp: '2026-06-10T16:20:00' },
+   762→  { id: 'INC-04', orderId: 'LF-2836', tipo: 'paquete_danado', titulo: 'Paquete con daño', descripcion: 'Comida derramada durante transporte', repartidor: 'Ana Torres', motoId: 'Moto-09', gravedad: 'media', estado: 'resuelta', lat: 12.1100, lng: -86.2400, timestamp: '2026-06-09T19:45:00', resolucion: 'Reembolso parcial al cliente', tiempoResolucion: '35 min' },
+   763→  { id: 'INC-05', orderId: 'LF-2834', tipo: 'accidente', titulo: 'Accidente menor', descripcion: 'Colisión leve en intersección', repartidor: 'Rosa Díaz', motoId: 'Moto-02', gravedad: 'alta', estado: 'resuelta', lat: 12.1050, lng: -86.2350, timestamp: '2026-06-07T14:30:00', resolucion: 'Repartidor atendido, moto en taller', tiempoResolucion: '2h 15min' },
+   764→  { id: 'INC-06', orderId: 'LF-2847', tipo: 'retraso', titulo: 'Retraso por lluvia', descripcion: 'Lluvia fuerte impide avance', repartidor: 'Carlos Mendoza', motoId: 'Moto-03', gravedad: 'baja', estado: 'activa', lat: 12.1150, lng: -86.2450, timestamp: '2026-06-10T15:00:00' },
+   765→];
+   766→
+   767→const MOCK_CLIENTS: Client[] = [
+   768→  { id: 'CL-01', nombre: 'María López', email: 'maria.lopez@gmail.com', telefono: '+505 8888-1234', direccion: 'Col. Los Robles, Managua', totalEnvios: 24, montoTotal: 3450, ultimoEnvio: '2026-06-10', zonaFrecuente: 'Los Robles' },
+   769→  { id: 'CL-02', nombre: 'Pedro Ruiz', email: 'pedro.ruiz@gmail.com', telefono: '+505 8888-5678', direccion: 'Barrio Monseñor Lezcano', totalEnvios: 18, montoTotal: 2100, ultimoEnvio: '2026-06-10', zonaFrecuente: 'Monseñor Lezcano' },
+   770→  { id: 'CL-03', nombre: 'Sofía Chamorro', email: 'sofia.chamorro@gmail.com', telefono: '+505 8888-9012', direccion: 'Villa Fontana, Managua', totalEnvios: 12, montoTotal: 1800, ultimoEnvio: '2026-06-10', zonaFrecuente: 'Villa Fontana' },
+   771→  { id: 'CL-04', nombre: 'Diego Soto', email: 'diego.soto@gmail.com', telefono: '+505 8888-3456', direccion: 'Bello Horizonte', totalEnvios: 8, montoTotal: 1200, ultimoEnvio: '2026-06-10', zonaFrecuente: 'Bello Horizonte' },
+   772→  { id: 'CL-05', nombre: 'Laura Vega', email: 'laura.vega@gmail.com', telefono: '+505 8888-7890', direccion: 'Centro Histórico, Managua', totalEnvios: 32, montoTotal: 4800, ultimoEnvio: '2026-06-09', zonaFrecuente: 'Centro' },
+   773→  { id: 'CL-06', nombre: 'Roberto Martínez', email: 'roberto.martinez@gmail.com', telefono: '+505 8888-2345', direccion: 'Col. Centroamérica', totalEnvios: 15, montoTotal: 2625, ultimoEnvio: '2026-06-09', zonaFrecuente: 'Centro' },
+   774→  { id: 'CL-07', nombre: 'Carmen Ríos', email: 'carmen.rios@gmail.com', telefono: '+505 8888-6789', direccion: 'Altamira, Managua', totalEnvios: 4, montoTotal: 440, ultimoEnvio: '2026-06-09', zonaFrecuente: 'Los Robles' },
+   775→  { id: 'CL-08', nombre: 'Andrés Cruz', email: 'andres.cruz@gmail.com', telefono: '+505 8888-0123', direccion: 'Santo Domingo, Managua', totalEnvios: 22, montoTotal: 5060, ultimoEnvio: '2026-06-09', zonaFrecuente: 'Villa Fontana' },
+   776→  { id: 'CL-09', nombre: 'Felipe Reyes', email: 'felipe.reyes@gmail.com', telefono: '+505 8888-8901', direccion: 'Carretera Sur', totalEnvios: 3, montoTotal: 540, ultimoEnvio: '2026-06-08', zonaFrecuente: 'Centro' },
+   777→  { id: 'CL-10', nombre: 'Gabriela Navarro', email: 'gabriela.navarro@gmail.com', telefono: '+505 8888-2468', direccion: 'Col. Los Robles', totalEnvios: 7, montoTotal: 1015, ultimoEnvio: '2026-06-08', zonaFrecuente: 'Los Robles' },
+   778→];
+   779→
+   780→const MOCK_ACTIVITY_EVENTS: ActivityEvent[] = [
+   781→  { id: 'E-01', tipo: 'orden', titulo: 'Orden LF-2847 creada', detalle: 'Envío a Col. Los Robles · C$ 120 · Asignada a Carlos M.', timestamp: '2026-06-10T14:30:00', leido: false },
+   782→  { id: 'E-02', tipo: 'repartidor', titulo: 'Carlos M. en camino', detalle: 'Recogiendo paquete en Metrocentro', timestamp: '2026-06-10T14:35:00', leido: false },
+   783→  { id: 'E-03', tipo: 'incidencia', titulo: 'Falla mecánica reportada', detalle: 'Moto-02 detenida en Carretera Sur · Ana Torres', timestamp: '2026-06-10T14:30:00', leido: false },
+   784→  { id: 'E-04', tipo: 'orden', titulo: 'Orden LF-2846 entregada', detalle: 'Barrio Monseñor Lezcano · Ana Torres · C$ 85', timestamp: '2026-06-10T10:58:00', leido: true },
+   785→  { id: 'E-05', tipo: 'flota', titulo: 'Moto-05 en mantenimiento', detalle: 'Kilometraje excedido, enviada a taller', timestamp: '2026-06-10T09:00:00', leido: true },
+   786→  { id: 'E-06', tipo: 'orden', titulo: 'Orden LF-2845 creada', detalle: 'Envío a Villa Fontana · C$ 200 · Sin asignar', timestamp: '2026-06-10T15:00:00', leido: false },
+   787→  { id: 'E-07', tipo: 'finanzas', titulo: 'Pago recibido', detalle: 'C$ 175 transferencia · Roberto Martínez', timestamp: '2026-06-10T11:00:00', leido: true },
+   788→  { id: 'E-08', tipo: 'repartidor', titulo: 'Jorge Pérez conectado', detalle: 'Disponible con Moto-07', timestamp: '2026-06-10T08:30:00', leido: true },
+   789→  { id: 'E-09', tipo: 'incidencia', titulo: 'Cliente no responde', detalle: 'Orden LF-2842 · Ana Torres intentó contacto 3 veces', timestamp: '2026-06-10T13:15:00', leido: false },
+   790→  { id: 'E-10', tipo: 'config', titulo: 'Tarifa actualizada', detalle: 'Zona Bello Horizonte: C$ 65 → C$ 75', timestamp: '2026-06-09T16:00:00', leido: true },
+   791→  { id: 'E-11', tipo: 'orden', titulo: 'Orden LF-2844 recogida', detalle: 'Plaza Inter → Bello Horizonte · Luis Ramos', timestamp: '2026-06-10T14:05:00', leido: false },
+   792→  { id: 'E-12', tipo: 'flota', titulo: 'Moto-10 batería baja', detalle: 'Nivel al 12%, requiere carga inmediata', timestamp: '2026-06-10T12:30:00', leido: true },
+   793→  { id: 'E-13', tipo: 'repartidor', titulo: 'Rosa Díaz completó 4 entregas', detalle: 'Hoy: 25 km recorridos · C$ 620 cobrados', timestamp: '2026-06-10T17:00:00', leido: true },
+   794→  { id: 'E-14', tipo: 'finanzas', titulo: 'Conciliación pendiente', detalle: 'C$ 340 en efectivo por cobrar · Carlos M.', timestamp: '2026-06-10T18:00:00', leido: false },
+   795→  { id: 'E-15', tipo: 'incidencia', titulo: 'Retraso por lluvia', detalle: 'Orden LF-2847 · Carlos M. reporta lluvia fuerte', timestamp: '2026-06-10T15:00:00', leido: false },
+   796→];
+   797→
+   798→const MOCK_PAYMENT_CONCILIATIONS: PaymentConciliation[] = [
+   799→  { id: 'PC-01', repartidor: 'Carlos Mendoza', monto: 340, fecha: '2026-06-10', estado: 'pendiente' },
+   800→  { id: 'PC-02', repartidor: 'Ana Torres', monto: 195, fecha: '2026-06-10', estado: 'pendiente' },
+   801→  { id: 'PC-03', repartidor: 'Luis Ramos', monto: 280, fecha: '2026-06-09', estado: 'conciliado' },
+   802→  { id: 'PC-04', repartidor: 'Rosa Díaz', monto: 620, fecha: '2026-06-10', estado: 'pendiente' },
+   803→  { id: 'PC-05', repartidor: 'Jorge Pérez', monto: 150, fecha: '2026-06-09', estado: 'conciliado' },
+   804→];
+   805→
+   806→const MOCK_ZONE_POLYGONS: ZonePolygon[] = [
+   807→  { id: 'ZP-01', nombre: 'Centro', color: '#002A5C', coords: [[12.140, -86.260], [12.140, -86.244], [12.132, -86.244], [12.132, -86.260], [12.136, -86.262]] },
+   808→  { id: 'ZP-02', nombre: 'Villa Fontana', color: '#FF6600', coords: [[12.090, -86.215], [12.090, -86.199], [12.080, -86.199], [12.080, -86.215], [12.085, -86.217]] },
+   809→  { id: 'ZP-03', nombre: 'Los Robles', color: '#16A34A', coords: [[12.128, -86.258], [12.128, -86.246], [12.120, -86.246], [12.120, -86.258], [12.124, -86.260]] },
+   810→  { id: 'ZP-04', nombre: 'Bello Horizonte', color: '#8B5CF6', coords: [[12.135, -86.286], [12.135, -86.274], [12.125, -86.274], [12.125, -86.286], [12.130, -86.288]] },
+   811→  { id: 'ZP-05', nombre: 'Monseñor Lezcano', color: '#3B82F6', coords: [[12.103, -86.237], [12.103, -86.225], [12.093, -86.225], [12.093, -86.237], [12.098, -86.239]] },
+   812→  { id: 'ZP-06', nombre: 'Reparto Schick', color: '#F59E0B', coords: [[12.113, -86.245], [12.113, -86.235], [12.103, -86.235], [12.103, -86.245], [12.108, -86.247]] },
+   813→];
+   814→
+   815→/* ─── Marketing Mock Data ─── */
+   816→
+   817→const MOCK_CAMPANAS: Campana[] = [
+   818→  {
+   819→    id: 'CAMP-01', titulo: 'Promo verano', tipo: 'push', segmento: 'Todos los clientes',
+   820→    contenido: { titulo: '¡Promo Verano! 🔥', cuerpo: '20% de descuento en tu próximo envío. Usa el código VERANO20', boton: 'Usar ahora' },
+   821→    estado: 'enviada', enviadaEn: '2026-06-08T10:00:00', destinatarios: 120, abiertos: 85, clicks: 32,
+   822→    creadoPor: 'admin', createdAt: '2026-06-07T15:00:00',
+   823→  },
+   824→  {
+   825→    id: 'CAMP-02', titulo: 'Reactivación clientes inactivos', tipo: 'email', segmento: 'Clientes inactivos',
+   826→    contenido: { titulo: 'Te extrañamos', cuerpo: 'Hace tiempo que no haces un envío. Tenemos una sorpresa para ti.', boton: 'Ver oferta' },
+   827→    estado: 'programada', programadaPara: '2026-06-15T09:00:00', destinatarios: 45, abiertos: 0, clicks: 0,
+   828→    creadoPor: 'admin', createdAt: '2026-06-10T14:00:00',
+   829→  },
+   830→  {
+   831→    id: 'CAMP-03', titulo: 'Descuento fin de semana', tipo: 'sms', segmento: 'Clientes frecuentes',
+   832→    contenido: { cuerpo: 'LOGIFAST: 15% OFF este fin de semana. Código: FINDE15' },
+   833→    estado: 'borrador', destinatarios: 0, abiertos: 0, clicks: 0,
+   834→    creadoPor: 'admin', createdAt: '2026-06-10T16:00:00',
+   835→  },
+   836→];
+   837→
+   838→const MOCK_CODIGOS: CodigoPromocional[] = [
+   839→  { id: 'COD-01', codigo: 'LOGI20', tipoDescuento: 'porcentaje', valor: 20, aplicableA: 'Todos los envíos', maxUsos: 100, usosActuales: 45, segmento: 'todos', vigenciaInicio: '2026-06-01', vigenciaFin: '2026-07-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-06-01' },
+   840→  { id: 'COD-02', codigo: 'ENVIO50', tipoDescuento: 'monto', valor: 50, aplicableA: 'Primer envío', maxUsos: 50, usosActuales: 12, segmento: 'Clientes nuevos', vigenciaInicio: '2026-05-01', vigenciaFin: '2026-08-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-05-01' },
+   841→  { id: 'COD-03', codigo: 'RAPIDO15', tipoDescuento: 'porcentaje', valor: 15, aplicableA: 'Envíos > C$100', montoMinimo: 100, maxUsos: 200, usosActuales: 0, segmento: 'todos', vigenciaInicio: '2026-06-10', vigenciaFin: '2026-06-30', estado: 'activo', creadoPor: 'admin', createdAt: '2026-06-10' },
+   842→  { id: 'COD-04', codigo: 'BIENVENIDO', tipoDescuento: 'porcentaje', valor: 25, aplicableA: 'Primer envío', maxUsos: 0, usosActuales: 89, segmento: 'Clientes nuevos', vigenciaInicio: '2026-01-01', vigenciaFin: '2026-12-31', estado: 'activo', creadoPor: 'admin', createdAt: '2026-01-01' },
+   843→];
+   844→
+   845→const MOCK_BANNERS: Banner[] = [
+   846→  { id: 'BAN-01', titulo: '20% en tu próximo envío', subtitulo: 'Usa el código LOGI20', tipo: 'promo_grande', colorFondo: '#FF5722', colorTexto: '#FFFFFF', botonTexto: 'Usar ahora', botonAccion: 'Ir a solicitar envío', segmento: 'todos', mostrarEn: 'app', posicion: 1, estado: 'activo', impresiones: 1540, clicks: 230, creadoPor: 'admin', createdAt: '2026-06-05' },
+   847→  { id: 'BAN-02', titulo: 'Envíos los domingos', subtitulo: 'Ahora también los domingos', tipo: 'tarjeta_compacta', colorFondo: '#1B1B2F', colorTexto: '#FFFFFF', icono: 'calendar', segmento: 'todos', mostrarEn: 'app', posicion: 2, estado: 'activo', impresiones: 980, clicks: 67, creadoPor: 'admin', createdAt: '2026-06-08' },
+   848→  { id: 'BAN-03', titulo: 'Nuevo: seguimiento mejorado', tipo: 'notificacion', colorFondo: '#2979FF', colorTexto: '#FFFFFF', icono: 'map', segmento: 'todos', mostrarEn: 'ambos', posicion: 3, estado: 'activo', impresiones: 2100, clicks: 145, creadoPor: 'admin', createdAt: '2026-06-01' },
+   849→  { id: 'BAN-04', titulo: 'Refiere a un amigo y gana', subtitulo: 'Ambos obtienen C$50 de descuento', tipo: 'slider', colorFondo: '#1B1B2F', colorTexto: '#FFFFFF', gradiente: { from: '#1B1B2F', to: '#FF5722', direction: 'to right' }, botonTexto: 'Invitar', botonAccion: 'Abrir link externo', segmento: 'Clientes frecuentes', mostrarEn: 'app', posicion: 4, estado: 'inactivo', impresiones: 0, clicks: 0, creadoPor: 'admin', createdAt: '2026-06-09' },
+   850→];
+   851→
+   852→const MOCK_FEED_ITEMS: FeedItem[] = [
+   853→  { id: 'FI-01', tipo: 'anuncio', titulo: 'Horario extendido los viernes', descripcion: 'Ahora atendemos hasta las 9pm los viernes', icono: 'clock', segmento: 'todos', posicion: 1, estado: 'activo', impresiones: 890, clicks: 34, creadoPor: 'admin', createdAt: '2026-06-08' },
+   854→  { id: 'FI-02', tipo: 'promocion', titulo: 'Usa LOGI20 y ahorra', descripcion: '20% de descuento en tu próximo envío', icono: 'tag', botonTexto: 'Copiar código', codigoPromo: 'LOGI20', segmento: 'todos', posicion: 2, estado: 'activo', impresiones: 1200, clicks: 89, creadoPor: 'admin', createdAt: '2026-06-06' },
+   855→  { id: 'FI-03', tipo: 'novedad', titulo: 'Ahora puedes pagar con transferencia', descripcion: 'Nuevo método de pago disponible', icono: 'credit-card', segmento: 'todos', posicion: 3, estado: 'activo', impresiones: 760, clicks: 45, creadoPor: 'admin', createdAt: '2026-06-04' },
+   856→  { id: 'FI-04', tipo: 'recordatorio', titulo: 'Hace 15 días no envías, ¡te extrañamos!', descripcion: 'Tenemos una sorpresa para ti', icono: 'heart', botonTexto: 'Ver oferta', segmento: 'Clientes inactivos', posicion: 4, estado: 'activo', impresiones: 340, clicks: 23, creadoPor: 'admin', createdAt: '2026-06-10' },
+   857→  { id: 'FI-05', tipo: 'anuncio', titulo: 'Cobertura ampliada a Masaya', descripcion: 'Ahora también llegamos a Masaya y sus alrededores', icono: 'map-pin', segmento: 'todos', posicion: 5, estado: 'activo', impresiones: 560, clicks: 18, creadoPor: 'admin', createdAt: '2026-06-09' },
+   858→];
+   859→
+   860→const MOCK_PLANTILLAS: PlantillaMensaje[] = [
+   861→  { id: 'TPL-01', nombre: 'Confirmación de orden', categoria: 'orden', contenido: 'Hola {{nombre}}, tu orden #{{orden_id}} ha sido confirmada. Tu repartidor {{repartidor}} está en camino.', variables: ['nombre', 'orden_id', 'repartidor'], esDefault: true, createdAt: '2026-01-01' },
+   862→  { id: 'TPL-02', nombre: 'Orden entregada', categoria: 'orden', contenido: 'Tu orden #{{orden_id}} fue entregada exitosamente. ¡Gracias por usar LOGIFAST!', variables: ['orden_id'], esDefault: true, createdAt: '2026-01-01' },
+   863→  { id: 'TPL-03', nombre: 'Recordatorio', categoria: 'promocion', contenido: 'Hola {{nombre}}, hace {{dias}} días que no haces un envío. ¡Tenemos una promo para ti!', variables: ['nombre', 'dias'], esDefault: true, createdAt: '2026-01-01' },
+   864→  { id: 'TPL-04', nombre: 'Incidencia', categoria: 'incidencia', contenido: 'Lamentamos informarte que tu orden #{{orden_id}} presenta una incidencia. Estamos trabajando en resolverlo.', variables: ['orden_id'], esDefault: true, createdAt: '2026-01-01' },
+   865→  { id: 'TPL-05', nombre: 'Código promocional', categoria: 'promocion', contenido: '¡{{nombre}}, usa el código {{codigo}} y obtiene {{descuento}} en tu próximo envío!', variables: ['nombre', 'codigo', 'descuento'], esDefault: true, createdAt: '2026-01-01' },
+   866→];
+   867→
+   868→const MOCK_CONVERSACIONES: Conversacion[] = [
+   869→  {
+   870→    id: 'CONV-01', participanteId: 'CLI-01', participanteNombre: 'María López', participanteRol: 'cliente',
+   871→    ultimoMensaje: '¿A qué hora llegará mi envío?', ultimoTimestamp: '2026-06-10T15:30:00', noLeidos: 1,
+   872→    mensajes: [
+   873→      { id: 'MSG-01', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Hola, hice un envío esta mañana', leido: true, enviadoEn: '2026-06-10T10:00:00' },
+   874→      { id: 'MSG-02', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-01', receptorNombre: 'María López', contenido: 'Hola María, tu orden LF-2847 está en camino', leido: true, enviadoEn: '2026-06-10T10:05:00' },
+   875→      { id: 'MSG-03', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Perfecto, gracias', leido: true, enviadoEn: '2026-06-10T10:10:00' },
+   876→      { id: 'MSG-04', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-01', receptorNombre: 'María López', contenido: 'Tu repartidor es Carlos Mendoza, llegará en aprox 20 min', leido: true, enviadoEn: '2026-06-10T14:30:00' },
+   877→      { id: 'MSG-05', emisorId: 'CLI-01', emisorNombre: 'María López', receptorId: 'admin', receptorNombre: 'Admin', contenido: '¿A qué hora llegará mi envío?', leido: false, enviadoEn: '2026-06-10T15:30:00' },
+   878→    ],
+   879→  },
+   880→  {
+   881→    id: 'CONV-02', participanteId: 'RID-01', participanteNombre: 'Carlos M.', participanteRol: 'repartidor',
+   882→    ultimoMensaje: 'Ya recogí el paquete, en camino', ultimoTimestamp: '2026-06-10T14:35:00', noLeidos: 0,
+   883→    mensajes: [
+   884→      { id: 'MSG-06', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'RID-01', receptorNombre: 'Carlos M.', contenido: 'Carlos, te asigné la orden LF-2847', leido: true, enviadoEn: '2026-06-10T14:30:00' },
+   885→      { id: 'MSG-07', emisorId: 'RID-01', emisorNombre: 'Carlos M.', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Recibido, voy para allá', leido: true, enviadoEn: '2026-06-10T14:32:00' },
+   886→      { id: 'MSG-08', emisorId: 'RID-01', emisorNombre: 'Carlos M.', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Ya recogí el paquete, en camino', leido: true, enviadoEn: '2026-06-10T14:35:00' },
+   887→    ],
+   888→  },
+   889→  {
+   890→    id: 'CONV-03', participanteId: 'CLI-04', participanteNombre: 'Pedro Ruiz', participanteRol: 'cliente',
+   891→    ultimoMensaje: 'Necesito cambiar la dirección de entrega', ultimoTimestamp: '2026-06-10T11:00:00', noLeidos: 1,
+   892→    mensajes: [
+   893→      { id: 'MSG-09', emisorId: 'CLI-04', emisorNombre: 'Pedro Ruiz', receptorId: 'admin', receptorNombre: 'Admin', contenido: 'Necesito cambiar la dirección de entrega', leido: false, enviadoEn: '2026-06-10T11:00:00' },
+   894→      { id: 'MSG-10', emisorId: 'admin', emisorNombre: 'Admin', receptorId: 'CLI-04', receptorNombre: 'Pedro Ruiz', contenido: 'Claro, ¿cuál es la nueva dirección?', leido: true, enviadoEn: '2026-06-10T11:05:00' },
+   895→    ],
+   896→  },
+   897→];
+   898→
+   899→const MOCK_NOTIFICACIONES_AUTO: NotificacionAutomatica[] = [
+   900→  { id: 'NA-01', evento: 'orden_creada', etiqueta: 'Orden confirmada', activa: true, canal: 'push', plantilla: 'Hola {{nombre}}, tu orden #{{orden_id}} ha sido confirmada.', destinatario: 'cliente' },
+   901→  { id: 'NA-02', evento: 'repartidor_asignado', etiqueta: 'Repartidor asignado', activa: true, canal: 'push', plantilla: '{{repartidor}} fue asignado a tu orden #{{orden_id}}.', destinatario: 'cliente' },
+   902→  { id: 'NA-03', evento: 'orden_encamino', etiqueta: 'Repartidor en camino', activa: true, canal: 'todos', plantilla: 'Tu repartidor está en camino. Llegará en ~15 min.', destinatario: 'cliente' },
+   903→  { id: 'NA-04', evento: 'orden_entregada', etiqueta: 'Orden entregada', activa: true, canal: 'push', plantilla: 'Tu orden #{{orden_id}} fue entregada. ¡Gracias!', destinatario: 'cliente' },
+   904→  { id: 'NA-05', evento: 'nueva_asignacion', etiqueta: 'Nueva asignación', activa: true, canal: 'push', plantilla: 'Nueva orden asignada: #{{orden_id}}. Origen: {{origen}}', destinatario: 'repartidor' },
+   905→  { id: 'NA-06', evento: 'alerta_mantenimiento', etiqueta: 'Alerta de mantenimiento', activa: true, canal: 'email', plantilla: 'La moto {{moto_id}} requiere mantenimiento: {{detalle}}', destinatario: 'ingeniero' },
+   906→  { id: 'NA-07', evento: 'incidencia_reportada', etiqueta: 'Incidencia reportada', activa: true, canal: 'todos', plantilla: 'Incidencia en orden #{{orden_id}}: {{detalle}}', destinatario: 'admin' },
+   907→  { id: 'NA-08', evento: 'pago_recibido', etiqueta: 'Pago recibido', activa: true, canal: 'push', plantilla: 'Pago de C${{monto}} recibido por orden #{{orden_id}}.', destinatario: 'cliente' },
+   908→];
+   909→
+   910→/* ─── Config Mock Data ─── */
+   911→
+   912→const MOCK_HORARIOS: ConfiguracionHorario[] = [
+   913→  { id: 'H-01', dia: 1, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+   914→  { id: 'H-02', dia: 2, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+   915→  { id: 'H-03', dia: 3, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+   916→  { id: 'H-04', dia: 4, horaInicio: '07:00', horaFin: '20:00', activo: true, recargoNocturno: 0 },
+   917→  { id: 'H-05', dia: 5, horaInicio: '07:00', horaFin: '21:00', activo: true, recargoNocturno: 0 },
+   918→  { id: 'H-06', dia: 6, horaInicio: '08:00', horaFin: '18:00', activo: true, recargoNocturno: 0 },
+   919→  { id: 'H-07', dia: 0, horaInicio: '09:00', horaFin: '14:00', activo: false, recargoNocturno: 0 },
+   920→];
+   921→
+   922→const MOCK_FERIADOS: Feriado[] = [
+   923→  { id: 'FER-01', fecha: '2026-07-19', nombre: 'Día de la Revolución', recargo: 50 },
+   924→  { id: 'FER-02', fecha: '2026-09-14', nombre: 'Batalla de San Jacinto', recargo: 30 },
+   925→  { id: 'FER-03', fecha: '2026-09-15', nombre: 'Independencia de Centroamérica', recargo: 30 },
+   926→  { id: 'FER-04', fecha: '2026-12-25', nombre: 'Navidad', recargo: 50 },
+   927→  { id: 'FER-05', fecha: '2026-01-01', nombre: 'Año Nuevo', recargo: 50 },
+   928→];
+   929→
+   930→const MOCK_INTEGRACIONES: Integracion[] = [
+   931→  { id: 'INT-01', nombre: 'WhatsApp Business API', descripcion: 'Notificaciones por WhatsApp', icono: 'message-circle', estado: 'conectado' },
+   932→  { id: 'INT-02', nombre: 'Pasarela de pago', descripcion: 'Pagos con tarjeta y transferencia', icono: 'credit-card', estado: 'conectado' },
+   933→  { id: 'INT-03', nombre: 'Google Maps API', descripcion: 'Geocodificación y rutas', icono: 'map', estado: 'conectado' },
+   934→  { id: 'INT-04', nombre: 'Twilio', descripcion: 'SMS masivos', icono: 'smartphone', estado: 'no_configurado' },
+   935→  { id: 'INT-05', nombre: 'SendGrid', descripcion: 'Emails masivos', icono: 'mail', estado: 'no_configurado' },
+   936→];
+   937→
+   938→/* ─── SuperAdmin Mock Data ─── */
+   939→
+   940→const MOCK_AUDIT_LOG: AuditLogEntry[] = [
+   941→  { id: 'AL-01', userId: 'admin', usuario: 'Super Admin', accion: 'crear', recurso: 'campaña', recursoId: 'CAMP-01', detalles: 'Campaña "Promo verano" creada', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T15:00:00' },
+   942→  { id: 'AL-02', userId: 'admin', usuario: 'Super Admin', accion: 'enviar', recurso: 'campaña', recursoId: 'CAMP-01', detalles: 'Campaña enviada a 120 clientes', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T15:30:00' },
+   943→  { id: 'AL-03', userId: 'admin', usuario: 'Super Admin', accion: 'editar', recurso: 'código_promo', recursoId: 'COD-01', detalles: 'Código LOGI20 actualizado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T12:00:00' },
+   944→  { id: 'AL-04', userId: 'U-02', usuario: 'Despachador', accion: 'despachar', recurso: 'orden', recursoId: 'LF-2847', detalles: 'Orden asignada a Carlos M.', ip: '192.168.1.101', dispositivo: 'Chrome/Win', createdAt: '2026-06-10T14:30:00' },
+   945→  { id: 'AL-05', userId: 'admin', usuario: 'Super Admin', accion: 'crear', recurso: 'banner', recursoId: 'BAN-01', detalles: 'Banner "20% en tu próximo envío" creado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-05T10:00:00' },
+   946→  { id: 'AL-06', userId: 'U-03', usuario: 'Ana Torres', accion: 'entregar', recurso: 'orden', recursoId: 'LF-2846', detalles: 'Orden entregada exitosamente', ip: '10.0.0.5', dispositivo: 'Android/App', createdAt: '2026-06-10T10:58:00' },
+   947→  { id: 'AL-07', userId: 'admin', usuario: 'Super Admin', accion: 'pausar', recurso: 'código_promo', recursoId: 'COD-03', detalles: 'Código RAPIDO15 pausado', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-10T16:00:00' },
+   948→  { id: 'AL-08', userId: 'admin', usuario: 'Super Admin', accion: 'editar', recurso: 'horario', detalles: 'Horario viernes extendido a 21:00', ip: '192.168.1.100', dispositivo: 'Chrome/Mac', createdAt: '2026-06-08T09:00:00' },
+   949→];
+   950→
+   951→const MOCK_FEATURE_FLAGS: FeatureFlag[] = [
+   952→  { id: 'FF-01', nombre: 'Habilitar chat', descripcion: 'Chat en tiempo real entre admin, clientes y repartidores', habilitado: true },
+   953→  { id: 'FF-02', nombre: 'Habilitar campañas', descripcion: 'Campañas de notificación masiva', habilitado: true },
+   954→  { id: 'FF-03', nombre: 'Habilitar códigos promo', descripcion: 'Sistema de códigos promocionales', habilitado: true },
+   955→  { id: 'FF-04', nombre: 'Habilitar banners', descripcion: 'Banners promocionales en la app del cliente', habilitado: true },
+   956→  { id: 'FF-05', nombre: 'Habilitar feed', descripcion: 'Feed de contenido dinámico', habilitado: false },
+   957→  { id: 'FF-06', nombre: 'Modo mantenimiento', descripcion: 'Bloquea el acceso para todos excepto super admin', habilitado: false },
+   958→];
+   959→
+   960→const MOCK_MARKETING_KPI: MarketingKPI = {
+   961→  clientesActivosMes: 87,
+   962→  tendenciaActivos: 12,
+   963→  tasaRetencion: 68,
+   964→  frecuenciaPromedio: 3.2,
+   965→  valorPromedioEnvio: 145,
+   966→  costoAdquisicion: 35,
+   967→};
+   968→
+   969→/* ─── Client Experience Mock Data ─── */
+   970→
+   971→const MOCK_CLIENT_NOTIFICACIONES: ClientNotificacion[] = [
+   972→  { id: 'CN-01', tipo: 'repartidor_camino', titulo: '¡Tu envío LF-2847 está en camino!', descripcion: 'El repartidor se dirige al punto de recogida', leida: false, relacionadoId: 'LF-2847', timestamp: new Date(Date.now() - 10 * 60000).toISOString() },
+   973→  { id: 'CN-02', tipo: 'paquete_recogido', titulo: 'Repartidor Carlos M. ha recogido tu paquete', descripcion: 'Tu paquete está en camino al destino', leida: false, relacionadoId: 'LF-2847', timestamp: new Date(Date.now() - 5 * 60000).toISOString() },
+   974→  { id: 'CN-03', tipo: 'entrega_exitosa', titulo: 'Orden LF-2830 entregada exitosamente', descripcion: 'El paquete fue entregado en Barrio Monseñor Lezcano', leida: true, relacionadoId: 'LF-2830', timestamp: new Date(Date.now() - 24 * 3600000).toISOString() },
+   975→  { id: 'CN-04', tipo: 'codigo_nuevo', titulo: 'Nuevo código disponible: LOGI20', descripcion: 'Usa LOGI20 y obtén 20% de descuento en tu próximo envío', leida: true, timestamp: new Date(Date.now() - 3 * 86400000).toISOString() },
+   976→  { id: 'CN-05', tipo: 'incidencia', titulo: 'Tu envío LF-2789 presenta una incidencia', descripcion: 'Estamos trabajando para resolverlo. Te mantendremos informado.', leida: true, relacionadoId: 'LF-2789', timestamp: new Date(Date.now() - 7 * 86400000).toISOString() },
+   977→];
+   978→
+   979→const MOCK_DIRECCIONES_GUARDADAS: DireccionGuardada[] = [
+   980→  { id: 'DG-01', etiqueta: 'Casa', direccion: 'Col. Los Robles, Managua', lat: 12.1245, lng: -86.2520 },
+   981→  { id: 'DG-02', etiqueta: 'Trabajo', direccion: 'Centro Comercial Metrocentro, Managua', lat: 12.1150, lng: -86.2362 },
+   982→  { id: 'DG-03', etiqueta: 'Mamá', direccion: 'Barrio Monseñor Lezcano, Managua', lat: 12.0980, lng: -86.2310 },
+   983→];
+   984→
+   985→const MOCK_DIRECCIONES_SUGERENCIAS: DireccionSugerencia[] = [
+   986→  { id: 'DS-01', direccion: 'Metrocentro, Managua', barrio: 'Centro', lat: 12.1150, lng: -86.2362 },
+   987→  { id: 'DS-02', direccion: 'Galerías Santo Domingo', barrio: 'Santo Domingo', lat: 12.0900, lng: -86.2180 },
+   988→  { id: 'DS-03', direccion: 'Universidad Centroamericana', barrio: 'Los Robles', lat: 12.1029, lng: -86.2545 },
+   989→  { id: 'DS-04', direccion: 'Hospital Metropolitano', barrio: 'Altamira', lat: 12.1050, lng: -86.2450 },
+   990→  { id: 'DS-05', direccion: 'Mercado Oriental', barrio: 'Centro', lat: 12.1320, lng: -86.2220 },
+   991→  { id: 'DS-06', direccion: 'Plaza Inter', barrio: 'Centro', lat: 12.1180, lng: -86.2650 },
+   992→  { id: 'DS-07', direccion: 'Col. Los Robles, Managua', barrio: 'Los Robles', lat: 12.1245, lng: -86.2520 },
+   993→  { id: 'DS-08', direccion: 'Barrio Monseñor Lezcano', barrio: 'Lezcano', lat: 12.0980, lng: -86.2310 },
+   994→  { id: 'DS-09', direccion: 'Villa Fontana, Managua', barrio: 'Villa Fontana', lat: 12.0850, lng: -86.2070 },
+   995→  { id: 'DS-10', direccion: 'Bello Horizonte', barrio: 'Bello Horizonte', lat: 12.1300, lng: -86.2800 },
+   996→  { id: 'DS-11', direccion: 'Reparto Schick', barrio: 'Schick', lat: 12.1080, lng: -86.2400 },
+   997→  { id: 'DS-12', direccion: 'Carretera a Masaya', barrio: 'Masaya', lat: 12.0950, lng: -86.2100 },
+   998→  { id: 'DS-13', direccion: 'Centro Histórico, Managua', barrio: 'Centro', lat: 12.1360, lng: -86.2520 },
+   999→  { id: 'DS-14', direccion: 'Col. Centroamérica', barrio: 'Centroamérica', lat: 12.1150, lng: -86.2600 },
+
+[showing lines 600-999 of 1678; use offset=1000 with limit to continue reading]

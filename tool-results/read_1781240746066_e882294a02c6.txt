@@ -1,0 +1,1036 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  Package,
+     7→  MapPin,
+     8→  Clock,
+     9→  User,
+    10→  ChevronDown,
+    11→  ChevronUp,
+    12→  AlertTriangle,
+    13→  Search,
+    14→  Download,
+    15→  RefreshCw,
+    16→  ArrowRight,
+    17→  CheckCircle,
+    18→  XCircle,
+    19→  Bike,
+    20→  Navigation,
+    21→  MessageCircle,
+    22→} from 'lucide-react';
+    23→import { useStore, type Order } from '@/lib/store';
+    24→
+    25→/* ═══════════════════════════════════════════════
+    26→   TYPES
+    27→   ═══════════════════════════════════════════════ */
+    28→
+    29→interface ClientEnviosProps {
+    30→  isDark: boolean;
+    31→  userName: string;
+    32→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+    33→  onOpenTracking: (orderId: string) => void;
+    34→  onOpenChat: (orderId: string) => void;
+    35→}
+    36→
+    37→interface ReportModalState {
+    38→  open: boolean;
+    39→  orderId: string;
+    40→  reason: string;
+    41→  description: string;
+    42→}
+    43→
+    44→/* ═══════════════════════════════════════════════
+    45→   HELPERS
+    46→   ═══════════════════════════════════════════════ */
+    47→
+    48→const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
+    49→  pendiente: { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-700 dark:text-yellow-400', label: 'Pendiente' },
+    50→  encamino: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', label: 'En camino' },
+    51→  recogido: { bg: 'bg-violet-100 dark:bg-violet-900/40', text: 'text-violet-700 dark:text-violet-400', label: 'Recogido' },
+    52→  entregado: { bg: 'bg-green-100 dark:bg-green-900/40', text: 'text-green-700 dark:text-green-400', label: 'Entregado' },
+    53→  incidencia: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-400', label: 'Incidencia' },
+    54→  programada: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', label: 'Programada' },
+    55→};
+    56→
+    57→const STATUS_CIRCLE_COLOR: Record<string, string> = {
+    58→  pendiente: 'var(--warning)',
+    59→  encamino: 'var(--info)',
+    60→  recogido: '#7C3AED',
+    61→  entregado: 'var(--exito)',
+    62→  incidencia: 'var(--peligro)',
+    63→  programada: 'var(--info)',
+    64→};
+    65→
+    66→const TIMELINE_STEPS = ['Orden creada', 'En camino', 'Recogida', 'Entregada'];
+    67→
+    68→function getStepIndex(estado: string): number {
+    69→  const map: Record<string, number> = { pendiente: 0, encamino: 1, recogido: 2, entregado: 3 };
+    70→  return map[estado] ?? 0;
+    71→}
+    72→
+    73→function getStatusFromStepIdx(idx: number): string {
+    74→  const map: Record<number, string> = { 0: 'pendiente', 1: 'encamino', 2: 'recogido', 3: 'entregado' };
+    75→  return map[idx] ?? 'pendiente';
+    76→}
+    77→
+    78→function shortenLocation(loc: string): string {
+    79→  if (loc.length <= 28) return loc;
+    80→  return loc.substring(0, 25) + '...';
+    81→}
+    82→
+    83→/* ═══════════════════════════════════════════════
+    84→   SUB-COMPONENTS
+    85→   ═══════════════════════════════════════════════ */
+    86→
+    87→function StatusBadge({ estado }: { estado: string }) {
+    88→  const s = STATUS_BADGE[estado] ?? STATUS_BADGE.pendiente;
+    89→  return (
+    90→    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}>
+    91→      {s.label}
+    92→    </span>
+    93→  );
+    94→}
+    95→
+    96→function RiderAvatar({ initials, name, size = 'md' }: { initials: string; name: string; size?: 'sm' | 'md' }) {
+    97→  const sz = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-9 h-9 text-sm';
+    98→  return (
+    99→    <div className="flex items-center gap-2">
+   100→      <div
+   101→        className={`${sz} rounded-full flex items-center justify-center font-bold`}
+   102→        style={{ background: 'var(--primario-soft)', color: 'var(--primario)' }}
+   103→      >
+   104→        {initials || <User className="w-3 h-3" />}
+   105→      </div>
+   106→      <span className={`font-medium ${size === 'sm' ? 'text-xs' : 'text-sm'}`} style={{ color: 'var(--text)' }}>
+   107→        {name || 'Sin asignar'}
+   108→      </span>
+   109→    </div>
+   110→  );
+   111→}
+   112→
+   113→/* ── Progress Timeline ──────────────────────── */
+   114→
+   115→function ProgressTimeline({ estado }: { estado: string }) {
+   116→  const currentStep = getStepIndex(estado);
+   117→
+   118→  return (
+   119→    <div className="w-full px-2 py-4">
+   120→      <div className="flex items-center justify-between relative">
+   121→        {/* Background line */}
+   122→        <div className="absolute top-4 left-6 right-6 h-0.5" style={{ background: 'var(--border)' }} />
+   123→
+   124→        {/* Completed line overlay */}
+   125→        {currentStep > 0 && (
+   126→          <motion.div
+   127→            className="absolute top-4 left-6 h-0.5"
+   128→            style={{ background: 'var(--primario)' }}
+   129→            initial={{ width: 0 }}
+   130→            animate={{ width: `${(currentStep / 3) * 100}%` }}
+   131→            transition={{ duration: 0.8, ease: 'easeOut' }}
+   132→          />
+   133→        )}
+   134→
+   135→        {TIMELINE_STEPS.map((step, idx) => {
+   136→          const isCompleted = idx <= currentStep && estado !== 'pendiente' ? idx < currentStep : false;
+   137→          const isCurrent = idx === currentStep;
+   138→          const isPending = idx > currentStep;
+   139→
+   140→          return (
+   141→            <div key={step} className="flex flex-col items-center z-10" style={{ flex: '1 0 0' }}>
+   142→              <motion.div
+   143→                className="w-8 h-8 rounded-full flex items-center justify-center border-2"
+   144→                style={{
+   145→                  borderColor: isCompleted || isCurrent ? 'var(--primario)' : 'var(--border)',
+   146→                  background: isCompleted ? 'var(--primario)' : isCurrent ? 'transparent' : 'var(--surface)',
+   147→                }}
+   148→                animate={isCurrent ? {
+   149→                  boxShadow: [
+   150→                    '0 0 0 0px rgba(255,87,34,0)',
+   151→                    '0 0 0 6px rgba(255,87,34,0.3)',
+   152→                    '0 0 0 0px rgba(255,87,34,0)',
+   153→                  ],
+   154→                } : {}}
+   155→                transition={isCurrent ? { duration: 2, repeat: Infinity } : {}}
+   156→              >
+   157→                {isCompleted ? (
+   158→                  <motion.div
+   159→                    initial={{ scale: 0 }}
+   160→                    animate={{ scale: 1 }}
+   161→                    transition={{ type: 'spring', stiffness: 300, damping: 20, delay: idx * 0.15 }}
+   162→                  >
+   163→                    <CheckCircle className="w-4 h-4 text-white" />
+   164→                  </motion.div>
+   165→                ) : isCurrent ? (
+   166→                  <motion.div
+   167→                    initial={{ scale: 0.5, opacity: 0 }}
+   168→                    animate={{ scale: 1, opacity: 1 }}
+   169→                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+   170→                  >
+   171→                    <Bike className="w-4 h-4" style={{ color: 'var(--primario)' }} />
+   172→                  </motion.div>
+   173→                ) : (
+   174→                  <div className="w-2 h-2 rounded-full" style={{ background: 'var(--border)' }} />
+   175→                )}
+   176→              </motion.div>
+   177→              <span
+   178→                className="text-[10px] sm:text-xs mt-1.5 text-center leading-tight"
+   179→                style={{
+   180→                  color: isCompleted || isCurrent ? 'var(--text)' : 'var(--text-muted)',
+   181→                  fontWeight: isCurrent ? 700 : 400,
+   182→                }}
+   183→              >
+   184→                {step}
+   185→              </span>
+   186→            </div>
+   187→          );
+   188→        })}
+   189→      </div>
+   190→    </div>
+   191→  );
+   192→}
+   193→
+   194→/* ── Map Placeholder ────────────────────────── */
+   195→
+   196→function MapPlaceholder() {
+   197→  return (
+   198→    <div
+   199→      className="w-full rounded-xl flex flex-col items-center justify-center gap-3"
+   200→      style={{
+   201→        height: 250,
+   202→        background: 'var(--bg-alt)',
+   203→        border: '1px dashed var(--border)',
+   204→      }}
+   205→    >
+   206→      <MapPin className="w-10 h-10" style={{ color: 'var(--text-muted)' }} />
+   207→      <span className="text-sm font-medium" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   208→        Mapa en tiempo real
+   209→      </span>
+   210→      <div className="flex items-center gap-1">
+   211→        <motion.div
+   212→          animate={{ rotate: 360 }}
+   213→          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+   214→        >
+   215→          <RefreshCw className="w-3 h-3" style={{ color: 'var(--primario)' }} />
+   216→        </motion.div>
+   217→        <span className="text-xs" style={{ color: 'var(--primario)', fontFamily: 'JetBrains Mono' }}>
+   218→          Actualizando...
+   219→        </span>
+   220→      </div>
+   221→    </div>
+   222→  );
+   223→}
+   224→
+   225→/* ── Empty State ────────────────────────────── */
+   226→
+   227→function EmptyActiveState({ onNavigate }: { onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void }) {
+   228→  return (
+   229→    <motion.div
+   230→      initial={{ opacity: 0, y: 20 }}
+   231→      animate={{ opacity: 1, y: 0 }}
+   232→      className="flex flex-col items-center justify-center py-16 px-4"
+   233→    >
+   234→      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" className="mb-6">
+   235→        {/* Package body */}
+   236→        <rect x="30" y="45" width="60" height="50" rx="6" style={{ fill: 'var(--bg-alt)' }} stroke="var(--border)" strokeWidth="2" />
+   237→        <rect x="30" y="45" width="60" height="18" rx="6" style={{ fill: 'var(--primario-soft)' }} stroke="var(--primario)" strokeWidth="1.5" />
+   238→        {/* Flap */}
+   239→        <path d="M30 55 L60 38 L90 55" stroke="var(--primario)" strokeWidth="2" fill="none" />
+   240→        {/* Arrow */}
+   241→        <motion.g
+   242→          animate={{ x: [0, 8, 0] }}
+   243→          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+   244→        >
+   245→          <path d="M62 82 L78 82" stroke="var(--primario)" strokeWidth="2.5" strokeLinecap="round" />
+   246→          <path d="M73 76 L79 82 L73 88" stroke="var(--primario)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+   247→        </motion.g>
+   248→        {/* Dots decoration */}
+   249→        <circle cx="20" cy="30" r="3" style={{ fill: 'var(--primario-soft)' }} />
+   250→        <circle cx="100" cy="35" r="2.5" style={{ fill: 'var(--primario-soft)' }} />
+   251→        <circle cx="15" cy="80" r="2" style={{ fill: 'var(--border)' }} />
+   252→      </svg>
+   253→      <h3
+   254→        className="text-xl font-bold mb-2"
+   255→        style={{ fontFamily: 'Syne', color: 'var(--text)' }}
+   256→      >
+   257→        No tienes envíos activos
+   258→      </h3>
+   259→      <p
+   260→        className="text-sm mb-6 text-center max-w-xs"
+   261→        style={{ color: 'var(--text-secondary)', fontFamily: 'DM Sans' }}
+   262→      >
+   263→        Solicita un envío y seguirá aquí en tiempo real
+   264→      </p>
+   265→      <button
+   266→        onClick={() => onNavigate('solicitar')}
+   267→        className="px-6 py-3 rounded-xl font-semibold text-white text-sm transition-all hover:scale-105 active:scale-95"
+   268→        style={{ background: 'var(--primario)', fontFamily: 'DM Sans' }}
+   269→      >
+   270→        Solicitar envío
+   271→      </button>
+   272→    </motion.div>
+   273→  );
+   274→}
+   275→
+   276→/* ── Report Problem Modal ───────────────────── */
+   277→
+   278→function ReportModal({
+   279→  state,
+   280→  setState,
+   281→  onSubmit,
+   282→}: {
+   283→  state: ReportModalState;
+   284→  setState: React.Dispatch<React.SetStateAction<ReportModalState>>;
+   285→  onSubmit: () => void;
+   286→}) {
+   287→  if (!state.open) return null;
+   288→
+   289→  const reasons = [
+   290→    { value: 'repartidor_no_llega', label: 'El repartidor no llega' },
+   291→    { value: 'direccion_incorrecta', label: 'Dirección incorrecta' },
+   292→    { value: 'otro', label: 'Otro' },
+   293→  ];
+   294→
+   295→  return (
+   296→    <motion.div
+   297→      initial={{ opacity: 0 }}
+   298→      animate={{ opacity: 1 }}
+   299→      exit={{ opacity: 0 }}
+   300→      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+   301→      style={{ background: 'rgba(0,0,0,0.5)' }}
+   302→      onClick={() => setState((s) => ({ ...s, open: false }))}
+   303→    >
+   304→      <motion.div
+   305→        initial={{ scale: 0.9, opacity: 0 }}
+   306→        animate={{ scale: 1, opacity: 1 }}
+   307→        exit={{ scale: 0.9, opacity: 0 }}
+   308→        className="w-full max-w-md rounded-2xl p-6"
+   309→        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+   310→        onClick={(e) => e.stopPropagation()}
+   311→      >
+   312→        <div className="flex items-center gap-3 mb-5">
+   313→          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--peligro)', opacity: 0.15 }}>
+   314→            <AlertTriangle className="w-5 h-5" style={{ color: 'var(--peligro)' }} />
+   315→          </div>
+   316→          <h3 className="text-lg font-bold" style={{ fontFamily: 'Syne', color: 'var(--text)' }}>
+   317→            ¿Qué pasó?
+   318→          </h3>
+   319→        </div>
+   320→
+   321→        <div className="space-y-3 mb-4">
+   322→          {reasons.map((r) => (
+   323→            <button
+   324→              key={r.value}
+   325→              onClick={() => setState((s) => ({ ...s, reason: r.value }))}
+   326→              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all"
+   327→              style={{
+   328→                background: state.reason === r.value ? 'var(--primario-soft)' : 'var(--bg-alt)',
+   329→                color: state.reason === r.value ? 'var(--primario)' : 'var(--text)',
+   330→                border: state.reason === r.value ? '1.5px solid var(--primario)' : '1px solid var(--border)',
+   331→                fontFamily: 'DM Sans',
+   332→              }}
+   333→            >
+   334→              {r.label}
+   335→            </button>
+   336→          ))}
+   337→        </div>
+   338→
+   339→        <textarea
+   340→          placeholder="Describe el problema (opcional)..."
+   341→          value={state.description}
+   342→          onChange={(e) => setState((s) => ({ ...s, description: e.target.value }))}
+   343→          className="w-full rounded-xl px-4 py-3 text-sm resize-none h-20 outline-none transition-all"
+   344→          style={{
+   345→            background: 'var(--bg-alt)',
+   346→            color: 'var(--text)',
+   347→            border: '1px solid var(--border)',
+   348→            fontFamily: 'DM Sans',
+   349→          }}
+   350→          onFocus={(e) => (e.target.style.borderColor = 'var(--primario)')}
+   351→          onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}
+   352→        />
+   353→
+   354→        <div className="flex gap-3 mt-5">
+   355→          <button
+   356→            onClick={() => setState((s) => ({ ...s, open: false }))}
+   357→            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+   358→            style={{
+   359→              background: 'var(--bg-alt)',
+   360→              color: 'var(--text-secondary)',
+   361→              border: '1px solid var(--border)',
+   362→              fontFamily: 'DM Sans',
+   363→            }}
+   364→          >
+   365→            Cancelar
+   366→          </button>
+   367→          <button
+   368→            onClick={onSubmit}
+   369→            disabled={!state.reason}
+   370→            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40"
+   371→            style={{
+   372→              background: 'var(--peligro)',
+   373→              fontFamily: 'DM Sans',
+   374→            }}
+   375→          >
+   376→            Enviar reporte
+   377→          </button>
+   378→        </div>
+   379→      </motion.div>
+   380→    </motion.div>
+   381→  );
+   382→}
+   383→
+   384→/* ── Active Order Card ──────────────────────── */
+   385→
+   386→function ActiveOrderCard({
+   387→  order,
+   388→  eta,
+   389→  onReport,
+   390→  onOpenTracking,
+   391→  onOpenChat,
+   392→}: {
+   393→  order: Order;
+   394→  eta: number;
+   395→  onReport: (orderId: string) => void;
+   396→  onOpenTracking: (orderId: string) => void;
+   397→  onOpenChat: (orderId: string) => void;
+   398→}) {
+   399→  const [lastUpdate, setLastUpdate] = useState(Date.now());
+   400→
+   401→  useEffect(() => {
+   402→    const interval = setInterval(() => setLastUpdate(Date.now()), 5000);
+   403→    return () => clearInterval(interval);
+   404→  }, []);
+   405→
+   406→  const statusColor = STATUS_CIRCLE_COLOR[order.estado] ?? 'var(--border)';
+   407→
+   408→  return (
+   409→    <motion.div
+   410→      layout
+   411→      initial={{ opacity: 0, y: 20 }}
+   412→      animate={{ opacity: 1, y: 0 }}
+   413→      exit={{ opacity: 0, y: -10 }}
+   414→      className="rounded-2xl overflow-hidden cursor-pointer transition-colors duration-200 hover:bg-[var(--bg-alt)]"
+   415→      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+   416→      onClick={() => onOpenTracking(order.id)}
+   417→    >
+   418→      {/* Header */}
+   419→      <div className="flex items-center justify-between p-4 pb-2">
+   420→        <div className="flex items-center gap-2">
+   421→          <StatusBadge estado={order.estado} />
+   422→          <span
+   423→            className="text-xs font-bold"
+   424→            style={{ fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}
+   425→          >
+   426→            {order.id}
+   427→          </span>
+   428→        </div>
+   429→        <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   430→          {order.fecha}
+   431→        </span>
+   432→      </div>
+   433→
+   434→      {/* Route */}
+   435→      <div className="px-4 py-2">
+   436→        <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
+   437→          <div className="w-2 h-2 rounded-full" style={{ background: 'var(--exito)' }} />
+   438→          <span>De: {order.origen}</span>
+   439→          <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+   440→          <div className="w-2 h-2 rounded-full" style={{ background: 'var(--primario)' }} />
+   441→          <span>A: {order.destino}</span>
+   442→        </div>
+   443→      </div>
+   444→
+   445→      {/* Rider + ETA */}
+   446→      <div className="px-4 py-3 flex items-center justify-between">
+   447→        <RiderAvatar initials={order.repartidorInitials} name={order.repartidor ?? ''} />
+   448→        <div className="text-right">
+   449→          <div
+   450→            className="text-2xl font-bold"
+   451→            style={{ fontFamily: 'JetBrains Mono', color: 'var(--primario)' }}
+   452→          >
+   453→            ~{eta} min
+   454→          </div>
+   455→          <div className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   456→            Llega en ~{eta} min
+   457→          </div>
+   458→        </div>
+   459→      </div>
+   460→
+   461→      {/* Map Placeholder */}
+   462→      <div className="px-4 pb-3">
+   463→        <MapPlaceholder />
+   464→      </div>
+   465→
+   466→      {/* Progress Timeline */}
+   467→      <div className="px-4 pb-4">
+   468→        <div className="rounded-xl p-3" style={{ background: 'var(--bg-alt)' }}>
+   469→          <ProgressTimeline estado={order.estado} />
+   470→        </div>
+   471→      </div>
+   472→
+   473→      {/* Live indicator */}
+   474→      <div className="px-4 pb-3 flex items-center gap-2">
+   475→        <motion.div
+   476→          className="w-2 h-2 rounded-full"
+   477→          style={{ background: 'var(--exito)' }}
+   478→          animate={{ opacity: [1, 0.3, 1] }}
+   479→          transition={{ duration: 1.5, repeat: Infinity }}
+   480→        />
+   481→        <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'JetBrains Mono' }}>
+   482→          En vivo · Actualizado hace {Math.floor((Date.now() - lastUpdate) / 1000)}s
+   483→        </span>
+   484→      </div>
+   485→
+   486→      {/* Action buttons */}
+   487→      <div className="px-4 pb-4 flex flex-wrap gap-2">
+   488→        <button
+   489→          onClick={(e) => { e.stopPropagation(); onOpenTracking(order.id); }}
+   490→          style={{
+   491→            padding: '8px 16px',
+   492→            borderRadius: 10,
+   493→            border: 'none',
+   494→            background: 'var(--primario)',
+   495→            color: '#FFFFFF',
+   496→            fontSize: 13,
+   497→            fontWeight: 600,
+   498→            cursor: 'pointer',
+   499→            fontFamily: "'DM Sans', sans-serif",
+   500→            display: 'flex',
+   501→            alignItems: 'center',
+   502→            gap: 6,
+   503→          }}
+   504→        >
+   505→          <Navigation size={16} />
+   506→          Ver seguimiento
+   507→        </button>
+   508→        {order.repartidor && (
+   509→          <button
+   510→            onClick={(e) => { e.stopPropagation(); onOpenChat(order.id); }}
+   511→            style={{
+   512→              padding: '8px 16px',
+   513→              borderRadius: 10,
+   514→              border: '1px solid var(--border)',
+   515→              background: 'transparent',
+   516→              color: 'var(--text)',
+   517→              fontSize: 13,
+   518→              fontWeight: 500,
+   519→              cursor: 'pointer',
+   520→              fontFamily: "'DM Sans', sans-serif",
+   521→              display: 'flex',
+   522→              alignItems: 'center',
+   523→              gap: 6,
+   524→            }}
+   525→          >
+   526→            <MessageCircle size={16} />
+   527→            Mensaje
+   528→          </button>
+   529→        )}
+   530→        <button
+   531→          onClick={(e) => { e.stopPropagation(); onReport(order.id); }}
+   532→          className="py-2.5 px-4 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+   533→          style={{
+   534→            background: 'transparent',
+   535→            color: 'var(--peligro)',
+   536→            border: '1px solid var(--peligro)',
+   537→            fontFamily: 'DM Sans',
+   538→          }}
+   539→        >
+   540→          <AlertTriangle className="w-4 h-4 inline mr-2" />
+   541→          Reportar problema
+   542→        </button>
+   543→      </div>
+   544→    </motion.div>
+   545→  );
+   546→}
+   547→
+   548→/* ── History Order Item ─────────────────────── */
+   549→
+   550→function HistoryOrderItem({
+   551→  order,
+   552→  onNavigate,
+   553→  onDownload,
+   554→}: {
+   555→  order: Order;
+   556→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+   557→  onDownload: (orderId: string) => void;
+   558→}) {
+   559→  const [expanded, setExpanded] = useState(false);
+   560→
+   561→  return (
+   562→    <motion.div layout className="rounded-xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+   563→      <button
+   564→        onClick={() => setExpanded(!expanded)}
+   565→        className="w-full text-left p-4 transition-all hover:opacity-90"
+   566→        style={{ background: 'var(--surface)' }}
+   567→      >
+   568→        {/* Row 1: ID + status + date */}
+   569→        <div className="flex items-center justify-between mb-1.5">
+   570→          <div className="flex items-center gap-2">
+   571→            <span className="text-[13px]" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}>
+   572→              {order.id}
+   573→            </span>
+   574→            <StatusBadge estado={order.estado} />
+   575→          </div>
+   576→          <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   577→            {order.fecha}
+   578→          </span>
+   579→        </div>
+   580→
+   581→        {/* Row 2: Route */}
+   582→        <div className="flex items-center gap-1.5 text-sm mb-1.5" style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
+   583→          <span>{shortenLocation(order.origen)}</span>
+   584→          <ArrowRight className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+   585→          <span>{shortenLocation(order.destino)}</span>
+   586→        </div>
+   587→
+   588→        {/* Row 3: Rider + amount + payment */}
+   589→        <div className="flex items-center justify-between">
+   590→          <div className="flex items-center gap-2">
+   591→            <RiderAvatar initials={order.repartidorInitials} name={order.repartidor ?? ''} size="sm" />
+   592→          </div>
+   593→          <div className="flex items-center gap-2">
+   594→            {order.metodoPago === 'efectivo' ? (
+   595→              <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   596→                💵
+   597→              </span>
+   598→            ) : (
+   599→              <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   600→                💳
+   601→              </span>
+   602→            )}
+   603→            <span className="text-sm font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text)' }}>
+   604→              C$ {order.monto}
+   605→            </span>
+   606→            {expanded ? (
+   607→              <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+   608→            ) : (
+   609→              <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+   610→            )}
+   611→          </div>
+   612→        </div>
+   613→      </button>
+   614→
+   615→      {/* Expanded details */}
+   616→      <AnimatePresence>
+   617→        {expanded && (
+   618→          <motion.div
+   619→            initial={{ height: 0, opacity: 0 }}
+   620→            animate={{ height: 'auto', opacity: 1 }}
+   621→            exit={{ height: 0, opacity: 0 }}
+   622→            transition={{ duration: 0.3 }}
+   623→            className="overflow-hidden"
+   624→          >
+   625→            <div className="px-4 pb-4 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
+   626→              {/* Route traveled */}
+   627→              <div className="pt-3">
+   628→                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   629→                  Ruta recorrida
+   630→                </p>
+   631→                <p className="text-sm" style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
+   632→                  {order.origen} → {order.destino}
+   633→                </p>
+   634→              </div>
+   635→
+   636→              {/* Timeline */}
+   637→              <div>
+   638→                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   639→                  Timeline completo
+   640→                </p>
+   641→                {order.timeline.map((t, i) => (
+   642→                  <div key={i} className="flex items-center gap-3 py-1">
+   643→                    <div
+   644→                      className="w-3 h-3 rounded-full flex-shrink-0"
+   645→                      style={{ background: t.completado ? 'var(--primario)' : 'var(--border)' }}
+   646→                    />
+   647→                    <span className="text-sm flex-1" style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
+   648→                      {t.step}
+   649→                    </span>
+   650→                    <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'JetBrains Mono' }}>
+   651→                      {t.hora}
+   652→                    </span>
+   653→                  </div>
+   654→                ))}
+   655→              </div>
+   656→
+   657→              {/* Simulated metrics */}
+   658→              <div className="grid grid-cols-2 gap-3">
+   659→                <div className="rounded-lg p-3" style={{ background: 'var(--bg-alt)' }}>
+   660→                  <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   661→                    Km recorridos
+   662→                  </p>
+   663→                  <p className="text-lg font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text)' }}>
+   664→                    {((Math.abs(order.destinoLat - order.origenLat) + Math.abs(order.destinoLng - order.origenLng)) * 111 * 10).toFixed(1)} km
+   665→                  </p>
+   666→                </div>
+   667→                <div className="rounded-lg p-3" style={{ background: 'var(--bg-alt)' }}>
+   668→                  <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   669→                    Tiempo total
+   670→                  </p>
+   671→                  <p className="text-lg font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text)' }}>
+   672→                    {order.timeline[3]?.completado && order.timeline[0]?.hora && order.timeline[3]?.hora
+   673→                      ? (() => {
+   674→                          const [h1, m1] = order.timeline[0].hora.split(':').map(Number);
+   675→                          const [h2, m2] = order.timeline[3].hora.split(':').map(Number);
+   676→                          const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+   677→                          return diff > 0 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : `${diff}m`;
+   678→                        })()
+   679→                      : '—'}
+   680→                  </p>
+   681→                </div>
+   682→              </div>
+   683→
+   684→              {/* Action buttons */}
+   685→              <div className="flex gap-2">
+   686→                <button
+   687→                  onClick={(e) => { e.stopPropagation(); onNavigate('solicitar'); }}
+   688→                  className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+   689→                  style={{
+   690→                    background: 'var(--primario)',
+   691→                    color: 'white',
+   692→                    fontFamily: 'DM Sans',
+   693→                  }}
+   694→                >
+   695→                  Volver a enviar a esta ruta
+   696→                </button>
+   697→                <button
+   698→                  onClick={(e) => { e.stopPropagation(); onDownload(order.id); }}
+   699→                  className="py-2 px-3 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+   700→                  style={{
+   701→                    background: 'var(--bg-alt)',
+   702→                    color: 'var(--text-secondary)',
+   703→                    border: '1px solid var(--border)',
+   704→                    fontFamily: 'DM Sans',
+   705→                  }}
+   706→                >
+   707→                  <Download className="w-3.5 h-3.5" />
+   708→                </button>
+   709→              </div>
+   710→            </div>
+   711→          </motion.div>
+   712→        )}
+   713→      </AnimatePresence>
+   714→    </motion.div>
+   715→  );
+   716→}
+   717→
+   718→/* ═══════════════════════════════════════════════
+   719→   MAIN COMPONENT
+   720→   ═══════════════════════════════════════════════ */
+   721→
+   722→export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientEnviosProps) {
+   723→  const {
+   724→    orders,
+   725→    clientEnvioTab,
+   726→    setClientEnvioTab,
+   727→    clientEnvioFilter,
+   728→    setClientEnvioFilter,
+   729→    clientSearchQuery,
+   730→    setClientSearchQuery,
+   731→    simulateStatusChange,
+   732→    addToast,
+   733→  } = useStore();
+   734→
+   735→  /* ── State ────────────────────── */
+   736→  const [reportModal, setReportModal] = useState<ReportModalState>({
+   737→    open: false,
+   738→    orderId: '',
+   739→    reason: '',
+   740→    description: '',
+   741→  });
+   742→  const [etaMap, setEtaMap] = useState<Record<string, number>>({});
+   743→  const [historyPage, setHistoryPage] = useState(1);
+   744→  const tickCountRef = useRef(0);
+   745→
+   746→  /* ── Filter orders for current client ── */
+   747→  const clientOrders = orders.filter(
+   748→    (o) => o.cliente === 'María López' || o.cliente === 'Maria López'
+   749→  );
+   750→
+   751→  const activeOrders = clientOrders.filter(
+   752→    (o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'
+   753→  );
+   754→
+   755→  const historicalOrders = clientOrders.filter(
+   756→    (o) => o.estado === 'entregado' || o.estado === 'incidencia'
+   757→  );
+   758→
+   759→  /* ── Filtered history ── */
+   760→  const filteredHistory = historicalOrders.filter((o) => {
+   761→    if (clientEnvioFilter === 'entregados') return o.estado === 'entregado';
+   762→    if (clientEnvioFilter === 'cancelados') return o.estado === 'incidencia';
+   763→    if (clientEnvioFilter === 'incidencia') return o.estado === 'incidencia';
+   764→    return true;
+   765→  }).filter((o) => {
+   766→    if (!clientSearchQuery) return true;
+   767→    const q = clientSearchQuery.toLowerCase();
+   768→    return (
+   769→      o.id.toLowerCase().includes(q) ||
+   770→      o.destino.toLowerCase().includes(q) ||
+   771→      o.origen.toLowerCase().includes(q)
+   772→    );
+   773→  });
+   774→
+   775→  const paginatedHistory = filteredHistory.slice(0, historyPage * 10);
+   776→
+   777→  /* ── Real-time simulation ── */
+   778→  useEffect(() => {
+   779→    const interval = setInterval(() => {
+   780→      tickCountRef.current += 1;
+   781→
+   782→      setEtaMap((prev) => {
+   783→        const next = { ...prev };
+   784→        // Initialize ETAs for any new active orders not yet in the map
+   785→        activeOrders.forEach((o) => {
+   786→          if (!next[o.id]) {
+   787→            next[o.id] = Math.floor(Math.random() * 15) + 8;
+   788→          }
+   789→        });
+   790→
+   791→        // Every 30 seconds (~6 ticks), reduce ETA by 1
+   792→        if (tickCountRef.current % 6 === 0) {
+   793→          activeOrders.forEach((o) => {
+   794→            if (next[o.id] && next[o.id] > 1) {
+   795→              next[o.id] -= 1;
+   796→            }
+   797→          });
+   798→        }
+   799→
+   800→        // Slightly modify ETA for visual feedback (every tick)
+   801→        activeOrders.forEach((o) => {
+   802→          if (next[o.id]) {
+   803→            const jitter = Math.random() > 0.5 ? 1 : -1;
+   804→            next[o.id] = Math.max(1, next[o.id] + (Math.random() > 0.7 ? jitter : 0));
+   805→          }
+   806→        });
+   807→
+   808→        return next;
+   809→      });
+   810→
+   811→      // Occasionally advance timeline (every ~30 seconds = 6 ticks)
+   812→      if (tickCountRef.current % 6 === 0 && Math.random() > 0.4) {
+   813→        simulateStatusChange();
+   814→      }
+   815→    }, 5000);
+   816→
+   817→    return () => clearInterval(interval);
+   818→  }, [activeOrders, simulateStatusChange]);
+   819→
+   820→  /* ── Handlers ── */
+   821→  const handleReport = useCallback((orderId: string) => {
+   822→    setReportModal({ open: true, orderId, reason: '', description: '' });
+   823→  }, []);
+   824→
+   825→  const handleReportSubmit = useCallback(() => {
+   826→    addToast(`Reporte enviado para ${reportModal.orderId}`, 'info');
+   827→    setReportModal({ open: false, orderId: '', reason: '', description: '' });
+   828→  }, [reportModal.orderId, addToast]);
+   829→
+   830→  const handleDownload = useCallback((orderId: string) => {
+   831→    addToast(`Descargando comprobante de ${orderId}...`, 'info');
+   832→  }, [addToast]);
+   833→
+   834→  /* ── Client metrics ── */
+   835→  const totalEnvios = clientOrders.length;
+   836→  const totalGastado = clientOrders.reduce((sum, o) => sum + o.monto, 0);
+   837→  const enviosEsteMes = clientOrders.filter((o) => o.fecha.startsWith('2026-06')).length;
+   838→
+   839→  /* ── Filter pills ── */
+   840→  const filterPills = [
+   841→    { key: 'todos', label: 'Todos' },
+   842→    { key: 'entregados', label: 'Entregados' },
+   843→    { key: 'cancelados', label: 'Cancelados' },
+   844→    { key: 'incidencia', label: 'Con incidencia' },
+   845→  ];
+   846→
+   847→  /* ═══════════════════════════════════════════════
+   848→     RENDER
+   849→     ═══════════════════════════════════════════════ */
+   850→
+   851→  return (
+   852→    <div className="w-full">
+   853→      {/* ── Tab Switcher ── */}
+   854→      <div className="flex gap-1 p-1 rounded-xl mb-6" style={{ background: 'var(--bg-alt)' }}>
+   855→        {(['activos', 'historial'] as const).map((tab) => (
+   856→          <button
+   857→            key={tab}
+   858→            onClick={() => { setClientEnvioTab(tab); setHistoryPage(1); }}
+   859→            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative"
+   860→            style={{
+   861→              fontFamily: 'DM Sans',
+   862→              color: clientEnvioTab === tab ? 'var(--primario)' : 'var(--text-muted)',
+   863→            }}
+   864→          >
+   865→            {clientEnvioTab === tab && (
+   866→              <motion.div
+   867→                layoutId="envio-tab-indicator"
+   868→                className="absolute inset-0 rounded-lg"
+   869→                style={{ background: 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
+   870→                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+   871→              />
+   872→            )}
+   873→            <span className="relative z-10">
+   874→              {tab === 'activos' ? 'Activos' : 'Historial'}
+   875→              {tab === 'activos' && activeOrders.length > 0 && (
+   876→                <span
+   877→                  className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white"
+   878→                  style={{ background: 'var(--primario)' }}
+   879→                >
+   880→                  {activeOrders.length}
+   881→                </span>
+   882→              )}
+   883→            </span>
+   884→          </button>
+   885→        ))}
+   886→      </div>
+   887→
+   888→      {/* ── Tab Content ── */}
+   889→      <AnimatePresence mode="wait">
+   890→        {clientEnvioTab === 'activos' ? (
+   891→          <motion.div
+   892→            key="activos"
+   893→            initial={{ opacity: 0, x: -20 }}
+   894→            animate={{ opacity: 1, x: 0 }}
+   895→            exit={{ opacity: 0, x: 20 }}
+   896→            transition={{ duration: 0.25 }}
+   897→          >
+   898→            {activeOrders.length === 0 ? (
+   899→              <EmptyActiveState onNavigate={onNavigate} />
+   900→            ) : (
+   901→              <div className="space-y-4">
+   902→                {activeOrders.map((order) => (
+   903→                  <ActiveOrderCard
+   904→                    key={order.id}
+   905→                    order={order}
+   906→                    eta={etaMap[order.id] ?? 12}
+   907→                    onReport={handleReport}
+   908→                    onOpenTracking={onOpenTracking}
+   909→                    onOpenChat={onOpenChat}
+   910→                  />
+   911→                ))}
+   912→              </div>
+   913→            )}
+   914→          </motion.div>
+   915→        ) : (
+   916→          <motion.div
+   917→            key="historial"
+   918→            initial={{ opacity: 0, x: 20 }}
+   919→            animate={{ opacity: 1, x: 0 }}
+   920→            exit={{ opacity: 0, x: -20 }}
+   921→            transition={{ duration: 0.25 }}
+   922→          >
+   923→            {/* Client metrics */}
+   924→            <div className="flex items-center justify-center gap-6 mb-5">
+   925→              {[
+   926→                { value: totalEnvios, label: 'envíos totales' },
+   927→                { value: `C$ ${totalGastado.toLocaleString()}`, label: 'gastados' },
+   928→                { value: enviosEsteMes, label: 'envíos este mes' },
+   929→              ].map((m, i) => (
+   930→                <div key={i} className="text-center">
+   931→                  <div className="text-base font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}>
+   932→                    {m.value}
+   933→                  </div>
+   934→                  <div className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   935→                    {m.label}
+   936→                  </div>
+   937→                </div>
+   938→              ))}
+   939→            </div>
+   940→
+   941→            {/* Filter pills */}
+   942→            <div className="flex gap-2 mb-4 flex-wrap">
+   943→              {filterPills.map((pill) => (
+   944→                <button
+   945→                  key={pill.key}
+   946→                  onClick={() => { setClientEnvioFilter(pill.key); setHistoryPage(1); }}
+   947→                  className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+   948→                  style={{
+   949→                    fontFamily: 'DM Sans',
+   950→                    background: clientEnvioFilter === pill.key ? 'var(--primario)' : 'var(--bg-alt)',
+   951→                    color: clientEnvioFilter === pill.key ? 'white' : 'var(--text-secondary)',
+   952→                    border: clientEnvioFilter === pill.key ? '1px solid var(--primario)' : '1px solid var(--border)',
+   953→                  }}
+   954→                >
+   955→                  {pill.label}
+   956→                </button>
+   957→              ))}
+   958→            </div>
+   959→
+   960→            {/* Search */}
+   961→            <div className="relative mb-4">
+   962→              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+   963→              <input
+   964→                type="text"
+   965→                placeholder="Buscar por ID o destino..."
+   966→                value={clientSearchQuery}
+   967→                onChange={(e) => { setClientSearchQuery(e.target.value); setHistoryPage(1); }}
+   968→                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+   969→                style={{
+   970→                  background: 'var(--bg-alt)',
+   971→                  color: 'var(--text)',
+   972→                  border: '1px solid var(--border)',
+   973→                  fontFamily: 'DM Sans',
+   974→                }}
+   975→                onFocus={(e) => (e.target.style.borderColor = 'var(--primario)')}
+   976→                onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}
+   977→              />
+   978→            </div>
+   979→
+   980→            {/* Counter */}
+   981→            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   982→              {filteredHistory.length} envío{filteredHistory.length !== 1 ? 's' : ''} en tu historial
+   983→            </p>
+   984→
+   985→            {/* Order list */}
+   986→            {filteredHistory.length === 0 ? (
+   987→              <div className="flex flex-col items-center py-12">
+   988→                <Package className="w-10 h-10 mb-3" style={{ color: 'var(--text-muted)' }} />
+   989→                <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+   990→                  No se encontraron envíos
+   991→                </p>
+   992→              </div>
+   993→            ) : (
+   994→              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+   995→                {paginatedHistory.map((order) => (
+   996→                  <HistoryOrderItem
+   997→                    key={order.id}
+   998→                    order={order}
+   999→                    onNavigate={onNavigate}
+  1000→                    onDownload={handleDownload}
+  1001→                  />
+  1002→                ))}
+  1003→                {paginatedHistory.length < filteredHistory.length && (
+  1004→                  <button
+  1005→                    onClick={() => setHistoryPage((p) => p + 1)}
+  1006→                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+  1007→                    style={{
+  1008→                      background: 'var(--bg-alt)',
+  1009→                      color: 'var(--primario)',
+  1010→                      border: '1px solid var(--border)',
+  1011→                      fontFamily: 'DM Sans',
+  1012→                    }}
+  1013→                  >
+  1014→                    Cargar más
+  1015→                  </button>
+  1016→                )}
+  1017→              </div>
+  1018→            )}
+  1019→          </motion.div>
+  1020→        )}
+  1021→      </AnimatePresence>
+  1022→
+  1023→      {/* ── Report Problem Modal ── */}
+  1024→      <AnimatePresence>
+  1025→        {reportModal.open && (
+  1026→          <ReportModal
+  1027→            state={reportModal}
+  1028→            setState={setReportModal}
+  1029→            onSubmit={handleReportSubmit}
+  1030→          />
+  1031→        )}
+  1032→      </AnimatePresence>
+  1033→    </div>
+  1034→  );
+  1035→}
+  1036→
