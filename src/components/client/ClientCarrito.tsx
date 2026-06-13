@@ -250,7 +250,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
                     Pago
                   </span>
                   <span className="text-xs font-medium" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}>
-                    {confirmedOrder.metodoPago === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}
+                    {confirmedOrder.metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
                   </span>
                 </div>
               </div>

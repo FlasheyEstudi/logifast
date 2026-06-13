@@ -1,0 +1,894 @@
+     1→'use client';
+     2→
+     3→import React, { useState } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  ArrowLeft,
+     7→  Plus,
+     8→  Minus,
+     9→  Trash2,
+    10→  Tag,
+    11→  MapPin,
+    12→  Clock,
+    13→  CreditCard,
+    14→  Banknote,
+    15→  Check,
+    16→  ChevronRight,
+    17→  X,
+    18→  ShoppingBag,
+    19→  Zap,
+    20→  Calendar,
+    21→} from 'lucide-react';
+    22→import { useMarketplaceStore, type CartItem, type Tienda } from '@/lib/marketplace-store';
+    23→import { useStore } from '@/lib/store';
+    24→
+    25→/* ═══════════════════════════════════════════════
+    26→   PROPS
+    27→   ═══════════════════════════════════════════════ */
+    28→
+    29→interface ClientCarritoProps {
+    30→  isDark: boolean;
+    31→  onClose: () => void;
+    32→  onBackToTienda: () => void;
+    33→}
+    34→
+    35→/* ═══════════════════════════════════════════════
+    36→   HELPERS
+    37→   ═══════════════════════════════════════════════ */
+    38→
+    39→function formatCordobas(n: number): string {
+    40→  return `C$ ${n.toLocaleString('es-NI')}`;
+    41→}
+    42→
+    43→/* ═══════════════════════════════════════════════
+    44→   COMPONENT
+    45→   ═══════════════════════════════════════════════ */
+    46→
+    47→export default function ClientCarrito({ isDark, onClose, onBackToTienda }: ClientCarritoProps) {
+    48→  /* ── Store ── */
+    49→  const {
+    50→    cartItems,
+    51→    cartCodigoPromo,
+    52→    cartDescuento,
+    53→    cartDireccionEntrega,
+    54→    cartInstrucciones,
+    55→    cartMetodoPago,
+    56→    cartScheduleMode,
+    57→    cartScheduleDate,
+    58→    cartScheduleTime,
+    59→    tiendas,
+    60→    ordenesCompra,
+    61→    compraConfirmada,
+    62→    compraConfirmadaId,
+    63→    removeFromCart,
+    64→    updateCartItemQty,
+    65→    clearCart,
+    66→    setCartCodigoPromo,
+    67→    setCartDescuento,
+    68→    setCartDireccionEntrega,
+    69→    setCartInstrucciones,
+    70→    setCartMetodoPago,
+    71→    setCartScheduleMode,
+    72→    setCartScheduleDate,
+    73→    setCartScheduleTime,
+    74→    confirmarCompra,
+    75→    getCartSubtotal,
+    76→    getCartTotal,
+    77→    getCartItemCount,
+    78→    getCartTiendas,
+    79→    getCartItemsByTienda,
+    80→  } = useMarketplaceStore();
+    81→
+    82→  const { direccionesGuardadas, validateCodigoPromo } = useStore();
+    83→
+    84→  /* ── Local state ── */
+    85→  const [promoInput, setPromoInput] = useState('');
+    86→  const [promoError, setPromoError] = useState('');
+    87→  const [showAddressDropdown, setShowAddressDropdown] = useState(false);
+    88→  const [isConfirming, setIsConfirming] = useState(false);
+    89→  const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
+    90→
+    91→  /* ── Derived ── */
+    92→  const itemCount = getCartItemCount();
+    93→  const subtotal = getCartSubtotal();
+    94→  const total = getCartTotal();
+    95→  const tiendaIds = getCartTiendas();
+    96→  const isEmpty = cartItems.length === 0;
+    97→
+    98→  // Calculate shipping: sum of shipping costs from each unique tienda
+    99→  const costoEnvio = tiendaIds.reduce((sum, tid) => {
+   100→    const t = tiendas.find((ti) => ti.id === tid);
+   101→    return sum + (t?.costoEnvio ?? 20);
+   102→  }, 0);
+   103→
+   104→  const firstTienda = tiendaIds.length > 0 ? tiendas.find((t) => t.id === tiendaIds[0]) : null;
+   105→
+   106→  // Get confirmed order
+   107→  const confirmedOrder = confirmedOrderId
+   108→    ? ordenesCompra.find((o) => o.id === confirmedOrderId)
+   109→    : null;
+   110→
+   111→  /* ── Promo logic ── */
+   112→  const handleApplyPromo = () => {
+   113→    if (!promoInput.trim()) return;
+   114→    const result = validateCodigoPromo(promoInput.trim());
+   115→    if (result.valid) {
+   116→      const discountAmount = result.tipo === 'porcentaje'
+   117→        ? Math.round(subtotal * (result.descuento / 100))
+   118→        : result.descuento;
+   119→      setCartCodigoPromo(promoInput.trim().toUpperCase());
+   120→      setCartDescuento(discountAmount);
+   121→      setPromoError('');
+   122→    } else {
+   123→      setPromoError('Código no válido');
+   124→    }
+   125→  };
+   126→
+   127→  const handleRemovePromo = () => {
+   128→    setCartCodigoPromo('');
+   129→    setCartDescuento(0);
+   130→    setPromoInput('');
+   131→    setPromoError('');
+   132→  };
+   133→
+   134→  /* ── Confirm purchase ── */
+   135→  const handleConfirmPurchase = async () => {
+   136→    setIsConfirming(true);
+   137→    // Brief loading simulation
+   138→    await new Promise((r) => setTimeout(r, 800));
+   139→    confirmarCompra();
+   140→    // Get the latest order ID right after confirming
+   141→    const state = useMarketplaceStore.getState();
+   142→    setConfirmedOrderId(state.compraConfirmadaId);
+   143→    setIsConfirming(false);
+   144→  };
+   145→
+   146→  /* ── Schedule helpers ── */
+   147→  const today = new Date().toISOString().split('T')[0];
+   148→  const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+   149→
+   150→  /* ═══════════════════════════════════════════════
+   151→     CONFIRMATION SCREEN
+   152→     ═══════════════════════════════════════════════ */
+   153→  if (confirmedOrder) {
+   154→    return (
+   155→      <motion.div
+   156→        initial={{ opacity: 0 }}
+   157→        animate={{ opacity: 1 }}
+   158→        exit={{ opacity: 0 }}
+   159→        className="fixed inset-0 z-50 flex flex-col"
+   160→        style={{ background: isDark ? 'var(--negro)' : 'var(--blanco)' }}
+   161→      >
+   162→        {/* Scrollable content */}
+   163→        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+   164→          <div className="max-w-lg mx-auto px-6 py-10 flex flex-col items-center text-center">
+   165→            {/* Animated checkmark */}
+   166→            <motion.div
+   167→              initial={{ scale: 0 }}
+   168→              animate={{ scale: 1 }}
+   169→              transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
+   170→              className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+   171→              style={{ background: 'var(--exito)', boxShadow: '0 8px 32px rgba(34,197,94,0.3)' }}
+   172→            >
+   173→              <Check className="w-12 h-12 text-white" strokeWidth={3} />
+   174→            </motion.div>
+   175→
+   176→            <motion.h2
+   177→              initial={{ opacity: 0, y: 20 }}
+   178→              animate={{ opacity: 1, y: 0 }}
+   179→              transition={{ delay: 0.4 }}
+   180→              className="text-[28px] font-bold mb-2"
+   181→              style={{ fontFamily: 'Syne, sans-serif', color: 'var(--exito)' }}
+   182→            >
+   183→              ¡Pedido confirmado!
+   184→            </motion.h2>
+   185→
+   186→            <motion.div
+   187→              initial={{ opacity: 0, y: 20 }}
+   188→              animate={{ opacity: 1, y: 0 }}
+   189→              transition={{ delay: 0.5 }}
+   190→              className="space-y-2 mb-8"
+   191→            >
+   192→              <p
+   193→                className="text-sm"
+   194→                style={{ color: isDark ? 'var(--gris3)' : 'var(--gris2)', fontFamily: 'DM Sans, sans-serif' }}
+   195→              >
+   196→                Orden <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>{confirmedOrder.id}</span>
+   197→              </p>
+   198→              <p
+   199→                className="text-sm"
+   200→                style={{ color: isDark ? 'var(--gris3)' : 'var(--gris2)', fontFamily: 'DM Sans, sans-serif' }}
+   201→              >
+   202→                {confirmedOrder.tiendaNombre}
+   203→              </p>
+   204→              <div
+   205→                className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full"
+   206→                style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   207→              >
+   208→                <Clock className="w-4 h-4" style={{ color: 'var(--primario)' }} />
+   209→                <span className="text-sm font-medium" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   210→                  Llegará en ~30 minutos
+   211→                </span>
+   212→              </div>
+   213→            </motion.div>
+   214→
+   215→            {/* Products mini-list */}
+   216→            <motion.div
+   217→              initial={{ opacity: 0, y: 20 }}
+   218→              animate={{ opacity: 1, y: 0 }}
+   219→              transition={{ delay: 0.6 }}
+   220→              className="w-full rounded-2xl p-4 mb-6"
+   221→              style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   222→            >
+   223→              <p className="text-xs font-semibold mb-3" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+   224→                Productos
+   225→              </p>
+   226→              <div className="space-y-2">
+   227→                {confirmedOrder.items.map((item, idx) => (
+   228→                  <div key={idx} className="flex items-center justify-between">
+   229→                    <span className="text-sm" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   230→                      {item.cantidad}× {item.nombreProducto}
+   231→                    </span>
+   232→                    <span className="text-sm font-medium" style={{ fontFamily: 'JetBrains Mono, monospace', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}>
+   233→                      {formatCordobas(item.cantidad * item.precioUnitario)}
+   234→                    </span>
+   235→                  </div>
+   236→                ))}
+   237→              </div>
+   238→
+   239→              <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}33` }}>
+   240→                <div className="flex items-center justify-between">
+   241→                  <span className="text-base font-bold" style={{ fontFamily: 'Syne, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   242→                    Total
+   243→                  </span>
+   244→                  <span className="text-base font-bold" style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--primario)' }}>
+   245→                    {formatCordobas(confirmedOrder.total)}
+   246→                  </span>
+   247→                </div>
+   248→                <div className="flex items-center justify-between mt-1">
+   249→                  <span className="text-xs" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}>
+   250→                    Pago
+   251→                  </span>
+   252→                  <span className="text-xs font-medium" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}>
+   253→                    {confirmedOrder.metodoPago === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}
+   254→                  </span>
+   255→                </div>
+   256→              </div>
+   257→            </motion.div>
+   258→
+   259→            {/* Action buttons */}
+   260→            <motion.div
+   261→              initial={{ opacity: 0, y: 20 }}
+   262→              animate={{ opacity: 1, y: 0 }}
+   263→              transition={{ delay: 0.7 }}
+   264→              className="w-full space-y-3"
+   265→            >
+   266→              <button
+   267→                onClick={onClose}
+   268→                className="w-full py-4 rounded-[14px] text-white font-bold text-[17px] transition-transform active:scale-[0.97]"
+   269→                style={{ fontFamily: 'Syne, sans-serif', background: 'var(--primario)' }}
+   270→              >
+   271→                Rastrear pedido
+   272→              </button>
+   273→              <button
+   274→                onClick={onClose}
+   275→                className="w-full py-4 rounded-[14px] font-semibold text-[15px] transition-transform active:scale-[0.97]"
+   276→                style={{
+   277→                  fontFamily: 'DM Sans, sans-serif',
+   278→                  background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)',
+   279→                  color: isDark ? 'var(--blanco)' : 'var(--negro)',
+   280→                }}
+   281→              >
+   282→                Volver al inicio
+   283→              </button>
+   284→            </motion.div>
+   285→          </div>
+   286→        </div>
+   287→      </motion.div>
+   288→    );
+   289→  }
+   290→
+   291→  /* ═══════════════════════════════════════════════
+   292→     MAIN CART VIEW
+   293→     ═══════════════════════════════════════════════ */
+   294→  return (
+   295→    <motion.div
+   296→      initial={{ opacity: 0, x: 40 }}
+   297→      animate={{ opacity: 1, x: 0 }}
+   298→      exit={{ opacity: 0, x: 40 }}
+   299→      transition={{ duration: 0.25 }}
+   300→      className="fixed inset-0 z-50 flex flex-col"
+   301→      style={{ background: isDark ? 'var(--negro)' : 'var(--blanco)' }}
+   302→    >
+   303→      {/* ── HEADER ── */}
+   304→      <div
+   305→        className="flex items-center justify-between px-5 py-4"
+   306→        style={{ borderBottom: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}22` }}
+   307→      >
+   308→        <div className="flex items-center gap-3">
+   309→          <button
+   310→            onClick={onClose}
+   311→            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+   312→            style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   313→          >
+   314→            <ArrowLeft className="w-5 h-5" style={{ color: isDark ? 'var(--blanco)' : 'var(--negro)' }} />
+   315→          </button>
+   316→          <h1 className="text-[28px] font-bold" style={{ fontFamily: 'Syne, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   317→            Tu carrito
+   318→          </h1>
+   319→        </div>
+   320→
+   321→        {!isEmpty && (
+   322→          <button
+   323→            onClick={clearCart}
+   324→            className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+   325→            style={{
+   326→              fontFamily: 'DM Sans, sans-serif',
+   327→              color: '#EF4444',
+   328→              background: '#EF444415',
+   329→            }}
+   330→          >
+   331→            Limpiar
+   332→          </button>
+   333→        )}
+   334→      </div>
+   335→
+   336→      {/* ── EMPTY STATE ── */}
+   337→      {isEmpty && (
+   338→        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+   339→          <motion.div
+   340→            initial={{ scale: 0.8, opacity: 0 }}
+   341→            animate={{ scale: 1, opacity: 1 }}
+   342→            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+   343→          >
+   344→            <ShoppingBag
+   345→              className="w-16 h-16 mb-4"
+   346→              style={{ color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}
+   347→              strokeWidth={1.5}
+   348→            />
+   349→          </motion.div>
+   350→          <p className="text-lg font-semibold mb-1" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   351→            Tu carrito está vacío
+   352→          </p>
+   353→          <p className="text-sm mb-6" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}>
+   354→            Explora tiendas y agrega productos
+   355→          </p>
+   356→          <button
+   357→            onClick={onClose}
+   358→            className="px-6 py-3 rounded-[14px] text-white font-semibold text-[15px] transition-transform active:scale-[0.97]"
+   359→            style={{ fontFamily: 'DM Sans, sans-serif', background: 'var(--primario)' }}
+   360→          >
+   361→            Explorar tiendas
+   362→          </button>
+   363→        </div>
+   364→      )}
+   365→
+   366→      {/* ── WITH ITEMS ── */}
+   367→      {!isEmpty && (
+   368→        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+   369→          <div className="max-w-lg mx-auto px-5 py-4 space-y-6">
+   370→
+   371→            {/* ── Items grouped by tienda ── */}
+   372→            {tiendaIds.map((tid) => {
+   373→              const tienda = tiendas.find((t) => t.id === tid);
+   374→              const items = getCartItemsByTienda(tid);
+   375→              if (!tienda || items.length === 0) return null;
+   376→
+   377→              return (
+   378→                <motion.div
+   379→                  key={tid}
+   380→                  initial={{ opacity: 0, y: 16 }}
+   381→                  animate={{ opacity: 1, y: 0 }}
+   382→                  className="rounded-2xl overflow-hidden"
+   383→                  style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   384→                >
+   385→                  {/* Tienda header */}
+   386→                  <div className="flex items-center justify-between px-4 py-3">
+   387→                    <div className="flex items-center gap-3">
+   388→                      <div
+   389→                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+   390→                        style={{ background: tienda.logoColor, fontFamily: 'Syne, sans-serif' }}
+   391→                      >
+   392→                        {tienda.logoIniciales}
+   393→                      </div>
+   394→                      <span className="text-sm font-semibold" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   395→                        {tienda.nombre}
+   396→                      </span>
+   397→                    </div>
+   398→                    <button
+   399→                      onClick={onBackToTienda}
+   400→                      className="text-xs font-medium flex items-center gap-1"
+   401→                      style={{ fontFamily: 'DM Sans, sans-serif', color: 'var(--primario)' }}
+   402→                    >
+   403→                      Ver tienda <ChevronRight className="w-3 h-3" />
+   404→                    </button>
+   405→                  </div>
+   406→
+   407→                  {/* Items */}
+   408→                  <div className="px-4 pb-3 space-y-3">
+   409→                    <AnimatePresence mode="popLayout">
+   410→                      {items.map((item) => (
+   411→                        <CartItemRow
+   412→                          key={item.id}
+   413→                          item={item}
+   414→                          isDark={isDark}
+   415→                          onIncrease={() => updateCartItemQty(item.id, item.cantidad + 1)}
+   416→                          onDecrease={() => updateCartItemQty(item.id, item.cantidad - 1)}
+   417→                          onRemove={() => removeFromCart(item.id)}
+   418→                        />
+   419→                      ))}
+   420→                    </AnimatePresence>
+   421→                  </div>
+   422→                </motion.div>
+   423→              );
+   424→            })}
+   425→
+   426→            {/* ── Promo code section ── */}
+   427→            <div
+   428→              className="rounded-2xl p-4"
+   429→              style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   430→            >
+   431→              <div className="flex items-center gap-2 mb-3">
+   432→                <Tag className="w-4 h-4" style={{ color: 'var(--primario)' }} />
+   433→                <span className="text-sm font-semibold" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   434→                  Código promocional
+   435→                </span>
+   436→              </div>
+   437→
+   438→              {cartCodigoPromo ? (
+   439→                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl" style={{ background: '#22C55E15' }}>
+   440→                  <div className="flex items-center gap-2">
+   441→                    <Check className="w-4 h-4" style={{ color: '#22C55E' }} />
+   442→                    <span className="text-sm font-medium" style={{ fontFamily: 'DM Sans, sans-serif', color: '#22C55E' }}>
+   443→                      Código {cartCodigoPromo} aplicado: -{cartDescuento > subtotal * 0.3 ? formatCordobas(cartDescuento) : `${Math.round((cartDescuento / subtotal) * 100)}%`}
+   444→                    </span>
+   445→                  </div>
+   446→                  <button
+   447→                    onClick={handleRemovePromo}
+   448→                    className="text-xs font-medium px-2 py-1 rounded-lg"
+   449→                    style={{ color: '#EF4444', background: '#EF444415' }}
+   450→                  >
+   451→                    Quitar
+   452→                  </button>
+   453→                </div>
+   454→              ) : (
+   455→                <>
+   456→                  <div className="flex gap-2">
+   457→                    <input
+   458→                      type="text"
+   459→                      value={promoInput}
+   460→                      onChange={(e) => { setPromoInput(e.target.value); setPromoError(''); }}
+   461→                      placeholder="Ingresa código promocional"
+   462→                      className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none transition-colors"
+   463→                      style={{
+   464→                        fontFamily: 'DM Sans, sans-serif',
+   465→                        background: isDark ? 'var(--negro)' : 'var(--blanco)',
+   466→                        color: isDark ? 'var(--blanco)' : 'var(--negro)',
+   467→                        border: `1px solid ${promoError ? '#EF4444' : isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   468→                      }}
+   469→                      onKeyDown={(e) => { if (e.key === 'Enter') handleApplyPromo(); }}
+   470→                    />
+   471→                    <button
+   472→                      onClick={handleApplyPromo}
+   473→                      className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-transform active:scale-[0.97]"
+   474→                      style={{ fontFamily: 'DM Sans, sans-serif', background: 'var(--primario)' }}
+   475→                    >
+   476→                      Aplicar
+   477→                    </button>
+   478→                  </div>
+   479→                  {promoError && (
+   480→                    <p className="text-xs mt-2" style={{ color: '#EF4444', fontFamily: 'DM Sans, sans-serif' }}>
+   481→                      {promoError}
+   482→                    </p>
+   483→                  )}
+   484→                </>
+   485→              )}
+   486→            </div>
+   487→
+   488→            {/* ── Delivery address ── */}
+   489→            <div
+   490→              className="rounded-2xl p-4"
+   491→              style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   492→            >
+   493→              <div className="flex items-center gap-2 mb-3">
+   494→                <MapPin className="w-4 h-4" style={{ color: 'var(--primario)' }} />
+   495→                <span className="text-sm font-semibold" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   496→                  Dirección de entrega
+   497→                </span>
+   498→              </div>
+   499→
+   500→              <div className="relative">
+   501→                <button
+   502→                  onClick={() => setShowAddressDropdown(!showAddressDropdown)}
+   503→                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors"
+   504→                  style={{
+   505→                    background: isDark ? 'var(--negro)' : 'var(--blanco)',
+   506→                    border: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   507→                  }}
+   508→                >
+   509→                  <span className="text-sm" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   510→                    {cartDireccionEntrega}
+   511→                  </span>
+   512→                  <span className="text-xs font-medium" style={{ color: 'var(--primario)' }}>
+   513→                    Cambiar
+   514→                  </span>
+   515→                </button>
+   516→
+   517→                <AnimatePresence>
+   518→                  {showAddressDropdown && (
+   519→                    <motion.div
+   520→                      initial={{ opacity: 0, y: -8, height: 0 }}
+   521→                      animate={{ opacity: 1, y: 0, height: 'auto' }}
+   522→                      exit={{ opacity: 0, y: -8, height: 0 }}
+   523→                      transition={{ duration: 0.2 }}
+   524→                      className="overflow-hidden mt-2 rounded-xl"
+   525→                      style={{ background: isDark ? 'var(--negro)' : 'var(--blanco)', border: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}33` }}
+   526→                    >
+   527→                      {direccionesGuardadas.map((dir) => (
+   528→                        <button
+   529→                          key={dir.id}
+   530→                          onClick={() => {
+   531→                            setCartDireccionEntrega(dir.direccion);
+   532→                            setShowAddressDropdown(false);
+   533→                          }}
+   534→                          className="w-full text-left px-3 py-2.5 flex items-center gap-3 transition-colors hover:opacity-80"
+   535→                          style={{
+   536→                            borderBottom: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}22`,
+   537→                          }}
+   538→                        >
+   539→                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--primario)' }} />
+   540→                          <div>
+   541→                            <p className="text-xs font-semibold" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   542→                              {dir.etiqueta}
+   543→                            </p>
+   544→                            <p className="text-xs" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}>
+   545→                              {dir.direccion}
+   546→                            </p>
+   547→                          </div>
+   548→                          {cartDireccionEntrega === dir.direccion && (
+   549→                            <Check className="w-4 h-4 ml-auto flex-shrink-0" style={{ color: 'var(--primario)' }} />
+   550→                          )}
+   551→                        </button>
+   552→                      ))}
+   553→                    </motion.div>
+   554→                  )}
+   555→                </AnimatePresence>
+   556→              </div>
+   557→            </div>
+   558→
+   559→            {/* ── Delivery schedule ── */}
+   560→            <div
+   561→              className="rounded-2xl p-4"
+   562→              style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   563→            >
+   564→              <div className="flex items-center gap-2 mb-3">
+   565→                <Clock className="w-4 h-4" style={{ color: 'var(--primario)' }} />
+   566→                <span className="text-sm font-semibold" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   567→                  Entregar:
+   568→                </span>
+   569→              </div>
+   570→
+   571→              <div className="flex gap-2">
+   572→                <button
+   573→                  onClick={() => setCartScheduleMode('ahora')}
+   574→                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all"
+   575→                  style={{
+   576→                    fontFamily: 'DM Sans, sans-serif',
+   577→                    background: cartScheduleMode === 'ahora' ? 'var(--primario)' : isDark ? 'var(--negro)' : 'var(--blanco)',
+   578→                    color: cartScheduleMode === 'ahora' ? '#fff' : isDark ? 'var(--gris3)' : 'var(--gris2)',
+   579→                    border: `1px solid ${cartScheduleMode === 'ahora' ? 'var(--primario)' : isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   580→                  }}
+   581→                >
+   582→                  <Zap className="w-4 h-4" />
+   583→                  Lo antes posible
+   584→                </button>
+   585→                <button
+   586→                  onClick={() => setCartScheduleMode('programar')}
+   587→                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all"
+   588→                  style={{
+   589→                    fontFamily: 'DM Sans, sans-serif',
+   590→                    background: cartScheduleMode === 'programar' ? 'var(--primario)' : isDark ? 'var(--negro)' : 'var(--blanco)',
+   591→                    color: cartScheduleMode === 'programar' ? '#fff' : isDark ? 'var(--gris3)' : 'var(--gris2)',
+   592→                    border: `1px solid ${cartScheduleMode === 'programar' ? 'var(--primario)' : isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   593→                  }}
+   594→                >
+   595→                  <Calendar className="w-4 h-4" />
+   596→                  Programar
+   597→                </button>
+   598→              </div>
+   599→
+   600→              {cartScheduleMode === 'ahora' && (
+   601→                <motion.div
+   602→                  initial={{ opacity: 0, height: 0 }}
+   603→                  animate={{ opacity: 1, height: 'auto' }}
+   604→                  exit={{ opacity: 0, height: 0 }}
+   605→                  className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg"
+   606→                  style={{ background: isDark ? 'var(--negro)' : 'var(--blanco)' }}
+   607→                >
+   608→                  <Zap className="w-3.5 h-3.5" style={{ color: 'var(--primario)' }} />
+   609→                  <span className="text-sm" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   610→                    ETA: <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: 'var(--primario)' }}>25-35 min</span>
+   611→                  </span>
+   612→                </motion.div>
+   613→              )}
+   614→
+   615→              {cartScheduleMode === 'programar' && (
+   616→                <motion.div
+   617→                  initial={{ opacity: 0, height: 0 }}
+   618→                  animate={{ opacity: 1, height: 'auto' }}
+   619→                  exit={{ opacity: 0, height: 0 }}
+   620→                  className="mt-3 flex gap-2"
+   621→                >
+   622→                  <input
+   623→                    type="date"
+   624→                    value={cartScheduleDate ?? today}
+   625→                    min={today}
+   626→                    max={nextWeek}
+   627→                    onChange={(e) => setCartScheduleDate(e.target.value)}
+   628→                    className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
+   629→                    style={{
+   630→                      fontFamily: 'DM Sans, sans-serif',
+   631→                      background: isDark ? 'var(--negro)' : 'var(--blanco)',
+   632→                      color: isDark ? 'var(--blanco)' : 'var(--negro)',
+   633→                      border: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   634→                    }}
+   635→                  />
+   636→                  <input
+   637→                    type="time"
+   638→                    value={cartScheduleTime ?? '12:00'}
+   639→                    onChange={(e) => setCartScheduleTime(e.target.value)}
+   640→                    className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
+   641→                    style={{
+   642→                      fontFamily: 'DM Sans, sans-serif',
+   643→                      background: isDark ? 'var(--negro)' : 'var(--blanco)',
+   644→                      color: isDark ? 'var(--blanco)' : 'var(--negro)',
+   645→                      border: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   646→                    }}
+   647→                  />
+   648→                </motion.div>
+   649→              )}
+   650→            </div>
+   651→
+   652→            {/* ── Instructions ── */}
+   653→            <div
+   654→              className="rounded-2xl p-4"
+   655→              style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   656→            >
+   657→              <span className="text-sm font-semibold block mb-3" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   658→                Instrucciones para el repartidor
+   659→              </span>
+   660→              <textarea
+   661→                value={cartInstrucciones}
+   662→                onChange={(e) => setCartInstrucciones(e.target.value)}
+   663→                placeholder="Instrucciones para el repartidor (opcional)"
+   664→                rows={2}
+   665→                className="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none transition-colors"
+   666→                style={{
+   667→                  fontFamily: 'DM Sans, sans-serif',
+   668→                  background: isDark ? 'var(--negro)' : 'var(--blanco)',
+   669→                  color: isDark ? 'var(--blanco)' : 'var(--negro)',
+   670→                  border: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   671→                }}
+   672→              />
+   673→            </div>
+   674→
+   675→            {/* ── Cost summary ── */}
+   676→            <div
+   677→              className="rounded-2xl p-4"
+   678→              style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   679→            >
+   680→              <div className="space-y-2">
+   681→                <div className="flex items-center justify-between">
+   682→                  <span className="text-sm" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}>
+   683→                    Productos ({itemCount} {itemCount === 1 ? 'item' : 'items'})
+   684→                  </span>
+   685→                  <span className="text-sm font-medium" style={{ fontFamily: 'JetBrains Mono, monospace', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   686→                    {formatCordobas(subtotal)}
+   687→                  </span>
+   688→                </div>
+   689→                <div className="flex items-center justify-between">
+   690→                  <span className="text-sm" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}>
+   691→                    Envío
+   692→                  </span>
+   693→                  <span className="text-sm font-medium" style={{ fontFamily: 'JetBrains Mono, monospace', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   694→                    {formatCordobas(costoEnvio)}
+   695→                  </span>
+   696→                </div>
+   697→                {cartDescuento > 0 && (
+   698→                  <div className="flex items-center justify-between">
+   699→                    <span className="text-sm" style={{ fontFamily: 'DM Sans, sans-serif', color: '#22C55E' }}>
+   700→                      Descuento
+   701→                    </span>
+   702→                    <span className="text-sm font-medium" style={{ fontFamily: 'JetBrains Mono, monospace', color: '#22C55E' }}>
+   703→                      -{formatCordobas(cartDescuento)}
+   704→                    </span>
+   705→                  </div>
+   706→                )}
+   707→              </div>
+   708→
+   709→              <div className="my-3" style={{ borderTop: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}33` }} />
+   710→
+   711→              <div className="flex items-center justify-between">
+   712→                <span className="text-[28px] font-bold" style={{ fontFamily: 'Syne, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   713→                  TOTAL
+   714→                </span>
+   715→                <span className="text-[28px] font-bold" style={{ fontFamily: 'Syne, sans-serif', color: 'var(--primario)' }}>
+   716→                  {formatCordobas(total)}
+   717→                </span>
+   718→              </div>
+   719→            </div>
+   720→
+   721→            {/* ── Payment method ── */}
+   722→            <div
+   723→              className="rounded-2xl p-4"
+   724→              style={{ background: isDark ? 'var(--grisOscuro)' : 'var(--grisClaro)' }}
+   725→            >
+   726→              <div className="flex items-center gap-2 mb-3">
+   727→                <CreditCard className="w-4 h-4" style={{ color: 'var(--primario)' }} />
+   728→                <span className="text-sm font-semibold" style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}>
+   729→                  Método de pago
+   730→                </span>
+   731→              </div>
+   732→
+   733→              <div className="flex gap-3">
+   734→                <button
+   735→                  onClick={() => setCartMetodoPago('efectivo')}
+   736→                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all"
+   737→                  style={{
+   738→                    fontFamily: 'DM Sans, sans-serif',
+   739→                    background: cartMetodoPago === 'efectivo' ? 'var(--primario)' : isDark ? 'var(--negro)' : 'var(--blanco)',
+   740→                    color: cartMetodoPago === 'efectivo' ? '#fff' : isDark ? 'var(--gris3)' : 'var(--gris2)',
+   741→                    border: `1px solid ${cartMetodoPago === 'efectivo' ? 'var(--primario)' : isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   742→                  }}
+   743→                >
+   744→                  <Banknote className="w-4 h-4" />
+   745→                  Efectivo
+   746→                </button>
+   747→                <button
+   748→                  onClick={() => setCartMetodoPago('transferencia')}
+   749→                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all"
+   750→                  style={{
+   751→                    fontFamily: 'DM Sans, sans-serif',
+   752→                    background: cartMetodoPago === 'transferencia' ? 'var(--primario)' : isDark ? 'var(--negro)' : 'var(--blanco)',
+   753→                    color: cartMetodoPago === 'transferencia' ? '#fff' : isDark ? 'var(--gris3)' : 'var(--gris2)',
+   754→                    border: `1px solid ${cartMetodoPago === 'transferencia' ? 'var(--primario)' : isDark ? 'var(--gris3)' : 'var(--gris2)'}44`,
+   755→                  }}
+   756→                >
+   757→                  <CreditCard className="w-4 h-4" />
+   758→                  Transferencia
+   759→                </button>
+   760→              </div>
+   761→            </div>
+   762→
+   763→            {/* Bottom spacer for button */}
+   764→            <div className="h-4" />
+   765→          </div>
+   766→        </div>
+   767→      )}
+   768→
+   769→      {/* ── "Hacer pedido" button (fixed bottom) ── */}
+   770→      {!isEmpty && (
+   771→        <div
+   772→          className="px-5 py-4"
+   773→          style={{
+   774→            borderTop: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}22`,
+   775→            background: isDark ? 'var(--negro)' : 'var(--blanco)',
+   776→          }}
+   777→        >
+   778→          <button
+   779→            onClick={handleConfirmPurchase}
+   780→            disabled={isConfirming}
+   781→            className="w-full py-[18px] rounded-[14px] text-white font-bold text-[17px] transition-transform active:scale-[0.97] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+   782→            style={{ fontFamily: 'Syne, sans-serif', background: 'var(--primario)' }}
+   783→          >
+   784→            {isConfirming ? (
+   785→              <>
+   786→                <motion.div
+   787→                  animate={{ rotate: 360 }}
+   788→                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+   789→                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+   790→                />
+   791→                Procesando...
+   792→              </>
+   793→            ) : (
+   794→              <>
+   795→                Hacer pedido · {formatCordobas(total)}
+   796→              </>
+   797→            )}
+   798→          </button>
+   799→        </div>
+   800→      )}
+   801→    </motion.div>
+   802→  );
+   803→}
+   804→
+   805→/* ═══════════════════════════════════════════════
+   806→   CART ITEM ROW SUBCOMPONENT
+   807→   ═══════════════════════════════════════════════ */
+   808→
+   809→interface CartItemRowProps {
+   810→  item: CartItem;
+   811→  isDark: boolean;
+   812→  onIncrease: () => void;
+   813→  onDecrease: () => void;
+   814→  onRemove: () => void;
+   815→}
+   816→
+   817→function CartItemRow({ item, isDark, onIncrease, onDecrease, onRemove }: CartItemRowProps) {
+   818→  const lineTotal = item.precioUnitario * item.cantidad;
+   819→
+   820→  return (
+   821→    <motion.div
+   822→      layout
+   823→      initial={{ opacity: 0, x: -16 }}
+   824→      animate={{ opacity: 1, x: 0 }}
+   825→      exit={{ opacity: 0, x: 16, height: 0, marginBottom: 0 }}
+   826→      transition={{ duration: 0.2 }}
+   827→      className="flex items-center gap-3"
+   828→    >
+   829→      {/* Image placeholder */}
+   830→      <div
+   831→        className="w-14 h-14 rounded-[10px] flex-shrink-0"
+   832→        style={{ background: item.imagenColor }}
+   833→      />
+   834→
+   835→      {/* Info */}
+   836→      <div className="flex-1 min-w-0">
+   837→        <p
+   838→          className="text-sm font-semibold truncate"
+   839→          style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}
+   840→        >
+   841→          {item.nombreProducto}
+   842→        </p>
+   843→        <p
+   844→          className="text-xs mt-0.5"
+   845→          style={{ fontFamily: 'DM Sans, sans-serif', color: isDark ? 'var(--gris3)' : 'var(--gris2)' }}
+   846→        >
+   847→          {formatCordobas(item.precioUnitario)} c/u
+   848→        </p>
+   849→
+   850→        {/* Quantity controls */}
+   851→        <div className="flex items-center gap-2 mt-1.5">
+   852→          <button
+   853→            onClick={onDecrease}
+   854→            className="w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+   855→            style={{ background: isDark ? 'var(--negro)' : 'var(--blanco)', border: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}55` }}
+   856→          >
+   857→            <Minus className="w-3 h-3" style={{ color: isDark ? 'var(--blanco)' : 'var(--negro)' }} />
+   858→          </button>
+   859→          <span
+   860→            className="text-sm font-semibold w-6 text-center"
+   861→            style={{ fontFamily: 'JetBrains Mono, monospace', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}
+   862→          >
+   863→            {item.cantidad}
+   864→          </span>
+   865→          <button
+   866→            onClick={onIncrease}
+   867→            className="w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+   868→            style={{ background: isDark ? 'var(--negro)' : 'var(--blanco)', border: `1px solid ${isDark ? 'var(--gris3)' : 'var(--gris2)'}55` }}
+   869→          >
+   870→            <Plus className="w-3 h-3" style={{ color: isDark ? 'var(--blanco)' : 'var(--negro)' }} />
+   871→          </button>
+   872→        </div>
+   873→      </div>
+   874→
+   875→      {/* Price & trash */}
+   876→      <div className="flex flex-col items-end gap-2">
+   877→        <span
+   878→          className="text-sm font-bold"
+   879→          style={{ fontFamily: 'JetBrains Mono, monospace', color: isDark ? 'var(--blanco)' : 'var(--negro)' }}
+   880→        >
+   881→          {formatCordobas(lineTotal)}
+   882→        </span>
+   883→        <button
+   884→          onClick={onRemove}
+   885→          className="w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+   886→          style={{ background: '#EF444415' }}
+   887→        >
+   888→          <Trash2 className="w-3.5 h-3.5" style={{ color: '#EF4444' }} />
+   889→        </button>
+   890→      </div>
+   891→    </motion.div>
+   892→  );
+   893→}
+   894→

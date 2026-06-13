@@ -19,6 +19,8 @@ import {
   Bike,
   Navigation,
   MessageCircle,
+  Banknote,
+  CreditCard,
 } from 'lucide-react';
 import { useStore, type Order } from '@/lib/store';
 
@@ -592,12 +594,12 @@ function HistoryOrderItem({
           </div>
           <div className="flex items-center gap-2">
             {order.metodoPago === 'efectivo' ? (
-              <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                💵
+              <span className="text-xs px-1.5 py-0.5 rounded flex items-center" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+                <Banknote size={14} />
               </span>
             ) : (
-              <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                💳
+              <span className="text-xs px-1.5 py-0.5 rounded flex items-center" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
+                <CreditCard size={14} />
               </span>
             )}
             <span className="text-sm font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text)' }}>

@@ -1,0 +1,2002 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  MapPin,
+     7→  Package,
+     8→  ArrowUpDown,
+     9→  ChevronLeft,
+    10→  ChevronRight,
+    11→  CreditCard,
+    12→  Banknote,
+    13→  Tag,
+    14→  Check,
+    15→  Info,
+    16→  AlertCircle,
+    17→  Copy,
+    18→  FileText,
+    19→  Box,
+    20→  Truck,
+    21→  ShieldCheck,
+    22→  Map,
+    23→  X,
+    24→  Zap,
+    25→  Calendar,
+    26→  ChevronUp,
+    27→} from 'lucide-react';
+    28→import { useStore } from '@/lib/store';
+    29→import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
+    30→
+    31→/* ═══════════════════════════════════════════════
+    32→   TYPES
+    33→   ═══════════════════════════════════════════════ */
+    34→
+    35→interface ClientSolicitarProps {
+    36→  isDark: boolean;
+    37→  userName: string;
+    38→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+    39→  onOpenTracking?: (orderId: string) => void;
+    40→  onOpenChat?: (orderId: string) => void;
+    41→}
+    42→
+    43→type WizardStep = 1 | 2 | 3 | 4;
+    44→
+    45→interface CostBreakdown {
+    46→  base: number;
+    47→  distance: number;
+    48→  distanceKm: number;
+    49→  size: number;
+    50→  fragile: number;
+    51→  subtotal: number;
+    52→  promoDiscount: number;
+    53→  total: number;
+    54→  estimatedTime: string;
+    55→}
+    56→
+    57→/* ═══════════════════════════════════════════════
+    58→   HELPERS
+    59→   ═══════════════════════════════════════════════ */
+    60→
+    61→function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    62→  const R = 6371;
+    63→  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    64→  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    65→  const a =
+    66→    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    67→    Math.cos((lat1 * Math.PI) / 180) *
+    68→      Math.cos((lat2 * Math.PI) / 180) *
+    69→      Math.sin(dLng / 2) *
+    70→      Math.sin(dLng / 2);
+    71→  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    72→  return R * c;
+    73→}
+    74→
+    75→function useCountUp(end: number, duration = 800, start = true) {
+    76→  const [value, setValue] = useState(0);
+    77→  const rafRef = useRef<number>(0);
+    78→
+    79→  useEffect(() => {
+    80→    if (!start) return;
+    81→    let startTime: number | null = null;
+    82→    const from = value;
+    83→    const animate = (ts: number) => {
+    84→      if (!startTime) startTime = ts;
+    85→      const progress = Math.min((ts - startTime) / duration, 1);
+    86→      const eased = 1 - Math.pow(1 - progress, 3);
+    87→      const nextVal = Math.round(from + (end - from) * eased);
+    88→      setValue(nextVal);
+    89→      if (progress < 1) rafRef.current = requestAnimationFrame(animate);
+    90→    };
+    91→    rafRef.current = requestAnimationFrame(animate);
+    92→    return () => cancelAnimationFrame(rafRef.current);
+    93→  }, [end, duration, start]);
+    94→
+    95→  return start ? value : 0;
+    96→}
+    97→
+    98→function formatCordobas(n: number): string {
+    99→  return `C$ ${n.toLocaleString('es-NI')}`;
+   100→}
+   101→
+   102→const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+   103→const MESES_ES = [
+   104→  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+   105→  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+   106→];
+   107→const DIAS_COMPLETOS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+   108→
+   109→function formatSpanishDate(dateStr: string): string {
+   110→  const d = new Date(dateStr + 'T12:00:00');
+   111→  const diaSemana = DIAS_COMPLETOS[d.getDay()];
+   112→  const dia = d.getDate();
+   113→  const mes = MESES_ES[d.getMonth()];
+   114→  return `${diaSemana} ${dia} de ${mes}`;
+   115→}
+   116→
+   117→function generateTimeSlots(): string[] {
+   118→  const slots: string[] = [];
+   119→  for (let h = 7; h <= 20; h++) {
+   120→    for (const m of [0, 30]) {
+   121→      if (h === 20 && m === 30) break;
+   122→      const hour12 = h > 12 ? h - 12 : h;
+   123→      const ampm = h >= 12 ? 'PM' : 'AM';
+   124→      const hh = hour12 === 0 ? 12 : hour12;
+   125→      const mm = m === 0 ? '00' : '30';
+   126→      slots.push(`${hh}:${mm} ${ampm}`);
+   127→    }
+   128→  }
+   129→  return slots;
+   130→}
+   131→
+   132→const TIME_SLOTS = generateTimeSlots();
+   133→
+   134→/* ═══════════════════════════════════════════════
+   135→   STEP LABELS
+   136→   ═══════════════════════════════════════════════ */
+   137→
+   138→const STEP_LABELS = ['Dirección', 'Detalles', 'Pago', 'Confirmar'] as const;
+   139→
+   140→/* ═══════════════════════════════════════════════
+   141→   SIZE OPTIONS
+   142→   ═══════════════════════════════════════════════ */
+   143→
+   144→const SIZE_OPTIONS = [
+   145→  { key: 'pequeno' as const, label: 'Pequeño', desc: 'Hasta 1 kg', icon: FileText, surcharge: 0 },
+   146→  { key: 'mediano' as const, label: 'Mediano', desc: 'Hasta 5 kg', icon: Package, surcharge: 15 },
+   147→  { key: 'grande' as const, label: 'Grande', desc: 'Hasta 15 kg', icon: Box, surcharge: 35 },
+   148→];
+   149→
+   150→/* ═══════════════════════════════════════════════
+   151→   PROGRESS BAR
+   152→   ═══════════════════════════════════════════════ */
+   153→
+   154→function ProgressBar({ currentStep }: { currentStep: WizardStep }) {
+   155→  return (
+   156→    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 0, padding: '0 16px', marginBottom: 32 }}>
+   157→      {STEP_LABELS.map((label, idx) => {
+   158→        const stepNum = (idx + 1) as WizardStep;
+   159→        const isCompleted = stepNum < currentStep;
+   160→        const isCurrent = stepNum === currentStep;
+   161→
+   162→        return (
+   163→          <React.Fragment key={label}>
+   164→            {/* Connector line before (not for first) */}
+   165→            {idx > 0 && (
+   166→              <div style={{ flex: 1, height: 2, marginTop: 17, position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
+   167→                <div
+   168→                  style={{
+   169→                    position: 'absolute',
+   170→                    inset: 0,
+   171→                    background: 'var(--border)',
+   172→                    borderRadius: 1,
+   173→                  }}
+   174→                />
+   175→                <motion.div
+   176→                  initial={{ scaleX: 0 }}
+   177→                  animate={{ scaleX: isCompleted || isCurrent ? 1 : 0 }}
+   178→                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+   179→                  style={{
+   180→                    position: 'absolute',
+   181→                    inset: 0,
+   182→                    background: 'var(--primario)',
+   183→                    borderRadius: 1,
+   184→                    transformOrigin: 'left',
+   185→                  }}
+   186→                />
+   187→              </div>
+   188→            )}
+   189→
+   190→            {/* Circle + label */}
+   191→            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 56 }}>
+   192→              <div
+   193→                style={{
+   194→                  width: 36,
+   195→                  height: 36,
+   196→                  borderRadius: '50%',
+   197→                  display: 'flex',
+   198→                  alignItems: 'center',
+   199→                  justifyContent: 'center',
+   200→                  background: isCompleted ? 'var(--primario)' : 'transparent',
+   201→                  border: `2px solid ${isCompleted || isCurrent ? 'var(--primario)' : 'var(--border)'}`,
+   202→                  transition: 'all 0.3s ease',
+   203→                  position: 'relative',
+   204→                }}
+   205→              >
+   206→                {isCompleted ? (
+   207→                  <Check size={18} strokeWidth={2.5} color="white" />
+   208→                ) : isCurrent ? (
+   209→                  <motion.div
+   210→                    animate={{ scale: [1, 1.3, 1] }}
+   211→                    transition={{ duration: 1.5, repeat: Infinity }}
+   212→                    style={{
+   213→                      width: 10,
+   214→                      height: 10,
+   215→                      borderRadius: '50%',
+   216→                      background: 'var(--primario)',
+   217→                    }}
+   218→                  />
+   219→                ) : (
+   220→                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   221→                    {stepNum}
+   222→                  </span>
+   223→                )}
+   224→              </div>
+   225→              <span
+   226→                style={{
+   227→                  fontSize: 11,
+   228→                  fontWeight: isCurrent ? 600 : 400,
+   229→                  color: isCurrent ? 'var(--primario)' : isCompleted ? 'var(--text)' : 'var(--text-muted)',
+   230→                  fontFamily: "'DM Sans', sans-serif",
+   231→                  whiteSpace: 'nowrap',
+   232→                }}
+   233→              >
+   234→                {label}
+   235→              </span>
+   236→            </div>
+   237→          </React.Fragment>
+   238→        );
+   239→      })}
+   240→    </div>
+   241→  );
+   242→}
+   243→
+   244→/* ═══════════════════════════════════════════════
+   245→   AUTOCOMPLETE INPUT
+   246→   ═══════════════════════════════════════════════ */
+   247→
+   248→function AddressInput({
+   249→  label,
+   250→  value,
+   251→  onChange,
+   252→  onSelect,
+   253→  dotColor,
+   254→  suggestions,
+   255→  placeholder,
+   256→}: {
+   257→  label: string;
+   258→  value: string;
+   259→  onChange: (v: string) => void;
+   260→  onSelect: (s: DireccionSugerencia) => void;
+   261→  dotColor: string;
+   262→  suggestions: DireccionSugerencia[];
+   263→  placeholder: string;
+   264→}) {
+   265→  const [showDropdown, setShowDropdown] = useState(false);
+   266→  const containerRef = useRef<HTMLDivElement>(null);
+   267→
+   268→  const filtered = useMemo(() => {
+   269→    if (value.length < 2) return [];
+   270→    const q = value.toLowerCase();
+   271→    return suggestions.filter(
+   272→      (s) =>
+   273→        s.direccion.toLowerCase().includes(q) ||
+   274→        s.barrio.toLowerCase().includes(q)
+   275→    );
+   276→  }, [value, suggestions]);
+   277→
+   278→  // Close dropdown when clicking outside
+   279→  const handleBlur = useCallback((e: React.FocusEvent) => {
+   280→    // Use setTimeout to allow click events on dropdown items to fire first
+   281→    setTimeout(() => {
+   282→      if (containerRef.current && !containerRef.current.contains(document.activeElement)) {
+   283→        setShowDropdown(false);
+   284→      }
+   285→    }, 150);
+   286→  }, []);
+   287→
+   288→  return (
+   289→    <div ref={containerRef} style={{ position: 'relative' }}>
+   290→      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+   291→        {label}
+   292→      </label>
+   293→      <div style={{ position: 'relative' }}>
+   294→        <div
+   295→          style={{
+   296→            position: 'absolute',
+   297→            left: 16,
+   298→            top: '50%',
+   299→            transform: 'translateY(-50%)',
+   300→            width: 12,
+   301→            height: 12,
+   302→            borderRadius: '50%',
+   303→            background: dotColor,
+   304→            boxShadow: `0 0 0 3px ${dotColor}33`,
+   305→          }}
+   306→        />
+   307→        <input
+   308→          type="text"
+   309→          value={value}
+   310→          onChange={(e) => { onChange(e.target.value); setShowDropdown(true); }}
+   311→          onFocus={() => {
+   312→            if (filtered.length > 0) setShowDropdown(true);
+   313→          }}
+   314→          onBlur={handleBlur}
+   315→          placeholder={placeholder}
+   316→          style={{
+   317→            width: '100%',
+   318→            padding: '16px 20px 16px 48px',
+   319→            borderRadius: 14,
+   320→            border: `1.5px solid var(--border)`,
+   321→            background: 'var(--surface)',
+   322→            color: 'var(--text)',
+   323→            fontSize: 15,
+   324→            fontFamily: "'DM Sans', sans-serif",
+   325→            outline: 'none',
+   326→            transition: 'border-color 0.2s',
+   327→          }}
+   328→          onFocusCapture={(e) => {
+   329→            (e.target as HTMLInputElement).style.borderColor = 'var(--primario)';
+   330→          }}
+   331→          onBlurCapture={(e) => {
+   332→            (e.target as HTMLInputElement).style.borderColor = 'var(--border)';
+   333→          }}
+   334→        />
+   335→        {value && (
+   336→          <button
+   337→            onClick={() => { onChange(''); setShowDropdown(false); }}
+   338→            style={{
+   339→              position: 'absolute',
+   340→              right: 12,
+   341→              top: '50%',
+   342→              transform: 'translateY(-50%)',
+   343→              background: 'none',
+   344→              border: 'none',
+   345→              cursor: 'pointer',
+   346→              color: 'var(--text-muted)',
+   347→              padding: 4,
+   348→              display: 'flex',
+   349→            }}
+   350→          >
+   351→            <X size={16} />
+   352→          </button>
+   353→        )}
+   354→      </div>
+   355→      <AnimatePresence>
+   356→        {showDropdown && (
+   357→          <motion.div
+   358→            initial={{ opacity: 0, y: -4 }}
+   359→            animate={{ opacity: 1, y: 0 }}
+   360→            exit={{ opacity: 0, y: -4 }}
+   361→            transition={{ duration: 0.15 }}
+   362→            style={{
+   363→              position: 'absolute',
+   364→              top: '100%',
+   365→              left: 0,
+   366→              right: 0,
+   367→              zIndex: 50,
+   368→              background: 'var(--surface)',
+   369→              border: '1.5px solid var(--border)',
+   370→              borderRadius: 12,
+   371→              marginTop: 4,
+   372→              maxHeight: 200,
+   373→              overflowY: 'auto',
+   374→              boxShadow: 'var(--shadow-lg)',
+   375→            }}
+   376→          >
+   377→            {filtered.map((s) => (
+   378→              <button
+   379→                key={s.id}
+   380→                onClick={() => {
+   381→                  onSelect(s);
+   382→                  setShowDropdown(false);
+   383→                }}
+   384→                style={{
+   385→                  display: 'flex',
+   386→                  alignItems: 'center',
+   387→                  gap: 10,
+   388→                  padding: '10px 14px',
+   389→                  width: '100%',
+   390→                  border: 'none',
+   391→                  background: 'transparent',
+   392→                  cursor: 'pointer',
+   393→                  textAlign: 'left',
+   394→                  color: 'var(--text)',
+   395→                  fontFamily: "'DM Sans', sans-serif",
+   396→                  borderBottom: '1px solid var(--border)',
+   397→                  transition: 'background 0.15s',
+   398→                }}
+   399→                onMouseEnter={(e) => {
+   400→                  (e.currentTarget as HTMLElement).style.background = 'var(--primario-soft)';
+   401→                }}
+   402→                onMouseLeave={(e) => {
+   403→                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+   404→                }}
+   405→              >
+   406→                <MapPin size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+   407→                <div>
+   408→                  <div style={{ fontSize: 14, fontWeight: 500 }}>{s.direccion}</div>
+   409→                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.barrio}</div>
+   410→                </div>
+   411→              </button>
+   412→            ))}
+   413→          </motion.div>
+   414→        )}
+   415→      </AnimatePresence>
+   416→    </div>
+   417→  );
+   418→}
+   419→
+   420→/* ═══════════════════════════════════════════════
+   421→   TOGGLE SWITCH
+   422→   ═══════════════════════════════════════════════ */
+   423→
+   424→function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+   425→  return (
+   426→    <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => onChange(!checked)}>
+   427→      <div
+   428→        style={{
+   429→          width: 48,
+   430→          height: 26,
+   431→          borderRadius: 13,
+   432→          background: checked ? 'var(--primario)' : 'var(--border)',
+   433→          position: 'relative',
+   434→          transition: 'background 0.3s ease',
+   435→          flexShrink: 0,
+   436→        }}
+   437→      >
+   438→        <motion.div
+   439→          animate={{ x: checked ? 22 : 2 }}
+   440→          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+   441→          style={{
+   442→            width: 22,
+   443→            height: 22,
+   444→            borderRadius: '50%',
+   445→            background: 'white',
+   446→            position: 'absolute',
+   447→            top: 2,
+   448→            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+   449→          }}
+   450→        />
+   451→      </div>
+   452→      <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+   453→    </div>
+   454→  );
+   455→}
+   456→
+   457→/* ═══════════════════════════════════════════════
+   458→   COST BREAKDOWN CARD
+   459→   ═══════════════════════════════════════════════ */
+   460→
+   461→function CostCard({ breakdown, showPromo }: { breakdown: CostBreakdown; showPromo?: boolean }) {
+   462→  const animatedDistance = useCountUp(Math.round(breakdown.distanceKm * 10) / 10, 600, breakdown.distanceKm > 0);
+   463→  const animatedTotal = useCountUp(breakdown.total, 600, breakdown.total > 0);
+   464→  const animatedSubtotal = useCountUp(breakdown.subtotal, 600, breakdown.subtotal > 0);
+   465→
+   466→  return (
+   467→    <div
+   468→      style={{
+   469→        background: 'var(--bg-alt)',
+   470→        borderRadius: 14,
+   471→        padding: 20,
+   472→        border: '1px solid var(--border)',
+   473→      }}
+   474→    >
+   475→      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+   476→        <div>
+   477→          <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>Distancia</div>
+   478→          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   479→            {animatedDistance.toFixed(1)} km
+   480→          </div>
+   481→        </div>
+   482→        <div>
+   483→          <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>Tiempo estimado</div>
+   484→          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   485→            {breakdown.estimatedTime}
+   486→          </div>
+   487→        </div>
+   488→      </div>
+   489→
+   490→      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginBottom: 8 }}>
+   491→        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   492→          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Tarifa base</span>
+   493→          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>{formatCordobas(breakdown.base)}</span>
+   494→        </div>
+   495→        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   496→          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Distancia ({breakdown.distanceKm.toFixed(1)} km × C$ 8)</span>
+   497→          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>{formatCordobas(breakdown.distance)}</span>
+   498→        </div>
+   499→        {breakdown.size > 0 && (
+   500→          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   501→            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Tamaño del paquete</span>
+   502→            <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>+{formatCordobas(breakdown.size)}</span>
+   503→          </div>
+   504→        )}
+   505→        {breakdown.fragile > 0 && (
+   506→          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   507→            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Cargo por fragilidad</span>
+   508→            <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>+{formatCordobas(breakdown.fragile)}</span>
+   509→          </div>
+   510→        )}
+   511→        {showPromo && breakdown.promoDiscount > 0 && (
+   512→          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+   513→            <span style={{ fontSize: 13, color: 'var(--exito)', fontFamily: "'DM Sans', sans-serif" }}>Descuento promocional</span>
+   514→            <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--exito)' }}>-{formatCordobas(breakdown.promoDiscount)}</span>
+   515→          </div>
+   516→        )}
+   517→      </div>
+   518→
+   519→      <div style={{ borderTop: '1.5px solid var(--border)', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+   520→        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+   521→          {showPromo ? 'Total' : 'Costo estimado'}
+   522→        </span>
+   523→        <span style={{ fontSize: 24, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+   524→          {formatCordobas(animatedTotal)}
+   525→        </span>
+   526→      </div>
+   527→    </div>
+   528→  );
+   529→}
+   530→
+   531→/* ═══════════════════════════════════════════════
+   532→   CHECK ANIMATION (SVG for confirmation)
+   533→   ═══════════════════════════════════════════════ */
+   534→
+   535→function CheckAnimation() {
+   536→  return (
+   537→    <div style={{ width: 80, height: 80, position: 'relative' }}>
+   538→      <svg viewBox="0 0 80 80" style={{ width: '100%', height: '100%' }}>
+   539→        <motion.circle
+   540→          cx="40"
+   541→          cy="40"
+   542→          r="36"
+   543→          fill="none"
+   544→          stroke="var(--exito)"
+   545→          strokeWidth="3"
+   546→          strokeLinecap="round"
+   547→          initial={{ pathLength: 0 }}
+   548→          animate={{ pathLength: 1 }}
+   549→          transition={{ duration: 0.6, ease: 'easeInOut' }}
+   550→        />
+   551→        <motion.path
+   552→          d="M24 42 L34 52 L56 30"
+   553→          fill="none"
+   554→          stroke="var(--exito)"
+   555→          strokeWidth="3.5"
+   556→          strokeLinecap="round"
+   557→          strokeLinejoin="round"
+   558→          initial={{ pathLength: 0 }}
+   559→          animate={{ pathLength: 1 }}
+   560→          transition={{ duration: 0.4, delay: 0.5, ease: 'easeOut' }}
+   561→        />
+   562→      </svg>
+   563→    </div>
+   564→  );
+   565→}
+   566→
+   567→/* ═══════════════════════════════════════════════
+   568→   MAIN COMPONENT
+   569→   ═══════════════════════════════════════════════ */
+   570→
+   571→export default function ClientSolicitar({ isDark, userName, onNavigate }: ClientSolicitarProps) {
+   572→  const {
+   573→    solicitudEnvio,
+   574→    setSolicitudEnvio,
+   575→    resetSolicitudEnvio,
+   576→    confirmarEnvio,
+   577→    direccionesSugerencias,
+   578→    validateCodigoPromo,
+   579→    addOrder,
+   580→    orders,
+   581→    scheduleMode,
+   582→    scheduleDate,
+   583→    scheduleTime,
+   584→    setScheduleMode,
+   585→    setScheduleDate,
+   586→    setScheduleTime,
+   587→  } = useStore();
+   588→
+   589→  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+   590→  const [direction, setDirection] = useState<1 | -1>(1);
+   591→  const [confirmed, setConfirmed] = useState(false);
+   592→  const [confirming, setConfirming] = useState(false);
+   593→  const [confirmedOrderId, setConfirmedOrderId] = useState('');
+   594→
+   595→  // Promo code state
+   596→  const [promoInput, setPromoInput] = useState('');
+   597→  const [promoExpanded, setPromoExpanded] = useState(false);
+   598→  const [promoStatus, setPromoStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
+   599→  const [promoMessage, setPromoMessage] = useState('');
+   600→  const [promoDiscount, setPromoDiscount] = useState(0);
+   601→  const [promoTipo, setPromoTipo] = useState('');
+   602→
+   603→  // Toast state
+   604→  const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' | 'info' } | null>(null);
+   605→
+   606→  // Change calculation
+   607→  const [montoPagoInput, setMontoPagoInput] = useState('');
+   608→
+   609→  // Calendar navigation state
+   610→  const [calendarMonth, setCalendarMonth] = useState(() => {
+   611→    const now = new Date();
+   612→    return { year: now.getFullYear(), month: now.getMonth() };
+   613→  });
+   614→
+   615→  const showToast = useCallback((message: string, variant: 'success' | 'error' | 'info') => {
+   616→    setToast({ message, variant });
+   617→    setTimeout(() => setToast(null), 3000);
+   618→  }, []);
+   619→
+   620→  /* ─── Cost calculation ─── */
+   621→  const costBreakdown = useMemo<CostBreakdown>(() => {
+   622→    const BASE = 50;
+   623→    const PER_KM = 8;
+   624→
+   625→    const distKm =
+   626→      solicitudEnvio.origenLat && solicitudEnvio.destinoLat
+   627→        ? haversineKm(solicitudEnvio.origenLat, solicitudEnvio.origenLng, solicitudEnvio.destinoLat, solicitudEnvio.destinoLng)
+   628→        : 0;
+   629→
+   630→    const distanceCost = Math.round(distKm * PER_KM);
+   631→    const sizeSurcharge = SIZE_OPTIONS.find((s) => s.key === solicitudEnvio.tamano)?.surcharge ?? 0;
+   632→    const fragileSurcharge = solicitudEnvio.fragil ? 10 : 0;
+   633→    const subtotal = BASE + distanceCost + sizeSurcharge + fragileSurcharge;
+   634→
+   635→    let discount = 0;
+   636→    if (promoDiscount > 0) {
+   637→      if (promoTipo === 'porcentaje') {
+   638→        discount = Math.round((subtotal * promoDiscount) / 100);
+   639→      } else {
+   640→        discount = Math.min(promoDiscount, subtotal);
+   641→      }
+   642→    }
+   643→
+   644→    const total = Math.max(0, subtotal - discount);
+   645→    const estimatedMinutes = Math.max(8, Math.round(distKm * 4));
+   646→
+   647→    return {
+   648→      base: BASE,
+   649→      distance: distanceCost,
+   650→      distanceKm: distKm,
+   651→      size: sizeSurcharge,
+   652→      fragile: fragileSurcharge,
+   653→      subtotal,
+   654→      promoDiscount: discount,
+   655→      total,
+   656→      estimatedTime: `~${estimatedMinutes} min`,
+   657→    };
+   658→  }, [solicitudEnvio, promoDiscount, promoTipo]);
+   659→
+   660→  /* ─── Step navigation ─── */
+   661→  const goToStep = useCallback(
+   662→    (step: WizardStep) => {
+   663→      setDirection(step > currentStep ? 1 : -1);
+   664→      setCurrentStep(step);
+   665→    },
+   666→    [currentStep]
+   667→  );
+   668→
+   669→  const canContinue = useCallback((): boolean => {
+   670→    switch (currentStep) {
+   671→      case 1:
+   672→        if (solicitudEnvio.origen.length === 0 || solicitudEnvio.destino.length === 0) return false;
+   673→        if (scheduleMode === 'programar' && (!scheduleDate || !scheduleTime)) return false;
+   674→        return true;
+   675→      case 2:
+   676→        return solicitudEnvio.descripcion.length > 0;
+   677→      case 3:
+   678→        return true;
+   679→      case 4:
+   680→        return solicitudEnvio.terminosAceptados;
+   681→      default:
+   682→        return false;
+   683→    }
+   684→  }, [currentStep, solicitudEnvio, scheduleMode, scheduleDate, scheduleTime]);
+   685→
+   686→  /* ─── Swap addresses ─── */
+   687→  const handleSwap = useCallback(() => {
+   688→    const newOrigen = solicitudEnvio.destino;
+   689→    const newDestino = solicitudEnvio.origen;
+   690→    const newOrigenLat = solicitudEnvio.destinoLat;
+   691→    const newOrigenLng = solicitudEnvio.destinoLng;
+   692→    const newDestinoLat = solicitudEnvio.origenLat;
+   693→    const newDestinoLng = solicitudEnvio.origenLng;
+   694→    setSolicitudEnvio({
+   695→      origen: newOrigen,
+   696→      destino: newDestino,
+   697→      origenLat: newOrigenLat,
+   698→      origenLng: newOrigenLng,
+   699→      destinoLat: newDestinoLat,
+   700→      destinoLng: newDestinoLng,
+   701→    });
+   702→  }, [solicitudEnvio, setSolicitudEnvio]);
+   703→
+   704→  /* ─── Apply promo code ─── */
+   705→  const handleApplyPromo = useCallback(() => {
+   706→    if (!promoInput.trim()) return;
+   707→    const result = validateCodigoPromo(promoInput.trim());
+   708→    if (result.valid) {
+   709→      setPromoDiscount(result.descuento);
+   710→      setPromoTipo(result.tipo);
+   711→      setPromoStatus('valid');
+   712→      setSolicitudEnvio({ codigoPromo: promoInput.trim().toUpperCase(), descuento: result.descuento });
+   713→      setPromoMessage(
+   714→        result.tipo === 'porcentaje'
+   715→          ? `¡${result.descuento}% de descuento aplicado!`
+   716→          : `¡C$ ${result.descuento} de descuento aplicado!`
+   717→      );
+   718→      showToast('¡Código promocional aplicado!', 'success');
+   719→    } else {
+   720→      setPromoDiscount(0);
+   721→      setPromoTipo('');
+   722→      setPromoStatus('invalid');
+   723→      setPromoMessage('Código no válido o expirado');
+   724→      showToast('Código no válido', 'error');
+   725→    }
+   726→  }, [promoInput, validateCodigoPromo, setSolicitudEnvio, showToast]);
+   727→
+   728→  /* ─── Copy bank details ─── */
+   729→  const handleCopyBank = useCallback(() => {
+   730→    const bankDetails = 'Banco BAC - Cta: 1234-5678-90 - LOGIFAST S.A.';
+   731→    navigator.clipboard.writeText(bankDetails).then(() => {
+   732→      showToast('Datos bancarios copiados al portapapeles', 'success');
+   733→    });
+   734→  }, [showToast]);
+   735→
+   736→  /* ─── Confirm shipping ─── */
+   737→  const handleConfirm = useCallback(() => {
+   738→    setConfirming(true);
+   739→    // Generate new order ID
+   740→    const lastId = orders.length > 0 ? parseInt(orders[0].id.replace('LF-', ''), 10) : 2860;
+   741→    const newId = `LF-${lastId + 1}`;
+   742→
+   743→    setTimeout(() => {
+   744→      const now = new Date();
+   745→      const fecha = now.toISOString().split('T')[0];
+   746→      const hora = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+   747→
+   748→      const isScheduled = scheduleMode === 'programar' && scheduleDate && scheduleTime;
+   749→      const scheduleNote = isScheduled
+   750→        ? ` [Programado: ${formatSpanishDate(scheduleDate)} a las ${scheduleTime}]`
+   751→        : '';
+   752→
+   753→      const newOrder: Order = {
+   754→        id: newId,
+   755→        cliente: userName,
+   756→        clienteTelefono: '+505 8888-0000',
+   757→        origen: solicitudEnvio.origen,
+   758→        destino: solicitudEnvio.destino,
+   759→        origenLat: solicitudEnvio.origenLat,
+   760→        origenLng: solicitudEnvio.origenLng,
+   761→        destinoLat: solicitudEnvio.destinoLat,
+   762→        destinoLng: solicitudEnvio.destinoLng,
+   763→        repartidor: null,
+   764→        repartidorInitials: '',
+   765→        descripcion: solicitudEnvio.descripcion + scheduleNote,
+   766→        monto: costBreakdown.total,
+   767→        estado: isScheduled ? 'programada' as OrderStatus : 'pendiente' as OrderStatus,
+   768→        metodoPago: solicitudEnvio.metodoPago as PaymentMethod,
+   769→        estadoPago: solicitudEnvio.metodoPago === 'transferencia' ? ('pendiente' as PaymentStatus) : ('pendiente' as PaymentStatus),
+   770→        fecha: isScheduled ? scheduleDate! : fecha,
+   771→        hora: isScheduled ? scheduleTime! : hora,
+   772→        timeline: [
+   773→          { step: isScheduled ? 'Programada' : 'Orden creada', hora: isScheduled ? scheduleTime! : hora, completado: true },
+   774→          { step: 'En camino', hora: '—', completado: false },
+   775→          { step: 'Recogida', hora: '—', completado: false },
+   776→          { step: 'Entregada', hora: '—', completado: false },
+   777→        ],
+   778→      };
+   779→
+   780→      addOrder(newOrder);
+   781→      confirmarEnvio(newId);
+   782→      setConfirmedOrderId(newId);
+   783→      setConfirming(false);
+   784→      setConfirmed(true);
+   785→    }, 2000);
+   786→  }, [orders, userName, solicitudEnvio, costBreakdown.total, addOrder, confirmarEnvio, scheduleMode, scheduleDate, scheduleTime]);
+   787→
+   788→  /* ─── Slide animation variants ─── */
+   789→  const slideVariants = {
+   790→    enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
+   791→    center: { x: 0, opacity: 1 },
+   792→    exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
+   793→  };
+   794→
+   795→  /* ─── Render step content ─── */
+   796→  const renderStep = () => {
+   797→    switch (currentStep) {
+   798→      /* ═══ STEP 1: DIRECCIONES ═══ */
+   799→      case 1:
+   800→        return (
+   801→          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+   802→            <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+   803→              ¿Dónde recogemos y entregamos?
+   804→            </h2>
+   805→
+   806→            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 12 }}>
+   807→              <AddressInput
+   808→                label="Dirección de recogida"
+   809→                value={solicitudEnvio.origen}
+   810→                onChange={(v) => setSolicitudEnvio({ origen: v })}
+   811→                onSelect={(s) =>
+   812→                  setSolicitudEnvio({ origen: s.direccion, origenLat: s.lat, origenLng: s.lng })
+   813→                }
+   814→                dotColor="var(--exito)"
+   815→                suggestions={direccionesSugerencias}
+   816→                placeholder="Ej: Metrocentro, Managua"
+   817→              />
+   818→
+   819→              {/* Swap button */}
+   820→              <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 0, zIndex: 10 }}>
+   821→                <motion.button
+   822→                  whileTap={{ rotate: 180 }}
+   823→                  transition={{ duration: 0.3 }}
+   824→                  onClick={handleSwap}
+   825→                  disabled={!solicitudEnvio.origen && !solicitudEnvio.destino}
+   826→                  style={{
+   827→                    width: 36,
+   828→                    height: 36,
+   829→                    borderRadius: '50%',
+   830→                    border: '1.5px solid var(--border)',
+   831→                    background: 'var(--surface)',
+   832→                    cursor: solicitudEnvio.origen || solicitudEnvio.destino ? 'pointer' : 'default',
+   833→                    display: 'flex',
+   834→                    alignItems: 'center',
+   835→                    justifyContent: 'center',
+   836→                    position: 'absolute',
+   837→                    top: -18,
+   838→                    boxShadow: 'var(--shadow-sm)',
+   839→                    opacity: solicitudEnvio.origen || solicitudEnvio.destino ? 1 : 0.4,
+   840→                  }}
+   841→                >
+   842→                  <ArrowUpDown size={16} style={{ color: 'var(--text-secondary)' }} />
+   843→                </motion.button>
+   844→              </div>
+   845→
+   846→              <AddressInput
+   847→                label="Dirección de entrega"
+   848→                value={solicitudEnvio.destino}
+   849→                onChange={(v) => setSolicitudEnvio({ destino: v })}
+   850→                onSelect={(s) =>
+   851→                  setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng })
+   852→                }
+   853→                dotColor="var(--primario)"
+   854→                suggestions={direccionesSugerencias}
+   855→                placeholder="Ej: Col. Los Robles, Managua"
+   856→              />
+   857→            </div>
+   858→
+   859→            {/* Map preview */}
+   860→            <div
+   861→              style={{
+   862→                height: 240,
+   863→                borderRadius: 16,
+   864→                border: '1.5px solid var(--border)',
+   865→                overflow: 'hidden',
+   866→                background: 'var(--bg-alt)',
+   867→                display: 'flex',
+   868→                flexDirection: 'column',
+   869→                alignItems: 'center',
+   870→                justifyContent: 'center',
+   871→                gap: 8,
+   872→              }}
+   873→            >
+   874→              {solicitudEnvio.origen && solicitudEnvio.destino ? (
+   875→                <div style={{ textAlign: 'center', padding: '0 20px' }}>
+   876→                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+   877→                    <MapPin size={16} style={{ color: 'var(--exito)' }} />
+   878→                    <span style={{ fontSize: 13, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   879→                      {solicitudEnvio.origen}
+   880→                    </span>
+   881→                    <span style={{ color: 'var(--text-muted)' }}>→</span>
+   882→                    <MapPin size={16} style={{ color: 'var(--primario)' }} />
+   883→                    <span style={{ fontSize: 13, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   884→                      {solicitudEnvio.destino}
+   885→                    </span>
+   886→                  </div>
+   887→                  <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   888→                    {costBreakdown.distanceKm.toFixed(1)} km • {costBreakdown.estimatedTime}
+   889→                  </div>
+   890→                </div>
+   891→              ) : (
+   892→                <>
+   893→                  <Map size={32} style={{ color: 'var(--text-muted)' }} />
+   894→                  <span style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   895→                    Vista previa del recorrido
+   896→                  </span>
+   897→                </>
+   898→              )}
+   899→            </div>
+   900→
+   901→            {/* Schedule Toggle */}
+   902→            <div style={{ marginTop: 24, marginBottom: 16 }}>
+   903→              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+   904→                ¿Cuándo?
+   905→              </div>
+   906→              <div style={{ display: 'flex', gap: 8 }}>
+   907→                <button
+   908→                  onClick={() => setScheduleMode('ahora')}
+   909→                  style={{
+   910→                    flex: 1,
+   911→                    padding: '10px 16px',
+   912→                    borderRadius: 10,
+   913→                    border: scheduleMode === 'ahora' ? '2px solid var(--primario)' : '1px solid var(--border)',
+   914→                    background: scheduleMode === 'ahora' ? 'var(--primario-soft)' : 'transparent',
+   915→                    color: scheduleMode === 'ahora' ? 'var(--primario)' : 'var(--text-muted)',
+   916→                    fontSize: 14,
+   917→                    fontWeight: scheduleMode === 'ahora' ? 600 : 500,
+   918→                    cursor: 'pointer',
+   919→                    fontFamily: "'DM Sans', sans-serif",
+   920→                    display: 'flex',
+   921→                    alignItems: 'center',
+   922→                    justifyContent: 'center',
+   923→                    gap: 6,
+   924→                    transition: 'all 0.2s ease',
+   925→                  }}
+   926→                >
+   927→                  <Zap size={16} />
+   928→                  Ahora
+   929→                </button>
+   930→                <button
+   931→                  onClick={() => setScheduleMode('programar')}
+   932→                  style={{
+   933→                    flex: 1,
+   934→                    padding: '10px 16px',
+   935→                    borderRadius: 10,
+   936→                    border: scheduleMode === 'programar' ? '2px solid var(--primario)' : '1px solid var(--border)',
+   937→                    background: scheduleMode === 'programar' ? 'var(--primario-soft)' : 'transparent',
+   938→                    color: scheduleMode === 'programar' ? 'var(--primario)' : 'var(--text-muted)',
+   939→                    fontSize: 14,
+   940→                    fontWeight: scheduleMode === 'programar' ? 600 : 500,
+   941→                    cursor: 'pointer',
+   942→                    fontFamily: "'DM Sans', sans-serif",
+   943→                    display: 'flex',
+   944→                    alignItems: 'center',
+   945→                    justifyContent: 'center',
+   946→                    gap: 6,
+   947→                    transition: 'all 0.2s ease',
+   948→                  }}
+   949→                >
+   950→                  <Calendar size={16} />
+   951→                  Programar para después
+   952→                </button>
+   953→              </div>
+   954→            </div>
+   955→
+   956→            {/* Schedule Calendar & Time - only when programar */}
+   957→            {scheduleMode === 'programar' && (
+   958→              <motion.div
+   959→                initial={{ opacity: 0, height: 0 }}
+   960→                animate={{ opacity: 1, height: 'auto' }}
+   961→                exit={{ opacity: 0, height: 0 }}
+   962→                transition={{ duration: 0.3 }}
+   963→                style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+   964→              >
+   965→                {/* Calendar */}
+   966→                <div
+   967→                  style={{
+   968→                    background: 'var(--surface)',
+   969→                    borderRadius: 14,
+   970→                    border: '1.5px solid var(--border)',
+   971→                    padding: 16,
+   972→                  }}
+   973→                >
+   974→                  {/* Month navigation */}
+   975→                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+   976→                    <button
+   977→                      onClick={() => {
+   978→                        const m = calendarMonth.month === 0 ? 11 : calendarMonth.month - 1;
+   979→                        const y = calendarMonth.month === 0 ? calendarMonth.year - 1 : calendarMonth.year;
+   980→                        setCalendarMonth({ year: y, month: m });
+   981→                      }}
+   982→                      style={{
+   983→                        background: 'none',
+   984→                        border: '1px solid var(--border)',
+   985→                        borderRadius: 8,
+   986→                        padding: '4px 8px',
+   987→                        cursor: 'pointer',
+   988→                        color: 'var(--text)',
+   989→                        display: 'flex',
+   990→                        alignItems: 'center',
+   991→                      }}
+   992→                    >
+   993→                      <ChevronLeft size={16} />
+   994→                    </button>
+   995→                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+   996→                      {MESES_ES[calendarMonth.month]} {calendarMonth.year}
+   997→                    </span>
+   998→                    <button
+   999→                      onClick={() => {
+  1000→                        const m = calendarMonth.month === 11 ? 0 : calendarMonth.month + 1;
+  1001→                        const y = calendarMonth.month === 11 ? calendarMonth.year + 1 : calendarMonth.year;
+  1002→                        setCalendarMonth({ year: y, month: m });
+  1003→                      }}
+  1004→                      style={{
+  1005→                        background: 'none',
+  1006→                        border: '1px solid var(--border)',
+  1007→                        borderRadius: 8,
+  1008→                        padding: '4px 8px',
+  1009→                        cursor: 'pointer',
+  1010→                        color: 'var(--text)',
+  1011→                        display: 'flex',
+  1012→                        alignItems: 'center',
+  1013→                      }}
+  1014→                    >
+  1015→                      <ChevronRight size={16} />
+  1016→                    </button>
+  1017→                  </div>
+  1018→
+  1019→                  {/* Day headers */}
+  1020→                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+  1021→                    {DIAS_SEMANA.map((d) => (
+  1022→                      <div
+  1023→                        key={d}
+  1024→                        style={{
+  1025→                          textAlign: 'center',
+  1026→                          fontSize: 11,
+  1027→                          fontWeight: 600,
+  1028→                          color: 'var(--text-muted)',
+  1029→                          fontFamily: "'DM Sans', sans-serif",
+  1030→                          padding: '4px 0',
+  1031→                        }}
+  1032→                      >
+  1033→                        {d}
+  1034→                      </div>
+  1035→                    ))}
+  1036→                  </div>
+  1037→
+  1038→                  {/* Day grid */}
+  1039→                  {(() => {
+  1040→                    const firstDay = new Date(calendarMonth.year, calendarMonth.month, 1);
+  1041→                    let startDow = firstDay.getDay(); // 0=Sun
+  1042→                    startDow = startDow === 0 ? 6 : startDow - 1; // convert to Mon=0
+  1043→                    const daysInMonth = new Date(calendarMonth.year, calendarMonth.month + 1, 0).getDate();
+  1044→                    const today = new Date();
+  1045→                    today.setHours(0, 0, 0, 0);
+  1046→                    const maxDate = new Date(today);
+  1047→                    maxDate.setDate(maxDate.getDate() + 30);
+  1048→
+  1049→                    const cells: React.ReactNode[] = [];
+  1050→                    // Empty cells before first day
+  1051→                    for (let i = 0; i < startDow; i++) {
+  1052→                      cells.push(<div key={`empty-${i}`} />);
+  1053→                    }
+  1054→                    // Day cells
+  1055→                    for (let day = 1; day <= daysInMonth; day++) {
+  1056→                      const dateObj = new Date(calendarMonth.year, calendarMonth.month, day);
+  1057→                      dateObj.setHours(0, 0, 0, 0);
+  1058→                      const dateStr = `${calendarMonth.year}-${String(calendarMonth.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  1059→                      const isSunday = dateObj.getDay() === 0;
+  1060→                      const isPast = dateObj < today;
+  1061→                      const isAfterMax = dateObj > maxDate;
+  1062→                      const isDisabled = isSunday || isPast || isAfterMax;
+  1063→                      const isToday = dateObj.getTime() === today.getTime();
+  1064→                      const isSelected = scheduleDate === dateStr;
+  1065→
+  1066→                      cells.push(
+  1067→                        <button
+  1068→                          key={dateStr}
+  1069→                          disabled={isDisabled}
+  1070→                          onClick={() => !isDisabled && setScheduleDate(dateStr)}
+  1071→                          style={{
+  1072→                            width: '100%',
+  1073→                            aspectRatio: '1',
+  1074→                            borderRadius: '50%',
+  1075→                            border: isSelected
+  1076→                              ? 'none'
+  1077→                              : isToday
+  1078→                                ? '1.5px solid var(--primario)'
+  1079→                                : 'none',
+  1080→                            background: isSelected ? 'var(--primario)' : 'transparent',
+  1081→                            color: isSelected
+  1082→                              ? 'white'
+  1083→                              : isDisabled
+  1084→                                ? 'var(--text-muted)'
+  1085→                                : 'var(--text)',
+  1086→                            fontSize: 13,
+  1087→                            fontWeight: isSelected ? 600 : 400,
+  1088→                            fontFamily: "'DM Sans', sans-serif",
+  1089→                            cursor: isDisabled ? 'default' : 'pointer',
+  1090→                            opacity: isDisabled ? 0.35 : 1,
+  1091→                            display: 'flex',
+  1092→                            alignItems: 'center',
+  1093→                            justifyContent: 'center',
+  1094→                            transition: 'all 0.15s ease',
+  1095→                          }}
+  1096→                        >
+  1097→                          {day}
+  1098→                        </button>
+  1099→                      );
+  1100→                    }
+  1101→
+  1102→                    return (
+  1103→                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+  1104→                        {cells}
+  1105→                      </div>
+  1106→                    );
+  1107→                  })()}
+  1108→                </div>
+  1109→
+  1110→                {/* Time selector */}
+  1111→                <div>
+  1112→                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+  1113→                    Hora de recogida
+  1114→                  </label>
+  1115→                  <div
+  1116→                    style={{
+  1117→                      display: 'grid',
+  1118→                      gridTemplateColumns: 'repeat(4, 1fr)',
+  1119→                      gap: 6,
+  1120→                      maxHeight: 180,
+  1121→                      overflowY: 'auto',
+  1122→                      padding: '4px 0',
+  1123→                    }}
+  1124→                  >
+  1125→                    {(() => {
+  1126→                      const now = new Date();
+  1127→                      const isToday = scheduleDate === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  1128→
+  1129→                      return TIME_SLOTS.map((slot) => {
+  1130→                        const isSelected = scheduleTime === slot;
+  1131→                        let isDisabled = false;
+  1132→
+  1133→                        if (isToday && scheduleDate) {
+  1134→                          // Parse slot time to compare
+  1135→                          const parts = slot.match(/(\d+):(\d+)\s*(AM|PM)/);
+  1136→                          if (parts) {
+  1137→                            let h = parseInt(parts[1]);
+  1138→                            const m = parseInt(parts[2]);
+  1139→                            if (parts[3] === 'PM' && h !== 12) h += 12;
+  1140→                            if (parts[3] === 'AM' && h === 12) h = 0;
+  1141→                            const slotMinutes = h * 60 + m;
+  1142→                            const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  1143→                            isDisabled = slotMinutes <= nowMinutes;
+  1144→                          }
+  1145→                        }
+  1146→
+  1147→                        return (
+  1148→                          <button
+  1149→                            key={slot}
+  1150→                            disabled={isDisabled}
+  1151→                            onClick={() => !isDisabled && setScheduleTime(slot)}
+  1152→                            style={{
+  1153→                              padding: '8px 4px',
+  1154→                              borderRadius: 8,
+  1155→                              border: isSelected
+  1156→                                ? '2px solid var(--primario)'
+  1157→                                : '1px solid var(--border)',
+  1158→                              background: isSelected ? 'var(--primario-soft)' : 'transparent',
+  1159→                              color: isSelected
+  1160→                                ? 'var(--primario)'
+  1161→                                : isDisabled
+  1162→                                  ? 'var(--text-muted)'
+  1163→                                  : 'var(--text)',
+  1164→                              fontSize: 12,
+  1165→                              fontWeight: isSelected ? 600 : 500,
+  1166→                              fontFamily: "'JetBrains Mono', monospace",
+  1167→                              cursor: isDisabled ? 'default' : 'pointer',
+  1168→                              opacity: isDisabled ? 0.35 : 1,
+  1169→                              textAlign: 'center',
+  1170→                              transition: 'all 0.15s ease',
+  1171→                            }}
+  1172→                          >
+  1173→                            {slot}
+  1174→                          </button>
+  1175→                        );
+  1176→                      });
+  1177→                    })()}
+  1178→                  </div>
+  1179→                </div>
+  1180→
+  1181→                {/* Preview card */}
+  1182→                {scheduleDate && scheduleTime && (
+  1183→                  <motion.div
+  1184→                    initial={{ opacity: 0, y: 4 }}
+  1185→                    animate={{ opacity: 1, y: 0 }}
+  1186→                    style={{
+  1187→                      marginTop: 4,
+  1188→                      padding: '12px 16px',
+  1189→                      background: 'var(--bg-alt)',
+  1190→                      borderRadius: 12,
+  1191→                      fontSize: 13,
+  1192→                      color: 'var(--text)',
+  1193→                      fontFamily: "'DM Sans', sans-serif",
+  1194→                      border: '1px solid var(--border)',
+  1195→                    }}
+  1196→                  >
+  1197→                    Tu envío será recogido el <strong>{formatSpanishDate(scheduleDate)}</strong> a las <strong>{scheduleTime}</strong>
+  1198→                  </motion.div>
+  1199→                )}
+  1200→              </motion.div>
+  1201→            )}
+  1202→
+  1203→            {/* Auto quote */}
+  1204→            {solicitudEnvio.origen && solicitudEnvio.destino && costBreakdown.distanceKm > 0 && (
+  1205→              <motion.div
+  1206→                initial={{ opacity: 0, y: 10 }}
+  1207→                animate={{ opacity: 1, y: 0 }}
+  1208→                transition={{ duration: 0.3 }}
+  1209→              >
+  1210→                <CostCard breakdown={costBreakdown} />
+  1211→              </motion.div>
+  1212→            )}
+  1213→          </div>
+  1214→        );
+  1215→
+  1216→      /* ═══ STEP 2: DETALLES ═══ */
+  1217→      case 2:
+  1218→        return (
+  1219→          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+  1220→            <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+  1221→              ¿Qué envías?
+  1222→            </h2>
+  1223→
+  1224→            {/* Descripción */}
+  1225→            <div>
+  1226→              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+  1227→                Descripción del paquete
+  1228→              </label>
+  1229→              <div style={{ position: 'relative' }}>
+  1230→                <input
+  1231→                  type="text"
+  1232→                  value={solicitudEnvio.descripcion}
+  1233→                  onChange={(e) => {
+  1234→                    if (e.target.value.length <= 100) {
+  1235→                      setSolicitudEnvio({ descripcion: e.target.value });
+  1236→                    }
+  1237→                  }}
+  1238→                  placeholder="Ej: Documentos legales, caja mediana..."
+  1239→                  style={{
+  1240→                    width: '100%',
+  1241→                    padding: '14px 16px',
+  1242→                    borderRadius: 12,
+  1243→                    border: '1.5px solid var(--border)',
+  1244→                    background: 'var(--surface)',
+  1245→                    color: 'var(--text)',
+  1246→                    fontSize: 15,
+  1247→                    fontFamily: "'DM Sans', sans-serif",
+  1248→                    outline: 'none',
+  1249→                    transition: 'border-color 0.2s',
+  1250→                    paddingRight: 56,
+  1251→                  }}
+  1252→                  onFocus={(e) => { e.target.style.borderColor = 'var(--primario)'; }}
+  1253→                  onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+  1254→                />
+  1255→                <span
+  1256→                  style={{
+  1257→                    position: 'absolute',
+  1258→                    right: 14,
+  1259→                    top: '50%',
+  1260→                    transform: 'translateY(-50%)',
+  1261→                    fontSize: 12,
+  1262→                    fontFamily: "'JetBrains Mono', monospace",
+  1263→                    color: solicitudEnvio.descripcion.length >= 90 ? 'var(--peligro)' : 'var(--text-muted)',
+  1264→                  }}
+  1265→                >
+  1266→                  {solicitudEnvio.descripcion.length}/100
+  1267→                </span>
+  1268→              </div>
+  1269→            </div>
+  1270→
+  1271→            {/* Tamaño */}
+  1272→            <div>
+  1273→              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+  1274→                Tamaño del paquete
+  1275→              </label>
+  1276→              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+  1277→                {SIZE_OPTIONS.map((opt) => {
+  1278→                  const isSelected = solicitudEnvio.tamano === opt.key;
+  1279→                  const Icon = opt.icon;
+  1280→                  return (
+  1281→                    <motion.button
+  1282→                      key={opt.key}
+  1283→                      whileTap={{ scale: 0.97 }}
+  1284→                      onClick={() => setSolicitudEnvio({ tamano: opt.key })}
+  1285→                      style={{
+  1286→                        display: 'flex',
+  1287→                        flexDirection: 'column',
+  1288→                        alignItems: 'center',
+  1289→                        gap: 8,
+  1290→                        padding: '16px 8px',
+  1291→                        borderRadius: 14,
+  1292→                        border: `2px solid ${isSelected ? 'var(--primario)' : 'var(--border)'}`,
+  1293→                        background: isSelected ? 'var(--primario-soft)' : 'var(--surface)',
+  1294→                        cursor: 'pointer',
+  1295→                        transition: 'all 0.2s ease',
+  1296→                        textAlign: 'center',
+  1297→                      }}
+  1298→                    >
+  1299→                      <Icon
+  1300→                        size={24}
+  1301→                        style={{
+  1302→                          color: isSelected ? 'var(--primario)' : 'var(--text-muted)',
+  1303→                          transition: 'color 0.2s',
+  1304→                        }}
+  1305→                      />
+  1306→                      <span
+  1307→                        style={{
+  1308→                          fontSize: 14,
+  1309→                          fontWeight: 600,
+  1310→                          color: isSelected ? 'var(--primario)' : 'var(--text)',
+  1311→                          fontFamily: "'DM Sans', sans-serif",
+  1312→                          transition: 'color 0.2s',
+  1313→                        }}
+  1314→                      >
+  1315→                        {opt.label}
+  1316→                      </span>
+  1317→                      <span
+  1318→                        style={{
+  1319→                          fontSize: 12,
+  1320→                          color: 'var(--text-muted)',
+  1321→                          fontFamily: "'DM Sans', sans-serif",
+  1322→                        }}
+  1323→                      >
+  1324→                        {opt.desc}
+  1325→                      </span>
+  1326→                      {opt.surcharge > 0 && (
+  1327→                        <span
+  1328→                          style={{
+  1329→                            fontSize: 11,
+  1330→                            fontFamily: "'JetBrains Mono', monospace",
+  1331→                            color: 'var(--text-secondary)',
+  1332→                          }}
+  1333→                        >
+  1334→                          +C$ {opt.surcharge}
+  1335→                        </span>
+  1336→                      )}
+  1337→                    </motion.button>
+  1338→                  );
+  1339→                })}
+  1340→              </div>
+  1341→            </div>
+  1342→
+  1343→            {/* Instrucciones */}
+  1344→            <div>
+  1345→              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+  1346→                Instrucciones especiales (opcional)
+  1347→              </label>
+  1348→              <textarea
+  1349→                value={solicitudEnvio.instrucciones}
+  1350→                onChange={(e) => {
+  1351→                  if (e.target.value.length <= 200) {
+  1352→                    setSolicitudEnvio({ instrucciones: e.target.value });
+  1353→                  }
+  1354→                }}
+  1355→                placeholder="Ej: Tocar timbre dos veces, dejar con el portero..."
+  1356→                rows={3}
+  1357→                style={{
+  1358→                  width: '100%',
+  1359→                  padding: '14px 16px',
+  1360→                  borderRadius: 12,
+  1361→                  border: '1.5px solid var(--border)',
+  1362→                  background: 'var(--surface)',
+  1363→                  color: 'var(--text)',
+  1364→                  fontSize: 15,
+  1365→                  fontFamily: "'DM Sans', sans-serif",
+  1366→                  outline: 'none',
+  1367→                  resize: 'none',
+  1368→                  transition: 'border-color 0.2s',
+  1369→                }}
+  1370→                onFocus={(e) => { e.target.style.borderColor = 'var(--primario)'; }}
+  1371→                onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+  1372→              />
+  1373→              <div style={{ textAlign: 'right', marginTop: 4 }}>
+  1374→                <span
+  1375→                  style={{
+  1376→                    fontSize: 11,
+  1377→                    fontFamily: "'JetBrains Mono', monospace",
+  1378→                    color: solicitudEnvio.instrucciones.length >= 180 ? 'var(--peligro)' : 'var(--text-muted)',
+  1379→                  }}
+  1380→                >
+  1381→                  {solicitudEnvio.instrucciones.length}/200
+  1382→                </span>
+  1383→              </div>
+  1384→            </div>
+  1385→
+  1386→            {/* Frágil */}
+  1387→            <div
+  1388→              style={{
+  1389→                display: 'flex',
+  1390→                justifyContent: 'space-between',
+  1391→                alignItems: 'center',
+  1392→                padding: '14px 16px',
+  1393→                borderRadius: 12,
+  1394→                border: '1.5px solid var(--border)',
+  1395→                background: 'var(--surface)',
+  1396→              }}
+  1397→            >
+  1398→              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1399→                <ShieldCheck size={20} style={{ color: solicitudEnvio.fragil ? 'var(--warning)' : 'var(--text-muted)' }} />
+  1400→                <div>
+  1401→                  <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>Paquete frágil</span>
+  1402→                  <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginLeft: 8 }}>+C$ 10</span>
+  1403→                </div>
+  1404→              </div>
+  1405→              <ToggleSwitch
+  1406→                checked={solicitudEnvio.fragil}
+  1407→                onChange={(v) => setSolicitudEnvio({ fragil: v })}
+  1408→                label=""
+  1409→              />
+  1410→            </div>
+  1411→
+  1412→            {/* Updated quote */}
+  1413→            {costBreakdown.total > 0 && <CostCard breakdown={costBreakdown} />}
+  1414→          </div>
+  1415→        );
+  1416→
+  1417→      /* ═══ STEP 3: PAGO ═══ */
+  1418→      case 3:
+  1419→        return (
+  1420→          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+  1421→            <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+  1422→              ¿Cómo pagas?
+  1423→            </h2>
+  1424→
+  1425→            {/* Payment method cards */}
+  1426→            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+  1427→              {[
+  1428→                {
+  1429→                  key: 'efectivo' as const,
+  1430→                  label: 'Efectivo',
+  1431→                  desc: 'Paga al repartidor al recibir',
+  1432→                  icon: Banknote,
+  1433→                },
+  1434→                {
+  1435→                  key: 'transferencia' as const,
+  1436→                  label: 'Transferencia',
+  1437→                  desc: 'Transfiere antes de la entrega',
+  1438→                  icon: CreditCard,
+  1439→                },
+  1440→              ].map((method) => {
+  1441→                const isSelected = solicitudEnvio.metodoPago === method.key;
+  1442→                const Icon = method.icon;
+  1443→                return (
+  1444→                  <motion.button
+  1445→                    key={method.key}
+  1446→                    whileTap={{ scale: 0.97 }}
+  1447→                    onClick={() => setSolicitudEnvio({ metodoPago: method.key })}
+  1448→                    style={{
+  1449→                      display: 'flex',
+  1450→                      flexDirection: 'column',
+  1451→                      alignItems: 'center',
+  1452→                      gap: 10,
+  1453→                      padding: '20px 12px',
+  1454→                      borderRadius: 14,
+  1455→                      border: `2px solid ${isSelected ? 'var(--primario)' : 'var(--border)'}`,
+  1456→                      background: isSelected ? 'var(--primario-soft)' : 'var(--surface)',
+  1457→                      cursor: 'pointer',
+  1458→                      transition: 'all 0.2s ease',
+  1459→                      textAlign: 'center',
+  1460→                    }}
+  1461→                  >
+  1462→                    <Icon
+  1463→                      size={28}
+  1464→                      style={{
+  1465→                        color: isSelected ? 'var(--primario)' : 'var(--text-muted)',
+  1466→                        transition: 'color 0.2s',
+  1467→                      }}
+  1468→                    />
+  1469→                    <span
+  1470→                      style={{
+  1471→                        fontSize: 15,
+  1472→                        fontWeight: 600,
+  1473→                        color: isSelected ? 'var(--primario)' : 'var(--text)',
+  1474→                        fontFamily: "'DM Sans', sans-serif",
+  1475→                      }}
+  1476→                    >
+  1477→                      {method.label}
+  1478→                    </span>
+  1479→                    <span
+  1480→                      style={{
+  1481→                        fontSize: 12,
+  1482→                        color: 'var(--text-muted)',
+  1483→                        fontFamily: "'DM Sans', sans-serif",
+  1484→                        lineHeight: 1.3,
+  1485→                      }}
+  1486→                    >
+  1487→                      {method.desc}
+  1488→                    </span>
+  1489→                  </motion.button>
+  1490→                );
+  1491→              })}
+  1492→            </div>
+  1493→
+  1494→            {/* Conditional content for payment method */}
+  1495→            {solicitudEnvio.metodoPago === 'efectivo' && (
+  1496→              <motion.div
+  1497→                initial={{ opacity: 0, y: 8 }}
+  1498→                animate={{ opacity: 1, y: 0 }}
+  1499→                style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+  1500→              >
+  1501→                {/* Info box */}
+  1502→                <div
+  1503→                  style={{
+  1504→                    display: 'flex',
+  1505→                    alignItems: 'center',
+  1506→                    gap: 10,
+  1507→                    padding: '12px 16px',
+  1508→                    borderRadius: 12,
+  1509→                    background: 'rgba(255, 179, 0, 0.08)',
+  1510→                    border: '1px solid rgba(255, 179, 0, 0.2)',
+  1511→                  }}
+  1512→                >
+  1513→                  <Info size={18} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+  1514→                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+  1515→                    Recuerda tener el monto exacto
+  1516→                  </span>
+  1517→                </div>
+  1518→
+  1519→                {/* Change calculator */}
+  1520→                <div>
+  1521→                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+  1522→                    ¿Con cuánto vas a pagar? (opcional)
+  1523→                  </label>
+  1524→                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+  1525→                    <span style={{ fontSize: 15, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>C$</span>
+  1526→                    <input
+  1527→                      type="number"
+  1528→                      value={montoPagoInput}
+  1529→                      onChange={(e) => setMontoPagoInput(e.target.value)}
+  1530→                      placeholder="0"
+  1531→                      min={0}
+  1532→                      style={{
+  1533→                        flex: 1,
+  1534→                        padding: '12px 14px',
+  1535→                        borderRadius: 10,
+  1536→                        border: '1.5px solid var(--border)',
+  1537→                        background: 'var(--surface)',
+  1538→                        color: 'var(--text)',
+  1539→                        fontSize: 15,
+  1540→                        fontFamily: "'JetBrains Mono', monospace",
+  1541→                        outline: 'none',
+  1542→                      }}
+  1543→                    />
+  1544→                  </div>
+  1545→                  {montoPagoInput && parseInt(montoPagoInput) > costBreakdown.total && (
+  1546→                    <motion.div
+  1547→                      initial={{ opacity: 0 }}
+  1548→                      animate={{ opacity: 1 }}
+  1549→                      style={{
+  1550→                        marginTop: 8,
+  1551→                        padding: '10px 14px',
+  1552→                        borderRadius: 10,
+  1553→                        background: 'var(--bg-alt)',
+  1554→                        fontSize: 13,
+  1555→                        fontFamily: "'DM Sans', sans-serif",
+  1556→                        color: 'var(--text-secondary)',
+  1557→                      }}
+  1558→                    >
+  1559→                      Tu cambio:{' '}
+  1560→                      <span style={{ fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--exito)' }}>
+  1561→                        C$ {parseInt(montoPagoInput) - costBreakdown.total}
+  1562→                      </span>
+  1563→                    </motion.div>
+  1564→                  )}
+  1565→                  {montoPagoInput && parseInt(montoPagoInput) < costBreakdown.total && parseInt(montoPagoInput) > 0 && (
+  1566→                    <motion.div
+  1567→                      initial={{ opacity: 0 }}
+  1568→                      animate={{ opacity: 1 }}
+  1569→                      style={{
+  1570→                        marginTop: 8,
+  1571→                        padding: '10px 14px',
+  1572→                        borderRadius: 10,
+  1573→                        background: 'rgba(255,23,68,0.06)',
+  1574→                        border: '1px solid rgba(255,23,68,0.15)',
+  1575→                        fontSize: 13,
+  1576→                        fontFamily: "'DM Sans', sans-serif",
+  1577→                        color: 'var(--peligro)',
+  1578→                        display: 'flex',
+  1579→                        alignItems: 'center',
+  1580→                        gap: 8,
+  1581→                      }}
+  1582→                    >
+  1583→                      <AlertCircle size={14} />
+  1584→                      Monto insuficiente
+  1585→                    </motion.div>
+  1586→                  )}
+  1587→                </div>
+  1588→              </motion.div>
+  1589→            )}
+  1590→
+  1591→            {solicitudEnvio.metodoPago === 'transferencia' && (
+  1592→              <motion.div
+  1593→                initial={{ opacity: 0, y: 8 }}
+  1594→                animate={{ opacity: 1, y: 0 }}
+  1595→                style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+  1596→              >
+  1597→                {/* Info box with bank details */}
+  1598→                <div
+  1599→                  style={{
+  1600→                    padding: '16px',
+  1601→                    borderRadius: 12,
+  1602→                    background: 'rgba(41,121,255,0.06)',
+  1603→                    border: '1px solid rgba(41,121,255,0.15)',
+  1604→                  }}
+  1605→                >
+  1606→                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+  1607→                    <CreditCard size={16} style={{ color: 'var(--info)' }} />
+  1608→                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>Datos bancarios</span>
+  1609→                  </div>
+  1610→                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7 }}>
+  1611→                    <div><strong>Banco:</strong> BAC</div>
+  1612→                    <div><strong>Cuenta:</strong> 1234-5678-90</div>
+  1613→                    <div><strong>Titular:</strong> LOGIFAST S.A.</div>
+  1614→                  </div>
+  1615→                </div>
+  1616→
+  1617→                <button
+  1618→                  onClick={handleCopyBank}
+  1619→                  style={{
+  1620→                    display: 'flex',
+  1621→                    alignItems: 'center',
+  1622→                    justifyContent: 'center',
+  1623→                    gap: 8,
+  1624→                    padding: '12px 16px',
+  1625→                    borderRadius: 10,
+  1626→                    border: '1.5px solid var(--border)',
+  1627→                    background: 'var(--surface)',
+  1628→                    color: 'var(--text)',
+  1629→                    fontSize: 14,
+  1630→                    fontFamily: "'DM Sans', sans-serif",
+  1631→                    fontWeight: 500,
+  1632→                    cursor: 'pointer',
+  1633→                    transition: 'all 0.2s',
+  1634→                  }}
+  1635→                >
+  1636→                  <Copy size={16} />
+  1637→                  Copiar datos bancarios
+  1638→                </button>
+  1639→              </motion.div>
+  1640→            )}
+  1641→
+  1642→            {/* Promo code section */}
+  1643→            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+  1644→              {!promoExpanded ? (
+  1645→                <button
+  1646→                  onClick={() => setPromoExpanded(true)}
+  1647→                  style={{
+  1648→                    display: 'flex',
+  1649→                    alignItems: 'center',
+  1650→                    gap: 8,
+  1651→                    border: 'none',
+  1652→                    background: 'none',
+  1653→                    cursor: 'pointer',
+  1654→                    color: 'var(--primario)',
+  1655→                    fontSize: 14,
+  1656→                    fontWeight: 500,
+  1657→                    fontFamily: "'DM Sans', sans-serif",
+  1658→                    padding: 0,
+  1659→                  }}
+  1660→                >
+  1661→                  <Tag size={16} />
+  1662→                  ¿Tienes un código promocional?
+  1663→                </button>
+  1664→              ) : (
+  1665→                <motion.div
+  1666→                  initial={{ opacity: 0, height: 0 }}
+  1667→                  animate={{ opacity: 1, height: 'auto' }}
+  1668→                  style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+  1669→                >
+  1670→                  <div style={{ display: 'flex', gap: 8 }}>
+  1671→                    <input
+  1672→                      type="text"
+  1673→                      value={promoInput}
+  1674→                      onChange={(e) => {
+  1675→                        setPromoInput(e.target.value.toUpperCase());
+  1676→                        setPromoStatus('idle');
+  1677→                        setPromoMessage('');
+  1678→                      }}
+  1679→                      placeholder="Código promocional"
+  1680→                      style={{
+  1681→                        flex: 1,
+  1682→                        padding: '12px 14px',
+  1683→                        borderRadius: 10,
+  1684→                        border: '1.5px solid var(--border)',
+  1685→                        background: 'var(--surface)',
+  1686→                        color: 'var(--text)',
+  1687→                        fontSize: 14,
+  1688→                        fontFamily: "'JetBrains Mono', monospace",
+  1689→                        outline: 'none',
+  1690→                        textTransform: 'uppercase' as const,
+  1691→                      }}
+  1692→                    />
+  1693→                    <button
+  1694→                      onClick={handleApplyPromo}
+  1695→                      disabled={!promoInput.trim()}
+  1696→                      style={{
+  1697→                        padding: '12px 20px',
+  1698→                        borderRadius: 10,
+  1699→                        border: 'none',
+  1700→                        background: promoInput.trim() ? 'var(--primario)' : 'var(--border)',
+  1701→                        color: promoInput.trim() ? 'white' : 'var(--text-muted)',
+  1702→                        fontSize: 14,
+  1703→                        fontWeight: 600,
+  1704→                        fontFamily: "'DM Sans', sans-serif",
+  1705→                        cursor: promoInput.trim() ? 'pointer' : 'default',
+  1706→                        transition: 'all 0.2s',
+  1707→                      }}
+  1708→                    >
+  1709→                      Aplicar
+  1710→                    </button>
+  1711→                  </div>
+  1712→                  {promoMessage && (
+  1713→                    <motion.div
+  1714→                      initial={{ opacity: 0, y: -4 }}
+  1715→                      animate={{ opacity: 1, y: 0 }}
+  1716→                      style={{
+  1717→                        display: 'flex',
+  1718→                        alignItems: 'center',
+  1719→                        gap: 8,
+  1720→                        padding: '10px 14px',
+  1721→                        borderRadius: 10,
+  1722→                        background: promoStatus === 'valid' ? 'rgba(0,200,83,0.08)' : 'rgba(255,23,68,0.06)',
+  1723→                        border: `1px solid ${promoStatus === 'valid' ? 'rgba(0,200,83,0.2)' : 'rgba(255,23,68,0.15)'}`,
+  1724→                        fontSize: 13,
+  1725→                        fontFamily: "'DM Sans', sans-serif",
+  1726→                        color: promoStatus === 'valid' ? 'var(--exito)' : 'var(--peligro)',
+  1727→                      }}
+  1728→                    >
+  1729→                      {promoStatus === 'valid' ? <Check size={14} /> : <AlertCircle size={14} />}
+  1730→                      {promoMessage}
+  1731→                    </motion.div>
+  1732→                  )}
+  1733→                </motion.div>
+  1734→              )}
+  1735→            </div>
+  1736→
+  1737→            {/* Final cost summary */}
+  1738→            <CostCard breakdown={costBreakdown} showPromo />
+  1739→          </div>
+  1740→        );
+  1741→
+  1742→      /* ═══ STEP 4: CONFIRMAR ═══ */
+  1743→      case 4:
+  1744→        return (
+  1745→          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+  1746→            <h2 style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+  1747→              Confirma tu envío
+  1748→            </h2>
+  1749→
+  1750→            {/* Summary card */}
+  1751→            <div
+  1752→              style={{
+  1753→                background: 'var(--surface)',
+  1754→                borderRadius: 16,
+  1755→                border: '1.5px solid var(--border)',
+  1756→                overflow: 'hidden',
+  1757→              }}
+  1758→            >
+  1759→              {/* Route section */}
+  1760→              <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
+  1761→                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12, fontFamily: "'DM Sans', sans-serif" }}>
+  1762→                  Ruta
+  1763→                </div>
+  1764→                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+  1765→                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1766→                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--exito)', boxShadow: '0 0 0 3px rgba(0,200,83,0.2)', flexShrink: 0 }} />
+  1767→                    <span style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>{solicitudEnvio.origen}</span>
+  1768→                  </div>
+  1769→                  <div style={{ width: 1, height: 12, background: 'var(--border)', marginLeft: 5.5 }} />
+  1770→                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1771→                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--primario)', boxShadow: '0 0 0 3px rgba(255,87,34,0.2)', flexShrink: 0 }} />
+  1772→                    <span style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>{solicitudEnvio.destino}</span>
+  1773→                  </div>
+  1774→                </div>
+  1775→                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+  1776→                  {costBreakdown.distanceKm.toFixed(1)} km • {costBreakdown.estimatedTime}
+  1777→                </div>
+  1778→              </div>
+  1779→
+  1780→              {/* Schedule section - only when programar */}
+  1781→              {scheduleMode === 'programar' && scheduleDate && scheduleTime && (
+  1782→                <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
+  1783→                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+  1784→                    Programación
+  1785→                  </div>
+  1786→                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1787→                    <div style={{
+  1788→                      width: 32,
+  1789→                      height: 32,
+  1790→                      borderRadius: 8,
+  1791→                      background: 'var(--primario-soft)',
+  1792→                      display: 'flex',
+  1793→                      alignItems: 'center',
+  1794→                      justifyContent: 'center',
+  1795→                      flexShrink: 0,
+  1796→                    }}>
+  1797→                      <Calendar size={16} style={{ color: 'var(--primario)' }} />
+  1798→                    </div>
+  1799→                    <div>
+  1800→                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+  1801→                        {formatSpanishDate(scheduleDate)}
+  1802→                      </div>
+  1803→                      <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+  1804→                        {scheduleTime}
+  1805→                      </div>
+  1806→                    </div>
+  1807→                  </div>
+  1808→                  <div style={{
+  1809→                    marginTop: 10,
+  1810→                    padding: '8px 12px',
+  1811→                    borderRadius: 8,
+  1812→                    background: 'rgba(255,179,0,0.08)',
+  1813→                    border: '1px solid rgba(255,179,0,0.2)',
+  1814→                    fontSize: 12,
+  1815→                    color: 'var(--warning)',
+  1816→                    fontFamily: "'DM Sans', sans-serif",
+  1817→                    display: 'flex',
+  1818→                    alignItems: 'center',
+  1819→                    gap: 6,
+  1820→                  }}>
+  1821→                    <Info size={14} />
+  1822→                    Envío programado — se asignará repartidor en la fecha indicada
+  1823→                  </div>
+  1824→                </div>
+  1825→              )}
+  1826→
+  1827→              {/* Package section */}
+  1828→              <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
+  1829→                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+  1830→                  Paquete
+  1831→                </div>
+  1832→                <div style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>
+  1833→                  {solicitudEnvio.descripcion}
+  1834→                </div>
+  1835→                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+  1836→                  <span
+  1837→                    style={{
+  1838→                      padding: '4px 10px',
+  1839→                      borderRadius: 6,
+  1840→                      background: 'var(--bg-alt)',
+  1841→                      fontSize: 12,
+  1842→                      fontWeight: 500,
+  1843→                      fontFamily: "'DM Sans', sans-serif",
+  1844→                      color: 'var(--text-secondary)',
+  1845→                    }}
+  1846→                  >
+  1847→                    {SIZE_OPTIONS.find((s) => s.key === solicitudEnvio.tamano)?.label}
+  1848→                  </span>
+  1849→                  {solicitudEnvio.fragil && (
+  1850→                    <span
+  1851→                      style={{
+  1852→                        padding: '4px 10px',
+  1853→                        borderRadius: 6,
+  1854→                        background: 'rgba(255,179,0,0.1)',
+  1855→                        fontSize: 12,
+  1856→                        fontWeight: 500,
+  1857→                        fontFamily: "'DM Sans', sans-serif",
+  1858→                        color: 'var(--warning)',
+  1859→                      }}
+  1860→                    >
+  1861→                      Frágil
+  1862→                    </span>
+  1863→                  )}
+  1864→                </div>
+  1865→              </div>
+  1866→
+  1867→              {/* Payment section */}
+  1868→              <div style={{ padding: 20 }}>
+  1869→                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+  1870→                  Pago
+  1871→                </div>
+  1872→                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+  1873→                  {solicitudEnvio.metodoPago === 'efectivo' ? (
+  1874→                    <Banknote size={16} style={{ color: 'var(--exito)' }} />
+  1875→                  ) : (
+  1876→                    <CreditCard size={16} style={{ color: 'var(--info)' }} />
+  1877→                  )}
+  1878→                  <span style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+  1879→                    {solicitudEnvio.metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+  1880→                  </span>
+  1881→                </div>
+  1882→                {solicitudEnvio.codigoPromo && (
+  1883→                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+  1884→                    <Tag size={14} style={{ color: 'var(--exito)' }} />
+  1885→                    <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--exito)' }}>
+  1886→                      {solicitudEnvio.codigoPromo}
+  1887→                    </span>
+  1888→                  </div>
+  1889→                )}
+  1890→                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1.5px solid var(--border)' }}>
+  1891→                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>Total</span>
+  1892→                  <span style={{ fontSize: 20, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+  1893→                    {formatCordobas(costBreakdown.total)}
+  1894→                  </span>
+  1895→                </div>
+  1896→              </div>
+  1897→            </div>
+  1898→
+  1899→            {/* Terms checkbox */}
+  1900→            <div
+  1901→              onClick={() => setSolicitudEnvio({ terminosAceptados: !solicitudEnvio.terminosAceptados })}
+  1902→              style={{
+  1903→                display: 'flex',
+  1904→                alignItems: 'flex-start',
+  1905→                gap: 10,
+  1906→                cursor: 'pointer',
+  1907→                padding: '12px 14px',
+  1908→                borderRadius: 12,
+  1909→                border: solicitudEnvio.terminosAceptados ? '1.5px solid var(--primario)' : '1.5px solid var(--border)',
+  1910→                background: solicitudEnvio.terminosAceptados ? 'var(--primario-soft)' : 'transparent',
+  1911→                transition: 'all 0.2s',
+  1912→              }}
+  1913→            >
+  1914→              <div
+  1915→                style={{
+  1916→                  width: 22,
+  1917→                  height: 22,
+  1918→                  borderRadius: 6,
+  1919→                  border: `2px solid ${solicitudEnvio.terminosAceptados ? 'var(--primario)' : 'var(--border)'}`,
+  1920→                  background: solicitudEnvio.terminosAceptados ? 'var(--primario)' : 'transparent',
+  1921→                  display: 'flex',
+  1922→                  alignItems: 'center',
+  1923→                  justifyContent: 'center',
+  1924→                  flexShrink: 0,
+  1925→                  marginTop: 1,
+  1926→                  transition: 'all 0.2s',
+  1927→                }}
+  1928→              >
+  1929→                {solicitudEnvio.terminosAceptados && <Check size={14} strokeWidth={3} color="white" />}
+  1930→              </div>
+  1931→              <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>
+  1932→                Acepto los términos de servicio del envío
+  1933→              </span>
+  1934→            </div>
+  1935→          </div>
+  1936→        );
+  1937→
+  1938→      default:
+  1939→        return null;
+  1940→    }
+  1941→  };
+  1942→
+  1943→  /* ═══ CONFIRMATION SCREEN ═══ */
+  1944→  if (confirmed) {
+  1945→    return (
+  1946→      <div style={{ maxWidth: 480, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
+  1947→        <motion.div
+  1948→          initial={{ scale: 0.5, opacity: 0 }}
+  1949→          animate={{ scale: 1, opacity: 1 }}
+  1950→          transition={{ duration: 0.5, ease: 'easeOut' }}
+  1951→          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}
+  1952→        >
+  1953→          <CheckAnimation />
+  1954→          <h2 style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--exito)', margin: 0 }}>
+  1955→            {scheduleMode === 'programar' && scheduleDate && scheduleTime ? '¡Envío programado!' : '¡Envío confirmado!'}
+  1956→          </h2>
+  1957→          <p style={{ fontSize: 15, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>
+  1958→            Orden <span style={{ fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>#{confirmedOrderId}</span> {scheduleMode === 'programar' ? 'programada exitosamente' : 'creada exitosamente'}
+  1959→          </p>
+  1960→
+  1961→          {/* Schedule info in confirmation */}
+  1962→          {scheduleMode === 'programar' && scheduleDate && scheduleTime && (
+  1963→            <motion.div
+  1964→              initial={{ opacity: 0, y: 8 }}
+  1965→              animate={{ opacity: 1, y: 0 }}
+  1966→              transition={{ delay: 0.3 }}
+  1967→              style={{
+  1968→                display: 'flex',
+  1969→                alignItems: 'center',
+  1970→                gap: 10,
+  1971→                padding: '14px 18px',
+  1972→                borderRadius: 12,
+  1973→                background: 'var(--primario-soft)',
+  1974→                border: '1px solid rgba(255,87,34,0.2)',
+  1975→                width: '100%',
+  1976→                textAlign: 'left',
+  1977→              }}
+  1978→            >
+  1979→              <Calendar size={20} style={{ color: 'var(--primario)', flexShrink: 0 }} />
+  1980→              <div>
+  1981→                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--primario)', fontFamily: "'DM Sans', sans-serif" }}>
+  1982→                  Recogida programada
+  1983→                </div>
+  1984→                <div style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+  1985→                  {formatSpanishDate(scheduleDate)} a las {scheduleTime}
+  1986→                </div>
+  1987→              </div>
+  1988→            </motion.div>
+  1989→          )}
+  1990→
+  1991→          {/* Quick details */}
+  1992→          <div
+  1993→            style={{
+  1994→              background: 'var(--surface)',
+  1995→              borderRadius: 14,
+  1996→              border: '1.5px solid var(--border)',
+  1997→              padding: 20,
+  1998→              width: '100%',
+  1999→              textAlign: 'left',
+  2000→            }}
+
+[showing lines 1-2000 of 2248; use offset=2001 with limit to continue reading]

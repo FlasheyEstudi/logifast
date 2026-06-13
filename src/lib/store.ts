@@ -922,7 +922,7 @@ const MOCK_ZONE_POLYGONS: ZonePolygon[] = [
 const MOCK_CAMPANAS: Campana[] = [
   {
     id: 'CAMP-01', titulo: 'Promo verano', tipo: 'push', segmento: 'Todos los clientes',
-    contenido: { titulo: '¡Promo Verano! 🔥', cuerpo: '20% de descuento en tu próximo envío. Usa el código VERANO20', boton: 'Usar ahora' },
+    contenido: { titulo: '¡Promo Verano!', cuerpo: '20% de descuento en tu próximo envío. Usa el código VERANO20', boton: 'Usar ahora' },
     estado: 'enviada', enviadaEn: '2026-06-08T10:00:00', destinatarios: 120, abiertos: 85, clicks: 32,
     creadoPor: 'admin', createdAt: '2026-06-07T15:00:00',
   },
@@ -1124,7 +1124,7 @@ const MOCK_CHAT_CONVERSATIONS: ChatConversation[] = [
     active: true,
     messages: [
       { id: 'm1', senderId: 'sistema', senderName: 'Sistema', senderType: 'sistema', content: 'Orden asignada a Carlos M.', timestamp: '14:21', read: true },
-      { id: 'm2', senderId: 'r1', senderName: 'Carlos M.', senderType: 'repartidor', content: 'Hola! Ya voy en camino a recoger tu paquete 🏍️', timestamp: '14:22', read: true },
+      { id: 'm2', senderId: 'r1', senderName: 'Carlos M.', senderType: 'repartidor', content: 'Hola! Ya voy en camino a recoger tu paquete', timestamp: '14:22', read: true },
       { id: 'm3', senderId: 'cliente', senderName: 'María', senderType: 'cliente', content: 'Genial, te espero en la entrada principal de Metrocentro', timestamp: '14:23', read: true },
       { id: 'm4', senderId: 'sistema', senderName: 'Sistema', senderType: 'sistema', content: 'Carlos M. está en camino a recoger', timestamp: '14:25', read: true },
     ],

@@ -20,6 +20,12 @@ import {
   ShoppingBag,
   Store,
   Zap,
+  Utensils,
+  Pill,
+  Gift,
+  ShoppingCart,
+  Smartphone,
+  Dumbbell,
 } from 'lucide-react';
 import { useStore, type Order, type Banner, type FeedItem } from '@/lib/store';
 import { useMarketplaceStore, CATEGORIAS, MOCK_TIENDAS } from '@/lib/marketplace-store';
@@ -993,7 +999,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
                 background: 'var(--surface)', cursor: 'pointer', minWidth: 80, flexShrink: 0,
               }}
             >
-              <span style={{ fontSize: 28 }}>{cat.icon}</span>
+              <span style={{ fontSize: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primario)' }}>{(() => { const map: Record<string, React.ReactNode> = { utensils: <Utensils size={28} />, store: <Store size={28} />, pill: <Pill size={28} />, gift: <Gift size={28} />, 'shopping-cart': <ShoppingCart size={28} />, smartphone: <Smartphone size={28} />, dumbbell: <Dumbbell size={28} /> }; return map[cat.icon] || null; })()}</span>
               <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' }}>{cat.label}</span>
             </motion.button>
           ))}
@@ -1023,8 +1029,12 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
               {/* Info */}
               <div style={{ padding: '8px 16px 16px' }}>
                 <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{tienda.nombre}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                  {CATEGORIAS.find(c => c.key === tienda.categoria)?.label} · {tienda.calificacion} ★
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span>{CATEGORIAS.find(c => c.key === tienda.categoria)?.label}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                    <Star size={11} fill="var(--warning, #FFB300)" stroke="none" />
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 500 }}>{tienda.calificacion}</span>
+                  </span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
                   {tienda.tiempoEstimado} · Envío C${tienda.costoEnvio}

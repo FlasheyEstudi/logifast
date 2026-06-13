@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, SlidersHorizontal, Heart, Star, Clock, MapPin, Truck, ChevronRight, X, ShoppingBag } from 'lucide-react';
+import { Search, SlidersHorizontal, Heart, Star, Clock, MapPin, Truck, ChevronRight, X, ShoppingBag, Check, Utensils, Store, Pill, Gift, ShoppingCart, Smartphone, Dumbbell } from 'lucide-react';
 import { useMarketplaceStore, type Tienda, type TiendaCategoria, CATEGORIAS } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
 
@@ -47,6 +47,22 @@ function isOpenNow(horario: Record<string, { abre: string; cierra: string }>): b
 function categoriaLabel(key: TiendaCategoria): string {
   const found = CATEGORIAS.find((c) => c.key === key);
   return found ? found.label : key;
+}
+
+const ICON_MAP: Record<string, React.FC<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
+  utensils: Utensils,
+  store: Store,
+  pill: Pill,
+  gift: Gift,
+  'shopping-cart': ShoppingCart,
+  smartphone: Smartphone,
+  dumbbell: Dumbbell,
+};
+
+function CategoryIcon({ name, size = 20, style }: { name: string; size?: number; style?: React.CSSProperties }) {
+  const Icon = ICON_MAP[name];
+  if (!Icon) return null;
+  return <Icon size={size} style={style} />;
 }
 
 const FILTROS_SECUNDARIOS = [
@@ -559,7 +575,7 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
             transition: 'all 0.2s',
           }}
         >
-          🏠 Todos
+          Todos
         </button>
         {CATEGORIAS.map((cat) => {
           const isActive = explorarCategoria === cat.key;
@@ -585,7 +601,7 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
                 transition: 'all 0.2s',
               }}
             >
-              {cat.icon} {cat.label}
+              <CategoryIcon name={cat.icon} size={18} /> {cat.label}
             </button>
           );
         })}
@@ -732,7 +748,7 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
                       {tienda.nombre}
                     </span>
                     {tienda.verificado && (
-                      <span style={{ color: 'var(--info)', fontSize: 14 }}>✓</span>
+                      <Check size={14} style={{ color: 'var(--info)' }} />
                     )}
                     {tienda.badges.map((b) => (
                       <span key={b} style={badgeStyleFor(b)}>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
   LogOut, Shield, Bell, Moon, Sun, Globe, ChevronRight, AlertTriangle,
-  Star,
+  Star, Banknote, CreditCard,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -176,6 +176,16 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteText, setDeleteText] = useState('');
 
+  /* ─── Toast state ─── */
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   /* ─── Computed metrics ─── */
   const clientOrders = useMemo(
     () => orders.filter((o) => o.cliente === userName || o.cliente === 'María López' || o.cliente === 'Maria López'),
@@ -283,11 +293,11 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
 
   const nivelIcon = useMemo(() => {
     switch (fidelizacion.nivel) {
-      case 'bronce': return '🥉';
-      case 'plata': return '🥈';
-      case 'oro': return '🥇';
-      case 'platino': return '💎';
-      default: return '🥉';
+      case 'bronce': return '';
+      case 'plata': return '';
+      case 'oro': return '';
+      case 'platino': return '';
+      default: return '';
     }
   }, [fidelizacion.nivel]);
 
@@ -317,10 +327,10 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
 
   const benefitsText = useMemo(() => {
     switch (fidelizacion.nivel) {
-      case 'bronce': return '🥉 Bronce: 1 punto por cada C$100 gastados. Gana 10 puntos por envío completado.';
-      case 'plata': return '🥈 Plata: 2 puntos por cada C$100 gastados. Gana 15 puntos por envío completado. Envío prioritario.';
-      case 'oro': return '🥇 Oro: 3 puntos por cada C$100 gastados. Gana 20 puntos por envío completado. Envío prioritario + soporte VIP.';
-      case 'platino': return '💎 Platino: 5 puntos por cada C$100 gastados. Gana 25 puntos por envío completado. Envío prioritario + soporte VIP + descuentos exclusivos.';
+      case 'bronce': return 'Bronce: 1 punto por cada C$100 gastados. Gana 10 puntos por envío completado.';
+      case 'plata': return 'Plata: 2 puntos por cada C$100 gastados. Gana 15 puntos por envío completado. Envío prioritario.';
+      case 'oro': return 'Oro: 3 puntos por cada C$100 gastados. Gana 20 puntos por envío completado. Envío prioritario + soporte VIP.';
+      case 'platino': return 'Platino: 5 puntos por cada C$100 gastados. Gana 25 puntos por envío completado. Envío prioritario + soporte VIP + descuentos exclusivos.';
       default: return '';
     }
   }, [fidelizacion.nivel]);
@@ -340,18 +350,17 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
   const handleCanjear = (puntos: number) => {
     const ok = canjearPuntos(puntos);
     if (ok) {
-      // Simple toast via alert for now
-      alert(`✅ Se canjearon ${puntos} puntos correctamente`);
+      setToast({ message: `Se canjearon ${puntos} puntos correctamente`, type: 'success' });
     } else {
-      alert('❌ No tienes suficientes puntos');
+      setToast({ message: 'No tienes suficientes puntos', type: 'error' });
     }
   };
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(referidos.codigo).then(() => {
-      alert('📋 Código copiado: ' + referidos.codigo);
+      setToast({ message: 'Código copiado: ' + referidos.codigo, type: 'success' });
     }).catch(() => {
-      alert('📋 Código: ' + referidos.codigo);
+      setToast({ message: 'Código: ' + referidos.codigo, type: 'success' });
     });
   };
 
@@ -364,14 +373,14 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     if (typeof navigator !== 'undefined' && navigator.share) {
       navigator.share(shareData).catch(() => {
         navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
-          alert('🔗 Enlace copiado al portapapeles');
+          setToast({ message: 'Enlace copiado al portapapeles', type: 'success' });
         });
       });
     } else {
       navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
-        alert('🔗 Enlace copiado al portapapeles');
+        setToast({ message: 'Enlace copiado al portapapeles', type: 'success' });
       }).catch(() => {
-        alert('Código: ' + referidos.codigo + ' | Link: ' + referidos.link);
+        setToast({ message: 'Código: ' + referidos.codigo + ' | Link: ' + referidos.link, type: 'success' });
       });
     }
   };
@@ -993,8 +1002,8 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <span style={{ fontSize: 20 }}>
-                {prefPayment === 'efectivo' ? '💵' : '🏦'}
+              <span style={{ fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {prefPayment === 'efectivo' ? <Banknote size={20} style={{ color: 'var(--text-secondary)' }} /> : <CreditCard size={20} style={{ color: 'var(--text-secondary)' }} />}
               </span>
             </div>
             <div>
@@ -1201,6 +1210,37 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
               </div>
             </div>
           </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* ─── TOAST NOTIFICATION ─── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: 'fixed',
+              bottom: 100,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              padding: '12px 24px',
+              borderRadius: 12,
+              background: toast.type === 'success' ? 'var(--exito, #00C853)' : 'var(--peligro, #FF1744)',
+              color: '#fff',
+              fontSize: 14,
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 500,
+              zIndex: 9999,
+              boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+              maxWidth: '90vw',
+              textAlign: 'center',
+            }}
+          >
+            {toast.message}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

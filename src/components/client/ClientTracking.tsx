@@ -512,11 +512,18 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   // Star rendering for rating
   const renderStars = (rating: number) => {
     const full = Math.floor(rating);
-    const half = rating % 1 >= 0.5 ? 1 : 0;
-    const empty = 5 - full - half;
     return (
-      <span style={{ color: '#FF9800', fontSize: 13, letterSpacing: 1 }}>
-        {'★'.repeat(full)}{half ? '½' : ''}{'☆'.repeat(empty)}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star
+            key={i}
+            size={14}
+            fill={i < full ? 'var(--primario)' : 'none'}
+            stroke={i < full ? 'var(--primario)' : 'var(--border)'}
+            strokeWidth={i < full ? 0 : 1.5}
+            style={{ display: 'inline' }}
+          />
+        ))}
       </span>
     );
   };

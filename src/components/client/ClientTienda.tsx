@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Heart, Share2, Phone, Star, Clock, MapPin, Truck, Plus, Minus, Check, ChevronRight, X, ShoppingBag, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, Phone, Star, Clock, MapPin, Truck, Plus, Minus, Check, ChevronRight, X, ShoppingBag, MessageCircle, Sparkles } from 'lucide-react';
 import { useMarketplaceStore, type Tienda, type Producto, CATEGORIAS, MOCK_PRODUCTOS, MOCK_RESENAS } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
 
@@ -23,7 +23,7 @@ interface ClientTiendaProps {
 
 function categoriaLabel(key: string): string {
   const found = CATEGORIAS.find((c) => c.key === key);
-  return found ? `${found.icon} ${found.label}` : key;
+  return found ? found.label : key;
 }
 
 function isStoreOpen(horario: Record<string, { abre: string; cierra: string }>): { open: boolean; text: string } {
@@ -400,7 +400,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                   }}
                 >
                   {badge === 'Popular' && <Star size={10} fill={textColor} color={textColor} />}
-                  {badge === 'Nuevo' && <span style={{ fontSize: 10 }}>✨</span>}
+                  {badge === 'Nuevo' && <Sparkles size={10} style={{ display: 'inline', verticalAlign: '-1px' }} />}
                   {badge}
                 </span>
               );

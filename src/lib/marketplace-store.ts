@@ -109,13 +109,13 @@ export interface CategoriaInfo {
    ═══════════════════════════════════════════════ */
 
 export const CATEGORIAS: CategoriaInfo[] = [
-  { key: 'comida', icon: '🍕', label: 'Comida rápida' },
-  { key: 'tienda', icon: '🏪', label: 'Tiendas' },
-  { key: 'farmacia', icon: '💊', label: 'Farmacias' },
-  { key: 'regalos', icon: '🎁', label: 'Regalos / Flores' },
-  { key: 'supermercado', icon: '🛒', label: 'Supermercado' },
-  { key: 'tecnologia', icon: '📱', label: 'Tecnología' },
-  { key: 'deportes', icon: '🏋️', label: 'Deportes' },
+  { key: 'comida', icon: 'utensils', label: 'Comida rápida' },
+  { key: 'tienda', icon: 'store', label: 'Tiendas' },
+  { key: 'farmacia', icon: 'pill', label: 'Farmacias' },
+  { key: 'regalos', icon: 'gift', label: 'Regalos / Flores' },
+  { key: 'supermercado', icon: 'shopping-cart', label: 'Supermercado' },
+  { key: 'tecnologia', icon: 'smartphone', label: 'Tecnología' },
+  { key: 'deportes', icon: 'dumbbell', label: 'Deportes' },
 ];
 
 /* ═══════════════════════════════════════════════
