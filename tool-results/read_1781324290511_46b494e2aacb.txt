@@ -1,0 +1,1339 @@
+     1→     1→     1→'use client';
+     2→     2→     2→
+     3→     3→     3→import React, { useState, useEffect, useRef, useCallback } from 'react';
+     4→     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→     5→import {
+     6→     6→     6→  Phone,
+     7→     7→     7→  MessageCircle,
+     8→     8→     8→  Share2,
+     9→     9→     9→  X,
+    10→    10→    10→  ChevronDown,
+    11→    11→    11→  ChevronUp,
+    12→    12→    12→  MapPin,
+    13→    13→    13→  Package,
+    14→    14→    14→  Home,
+    15→    15→    15→  Bike,
+    16→    16→    16→  Clock,
+    17→    17→    17→  Target,
+    18→    18→    18→  AlertTriangle,
+    19→    19→    19→  CheckCircle,
+    20→    20→    20→  Star,
+    21→    21→    21→  Navigation,
+    22→    22→    22→} from 'lucide-react';
+    23→    23→    23→import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/lib/store';
+    24→    24→    24→
+    25→    25→    25→/* ═══════════════════════════════════════════════
+    26→    26→    26→   PROPS
+    27→    27→    27→   ═══════════════════════════════════════════════ */
+    28→    28→    28→
+    29→    29→    29→interface ClientTrackingProps {
+    30→    30→    30→  isDark: boolean;
+    31→    31→    31→  onBack: () => void;
+    32→    32→    32→  onOpenChat: (orderId: string) => void;
+    33→    33→    33→  onRate: (orderId: string) => void;
+    34→    34→    34→}
+    35→    35→    35→
+    36→    36→    36→/* ═══════════════════════════════════════════════
+    37→    37→    37→   MOCK REPARTIDORES INFO MAP
+    38→    38→    38→   ═══════════════════════════════════════════════ */
+    39→    39→    39→
+    40→    40→    40→const REPARTIDOR_MAP: Record<string, RepartidorInfo> = {
+    41→    41→    41→  'CM': { id: 'r1', nombre: 'Carlos Mendoza', initials: 'CM', color: '#4CAF50', calificacion: 4.8, totalEntregas: 287, moto: 'Honda Wave 125', telefono: '+505 8888-1111', lat: 12.1120, lng: -86.2400 },
+    42→    42→    42→  'AT': { id: 'r2', nombre: 'Ana Torres', initials: 'AT', color: '#E91E63', calificacion: 4.9, totalEntregas: 312, moto: 'Yamaha NMAX', telefono: '+505 8888-2222', lat: 12.1080, lng: -86.2480 },
+    43→    43→    43→  'LR': { id: 'r3', nombre: 'Luis Ramos', initials: 'LR', color: '#2196F3', calificacion: 4.6, totalEntregas: 195, moto: 'Suzuki AX4', telefono: '+505 8888-3333', lat: 12.1200, lng: -86.2600 },
+    44→    44→    44→  'JP': { id: 'r4', nombre: 'Jorge Pérez', initials: 'JP', color: '#FF9800', calificacion: 4.7, totalEntregas: 256, moto: 'Honda PCX', telefono: '+505 8888-4444', lat: 12.0950, lng: -86.2300 },
+    45→    45→    45→  'RD': { id: 'r5', nombre: 'Rosa Díaz', initials: 'RD', color: '#9C27B0', calificacion: 4.5, totalEntregas: 143, moto: 'TVS Ntorq', telefono: '+505 8888-5555', lat: 12.1100, lng: -86.2350 },
+    46→    46→    46→  'MS': { id: 'r6', nombre: 'Miguel Sevilla', initials: 'MS', color: '#00BCD4', calificacion: 4.4, totalEntregas: 98, moto: 'Honda Click', telefono: '+505 8888-6666', lat: 12.1300, lng: -86.2700 },
+    47→    47→    47→};
+    48→    48→    48→
+    49→    49→    49→function getRepartidorInfo(initials: string): RepartidorInfo {
+    50→    50→    50→  return REPARTIDOR_MAP[initials] ?? {
+    51→    51→    51→    id: 'r0',
+    52→    52→    52→    nombre: 'Repartidor',
+    53→    53→    53→    initials: initials || 'RP',
+    54→    54→    54→    color: '#FF5722',
+    55→    55→    55→    calificacion: 4.5,
+    56→    56→    56→    totalEntregas: 100,
+    57→    57→    57→    moto: 'Moto estándar',
+    58→    58→    58→    telefono: '+505 0000-0000',
+    59→    59→    59→    lat: 12.1140,
+    60→    60→    60→    lng: -86.2400,
+    61→    61→    61→  };
+    62→    62→    62→}
+    63→    63→    63→
+    64→    64→    64→/* ═══════════════════════════════════════════════
+    65→    65→    65→   HELPERS
+    66→    66→    66→   ═══════════════════════════════════════════════ */
+    67→    67→    67→
+    68→    68→    68→function statusBadge(estado: string): { label: string; color: string } {
+    69→    69→    69→  switch (estado) {
+    70→    70→    70→    case 'pendiente': return { label: 'Pendiente', color: 'var(--warning)' };
+    71→    71→    71→    case 'encamino': return { label: 'En camino', color: 'var(--info)' };
+    72→    72→    72→    case 'recogido': return { label: 'Recogido', color: 'var(--info)' };
+    73→    73→    73→    case 'entregado': return { label: 'Entregado', color: 'var(--exito)' };
+    74→    74→    74→    case 'incidencia': return { label: 'Incidencia', color: 'var(--peligro)' };
+    75→    75→    75→    case 'programada': return { label: 'Programada', color: 'var(--primario)' };
+    76→    76→    76→    default: return { label: estado, color: 'var(--text-muted)' };
+    77→    77→    77→  }
+    78→    78→    78→}
+    79→    79→    79→
+    80→    80→    80→function getStepIcon(step: TrackingStep, index: number) {
+    81→    81→    81→  if (step.status === 'completed') {
+    82→    82→    82→    return <CheckCircle size={18} style={{ color: 'var(--exito)' }} />;
+    83→    83→    83→  }
+    84→    84→    84→  if (step.status === 'current') {
+    85→    85→    85→    return (
+    86→    86→    86→      <motion.div
+    87→    87→    87→        animate={{ scale: [1, 1.3, 1] }}
+    88→    88→    88→        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+    89→    89→    89→        style={{
+    90→    90→    90→          width: 18,
+    91→    91→    91→          height: 18,
+    92→    92→    92→          borderRadius: '50%',
+    93→    93→    93→          border: '2.5px solid var(--primario)',
+    94→    94→    94→          background: 'var(--primario-soft)',
+    95→    95→    95→        }}
+    96→    96→    96→      />
+    97→    97→    97→    );
+    98→    98→    98→  }
+    99→    99→    99→  return (
+   100→   100→   100→    <div
+   101→   101→   101→      style={{
+   102→   102→   102→        width: 18,
+   103→   103→   103→        height: 18,
+   104→   104→   104→        borderRadius: '50%',
+   105→   105→   105→        border: '2px solid var(--border)',
+   106→   106→   106→        background: 'transparent',
+   107→   107→   107→      }}
+   108→   108→   108→    />
+   109→   109→   109→  );
+   110→   110→   110→}
+   111→   111→   111→
+   112→   112→   112→/* ═══════════════════════════════════════════════
+   113→   113→   113→   CSS MAP COMPONENT (No Leaflet)
+   114→   114→   114→   ═══════════════════════════════════════════════ */
+   115→   115→   115→
+   116→   116→   116→function VisualMap({
+   117→   117→   117→  isDark,
+   118→   118→   118→  order,
+   119→   119→   119→  currentStepIndex,
+   120→   120→   120→}: {
+   121→   121→   121→  isDark: boolean;
+   122→   122→   122→  order: Order | null;
+   123→   123→   123→  currentStepIndex: number;
+   124→   124→   124→}) {
+   125→   125→   125→  const mapRef = useRef<HTMLDivElement>(null);
+   126→   126→   126→  const [centered, setCentered] = useState(false);
+   127→   127→   127→
+   128→   128→   128→  // Calculate rider position based on step progress (0 to 7)
+   129→   129→   129→  const progress = Math.min(currentStepIndex / 7, 1);
+   130→   130→   130→
+   131→   131→   131→  // Pickup at left, destination at right, rider moves along path
+   132→   132→   132→  const pickupX = 15;
+   133→   133→   133→  const pickupY = 65;
+   134→   134→   134→  const destX = 82;
+   135→   135→   135→  const destY = 30;
+   136→   136→   136→
+   137→   137→   137→  // Rider position interpolates along a curved path
+   138→   138→   138→  const riderX = pickupX + (destX - pickupX) * progress;
+   139→   139→   139→  const riderY = pickupY + (destY - pickupY) * progress - Math.sin(progress * Math.PI) * 15;
+   140→   140→   140→
+   141→   141→   141→  // Control point for the SVG curve
+   142→   142→   142→  const ctrlX = (pickupX + destX) / 2;
+   143→   143→   143→  const ctrlY = Math.min(pickupY, destY) - 20;
+   144→   144→   144→
+   145→   145→   145→  const bgGradient = isDark
+   146→   146→   146→    ? 'linear-gradient(135deg, #0D1B2A 0%, #1B2838 40%, #162029 70%, #0A1628 100%)'
+   147→   147→   147→    : 'linear-gradient(135deg, #E0F2F1 0%, #B2DFDB 30%, #80CBC4 60%, #B2DFDB 100%)';
+   148→   148→   148→
+   149→   149→   149→  const roadColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+   150→   150→   150→  const gridColor = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)';
+   151→   151→   151→
+   152→   152→   152→  return (
+   153→   153→   153→    <div
+   154→   154→   154→      ref={mapRef}
+   155→   155→   155→      style={{
+   156→   156→   156→        position: 'relative',
+   157→   157→   157→        width: '100%',
+   158→   158→   158→        height: '100%',
+   159→   159→   159→        background: bgGradient,
+   160→   160→   160→        overflow: 'hidden',
+   161→   161→   161→      }}
+   162→   162→   162→    >
+   163→   163→   163→      {/* Grid pattern */}
+   164→   164→   164→      <svg
+   165→   165→   165→        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+   166→   166→   166→        xmlns="http://www.w3.org/2000/svg"
+   167→   167→   167→      >
+   168→   168→   168→        <defs>
+   169→   169→   169→          <pattern id="mapGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+   170→   170→   170→            <path d="M 40 0 L 0 0 0 40" fill="none" stroke={gridColor} strokeWidth="1" />
+   171→   171→   171→          </pattern>
+   172→   172→   172→          <pattern id="mapRoads" width="120" height="80" patternUnits="userSpaceOnUse">
+   173→   173→   173→            <line x1="0" y1="40" x2="120" y2="40" stroke={roadColor} strokeWidth="12" />
+   174→   174→   174→            <line x1="60" y1="0" x2="60" y2="80" stroke={roadColor} strokeWidth="8" />
+   175→   175→   175→          </pattern>
+   176→   176→   176→        </defs>
+   177→   177→   177→        <rect width="100%" height="100%" fill="url(#mapGrid)" />
+   178→   178→   178→        <rect width="100%" height="100%" fill="url(#mapRoads)" />
+   179→   179→   179→
+   180→   180→   180→        {/* Decorative "block" shapes */}
+   181→   181→   181→        {isDark ? (
+   182→   182→   182→          <>
+   183→   183→   183→            <rect x="5%" y="10%" width="25%" height="15%" rx="3" fill="rgba(255,255,255,0.02)" />
+   184→   184→   184→            <rect x="55%" y="50%" width="30%" height="12%" rx="3" fill="rgba(255,255,255,0.02)" />
+   185→   185→   185→            <rect x="35%" y="75%" width="20%" height="10%" rx="3" fill="rgba(255,255,255,0.015)" />
+   186→   186→   186→          </>
+   187→   187→   187→        ) : (
+   188→   188→   188→          <>
+   189→   189→   189→            <rect x="5%" y="10%" width="25%" height="15%" rx="3" fill="rgba(0,77,64,0.06)" />
+   190→   190→   190→            <rect x="55%" y="50%" width="30%" height="12%" rx="3" fill="rgba(0,77,64,0.06)" />
+   191→   191→   191→            <rect x="35%" y="75%" width="20%" height="10%" rx="3" fill="rgba(0,77,64,0.04)" />
+   192→   192→   192→          </>
+   193→   193→   193→        )}
+   194→   194→   194→
+   195→   195→   195→        {/* Dotted path from pickup to destination */}
+   196→   196→   196→        <path
+   197→   197→   197→          d={`M ${pickupX}% ${pickupY}% Q ${ctrlX}% ${ctrlY}% ${destX}% ${destY}%`}
+   198→   198→   198→          fill="none"
+   199→   199→   199→          stroke={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'}
+   200→   200→   200→          strokeWidth="2"
+   201→   201→   201→          strokeDasharray="6 6"
+   202→   202→   202→        />
+   203→   203→   203→
+   204→   204→   204→        {/* Completed portion of path */}
+   205→   205→   205→        {progress > 0 && (
+   206→   206→   206→          <path
+   207→   207→   207→            d={`M ${pickupX}% ${pickupY}% Q ${ctrlX}% ${ctrlY}% ${riderX}% ${riderY}%`}
+   208→   208→   208→            fill="none"
+   209→   209→   209→            stroke="var(--primario)"
+   210→   210→   210→            strokeWidth="2.5"
+   211→   211→   211→            strokeDasharray="none"
+   212→   212→   212→            opacity={0.7}
+   213→   213→   213→          />
+   214→   214→   214→        )}
+   215→   215→   215→      </svg>
+   216→   216→   216→
+   217→   217→   217→      {/* Pickup Marker */}
+   218→   218→   218→      <div
+   219→   219→   219→        style={{
+   220→   220→   220→          position: 'absolute',
+   221→   221→   221→          left: `${pickupX}%`,
+   222→   222→   222→          top: `${pickupY}%`,
+   223→   223→   223→          transform: 'translate(-50%, -50%)',
+   224→   224→   224→          display: 'flex',
+   225→   225→   225→          flexDirection: 'column',
+   226→   226→   226→          alignItems: 'center',
+   227→   227→   227→          gap: 4,
+   228→   228→   228→          zIndex: 10,
+   229→   229→   229→        }}
+   230→   230→   230→      >
+   231→   231→   231→        <div
+   232→   232→   232→          style={{
+   233→   233→   233→            width: 36,
+   234→   234→   234→            height: 36,
+   235→   235→   235→            borderRadius: '50%',
+   236→   236→   236→            background: 'var(--exito)',
+   237→   237→   237→            display: 'flex',
+   238→   238→   238→            alignItems: 'center',
+   239→   239→   239→            justifyContent: 'center',
+   240→   240→   240→            boxShadow: '0 2px 8px rgba(0,200,83,0.35)',
+   241→   241→   241→          }}
+   242→   242→   242→        >
+   243→   243→   243→          <Package size={18} color="#fff" />
+   244→   244→   244→        </div>
+   245→   245→   245→        <span
+   246→   246→   246→          style={{
+   247→   247→   247→            fontFamily: "'DM Sans', sans-serif",
+   248→   248→   248→            fontSize: 11,
+   249→   249→   249→            fontWeight: 600,
+   250→   250→   250→            color: isDark ? '#B2DFDB' : '#004D40',
+   251→   251→   251→            background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.85)',
+   252→   252→   252→            padding: '1px 6px',
+   253→   253→   253→            borderRadius: 4,
+   254→   254→   254→            whiteSpace: 'nowrap',
+   255→   255→   255→          }}
+   256→   256→   256→        >
+   257→   257→   257→          Recogida
+   258→   258→   258→        </span>
+   259→   259→   259→      </div>
+   260→   260→   260→
+   261→   261→   261→      {/* Destination Marker */}
+   262→   262→   262→      <div
+   263→   263→   263→        style={{
+   264→   264→   264→          position: 'absolute',
+   265→   265→   265→          left: `${destX}%`,
+   266→   266→   266→          top: `${destY}%`,
+   267→   267→   267→          transform: 'translate(-50%, -50%)',
+   268→   268→   268→          display: 'flex',
+   269→   269→   269→          flexDirection: 'column',
+   270→   270→   270→          alignItems: 'center',
+   271→   271→   271→          gap: 4,
+   272→   272→   272→          zIndex: 10,
+   273→   273→   273→        }}
+   274→   274→   274→      >
+   275→   275→   275→        <div
+   276→   276→   276→          style={{
+   277→   277→   277→            width: 36,
+   278→   278→   278→            height: 36,
+   279→   279→   279→            borderRadius: '50%',
+   280→   280→   280→            background: '#FF9800',
+   281→   281→   281→            display: 'flex',
+   282→   282→   282→            alignItems: 'center',
+   283→   283→   283→            justifyContent: 'center',
+   284→   284→   284→            boxShadow: '0 2px 8px rgba(255,152,0,0.35)',
+   285→   285→   285→          }}
+   286→   286→   286→        >
+   287→   287→   287→          <Home size={18} color="#fff" />
+   288→   288→   288→        </div>
+   289→   289→   289→        <span
+   290→   290→   290→          style={{
+   291→   291→   291→            fontFamily: "'DM Sans', sans-serif",
+   292→   292→   292→            fontSize: 11,
+   293→   293→   293→            fontWeight: 600,
+   294→   294→   294→            color: isDark ? '#FFE0B2' : '#E65100',
+   295→   295→   295→            background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.85)',
+   296→   296→   296→            padding: '1px 6px',
+   297→   297→   297→            borderRadius: 4,
+   298→   298→   298→            whiteSpace: 'nowrap',
+   299→   299→   299→          }}
+   300→   300→   300→        >
+   301→   301→   301→          Destino
+   302→   302→   302→        </span>
+   303→   303→   303→      </div>
+   304→   304→   304→
+   305→   305→   305→      {/* Rider Marker */}
+   306→   306→   306→      <motion.div
+   307→   307→   307→        animate={{ y: [0, -4, 0] }}
+   308→   308→   308→        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+   309→   309→   309→        style={{
+   310→   310→   310→          position: 'absolute',
+   311→   311→   311→          left: `${riderX}%`,
+   312→   312→   312→          top: `${riderY}%`,
+   313→   313→   313→          transform: 'translate(-50%, -50%)',
+   314→   314→   314→          display: 'flex',
+   315→   315→   315→          flexDirection: 'column',
+   316→   316→   316→          alignItems: 'center',
+   317→   317→   317→          gap: 4,
+   318→   318→   318→          zIndex: 20,
+   319→   319→   319→        }}
+   320→   320→   320→      >
+   321→   321→   321→        {/* Pulse ring */}
+   322→   322→   322→        <div
+   323→   323→   323→          style={{
+   324→   324→   324→            position: 'absolute',
+   325→   325→   325→            width: 48,
+   326→   326→   326→            height: 48,
+   327→   327→   327→            borderRadius: '50%',
+   328→   328→   328→            border: '2px solid var(--primario)',
+   329→   329→   329→            opacity: 0.4,
+   330→   330→   330→            animation: 'pulse-ring 1.8s ease-out infinite',
+   331→   331→   331→          }}
+   332→   332→   332→        />
+   333→   333→   333→        <div
+   334→   334→   334→          style={{
+   335→   335→   335→            width: 40,
+   336→   336→   336→            height: 40,
+   337→   337→   337→            borderRadius: '50%',
+   338→   338→   338→            background: '#fff',
+   339→   339→   339→            display: 'flex',
+   340→   340→   340→            alignItems: 'center',
+   341→   341→   341→            justifyContent: 'center',
+   342→   342→   342→            border: '3px solid var(--primario)',
+   343→   343→   343→            boxShadow: '0 2px 12px rgba(255,87,34,0.3)',
+   344→   344→   344→          }}
+   345→   345→   345→        >
+   346→   346→   346→          <Bike size={20} style={{ color: 'var(--primario)' }} />
+   347→   347→   347→        </div>
+   348→   348→   348→      </motion.div>
+   349→   349→   349→
+   350→   350→   350→      {/* ETA Pill near rider */}
+   351→   351→   351→      <div
+   352→   352→   352→        style={{
+   353→   353→   353→          position: 'absolute',
+   354→   354→   354→          left: `${Math.min(riderX + 8, 90)}%`,
+   355→   355→   355→          top: `${Math.max(riderY - 10, 5)}%`,
+   356→   356→   356→          transform: 'translate(0, -100%)',
+   357→   357→   357→          zIndex: 25,
+   358→   358→   358→        }}
+   359→   359→   359→      >
+   360→   360→   360→        <div
+   361→   361→   361→          style={{
+   362→   362→   362→            display: 'flex',
+   363→   363→   363→            alignItems: 'center',
+   364→   364→   364→            gap: 4,
+   365→   365→   365→            background: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.92)',
+   366→   366→   366→            backdropFilter: 'blur(8px)',
+   367→   367→   367→            padding: '4px 10px',
+   368→   368→   368→            borderRadius: 20,
+   369→   369→   369→            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+   370→   370→   370→          }}
+   371→   371→   371→        >
+   372→   372→   372→          <Clock size={13} style={{ color: 'var(--primario)' }} />
+   373→   373→   373→          <span
+   374→   374→   374→            style={{
+   375→   375→   375→              fontFamily: "'JetBrains Mono', monospace",
+   376→   376→   376→              fontSize: 13,
+   377→   377→   377→              fontWeight: 700,
+   378→   378→   378→              color: 'var(--primario)',
+   379→   379→   379→            }}
+   380→   380→   380→          >
+   381→   381→   381→            ~{useStore.getState().trackingETA} min
+   382→   382→   382→          </span>
+   383→   383→   383→        </div>
+   384→   384→   384→      </div>
+   385→   385→   385→
+   386→   386→   386→      {/* Center on rider FAB */}
+   387→   387→   387→      <button
+   388→   388→   388→        onClick={() => setCentered((c) => !c)}
+   389→   389→   389→        style={{
+   390→   390→   390→          position: 'absolute',
+   391→   391→   391→          bottom: 12,
+   392→   392→   392→          right: 12,
+   393→   393→   393→          width: 40,
+   394→   394→   394→          height: 40,
+   395→   395→   395→          borderRadius: '50%',
+   396→   396→   396→          background: 'var(--surface)',
+   397→   397→   397→          border: '1px solid var(--border)',
+   398→   398→   398→          display: 'flex',
+   399→   399→   399→          alignItems: 'center',
+   400→   400→   400→          justifyContent: 'center',
+   401→   401→   401→          cursor: 'pointer',
+   402→   402→   402→          boxShadow: 'var(--shadow-md)',
+   403→   403→   403→          zIndex: 30,
+   404→   404→   404→        }}
+   405→   405→   405→        aria-label="Centrar en repartidor"
+   406→   406→   406→      >
+   407→   407→   407→        <Target size={18} style={{ color: 'var(--primario)' }} />
+   408→   408→   408→      </button>
+   409→   409→   409→
+   410→   410→   410→      {/* Back button */}
+   411→   411→   411→      <button
+   412→   412→   412→        onClick={() => useStore.getState().setTrackingOrder(null)}
+   413→   413→   413→        style={{
+   414→   414→   414→          position: 'absolute',
+   415→   415→   415→          top: 12,
+   416→   416→   416→          left: 12,
+   417→   417→   417→          width: 36,
+   418→   418→   418→          height: 36,
+   419→   419→   419→          borderRadius: '50%',
+   420→   420→   420→          background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.85)',
+   421→   421→   421→          backdropFilter: 'blur(8px)',
+   422→   422→   422→          border: 'none',
+   423→   423→   423→          display: 'flex',
+   424→   424→   424→          alignItems: 'center',
+   425→   425→   425→          justifyContent: 'center',
+   426→   426→   426→          cursor: 'pointer',
+   427→   427→   427→          zIndex: 30,
+   428→   428→   428→        }}
+   429→   429→   429→        aria-label="Cerrar seguimiento"
+   430→   430→   430→      >
+   431→   431→   431→        <X size={18} style={{ color: isDark ? '#fff' : '#1B1B2F' }} />
+   432→   432→   432→      </button>
+   433→   433→   433→
+   434→   434→   434→      {/* Pulse animation keyframes */}
+   435→   435→   435→      <style>{`
+   436→   436→   436→        @keyframes pulse-ring {
+   437→   437→   437→          0% { transform: scale(1); opacity: 0.4; }
+   438→   438→   438→          100% { transform: scale(1.8); opacity: 0; }
+   439→   439→   439→        }
+   440→   440→   440→      `}</style>
+   441→   441→   441→    </div>
+   442→   442→   442→  );
+   443→   443→   443→}
+   444→   444→   444→
+   445→   445→   445→/* ═══════════════════════════════════════════════
+   446→   446→   446→   MAIN COMPONENT
+   447→   447→   447→   ═══════════════════════════════════════════════ */
+   448→   448→   448→
+   449→   449→   449→export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: ClientTrackingProps) {
+   450→   450→   450→  const {
+   451→   451→   451→    trackingOrderId,
+   452→   452→   452→    trackingSteps,
+   453→   453→   453→    trackingETA,
+   454→   454→   454→    orders,
+   455→   455→   455→    advanceTrackingStep,
+   456→   456→   456→    updateTrackingETA,
+   457→   457→   457→  } = useStore();
+   458→   458→   458→
+   459→   459→   459→  const [detailsExpanded, setDetailsExpanded] = useState(false);
+   460→   460→   460→  const [copied, setCopied] = useState(false);
+   461→   461→   461→  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   462→   462→   462→  const etaIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   463→   463→   463→
+   464→   464→   464→  // Find the current order
+   465→   465→   465→  const order = trackingOrderId
+   466→   466→   466→    ? orders.find((o) => o.id === trackingOrderId) ?? null
+   467→   467→   467→    : null;
+   468→   468→   468→
+   469→   469→   469→  // Get repartidor info
+   470→   470→   470→  const repartidor = order ? getRepartidorInfo(order.repartidorInitials) : null;
+   471→   471→   471→
+   472→   472→   472→  // Current step index
+   473→   473→   473→  const currentStepIdx = trackingSteps.findIndex((s) => s.status === 'current');
+   474→   474→   474→  const completedCount = trackingSteps.filter((s) => s.status === 'completed').length;
+   475→   475→   475→  const allCompleted = trackingSteps.every((s) => s.status === 'completed');
+   476→   476→   476→  const progressPct = allCompleted ? 100 : Math.round((completedCount / trackingSteps.length) * 100);
+   477→   477→   477→
+   478→   478→   478→  // Simulation intervals
+   479→   479→   479→  useEffect(() => {
+   480→   480→   480→    if (allCompleted) {
+   481→   481→   481→      if (intervalRef.current) clearInterval(intervalRef.current);
+   482→   482→   482→      if (etaIntervalRef.current) clearInterval(etaIntervalRef.current);
+   483→   483→   483→      return;
+   484→   484→   484→    }
+   485→   485→   485→
+   486→   486→   486→    intervalRef.current = setInterval(() => {
+   487→   487→   487→      advanceTrackingStep();
+   488→   488→   488→    }, 15000);
+   489→   489→   489→
+   490→   490→   490→    etaIntervalRef.current = setInterval(() => {
+   491→   491→   491→      updateTrackingETA();
+   492→   492→   492→    }, 30000);
+   493→   493→   493→
+   494→   494→   494→    return () => {
+   495→   495→   495→      if (intervalRef.current) clearInterval(intervalRef.current);
+   496→   496→   496→      if (etaIntervalRef.current) clearInterval(etaIntervalRef.current);
+   497→   497→   497→    };
+   498→   498→   498→  }, [allCompleted, advanceTrackingStep, updateTrackingETA]);
+   499→   499→   499→
+   500→   500→   500→  // Copy tracking link
+   501→   501→   501→  const handleShare = useCallback(() => {
+   502→   502→   502→    const link = `${window.location.origin}/track/${trackingOrderId ?? ''}`;
+   503→   503→   503→    navigator.clipboard.writeText(link).then(() => {
+   504→   504→   504→      setCopied(true);
+   505→   505→   505→      setTimeout(() => setCopied(false), 2000);
+   506→   506→   506→    });
+   507→   507→   507→  }, [trackingOrderId]);
+   508→   508→   508→
+   509→   509→   509→  // Status badge info
+   510→   510→   510→  const badge = order ? statusBadge(order.estado) : { label: '', color: '' };
+   511→   511→   511→
+   512→   512→   512→  // Star rendering for rating
+   513→   513→   513→  const renderStars = (rating: number) => {
+   514→   514→   514→    const full = Math.floor(rating);
+   515→   515→   515→    return (
+   516→   516→   516→      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+   517→   517→   517→        {Array.from({ length: 5 }).map((_, i) => (
+   518→   518→   518→          <Star
+   519→   519→   519→            key={i}
+   520→   520→   520→            size={14}
+   521→   521→   521→            fill={i < full ? 'var(--primario)' : 'none'}
+   522→   522→   522→            stroke={i < full ? 'var(--primario)' : 'var(--border)'}
+   523→   523→   523→            strokeWidth={i < full ? 0 : 1.5}
+   524→   524→   524→            style={{ display: 'inline' }}
+   525→   525→   525→          />
+   526→   526→   526→        ))}
+   527→   527→   527→      </span>
+   528→   528→   528→    );
+   529→   529→   529→  };
+   530→   530→   530→
+   531→   531→   531→  /* ─── DELIVERY CONFIRMED SCREEN ─── */
+   532→   532→   532→  if (allCompleted && order) {
+   533→   533→   533→    return (
+   534→   534→   534→      <div
+   535→   535→   535→        data-theme={isDark ? 'dark' : 'light'}
+   536→   536→   536→        style={{
+   537→   537→   537→          width: '100%',
+   538→   538→   538→          minHeight: '100vh',
+   539→   539→   539→          background: 'var(--bg)',
+   540→   540→   540→          display: 'flex',
+   541→   541→   541→          flexDirection: 'column',
+   542→   542→   542→          alignItems: 'center',
+   543→   543→   543→          justifyContent: 'center',
+   544→   544→   544→          padding: 24,
+   545→   545→   545→          gap: 16,
+   546→   546→   546→        }}
+   547→   547→   547→      >
+   548→   548→   548→        {/* Animated checkmark */}
+   549→   549→   549→        <motion.div
+   550→   550→   550→          initial={{ scale: 0 }}
+   551→   551→   551→          animate={{ scale: 1 }}
+   552→   552→   552→          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+   553→   553→   553→          style={{
+   554→   554→   554→            width: 80,
+   555→   555→   555→            height: 80,
+   556→   556→   556→            borderRadius: '50%',
+   557→   557→   557→            background: 'var(--exito)',
+   558→   558→   558→            display: 'flex',
+   559→   559→   559→            alignItems: 'center',
+   560→   560→   560→            justifyContent: 'center',
+   561→   561→   561→            boxShadow: '0 8px 30px rgba(0,200,83,0.3)',
+   562→   562→   562→          }}
+   563→   563→   563→        >
+   564→   564→   564→          <CheckCircle size={44} color="#fff" />
+   565→   565→   565→        </motion.div>
+   566→   566→   566→
+   567→   567→   567→        <motion.h2
+   568→   568→   568→          initial={{ opacity: 0, y: 10 }}
+   569→   569→   569→          animate={{ opacity: 1, y: 0 }}
+   570→   570→   570→          transition={{ delay: 0.3 }}
+   571→   571→   571→          style={{
+   572→   572→   572→            fontFamily: "'Syne', sans-serif",
+   573→   573→   573→            fontSize: 28,
+   574→   574→   574→            fontWeight: 700,
+   575→   575→   575→            color: 'var(--exito)',
+   576→   576→   576→            margin: 0,
+   577→   577→   577→          }}
+   578→   578→   578→        >
+   579→   579→   579→          ¡Entregado!
+   580→   580→   580→        </motion.h2>
+   581→   581→   581→
+   582→   582→   582→        <motion.p
+   583→   583→   583→          initial={{ opacity: 0, y: 10 }}
+   584→   584→   584→          animate={{ opacity: 1, y: 0 }}
+   585→   585→   585→          transition={{ delay: 0.5 }}
+   586→   586→   586→          style={{
+   587→   587→   587→            fontFamily: "'DM Sans', sans-serif",
+   588→   588→   588→            fontSize: 15,
+   589→   589→   589→            color: 'var(--text-secondary)',
+   590→   590→   590→            margin: 0,
+   591→   591→   591→            textAlign: 'center',
+   592→   592→   592→          }}
+   593→   593→   593→        >
+   594→   594→   594→          Tu paquete fue entregado exitosamente
+   595→   595→   595→        </motion.p>
+   596→   596→   596→
+   597→   597→   597→        {/* Info row */}
+   598→   598→   598→        <motion.div
+   599→   599→   599→          initial={{ opacity: 0, y: 10 }}
+   600→   600→   600→          animate={{ opacity: 1, y: 0 }}
+   601→   601→   601→          transition={{ delay: 0.7 }}
+   602→   602→   602→          style={{
+   603→   603→   603→            display: 'flex',
+   604→   604→   604→            gap: 16,
+   605→   605→   605→            flexWrap: 'wrap',
+   606→   606→   606→            justifyContent: 'center',
+   607→   607→   607→            marginTop: 8,
+   608→   608→   608→          }}
+   609→   609→   609→        >
+   610→   610→   610→          {[
+   611→   611→   611→            { icon: <Clock size={15} />, label: '14:52', sub: 'Hora' },
+   612→   612→   612→            { icon: <Bike size={15} />, label: repartidor?.nombre.split(' ')[0] ?? '—', sub: 'Repartidor' },
+   613→   613→   613→            { icon: <Navigation size={15} />, label: '3.2 km', sub: 'Distancia' },
+   614→   614→   614→            { icon: <Clock size={15} />, label: '18 min', sub: 'Tiempo total' },
+   615→   615→   615→          ].map((item, i) => (
+   616→   616→   616→            <div
+   617→   617→   617→              key={i}
+   618→   618→   618→              style={{
+   619→   619→   619→                display: 'flex',
+   620→   620→   620→                flexDirection: 'column',
+   621→   621→   621→                alignItems: 'center',
+   622→   622→   622→                gap: 2,
+   623→   623→   623→                background: 'var(--surface)',
+   624→   624→   624→                border: '1px solid var(--border)',
+   625→   625→   625→                borderRadius: 12,
+   626→   626→   626→                padding: '10px 14px',
+   627→   627→   627→                minWidth: 70,
+   628→   628→   628→              }}
+   629→   629→   629→            >
+   630→   630→   630→              <div style={{ color: 'var(--primario)', marginBottom: 2 }}>{item.icon}</div>
+   631→   631→   631→              <span
+   632→   632→   632→                style={{
+   633→   633→   633→                  fontFamily: "'JetBrains Mono', monospace",
+   634→   634→   634→                  fontSize: 13,
+   635→   635→   635→                  fontWeight: 600,
+   636→   636→   636→                  color: 'var(--text)',
+   637→   637→   637→                }}
+   638→   638→   638→              >
+   639→   639→   639→                {item.label}
+   640→   640→   640→              </span>
+   641→   641→   641→              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.sub}</span>
+   642→   642→   642→            </div>
+   643→   643→   643→          ))}
+   644→   644→   644→        </motion.div>
+   645→   645→   645→
+   646→   646→   646→        {/* Photo evidence placeholder */}
+   647→   647→   647→        <motion.div
+   648→   648→   648→          initial={{ opacity: 0, y: 10 }}
+   649→   649→   649→          animate={{ opacity: 1, y: 0 }}
+   650→   650→   650→          transition={{ delay: 0.9 }}
+   651→   651→   651→          style={{
+   652→   652→   652→            width: '100%',
+   653→   653→   653→            maxWidth: 280,
+   654→   654→   654→            height: 160,
+   655→   655→   655→            borderRadius: 12,
+   656→   656→   656→            border: '2px dashed var(--border)',
+   657→   657→   657→            display: 'flex',
+   658→   658→   658→            flexDirection: 'column',
+   659→   659→   659→            alignItems: 'center',
+   660→   660→   660→            justifyContent: 'center',
+   661→   661→   661→            gap: 6,
+   662→   662→   662→            marginTop: 8,
+   663→   663→   663→            background: 'var(--bg-alt)',
+   664→   664→   664→          }}
+   665→   665→   665→        >
+   666→   666→   666→          <Package size={28} style={{ color: 'var(--text-muted)' }} />
+   667→   667→   667→          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--text-muted)' }}>
+   668→   668→   668→            Foto de evidencia
+   669→   669→   669→          </span>
+   670→   670→   670→        </motion.div>
+   671→   671→   671→
+   672→   672→   672→        {/* Action buttons */}
+   673→   673→   673→        <motion.div
+   674→   674→   674→          initial={{ opacity: 0, y: 10 }}
+   675→   675→   675→          animate={{ opacity: 1, y: 0 }}
+   676→   676→   676→          transition={{ delay: 1.1 }}
+   677→   677→   677→          style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 300, marginTop: 12 }}
+   678→   678→   678→        >
+   679→   679→   679→          <button
+   680→   680→   680→            onClick={() => onRate(order.id)}
+   681→   681→   681→            style={{
+   682→   682→   682→              width: '100%',
+   683→   683→   683→              padding: '14px 0',
+   684→   684→   684→              borderRadius: 12,
+   685→   685→   685→              border: 'none',
+   686→   686→   686→              background: 'var(--primario)',
+   687→   687→   687→              color: '#fff',
+   688→   688→   688→              fontFamily: "'Syne', sans-serif",
+   689→   689→   689→              fontSize: 15,
+   690→   690→   690→              fontWeight: 700,
+   691→   691→   691→              cursor: 'pointer',
+   692→   692→   692→              boxShadow: 'var(--shadow-primario)',
+   693→   693→   693→              transition: 'background 0.2s',
+   694→   694→   694→            }}
+   695→   695→   695→          >
+   696→   696→   696→            <Star size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+   697→   697→   697→            Calificar servicio
+   698→   698→   698→          </button>
+   699→   699→   699→          <button
+   700→   700→   700→            onClick={onBack}
+   701→   701→   701→            style={{
+   702→   702→   702→              width: '100%',
+   703→   703→   703→              padding: '14px 0',
+   704→   704→   704→              borderRadius: 12,
+   705→   705→   705→              border: '1px solid var(--border)',
+   706→   706→   706→              background: 'transparent',
+   707→   707→   707→              color: 'var(--text)',
+   708→   708→   708→              fontFamily: "'DM Sans', sans-serif",
+   709→   709→   709→              fontSize: 14,
+   710→   710→   710→              fontWeight: 500,
+   711→   711→   711→              cursor: 'pointer',
+   712→   712→   712→              transition: 'border-color 0.2s',
+   713→   713→   713→            }}
+   714→   714→   714→          >
+   715→   715→   715→            Volver al inicio
+   716→   716→   716→          </button>
+   717→   717→   717→        </motion.div>
+   718→   718→   718→      </div>
+   719→   719→   719→    );
+   720→   720→   720→  }
+   721→   721→   721→
+   722→   722→   722→  /* ─── MAIN TRACKING LAYOUT ─── */
+   723→   723→   723→  return (
+   724→   724→   724→    <div
+   725→   725→   725→      data-theme={isDark ? 'dark' : 'light'}
+   726→   726→   726→      style={{
+   727→   727→   727→        width: '100%',
+   728→   728→   728→        height: '100vh',
+   729→   729→   729→        display: 'flex',
+   730→   730→   730→        flexDirection: 'column',
+   731→   731→   731→        background: 'var(--bg)',
+   732→   732→   732→        overflow: 'hidden',
+   733→   733→   733→      }}
+   734→   734→   734→      className="md:!flex-row"
+   735→   735→   735→    >
+   736→   736→   736→      {/* ─── MAP AREA ─── */}
+   737→   737→   737→      <div
+   738→   738→   738→        style={{
+   739→   739→   739→          position: 'relative',
+   740→   740→   740→          width: '100%',
+   741→   741→   741→          height: '50vh',
+   742→   742→   742→          flexShrink: 0,
+   743→   743→   743→        }}
+   744→   744→   744→        className="md:!h-full md:!w-[60%]"
+   745→   745→   745→      >
+   746→   746→   746→        <VisualMap
+   747→   747→   747→          isDark={isDark}
+   748→   748→   748→          order={order}
+   749→   749→   749→          currentStepIndex={currentStepIdx >= 0 ? currentStepIdx : 0}
+   750→   750→   750→        />
+   751→   751→   751→        {/* Back button overlaid on map */}
+   752→   752→   752→        <button
+   753→   753→   753→          onClick={onBack}
+   754→   754→   754→          style={{
+   755→   755→   755→            position: 'absolute',
+   756→   756→   756→            top: 12,
+   757→   757→   757→            left: 12,
+   758→   758→   758→            width: 36,
+   759→   759→   759→            height: 36,
+   760→   760→   760→            borderRadius: '50%',
+   761→   761→   761→            background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.85)',
+   762→   762→   762→            backdropFilter: 'blur(8px)',
+   763→   763→   763→            border: 'none',
+   764→   764→   764→            display: 'flex',
+   765→   765→   765→            alignItems: 'center',
+   766→   766→   766→            justifyContent: 'center',
+   767→   767→   767→            cursor: 'pointer',
+   768→   768→   768→            zIndex: 30,
+   769→   769→   769→          }}
+   770→   770→   770→          aria-label="Volver"
+   771→   771→   771→        >
+   772→   772→   772→          <X size={18} style={{ color: isDark ? '#fff' : '#1B1B2F' }} />
+   773→   773→   773→        </button>
+   774→   774→   774→      </div>
+   775→   775→   775→
+   776→   776→   776→      {/* ─── BOTTOM SHEET ─── */}
+   777→   777→   777→      <div
+   778→   778→   778→        style={{
+   779→   779→   779→          flex: 1,
+   780→   780→   780→          background: 'var(--bg)',
+   781→   781→   781→          borderTopLeftRadius: 24,
+   782→   782→   782→          borderTopRightRadius: 24,
+   783→   783→   783→          display: 'flex',
+   784→   784→   784→          flexDirection: 'column',
+   785→   785→   785→          marginTop: -20,
+   786→   786→   786→          position: 'relative',
+   787→   787→   787→          zIndex: 10,
+   788→   788→   788→          overflow: 'hidden',
+   789→   789→   789→        }}
+   790→   790→   790→        className="md:!mt-0 md:!rounded-none md:!border-l md:!border-[var(--border)]"
+   791→   791→   791→      >
+   792→   792→   792→        {/* Handle bar */}
+   793→   793→   793→        <div
+   794→   794→   794→          style={{
+   795→   795→   795→            display: 'flex',
+   796→   796→   796→            justifyContent: 'center',
+   797→   797→   797→            paddingTop: 10,
+   798→   798→   798→            paddingBottom: 4,
+   799→   799→   799→            flexShrink: 0,
+   800→   800→   800→          }}
+   801→   801→   801→        >
+   802→   802→   802→          <div
+   803→   803→   803→            style={{
+   804→   804→   804→              width: 40,
+   805→   805→   805→              height: 4,
+   806→   806→   806→              borderRadius: 2,
+   807→   807→   807→              background: 'var(--border)',
+   808→   808→   808→            }}
+   809→   809→   809→          />
+   810→   810→   810→        </div>
+   811→   811→   811→
+   812→   812→   812→        {/* Scrollable content */}
+   813→   813→   813→        <div
+   814→   814→   814→          style={{
+   815→   815→   815→            flex: 1,
+   816→   816→   816→            overflowY: 'auto',
+   817→   817→   817→            paddingLeft: 20,
+   818→   818→   818→            paddingRight: 20,
+   819→   819→   819→            paddingBottom: 32,
+   820→   820→   820→          }}
+   821→   821→   821→          className="lf-scrollbar"
+   822→   822→   822→        >
+   823→   823→   823→          {/* ─── ORDER HEADER ─── */}
+   824→   824→   824→          <div
+   825→   825→   825→            style={{
+   826→   826→   826→              display: 'flex',
+   827→   827→   827→              alignItems: 'center',
+   828→   828→   828→              justifyContent: 'space-between',
+   829→   829→   829→              marginBottom: 16,
+   830→   830→   830→              marginTop: 4,
+   831→   831→   831→            }}
+   832→   832→   832→          >
+   833→   833→   833→            <span
+   834→   834→   834→              style={{
+   835→   835→   835→                fontFamily: "'JetBrains Mono', monospace",
+   836→   836→   836→                fontSize: 14,
+   837→   837→   837→                color: 'var(--text-muted)',
+   838→   838→   838→              }}
+   839→   839→   839→            >
+   840→   840→   840→              {order?.id ?? '—'}
+   841→   841→   841→            </span>
+   842→   842→   842→            <span
+   843→   843→   843→              style={{
+   844→   844→   844→                display: 'inline-flex',
+   845→   845→   845→                alignItems: 'center',
+   846→   846→   846→                gap: 6,
+   847→   847→   847→                padding: '4px 12px',
+   848→   848→   848→                borderRadius: 20,
+   849→   849→   849→                fontSize: 12,
+   850→   850→   850→                fontWeight: 600,
+   851→   851→   851→                fontFamily: "'DM Sans', sans-serif",
+   852→   852→   852→                color: '#fff',
+   853→   853→   853→                background: badge.color,
+   854→   854→   854→              }}
+   855→   855→   855→            >
+   856→   856→   856→              {badge.label}
+   857→   857→   857→            </span>
+   858→   858→   858→          </div>
+   859→   859→   859→
+   860→   860→   860→          {/* ─── ETA SECTION ─── */}
+   861→   861→   861→          <div style={{ marginBottom: 20 }}>
+   862→   862→   862→            <p
+   863→   863→   863→              style={{
+   864→   864→   864→                fontFamily: "'DM Sans', sans-serif",
+   865→   865→   865→                fontSize: 14,
+   866→   866→   866→                color: 'var(--text-muted)',
+   867→   867→   867→                margin: '0 0 4px 0',
+   868→   868→   868→              }}
+   869→   869→   869→            >
+   870→   870→   870→              {order?.estado === 'programada'
+   871→   871→   871→                ? 'Recogida programada para'
+   872→   872→   872→                : 'Tu paquete llega en'}
+   873→   873→   873→            </p>
+   874→   874→   874→            <AnimatePresence mode="wait">
+   875→   875→   875→              <motion.h2
+   876→   876→   876→                key={trackingETA}
+   877→   877→   877→                initial={{ opacity: 0, y: 8 }}
+   878→   878→   878→                animate={{ opacity: 1, y: 0 }}
+   879→   879→   879→                exit={{ opacity: 0, y: -8 }}
+   880→   880→   880→                transition={{ duration: 0.25 }}
+   881→   881→   881→                style={{
+   882→   882→   882→                  fontFamily: "'Syne', sans-serif",
+   883→   883→   883→                  fontSize: 36,
+   884→   884→   884→                  fontWeight: 700,
+   885→   885→   885→                  color: 'var(--primario)',
+   886→   886→   886→                  margin: '0 0 12px 0',
+   887→   887→   887→                }}
+   888→   888→   888→              >
+   889→   889→   889→                {order?.estado === 'programada'
+   890→   890→   890→                  ? order.hora
+   891→   891→   891→                  : `~${trackingETA} minutos`}
+   892→   892→   892→              </motion.h2>
+   893→   893→   893→            </AnimatePresence>
+   894→   894→   894→
+   895→   895→   895→            {/* Progress bar */}
+   896→   896→   896→            <div
+   897→   897→   897→              style={{
+   898→   898→   898→                width: '100%',
+   899→   899→   899→                height: 6,
+   900→   900→   900→                borderRadius: 3,
+   901→   901→   901→                background: 'var(--bg-alt)',
+   902→   902→   902→                overflow: 'hidden',
+   903→   903→   903→              }}
+   904→   904→   904→            >
+   905→   905→   905→              <motion.div
+   906→   906→   906→                initial={{ width: 0 }}
+   907→   907→   907→                animate={{ width: `${progressPct}%` }}
+   908→   908→   908→                transition={{ duration: 0.6, ease: 'easeOut' }}
+   909→   909→   909→                style={{
+   910→   910→   910→                  height: '100%',
+   911→   911→   911→                  borderRadius: 3,
+   912→   912→   912→                  background: `linear-gradient(90deg, var(--primario), var(--primario-hover))`,
+   913→   913→   913→                }}
+   914→   914→   914→              />
+   915→   915→   915→            </div>
+   916→   916→   916→            <p
+   917→   917→   917→              style={{
+   918→   918→   918→                fontFamily: "'JetBrains Mono', monospace",
+   919→   919→   919→                fontSize: 11,
+   920→   920→   920→                color: 'var(--text-muted)',
+   921→   921→   921→                marginTop: 4,
+   922→   922→   922→                margin: '4px 0 0 0',
+   923→   923→   923→              }}
+   924→   924→   924→            >
+   925→   925→   925→              {progressPct}% completado
+   926→   926→   926→            </p>
+   927→   927→   927→          </div>
+   928→   928→   928→
+   929→   929→   929→          {/* ─── 8-STEP TIMELINE ─── */}
+   930→   930→   930→          <div style={{ marginBottom: 24 }}>
+   931→   931→   931→            {trackingSteps.map((step, i) => (
+   932→   932→   932→              <div
+   933→   933→   933→                key={step.id}
+   934→   934→   934→                style={{
+   935→   935→   935→                  display: 'flex',
+   936→   936→   936→                  gap: 12,
+   937→   937→   937→                  position: 'relative',
+   938→   938→   938→                  minHeight: 44,
+   939→   939→   939→                }}
+   940→   940→   940→              >
+   941→   941→   941→                {/* Left: Icon + connector */}
+   942→   942→   942→                <div
+   943→   943→   943→                  style={{
+   944→   944→   944→                    display: 'flex',
+   945→   945→   945→                    flexDirection: 'column',
+   946→   946→   946→                    alignItems: 'center',
+   947→   947→   947→                    width: 24,
+   948→   948→   948→                    flexShrink: 0,
+   949→   949→   949→                  }}
+   950→   950→   950→                >
+   951→   951→   951→                  <AnimatePresence mode="wait">
+   952→   952→   952→                    <motion.div
+   953→   953→   953→                      key={`${step.id}-${step.status}`}
+   954→   954→   954→                      initial={step.status === 'completed' ? { scale: 0 } : { scale: 1 }}
+   955→   955→   955→                      animate={{ scale: 1 }}
+   956→   956→   956→                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+   957→   957→   957→                      style={{
+   958→   958→   958→                        display: 'flex',
+   959→   959→   959→                        alignItems: 'center',
+   960→   960→   960→                        justifyContent: 'center',
+   961→   961→   961→                        width: 24,
+   962→   962→   962→                        height: 24,
+   963→   963→   963→                        flexShrink: 0,
+   964→   964→   964→                      }}
+   965→   965→   965→                    >
+   966→   966→   966→                      {getStepIcon(step, i)}
+   967→   967→   967→                    </motion.div>
+   968→   968→   968→                  </AnimatePresence>
+   969→   969→   969→
+   970→   970→   970→                  {/* Connector line */}
+   971→   971→   971→                  {i < trackingSteps.length - 1 && (
+   972→   972→   972→                    <div
+   973→   973→   973→                      style={{
+   974→   974→   974→                        width: 2,
+   975→   975→   975→                        flex: 1,
+   976→   976→   976→                        minHeight: 20,
+   977→   977→   977→                        background: step.status === 'completed'
+   978→   978→   978→                          ? 'var(--primario)'
+   979→   979→   979→                          : 'transparent',
+   980→   980→   980→                        borderLeft: step.status !== 'completed'
+   981→   981→   981→                          ? '2px dashed var(--border)'
+   982→   982→   982→                          : 'none',
+   983→   983→   983→                      }}
+   984→   984→   984→                    />
+   985→   985→   985→                  )}
+   986→   986→   986→                </div>
+   987→   987→   987→
+   988→   988→   988→                {/* Right: Step text + timestamp */}
+   989→   989→   989→                <div
+   990→   990→   990→                  style={{
+   991→   991→   991→                    display: 'flex',
+   992→   992→   992→                    justifyContent: 'space-between',
+   993→   993→   993→                    alignItems: 'flex-start',
+   994→   994→   994→                    flex: 1,
+   995→   995→   995→                    paddingTop: 2,
+   996→   996→   996→                    paddingBottom: i < trackingSteps.length - 1 ? 0 : 0,
+   997→   997→   997→                  }}
+   998→   998→   998→                >
+   999→   999→   999→                  <span
+  1000→  1000→  1000→                    style={{
+  1001→  1001→  1001→                      fontFamily: "'DM Sans', sans-serif",
+  1002→  1002→  1002→                      fontSize: 13,
+  1003→  1003→  1003→                      fontWeight: step.status === 'current' ? 600 : step.status === 'completed' ? 500 : 400,
+  1004→  1004→  1004→                      color: step.status === 'pending' ? 'var(--text-muted)' : 'var(--text)',
+  1005→  1005→  1005→                    }}
+  1006→  1006→  1006→                  >
+  1007→  1007→  1007→                    {step.label}
+  1008→  1008→  1008→                  </span>
+  1009→  1009→  1009→                  <span
+  1010→  1010→  1010→                    style={{
+  1011→  1011→  1011→                      fontFamily: "'JetBrains Mono', monospace",
+  1012→  1012→  1012→                      fontSize: 11,
+  1013→  1013→  1013→                      color: 'var(--text-muted)',
+  1014→  1014→  1014→                      flexShrink: 0,
+  1015→  1015→  1015→                      marginLeft: 8,
+  1016→  1016→  1016→                    }}
+  1017→  1017→  1017→                  >
+  1018→  1018→  1018→                    {step.timestamp}
+  1019→  1019→  1019→                  </span>
+  1020→  1020→  1020→                </div>
+  1021→  1021→  1021→              </div>
+  1022→  1022→  1022→            ))}
+  1023→  1023→  1023→          </div>
+  1024→  1024→  1024→
+  1025→  1025→  1025→          {/* ─── DRIVER INFO CARD ─── */}
+  1026→  1026→  1026→          {repartidor && (
+  1027→  1027→  1027→            <motion.div
+  1028→  1028→  1028→              initial={{ opacity: 0, y: 20 }}
+  1029→  1029→  1029→              animate={{ opacity: 1, y: 0 }}
+  1030→  1030→  1030→              transition={{ duration: 0.4, delay: 0.2 }}
+  1031→  1031→  1031→              style={{
+  1032→  1032→  1032→                background: 'var(--surface)',
+  1033→  1033→  1033→                border: '1px solid var(--border)',
+  1034→  1034→  1034→                borderRadius: 16,
+  1035→  1035→  1035→                padding: 16,
+  1036→  1036→  1036→                marginBottom: 20,
+  1037→  1037→  1037→              }}
+  1038→  1038→  1038→            >
+  1039→  1039→  1039→              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+  1040→  1040→  1040→                {/* Avatar */}
+  1041→  1041→  1041→                <div
+  1042→  1042→  1042→                  style={{
+  1043→  1043→  1043→                    width: 48,
+  1044→  1044→  1044→                    height: 48,
+  1045→  1045→  1045→                    borderRadius: '50%',
+  1046→  1046→  1046→                    background: repartidor.color,
+  1047→  1047→  1047→                    display: 'flex',
+  1048→  1048→  1048→                    alignItems: 'center',
+  1049→  1049→  1049→                    justifyContent: 'center',
+  1050→  1050→  1050→                    fontFamily: "'Syne', sans-serif",
+  1051→  1051→  1051→                    fontSize: 18,
+  1052→  1052→  1052→                    fontWeight: 700,
+  1053→  1053→  1053→                    color: '#fff',
+  1054→  1054→  1054→                    flexShrink: 0,
+  1055→  1055→  1055→                  }}
+  1056→  1056→  1056→                >
+  1057→  1057→  1057→                  {repartidor.initials}
+  1058→  1058→  1058→                </div>
+  1059→  1059→  1059→                <div style={{ flex: 1, minWidth: 0 }}>
+  1060→  1060→  1060→                  <p
+  1061→  1061→  1061→                    style={{
+  1062→  1062→  1062→                      fontFamily: "'DM Sans', sans-serif",
+  1063→  1063→  1063→                      fontSize: 16,
+  1064→  1064→  1064→                      fontWeight: 700,
+  1065→  1065→  1065→                      color: 'var(--text)',
+  1066→  1066→  1066→                      margin: 0,
+  1067→  1067→  1067→                      lineHeight: 1.2,
+  1068→  1068→  1068→                    }}
+  1069→  1069→  1069→                  >
+  1070→  1070→  1070→                    {repartidor.nombre}
+  1071→  1071→  1071→                  </p>
+  1072→  1072→  1072→                  <p
+  1073→  1073→  1073→                    style={{
+  1074→  1074→  1074→                      fontFamily: "'DM Sans', sans-serif",
+  1075→  1075→  1075→                      fontSize: 13,
+  1076→  1076→  1076→                      color: 'var(--text-muted)',
+  1077→  1077→  1077→                      margin: '2px 0 0 0',
+  1078→  1078→  1078→                    }}
+  1079→  1079→  1079→                  >
+  1080→  1080→  1080→                    {repartidor.moto}
+  1081→  1081→  1081→                  </p>
+  1082→  1082→  1082→                </div>
+  1083→  1083→  1083→              </div>
+  1084→  1084→  1084→
+  1085→  1085→  1085→              {/* Rating row */}
+  1086→  1086→  1086→              <div
+  1087→  1087→  1087→                style={{
+  1088→  1088→  1088→                  display: 'flex',
+  1089→  1089→  1089→                  alignItems: 'center',
+  1090→  1090→  1090→                  gap: 6,
+  1091→  1091→  1091→                  marginBottom: 12,
+  1092→  1092→  1092→                }}
+  1093→  1093→  1093→              >
+  1094→  1094→  1094→                <Star size={14} style={{ color: '#FF9800' }} />
+  1095→  1095→  1095→                <span
+  1096→  1096→  1096→                  style={{
+  1097→  1097→  1097→                    fontFamily: "'JetBrains Mono', monospace",
+  1098→  1098→  1098→                    fontSize: 13,
+  1099→  1099→  1099→                    fontWeight: 600,
+  1100→  1100→  1100→                    color: 'var(--text)',
+  1101→  1101→  1101→                  }}
+  1102→  1102→  1102→                >
+  1103→  1103→  1103→                  {repartidor.calificacion}
+  1104→  1104→  1104→                </span>
+  1105→  1105→  1105→                {renderStars(repartidor.calificacion)}
+  1106→  1106→  1106→                <span
+  1107→  1107→  1107→                  style={{
+  1108→  1108→  1108→                    fontFamily: "'DM Sans', sans-serif",
+  1109→  1109→  1109→                    fontSize: 12,
+  1110→  1110→  1110→                    color: 'var(--text-muted)',
+  1111→  1111→  1111→                    marginLeft: 4,
+  1112→  1112→  1112→                  }}
+  1113→  1113→  1113→                >
+  1114→  1114→  1114→                  {repartidor.totalEntregas} entregas
+  1115→  1115→  1115→                </span>
+  1116→  1116→  1116→              </div>
+  1117→  1117→  1117→
+  1118→  1118→  1118→              {/* Action pills */}
+  1119→  1119→  1119→              <div style={{ display: 'flex', gap: 8 }}>
+  1120→  1120→  1120→                <a
+  1121→  1121→  1121→                  href={`tel:${repartidor.telefono}`}
+  1122→  1122→  1122→                  style={{
+  1123→  1123→  1123→                    flex: 1,
+  1124→  1124→  1124→                    display: 'flex',
+  1125→  1125→  1125→                    alignItems: 'center',
+  1126→  1126→  1126→                    justifyContent: 'center',
+  1127→  1127→  1127→                    gap: 6,
+  1128→  1128→  1128→                    padding: '10px 0',
+  1129→  1129→  1129→                    borderRadius: 10,
+  1130→  1130→  1130→                    border: '1px solid var(--border)',
+  1131→  1131→  1131→                    background: 'var(--bg-alt)',
+  1132→  1132→  1132→                    color: 'var(--text)',
+  1133→  1133→  1133→                    fontFamily: "'DM Sans', sans-serif",
+  1134→  1134→  1134→                    fontSize: 13,
+  1135→  1135→  1135→                    fontWeight: 500,
+  1136→  1136→  1136→                    textDecoration: 'none',
+  1137→  1137→  1137→                    cursor: 'pointer',
+  1138→  1138→  1138→                    transition: 'border-color 0.2s',
+  1139→  1139→  1139→                  }}
+  1140→  1140→  1140→                >
+  1141→  1141→  1141→                  <Phone size={15} style={{ color: 'var(--exito)' }} />
+  1142→  1142→  1142→                  Llamar
+  1143→  1143→  1143→                </a>
+  1144→  1144→  1144→                <button
+  1145→  1145→  1145→                  onClick={() => order && onOpenChat(order.id)}
+  1146→  1146→  1146→                  style={{
+  1147→  1147→  1147→                    flex: 1,
+  1148→  1148→  1148→                    display: 'flex',
+  1149→  1149→  1149→                    alignItems: 'center',
+  1150→  1150→  1150→                    justifyContent: 'center',
+  1151→  1151→  1151→                    gap: 6,
+  1152→  1152→  1152→                    padding: '10px 0',
+  1153→  1153→  1153→                    borderRadius: 10,
+  1154→  1154→  1154→                    border: '1px solid var(--border)',
+  1155→  1155→  1155→                    background: 'var(--bg-alt)',
+  1156→  1156→  1156→                    color: 'var(--text)',
+  1157→  1157→  1157→                    fontFamily: "'DM Sans', sans-serif",
+  1158→  1158→  1158→                    fontSize: 13,
+  1159→  1159→  1159→                    fontWeight: 500,
+  1160→  1160→  1160→                    cursor: 'pointer',
+  1161→  1161→  1161→                    transition: 'border-color 0.2s',
+  1162→  1162→  1162→                  }}
+  1163→  1163→  1163→                >
+  1164→  1164→  1164→                  <MessageCircle size={15} style={{ color: 'var(--info)' }} />
+  1165→  1165→  1165→                  Mensaje
+  1166→  1166→  1166→                </button>
+  1167→  1167→  1167→                <button
+  1168→  1168→  1168→                  onClick={handleShare}
+  1169→  1169→  1169→                  style={{
+  1170→  1170→  1170→                    flex: 1,
+  1171→  1171→  1171→                    display: 'flex',
+  1172→  1172→  1172→                    alignItems: 'center',
+  1173→  1173→  1173→                    justifyContent: 'center',
+  1174→  1174→  1174→                    gap: 6,
+  1175→  1175→  1175→                    padding: '10px 0',
+  1176→  1176→  1176→                    borderRadius: 10,
+  1177→  1177→  1177→                    border: '1px solid var(--border)',
+  1178→  1178→  1178→                    background: 'var(--bg-alt)',
+  1179→  1179→  1179→                    color: 'var(--text)',
+  1180→  1180→  1180→                    fontFamily: "'DM Sans', sans-serif",
+  1181→  1181→  1181→                    fontSize: 13,
+  1182→  1182→  1182→                    fontWeight: 500,
+  1183→  1183→  1183→                    cursor: 'pointer',
+  1184→  1184→  1184→                    transition: 'border-color 0.2s',
+  1185→  1185→  1185→                  }}
+  1186→  1186→  1186→                >
+  1187→  1187→  1187→                  <Share2 size={15} style={{ color: 'var(--primario)' }} />
+  1188→  1188→  1188→                  {copied ? '¡Copiado!' : 'Compartir'}
+  1189→  1189→  1189→                </button>
+  1190→  1190→  1190→              </div>
+  1191→  1191→  1191→            </motion.div>
+  1192→  1192→  1192→          )}
+  1193→  1193→  1193→
+  1194→  1194→  1194→          {/* ─── ORDER DETAILS (expandable) ─── */}
+  1195→  1195→  1195→          {order && (
+  1196→  1196→  1196→            <div style={{ marginBottom: 20 }}>
+  1197→  1197→  1197→              <button
+  1198→  1198→  1198→                onClick={() => setDetailsExpanded((v) => !v)}
+  1199→  1199→  1199→                style={{
+  1200→  1200→  1200→                  display: 'flex',
+  1201→  1201→  1201→                  alignItems: 'center',
+  1202→  1202→  1202→                  justifyContent: 'space-between',
+  1203→  1203→  1203→                  width: '100%',
+  1204→  1204→  1204→                  padding: '12px 0',
+  1205→  1205→  1205→                  border: 'none',
+  1206→  1206→  1206→                  background: 'transparent',
+  1207→  1207→  1207→                  cursor: 'pointer',
+  1208→  1208→  1208→                  color: 'var(--text)',
+  1209→  1209→  1209→                }}
+  1210→  1210→  1210→              >
+  1211→  1211→  1211→                <span
+  1212→  1212→  1212→                  style={{
+  1213→  1213→  1213→                    fontFamily: "'Syne', sans-serif",
+  1214→  1214→  1214→                    fontSize: 14,
+  1215→  1215→  1215→                    fontWeight: 600,
+  1216→  1216→  1216→                  }}
+  1217→  1217→  1217→                >
+  1218→  1218→  1218→                  Detalles del envío
+  1219→  1219→  1219→                </span>
+  1220→  1220→  1220→                {detailsExpanded ? (
+  1221→  1221→  1221→                  <ChevronUp size={18} style={{ color: 'var(--text-muted)' }} />
+  1222→  1222→  1222→                ) : (
+  1223→  1223→  1223→                  <ChevronDown size={18} style={{ color: 'var(--text-muted)' }} />
+  1224→  1224→  1224→                )}
+  1225→  1225→  1225→              </button>
+  1226→  1226→  1226→
+  1227→  1227→  1227→              <AnimatePresence>
+  1228→  1228→  1228→                {detailsExpanded && (
+  1229→  1229→  1229→                  <motion.div
+  1230→  1230→  1230→                    initial={{ height: 0, opacity: 0 }}
+  1231→  1231→  1231→                    animate={{ height: 'auto', opacity: 1 }}
+  1232→  1232→  1232→                    exit={{ height: 0, opacity: 0 }}
+  1233→  1233→  1233→                    transition={{ duration: 0.3 }}
+  1234→  1234→  1234→                    style={{ overflow: 'hidden' }}
+  1235→  1235→  1235→                  >
+  1236→  1236→  1236→                    <div
+  1237→  1237→  1237→                      style={{
+  1238→  1238→  1238→                        display: 'grid',
+  1239→  1239→  1239→                        gridTemplateColumns: '1fr 1fr',
+  1240→  1240→  1240→                        gap: 10,
+  1241→  1241→  1241→                        paddingTop: 4,
+  1242→  1242→  1242→                        paddingBottom: 8,
+  1243→  1243→  1243→                      }}
+  1244→  1244→  1244→                    >
+  1245→  1245→  1245→                      {[
+  1246→  1246→  1246→                        { label: 'Descripción', value: order.descripcion || 'Paquete estándar' },
+  1247→  1247→  1247→                        { label: 'Tamaño', value: 'Mediano (30×30×30cm)' },
+  1248→  1248→  1248→                        { label: 'Fragil', value: 'No' },
+  1249→  1249→  1249→                        { label: 'Instrucciones', value: 'Dejar en portería' },
+  1250→  1250→  1250→                        {
+  1251→  1251→  1251→                          label: 'Pago',
+  1252→  1252→  1252→                          value: `${order.metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia'} — C$${order.monto}`,
+  1253→  1253→  1253→                        },
+  1254→  1254→  1254→                        { label: 'Código promo', value: '—' },
+  1255→  1255→  1255→                      ].map((detail, i) => (
+  1256→  1256→  1256→                        <div key={i}>
+  1257→  1257→  1257→                          <p
+  1258→  1258→  1258→                            style={{
+  1259→  1259→  1259→                              fontFamily: "'DM Sans', sans-serif",
+  1260→  1260→  1260→                              fontSize: 11,
+  1261→  1261→  1261→                              color: 'var(--text-muted)',
+  1262→  1262→  1262→                              margin: 0,
+  1263→  1263→  1263→                            }}
+  1264→  1264→  1264→                          >
+  1265→  1265→  1265→                            {detail.label}
+  1266→  1266→  1266→                          </p>
+  1267→  1267→  1267→                          <p
+  1268→  1268→  1268→                            style={{
+  1269→  1269→  1269→                              fontFamily: "'DM Sans', sans-serif",
+  1270→  1270→  1270→                              fontSize: 13,
+  1271→  1271→  1271→                              fontWeight: 500,
+  1272→  1272→  1272→                              color: 'var(--text)',
+  1273→  1273→  1273→                              margin: '2px 0 0 0',
+  1274→  1274→  1274→                            }}
+  1275→  1275→  1275→                          >
+  1276→  1276→  1276→                            {detail.value}
+  1277→  1277→  1277→                          </p>
+  1278→  1278→  1278→                        </div>
+  1279→  1279→  1279→                      ))}
+  1280→  1280→  1280→                    </div>
+  1281→  1281→  1281→                  </motion.div>
+  1282→  1282→  1282→                )}
+  1283→  1283→  1283→              </AnimatePresence>
+  1284→  1284→  1284→            </div>
+  1285→  1285→  1285→          )}
+  1286→  1286→  1286→
+  1287→  1287→  1287→          {/* ─── ACTION BUTTONS ─── */}
+  1288→  1288→  1288→          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+  1289→  1289→  1289→            <button
+  1290→  1290→  1290→              style={{
+  1291→  1291→  1291→                display: 'flex',
+  1292→  1292→  1292→                alignItems: 'center',
+  1293→  1293→  1293→                justifyContent: 'center',
+  1294→  1294→  1294→                gap: 6,
+  1295→  1295→  1295→                padding: '12px 0',
+  1296→  1296→  1296→                borderRadius: 10,
+  1297→  1297→  1297→                border: '1px solid var(--border)',
+  1298→  1298→  1298→                background: 'transparent',
+  1299→  1299→  1299→                fontFamily: "'DM Sans', sans-serif",
+  1300→  1300→  1300→                fontSize: 13,
+  1301→  1301→  1301→                fontWeight: 500,
+  1302→  1302→  1302→                cursor: 'pointer',
+  1303→  1303→  1303→                color: 'var(--peligro)',
+  1304→  1304→  1304→                transition: 'background 0.2s',
+  1305→  1305→  1305→              }}
+  1306→  1306→  1306→            >
+  1307→  1307→  1307→              <AlertTriangle size={15} />
+  1308→  1308→  1308→              Reportar problema
+  1309→  1309→  1309→            </button>
+  1310→  1310→  1310→            {order && (order.estado === 'pendiente' || order.estado === 'programada') && (
+  1311→  1311→  1311→              <button
+  1312→  1312→  1312→                style={{
+  1313→  1313→  1313→                  display: 'flex',
+  1314→  1314→  1314→                  alignItems: 'center',
+  1315→  1315→  1315→                  justifyContent: 'center',
+  1316→  1316→  1316→                  gap: 6,
+  1317→  1317→  1317→                  padding: '12px 0',
+  1318→  1318→  1318→                  borderRadius: 10,
+  1319→  1319→  1319→                  border: '1px solid var(--border)',
+  1320→  1320→  1320→                  background: 'transparent',
+  1321→  1321→  1321→                  fontFamily: "'DM Sans', sans-serif",
+  1322→  1322→  1322→                  fontSize: 13,
+  1323→  1323→  1323→                  fontWeight: 500,
+  1324→  1324→  1324→                  cursor: 'pointer',
+  1325→  1325→  1325→                  color: 'var(--peligro)',
+  1326→  1326→  1326→                  transition: 'background 0.2s',
+  1327→  1327→  1327→                }}
+  1328→  1328→  1328→              >
+  1329→  1329→  1329→                <X size={15} />
+  1330→  1330→  1330→                Cancelar envío
+  1331→  1331→  1331→              </button>
+  1332→  1332→  1332→            )}
+  1333→  1333→  1333→          </div>
+  1334→  1334→  1334→        </div>
+  1335→  1335→  1335→      </div>
+  1336→  1336→  1336→    </div>
+  1337→  1337→  1337→  );
+  1338→  1338→  1338→}
+  1339→  1339→  1339→

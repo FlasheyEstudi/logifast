@@ -54,11 +54,53 @@ function pickRandomReply(): string {
   return MOCK_REPARTIDOR_REPLIES[Math.floor(Math.random() * MOCK_REPARTIDOR_REPLIES.length)];
 }
 
+/** Trigger haptic feedback if available */
+function hapticTap() {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(10);
+  }
+}
+
 /* ═══════════════════════════════════════════════
    SUB-COMPONENTS
    ═══════════════════════════════════════════════ */
 
-/** Single message bubble */
+/** Typing indicator with 3 sequential bouncing dots */
+function TypingIndicator({ isDark }: { isDark: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      className="flex justify-start mb-1"
+    >
+      <div
+        className="px-5 py-3 flex items-center gap-[5px]"
+        style={{
+          background: 'var(--bg-alt)',
+          borderRadius: '20px 20px 20px 4px',
+        }}
+      >
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            className="w-[7px] h-[7px] rounded-full"
+            style={{ background: 'var(--text-muted)' }}
+            animate={{ y: [0, -5, 0] }}
+            transition={{
+              duration: 0.6,
+              repeat: Infinity,
+              delay: i * 0.18,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+/** Single message bubble — iMessage / WhatsApp style */
 function MessageBubble({
   msg,
   isClient,
@@ -70,17 +112,21 @@ function MessageBubble({
   isSystem: boolean;
   isDark: boolean;
 }) {
+  /* System message — centered pill */
   if (isSystem) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }}
         className="flex justify-center my-3"
       >
         <span
-          className="text-[11px] italic px-3 py-1"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-[12px] px-4 py-1.5 rounded-full"
+          style={{
+            background: 'var(--bg-alt)',
+            color: 'var(--text-muted)',
+          }}
         >
           {msg.content}
         </span>
@@ -88,31 +134,35 @@ function MessageBubble({
     );
   }
 
+  /* Chat bubble */
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
+      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={`flex ${isClient ? 'justify-end' : 'justify-start'} mb-1`}
     >
-      <div className={`max-w-[80%] relative`}>
+      <div className="max-w-[80%] relative">
         <div
-          className="px-3.5 py-2.5 text-[14px] leading-relaxed break-words"
+          className="px-4 py-2.5 text-[14px] leading-relaxed break-words"
           style={{
-            background: isClient ? 'var(--primario)' : isDark ? 'var(--surface-elevated)' : 'var(--bg-alt)',
+            background: isClient ? 'var(--primario)' : 'var(--bg-alt)',
             color: isClient ? '#FFFFFF' : 'var(--text)',
-            borderRadius: isClient ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+            borderRadius: isClient
+              ? '20px 20px 4px 20px'
+              : '20px 20px 20px 4px',
+            fontFamily: "'DM Sans', sans-serif",
           }}
         >
           {msg.content}
         </div>
         {/* Read indicator for client messages */}
         {isClient && (
-          <div className="flex justify-end mt-0.5 mr-1">
+          <div className="flex justify-end mt-0.5 mr-1.5">
             {msg.read ? (
               <CheckCheck className="w-3.5 h-3.5" style={{ color: 'var(--info)' }} />
             ) : (
-              <Check className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+              <Check className="w-3.5 h-3.5" style={{ color: isClient ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)' }} />
             )}
           </div>
         )}
@@ -121,13 +171,16 @@ function MessageBubble({
   );
 }
 
-/** Timestamp divider */
-function TimestampDivider({ time, isDark }: { time: string; isDark: boolean }) {
+/** Timestamp divider — centered, 11px muted */
+function TimestampDivider({ time }: { time: string }) {
   return (
-    <div className="flex justify-center my-2">
+    <div className="flex justify-center my-3">
       <span
         className="text-[11px]"
-        style={{ color: 'var(--text-muted)' }}
+        style={{
+          color: 'var(--text-muted)',
+          fontFamily: "'JetBrains Mono', monospace",
+        }}
       >
         {time}
       </span>
@@ -209,7 +262,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [conversation?.messages, scrollToBottom]);
+  }, [conversation?.messages, isTyping, scrollToBottom]);
 
   /* ── Textarea auto-resize ─────────────── */
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -236,7 +289,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
 
     // Simulate repartidor reply
     setIsTyping(true);
-    const delay = 2000 + Math.random() * 1000; // 2-3 seconds
+    const delay = 2000 + Math.random() * 1000;
     setTimeout(() => {
       setIsTyping(false);
       if (chatOrderId) {
@@ -249,6 +302,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
   const handleQuickReply = useCallback(
     (text: string) => {
       if (!chatOrderId || !isActive || chatDeactivated) return;
+      hapticTap();
       sendChatMessage(chatOrderId, text, 'cliente');
 
       // Simulate repartidor reply
@@ -292,14 +346,11 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
       const isClient = msg.senderType === 'cliente';
       const isSystem = msg.senderType === 'sistema';
 
-      // Show timestamp divider between message groups
+      // Show timestamp divider when timestamp changes
       if (msg.timestamp !== lastTimestamp) {
-        // Only show timestamp if there's a change or it's the first message
-        if (idx === 0 || msg.timestamp !== lastTimestamp) {
-          elements.push(
-            <TimestampDivider key={`ts-${msg.id}`} time={formatTime(msg.timestamp)} isDark={isDark} />
-          );
-        }
+        elements.push(
+          <TimestampDivider key={`ts-${msg.id}`} time={formatTime(msg.timestamp)} />
+        );
         lastTimestamp = msg.timestamp;
       }
 
@@ -311,33 +362,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     // Typing indicator
     if (isTyping) {
       elements.push(
-        <motion.div
-          key="typing-indicator"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-start mb-1"
-        >
-          <div
-            className="px-4 py-3 flex items-center gap-1"
-            style={{
-              background: isDark ? 'var(--surface-elevated)' : 'var(--bg-alt)',
-              borderRadius: '16px 16px 16px 4px',
-            }}
-          >
-            <span
-              className="w-2 h-2 rounded-full animate-bounce"
-              style={{ background: 'var(--text-muted)', animationDelay: '0ms' }}
-            />
-            <span
-              className="w-2 h-2 rounded-full animate-bounce"
-              style={{ background: 'var(--text-muted)', animationDelay: '150ms' }}
-            />
-            <span
-              className="w-2 h-2 rounded-full animate-bounce"
-              style={{ background: 'var(--text-muted)', animationDelay: '300ms' }}
-            />
-          </div>
-        </motion.div>
+        <TypingIndicator key="typing-indicator" isDark={isDark} />
       );
     }
 
@@ -352,73 +377,86 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     <AnimatePresence>
       {chatOpen && (
         <>
-          {/* Backdrop (mobile) */}
+          {/* ── BACKDROP ───────────────────────────── */}
           <motion.div
             key="chat-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
             onClick={handleClose}
           />
 
-          {/* Chat panel */}
+          {/* ── BOTTOM SHEET (FULL SCREEN) ─────────── */}
           <motion.div
-            key="chat-panel"
-            initial={{ y: '100%', opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="fixed inset-0 z-50 md:inset-auto md:top-0 md:right-0 md:bottom-0 md:w-[400px] flex flex-col font-[DM_Sans]"
+            key="chat-sheet"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+            className="fixed inset-0 z-50 flex flex-col"
             style={{
-              background: isDark ? '#0A0A0F' : 'var(--surface)',
+              background: 'var(--bg)',
+              borderTopLeftRadius: 'var(--lf-sheet-radius)',
+              borderTopRightRadius: 'var(--lf-sheet-radius)',
             }}
           >
-            {/* ── HEADER ────────────────────────────── */}
+            {/* ── HEADER (Glassmorphism) ──────────────── */}
             <div
-              className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b"
+              className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3"
               style={{
-                background: isDark ? '#0A0A0F' : 'var(--surface)',
-                borderColor: 'var(--border)',
+                background: 'var(--lf-glass-bg)',
+                backdropFilter: 'blur(var(--lf-glass-blur))',
+                WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+                borderBottom: '1px solid var(--lf-glass-border)',
+                borderTopLeftRadius: 'var(--lf-sheet-radius)',
+                borderTopRightRadius: 'var(--lf-sheet-radius)',
               }}
             >
-              {/* Driver avatar */}
+              {/* Driver avatar 36x36 */}
               {repartidor ? (
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                   style={{ background: repartidor.color }}
                 >
                   {repartidor.initials || getInitials(repartidor.nombre)}
                 </div>
               ) : (
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                   style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)' }}
                 >
                   ?
                 </div>
               )}
 
-              {/* Driver info */}
+              {/* Driver name + online status */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="font-bold text-[16px] truncate"
-                    style={{ color: 'var(--text)' }}
-                  >
-                    {repartidor?.nombre ?? 'Repartidor'}
-                  </span>
-                </div>
+                <span
+                  className="font-bold text-[15px] truncate block"
+                  style={{
+                    color: 'var(--text)',
+                    fontFamily: "'Syne', sans-serif",
+                  }}
+                >
+                  {repartidor?.nombre ?? 'Repartidor'}
+                </span>
                 {isActive && !chatDeactivated ? (
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500" />
-                    <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                    <span className="w-[7px] h-[7px] rounded-full bg-green-500 shrink-0" />
+                    <span
+                      className="text-[12px]"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
                       En línea
                     </span>
                   </div>
                 ) : (
-                  <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  <span
+                    className="text-[12px]"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     Chat finalizado
                   </span>
                 )}
@@ -435,14 +473,17 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                 </button>
               )}
 
-              {/* Close button */}
+              {/* Close button 36x36 */}
               <button
                 onClick={handleClose}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
-                style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)' }}
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors active:scale-90"
+                style={{
+                  background: 'var(--bg-alt)',
+                  color: 'var(--text-muted)',
+                }}
                 aria-label="Cerrar chat"
               >
-                <X className="w-4 h-4" />
+                <X className="w-[18px] h-[18px]" />
               </button>
             </div>
 
@@ -461,6 +502,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                     style={{
                       background: isDark ? 'rgba(255,183,0,0.1)' : 'rgba(255,183,0,0.08)',
                       color: 'var(--warning)',
+                      fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
                     Este chat se cerrará pronto. ¿Necesitas algo más?
@@ -484,6 +526,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                     style={{
                       background: isDark ? 'rgba(255,23,68,0.1)' : 'rgba(255,23,68,0.06)',
                       color: 'var(--peligro)',
+                      fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
                     Chat finalizado. Para ayuda, contacta soporte.
@@ -497,30 +540,26 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
               ref={messagesContainerRef}
               className="flex-1 overflow-y-auto px-4 py-3"
               style={{
-                background: isDark ? '#0A0A0F' : 'var(--bg)',
                 scrollbarWidth: 'thin',
                 scrollbarColor: isDark ? '#2A2A38 transparent' : '#D1CBC4 transparent',
               }}
             >
-              <style jsx>{`
-                div::-webkit-scrollbar {
-                  width: 5px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: transparent;
-                }
-                div::-webkit-scrollbar-thumb {
+              {/* Custom scrollbar styles */}
+              <style>{`
+                [data-messages-scroll]::-webkit-scrollbar { width: 5px; }
+                [data-messages-scroll]::-webkit-scrollbar-track { background: transparent; }
+                [data-messages-scroll]::-webkit-scrollbar-thumb {
                   background: ${isDark ? '#2A2A38' : '#D1CBC4'};
                   border-radius: 10px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: ${isDark ? '#3A3A4A' : '#B8B0A8'};
                 }
               `}</style>
 
               {!conversation ? (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-[14px]" style={{ color: 'var(--text-muted)' }}>
+                  <p
+                    className="text-[14px]"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     No hay conversación activa
                   </p>
                 </div>
@@ -532,50 +571,44 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
               )}
             </div>
 
-            {/* ── QUICK REPLIES ─────────────────────── */}
-            {isActive && !chatDeactivated && conversation && (
+            {/* ── BOTTOM SECTION: Quick Replies + Input (Glassmorphism) ── */}
+            {isActive && !chatDeactivated ? (
               <div
-                className="flex gap-2 px-4 py-2 overflow-x-auto"
+                className="sticky bottom-0 z-10"
                 style={{
-                  background: isDark ? '#0A0A0F' : 'var(--surface)',
-                  borderTop: `1px solid ${isDark ? 'rgba(42,42,56,0.5)' : 'var(--border)'}`,
-                  scrollbarWidth: 'none',
+                  background: 'var(--lf-glass-bg)',
+                  backdropFilter: 'blur(var(--lf-glass-blur))',
+                  WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+                  borderTop: '1px solid var(--lf-glass-border)',
+                  paddingBottom: 'var(--lf-safe-bottom)',
                 }}
               >
-                {QUICK_REPLIES.map((text) => (
-                  <button
-                    key={text}
-                    onClick={() => handleQuickReply(text)}
-                    className="shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all hover:opacity-80 active:scale-95"
-                    style={{
-                      border: `1px solid var(--border)`,
-                      background: 'transparent',
-                      color: 'var(--text)',
-                    }}
+                {/* Quick reply chips — horizontal scroll */}
+                {conversation && (
+                  <div
+                    className="flex gap-2 px-4 pt-2.5 pb-1 overflow-x-auto"
+                    style={{ scrollbarWidth: 'none' }}
                   >
-                    {text}
-                  </button>
-                ))}
-              </div>
-            )}
+                    {QUICK_REPLIES.map((text) => (
+                      <button
+                        key={text}
+                        onClick={() => handleQuickReply(text)}
+                        className="shrink-0 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all hover:opacity-80 active:scale-95"
+                        style={{
+                          border: '1px solid var(--border)',
+                          background: 'transparent',
+                          color: 'var(--text)',
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}
+                      >
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-            {/* ── INPUT AREA ────────────────────────── */}
-            <div
-              className="sticky bottom-0 border-t px-4 py-3"
-              style={{
-                background: isDark ? '#0A0A0F' : 'var(--surface)',
-                borderColor: 'var(--border)',
-              }}
-            >
-              {chatDeactivated || !isActive ? (
-                <div
-                  className="flex items-center justify-center py-2 text-[13px]"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Chat finalizado
-                </div>
-              ) : (
-                <div className="flex items-end gap-2">
+                {/* Input area */}
+                <div className="flex items-end gap-2 px-4 py-3">
                   <textarea
                     ref={textareaRef}
                     value={input}
@@ -585,29 +618,52 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                     rows={1}
                     className="flex-1 resize-none rounded-2xl px-4 py-2.5 text-[14px] outline-none transition-colors"
                     style={{
-                      background: isDark ? 'var(--surface-elevated)' : 'var(--bg-alt)',
+                      background: 'var(--bg-alt)',
                       color: 'var(--text)',
-                      border: `1px solid var(--border)`,
+                      border: '1px solid var(--border)',
                       maxHeight: '96px',
-                      fontFamily: 'DM Sans, sans-serif',
+                      fontFamily: "'DM Sans', sans-serif",
                     }}
                   />
-                  <button
+                  <motion.button
                     onClick={handleSend}
                     disabled={!input.trim()}
-                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all"
+                    whileTap={{ scale: 0.9 }}
+                    className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors"
                     style={{
-                      background: input.trim() ? 'var(--primario)' : isDark ? 'var(--surface-elevated)' : 'var(--bg-alt)',
+                      background: input.trim() ? 'var(--primario)' : 'var(--bg-alt)',
                       color: input.trim() ? '#FFFFFF' : 'var(--text-muted)',
-                      opacity: input.trim() ? 1 : 0.5,
+                      boxShadow: input.trim() ? 'var(--shadow-primario)' : 'none',
                     }}
                     aria-label="Enviar mensaje"
                   >
-                    <Send className="w-4 h-4" />
-                  </button>
+                    <Send className="w-[18px] h-[18px]" />
+                  </motion.button>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              /* ── Deactivated / inactive bottom bar ── */
+              <div
+                className="sticky bottom-0 z-10 border-t px-4 py-3"
+                style={{
+                  background: 'var(--lf-glass-bg)',
+                  backdropFilter: 'blur(var(--lf-glass-blur))',
+                  WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+                  borderTop: '1px solid var(--lf-glass-border)',
+                  paddingBottom: 'var(--lf-safe-bottom)',
+                }}
+              >
+                <div
+                  className="flex items-center justify-center py-2 text-[13px]"
+                  style={{
+                    color: 'var(--text-muted)',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
+                  Chat finalizado
+                </div>
+              </div>
+            )}
           </motion.div>
         </>
       )}

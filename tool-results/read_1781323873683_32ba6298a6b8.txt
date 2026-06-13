@@ -1,0 +1,873 @@
+     1→     1→'use client';
+     2→     2→import React, { useState, useMemo } from 'react';
+     3→     3→import { motion, AnimatePresence } from 'framer-motion';
+     4→     4→import { Search, SlidersHorizontal, Heart, Star, Clock, MapPin, Truck, ChevronRight, X, ShoppingBag, Check, Utensils, Store, Pill, Gift, ShoppingCart, Smartphone, Dumbbell } from 'lucide-react';
+     5→     5→import { useMarketplaceStore, type Tienda, type TiendaCategoria, CATEGORIAS } from '@/lib/marketplace-store';
+     6→     6→import { useStore } from '@/lib/store';
+     7→     7→
+     8→     8→/* ═══════════════════════════════════════════════
+     9→     9→   PROPS
+    10→    10→   ═══════════════════════════════════════════════ */
+    11→    11→
+    12→    12→interface ClientExplorarProps {
+    13→    13→  isDark: boolean;
+    14→    14→  userName: string;
+    15→    15→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+    16→    16→  onOpenTracking: (orderId: string) => void;
+    17→    17→  onOpenChat: (orderId: string) => void;
+    18→    18→}
+    19→    19→
+    20→    20→/* ═══════════════════════════════════════════════
+    21→    21→   HELPERS
+    22→    22→   ═══════════════════════════════════════════════ */
+    23→    23→
+    24→    24→const DIA_MAP: Record<number, string> = {
+    25→    25→  0: 'dom',
+    26→    26→  1: 'lun',
+    27→    27→  2: 'mar',
+    28→    28→  3: 'mie',
+    29→    29→  4: 'jue',
+    30→    30→  5: 'vie',
+    31→    31→  6: 'sab',
+    32→    32→};
+    33→    33→
+    34→    34→function isOpenNow(horario: Record<string, { abre: string; cierra: string }>): boolean {
+    35→    35→  const now = new Date();
+    36→    36→  const diaKey = DIA_MAP[now.getDay()];
+    37→    37→  const h = horario[diaKey];
+    38→    38→  if (!h || !h.abre || !h.cierra) return false;
+    39→    39→  const currentMin = now.getHours() * 60 + now.getMinutes();
+    40→    40→  const [abH, abM] = h.abre.split(':').map(Number);
+    41→    41→  const [ciH, ciM] = h.cierra.split(':').map(Number);
+    42→    42→  const abreMin = abH * 60 + abM;
+    43→    43→  const cierraMin = ciH * 60 + ciM;
+    44→    44→  return currentMin >= abreMin && currentMin <= cierraMin;
+    45→    45→}
+    46→    46→
+    47→    47→function categoriaLabel(key: TiendaCategoria): string {
+    48→    48→  const found = CATEGORIAS.find((c) => c.key === key);
+    49→    49→  return found ? found.label : key;
+    50→    50→}
+    51→    51→
+    52→    52→const ICON_MAP: Record<string, React.FC<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
+    53→    53→  utensils: Utensils,
+    54→    54→  store: Store,
+    55→    55→  pill: Pill,
+    56→    56→  gift: Gift,
+    57→    57→  'shopping-cart': ShoppingCart,
+    58→    58→  smartphone: Smartphone,
+    59→    59→  dumbbell: Dumbbell,
+    60→    60→};
+    61→    61→
+    62→    62→function CategoryIcon({ name, size = 20, style }: { name: string; size?: number; style?: React.CSSProperties }) {
+    63→    63→  const Icon = ICON_MAP[name];
+    64→    64→  if (!Icon) return null;
+    65→    65→  return <Icon size={size} style={style} />;
+    66→    66→}
+    67→    67→
+    68→    68→const FILTROS_SECUNDARIOS = [
+    69→    69→  { key: 'cerca', label: 'Cerca de mi', icon: MapPin },
+    70→    70→  { key: 'calificados', label: 'Mejor calificados', icon: Star },
+    71→    71→  { key: 'envio_gratis', label: 'Envío gratis', icon: Truck },
+    72→    72→  { key: 'abierto', label: 'Abierto ahora', icon: Clock },
+    73→    73→  { key: 'promo', label: 'Con promo', icon: ShoppingBag },
+    74→    74→  { key: 'favoritos', label: 'Favoritos', icon: Heart },
+    75→    75→] as const;
+    76→    76→
+    77→    77→/* ═══════════════════════════════════════════════
+    78→    78→   BADGE STYLE
+    79→    79→   ═══════════════════════════════════════════════ */
+    80→    80→
+    81→    81→function badgeStyleFor(badge: string): React.CSSProperties {
+    82→    82→  switch (badge) {
+    83→    83→    case 'Popular':
+    84→    84→      return {
+    85→    85→        display: 'inline-block',
+    86→    86→        fontSize: 10,
+    87→    87→        fontWeight: 700,
+    88→    88→        fontFamily: "'JetBrains Mono', monospace",
+    89→    89→        padding: '1px 6px',
+    90→    90→        borderRadius: 6,
+    91→    91→        background: 'var(--primario-soft, rgba(255,87,34,0.12))',
+    92→    92→        color: 'var(--primario, #FF5722)',
+    93→    93→      };
+    94→    94→    case 'Nuevo':
+    95→    95→      return {
+    96→    96→        display: 'inline-block',
+    97→    97→        fontSize: 10,
+    98→    98→        fontWeight: 700,
+    99→    99→        fontFamily: "'JetBrains Mono', monospace",
+   100→   100→        padding: '1px 6px',
+   101→   101→        borderRadius: 6,
+   102→   102→        background: 'var(--info, #2979FF)',
+   103→   103→        color: '#fff',
+   104→   104→      };
+   105→   105→    case 'Promo':
+   106→   106→      return {
+   107→   107→        display: 'inline-block',
+   108→   108→        fontSize: 10,
+   109→   109→        fontWeight: 700,
+   110→   110→        fontFamily: "'JetBrains Mono', monospace",
+   111→   111→        padding: '1px 6px',
+   112→   112→        borderRadius: 6,
+   113→   113→        background: 'var(--exito, #00C853)',
+   114→   114→        color: '#fff',
+   115→   115→      };
+   116→   116→    default:
+   117→   117→      return {
+   118→   118→        display: 'inline-block',
+   119→   119→        fontSize: 10,
+   120→   120→        fontWeight: 700,
+   121→   121→        fontFamily: "'JetBrains Mono', monospace",
+   122→   122→        padding: '1px 6px',
+   123→   123→        borderRadius: 6,
+   124→   124→        background: 'var(--surface, #f5f5f5)',
+   125→   125→        color: 'var(--text-muted, #999)',
+   126→   126→      };
+   127→   127→  }
+   128→   128→}
+   129→   129→
+   130→   130→/* ═══════════════════════════════════════════════
+   131→   131→   ANIMATION VARIANTS
+   132→   132→   ═══════════════════════════════════════════════ */
+   133→   133→
+   134→   134→const fadeUp = {
+   135→   135→  hidden: { opacity: 0, y: 16 },
+   136→   136→  visible: (i: number) => ({
+   137→   137→    opacity: 1,
+   138→   138→    y: 0,
+   139→   139→    transition: { delay: i * 0.04, duration: 0.35, ease: 'easeOut' },
+   140→   140→  }),
+   141→   141→};
+   142→   142→
+   143→   143→const dropdownVariant = {
+   144→   144→  hidden: { opacity: 0, y: -6, scale: 0.97 },
+   145→   145→  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } },
+   146→   146→  exit: { opacity: 0, y: -6, scale: 0.97, transition: { duration: 0.15 } },
+   147→   147→};
+   148→   148→
+   149→   149→/* ═══════════════════════════════════════════════
+   150→   150→   COMPONENT
+   151→   151→   ═══════════════════════════════════════════════ */
+   152→   152→
+   153→   153→export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientExplorarProps) {
+   154→   154→  const {
+   155→   155→    tiendas,
+   156→   156→    productos,
+   157→   157→    explorarCategoria,
+   158→   158→    explorarFiltros,
+   159→   159→    explorarSearch,
+   160→   160→    favoritosTiendas,
+   161→   161→    setExplorarCategoria,
+   162→   162→    toggleExplorarFiltro,
+   163→   163→    setExplorarSearch,
+   164→   164→    setTiendaSeleccionada,
+   165→   165→    toggleFavoritoTienda,
+   166→   166→    isFavoritoTienda,
+   167→   167→  } = useMarketplaceStore();
+   168→   168→
+   169→   169→  const [searchFocused, setSearchFocused] = useState(false);
+   170→   170→  const [localSearch, setLocalSearch] = useState(explorarSearch);
+   171→   171→
+   172→   172→  /* ─── Filtered tiendas ─── */
+   173→   173→  const filteredTiendas = useMemo(() => {
+   174→   174→    let result = tiendas.filter((t) => t.estado === 'activo');
+   175→   175→
+   176→   176→    // Category filter
+   177→   177→    if (explorarCategoria !== 'todos') {
+   178→   178→      result = result.filter((t) => t.categoria === explorarCategoria);
+   179→   179→    }
+   180→   180→
+   181→   181→    // Search filter
+   182→   182→    if (localSearch.trim()) {
+   183→   183→      const q = localSearch.trim().toLowerCase();
+   184→   184→      result = result.filter(
+   185→   185→        (t) =>
+   186→   186→          t.nombre.toLowerCase().includes(q) ||
+   187→   187→          t.descripcion.toLowerCase().includes(q)
+   188→   188→      );
+   189→   189→    }
+   190→   190→
+   191→   191→    // Secondary filters
+   192→   192→    if (explorarFiltros.includes('calificados')) {
+   193→   193→      result = [...result].sort((a, b) => b.calificacion - a.calificacion);
+   194→   194→    }
+   195→   195→    if (explorarFiltros.includes('envio_gratis')) {
+   196→   196→      result = result.filter((t) => t.costoEnvio <= 20);
+   197→   197→    }
+   198→   198→    if (explorarFiltros.includes('abierto')) {
+   199→   199→      result = result.filter((t) => isOpenNow(t.horario));
+   200→   200→    }
+   201→   201→    if (explorarFiltros.includes('promo')) {
+   202→   202→      result = result.filter((t) => t.badges.some((b) => b === 'Promo'));
+   203→   203→    }
+   204→   204→    if (explorarFiltros.includes('favoritos')) {
+   205→   205→      result = result.filter((t) => isFavoritoTienda(t.id));
+   206→   206→    }
+   207→   207→    // 'cerca' = show all (simulated)
+   208→   208→
+   209→   209→    return result;
+   210→   210→  }, [tiendas, explorarCategoria, localSearch, explorarFiltros, isFavoritoTienda]);
+   211→   211→
+   212→   212→  /* ─── Search results: grouped ─── */
+   213→   213→  const searchResults = useMemo(() => {
+   214→   214→    if (!localSearch.trim()) return { tiendas: [] as Tienda[], productos: [] as typeof productos };
+   215→   215→    const q = localSearch.trim().toLowerCase();
+   216→   216→    const matchedTiendas = tiendas.filter(
+   217→   217→      (t) =>
+   218→   218→        t.estado === 'activo' &&
+   219→   219→        (t.nombre.toLowerCase().includes(q) || t.descripcion.toLowerCase().includes(q))
+   220→   220→    );
+   221→   221→    const matchedProductos = productos.filter(
+   222→   222→      (p) =>
+   223→   223→        p.disponible &&
+   224→   224→        (p.nombre.toLowerCase().includes(q) || p.descripcion.toLowerCase().includes(q))
+   225→   225→    );
+   226→   226→    return { tiendas: matchedTiendas.slice(0, 5), productos: matchedProductos.slice(0, 5) };
+   227→   227→  }, [localSearch, tiendas, productos]);
+   228→   228→
+   229→   229→  const showDropdown = searchFocused && localSearch.trim().length > 0;
+   230→   230→
+   231→   231→  /* ─── Handlers ─── */
+   232→   232→  function handleSearchChange(val: string) {
+   233→   233→    setLocalSearch(val);
+   234→   234→    setExplorarSearch(val);
+   235→   235→  }
+   236→   236→
+   237→   237→  function handleClearSearch() {
+   238→   238→    setLocalSearch('');
+   239→   239→    setExplorarSearch('');
+   240→   240→  }
+   241→   241→
+   242→   242→  function handleTiendaClick(tiendaId: string) {
+   243→   243→    setTiendaSeleccionada(tiendaId);
+   244→   244→    onNavigate('explorar');
+   245→   245→  }
+   246→   246→
+   247→   247→  /* ═══════════════════════════════════════════════
+   248→   248→     RENDER
+   249→   249→     ═══════════════════════════════════════════════ */
+   250→   250→
+   251→   251→  return (
+   252→   252→    <div
+   253→   253→      style={{
+   254→   254→        padding: '20px 16px 100px 16px',
+   255→   255→        maxWidth: 600,
+   256→   256→        margin: '0 auto',
+   257→   257→        minHeight: '100vh',
+   258→   258→      }}
+   259→   259→    >
+   260→   260→      {/* ─── HEADER ─── */}
+   261→   261→      <div style={{ marginBottom: 20 }}>
+   262→   262→        <h1
+   263→   263→          style={{
+   264→   264→            fontFamily: "'Syne', sans-serif",
+   265→   265→            fontWeight: 700,
+   266→   266→            fontSize: 28,
+   267→   267→            color: 'var(--text)',
+   268→   268→            margin: 0,
+   269→   269→            lineHeight: 1.2,
+   270→   270→          }}
+   271→   271→        >
+   272→   272→          Explorar
+   273→   273→        </h1>
+   274→   274→        <button
+   275→   275→          style={{
+   276→   276→            display: 'flex',
+   277→   277→            alignItems: 'center',
+   278→   278→            gap: 6,
+   279→   279→            marginTop: 6,
+   280→   280→            background: 'none',
+   281→   281→            border: 'none',
+   282→   282→            cursor: 'pointer',
+   283→   283→            padding: 0,
+   284→   284→            color: 'var(--text-secondary)',
+   285→   285→            fontSize: 13,
+   286→   286→            fontFamily: "'DM Sans', sans-serif",
+   287→   287→          }}
+   288→   288→        >
+   289→   289→          <MapPin size={14} style={{ color: 'var(--primario)' }} />
+   290→   290→          <span>Entregar en: Col. Los Robles</span>
+   291→   291→          <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
+   292→   292→        </button>
+   293→   293→      </div>
+   294→   294→
+   295→   295→      {/* ─── SEARCH BAR ─── */}
+   296→   296→      <div style={{ position: 'relative', marginBottom: 16 }}>
+   297→   297→        <div
+   298→   298→          style={{
+   299→   299→            display: 'flex',
+   300→   300→            alignItems: 'center',
+   301→   301→            gap: 10,
+   302→   302→            background: 'var(--bg-alt)',
+   303→   303→            border: `1.5px solid ${searchFocused ? 'var(--primario)' : 'var(--border)'}`,
+   304→   304→            borderRadius: 16,
+   305→   305→            padding: '12px 14px',
+   306→   306→            transition: 'border-color 0.2s',
+   307→   307→          }}
+   308→   308→        >
+   309→   309→          <Search size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+   310→   310→          <input
+   311→   311→            type="text"
+   312→   312→            placeholder="Buscar tiendas o productos..."
+   313→   313→            value={localSearch}
+   314→   314→            onChange={(e) => handleSearchChange(e.target.value)}
+   315→   315→            onFocus={() => setSearchFocused(true)}
+   316→   316→            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+   317→   317→            style={{
+   318→   318→              flex: 1,
+   319→   319→              border: 'none',
+   320→   320→              outline: 'none',
+   321→   321→              background: 'transparent',
+   322→   322→              fontSize: 15,
+   323→   323→              fontFamily: "'DM Sans', sans-serif",
+   324→   324→              color: 'var(--text)',
+   325→   325→            }}
+   326→   326→          />
+   327→   327→          {localSearch && (
+   328→   328→            <button
+   329→   329→              onClick={handleClearSearch}
+   330→   330→              style={{
+   331→   331→                background: 'none',
+   332→   332→                border: 'none',
+   333→   333→                cursor: 'pointer',
+   334→   334→                color: 'var(--text-muted)',
+   335→   335→                padding: 0,
+   336→   336→                display: 'flex',
+   337→   337→                alignItems: 'center',
+   338→   338→              }}
+   339→   339→            >
+   340→   340→              <X size={16} />
+   341→   341→            </button>
+   342→   342→          )}
+   343→   343→        </div>
+   344→   344→
+   345→   345→        {/* Search Dropdown */}
+   346→   346→        <AnimatePresence>
+   347→   347→          {showDropdown && (
+   348→   348→            <motion.div
+   349→   349→              variants={dropdownVariant}
+   350→   350→              initial="hidden"
+   351→   351→              animate="visible"
+   352→   352→              exit="exit"
+   353→   353→              style={{
+   354→   354→                position: 'absolute',
+   355→   355→                top: '100%',
+   356→   356→                left: 0,
+   357→   357→                right: 0,
+   358→   358→                zIndex: 50,
+   359→   359→                marginTop: 6,
+   360→   360→                background: 'var(--surface)',
+   361→   361→                border: '1px solid var(--border)',
+   362→   362→                borderRadius: 14,
+   363→   363→                boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+   364→   364→                overflow: 'hidden',
+   365→   365→                maxHeight: 360,
+   366→   366→              }}
+   367→   367→              className="lf-scrollbar"
+   368→   368→            >
+   369→   369→              {/* Tiendas section */}
+   370→   370→              {searchResults.tiendas.length > 0 && (
+   371→   371→                <div style={{ padding: '12px 14px 6px 14px' }}>
+   372→   372→                  <div
+   373→   373→                    style={{
+   374→   374→                      fontSize: 11,
+   375→   375→                      fontWeight: 700,
+   376→   376→                      fontFamily: "'JetBrains Mono', monospace",
+   377→   377→                      textTransform: 'uppercase',
+   378→   378→                      color: 'var(--text-muted)',
+   379→   379→                      letterSpacing: 0.5,
+   380→   380→                      marginBottom: 6,
+   381→   381→                    }}
+   382→   382→                  >
+   383→   383→                    Tiendas
+   384→   384→                  </div>
+   385→   385→                  {searchResults.tiendas.map((t) => (
+   386→   386→                    <button
+   387→   387→                      key={t.id}
+   388→   388→                      onMouseDown={() => handleTiendaClick(t.id)}
+   389→   389→                      style={{
+   390→   390→                        display: 'flex',
+   391→   391→                        alignItems: 'center',
+   392→   392→                        gap: 10,
+   393→   393→                        width: '100%',
+   394→   394→                        padding: '8px 6px',
+   395→   395→                        background: 'none',
+   396→   396→                        border: 'none',
+   397→   397→                        cursor: 'pointer',
+   398→   398→                        borderRadius: 10,
+   399→   399→                        textAlign: 'left',
+   400→   400→                      }}
+   401→   401→                    >
+   402→   402→                      <div
+   403→   403→                        style={{
+   404→   404→                          width: 36,
+   405→   405→                          height: 36,
+   406→   406→                          borderRadius: 10,
+   407→   407→                          background: t.logoColor,
+   408→   408→                          display: 'flex',
+   409→   409→                          alignItems: 'center',
+   410→   410→                          justifyContent: 'center',
+   411→   411→                          flexShrink: 0,
+   412→   412→                        }}
+   413→   413→                      >
+   414→   414→                        <span
+   415→   415→                          style={{
+   416→   416→                            fontFamily: "'Syne', sans-serif",
+   417→   417→                            fontWeight: 700,
+   418→   418→                            fontSize: 13,
+   419→   419→                            color: '#fff',
+   420→   420→                          }}
+   421→   421→                        >
+   422→   422→                          {t.logoIniciales}
+   423→   423→                        </span>
+   424→   424→                      </div>
+   425→   425→                      <div style={{ flex: 1, minWidth: 0 }}>
+   426→   426→                        <div
+   427→   427→                          style={{
+   428→   428→                            fontSize: 14,
+   429→   429→                            fontWeight: 600,
+   430→   430→                            color: 'var(--text)',
+   431→   431→                            fontFamily: "'DM Sans', sans-serif",
+   432→   432→                          }}
+   433→   433→                        >
+   434→   434→                          {t.nombre}
+   435→   435→                        </div>
+   436→   436→                        <div
+   437→   437→                          style={{
+   438→   438→                            fontSize: 12,
+   439→   439→                            color: 'var(--text-muted)',
+   440→   440→                            fontFamily: "'DM Sans', sans-serif",
+   441→   441→                          }}
+   442→   442→                        >
+   443→   443→                          {categoriaLabel(t.categoria)}
+   444→   444→                        </div>
+   445→   445→                      </div>
+   446→   446→                    </button>
+   447→   447→                  ))}
+   448→   448→                </div>
+   449→   449→              )}
+   450→   450→
+   451→   451→              {/* Productos section */}
+   452→   452→              {searchResults.productos.length > 0 && (
+   453→   453→                <div style={{ padding: '6px 14px 12px 14px' }}>
+   454→   454→                  <div
+   455→   455→                    style={{
+   456→   456→                      fontSize: 11,
+   457→   457→                      fontWeight: 700,
+   458→   458→                      fontFamily: "'JetBrains Mono', monospace",
+   459→   459→                      textTransform: 'uppercase',
+   460→   460→                      color: 'var(--text-muted)',
+   461→   461→                      letterSpacing: 0.5,
+   462→   462→                      marginBottom: 6,
+   463→   463→                    }}
+   464→   464→                  >
+   465→   465→                    Productos
+   466→   466→                  </div>
+   467→   467→                  {searchResults.productos.map((p) => {
+   468→   468→                    const tienda = tiendas.find((t) => t.id === p.tiendaId);
+   469→   469→                    return (
+   470→   470→                      <button
+   471→   471→                        key={p.id}
+   472→   472→                        onMouseDown={() => {
+   473→   473→                          if (tienda) handleTiendaClick(tienda.id);
+   474→   474→                        }}
+   475→   475→                        style={{
+   476→   476→                          display: 'flex',
+   477→   477→                          alignItems: 'center',
+   478→   478→                          gap: 10,
+   479→   479→                          width: '100%',
+   480→   480→                          padding: '8px 6px',
+   481→   481→                          background: 'none',
+   482→   482→                          border: 'none',
+   483→   483→                          cursor: 'pointer',
+   484→   484→                          borderRadius: 10,
+   485→   485→                          textAlign: 'left',
+   486→   486→                        }}
+   487→   487→                      >
+   488→   488→                        <div
+   489→   489→                          style={{
+   490→   490→                            width: 36,
+   491→   491→                            height: 36,
+   492→   492→                            borderRadius: 10,
+   493→   493→                            background: p.imagenColor,
+   494→   494→                            display: 'flex',
+   495→   495→                            alignItems: 'center',
+   496→   496→                            justifyContent: 'center',
+   497→   497→                            flexShrink: 0,
+   498→   498→                          }}
+   499→   499→                        >
+   500→   500→                          <ShoppingBag size={14} style={{ color: '#fff' }} />
+   501→   501→                        </div>
+   502→   502→                        <div style={{ flex: 1, minWidth: 0 }}>
+   503→   503→                          <div
+   504→   504→                            style={{
+   505→   505→                              fontSize: 14,
+   506→   506→                              fontWeight: 600,
+   507→   507→                              color: 'var(--text)',
+   508→   508→                              fontFamily: "'DM Sans', sans-serif",
+   509→   509→                            }}
+   510→   510→                          >
+   511→   511→                            {p.nombre}
+   512→   512→                          </div>
+   513→   513→                          <div
+   514→   514→                            style={{
+   515→   515→                              fontSize: 12,
+   516→   516→                              color: 'var(--text-muted)',
+   517→   517→                              fontFamily: "'DM Sans', sans-serif",
+   518→   518→                            }}
+   519→   519→                          >
+   520→   520→                            {tienda?.nombre} · C${p.precio}
+   521→   521→                          </div>
+   522→   522→                        </div>
+   523→   523→                      </button>
+   524→   524→                    );
+   525→   525→                  })}
+   526→   526→                </div>
+   527→   527→              )}
+   528→   528→
+   529→   529→              {searchResults.tiendas.length === 0 && searchResults.productos.length === 0 && (
+   530→   530→                <div
+   531→   531→                  style={{
+   532→   532→                    padding: 24,
+   533→   533→                    textAlign: 'center',
+   534→   534→                    fontSize: 14,
+   535→   535→                    color: 'var(--text-muted)',
+   536→   536→                    fontFamily: "'DM Sans', sans-serif",
+   537→   537→                  }}
+   538→   538→                >
+   539→   539→                  No se encontraron resultados
+   540→   540→                </div>
+   541→   541→              )}
+   542→   542→            </motion.div>
+   543→   543→          )}
+   544→   544→        </AnimatePresence>
+   545→   545→      </div>
+   546→   546→
+   547→   547→      {/* ─── CATEGORY PILLS ─── */}
+   548→   548→      <div
+   549→   549→        style={{
+   550→   550→          display: 'flex',
+   551→   551→          gap: 8,
+   552→   552→          overflowX: 'auto',
+   553→   553→          paddingBottom: 4,
+   554→   554→          marginBottom: 12,
+   555→   555→          scrollbarWidth: 'none',
+   556→   556→        }}
+   557→   557→      >
+   558→   558→        <button
+   559→   559→          onClick={() => setExplorarCategoria('todos')}
+   560→   560→          style={{
+   561→   561→            display: 'flex',
+   562→   562→            alignItems: 'center',
+   563→   563→            gap: 4,
+   564→   564→            padding: '8px 14px',
+   565→   565→            borderRadius: 20,
+   566→   566→            border: 'none',
+   567→   567→            cursor: 'pointer',
+   568→   568→            whiteSpace: 'nowrap',
+   569→   569→            fontSize: 13,
+   570→   570→            fontWeight: 600,
+   571→   571→            fontFamily: "'DM Sans', sans-serif",
+   572→   572→            background: explorarCategoria === 'todos' ? 'var(--primario)' : 'transparent',
+   573→   573→            color: explorarCategoria === 'todos' ? '#fff' : 'var(--text-muted)',
+   574→   574→            border: `1.5px solid ${explorarCategoria === 'todos' ? 'var(--primario)' : 'var(--border)'}`,
+   575→   575→            transition: 'all 0.2s',
+   576→   576→          }}
+   577→   577→        >
+   578→   578→          Todos
+   579→   579→        </button>
+   580→   580→        {CATEGORIAS.map((cat) => {
+   581→   581→          const isActive = explorarCategoria === cat.key;
+   582→   582→          return (
+   583→   583→            <button
+   584→   584→              key={cat.key}
+   585→   585→              onClick={() => setExplorarCategoria(cat.key)}
+   586→   586→              style={{
+   587→   587→                display: 'flex',
+   588→   588→                alignItems: 'center',
+   589→   589→                gap: 4,
+   590→   590→                padding: '8px 14px',
+   591→   591→                borderRadius: 20,
+   592→   592→                border: 'none',
+   593→   593→                cursor: 'pointer',
+   594→   594→                whiteSpace: 'nowrap',
+   595→   595→                fontSize: 13,
+   596→   596→                fontWeight: 600,
+   597→   597→                fontFamily: "'DM Sans', sans-serif",
+   598→   598→                background: isActive ? 'var(--primario)' : 'transparent',
+   599→   599→                color: isActive ? '#fff' : 'var(--text-muted)',
+   600→   600→                border: `1.5px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+   601→   601→                transition: 'all 0.2s',
+   602→   602→              }}
+   603→   603→            >
+   604→   604→              <CategoryIcon name={cat.icon} size={18} /> {cat.label}
+   605→   605→            </button>
+   606→   606→          );
+   607→   607→        })}
+   608→   608→      </div>
+   609→   609→
+   610→   610→      {/* ─── SECONDARY FILTERS ─── */}
+   611→   611→      <div
+   612→   612→        style={{
+   613→   613→          display: 'flex',
+   614→   614→          gap: 8,
+   615→   615→          overflowX: 'auto',
+   616→   616→          paddingBottom: 4,
+   617→   617→          marginBottom: 20,
+   618→   618→          scrollbarWidth: 'none',
+   619→   619→        }}
+   620→   620→      >
+   621→   621→        {FILTROS_SECUNDARIOS.map((f) => {
+   622→   622→          const isActive = explorarFiltros.includes(f.key);
+   623→   623→          const IconComp = f.icon;
+   624→   624→          return (
+   625→   625→            <button
+   626→   626→              key={f.key}
+   627→   627→              onClick={() => toggleExplorarFiltro(f.key)}
+   628→   628→              style={{
+   629→   629→                display: 'flex',
+   630→   630→                alignItems: 'center',
+   631→   631→                gap: 4,
+   632→   632→                padding: '6px 12px',
+   633→   633→                borderRadius: 16,
+   634→   634→                border: 'none',
+   635→   635→                cursor: 'pointer',
+   636→   636→                whiteSpace: 'nowrap',
+   637→   637→                fontSize: 12,
+   638→   638→                fontWeight: 600,
+   639→   639→                fontFamily: "'DM Sans', sans-serif",
+   640→   640→                background: isActive ? 'var(--primario-soft, rgba(255,87,34,0.1))' : 'transparent',
+   641→   641→                color: isActive ? 'var(--primario)' : 'var(--text-muted)',
+   642→   642→                border: `1px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+   643→   643→                transition: 'all 0.2s',
+   644→   644→              }}
+   645→   645→            >
+   646→   646→              <IconComp size={13} />
+   647→   647→              {f.label}
+   648→   648→            </button>
+   649→   649→          );
+   650→   650→        })}
+   651→   651→      </div>
+   652→   652→
+   653→   653→      {/* ─── RESULTS COUNT ─── */}
+   654→   654→      <div
+   655→   655→        style={{
+   656→   656→          fontSize: 13,
+   657→   657→          color: 'var(--text-muted)',
+   658→   658→          fontFamily: "'DM Sans', sans-serif",
+   659→   659→          marginBottom: 14,
+   660→   660→          display: 'flex',
+   661→   661→          alignItems: 'center',
+   662→   662→          justifyContent: 'space-between',
+   663→   663→        }}
+   664→   664→      >
+   665→   665→        <span>
+   666→   666→          {filteredTiendas.length} {filteredTiendas.length === 1 ? 'tienda' : 'tiendas'}
+   667→   667→        </span>
+   668→   668→        {explorarFiltros.length > 0 && (
+   669→   669→          <button
+   670→   670→            onClick={() => explorarFiltros.forEach((f) => toggleExplorarFiltro(f))}
+   671→   671→            style={{
+   672→   672→              fontSize: 12,
+   673→   673→              color: 'var(--primario)',
+   674→   674→              background: 'none',
+   675→   675→              border: 'none',
+   676→   676→              cursor: 'pointer',
+   677→   677→              fontFamily: "'DM Sans', sans-serif",
+   678→   678→              fontWeight: 600,
+   679→   679→            }}
+   680→   680→          >
+   681→   681→            Limpiar filtros
+   682→   682→          </button>
+   683→   683→        )}
+   684→   684→      </div>
+   685→   685→
+   686→   686→      {/* ─── STORE LIST ─── */}
+   687→   687→      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+   688→   688→        <AnimatePresence mode="popLayout">
+   689→   689→          {filteredTiendas.map((tienda, idx) => {
+   690→   690→            const isFav = isFavoritoTienda(tienda.id);
+   691→   691→
+   692→   692→            return (
+   693→   693→              <motion.div
+   694→   694→                key={tienda.id}
+   695→   695→                custom={idx}
+   696→   696→                variants={fadeUp}
+   697→   697→                initial="hidden"
+   698→   698→                animate="visible"
+   699→   699→                exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
+   700→   700→                layout
+   701→   701→                onClick={() => handleTiendaClick(tienda.id)}
+   702→   702→                style={{
+   703→   703→                  display: 'flex',
+   704→   704→                  gap: 14,
+   705→   705→                  padding: 16,
+   706→   706→                  background: 'var(--surface)',
+   707→   707→                  borderRadius: 16,
+   708→   708→                  border: '1px solid var(--border)',
+   709→   709→                  cursor: 'pointer',
+   710→   710→                }}
+   711→   711→              >
+   712→   712→                {/* Left: Logo square 80x80 */}
+   713→   713→                <div
+   714→   714→                  style={{
+   715→   715→                    width: 80,
+   716→   716→                    height: 80,
+   717→   717→                    borderRadius: 14,
+   718→   718→                    background: tienda.logoColor,
+   719→   719→                    display: 'flex',
+   720→   720→                    alignItems: 'center',
+   721→   721→                    justifyContent: 'center',
+   722→   722→                    flexShrink: 0,
+   723→   723→                  }}
+   724→   724→                >
+   725→   725→                  <span
+   726→   726→                    style={{
+   727→   727→                      fontFamily: "'Syne', sans-serif",
+   728→   728→                      fontWeight: 700,
+   729→   729→                      fontSize: 20,
+   730→   730→                      color: '#fff',
+   731→   731→                    }}
+   732→   732→                  >
+   733→   733→                    {tienda.logoIniciales}
+   734→   734→                  </span>
+   735→   735→                </div>
+   736→   736→
+   737→   737→                {/* Center: Info */}
+   738→   738→                <div style={{ flex: 1, minWidth: 0 }}>
+   739→   739→                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+   740→   740→                    <span
+   741→   741→                      style={{
+   742→   742→                        fontSize: 16,
+   743→   743→                        fontWeight: 600,
+   744→   744→                        color: 'var(--text)',
+   745→   745→                        fontFamily: "'DM Sans', sans-serif",
+   746→   746→                      }}
+   747→   747→                    >
+   748→   748→                      {tienda.nombre}
+   749→   749→                    </span>
+   750→   750→                    {tienda.verificado && (
+   751→   751→                      <Check size={14} style={{ color: 'var(--info)' }} />
+   752→   752→                    )}
+   753→   753→                    {tienda.badges.map((b) => (
+   754→   754→                      <span key={b} style={badgeStyleFor(b)}>
+   755→   755→                        {b}
+   756→   756→                      </span>
+   757→   757→                    ))}
+   758→   758→                  </div>
+   759→   759→                  <div
+   760→   760→                    style={{
+   761→   761→                      fontSize: 13,
+   762→   762→                      color: 'var(--text-muted)',
+   763→   763→                      marginTop: 2,
+   764→   764→                      fontFamily: "'DM Sans', sans-serif",
+   765→   765→                      display: 'flex',
+   766→   766→                      alignItems: 'center',
+   767→   767→                      gap: 4,
+   768→   768→                    }}
+   769→   769→                  >
+   770→   770→                    {categoriaLabel(tienda.categoria)} ·{' '}
+   771→   771→                    <Star
+   772→   772→                      size={11}
+   773→   773→                      style={{ color: '#FF9800', display: 'inline', verticalAlign: 'middle' }}
+   774→   774→                    />{' '}
+   775→   775→                    {tienda.calificacion} · {tienda.totalPedidos} pedidos
+   776→   776→                  </div>
+   777→   777→                  <div
+   778→   778→                    style={{
+   779→   779→                      fontSize: 12,
+   780→   780→                      color: 'var(--text-muted)',
+   781→   781→                      marginTop: 4,
+   782→   782→                      display: 'flex',
+   783→   783→                      alignItems: 'center',
+   784→   784→                      gap: 8,
+   785→   785→                      fontFamily: "'DM Sans', sans-serif",
+   786→   786→                      flexWrap: 'wrap',
+   787→   787→                    }}
+   788→   788→                  >
+   789→   789→                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+   790→   790→                      <Clock size={11} /> {tienda.tiempoEstimado}
+   791→   791→                    </span>
+   792→   792→                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+   793→   793→                      <Truck size={11} /> C${tienda.costoEnvio}
+   794→   794→                    </span>
+   795→   795→                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+   796→   796→                      Min. C${tienda.pedidoMinimo}
+   797→   797→                    </span>
+   798→   798→                  </div>
+   799→   799→                </div>
+   800→   800→
+   801→   801→                {/* Right: Heart */}
+   802→   802→                <button
+   803→   803→                  onClick={(e) => {
+   804→   804→                    e.stopPropagation();
+   805→   805→                    toggleFavoritoTienda(tienda.id);
+   806→   806→                  }}
+   807→   807→                  style={{
+   808→   808→                    background: 'none',
+   809→   809→                    border: 'none',
+   810→   810→                    cursor: 'pointer',
+   811→   811→                    color: isFav ? 'var(--peligro)' : 'var(--text-muted)',
+   812→   812→                    padding: 4,
+   813→   813→                    alignSelf: 'flex-start',
+   814→   814→                  }}
+   815→   815→                >
+   816→   816→                  <Heart size={20} fill={isFav ? 'var(--peligro)' : 'none'} />
+   817→   817→                </button>
+   818→   818→              </motion.div>
+   819→   819→            );
+   820→   820→          })}
+   821→   821→        </AnimatePresence>
+   822→   822→      </div>
+   823→   823→
+   824→   824→      {/* ─── EMPTY STATE ─── */}
+   825→   825→      {filteredTiendas.length === 0 && (
+   826→   826→        <motion.div
+   827→   827→          initial={{ opacity: 0, y: 10 }}
+   828→   828→          animate={{ opacity: 1, y: 0 }}
+   829→   829→          style={{
+   830→   830→            textAlign: 'center',
+   831→   831→            padding: '48px 20px',
+   832→   832→          }}
+   833→   833→        >
+   834→   834→          <div
+   835→   835→            style={{
+   836→   836→              width: 64,
+   837→   837→              height: 64,
+   838→   838→              borderRadius: 20,
+   839→   839→              background: 'var(--bg-alt)',
+   840→   840→              display: 'flex',
+   841→   841→              alignItems: 'center',
+   842→   842→              justifyContent: 'center',
+   843→   843→              margin: '0 auto 16px auto',
+   844→   844→            }}
+   845→   845→          >
+   846→   846→            <Search size={28} style={{ color: 'var(--text-muted)' }} />
+   847→   847→          </div>
+   848→   848→          <div
+   849→   849→            style={{
+   850→   850→              fontSize: 16,
+   851→   851→              fontWeight: 600,
+   852→   852→              color: 'var(--text)',
+   853→   853→              fontFamily: "'DM Sans', sans-serif",
+   854→   854→              marginBottom: 6,
+   855→   855→            }}
+   856→   856→          >
+   857→   857→            No hay tiendas disponibles
+   858→   858→          </div>
+   859→   859→          <div
+   860→   860→            style={{
+   861→   861→              fontSize: 14,
+   862→   862→              color: 'var(--text-muted)',
+   863→   863→              fontFamily: "'DM Sans', sans-serif",
+   864→   864→            }}
+   865→   865→          >
+   866→   866→            Intenta cambiar los filtros o buscar algo diferente
+   867→   867→          </div>
+   868→   868→        </motion.div>
+   869→   869→      )}
+   870→   870→    </div>
+   871→   871→  );
+   872→   872→}
+   873→   873→

@@ -1,0 +1,2002 @@
+     1→@import "tailwindcss";
+     2→@import "tw-animate-css";
+     3→
+     4→/* ========================================
+     5→   LOGIFAST 2.0 — Complete Rebrand Design System
+     6→   ======================================== */
+     7→
+     8→:root {
+     9→  /* ─── MODO CLARO ─── */
+    10→  --bg: #FAF8F5;
+    11→  --bg-alt: #F2EDE8;
+    12→  --surface: #FFFFFF;
+    13→  --surface-elevated: #FFFFFF;
+    14→  --text: #1B1B2F;
+    15→  --text-secondary: #5A5A72;
+    16→  --text-muted: #8E8EA0;
+    17→  --border: #E8E4DE;
+    18→  --primario: #FF5722;
+    19→  --primario-hover: #E64A19;
+    20→  --primario-soft: rgba(255, 87, 34, 0.05);
+    21→  --secundario: #1B1B2F;
+    22→  --secundario-soft: rgba(27, 27, 47, 0.03);
+    23→  --exito: #00C853;
+    24→  --warning: #FFB300;
+    25→  --peligro: #FF1744;
+    26→  --info: #2979FF;
+    27→
+    28→  /* Shadows */
+    29→  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    30→  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+    31→  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
+    32→  --shadow-xl: 0 16px 50px rgba(0,0,0,0.12);
+    33→  --shadow-primario: 0 8px 30px rgba(255, 87, 34, 0.3);
+    34→
+    35→  /* Navbar */
+    36→  --nav-bg: transparent;
+    37→  --nav-blur: 0;
+    38→
+    39→  /* Grain */
+    40→  --grain-opacity: 0.025;
+    41→
+    42→  /* ─── Mobile 2026 Tokens ─── */
+    43→  --lf-sheet-radius: 28px;
+    44→  --lf-card-radius: 22px;
+    45→  --lf-pill-radius: 100px;
+    46→  --lf-input-radius: 16px;
+    47→  --lf-button-radius: 16px;
+    48→  --lf-fab-size: 60px;
+    49→  --lf-bottom-nav-height: 72px;
+    50→  --lf-safe-bottom: env(safe-area-inset-bottom, 0px);
+    51→  --lf-sheet-snap-1: 30vh;
+    52→  --lf-sheet-snap-2: 60vh;
+    53→  --lf-sheet-snap-3: 92vh;
+    54→
+    55→  /* Glassmorphism */
+    56→  --lf-glass-bg: rgba(255,255,255,0.72);
+    57→  --lf-glass-border: rgba(255,255,255,0.18);
+    58→  --lf-glass-blur: 24px;
+    59→
+    60→  /* Shadow mobile */
+    61→  --lf-shadow-card: 0 2px 12px rgba(0,0,0,0.06);
+    62→  --lf-shadow-float: 0 8px 32px rgba(0,0,0,0.12);
+    63→  --lf-shadow-sheet: 0 -12px 48px rgba(0,0,0,0.18);
+    64→  --lf-shadow-fab: 0 6px 24px rgba(255,87,34,0.35);
+    65→
+    66→  /* Keep shadcn compatibility */
+    67→  --radius: 0.75rem;
+    68→  --background: #FAF8F5;
+    69→  --foreground: #1B1B2F;
+    70→  --card: #FFFFFF;
+    71→  --card-foreground: #1B1B2F;
+    72→  --popover: #FFFFFF;
+    73→  --popover-foreground: #1B1B2F;
+    74→  --primary: #FF5722;
+    75→  --primary-foreground: #FFFFFF;
+    76→  --secondary: #F2EDE8;
+    77→  --secondary-foreground: #1B1B2F;
+    78→  --muted: #F2EDE8;
+    79→  --muted-foreground: #8E8EA0;
+    80→  --accent: #FF5722;
+    81→  --accent-foreground: #FFFFFF;
+    82→  --destructive: #FF1744;
+    83→  --border-shadcn: #E8E4DE;
+    84→  --input: #E8E4DE;
+    85→  --ring: #FF5722;
+    86→}
+    87→
+    88→[data-theme="dark"] {
+    89→  /* ─── MODO OSCURO ─── */
+    90→  --bg: #0A0A0F;
+    91→  --bg-alt: #12121A;
+    92→  --surface: #1A1A24;
+    93→  --surface-elevated: #22222E;
+    94→  --text: #F0EDE8;
+    95→  --text-secondary: #A8A8BE;
+    96→  --text-muted: #6B6B80;
+    97→  --border: #2A2A38;
+    98→  --primario: #FF6E40;
+    99→  --primario-hover: #FF8A65;
+   100→  --primario-soft: rgba(255, 110, 64, 0.07);
+   101→  --secundario: #E0DDD7;
+   102→  --secundario-soft: rgba(224, 221, 215, 0.03);
+   103→  --exito: #69F0AE;
+   104→  --warning: #FFD740;
+   105→  --peligro: #FF5252;
+   106→  --info: #448AFF;
+   107→
+   108→  /* Shadows */
+   109→  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+   110→  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+   111→  --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+   112→  --shadow-xl: 0 16px 50px rgba(0,0,0,0.5);
+   113→  --shadow-primario: 0 8px 30px rgba(255, 110, 64, 0.2);
+   114→
+   115→  /* Navbar */
+   116→  --nav-bg: transparent;
+   117→
+   118→  /* ─── Mobile 2026 Tokens (Dark) ─── */
+   119→  --lf-glass-bg: rgba(10,10,15,0.82);
+   120→  --lf-glass-border: rgba(255,255,255,0.08);
+   121→  --lf-glass-blur: 24px;
+   122→
+   123→  --lf-shadow-card: 0 2px 12px rgba(0,0,0,0.2);
+   124→  --lf-shadow-float: 0 8px 32px rgba(0,0,0,0.35);
+   125→  --lf-shadow-sheet: 0 -12px 48px rgba(0,0,0,0.5);
+   126→  --lf-shadow-fab: 0 6px 24px rgba(255,110,64,0.25);
+   127→
+   128→  /* Grain */
+   129→  --grain-opacity: 0.03;
+   130→
+   131→  /* shadcn dark */
+   132→  --background: #0A0A0F;
+   133→  --foreground: #F0EDE8;
+   134→  --card: #1A1A24;
+   135→  --card-foreground: #F0EDE8;
+   136→  --popover: #1A1A24;
+   137→  --popover-foreground: #F0EDE8;
+   138→  --primary: #FF6E40;
+   139→  --primary-foreground: #FFFFFF;
+   140→  --secondary: #12121A;
+   141→  --secondary-foreground: #F0EDE8;
+   142→  --muted: #12121A;
+   143→  --muted-foreground: #6B6B80;
+   144→  --accent: #FF6E40;
+   145→  --accent-foreground: #FFFFFF;
+   146→  --destructive: #FF5252;
+   147→  --border-shadcn: #2A2A38;
+   148→  --input: #2A2A38;
+   149→  --ring: #FF6E40;
+   150→}
+   151→
+   152→/* ========================================
+   153→   Base Styles
+   154→   ======================================== */
+   155→
+   156→* {
+   157→  margin: 0;
+   158→  padding: 0;
+   159→  box-sizing: border-box;
+   160→}
+   161→
+   162→html {
+   163→  scroll-behavior: smooth;
+   164→}
+   165→
+   166→body {
+   167→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   168→  background-color: var(--bg);
+   169→  color: var(--text);
+   170→  transition: background-color 0.4s ease, color 0.3s ease;
+   171→  overflow-x: hidden;
+   172→  line-height: 1.6;
+   173→  -webkit-font-smoothing: antialiased;
+   174→  -moz-osx-font-smoothing: grayscale;
+   175→}
+   176→
+   177→/* ========================================
+   178→   Typography Helpers
+   179→   ======================================== */
+   180→
+   181→.font-syne {
+   182→  font-family: 'Syne', var(--font-syne), sans-serif;
+   183→}
+   184→
+   185→.font-mono {
+   186→  font-family: 'JetBrains Mono', var(--font-jetbrains), monospace;
+   187→}
+   188→
+   189→.font-body {
+   190→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   191→}
+   192→
+   193→/* ========================================
+   194→   Noise / Grain Overlay
+   195→   ======================================== */
+   196→
+   197→.grain-overlay::before {
+   198→  content: '';
+   199→  position: fixed;
+   200→  top: 0;
+   201→  left: 0;
+   202→  width: 100%;
+   203→  height: 100%;
+   204→  pointer-events: none;
+   205→  z-index: 9999;
+   206→  opacity: var(--grain-opacity);
+   207→  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+   208→  background-repeat: repeat;
+   209→  background-size: 200px 200px;
+   210→}
+   211→
+   212→/* ========================================
+   213→   NEW LOGO — LOGIFAST 2.0
+   214→   ======================================== */
+   215→
+   216→.lf-logo {
+   217→  display: flex;
+   218→  align-items: center;
+   219→  gap: 12px;
+   220→  text-decoration: none;
+   221→  cursor: pointer;
+   222→}
+   223→
+   224→.lf-logo-icon {
+   225→  width: 36px;
+   226→  height: 36px;
+   227→  border-radius: 12px;
+   228→  background: linear-gradient(135deg, #FF5722, #FF7043);
+   229→  display: flex;
+   230→  align-items: center;
+   231→  justify-content: center;
+   232→  position: relative;
+   233→  overflow: hidden;
+   234→  flex-shrink: 0;
+   235→}
+   236→
+   237→.lf-logo-icon-text {
+   238→  font-family: 'Syne', var(--font-syne), sans-serif;
+   239→  font-weight: 700;
+   240→  font-size: 14px;
+   241→  color: white;
+   242→  letter-spacing: -0.02em;
+   243→  position: relative;
+   244→  z-index: 2;
+   245→}
+   246→
+   247→.lf-logo-icon::before {
+   248→  content: '';
+   249→  position: absolute;
+   250→  bottom: 0;
+   251→  left: 0;
+   252→  width: 100%;
+   253→  height: 100%;
+   254→  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+   255→  z-index: 1;
+   256→}
+   257→
+   258→.lf-logo-icon-line {
+   259→  position: absolute;
+   260→  bottom: 4px;
+   261→  left: 4px;
+   262→  width: calc(100% - 8px);
+   263→  height: 1px;
+   264→  background: rgba(255,255,255,0.3);
+   265→  transform: rotate(-45deg);
+   266→  transform-origin: bottom left;
+   267→  z-index: 3;
+   268→}
+   269→
+   270→.lf-logo-wordmark {
+   271→  display: flex;
+   272→  align-items: baseline;
+   273→  font-family: 'Syne', var(--font-syne), sans-serif;
+   274→  font-size: 20px;
+   275→  letter-spacing: -0.02em;
+   276→}
+   277→
+   278→.lf-logo-logi {
+   279→  font-weight: 400;
+   280→  color: var(--text);
+   281→}
+   282→
+   283→.lf-logo-fast {
+   284→  font-weight: 700;
+   285→  color: var(--primario);
+   286→  position: relative;
+   287→}
+   288→
+   289→/* Custom "A" with speed line — done via CSS */
+   290→.lf-logo-fast-a {
+   291→  position: relative;
+   292→  display: inline-block;
+   293→}
+   294→
+   295→.lf-logo-fast-a::after {
+   296→  content: '';
+   297→  position: absolute;
+   298→  bottom: 2px;
+   299→  right: -8px;
+   300→  width: 12px;
+   301→  height: 2px;
+   302→  background: var(--primario);
+   303→  border-radius: 1px;
+   304→  transform: rotate(-5deg);
+   305→}
+   306→
+   307→/* Logo — large version for auth screens */
+   308→.lf-logo-lg .lf-logo-icon {
+   309→  width: 56px;
+   310→  height: 56px;
+   311→  border-radius: 14px;
+   312→}
+   313→
+   314→.lf-logo-lg .lf-logo-icon-text {
+   315→  font-size: 20px;
+   316→}
+   317→
+   318→.lf-logo-lg .lf-logo-wordmark {
+   319→  font-size: 28px;
+   320→}
+   321→
+   322→.lf-logo-lg .lf-logo-fast-a::after {
+   323→  width: 16px;
+   324→  height: 2.5px;
+   325→  bottom: 4px;
+   326→  right: -10px;
+   327→}
+   328→
+   329→.lf-tagline {
+   330→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   331→  font-size: 11px;
+   332→  font-weight: 400;
+   333→  letter-spacing: 0.2em;
+   334→  color: var(--text-muted);
+   335→  text-transform: none;
+   336→}
+   337→
+   338→/* ========================================
+   339→   NAVBAR 2.0
+   340→   ======================================== */
+   341→
+   342→.lf-navbar {
+   343→  position: fixed;
+   344→  top: 0;
+   345→  left: 0;
+   346→  right: 0;
+   347→  z-index: 1000;
+   348→  height: 72px;
+   349→  padding: 0 clamp(24px, 5vw, 80px);
+   350→  display: flex;
+   351→  align-items: center;
+   352→  justify-content: space-between;
+   353→  background: var(--nav-bg);
+   354→  backdrop-filter: blur(0px);
+   355→  -webkit-backdrop-filter: blur(0px);
+   356→  transition: all 0.35s ease;
+   357→  border-bottom: 1px solid transparent;
+   358→}
+   359→
+   360→.lf-navbar.scrolled {
+   361→  background: color-mix(in srgb, var(--surface) 80%, transparent);
+   362→  backdrop-filter: blur(20px);
+   363→  -webkit-backdrop-filter: blur(20px);
+   364→  border-bottom: 1px solid var(--border);
+   365→  box-shadow: var(--shadow-sm);
+   366→}
+   367→
+   368→.lf-nav-links {
+   369→  display: flex;
+   370→  align-items: center;
+   371→  gap: 36px;
+   372→  list-style: none;
+   373→}
+   374→
+   375→.lf-nav-links a {
+   376→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   377→  font-size: 14px;
+   378→  font-weight: 500;
+   379→  color: var(--text-secondary);
+   380→  text-decoration: none;
+   381→  position: relative;
+   382→  padding-bottom: 2px;
+   383→  transition: color 0.3s;
+   384→}
+   385→
+   386→.lf-nav-links a::after {
+   387→  content: '';
+   388→  position: absolute;
+   389→  bottom: -2px;
+   390→  left: 0;
+   391→  width: 0;
+   392→  height: 1.5px;
+   393→  background: var(--primario);
+   394→  transition: width 0.3s ease;
+   395→}
+   396→
+   397→.lf-nav-links a:hover {
+   398→  color: var(--primario);
+   399→}
+   400→
+   401→.lf-nav-links a:hover::after {
+   402→  width: 100%;
+   403→}
+   404→
+   405→.lf-nav-actions {
+   406→  display: flex;
+   407→  align-items: center;
+   408→  gap: 10px;
+   409→}
+   410→
+   411→.lf-theme-toggle {
+   412→  width: 40px;
+   413→  height: 40px;
+   414→  border-radius: 50%;
+   415→  border: 1px solid var(--border);
+   416→  background: var(--surface);
+   417→  cursor: pointer;
+   418→  display: flex;
+   419→  align-items: center;
+   420→  justify-content: center;
+   421→  transition: all 0.3s;
+   422→  color: var(--text);
+   423→  flex-shrink: 0;
+   424→}
+   425→
+   426→.lf-theme-toggle:hover {
+   427→  border-color: var(--primario);
+   428→  color: var(--primario);
+   429→}
+   430→
+   431→.lf-theme-toggle svg {
+   432→  transition: transform 0.3s ease;
+   433→}
+   434→
+   435→.lf-theme-toggle:active svg {
+   436→  transform: rotate(90deg);
+   437→}
+   438→
+   439→.lf-btn-ghost {
+   440→  display: inline-flex;
+   441→  align-items: center;
+   442→  gap: 8px;
+   443→  padding: 10px 24px;
+   444→  background: transparent;
+   445→  color: var(--text);
+   446→  border: 1.5px solid var(--border);
+   447→  border-radius: 100px;
+   448→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   449→  font-size: 14px;
+   450→  font-weight: 500;
+   451→  cursor: pointer;
+   452→  transition: all 0.3s;
+   453→}
+   454→
+   455→.lf-btn-ghost:hover {
+   456→  border-color: var(--primario);
+   457→  color: var(--primario);
+   458→}
+   459→
+   460→.lf-btn-primario {
+   461→  display: inline-flex;
+   462→  align-items: center;
+   463→  justify-content: center;
+   464→  gap: 8px;
+   465→  padding: 10px 24px;
+   466→  background: var(--primario);
+   467→  color: white;
+   468→  border: none;
+   469→  border-radius: 100px;
+   470→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   471→  font-size: 14px;
+   472→  font-weight: 600;
+   473→  cursor: pointer;
+   474→  transition: all 0.3s;
+   475→  position: relative;
+   476→  overflow: hidden;
+   477→}
+   478→
+   479→.lf-btn-primario::before {
+   480→  content: '';
+   481→  position: absolute;
+   482→  top: 0;
+   483→  left: -100%;
+   484→  width: 100%;
+   485→  height: 100%;
+   486→  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+   487→  transition: left 0.5s;
+   488→}
+   489→
+   490→.lf-btn-primario:hover::before {
+   491→  left: 100%;
+   492→}
+   493→
+   494→.lf-btn-primario:hover {
+   495→  background: var(--primario-hover);
+   496→  transform: translateY(-1px);
+   497→  box-shadow: var(--shadow-primario);
+   498→}
+   499→
+   500→/* Hamburger */
+   501→.lf-hamburger {
+   502→  display: none;
+   503→  width: 40px;
+   504→  height: 40px;
+   505→  border: none;
+   506→  background: transparent;
+   507→  cursor: pointer;
+   508→  flex-direction: column;
+   509→  align-items: center;
+   510→  justify-content: center;
+   511→  gap: 5px;
+   512→}
+   513→
+   514→.lf-hamburger span {
+   515→  display: block;
+   516→  width: 22px;
+   517→  height: 2px;
+   518→  background: var(--text);
+   519→  border-radius: 2px;
+   520→  transition: all 0.3s;
+   521→}
+   522→
+   523→.lf-hamburger.open span:nth-child(1) {
+   524→  transform: rotate(45deg) translate(5px, 5px);
+   525→}
+   526→
+   527→.lf-hamburger.open span:nth-child(2) {
+   528→  opacity: 0;
+   529→}
+   530→
+   531→.lf-hamburger.open span:nth-child(3) {
+   532→  transform: rotate(-45deg) translate(5px, -5px);
+   533→}
+   534→
+   535→/* Mobile nav overlay */
+   536→.lf-mobile-nav {
+   537→  display: none;
+   538→  position: fixed;
+   539→  top: 0;
+   540→  left: 0;
+   541→  right: 0;
+   542→  bottom: 0;
+   543→  background: var(--surface);
+   544→  z-index: 999;
+   545→  padding: 100px clamp(24px, 5vw, 48px) 32px;
+   546→  flex-direction: column;
+   547→  gap: 20px;
+   548→  opacity: 0;
+   549→  transform: translateY(-20px);
+   550→  transition: all 0.35s ease;
+   551→}
+   552→
+   553→.lf-mobile-nav.open {
+   554→  display: flex;
+   555→  opacity: 1;
+   556→  transform: translateY(0);
+   557→}
+   558→
+   559→.lf-mobile-nav a {
+   560→  font-family: 'Syne', var(--font-syne), sans-serif;
+   561→  font-size: 28px;
+   562→  font-weight: 600;
+   563→  color: var(--text);
+   564→  text-decoration: none;
+   565→  padding: 12px 0;
+   566→  border-bottom: 1px solid var(--border);
+   567→  transition: color 0.2s;
+   568→}
+   569→
+   570→.lf-mobile-nav a:hover {
+   571→  color: var(--primario);
+   572→}
+   573→
+   574→/* ========================================
+   575→   HERO 2.0 — Editorial Layout
+   576→   ======================================== */
+   577→
+   578→.lf-hero {
+   579→  min-height: 100vh;
+   580→  padding: 120px clamp(24px, 5vw, 80px) 0;
+   581→  position: relative;
+   582→  overflow: hidden;
+   583→  display: flex;
+   584→  flex-direction: column;
+   585→}
+   586→
+   587→.lf-hero::before {
+   588→  content: '';
+   589→  position: absolute;
+   590→  bottom: -20%;
+   591→  right: -10%;
+   592→  width: 800px;
+   593→  height: 800px;
+   594→  background: radial-gradient(circle, rgba(255, 87, 34, 0.04) 0%, transparent 70%);
+   595→  border-radius: 50%;
+   596→  pointer-events: none;
+   597→}
+   598→
+   599→[data-theme="dark"] .lf-hero::before {
+   600→  background: radial-gradient(circle, rgba(255, 110, 64, 0.03) 0%, transparent 70%);
+   601→}
+   602→
+   603→.lf-hero-inner {
+   604→  max-width: 1200px;
+   605→  margin: 0 auto;
+   606→  width: 100%;
+   607→  flex: 1;
+   608→  display: flex;
+   609→  flex-direction: column;
+   610→  justify-content: center;
+   611→}
+   612→
+   613→/* Badge */
+   614→.lf-hero-badge {
+   615→  display: inline-flex;
+   616→  align-items: center;
+   617→  gap: 8px;
+   618→  padding: 8px 18px;
+   619→  border-radius: 100px;
+   620→  background: var(--primario-soft);
+   621→  border: 1px solid var(--border);
+   622→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   623→  font-size: 13px;
+   624→  font-weight: 500;
+   625→  color: var(--text-secondary);
+   626→  margin-bottom: 40px;
+   627→  width: fit-content;
+   628→}
+   629→
+   630→.lf-hero-badge-dot {
+   631→  width: 8px;
+   632→  height: 8px;
+   633→  background: var(--exito);
+   634→  border-radius: 50%;
+   635→  animation: dotPulse 2s ease-in-out infinite;
+   636→}
+   637→
+   638→/* Giant Title */
+   639→.lf-hero-title {
+   640→  margin-bottom: 48px;
+   641→}
+   642→
+   643→.lf-hero-title-line {
+   644→  font-family: 'Syne', var(--font-syne), sans-serif;
+   645→  font-size: clamp(48px, 8vw, 120px);
+   646→  line-height: 1.0;
+   647→  letter-spacing: -0.03em;
+   648→  display: block;
+   649→}
+   650→
+   651→.lf-hero-title-light {
+   652→  font-weight: 400;
+   653→  color: var(--text);
+   654→}
+   655→
+   656→.lf-hero-title-bold {
+   657→  font-weight: 700;
+   658→  color: var(--primario);
+   659→}
+   660→
+   661→/* Hero grid: subtitle + actions */
+   662→.lf-hero-grid {
+   663→  display: grid;
+   664→  grid-template-columns: 3fr 2fr;
+   665→  gap: 40px;
+   666→  align-items: start;
+   667→  margin-bottom: 80px;
+   668→}
+   669→
+   670→.lf-hero-subtitle {
+   671→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   672→  font-size: 18px;
+   673→  line-height: 1.7;
+   674→  color: var(--text-secondary);
+   675→  max-width: 520px;
+   676→}
+   677→
+   678→.lf-hero-actions {
+   679→  display: flex;
+   680→  flex-direction: column;
+   681→  gap: 12px;
+   682→}
+   683→
+   684→.lf-btn-hero-primary {
+   685→  display: flex;
+   686→  align-items: center;
+   687→  justify-content: center;
+   688→  gap: 10px;
+   689→  width: 100%;
+   690→  padding: 18px 36px;
+   691→  background: var(--primario);
+   692→  color: white;
+   693→  border: none;
+   694→  border-radius: 14px;
+   695→  font-family: 'Syne', var(--font-syne), sans-serif;
+   696→  font-size: 17px;
+   697→  font-weight: 600;
+   698→  cursor: pointer;
+   699→  transition: all 0.3s;
+   700→  position: relative;
+   701→  overflow: hidden;
+   702→}
+   703→
+   704→.lf-btn-hero-primary::before {
+   705→  content: '';
+   706→  position: absolute;
+   707→  top: 0;
+   708→  left: -100%;
+   709→  width: 100%;
+   710→  height: 100%;
+   711→  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+   712→  transition: left 0.6s;
+   713→}
+   714→
+   715→.lf-btn-hero-primary:hover::before {
+   716→  left: 100%;
+   717→}
+   718→
+   719→.lf-btn-hero-primary:hover {
+   720→  background: var(--primario-hover);
+   721→  transform: translateY(-2px);
+   722→  box-shadow: var(--shadow-primario);
+   723→}
+   724→
+   725→.lf-btn-hero-outline {
+   726→  display: flex;
+   727→  align-items: center;
+   728→  justify-content: center;
+   729→  gap: 10px;
+   730→  width: 100%;
+   731→  padding: 18px 36px;
+   732→  background: transparent;
+   733→  color: var(--text);
+   734→  border: 1.5px solid var(--border);
+   735→  border-radius: 14px;
+   736→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   737→  font-size: 17px;
+   738→  font-weight: 500;
+   739→  cursor: pointer;
+   740→  transition: all 0.3s;
+   741→}
+   742→
+   743→.lf-btn-hero-outline:hover {
+   744→  border-color: var(--primario);
+   745→  color: var(--primario);
+   746→}
+   747→
+   748→/* Hero Stats */
+   749→.lf-hero-stats {
+   750→  border-top: 1px solid var(--border);
+   751→  padding-top: 40px;
+   752→  padding-bottom: 40px;
+   753→  display: grid;
+   754→  grid-template-columns: repeat(4, 1fr);
+   755→  gap: 24px;
+   756→}
+   757→
+   758→.lf-hero-stat {
+   759→  display: flex;
+   760→  flex-direction: column;
+   761→}
+   762→
+   763→.lf-hero-stat-number {
+   764→  font-family: 'JetBrains Mono', var(--font-jetbrains), monospace;
+   765→  font-size: 40px;
+   766→  font-weight: 700;
+   767→  color: var(--text);
+   768→  letter-spacing: -1px;
+   769→  line-height: 1.1;
+   770→}
+   771→
+   772→.lf-hero-stat-label {
+   773→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   774→  font-size: 13px;
+   775→  color: var(--text-muted);
+   776→  margin-top: 4px;
+   777→}
+   778→
+   779→/* ========================================
+   780→   "COMO FUNCIONA" Section
+   781→   ======================================== */
+   782→
+   783→.lf-how {
+   784→  padding: 120px clamp(24px, 5vw, 80px);
+   785→}
+   786→
+   787→.lf-how-inner {
+   788→  max-width: 1200px;
+   789→  margin: 0 auto;
+   790→}
+   791→
+   792→.lf-how-header {
+   793→  margin-bottom: 80px;
+   794→}
+   795→
+   796→.lf-eyebrow {
+   797→  font-family: 'JetBrains Mono', var(--font-jetbrains), monospace;
+   798→  font-size: 12px;
+   799→  text-transform: uppercase;
+   800→  letter-spacing: 0.15em;
+   801→  color: var(--primario);
+   802→  margin-bottom: 16px;
+   803→  display: block;
+   804→}
+   805→
+   806→.lf-section-title {
+   807→  font-family: 'Syne', var(--font-syne), sans-serif;
+   808→  font-size: clamp(32px, 4vw, 56px);
+   809→  font-weight: 700;
+   810→  line-height: 1.1;
+   811→  letter-spacing: -0.02em;
+   812→  color: var(--text);
+   813→}
+   814→
+   815→/* Steps — vertical editorial */
+   816→.lf-steps {
+   817→  display: flex;
+   818→  flex-direction: column;
+   819→  gap: 0;
+   820→}
+   821→
+   822→.lf-step {
+   823→  display: flex;
+   824→  align-items: flex-start;
+   825→  gap: 24px;
+   826→  padding: 40px 0;
+   827→  position: relative;
+   828→}
+   829→
+   830→.lf-step-num {
+   831→  font-family: 'Syne', var(--font-syne), sans-serif;
+   832→  font-size: 80px;
+   833→  font-weight: 700;
+   834→  color: var(--primario-soft);
+   835→  min-width: 120px;
+   836→  text-align: right;
+   837→  line-height: 1;
+   838→  flex-shrink: 0;
+   839→  transition: color 0.3s;
+   840→  user-select: none;
+   841→}
+   842→
+   843→.lf-step:hover .lf-step-num {
+   844→  color: rgba(255, 87, 34, 0.15);
+   845→}
+   846→
+   847→[data-theme="dark"] .lf-step:hover .lf-step-num {
+   848→  color: rgba(255, 110, 64, 0.15);
+   849→}
+   850→
+   851→.lf-step-content {
+   852→  padding-top: 12px;
+   853→}
+   854→
+   855→.lf-step-title {
+   856→  font-family: 'Syne', var(--font-syne), sans-serif;
+   857→  font-size: 20px;
+   858→  font-weight: 700;
+   859→  color: var(--text);
+   860→  margin-bottom: 8px;
+   861→}
+   862→
+   863→.lf-step-desc {
+   864→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   865→  font-size: 15px;
+   866→  color: var(--text-secondary);
+   867→  max-width: 400px;
+   868→  line-height: 1.7;
+   869→}
+   870→
+   871→.lf-step-connector {
+   872→  position: absolute;
+   873→  bottom: 0;
+   874→  left: 60px;
+   875→  width: 1px;
+   876→  height: 40px;
+   877→  background: var(--border);
+   878→}
+   879→
+   880→.lf-step:last-child .lf-step-connector {
+   881→  display: none;
+   882→}
+   883→
+   884→/* ========================================
+   885→   "CARACTERISTICAS" Section
+   886→   ======================================== */
+   887→
+   888→.lf-features {
+   889→  padding: 120px clamp(24px, 5vw, 80px);
+   890→  background: var(--bg-alt);
+   891→}
+   892→
+   893→.lf-features-inner {
+   894→  max-width: 1200px;
+   895→  margin: 0 auto;
+   896→}
+   897→
+   898→.lf-features-header {
+   899→  text-align: center;
+   900→  max-width: 540px;
+   901→  margin: 0 auto 80px;
+   902→}
+   903→
+   904→.lf-features-header .lf-section-title {
+   905→  margin-bottom: 16px;
+   906→}
+   907→
+   908→.lf-features-header p {
+   909→  font-size: 16px;
+   910→  color: var(--text-secondary);
+   911→  line-height: 1.7;
+   912→}
+   913→
+   914→.lf-features-grid {
+   915→  display: grid;
+   916→  grid-template-columns: repeat(3, 1fr);
+   917→  gap: 0;
+   918→}
+   919→
+   920→.lf-feature-item {
+   921→  padding: 32px 28px;
+   922→  position: relative;
+   923→  cursor: default;
+   924→}
+   925→
+   926→.lf-feature-num {
+   927→  font-family: 'JetBrains Mono', var(--font-jetbrains), monospace;
+   928→  font-size: 64px;
+   929→  font-weight: 700;
+   930→  color: var(--border);
+   931→  line-height: 1;
+   932→  transition: color 0.3s;
+   933→  user-select: none;
+   934→}
+   935→
+   936→.lf-feature-item:hover .lf-feature-num {
+   937→  color: var(--primario);
+   938→}
+   939→
+   940→.lf-feature-title {
+   941→  font-family: 'Syne', var(--font-syne), sans-serif;
+   942→  font-size: 20px;
+   943→  font-weight: 700;
+   944→  color: var(--text);
+   945→  margin-top: -20px;
+   946→  position: relative;
+   947→  transition: color 0.3s;
+   948→}
+   949→
+   950→.lf-feature-item:hover .lf-feature-title {
+   951→  color: var(--primario);
+   952→}
+   953→
+   954→.lf-feature-desc {
+   955→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+   956→  font-size: 14px;
+   957→  color: var(--text-secondary);
+   958→  margin-top: 12px;
+   959→  max-width: 300px;
+   960→  line-height: 1.7;
+   961→}
+   962→
+   963→.lf-feature-line {
+   964→  height: 1px;
+   965→  background: var(--border);
+   966→  margin-top: 24px;
+   967→}
+   968→
+   969→/* ========================================
+   970→   "ROLES" Section
+   971→   ======================================== */
+   972→
+   973→.lf-roles {
+   974→  padding: 120px clamp(24px, 5vw, 80px);
+   975→}
+   976→
+   977→.lf-roles-inner {
+   978→  max-width: 1200px;
+   979→  margin: 0 auto;
+   980→}
+   981→
+   982→.lf-roles-header {
+   983→  text-align: center;
+   984→  max-width: 540px;
+   985→  margin: 0 auto 80px;
+   986→}
+   987→
+   988→.lf-role-block {
+   989→  display: grid;
+   990→  grid-template-columns: 1fr 1fr;
+   991→  gap: 64px;
+   992→  align-items: center;
+   993→  padding: 60px 0;
+   994→}
+   995→
+   996→.lf-role-block.reverse {
+   997→  direction: rtl;
+   998→}
+   999→
+  1000→.lf-role-block.reverse > * {
+  1001→  direction: ltr;
+  1002→}
+  1003→
+  1004→.lf-role-info-title {
+  1005→  font-family: 'Syne', var(--font-syne), sans-serif;
+  1006→  font-size: 28px;
+  1007→  font-weight: 700;
+  1008→  color: var(--text);
+  1009→  margin-bottom: 16px;
+  1010→}
+  1011→
+  1012→.lf-role-info-desc {
+  1013→  font-size: 15px;
+  1014→  color: var(--text-secondary);
+  1015→  line-height: 1.7;
+  1016→  margin-bottom: 24px;
+  1017→}
+  1018→
+  1019→.lf-role-features {
+  1020→  list-style: none;
+  1021→  display: flex;
+  1022→  flex-direction: column;
+  1023→  gap: 12px;
+  1024→}
+  1025→
+  1026→.lf-role-features li {
+  1027→  display: flex;
+  1028→  align-items: center;
+  1029→  gap: 10px;
+  1030→  font-size: 15px;
+  1031→  color: var(--text);
+  1032→}
+  1033→
+  1034→.lf-role-check {
+  1035→  width: 22px;
+  1036→  height: 22px;
+  1037→  border-radius: 50%;
+  1038→  background: rgba(0, 200, 83, 0.1);
+  1039→  display: flex;
+  1040→  align-items: center;
+  1041→  justify-content: center;
+  1042→  color: var(--exito);
+  1043→  flex-shrink: 0;
+  1044→}
+  1045→
+  1046→[data-theme="dark"] .lf-role-check {
+  1047→  background: rgba(105, 240, 174, 0.1);
+  1048→}
+  1049→
+  1050→/* Role mockups — CSS-only UI simulations */
+  1051→.lf-role-mockup {
+  1052→  background: var(--surface);
+  1053→  border: 1px solid var(--border);
+  1054→  border-radius: 16px;
+  1055→  padding: 24px;
+  1056→  display: flex;
+  1057→  flex-direction: column;
+  1058→  gap: 10px;
+  1059→  min-height: 280px;
+  1060→  position: relative;
+  1061→  overflow: hidden;
+  1062→}
+  1063→
+  1064→.lf-mockup-bar {
+  1065→  border-radius: 6px;
+  1066→  transition: all 0.3s;
+  1067→}
+  1068→
+  1069→.lf-mockup-bar-navy {
+  1070→  background: var(--secundario-soft);
+  1071→  border: 1px solid var(--border);
+  1072→}
+  1073→
+  1074→.lf-mockup-bar-accent {
+  1075→  background: var(--primario-soft);
+  1076→  border: 1px solid rgba(255, 87, 34, 0.2);
+  1077→}
+  1078→
+  1079→.lf-mockup-bar-muted {
+  1080→  background: var(--border);
+  1081→}
+  1082→
+  1083→/* Map mockup for Cliente */
+  1084→.lf-mockup-map {
+  1085→  flex: 1;
+  1086→  min-height: 120px;
+  1087→  background: var(--bg-alt);
+  1088→  border-radius: 10px;
+  1089→  position: relative;
+  1090→  overflow: hidden;
+  1091→}
+  1092→
+  1093→.lf-mockup-map-grid {
+  1094→  position: absolute;
+  1095→  inset: 0;
+  1096→  background-image:
+  1097→    linear-gradient(var(--border) 1px, transparent 1px),
+  1098→    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  1099→  background-size: 20px 20px;
+  1100→  opacity: 0.5;
+  1101→}
+  1102→
+  1103→.lf-mockup-map-route {
+  1104→  position: absolute;
+  1105→  top: 30%;
+  1106→  left: 15%;
+  1107→  width: 70%;
+  1108→  height: 2px;
+  1109→  background: var(--primario);
+  1110→  transform: rotate(-15deg);
+  1111→  border-radius: 1px;
+  1112→}
+  1113→
+  1114→.lf-mockup-map-pin {
+  1115→  position: absolute;
+  1116→  width: 16px;
+  1117→  height: 16px;
+  1118→  border-radius: 50%;
+  1119→  border: 2px solid white;
+  1120→}
+  1121→
+  1122→.lf-mockup-map-pin.green {
+  1123→  background: var(--exito);
+  1124→  top: 25%;
+  1125→  left: 10%;
+  1126→}
+  1127→
+  1128→.lf-mockup-map-pin.orange {
+  1129→  background: var(--primario);
+  1130→  bottom: 30%;
+  1131→  right: 15%;
+  1132→}
+  1133→
+  1134→/* Progress bar mockup for Repartidor */
+  1135→.lf-mockup-progress {
+  1136→  height: 8px;
+  1137→  border-radius: 4px;
+  1138→  background: var(--border);
+  1139→  overflow: hidden;
+  1140→}
+  1141→
+  1142→.lf-mockup-progress-fill {
+  1143→  height: 100%;
+  1144→  border-radius: 4px;
+  1145→  background: linear-gradient(90deg, var(--primario), var(--exito));
+  1146→  transition: width 0.5s;
+  1147→}
+  1148→
+  1149→/* Chart mockup for Admin */
+  1150→.lf-mockup-chart {
+  1151→  display: flex;
+  1152→  align-items: flex-end;
+  1153→  gap: 6px;
+  1154→  flex: 1;
+  1155→  min-height: 80px;
+  1156→  padding-top: 10px;
+  1157→}
+  1158→
+  1159→.lf-mockup-chart-bar {
+  1160→  flex: 1;
+  1161→  border-radius: 4px 4px 0 0;
+  1162→  min-height: 10px;
+  1163→}
+  1164→
+  1165→/* Alert mockup for Ingeniero */
+  1166→.lf-mockup-alert {
+  1167→  display: flex;
+  1168→  align-items: center;
+  1169→  gap: 10px;
+  1170→  padding: 12px;
+  1171→  border-radius: 8px;
+  1172→}
+  1173→
+  1174→.lf-mockup-alert-dot {
+  1175→  width: 8px;
+  1176→  height: 8px;
+  1177→  border-radius: 50%;
+  1178→  flex-shrink: 0;
+  1179→}
+  1180→
+  1181→.lf-mockup-alert-dot.red { background: var(--peligro); }
+  1182→.lf-mockup-alert-dot.yellow { background: var(--warning); }
+  1183→.lf-mockup-alert-dot.green { background: var(--exito); }
+  1184→
+  1185→.lf-role-separator {
+  1186→  width: 60px;
+  1187→  height: 1px;
+  1188→  background: var(--border);
+  1189→  margin: 0 auto;
+  1190→}
+  1191→
+  1192→/* ========================================
+  1193→   "NUMEROS" Section (Social Proof)
+  1194→   ======================================== */
+  1195→
+  1196→.lf-numeros {
+  1197→  padding: 100px clamp(24px, 5vw, 80px);
+  1198→  background: var(--secundario);
+  1199→}
+  1200→
+  1201→[data-theme="dark"] .lf-numeros {
+  1202→  background: var(--surface);
+  1203→}
+  1204→
+  1205→.lf-numeros-inner {
+  1206→  max-width: 1200px;
+  1207→  margin: 0 auto;
+  1208→}
+  1209→
+  1210→.lf-numeros-grid {
+  1211→  display: grid;
+  1212→  grid-template-columns: repeat(4, 1fr);
+  1213→  gap: 40px;
+  1214→  text-align: center;
+  1215→}
+  1216→
+  1217→.lf-numeros-item {
+  1218→  display: flex;
+  1219→  flex-direction: column;
+  1220→  align-items: center;
+  1221→}
+  1222→
+  1223→.lf-numeros-number {
+  1224→  font-family: 'JetBrains Mono', var(--font-jetbrains), monospace;
+  1225→  font-size: 56px;
+  1226→  font-weight: 700;
+  1227→  color: var(--primario);
+  1228→  line-height: 1.1;
+  1229→}
+  1230→
+  1231→.lf-numeros-label {
+  1232→  font-size: 15px;
+  1233→  color: rgba(255, 255, 255, 0.6);
+  1234→  margin-top: 8px;
+  1235→}
+  1236→
+  1237→[data-theme="dark"] .lf-numeros-label {
+  1238→  color: var(--text-secondary);
+  1239→}
+  1240→
+  1241→.lf-numeros-desc {
+  1242→  font-size: 13px;
+  1243→  color: rgba(255, 255, 255, 0.35);
+  1244→  margin-top: 4px;
+  1245→}
+  1246→
+  1247→[data-theme="dark"] .lf-numeros-desc {
+  1248→  color: var(--text-muted);
+  1249→}
+  1250→
+  1251→/* ========================================
+  1252→   CTA FINAL Section
+  1253→   ======================================== */
+  1254→
+  1255→.lf-cta {
+  1256→  padding: 120px clamp(24px, 5vw, 80px);
+  1257→  text-align: center;
+  1258→}
+  1259→
+  1260→.lf-cta-inner {
+  1261→  max-width: 700px;
+  1262→  margin: 0 auto;
+  1263→}
+  1264→
+  1265→.lf-cta-title {
+  1266→  font-family: 'Syne', var(--font-syne), sans-serif;
+  1267→  font-size: clamp(36px, 5vw, 64px);
+  1268→  font-weight: 700;
+  1269→  color: var(--text);
+  1270→  line-height: 1.1;
+  1271→  margin-bottom: 20px;
+  1272→}
+  1273→
+  1274→.lf-cta-desc {
+  1275→  font-size: 17px;
+  1276→  color: var(--text-secondary);
+  1277→  max-width: 480px;
+  1278→  margin: 0 auto 40px;
+  1279→  line-height: 1.7;
+  1280→}
+  1281→
+  1282→.lf-btn-cta {
+  1283→  display: inline-flex;
+  1284→  align-items: center;
+  1285→  gap: 10px;
+  1286→  padding: 20px 48px;
+  1287→  background: var(--primario);
+  1288→  color: white;
+  1289→  border: none;
+  1290→  border-radius: 14px;
+  1291→  font-family: 'Syne', var(--font-syne), sans-serif;
+  1292→  font-size: 18px;
+  1293→  font-weight: 700;
+  1294→  cursor: pointer;
+  1295→  transition: all 0.3s;
+  1296→  position: relative;
+  1297→  overflow: hidden;
+  1298→}
+  1299→
+  1300→.lf-btn-cta::before {
+  1301→  content: '';
+  1302→  position: absolute;
+  1303→  top: 0;
+  1304→  left: -100%;
+  1305→  width: 100%;
+  1306→  height: 100%;
+  1307→  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  1308→  transition: left 0.6s;
+  1309→}
+  1310→
+  1311→.lf-btn-cta:hover::before {
+  1312→  left: 100%;
+  1313→}
+  1314→
+  1315→.lf-btn-cta:hover {
+  1316→  background: var(--primario-hover);
+  1317→  transform: translateY(-2px);
+  1318→  box-shadow: var(--shadow-primario);
+  1319→}
+  1320→
+  1321→.lf-cta-note {
+  1322→  font-size: 13px;
+  1323→  color: var(--text-muted);
+  1324→  margin-top: 16px;
+  1325→}
+  1326→
+  1327→/* ========================================
+  1328→   FOOTER 2.0
+  1329→   ======================================== */
+  1330→
+  1331→.lf-footer {
+  1332→  padding: 80px clamp(24px, 5vw, 80px) 40px;
+  1333→  border-top: 1px solid var(--border);
+  1334→}
+  1335→
+  1336→.lf-footer-inner {
+  1337→  max-width: 1200px;
+  1338→  margin: 0 auto;
+  1339→}
+  1340→
+  1341→.lf-footer-grid {
+  1342→  display: grid;
+  1343→  grid-template-columns: 2fr 1fr 1fr 1fr;
+  1344→  gap: 48px;
+  1345→  margin-bottom: 48px;
+  1346→}
+  1347→
+  1348→.lf-footer-brand-tagline {
+  1349→  font-size: 14px;
+  1350→  color: var(--text-muted);
+  1351→  margin-top: 12px;
+  1352→}
+  1353→
+  1354→.lf-footer-brand-location {
+  1355→  font-size: 13px;
+  1356→  color: var(--text-muted);
+  1357→  margin-top: 8px;
+  1358→}
+  1359→
+  1360→.lf-footer-col-title {
+  1361→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1362→  font-size: 13px;
+  1363→  font-weight: 600;
+  1364→  color: var(--text);
+  1365→  margin-bottom: 16px;
+  1366→  text-transform: uppercase;
+  1367→  letter-spacing: 0.05em;
+  1368→}
+  1369→
+  1370→.lf-footer-links {
+  1371→  list-style: none;
+  1372→  display: flex;
+  1373→  flex-direction: column;
+  1374→  gap: 10px;
+  1375→}
+  1376→
+  1377→.lf-footer-links a {
+  1378→  font-size: 14px;
+  1379→  color: var(--text-muted);
+  1380→  text-decoration: none;
+  1381→  transition: color 0.2s;
+  1382→}
+  1383→
+  1384→.lf-footer-links a:hover {
+  1385→  color: var(--primario);
+  1386→}
+  1387→
+  1388→.lf-footer-bottom {
+  1389→  border-top: 1px solid var(--border);
+  1390→  padding-top: 24px;
+  1391→  display: flex;
+  1392→  justify-content: space-between;
+  1393→  align-items: center;
+  1394→  font-size: 13px;
+  1395→  color: var(--text-muted);
+  1396→}
+  1397→
+  1398→/* ========================================
+  1399→   AUTH SCREENS 2.0 — Centered Layout
+  1400→   ======================================== */
+  1401→
+  1402→.lf-auth-screen {
+  1403→  position: fixed;
+  1404→  inset: 0;
+  1405→  z-index: 2000;
+  1406→  background: var(--bg);
+  1407→  display: flex;
+  1408→  align-items: center;
+  1409→  justify-content: center;
+  1410→  overflow-y: auto;
+  1411→  padding: 40px 20px;
+  1412→}
+  1413→
+  1414→.lf-auth-screen::before {
+  1415→  content: '';
+  1416→  position: absolute;
+  1417→  bottom: -10%;
+  1418→  right: -5%;
+  1419→  width: 600px;
+  1420→  height: 600px;
+  1421→  background: radial-gradient(circle, var(--primario-soft) 0%, transparent 70%);
+  1422→  border-radius: 50%;
+  1423→  pointer-events: none;
+  1424→}
+  1425→
+  1426→[data-theme="dark"] .lf-auth-screen::before {
+  1427→  background: radial-gradient(circle, rgba(255, 110, 64, 0.03) 0%, transparent 70%);
+  1428→}
+  1429→
+  1430→.lf-auth-container {
+  1431→  max-width: 420px;
+  1432→  width: 100%;
+  1433→  position: relative;
+  1434→  z-index: 2;
+  1435→}
+  1436→
+  1437→/* Register is slightly wider for 2x2 role grid */
+  1438→.lf-auth-container-wide {
+  1439→  max-width: 440px;
+  1440→}
+  1441→
+  1442→/* Auth brand */
+  1443→.lf-auth-brand {
+  1444→  display: flex;
+  1445→  flex-direction: column;
+  1446→  align-items: center;
+  1447→  margin-bottom: 48px;
+  1448→}
+  1449→
+  1450→.lf-auth-brand .lf-tagline {
+  1451→  margin-top: 8px;
+  1452→}
+  1453→
+  1454→/* Auth title */
+  1455→.lf-auth-title {
+  1456→  font-family: 'Syne', var(--font-syne), sans-serif;
+  1457→  font-size: 32px;
+  1458→  font-weight: 700;
+  1459→  color: var(--text);
+  1460→  text-align: center;
+  1461→  margin-bottom: 8px;
+  1462→}
+  1463→
+  1464→.lf-auth-subtitle {
+  1465→  font-size: 15px;
+  1466→  color: var(--text-secondary);
+  1467→  text-align: center;
+  1468→  margin-bottom: 36px;
+  1469→}
+  1470→
+  1471→/* Form inputs */
+  1472→.lf-form-group {
+  1473→  margin-bottom: 20px;
+  1474→}
+  1475→
+  1476→.lf-form-label {
+  1477→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1478→  font-size: 14px;
+  1479→  font-weight: 500;
+  1480→  color: var(--text);
+  1481→  margin-bottom: 8px;
+  1482→  display: block;
+  1483→}
+  1484→
+  1485→.lf-input-wrapper {
+  1486→  position: relative;
+  1487→}
+  1488→
+  1489→.lf-input-icon {
+  1490→  position: absolute;
+  1491→  left: 16px;
+  1492→  top: 50%;
+  1493→  transform: translateY(-50%);
+  1494→  color: var(--text-muted);
+  1495→  display: flex;
+  1496→  align-items: center;
+  1497→  pointer-events: none;
+  1498→  transition: color 0.3s;
+  1499→}
+  1500→
+  1501→.lf-form-input {
+  1502→  width: 100%;
+  1503→  padding: 14px 16px 14px 46px;
+  1504→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1505→  font-size: 15px;
+  1506→  color: var(--text);
+  1507→  background: var(--bg);
+  1508→  border: 1.5px solid var(--border);
+  1509→  border-radius: 12px;
+  1510→  outline: none;
+  1511→  transition: all 0.3s;
+  1512→}
+  1513→
+  1514→.lf-form-input::placeholder {
+  1515→  color: var(--text-muted);
+  1516→}
+  1517→
+  1518→.lf-form-input:focus {
+  1519→  border-color: var(--primario);
+  1520→  box-shadow: 0 0 0 3px var(--primario-soft);
+  1521→}
+  1522→
+  1523→.lf-form-input:focus + .lf-input-icon,
+  1524→.lf-form-input:focus ~ .lf-input-icon {
+  1525→  color: var(--primario);
+  1526→}
+  1527→
+  1528→.lf-form-input.error {
+  1529→  border-color: var(--peligro);
+  1530→  box-shadow: 0 0 0 3px rgba(255, 23, 68, 0.08);
+  1531→}
+  1532→
+  1533→.lf-input-eye {
+  1534→  position: absolute;
+  1535→  right: 16px;
+  1536→  top: 50%;
+  1537→  transform: translateY(-50%);
+  1538→  background: none;
+  1539→  border: none;
+  1540→  color: var(--text-muted);
+  1541→  cursor: pointer;
+  1542→  display: flex;
+  1543→  align-items: center;
+  1544→  padding: 4px;
+  1545→  transition: color 0.3s;
+  1546→}
+  1547→
+  1548→.lf-input-eye:hover {
+  1549→  color: var(--primario);
+  1550→}
+  1551→
+  1552→.lf-form-error {
+  1553→  font-size: 13px;
+  1554→  color: var(--peligro);
+  1555→  margin-top: 6px;
+  1556→  min-height: 18px;
+  1557→  animation: fadeUp 0.2s ease;
+  1558→}
+  1559→
+  1560→/* Password strength bar */
+  1561→.lf-strength-bar {
+  1562→  display: flex;
+  1563→  align-items: center;
+  1564→  gap: 4px;
+  1565→  margin-top: 10px;
+  1566→}
+  1567→
+  1568→.lf-strength-segments {
+  1569→  display: flex;
+  1570→  gap: 4px;
+  1571→  flex: 1;
+  1572→}
+  1573→
+  1574→.lf-strength-segment {
+  1575→  height: 4px;
+  1576→  flex: 1;
+  1577→  border-radius: 2px;
+  1578→  background: var(--border);
+  1579→  transition: background 0.3s;
+  1580→}
+  1581→
+  1582→.lf-strength-segment.filled-weak { background: var(--peligro); }
+  1583→.lf-strength-segment.filled-regular { background: #FF9800; }
+  1584→.lf-strength-segment.filled-buena { background: var(--warning); }
+  1585→.lf-strength-segment.filled-fuerte { background: var(--exito); }
+  1586→
+  1587→.lf-strength-text {
+  1588→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1589→  font-size: 12px;
+  1590→  font-weight: 500;
+  1591→  margin-left: 8px;
+  1592→  min-width: 50px;
+  1593→}
+  1594→
+  1595→.lf-strength-text.weak { color: var(--peligro); }
+  1596→.lf-strength-text.regular { color: #FF9800; }
+  1597→.lf-strength-text.buena { color: var(--warning); }
+  1598→.lf-strength-text.fuerte { color: var(--exito); }
+  1599→
+  1600→/* Forgot password link */
+  1601→.lf-forgot-link {
+  1602→  display: block;
+  1603→  text-align: right;
+  1604→  font-size: 13px;
+  1605→  color: var(--text-muted);
+  1606→  background: none;
+  1607→  border: none;
+  1608→  cursor: pointer;
+  1609→  margin-top: -8px;
+  1610→  margin-bottom: 24px;
+  1611→  transition: color 0.3s;
+  1612→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1613→}
+  1614→
+  1615→.lf-forgot-link:hover {
+  1616→  color: var(--primario);
+  1617→}
+  1618→
+  1619→/* Submit button */
+  1620→.lf-auth-submit {
+  1621→  width: 100%;
+  1622→  padding: 16px;
+  1623→  background: var(--primario);
+  1624→  color: white;
+  1625→  border: none;
+  1626→  border-radius: 12px;
+  1627→  font-family: 'Syne', var(--font-syne), sans-serif;
+  1628→  font-size: 16px;
+  1629→  font-weight: 700;
+  1630→  cursor: pointer;
+  1631→  transition: all 0.3s;
+  1632→  position: relative;
+  1633→  overflow: hidden;
+  1634→  display: flex;
+  1635→  align-items: center;
+  1636→  justify-content: center;
+  1637→  gap: 8px;
+  1638→}
+  1639→
+  1640→.lf-auth-submit:hover {
+  1641→  background: var(--primario-hover);
+  1642→  transform: translateY(-1px);
+  1643→  box-shadow: var(--shadow-primario);
+  1644→}
+  1645→
+  1646→.lf-auth-submit:disabled {
+  1647→  opacity: 0.7;
+  1648→  cursor: not-allowed;
+  1649→  transform: none;
+  1650→  box-shadow: none;
+  1651→}
+  1652→
+  1653→/* Loading dots */
+  1654→.lf-loading-dots {
+  1655→  display: flex;
+  1656→  gap: 4px;
+  1657→  align-items: center;
+  1658→}
+  1659→
+  1660→.lf-loading-dot {
+  1661→  width: 6px;
+  1662→  height: 6px;
+  1663→  border-radius: 50%;
+  1664→  background: white;
+  1665→  animation: dotBounce 1.4s ease-in-out infinite;
+  1666→}
+  1667→
+  1668→.lf-loading-dot:nth-child(2) { animation-delay: 0.16s; }
+  1669→.lf-loading-dot:nth-child(3) { animation-delay: 0.32s; }
+  1670→
+  1671→/* Separator */
+  1672→.lf-separator {
+  1673→  display: flex;
+  1674→  align-items: center;
+  1675→  gap: 16px;
+  1676→  margin: 28px 0;
+  1677→}
+  1678→
+  1679→.lf-separator-line {
+  1680→  flex: 1;
+  1681→  height: 1px;
+  1682→  background: var(--border);
+  1683→}
+  1684→
+  1685→.lf-separator-text {
+  1686→  font-size: 13px;
+  1687→  color: var(--text-muted);
+  1688→  white-space: nowrap;
+  1689→}
+  1690→
+  1691→/* Demo quick-access buttons */
+  1692→.lf-demo-grid {
+  1693→  display: grid;
+  1694→  grid-template-columns: 1fr 1fr;
+  1695→  gap: 10px;
+  1696→}
+  1697→
+  1698→.lf-demo-btn {
+  1699→  display: flex;
+  1700→  flex-direction: column;
+  1701→  align-items: center;
+  1702→  gap: 8px;
+  1703→  padding: 14px;
+  1704→  background: transparent;
+  1705→  border: 1.5px solid var(--border);
+  1706→  border-radius: 12px;
+  1707→  cursor: pointer;
+  1708→  transition: all 0.3s;
+  1709→}
+  1710→
+  1711→.lf-demo-btn:hover {
+  1712→  border-color: var(--primario);
+  1713→  background: var(--primario-soft);
+  1714→}
+  1715→
+  1716→.lf-demo-btn:hover .lf-demo-btn-icon {
+  1717→  color: var(--primario);
+  1718→}
+  1719→
+  1720→.lf-demo-btn-icon {
+  1721→  color: var(--text-secondary);
+  1722→  transition: color 0.3s;
+  1723→}
+  1724→
+  1725→.lf-demo-btn-text {
+  1726→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1727→  font-size: 13px;
+  1728→  font-weight: 500;
+  1729→  color: var(--text);
+  1730→}
+  1731→
+  1732→.lf-demo-label {
+  1733→  text-align: center;
+  1734→  font-size: 12px;
+  1735→  color: var(--text-muted);
+  1736→  margin-top: 12px;
+  1737→}
+  1738→
+  1739→/* Switch link */
+  1740→.lf-switch-link {
+  1741→  text-align: center;
+  1742→  font-size: 14px;
+  1743→  color: var(--text-secondary);
+  1744→  margin-top: 32px;
+  1745→}
+  1746→
+  1747→.lf-switch-link-btn {
+  1748→  font-size: 14px;
+  1749→  font-weight: 700;
+  1750→  color: var(--primario);
+  1751→  background: none;
+  1752→  border: none;
+  1753→  cursor: pointer;
+  1754→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1755→  transition: opacity 0.2s;
+  1756→}
+  1757→
+  1758→.lf-switch-link-btn:hover {
+  1759→  opacity: 0.8;
+  1760→}
+  1761→
+  1762→/* Back link */
+  1763→.lf-back-link {
+  1764→  display: flex;
+  1765→  align-items: center;
+  1766→  justify-content: center;
+  1767→  gap: 6px;
+  1768→  font-size: 13px;
+  1769→  color: var(--text-muted);
+  1770→  background: none;
+  1771→  border: none;
+  1772→  cursor: pointer;
+  1773→  margin-top: 16px;
+  1774→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1775→  transition: color 0.3s;
+  1776→}
+  1777→
+  1778→.lf-back-link:hover {
+  1779→  color: var(--primario);
+  1780→}
+  1781→
+  1782→/* Role selection cards (register) */
+  1783→.lf-role-grid {
+  1784→  display: grid;
+  1785→  grid-template-columns: 1fr 1fr;
+  1786→  gap: 10px;
+  1787→  margin-top: 8px;
+  1788→}
+  1789→
+  1790→.lf-role-card {
+  1791→  display: flex;
+  1792→  flex-direction: column;
+  1793→  align-items: center;
+  1794→  gap: 8px;
+  1795→  padding: 20px 16px;
+  1796→  background: transparent;
+  1797→  border: 1.5px solid var(--border);
+  1798→  border-radius: 14px;
+  1799→  cursor: pointer;
+  1800→  transition: all 0.3s;
+  1801→  position: relative;
+  1802→}
+  1803→
+  1804→.lf-role-card:hover {
+  1805→  border-color: var(--primario);
+  1806→  background: var(--primario-soft);
+  1807→}
+  1808→
+  1809→.lf-role-card.selected {
+  1810→  border-color: var(--primario);
+  1811→  background: var(--primario-soft);
+  1812→}
+  1813→
+  1814→.lf-role-card.selected .lf-role-card-icon {
+  1815→  color: var(--primario);
+  1816→}
+  1817→
+  1818→.lf-role-card-check {
+  1819→  position: absolute;
+  1820→  top: 8px;
+  1821→  right: 8px;
+  1822→  width: 18px;
+  1823→  height: 18px;
+  1824→  border-radius: 50%;
+  1825→  background: var(--primario);
+  1826→  display: none;
+  1827→  align-items: center;
+  1828→  justify-content: center;
+  1829→  color: white;
+  1830→}
+  1831→
+  1832→.lf-role-card.selected .lf-role-card-check {
+  1833→  display: flex;
+  1834→}
+  1835→
+  1836→.lf-role-card-icon {
+  1837→  color: var(--text-secondary);
+  1838→  transition: color 0.3s;
+  1839→}
+  1840→
+  1841→.lf-role-card-label {
+  1842→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1843→  font-size: 14px;
+  1844→  font-weight: 500;
+  1845→  color: var(--text);
+  1846→}
+  1847→
+  1848→/* Terms checkbox */
+  1849→.lf-terms {
+  1850→  display: flex;
+  1851→  align-items: flex-start;
+  1852→  gap: 10px;
+  1853→  margin-top: 20px;
+  1854→  margin-bottom: 24px;
+  1855→}
+  1856→
+  1857→.lf-terms-checkbox {
+  1858→  width: 18px;
+  1859→  height: 18px;
+  1860→  border-radius: 5px;
+  1861→  border: 1.5px solid var(--border);
+  1862→  background: transparent;
+  1863→  cursor: pointer;
+  1864→  display: flex;
+  1865→  align-items: center;
+  1866→  justify-content: center;
+  1867→  flex-shrink: 0;
+  1868→  transition: all 0.2s;
+  1869→  margin-top: 1px;
+  1870→}
+  1871→
+  1872→.lf-terms-checkbox.checked {
+  1873→  background: var(--primario);
+  1874→  border-color: var(--primario);
+  1875→}
+  1876→
+  1877→.lf-terms-text {
+  1878→  font-size: 13px;
+  1879→  color: var(--text-secondary);
+  1880→  line-height: 1.5;
+  1881→}
+  1882→
+  1883→.lf-terms-link {
+  1884→  color: var(--primario);
+  1885→  text-decoration: none;
+  1886→  font-weight: 500;
+  1887→}
+  1888→
+  1889→.lf-terms-link:hover {
+  1890→  text-decoration: underline;
+  1891→}
+  1892→
+  1893→/* Register success screen */
+  1894→.lf-success-screen {
+  1895→  display: flex;
+  1896→  flex-direction: column;
+  1897→  align-items: center;
+  1898→  text-align: center;
+  1899→  padding: 40px 0;
+  1900→}
+  1901→
+  1902→.lf-success-circle {
+  1903→  width: 80px;
+  1904→  height: 80px;
+  1905→  border-radius: 50%;
+  1906→  background: rgba(0, 200, 83, 0.1);
+  1907→  display: flex;
+  1908→  align-items: center;
+  1909→  justify-content: center;
+  1910→  margin-bottom: 24px;
+  1911→  animation: scaleIn 0.4s ease;
+  1912→}
+  1913→
+  1914→[data-theme="dark"] .lf-success-circle {
+  1915→  background: rgba(105, 240, 174, 0.1);
+  1916→}
+  1917→
+  1918→.lf-success-title {
+  1919→  font-family: 'Syne', var(--font-syne), sans-serif;
+  1920→  font-size: 28px;
+  1921→  font-weight: 700;
+  1922→  color: var(--text);
+  1923→  margin-bottom: 8px;
+  1924→}
+  1925→
+  1926→.lf-success-desc {
+  1927→  font-size: 15px;
+  1928→  color: var(--text-secondary);
+  1929→  margin-bottom: 32px;
+  1930→}
+  1931→
+  1932→/* Redirect screen */
+  1933→.lf-redirect-screen {
+  1934→  display: flex;
+  1935→  flex-direction: column;
+  1936→  align-items: center;
+  1937→  text-align: center;
+  1938→  padding: 60px 0;
+  1939→}
+  1940→
+  1941→.lf-redirect-text {
+  1942→  font-family: 'DM Sans', var(--font-dm-sans), sans-serif;
+  1943→  font-size: 16px;
+  1944→  color: var(--text-secondary);
+  1945→  margin-top: 24px;
+  1946→}
+  1947→
+  1948→.lf-spinner {
+  1949→  width: 32px;
+  1950→  height: 32px;
+  1951→  border: 3px solid var(--border);
+  1952→  border-top-color: var(--primario);
+  1953→  border-radius: 50%;
+  1954→  animation: spin 0.8s linear infinite;
+  1955→}
+  1956→
+  1957→/* ========================================
+  1958→   TOAST NOTIFICATIONS 2.0
+  1959→   ======================================== */
+  1960→
+  1961→.lf-toast-container {
+  1962→  position: fixed;
+  1963→  bottom: 24px;
+  1964→  right: 24px;
+  1965→  z-index: 10000;
+  1966→  display: flex;
+  1967→  flex-direction: column;
+  1968→  gap: 8px;
+  1969→}
+  1970→
+  1971→.lf-toast {
+  1972→  max-width: 380px;
+  1973→  display: flex;
+  1974→  align-items: center;
+  1975→  gap: 12px;
+  1976→  padding: 16px;
+  1977→  background: var(--surface);
+  1978→  border-radius: 14px;
+  1979→  box-shadow: var(--shadow-xl);
+  1980→  border-left: 4px solid var(--border);
+  1981→  position: relative;
+  1982→  overflow: hidden;
+  1983→  animation: slideUp 0.3s ease;
+  1984→}
+  1985→
+  1986→.lf-toast.success { border-left-color: var(--exito); }
+  1987→.lf-toast.error { border-left-color: var(--peligro); }
+  1988→.lf-toast.warning { border-left-color: var(--warning); }
+  1989→.lf-toast.info { border-left-color: var(--info); }
+  1990→
+  1991→.lf-toast-icon {
+  1992→  flex-shrink: 0;
+  1993→  display: flex;
+  1994→  align-items: center;
+  1995→  justify-content: center;
+  1996→}
+  1997→
+  1998→.lf-toast-content {
+  1999→  flex: 1;
+  2000→}
+
+[showing lines 1-2000 of 2409; use offset=2001 with limit to continue reading]

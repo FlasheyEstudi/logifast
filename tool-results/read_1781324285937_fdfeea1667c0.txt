@@ -1,0 +1,1443 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useState, useMemo } from 'react';
+     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→import { Package, ShoppingBag, ChevronDown, ChevronUp, Search, Filter, Star, Clock, MapPin, Bike, Navigation, MessageCircle, AlertTriangle, RefreshCw, CheckCircle, XCircle, Truck, ArrowRight, RotateCcw } from 'lucide-react';
+     6→     6→import { useStore, type Order } from '@/lib/store';
+     7→     7→import { useMarketplaceStore, type OrdenCompra, CATEGORIAS } from '@/lib/marketplace-store';
+     8→     8→
+     9→     9→/* ═══════════════════════════════════════════════
+    10→    10→   PROPS
+    11→    11→   ═══════════════════════════════════════════════ */
+    12→    12→
+    13→    13→interface ClientPedidosProps {
+    14→    14→  isDark: boolean;
+    15→    15→  userName: string;
+    16→    16→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+    17→    17→  onOpenTracking: (orderId: string) => void;
+    18→    18→  onOpenChat: (orderId: string) => void;
+    19→    19→}
+    20→    20→
+    21→    21→type TabKey = 'activos' | 'envios' | 'compras';
+    22→    22→type EnvioFilterKey = 'todos' | 'entregados' | 'cancelados' | 'incidencia';
+    23→    23→
+    24→    24→/* ═══════════════════════════════════════════════
+    25→    25→   STATUS HELPERS — ENVIOS
+    26→    26→   ═══════════════════════════════════════════════ */
+    27→    27→
+    28→    28→const ENVIO_STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
+    29→    29→  pendiente: { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-700 dark:text-yellow-400', label: 'Pendiente' },
+    30→    30→  encamino: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', label: 'En camino' },
+    31→    31→  recogido: { bg: 'bg-violet-100 dark:bg-violet-900/40', text: 'text-violet-700 dark:text-violet-400', label: 'Recogido' },
+    32→    32→  entregado: { bg: 'bg-green-100 dark:bg-green-900/40', text: 'text-green-700 dark:text-green-400', label: 'Entregado' },
+    33→    33→  incidencia: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-400', label: 'Incidencia' },
+    34→    34→  programada: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', label: 'Programada' },
+    35→    35→};
+    36→    36→
+    37→    37→const ENVIO_STATUS_COLOR: Record<string, string> = {
+    38→    38→  pendiente: 'var(--warning)',
+    39→    39→  encamino: 'var(--info)',
+    40→    40→  recogido: '#7C3AED',
+    41→    41→  entregado: 'var(--exito)',
+    42→    42→  incidencia: 'var(--peligro)',
+    43→    43→  programada: 'var(--info)',
+    44→    44→};
+    45→    45→
+    46→    46→function envioStatusLabel(estado: string): string {
+    47→    47→  return ENVIO_STATUS_BADGE[estado]?.label ?? estado;
+    48→    48→}
+    49→    49→
+    50→    50→function shortenLocation(loc: string): string {
+    51→    51→  if (loc.length <= 28) return loc;
+    52→    52→  return loc.substring(0, 25) + '...';
+    53→    53→}
+    54→    54→
+    55→    55→/* ═══════════════════════════════════════════════
+    56→    56→   STATUS HELPERS — COMPRAS
+    57→    57→   ═══════════════════════════════════════════════ */
+    58→    58→
+    59→    59→const compraStatusColor = (estado: string): string => {
+    60→    60→  switch (estado) {
+    61→    61→    case 'recibido': return 'var(--info)';
+    62→    62→    case 'preparando': return 'var(--warning)';
+    63→    63→    case 'listo': return 'var(--info)';
+    64→    64→    case 'en_camino': return 'var(--primario)';
+    65→    65→    case 'entregado': return 'var(--exito)';
+    66→    66→    default: return 'var(--text-muted)';
+    67→    67→  }
+    68→    68→};
+    69→    69→
+    70→    70→const compraStatusLabel = (estado: string): string => {
+    71→    71→  switch (estado) {
+    72→    72→    case 'recibido': return 'Recibido';
+    73→    73→    case 'preparando': return 'Preparando';
+    74→    74→    case 'listo': return 'Listo';
+    75→    75→    case 'en_camino': return 'En camino';
+    76→    76→    case 'entregado': return 'Entregado';
+    77→    77→    default: return estado;
+    78→    78→  }
+    79→    79→};
+    80→    80→
+    81→    81→const COMPRA_STEPS = ['Recibido', 'Preparando', 'Listo', 'En camino', 'Entregado'];
+    82→    82→const COMPRA_STEP_MAP: Record<string, number> = {
+    83→    83→  recibido: 0,
+    84→    84→  preparando: 1,
+    85→    85→  listo: 2,
+    86→    86→  en_camino: 3,
+    87→    87→  entregado: 4,
+    88→    88→};
+    89→    89→
+    90→    90→function getCompraStepIndex(estado: string): number {
+    91→    91→  return COMPRA_STEP_MAP[estado] ?? 0;
+    92→    92→}
+    93→    93→
+    94→    94→/* ═══════════════════════════════════════════════
+    95→    95→   SUB-COMPONENTS
+    96→    96→   ═══════════════════════════════════════════════ */
+    97→    97→
+    98→    98→/* ── Compra Progress Bar ────────────────────── */
+    99→    99→
+   100→   100→function CompraProgressBar({ estado }: { estado: string }) {
+   101→   101→  const currentStep = getCompraStepIndex(estado);
+   102→   102→  const progress = currentStep / (COMPRA_STEPS.length - 1);
+   103→   103→
+   104→   104→  return (
+   105→   105→    <div style={{ marginTop: 12 }}>
+   106→   106→      <div
+   107→   107→        style={{
+   108→   108→          width: '100%',
+   109→   109→          height: 4,
+   110→   110→          borderRadius: 2,
+   111→   111→          background: 'var(--border)',
+   112→   112→          position: 'relative',
+   113→   113→          overflow: 'hidden',
+   114→   114→        }}
+   115→   115→      >
+   116→   116→        <motion.div
+   117→   117→          initial={{ width: 0 }}
+   118→   118→          animate={{ width: `${progress * 100}%` }}
+   119→   119→          transition={{ duration: 0.8, ease: 'easeOut' }}
+   120→   120→          style={{
+   121→   121→            height: '100%',
+   122→   122→            borderRadius: 2,
+   123→   123→            background: compraStatusColor(estado),
+   124→   124→          }}
+   125→   125→        />
+   126→   126→      </div>
+   127→   127→      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+   128→   128→        {COMPRA_STEPS.map((step, idx) => (
+   129→   129→          <span
+   130→   130→            key={step}
+   131→   131→            style={{
+   132→   132→              fontSize: 9,
+   133→   133→              fontFamily: "'DM Sans', sans-serif",
+   134→   134→              color: idx <= currentStep ? compraStatusColor(estado) : 'var(--text-muted)',
+   135→   135→              fontWeight: idx === currentStep ? 600 : 400,
+   136→   136→            }}
+   137→   137→          >
+   138→   138→            {step}
+   139→   139→          </span>
+   140→   140→        ))}
+   141→   141→      </div>
+   142→   142→    </div>
+   143→   143→  );
+   144→   144→}
+   145→   145→
+   146→   146→/* ── Active Envio Card (simplified) ────────── */
+   147→   147→
+   148→   148→function ActiveEnvioCard({
+   149→   149→  order,
+   150→   150→  onOpenTracking,
+   151→   151→  onOpenChat,
+   152→   152→}: {
+   153→   153→  order: Order;
+   154→   154→  onOpenTracking: (orderId: string) => void;
+   155→   155→  onOpenChat: (orderId: string) => void;
+   156→   156→}) {
+   157→   157→  const badge = ENVIO_STATUS_BADGE[order.estado] ?? ENVIO_STATUS_BADGE.pendiente;
+   158→   158→  const statusBg = ENVIO_STATUS_COLOR[order.estado] ?? 'var(--border)';
+   159→   159→
+   160→   160→  const statusBadgeStyle: React.CSSProperties = {
+   161→   161→    display: 'inline-flex',
+   162→   162→    alignItems: 'center',
+   163→   163→    gap: 4,
+   164→   164→    padding: '3px 10px',
+   165→   165→    borderRadius: 20,
+   166→   166→    fontSize: 11,
+   167→   167→    fontWeight: 600,
+   168→   168→    fontFamily: "'DM Sans', sans-serif",
+   169→   169→    background: `${statusBg}20`,
+   170→   170→    color: statusBg,
+   171→   171→  };
+   172→   172→
+   173→   173→  return (
+   174→   174→    <motion.div
+   175→   175→      layout
+   176→   176→      initial={{ opacity: 0, y: 20 }}
+   177→   177→      animate={{ opacity: 1, y: 0 }}
+   178→   178→      exit={{ opacity: 0, y: -10 }}
+   179→   179→      transition={{ duration: 0.3 }}
+   180→   180→    >
+   181→   181→      <div
+   182→   182→        style={{
+   183→   183→          padding: 16,
+   184→   184→          background: 'var(--surface)',
+   185→   185→          borderRadius: 16,
+   186→   186→          border: '1px solid var(--border)',
+   187→   187→        }}
+   188→   188→      >
+   189→   189→        {/* Header row */}
+   190→   190→        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+   191→   191→          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+   192→   192→            <Package size={20} style={{ color: 'var(--primario)' }} />
+   193→   193→            <div>
+   194→   194→              <div style={{ fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: 'var(--text)' }}>
+   195→   195→                {order.id}
+   196→   196→              </div>
+   197→   197→              <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   198→   198→                {order.origen} → {order.destino}
+   199→   199→              </div>
+   200→   200→            </div>
+   201→   201→          </div>
+   202→   202→          <span style={statusBadgeStyle}>{envioStatusLabel(order.estado)}</span>
+   203→   203→        </div>
+   204→   204→
+   205→   205→        {/* ETA + rider info */}
+   206→   206→        <div
+   207→   207→          style={{
+   208→   208→            display: 'flex',
+   209→   209→            justifyContent: 'space-between',
+   210→   210→            alignItems: 'center',
+   211→   211→            marginTop: 10,
+   212→   212→            padding: '8px 12px',
+   213→   213→            borderRadius: 10,
+   214→   214→            background: 'var(--bg-alt)',
+   215→   215→          }}
+   216→   216→        >
+   217→   217→          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   218→   218→            <div
+   219→   219→              style={{
+   220→   220→                width: 26,
+   221→   221→                height: 26,
+   222→   222→                borderRadius: '50%',
+   223→   223→                background: 'var(--primario-soft)',
+   224→   224→                display: 'flex',
+   225→   225→                alignItems: 'center',
+   226→   226→                justifyContent: 'center',
+   227→   227→                fontSize: 10,
+   228→   228→                fontWeight: 700,
+   229→   229→                color: 'var(--primario)',
+   230→   230→                fontFamily: "'Syne', sans-serif",
+   231→   231→              }}
+   232→   232→            >
+   233→   233→              {order.repartidorInitials || '?'}
+   234→   234→            </div>
+   235→   235→            <span style={{ fontSize: 12, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>
+   236→   236→              {order.repartidor || 'Sin asignar'}
+   237→   237→            </span>
+   238→   238→          </div>
+   239→   239→          <div style={{ textAlign: 'right' }}>
+   240→   240→            <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+   241→   241→              ~{Math.floor(Math.random() * 12) + 8} min
+   242→   242→            </div>
+   243→   243→          </div>
+   244→   244→        </div>
+   245→   245→
+   246→   246→        {/* Action buttons */}
+   247→   247→        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+   248→   248→          <button
+   249→   249→            onClick={() => onOpenTracking(order.id)}
+   250→   250→            style={{
+   251→   251→              padding: '8px 14px',
+   252→   252→              borderRadius: 10,
+   253→   253→              border: 'none',
+   254→   254→              background: 'var(--primario)',
+   255→   255→              color: '#fff',
+   256→   256→              fontSize: 13,
+   257→   257→              fontWeight: 600,
+   258→   258→              cursor: 'pointer',
+   259→   259→              fontFamily: "'DM Sans', sans-serif",
+   260→   260→              display: 'flex',
+   261→   261→              alignItems: 'center',
+   262→   262→              gap: 5,
+   263→   263→            }}
+   264→   264→          >
+   265→   265→            <Navigation size={14} />
+   266→   266→            Rastrear
+   267→   267→          </button>
+   268→   268→          {order.repartidor && (
+   269→   269→            <button
+   270→   270→              onClick={() => onOpenChat(order.id)}
+   271→   271→              style={{
+   272→   272→                padding: '8px 14px',
+   273→   273→                borderRadius: 10,
+   274→   274→                border: '1px solid var(--border)',
+   275→   275→                background: 'transparent',
+   276→   276→                color: 'var(--text)',
+   277→   277→                fontSize: 13,
+   278→   278→                fontWeight: 500,
+   279→   279→                cursor: 'pointer',
+   280→   280→                fontFamily: "'DM Sans', sans-serif",
+   281→   281→                display: 'flex',
+   282→   282→                alignItems: 'center',
+   283→   283→                gap: 5,
+   284→   284→              }}
+   285→   285→            >
+   286→   286→              <MessageCircle size={14} />
+   287→   287→              Mensaje
+   288→   288→            </button>
+   289→   289→          )}
+   290→   290→        </div>
+   291→   291→      </div>
+   292→   292→    </motion.div>
+   293→   293→  );
+   294→   294→}
+   295→   295→
+   296→   296→/* ── Active Compra Card ────────────────────── */
+   297→   297→
+   298→   298→function ActiveCompraCard({
+   299→   299→  oc,
+   300→   300→  onOpenTracking,
+   301→   301→}: {
+   302→   302→  oc: OrdenCompra;
+   303→   303→  onOpenTracking: (orderId: string) => void;
+   304→   304→}) {
+   305→   305→  const color = compraStatusColor(oc.estado);
+   306→   306→
+   307→   307→  const compraStatusBadgeStyle: React.CSSProperties = {
+   308→   308→    display: 'inline-flex',
+   309→   309→    alignItems: 'center',
+   310→   310→    gap: 4,
+   311→   311→    padding: '3px 10px',
+   312→   312→    borderRadius: 20,
+   313→   313→    fontSize: 11,
+   314→   314→    fontWeight: 600,
+   315→   315→    fontFamily: "'DM Sans', sans-serif",
+   316→   316→    background: `${color}20`,
+   317→   317→    color,
+   318→   318→  };
+   319→   319→
+   320→   320→  return (
+   321→   321→    <motion.div
+   322→   322→      layout
+   323→   323→      initial={{ opacity: 0, y: 20 }}
+   324→   324→      animate={{ opacity: 1, y: 0 }}
+   325→   325→      exit={{ opacity: 0, y: -10 }}
+   326→   326→      transition={{ duration: 0.3 }}
+   327→   327→    >
+   328→   328→      <div
+   329→   329→        style={{
+   330→   330→          padding: 16,
+   331→   331→          background: 'var(--surface)',
+   332→   332→          borderRadius: 16,
+   333→   333→          border: '1px solid var(--border)',
+   334→   334→        }}
+   335→   335→      >
+   336→   336→        {/* Header row */}
+   337→   337→        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+   338→   338→          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+   339→   339→            <div
+   340→   340→              style={{
+   341→   341→                width: 40,
+   342→   342→                height: 40,
+   343→   343→                borderRadius: 10,
+   344→   344→                background: oc.tiendaColor,
+   345→   345→                display: 'flex',
+   346→   346→                alignItems: 'center',
+   347→   347→                justifyContent: 'center',
+   348→   348→              }}
+   349→   349→            >
+   350→   350→              <span
+   351→   351→                style={{
+   352→   352→                  color: '#fff',
+   353→   353→                  fontFamily: "'Syne', sans-serif",
+   354→   354→                  fontWeight: 700,
+   355→   355→                  fontSize: 12,
+   356→   356→                }}
+   357→   357→              >
+   358→   358→                {oc.tiendaLogo}
+   359→   359→              </span>
+   360→   360→            </div>
+   361→   361→            <div>
+   362→   362→              <div style={{ fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: 'var(--text)' }}>
+   363→   363→                {oc.tiendaNombre}
+   364→   364→              </div>
+   365→   365→              <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   366→   366→                {oc.items.map(i => i.nombreProducto).join(', ')}
+   367→   367→              </div>
+   368→   368→            </div>
+   369→   369→          </div>
+   370→   370→          <span style={compraStatusBadgeStyle}>{compraStatusLabel(oc.estado)}</span>
+   371→   371→        </div>
+   372→   372→
+   373→   373→        {/* Progress bar */}
+   374→   374→        <CompraProgressBar estado={oc.estado} />
+   375→   375→
+   376→   376→        {/* Repartidor + total */}
+   377→   377→        <div
+   378→   378→          style={{
+   379→   379→            display: 'flex',
+   380→   380→            justifyContent: 'space-between',
+   381→   381→            alignItems: 'center',
+   382→   382→            marginTop: 10,
+   383→   383→            padding: '8px 12px',
+   384→   384→            borderRadius: 10,
+   385→   385→            background: 'var(--bg-alt)',
+   386→   386→          }}
+   387→   387→        >
+   388→   388→          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   389→   389→            <div
+   390→   390→              style={{
+   391→   391→                width: 26,
+   392→   392→                height: 26,
+   393→   393→                borderRadius: '50%',
+   394→   394→                background: 'var(--primario-soft)',
+   395→   395→                display: 'flex',
+   396→   396→                alignItems: 'center',
+   397→   397→                justifyContent: 'center',
+   398→   398→                fontSize: 10,
+   399→   399→                fontWeight: 700,
+   400→   400→                color: 'var(--primario)',
+   401→   401→                fontFamily: "'Syne', sans-serif",
+   402→   402→              }}
+   403→   403→            >
+   404→   404→              {oc.repartidorInitials || '?'}
+   405→   405→            </div>
+   406→   406→            <span style={{ fontSize: 12, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>
+   407→   407→              {oc.repartidorNombre || 'Sin asignar'}
+   408→   408→            </span>
+   409→   409→          </div>
+   410→   410→          <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   411→   411→            C$ {oc.total}
+   412→   412→          </span>
+   413→   413→        </div>
+   414→   414→
+   415→   415→        {/* Action button */}
+   416→   416→        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+   417→   417→          <button
+   418→   418→            onClick={() => onOpenTracking(oc.id)}
+   419→   419→            style={{
+   420→   420→              padding: '8px 14px',
+   421→   421→              borderRadius: 10,
+   422→   422→              border: 'none',
+   423→   423→              background: 'var(--primario)',
+   424→   424→              color: '#fff',
+   425→   425→              fontSize: 13,
+   426→   426→              fontWeight: 600,
+   427→   427→              cursor: 'pointer',
+   428→   428→              fontFamily: "'DM Sans', sans-serif",
+   429→   429→              display: 'flex',
+   430→   430→              alignItems: 'center',
+   431→   431→              gap: 5,
+   432→   432→            }}
+   433→   433→          >
+   434→   434→            <Navigation size={14} />
+   435→   435→            Rastrear
+   436→   436→          </button>
+   437→   437→        </div>
+   438→   438→      </div>
+   439→   439→    </motion.div>
+   440→   440→  );
+   441→   441→}
+   442→   442→
+   443→   443→/* ── History Envio Item (expandable) ────────── */
+   444→   444→
+   445→   445→function HistoryEnvioItem({
+   446→   446→  order,
+   447→   447→  onNavigate,
+   448→   448→  onOpenTracking,
+   449→   449→}: {
+   450→   450→  order: Order;
+   451→   451→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+   452→   452→  onOpenTracking: (orderId: string) => void;
+   453→   453→}) {
+   454→   454→  const [expanded, setExpanded] = useState(false);
+   455→   455→  const badge = ENVIO_STATUS_BADGE[order.estado] ?? ENVIO_STATUS_BADGE.pendiente;
+   456→   456→
+   457→   457→  return (
+   458→   458→    <motion.div
+   459→   459→      layout
+   460→   460→      className="rounded-xl overflow-hidden"
+   461→   461→      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+   462→   462→    >
+   463→   463→      <button
+   464→   464→        onClick={() => setExpanded(!expanded)}
+   465→   465→        className="w-full text-left p-4 transition-all hover:opacity-90"
+   466→   466→        style={{ background: 'var(--surface)' }}
+   467→   467→      >
+   468→   468→        {/* Row 1: ID + status + date */}
+   469→   469→        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+   470→   470→          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   471→   471→            <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+   472→   472→              {order.id}
+   473→   473→            </span>
+   474→   474→            <span
+   475→   475→              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}
+   476→   476→            >
+   477→   477→              {badge.label}
+   478→   478→            </span>
+   479→   479→          </div>
+   480→   480→          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   481→   481→            {order.fecha}
+   482→   482→          </span>
+   483→   483→        </div>
+   484→   484→
+   485→   485→        {/* Row 2: Route */}
+   486→   486→        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, marginBottom: 6, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+   487→   487→          <span>{shortenLocation(order.origen)}</span>
+   488→   488→          <ArrowRight size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+   489→   489→          <span>{shortenLocation(order.destino)}</span>
+   490→   490→        </div>
+   491→   491→
+   492→   492→        {/* Row 3: Rider + amount */}
+   493→   493→        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+   494→   494→          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   495→   495→            <div
+   496→   496→              style={{
+   497→   497→                width: 22,
+   498→   498→                height: 22,
+   499→   499→                borderRadius: '50%',
+   500→   500→                background: 'var(--primario-soft)',
+   501→   501→                display: 'flex',
+   502→   502→                alignItems: 'center',
+   503→   503→                justifyContent: 'center',
+   504→   504→                fontSize: 9,
+   505→   505→                fontWeight: 700,
+   506→   506→                color: 'var(--primario)',
+   507→   507→                fontFamily: "'Syne', sans-serif",
+   508→   508→              }}
+   509→   509→            >
+   510→   510→              {order.repartidorInitials || '?'}
+   511→   511→            </div>
+   512→   512→            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+   513→   513→              {order.repartidor || 'Sin asignar'}
+   514→   514→            </span>
+   515→   515→          </div>
+   516→   516→          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   517→   517→            <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: 'var(--text)' }}>
+   518→   518→              C$ {order.monto}
+   519→   519→            </span>
+   520→   520→            {expanded ? (
+   521→   521→              <ChevronUp size={16} style={{ color: 'var(--text-muted)' }} />
+   522→   522→            ) : (
+   523→   523→              <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} />
+   524→   524→            )}
+   525→   525→          </div>
+   526→   526→        </div>
+   527→   527→      </button>
+   528→   528→
+   529→   529→      {/* Expanded details */}
+   530→   530→      <AnimatePresence>
+   531→   531→        {expanded && (
+   532→   532→          <motion.div
+   533→   533→            initial={{ height: 0, opacity: 0 }}
+   534→   534→            animate={{ height: 'auto', opacity: 1 }}
+   535→   535→            exit={{ height: 0, opacity: 0 }}
+   536→   536→            transition={{ duration: 0.3 }}
+   537→   537→            className="overflow-hidden"
+   538→   538→          >
+   539→   539→            <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)' }}>
+   540→   540→              {/* Route detail */}
+   541→   541→              <div style={{ paddingTop: 12 }}>
+   542→   542→                <p style={{ fontSize: 11, fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   543→   543→                  Ruta completa
+   544→   544→                </p>
+   545→   545→                <p style={{ fontSize: 13, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+   546→   546→                  {order.origen} → {order.destino}
+   547→   547→                </p>
+   548→   548→              </div>
+   549→   549→
+   550→   550→              {/* Timeline */}
+   551→   551→              <div style={{ marginTop: 12 }}>
+   552→   552→                <p style={{ fontSize: 11, fontWeight: 600, marginBottom: 8, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   553→   553→                  Timeline
+   554→   554→                </p>
+   555→   555→                {order.timeline.map((t, i) => (
+   556→   556→                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '3px 0' }}>
+   557→   557→                    <div
+   558→   558→                      style={{
+   559→   559→                        width: 10,
+   560→   560→                        height: 10,
+   561→   561→                        borderRadius: '50%',
+   562→   562→                        background: t.completado ? 'var(--primario)' : 'var(--border)',
+   563→   563→                        flexShrink: 0,
+   564→   564→                      }}
+   565→   565→                    />
+   566→   566→                    <span style={{ fontSize: 13, flex: 1, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+   567→   567→                      {t.step}
+   568→   568→                    </span>
+   569→   569→                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+   570→   570→                      {t.hora}
+   571→   571→                    </span>
+   572→   572→                  </div>
+   573→   573→                ))}
+   574→   574→              </div>
+   575→   575→
+   576→   576→              {/* Simulated metrics */}
+   577→   577→              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+   578→   578→                <div style={{ borderRadius: 10, padding: 12, background: 'var(--bg-alt)' }}>
+   579→   579→                  <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Km recorridos</p>
+   580→   580→                  <p style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   581→   581→                    {((Math.abs(order.destinoLat - order.origenLat) + Math.abs(order.destinoLng - order.origenLng)) * 111 * 10).toFixed(1)} km
+   582→   582→                  </p>
+   583→   583→                </div>
+   584→   584→                <div style={{ borderRadius: 10, padding: 12, background: 'var(--bg-alt)' }}>
+   585→   585→                  <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>Tiempo total</p>
+   586→   586→                  <p style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   587→   587→                    {order.timeline[3]?.completado && order.timeline[0]?.hora && order.timeline[3]?.hora
+   588→   588→                      ? (() => {
+   589→   589→                          const [h1, m1] = order.timeline[0].hora.split(':').map(Number);
+   590→   590→                          const [h2, m2] = order.timeline[3].hora.split(':').map(Number);
+   591→   591→                          const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+   592→   592→                          return diff > 0 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : `${diff}m`;
+   593→   593→                        })()
+   594→   594→                      : '—'}
+   595→   595→                  </p>
+   596→   596→                </div>
+   597→   597→              </div>
+   598→   598→
+   599→   599→              {/* Action button */}
+   600→   600→              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+   601→   601→                <button
+   602→   602→                  onClick={(e) => { e.stopPropagation(); onNavigate('solicitar'); }}
+   603→   603→                  style={{
+   604→   604→                    flex: 1,
+   605→   605→                    padding: '8px 0',
+   606→   606→                    borderRadius: 10,
+   607→   607→                    border: 'none',
+   608→   608→                    background: 'var(--primario)',
+   609→   609→                    color: '#fff',
+   610→   610→                    fontSize: 12,
+   611→   611→                    fontWeight: 600,
+   612→   612→                    cursor: 'pointer',
+   613→   613→                    fontFamily: "'DM Sans', sans-serif",
+   614→   614→                    display: 'flex',
+   615→   615→                    alignItems: 'center',
+   616→   616→                    justifyContent: 'center',
+   617→   617→                    gap: 5,
+   618→   618→                  }}
+   619→   619→                >
+   620→   620→                  <RotateCcw size={13} />
+   621→   621→                  Volver a enviar
+   622→   622→                </button>
+   623→   623→              </div>
+   624→   624→            </div>
+   625→   625→          </motion.div>
+   626→   626→        )}
+   627→   627→      </AnimatePresence>
+   628→   628→    </motion.div>
+   629→   629→  );
+   630→   630→}
+   631→   631→
+   632→   632→/* ── Compra History Item ────────────────────── */
+   633→   633→
+   634→   634→function CompraHistoryItem({
+   635→   635→  oc,
+   636→   636→  onNavigate,
+   637→   637→}: {
+   638→   638→  oc: OrdenCompra;
+   639→   639→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+   640→   640→}) {
+   641→   641→  const color = compraStatusColor(oc.estado);
+   642→   642→  const itemCount = oc.items.reduce((s, i) => s + i.cantidad, 0);
+   643→   643→
+   644→   644→  const compraStatusBadgeStyle: React.CSSProperties = {
+   645→   645→    display: 'inline-flex',
+   646→   646→    alignItems: 'center',
+   647→   647→    gap: 4,
+   648→   648→    padding: '3px 10px',
+   649→   649→    borderRadius: 20,
+   650→   650→    fontSize: 11,
+   651→   651→    fontWeight: 600,
+   652→   652→    fontFamily: "'DM Sans', sans-serif",
+   653→   653→    background: `${color}20`,
+   654→   654→    color,
+   655→   655→  };
+   656→   656→
+   657→   657→  return (
+   658→   658→    <motion.div
+   659→   659→      layout
+   660→   660→      initial={{ opacity: 0, y: 16 }}
+   661→   661→      animate={{ opacity: 1, y: 0 }}
+   662→   662→      exit={{ opacity: 0, y: -10 }}
+   663→   663→      transition={{ duration: 0.3 }}
+   664→   664→    >
+   665→   665→      <div
+   666→   666→        style={{
+   667→   667→          padding: 16,
+   668→   668→          background: 'var(--surface)',
+   669→   669→          borderRadius: 14,
+   670→   670→          border: '1px solid var(--border)',
+   671→   671→        }}
+   672→   672→      >
+   673→   673→        {/* Row 1: tienda logo + nombre + status badge + fecha + total */}
+   674→   674→        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+   675→   675→          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+   676→   676→            <div
+   677→   677→              style={{
+   678→   678→                width: 40,
+   679→   679→                height: 40,
+   680→   680→                borderRadius: 10,
+   681→   681→                background: oc.tiendaColor,
+   682→   682→                display: 'flex',
+   683→   683→                alignItems: 'center',
+   684→   684→                justifyContent: 'center',
+   685→   685→              }}
+   686→   686→            >
+   687→   687→              <span
+   688→   688→                style={{
+   689→   689→                  color: '#fff',
+   690→   690→                  fontFamily: "'Syne', sans-serif",
+   691→   691→                  fontWeight: 700,
+   692→   692→                  fontSize: 12,
+   693→   693→                }}
+   694→   694→              >
+   695→   695→                {oc.tiendaLogo}
+   696→   696→              </span>
+   697→   697→            </div>
+   698→   698→            <div>
+   699→   699→              <div style={{ fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: 'var(--text)' }}>
+   700→   700→                {oc.tiendaNombre}
+   701→   701→              </div>
+   702→   702→              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   703→   703→                {oc.fecha} · {oc.hora}
+   704→   704→              </div>
+   705→   705→            </div>
+   706→   706→          </div>
+   707→   707→          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+   708→   708→            <span style={compraStatusBadgeStyle}>{compraStatusLabel(oc.estado)}</span>
+   709→   709→            <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   710→   710→              C$ {oc.total}
+   711→   711→            </span>
+   712→   712→          </div>
+   713→   713→        </div>
+   714→   714→
+   715→   715→        {/* Row 2: resumen productos */}
+   716→   716→        <div
+   717→   717→          style={{
+   718→   718→            marginTop: 8,
+   719→   719→            fontSize: 12,
+   720→   720→            color: 'var(--text-muted)',
+   721→   721→            fontFamily: "'DM Sans', sans-serif",
+   722→   722→            overflow: 'hidden',
+   723→   723→            textOverflow: 'ellipsis',
+   724→   724→            whiteSpace: 'nowrap',
+   725→   725→          }}
+   726→   726→        >
+   727→   727→          {itemCount} producto{itemCount !== 1 ? 's' : ''}: {oc.items.map(i => i.nombreProducto).join(', ')}
+   728→   728→        </div>
+   729→   729→
+   730→   730→        {/* Row 3: repartidor + calificacion */}
+   731→   731→        <div
+   732→   732→          style={{
+   733→   733→            display: 'flex',
+   734→   734→            justifyContent: 'space-between',
+   735→   735→            alignItems: 'center',
+   736→   736→            marginTop: 8,
+   737→   737→            padding: '6px 10px',
+   738→   738→            borderRadius: 8,
+   739→   739→            background: 'var(--bg-alt)',
+   740→   740→          }}
+   741→   741→        >
+   742→   742→          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   743→   743→            <div
+   744→   744→              style={{
+   745→   745→                width: 22,
+   746→   746→                height: 22,
+   747→   747→                borderRadius: '50%',
+   748→   748→                background: 'var(--primario-soft)',
+   749→   749→                display: 'flex',
+   750→   750→                alignItems: 'center',
+   751→   751→                justifyContent: 'center',
+   752→   752→                fontSize: 9,
+   753→   753→                fontWeight: 700,
+   754→   754→                color: 'var(--primario)',
+   755→   755→                fontFamily: "'Syne', sans-serif",
+   756→   756→              }}
+   757→   757→            >
+   758→   758→              {oc.repartidorInitials || '?'}
+   759→   759→            </div>
+   760→   760→            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+   761→   761→              {oc.repartidorNombre || 'Sin asignar'}
+   762→   762→            </span>
+   763→   763→          </div>
+   764→   764→          {oc.calificacion && (
+   765→   765→            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+   766→   766→              {Array.from({ length: 5 }).map((_, i) => (
+   767→   767→                <Star
+   768→   768→                  key={i}
+   769→   769→                  size={13}
+   770→   770→                  style={{ color: i < oc.calificacion! ? '#F59E0B' : 'var(--border)' }}
+   771→   771→                  fill={i < oc.calificacion! ? '#F59E0B' : 'none'}
+   772→   772→                />
+   773→   773→              ))}
+   774→   774→            </div>
+   775→   775→          )}
+   776→   776→        </div>
+   777→   777→
+   778→   778→        {/* Row 4: action buttons */}
+   779→   779→        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+   780→   780→          <button
+   781→   781→            onClick={() => onNavigate('explorar')}
+   782→   782→            style={{
+   783→   783→              padding: '8px 14px',
+   784→   784→              borderRadius: 10,
+   785→   785→              border: 'none',
+   786→   786→              background: 'var(--primario)',
+   787→   787→              color: '#fff',
+   788→   788→              fontSize: 12,
+   789→   789→              fontWeight: 600,
+   790→   790→              cursor: 'pointer',
+   791→   791→              fontFamily: "'DM Sans', sans-serif",
+   792→   792→              display: 'flex',
+   793→   793→              alignItems: 'center',
+   794→   794→              gap: 5,
+   795→   795→            }}
+   796→   796→          >
+   797→   797→            <RotateCcw size={13} />
+   798→   798→            Reordenar
+   799→   799→          </button>
+   800→   800→          <button
+   801→   801→            style={{
+   802→   802→              padding: '8px 14px',
+   803→   803→              borderRadius: 10,
+   804→   804→              border: '1px solid var(--border)',
+   805→   805→              background: 'transparent',
+   806→   806→              color: 'var(--text)',
+   807→   807→              fontSize: 12,
+   808→   808→              fontWeight: 500,
+   809→   809→              cursor: 'pointer',
+   810→   810→              fontFamily: "'DM Sans', sans-serif",
+   811→   811→            }}
+   812→   812→          >
+   813→   813→            Ver detalle
+   814→   814→          </button>
+   815→   815→          {!oc.calificacion && (
+   816→   816→            <button
+   817→   817→              style={{
+   818→   818→                padding: '8px 14px',
+   819→   819→                borderRadius: 10,
+   820→   820→                border: '1px solid var(--border)',
+   821→   821→                background: 'transparent',
+   822→   822→                color: '#F59E0B',
+   823→   823→                fontSize: 12,
+   824→   824→                fontWeight: 500,
+   825→   825→                cursor: 'pointer',
+   826→   826→                fontFamily: "'DM Sans', sans-serif",
+   827→   827→                display: 'flex',
+   828→   828→                alignItems: 'center',
+   829→   829→                gap: 5,
+   830→   830→              }}
+   831→   831→            >
+   832→   832→              <Star size={13} />
+   833→   833→              Calificar
+   834→   834→            </button>
+   835→   835→          )}
+   836→   836→        </div>
+   837→   837→      </div>
+   838→   838→    </motion.div>
+   839→   839→  );
+   840→   840→}
+   841→   841→
+   842→   842→/* ── Empty States ────────────────────────────── */
+   843→   843→
+   844→   844→function EmptyActiveEnvios() {
+   845→   845→  return (
+   846→   846→    <motion.div
+   847→   847→      initial={{ opacity: 0, y: 20 }}
+   848→   848→      animate={{ opacity: 1, y: 0 }}
+   849→   849→      style={{
+   850→   850→        display: 'flex',
+   851→   851→        flexDirection: 'column',
+   852→   852→        alignItems: 'center',
+   853→   853→        justifyContent: 'center',
+   854→   854→        padding: '48px 16px',
+   855→   855→      }}
+   856→   856→    >
+   857→   857→      <svg width="100" height="100" viewBox="0 0 120 120" fill="none">
+   858→   858→        <rect x="30" y="45" width="60" height="50" rx="6" style={{ fill: 'var(--bg-alt)' }} stroke="var(--border)" strokeWidth="2" />
+   859→   859→        <rect x="30" y="45" width="60" height="18" rx="6" style={{ fill: 'var(--primario-soft)' }} stroke="var(--primario)" strokeWidth="1.5" />
+   860→   860→        <path d="M30 55 L60 38 L90 55" stroke="var(--primario)" strokeWidth="2" fill="none" />
+   861→   861→        <motion.g animate={{ x: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
+   862→   862→          <path d="M62 82 L78 82" stroke="var(--primario)" strokeWidth="2.5" strokeLinecap="round" />
+   863→   863→          <path d="M73 76 L79 82 L73 88" stroke="var(--primario)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+   864→   864→        </motion.g>
+   865→   865→      </svg>
+   866→   866→      <h3 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', marginTop: 16, marginBottom: 6 }}>
+   867→   867→        No tienes envíos activos
+   868→   868→      </h3>
+   869→   869→      <p style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", textAlign: 'center', maxWidth: 280 }}>
+   870→   870→        Solicita un envío y aparecerá aquí en tiempo real
+   871→   871→      </p>
+   872→   872→    </motion.div>
+   873→   873→  );
+   874→   874→}
+   875→   875→
+   876→   876→function EmptyActiveCompras() {
+   877→   877→  return (
+   878→   878→    <motion.div
+   879→   879→      initial={{ opacity: 0, y: 20 }}
+   880→   880→      animate={{ opacity: 1, y: 0 }}
+   881→   881→      style={{
+   882→   882→        display: 'flex',
+   883→   883→        flexDirection: 'column',
+   884→   884→        alignItems: 'center',
+   885→   885→        justifyContent: 'center',
+   886→   886→        padding: '48px 16px',
+   887→   887→      }}
+   888→   888→    >
+   889→   889→      <div
+   890→   890→        style={{
+   891→   891→          width: 80,
+   892→   892→          height: 80,
+   893→   893→          borderRadius: '50%',
+   894→   894→          background: 'var(--bg-alt)',
+   895→   895→          display: 'flex',
+   896→   896→          alignItems: 'center',
+   897→   897→          justifyContent: 'center',
+   898→   898→          marginBottom: 16,
+   899→   899→        }}
+   900→   900→      >
+   901→   901→        <ShoppingBag size={36} style={{ color: 'var(--text-muted)' }} />
+   902→   902→      </div>
+   903→   903→      <h3 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', marginBottom: 6 }}>
+   904→   904→        No tienes compras activas
+   905→   905→      </h3>
+   906→   906→      <p style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", textAlign: 'center', maxWidth: 280 }}>
+   907→   907→        Explora tiendas y haz tu primera compra
+   908→   908→      </p>
+   909→   909→    </motion.div>
+   910→   910→  );
+   911→   911→}
+   912→   912→
+   913→   913→function EmptyHistory({ type }: { type: 'envios' | 'compras' }) {
+   914→   914→  return (
+   915→   915→    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 16px' }}>
+   916→   916→      {type === 'envios' ? (
+   917→   917→        <Package size={40} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
+   918→   918→      ) : (
+   919→   919→        <ShoppingBag size={40} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
+   920→   920→      )}
+   921→   921→      <p style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   922→   922→        No se encontraron {type === 'envios' ? 'envíos' : 'compras'}
+   923→   923→      </p>
+   924→   924→    </div>
+   925→   925→  );
+   926→   926→}
+   927→   927→
+   928→   928→/* ═══════════════════════════════════════════════
+   929→   929→   MAIN COMPONENT
+   930→   930→   ═══════════════════════════════════════════════ */
+   931→   931→
+   932→   932→export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientPedidosProps) {
+   933→   933→  /* ── Store ── */
+   934→   934→  const { orders } = useStore();
+   935→   935→  const { ordenesCompra } = useMarketplaceStore();
+   936→   936→
+   937→   937→  /* ── Local state ── */
+   938→   938→  const [activeTab, setActiveTab] = useState<TabKey>('activos');
+   939→   939→  const [envioFilter, setEnvioFilter] = useState<EnvioFilterKey>('todos');
+   940→   940→  const [searchQuery, setSearchQuery] = useState('');
+   941→   941→
+   942→   942→  /* ── Computed: envios ── */
+   943→   943→  const clientOrders = useMemo(
+   944→   944→    () => orders.filter((o) => o.cliente === 'María López' || o.cliente === 'Maria López'),
+   945→   945→    [orders]
+   946→   946→  );
+   947→   947→
+   948→   948→  const activeEnvios = useMemo(
+   949→   949→    () => clientOrders.filter((o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'),
+   950→   950→    [clientOrders]
+   951→   951→  );
+   952→   952→
+   953→   953→  const historicalEnvios = useMemo(
+   954→   954→    () => clientOrders.filter((o) => o.estado === 'entregado' || o.estado === 'incidencia'),
+   955→   955→    [clientOrders]
+   956→   956→  );
+   957→   957→
+   958→   958→  const filteredEnvios = useMemo(() => {
+   959→   959→    let result = historicalEnvios;
+   960→   960→    if (envioFilter === 'entregados') result = result.filter((o) => o.estado === 'entregado');
+   961→   961→    else if (envioFilter === 'cancelados' || envioFilter === 'incidencia') result = result.filter((o) => o.estado === 'incidencia');
+   962→   962→
+   963→   963→    if (searchQuery) {
+   964→   964→      const q = searchQuery.toLowerCase();
+   965→   965→      result = result.filter(
+   966→   966→        (o) =>
+   967→   967→          o.id.toLowerCase().includes(q) ||
+   968→   968→          o.destino.toLowerCase().includes(q) ||
+   969→   969→          o.origen.toLowerCase().includes(q)
+   970→   970→      );
+   971→   971→    }
+   972→   972→    return result;
+   973→   973→  }, [historicalEnvios, envioFilter, searchQuery]);
+   974→   974→
+   975→   975→  /* ── Computed: compras ── */
+   976→   976→  const activeCompras = useMemo(
+   977→   977→    () => ordenesCompra.filter((oc) => oc.estado !== 'entregado'),
+   978→   978→    [ordenesCompra]
+   979→   979→  );
+   980→   980→
+   981→   981→  const deliveredCompras = useMemo(
+   982→   982→    () => ordenesCompra.filter((oc) => oc.estado === 'entregado'),
+   983→   983→    [ordenesCompra]
+   984→   984→  );
+   985→   985→
+   986→   986→  /* ── Tab counts ── */
+   987→   987→  const activosCount = activeEnvios.length + activeCompras.length;
+   988→   988→  const enviosCount = historicalEnvios.length;
+   989→   989→  const comprasCount = deliveredCompras.length;
+   990→   990→
+   991→   991→  /* ── Filter pills for envios tab ── */
+   992→   992→  const envioFilterPills: { key: EnvioFilterKey; label: string }[] = [
+   993→   993→    { key: 'todos', label: 'Todos' },
+   994→   994→    { key: 'entregados', label: 'Entregados' },
+   995→   995→    { key: 'cancelados', label: 'Cancelados' },
+   996→   996→    { key: 'incidencia', label: 'Con incidencia' },
+   997→   997→  ];
+   998→   998→
+   999→   999→  /* ═══════════════════════════════════════════════
+  1000→  1000→     RENDER
+  1001→  1001→     ═══════════════════════════════════════════════ */
+  1002→  1002→
+  1003→  1003→  return (
+  1004→  1004→    <div style={{ width: '100%' }}>
+  1005→  1005→      {/* ── Header ── */}
+  1006→  1006→      <div style={{ marginBottom: 24 }}>
+  1007→  1007→        <h1
+  1008→  1008→          style={{
+  1009→  1009→            fontSize: 24,
+  1010→  1010→            fontWeight: 700,
+  1011→  1011→            fontFamily: "'Syne', sans-serif",
+  1012→  1012→            color: 'var(--text)',
+  1013→  1013→            margin: 0,
+  1014→  1014→          }}
+  1015→  1015→        >
+  1016→  1016→          Mis Pedidos
+  1017→  1017→        </h1>
+  1018→  1018→      </div>
+  1019→  1019→
+  1020→  1020→      {/* ── Tabs ── */}
+  1021→  1021→      <div
+  1022→  1022→        style={{
+  1023→  1023→          display: 'flex',
+  1024→  1024→          gap: 8,
+  1025→  1025→          marginBottom: 24,
+  1026→  1026→          padding: 4,
+  1027→  1027→          borderRadius: 14,
+  1028→  1028→          background: 'var(--bg-alt)',
+  1029→  1029→        }}
+  1030→  1030→      >
+  1031→  1031→        {([
+  1032→  1032→          { key: 'activos' as TabKey, label: 'Activos', count: activosCount },
+  1033→  1033→          { key: 'envios' as TabKey, label: 'Envíos', count: enviosCount },
+  1034→  1034→          { key: 'compras' as TabKey, label: 'Compras', count: comprasCount },
+  1035→  1035→        ]).map((tab) => (
+  1036→  1036→          <button
+  1037→  1037→            key={tab.key}
+  1038→  1038→            onClick={() => setActiveTab(tab.key)}
+  1039→  1039→            style={{
+  1040→  1040→              flex: 1,
+  1041→  1041→              padding: '10px 0',
+  1042→  1042→              borderRadius: 10,
+  1043→  1043→              border: 'none',
+  1044→  1044→              background: activeTab === tab.key ? 'var(--primario)' : 'transparent',
+  1045→  1045→              color: activeTab === tab.key ? '#fff' : 'var(--text-muted)',
+  1046→  1046→              fontSize: 13,
+  1047→  1047→              fontWeight: 600,
+  1048→  1048→              cursor: 'pointer',
+  1049→  1049→              fontFamily: "'DM Sans', sans-serif",
+  1050→  1050→              position: 'relative',
+  1051→  1051→              transition: 'all 0.2s ease',
+  1052→  1052→              display: 'flex',
+  1053→  1053→              alignItems: 'center',
+  1054→  1054→              justifyContent: 'center',
+  1055→  1055→              gap: 6,
+  1056→  1056→            }}
+  1057→  1057→          >
+  1058→  1058→            {tab.label}
+  1059→  1059→            {tab.count > 0 && (
+  1060→  1060→              <span
+  1061→  1061→                style={{
+  1062→  1062→                  display: 'inline-flex',
+  1063→  1063→                  alignItems: 'center',
+  1064→  1064→                  justifyContent: 'center',
+  1065→  1065→                  minWidth: 18,
+  1066→  1066→                  height: 18,
+  1067→  1067→                  borderRadius: 9,
+  1068→  1068→                  padding: '0 5px',
+  1069→  1069→                  fontSize: 10,
+  1070→  1070→                  fontWeight: 700,
+  1071→  1071→                  background: activeTab === tab.key ? 'rgba(255,255,255,0.25)' : 'var(--primario)',
+  1072→  1072→                  color: activeTab === tab.key ? '#fff' : '#fff',
+  1073→  1073→                }}
+  1074→  1074→              >
+  1075→  1075→                {tab.count}
+  1076→  1076→              </span>
+  1077→  1077→            )}
+  1078→  1078→          </button>
+  1079→  1079→        ))}
+  1080→  1080→      </div>
+  1081→  1081→
+  1082→  1082→      {/* ── Tab Content ── */}
+  1083→  1083→      <AnimatePresence mode="wait">
+  1084→  1084→        {/* ═══ TAB: ACTIVOS ═══ */}
+  1085→  1085→        {activeTab === 'activos' && (
+  1086→  1086→          <motion.div
+  1087→  1087→            key="activos"
+  1088→  1088→            initial={{ opacity: 0, x: -20 }}
+  1089→  1089→            animate={{ opacity: 1, x: 0 }}
+  1090→  1090→            exit={{ opacity: 0, x: 20 }}
+  1091→  1091→            transition={{ duration: 0.25 }}
+  1092→  1092→          >
+  1093→  1093→            {/* Active Envios Section */}
+  1094→  1094→            {activeEnvios.length > 0 && (
+  1095→  1095→              <div style={{ marginBottom: 24 }}>
+  1096→  1096→                <div
+  1097→  1097→                  style={{
+  1098→  1098→                    display: 'flex',
+  1099→  1099→                    alignItems: 'center',
+  1100→  1100→                    gap: 8,
+  1101→  1101→                    marginBottom: 12,
+  1102→  1102→                  }}
+  1103→  1103→                >
+  1104→  1104→                  <Package size={16} style={{ color: 'var(--primario)' }} />
+  1105→  1105→                  <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: 'var(--text)' }}>
+  1106→  1106→                    Envíos activos
+  1107→  1107→                  </span>
+  1108→  1108→                  <span
+  1109→  1109→                    style={{
+  1110→  1110→                      display: 'inline-flex',
+  1111→  1111→                      alignItems: 'center',
+  1112→  1112→                      justifyContent: 'center',
+  1113→  1113→                      minWidth: 20,
+  1114→  1114→                      height: 20,
+  1115→  1115→                      borderRadius: 10,
+  1116→  1116→                      padding: '0 6px',
+  1117→  1117→                      fontSize: 10,
+  1118→  1118→                      fontWeight: 700,
+  1119→  1119→                      background: 'var(--primario)',
+  1120→  1120→                      color: '#fff',
+  1121→  1121→                    }}
+  1122→  1122→                  >
+  1123→  1123→                    {activeEnvios.length}
+  1124→  1124→                  </span>
+  1125→  1125→                </div>
+  1126→  1126→                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+  1127→  1127→                  {activeEnvios.map((order) => (
+  1128→  1128→                    <ActiveEnvioCard
+  1129→  1129→                      key={order.id}
+  1130→  1130→                      order={order}
+  1131→  1131→                      onOpenTracking={onOpenTracking}
+  1132→  1132→                      onOpenChat={onOpenChat}
+  1133→  1133→                    />
+  1134→  1134→                  ))}
+  1135→  1135→                </div>
+  1136→  1136→              </div>
+  1137→  1137→            )}
+  1138→  1138→
+  1139→  1139→            {/* Active Compras Section */}
+  1140→  1140→            {activeCompras.length > 0 && (
+  1141→  1141→              <div style={{ marginBottom: 24 }}>
+  1142→  1142→                <div
+  1143→  1143→                  style={{
+  1144→  1144→                    display: 'flex',
+  1145→  1145→                    alignItems: 'center',
+  1146→  1146→                    gap: 8,
+  1147→  1147→                    marginBottom: 12,
+  1148→  1148→                  }}
+  1149→  1149→                >
+  1150→  1150→                  <ShoppingBag size={16} style={{ color: 'var(--primario)' }} />
+  1151→  1151→                  <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: 'var(--text)' }}>
+  1152→  1152→                    Compras activas
+  1153→  1153→                  </span>
+  1154→  1154→                  <span
+  1155→  1155→                    style={{
+  1156→  1156→                      display: 'inline-flex',
+  1157→  1157→                      alignItems: 'center',
+  1158→  1158→                      justifyContent: 'center',
+  1159→  1159→                      minWidth: 20,
+  1160→  1160→                      height: 20,
+  1161→  1161→                      borderRadius: 10,
+  1162→  1162→                      padding: '0 6px',
+  1163→  1163→                      fontSize: 10,
+  1164→  1164→                      fontWeight: 700,
+  1165→  1165→                      background: 'var(--primario)',
+  1166→  1166→                      color: '#fff',
+  1167→  1167→                    }}
+  1168→  1168→                  >
+  1169→  1169→                    {activeCompras.length}
+  1170→  1170→                  </span>
+  1171→  1171→                </div>
+  1172→  1172→                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+  1173→  1173→                  {activeCompras.map((oc) => (
+  1174→  1174→                    <ActiveCompraCard
+  1175→  1175→                      key={oc.id}
+  1176→  1176→                      oc={oc}
+  1177→  1177→                      onOpenTracking={onOpenTracking}
+  1178→  1178→                    />
+  1179→  1179→                  ))}
+  1180→  1180→                </div>
+  1181→  1181→              </div>
+  1182→  1182→            )}
+  1183→  1183→
+  1184→  1184→            {/* Both empty */}
+  1185→  1185→            {activeEnvios.length === 0 && activeCompras.length === 0 && (
+  1186→  1186→              <div>
+  1187→  1187→                <EmptyActiveEnvios />
+  1188→  1188→                <div style={{ borderBottom: '1px solid var(--border)', margin: '0 16px' }} />
+  1189→  1189→                <EmptyActiveCompras />
+  1190→  1190→                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16, padding: '0 16px' }}>
+  1191→  1191→                  <button
+  1192→  1192→                    onClick={() => onNavigate('solicitar')}
+  1193→  1193→                    style={{
+  1194→  1194→                      padding: '10px 20px',
+  1195→  1195→                      borderRadius: 12,
+  1196→  1196→                      border: 'none',
+  1197→  1197→                      background: 'var(--primario)',
+  1198→  1198→                      color: '#fff',
+  1199→  1199→                      fontSize: 13,
+  1200→  1200→                      fontWeight: 600,
+  1201→  1201→                      cursor: 'pointer',
+  1202→  1202→                      fontFamily: "'DM Sans', sans-serif",
+  1203→  1203→                    }}
+  1204→  1204→                  >
+  1205→  1205→                    Solicitar envío
+  1206→  1206→                  </button>
+  1207→  1207→                  <button
+  1208→  1208→                    onClick={() => onNavigate('explorar')}
+  1209→  1209→                    style={{
+  1210→  1210→                      padding: '10px 20px',
+  1211→  1211→                      borderRadius: 12,
+  1212→  1212→                      border: '1px solid var(--border)',
+  1213→  1213→                      background: 'transparent',
+  1214→  1214→                      color: 'var(--text)',
+  1215→  1215→                      fontSize: 13,
+  1216→  1216→                      fontWeight: 500,
+  1217→  1217→                      cursor: 'pointer',
+  1218→  1218→                      fontFamily: "'DM Sans', sans-serif",
+  1219→  1219→                    }}
+  1220→  1220→                  >
+  1221→  1221→                    Explorar tiendas
+  1222→  1222→                  </button>
+  1223→  1223→                </div>
+  1224→  1224→              </div>
+  1225→  1225→            )}
+  1226→  1226→          </motion.div>
+  1227→  1227→        )}
+  1228→  1228→
+  1229→  1229→        {/* ═══ TAB: ENVIOS ═══ */}
+  1230→  1230→        {activeTab === 'envios' && (
+  1231→  1231→          <motion.div
+  1232→  1232→            key="envios"
+  1233→  1233→            initial={{ opacity: 0, x: -20 }}
+  1234→  1234→            animate={{ opacity: 1, x: 0 }}
+  1235→  1235→            exit={{ opacity: 0, x: 20 }}
+  1236→  1236→            transition={{ duration: 0.25 }}
+  1237→  1237→          >
+  1238→  1238→            {/* Metrics */}
+  1239→  1239→            <div
+  1240→  1240→              style={{
+  1241→  1241→                display: 'flex',
+  1242→  1242→                justifyContent: 'center',
+  1243→  1243→                gap: 24,
+  1244→  1244→                marginBottom: 20,
+  1245→  1245→              }}
+  1246→  1246→            >
+  1247→  1247→              {[
+  1248→  1248→                {
+  1249→  1249→                  value: clientOrders.length,
+  1250→  1250→                  label: 'envíos totales',
+  1251→  1251→                },
+  1252→  1252→                {
+  1253→  1253→                  value: `C$ ${clientOrders.reduce((s, o) => s + o.monto, 0).toLocaleString()}`,
+  1254→  1254→                  label: 'gastados',
+  1255→  1255→                },
+  1256→  1256→                {
+  1257→  1257→                  value: clientOrders.filter((o) => o.fecha.startsWith('2026-06')).length,
+  1258→  1258→                  label: 'envíos este mes',
+  1259→  1259→                },
+  1260→  1260→              ].map((m, i) => (
+  1261→  1261→                <div key={i} style={{ textAlign: 'center' }}>
+  1262→  1262→                  <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+  1263→  1263→                    {m.value}
+  1264→  1264→                  </div>
+  1265→  1265→                  <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+  1266→  1266→                    {m.label}
+  1267→  1267→                  </div>
+  1268→  1268→                </div>
+  1269→  1269→              ))}
+  1270→  1270→            </div>
+  1271→  1271→
+  1272→  1272→            {/* Filter pills */}
+  1273→  1273→            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+  1274→  1274→              {envioFilterPills.map((pill) => (
+  1275→  1275→                <button
+  1276→  1276→                  key={pill.key}
+  1277→  1277→                  onClick={() => setEnvioFilter(pill.key)}
+  1278→  1278→                  style={{
+  1279→  1279→                    padding: '6px 14px',
+  1280→  1280→                    borderRadius: 20,
+  1281→  1281→                    fontSize: 12,
+  1282→  1282→                    fontWeight: 600,
+  1283→  1283→                    fontFamily: "'DM Sans', sans-serif",
+  1284→  1284→                    background: envioFilter === pill.key ? 'var(--primario)' : 'var(--bg-alt)',
+  1285→  1285→                    color: envioFilter === pill.key ? 'white' : 'var(--text-secondary)',
+  1286→  1286→                    border: envioFilter === pill.key ? '1px solid var(--primario)' : '1px solid var(--border)',
+  1287→  1287→                    cursor: 'pointer',
+  1288→  1288→                    transition: 'all 0.2s ease',
+  1289→  1289→                  }}
+  1290→  1290→                >
+  1291→  1291→                  {pill.label}
+  1292→  1292→                </button>
+  1293→  1293→              ))}
+  1294→  1294→            </div>
+  1295→  1295→
+  1296→  1296→            {/* Search */}
+  1297→  1297→            <div style={{ position: 'relative', marginBottom: 16 }}>
+  1298→  1298→              <Search
+  1299→  1299→                size={16}
+  1300→  1300→                style={{
+  1301→  1301→                  position: 'absolute',
+  1302→  1302→                  left: 12,
+  1303→  1303→                  top: '50%',
+  1304→  1304→                  transform: 'translateY(-50%)',
+  1305→  1305→                  color: 'var(--text-muted)',
+  1306→  1306→                }}
+  1307→  1307→              />
+  1308→  1308→              <input
+  1309→  1309→                type="text"
+  1310→  1310→                placeholder="Buscar por ID o destino..."
+  1311→  1311→                value={searchQuery}
+  1312→  1312→                onChange={(e) => setSearchQuery(e.target.value)}
+  1313→  1313→                style={{
+  1314→  1314→                  width: '100%',
+  1315→  1315→                  paddingLeft: 36,
+  1316→  1316→                  paddingRight: 16,
+  1317→  1317→                  paddingTop: 10,
+  1318→  1318→                  paddingBottom: 10,
+  1319→  1319→                  borderRadius: 12,
+  1320→  1320→                  fontSize: 13,
+  1321→  1321→                  fontFamily: "'DM Sans', sans-serif",
+  1322→  1322→                  background: 'var(--bg-alt)',
+  1323→  1323→                  color: 'var(--text)',
+  1324→  1324→                  border: '1px solid var(--border)',
+  1325→  1325→                  outline: 'none',
+  1326→  1326→                }}
+  1327→  1327→                onFocus={(e) => (e.target.style.borderColor = 'var(--primario)')}
+  1328→  1328→                onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}
+  1329→  1329→              />
+  1330→  1330→            </div>
+  1331→  1331→
+  1332→  1332→            {/* Counter */}
+  1333→  1333→            <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginBottom: 12 }}>
+  1334→  1334→              {filteredEnvios.length} envío{filteredEnvios.length !== 1 ? 's' : ''} en tu historial
+  1335→  1335→            </p>
+  1336→  1336→
+  1337→  1337→            {/* Order list */}
+  1338→  1338→            {filteredEnvios.length === 0 ? (
+  1339→  1339→              <EmptyHistory type="envios" />
+  1340→  1340→            ) : (
+  1341→  1341→              <div
+  1342→  1342→                style={{
+  1343→  1343→                  display: 'flex',
+  1344→  1344→                  flexDirection: 'column',
+  1345→  1345→                  gap: 12,
+  1346→  1346→                  maxHeight: 600,
+  1347→  1347→                  overflowY: 'auto',
+  1348→  1348→                  paddingRight: 4,
+  1349→  1349→                  scrollbarWidth: 'thin',
+  1350→  1350→                }}
+  1351→  1351→              >
+  1352→  1352→                {filteredEnvios.map((order) => (
+  1353→  1353→                  <HistoryEnvioItem
+  1354→  1354→                    key={order.id}
+  1355→  1355→                    order={order}
+  1356→  1356→                    onNavigate={onNavigate}
+  1357→  1357→                    onOpenTracking={onOpenTracking}
+  1358→  1358→                  />
+  1359→  1359→                ))}
+  1360→  1360→              </div>
+  1361→  1361→            )}
+  1362→  1362→          </motion.div>
+  1363→  1363→        )}
+  1364→  1364→
+  1365→  1365→        {/* ═══ TAB: COMPRAS ═══ */}
+  1366→  1366→        {activeTab === 'compras' && (
+  1367→  1367→          <motion.div
+  1368→  1368→            key="compras"
+  1369→  1369→            initial={{ opacity: 0, x: -20 }}
+  1370→  1370→            animate={{ opacity: 1, x: 0 }}
+  1371→  1371→            exit={{ opacity: 0, x: 20 }}
+  1372→  1372→            transition={{ duration: 0.25 }}
+  1373→  1373→          >
+  1374→  1374→            {/* Metrics */}
+  1375→  1375→            <div
+  1376→  1376→              style={{
+  1377→  1377→                display: 'flex',
+  1378→  1378→                justifyContent: 'center',
+  1379→  1379→                gap: 24,
+  1380→  1380→                marginBottom: 20,
+  1381→  1381→              }}
+  1382→  1382→            >
+  1383→  1383→              {[
+  1384→  1384→                {
+  1385→  1385→                  value: deliveredCompras.length,
+  1386→  1386→                  label: 'compras totales',
+  1387→  1387→                },
+  1388→  1388→                {
+  1389→  1389→                  value: `C$ ${deliveredCompras.reduce((s, o) => s + o.total, 0).toLocaleString()}`,
+  1390→  1390→                  label: 'gastados',
+  1391→  1391→                },
+  1392→  1392→                {
+  1393→  1393→                  value: ordenesCompra.length,
+  1394→  1394→                  label: 'pedidos totales',
+  1395→  1395→                },
+  1396→  1396→              ].map((m, i) => (
+  1397→  1397→                <div key={i} style={{ textAlign: 'center' }}>
+  1398→  1398→                  <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+  1399→  1399→                    {m.value}
+  1400→  1400→                  </div>
+  1401→  1401→                  <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+  1402→  1402→                    {m.label}
+  1403→  1403→                  </div>
+  1404→  1404→                </div>
+  1405→  1405→              ))}
+  1406→  1406→            </div>
+  1407→  1407→
+  1408→  1408→            {/* Counter */}
+  1409→  1409→            <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginBottom: 12 }}>
+  1410→  1410→              {deliveredCompras.length} compra{deliveredCompras.length !== 1 ? 's' : ''} completada{deliveredCompras.length !== 1 ? 's' : ''}
+  1411→  1411→            </p>
+  1412→  1412→
+  1413→  1413→            {/* Compras list */}
+  1414→  1414→            {deliveredCompras.length === 0 ? (
+  1415→  1415→              <EmptyHistory type="compras" />
+  1416→  1416→            ) : (
+  1417→  1417→              <div
+  1418→  1418→                style={{
+  1419→  1419→                  display: 'flex',
+  1420→  1420→                  flexDirection: 'column',
+  1421→  1421→                  gap: 12,
+  1422→  1422→                  maxHeight: 600,
+  1423→  1423→                  overflowY: 'auto',
+  1424→  1424→                  paddingRight: 4,
+  1425→  1425→                  scrollbarWidth: 'thin',
+  1426→  1426→                }}
+  1427→  1427→              >
+  1428→  1428→                {deliveredCompras.map((oc) => (
+  1429→  1429→                  <CompraHistoryItem
+  1430→  1430→                    key={oc.id}
+  1431→  1431→                    oc={oc}
+  1432→  1432→                    onNavigate={onNavigate}
+  1433→  1433→                  />
+  1434→  1434→                ))}
+  1435→  1435→              </div>
+  1436→  1436→            )}
+  1437→  1437→          </motion.div>
+  1438→  1438→        )}
+  1439→  1439→      </AnimatePresence>
+  1440→  1440→    </div>
+  1441→  1441→  );
+  1442→  1442→}
+  1443→  1443→

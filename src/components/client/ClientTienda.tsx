@@ -1,10 +1,19 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Heart, Share2, Phone, Star, Clock, MapPin, Truck, Plus, Minus, Check, ChevronRight, X, ShoppingBag, MessageCircle, Sparkles } from 'lucide-react';
-import { useMarketplaceStore, type Tienda, type Producto, CATEGORIAS, MOCK_PRODUCTOS, MOCK_RESENAS } from '@/lib/marketplace-store';
-import { useStore } from '@/lib/store';
+import {
+  ArrowLeft, Heart, Share2, Phone, Star, Clock, MapPin,
+  Truck, Plus, Minus, Check, ChevronRight, X, ShoppingBag,
+  MessageCircle, Sparkles, Search, Navigation,
+} from 'lucide-react';
+import {
+  useMarketplaceStore,
+  type Tienda,
+  type Producto,
+  CATEGORIAS,
+  MOCK_RESENAS,
+} from '@/lib/marketplace-store';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -40,8 +49,7 @@ function isStoreOpen(horario: Record<string, { abre: string; cierra: string }>):
   const abreMinutes = abreH * 60 + abreM;
   const cierraMinutes = cierraH * 60 + cierraM;
   if (currentMinutes >= abreMinutes && currentMinutes <= cierraMinutes) {
-    const cierraFormatted = dayHorario.cierra;
-    return { open: true, text: `Abierto hasta ${cierraFormatted}` };
+    return { open: true, text: `Abierto hasta ${dayHorario.cierra}` };
   }
   if (currentMinutes < abreMinutes) {
     return { open: false, text: `Abre a las ${dayHorario.abre}` };
@@ -55,16 +63,33 @@ function formatHorarioDisplay(h: { abre: string; cierra: string }): string {
 }
 
 const DAY_LABELS: Record<string, string> = {
-  lun: 'Lunes',
-  mar: 'Martes',
-  mie: 'Miércoles',
-  jue: 'Jueves',
-  vie: 'Viernes',
-  sab: 'Sábado',
-  dom: 'Domingo',
+  lun: 'Lunes', mar: 'Martes', mie: 'Miercoles',
+  jue: 'Jueves', vie: 'Viernes', sab: 'Sabado', dom: 'Domingo',
 };
 
 const DAY_ORDER = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
+
+/* ═══════════════════════════════════════════════
+   GEOMETRIC PATTERN OVERLAY
+   ═══════════════════════════════════════════════ */
+
+function GeometricPattern({ color }: { color: string }) {
+  return (
+    <svg
+      width="100%" height="100%"
+      style={{ position: 'absolute', inset: 0, opacity: 0.04 }}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <pattern id={`geo-${color.replace('#', '')}`} x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+          <circle cx="20" cy="20" r="1.5" fill={color} />
+          <path d="M0 20h40M20 0v40" stroke={color} strokeWidth="0.5" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill={`url(#geo-${color.replace('#', '')})`} />
+    </svg>
+  );
+}
 
 /* ═══════════════════════════════════════════════
    STAR DISPLAY
@@ -72,23 +97,14 @@ const DAY_ORDER = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
 
 function StarsDisplay({ rating, size = 14 }: { rating: number; size?: number }) {
   const full = Math.floor(rating);
-  const hasHalf = rating - full >= 0.3;
-  const empty = 5 - full - (hasHalf ? 1 : 0);
+  const empty = 5 - full;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
       {Array.from({ length: full }).map((_, i) => (
-        <Star key={`f${i}`} size={size} fill="#FFB300" color="#FFB300" />
+        <Star key={`f${i}`} size={size} fill="#FFB300" color="#FFB300" strokeWidth={0} />
       ))}
-      {hasHalf && (
-        <span style={{ position: 'relative', width: size, height: size, display: 'inline-flex' }}>
-          <Star size={size} color="var(--border)" style={{ position: 'absolute', left: 0 }} />
-          <span style={{ position: 'absolute', left: 0, overflow: 'hidden', width: size / 2 }}>
-            <Star size={size} fill="#FFB300" color="#FFB300" />
-          </span>
-        </span>
-      )}
-      {Array.from({ length: empty }).map((_, i) => (
-        <Star key={`e${i}`} size={size} color="var(--border)" />
+      {Array.from({ length: Math.max(0, empty) }).map((_, i) => (
+        <Star key={`e${i}`} size={size} color="var(--border)" strokeWidth={1.5} />
       ))}
     </span>
   );
@@ -111,15 +127,15 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
     updateCartItemQty,
     removeFromCart,
     getCartItemCount,
-    getCartItemsByTienda,
   } = useMarketplaceStore();
 
   /* ─── Local state ─── */
-  const [activeTab, setActiveTab] = useState<'productos' | 'info' | 'resenas'>('productos');
+  const [activeTab, setActiveTab] = useState<'menu' | 'info' | 'resenas'>('menu');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const [favAnimating, setFavAnimating] = useState(false);
   const [addedProductIds, setAddedProductIds] = useState<Set<string>>(new Set());
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   /* ─── Derived data ─── */
   const tienda = useMemo(() => tiendas.find((t) => t.id === tiendaId), [tiendas, tiendaId]);
@@ -169,7 +185,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
   }, [tiendaResenas, tienda]);
 
   const ratingDistribution = useMemo(() => {
-    const dist = [0, 0, 0, 0, 0]; // index 0 = 1 star, index 4 = 5 stars
+    const dist = [0, 0, 0, 0, 0];
     tiendaResenas.forEach((r) => {
       if (r.estrellas >= 1 && r.estrellas <= 5) dist[r.estrellas - 1]++;
     });
@@ -178,6 +194,9 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
 
   const cartItemCount = getCartItemCount();
   const isFavorite = tienda ? isFavoritoTienda(tienda.id) : false;
+
+  /* ─── Promo code from store data ─── */
+  const hasPromo = tienda?.badges?.includes('Promo');
 
   /* ─── Handlers ─── */
   const handleAddToCart = (producto: Producto) => {
@@ -228,81 +247,156 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
      ═══════════════════════════════════════════════ */
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', position: 'relative' }}>
-      {/* ─── STORE HEADER ─── */}
-      <div style={{ position: 'relative' }}>
-        {/* Cover */}
+
+      {/* ════════════════════════════════════════════
+          1. PORTADA (200px)
+          ════════════════════════════════════════════ */}
+      <div style={{ position: 'relative', height: 200 }}>
+        {/* Background color */}
         <div
           style={{
-            height: 200,
-            background: `linear-gradient(135deg, ${tienda.portadaColor}, ${tienda.logoColor})`,
-            position: 'relative',
+            position: 'absolute',
+            inset: 0,
+            background: tienda.portadaColor,
           }}
-        >
-          {/* Dark overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 100%)',
-            }}
-          />
-          {/* Back button */}
-          <button
-            onClick={onBack}
-            style={{
-              position: 'absolute',
-              top: 16,
-              left: 16,
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              background: 'rgba(0,0,0,0.35)',
-              backdropFilter: 'blur(8px)',
-              border: 'none',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 2,
-            }}
-          >
-            <ArrowLeft size={20} />
-          </button>
-        </div>
+        />
 
-        {/* Logo circle overlapping */}
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+        {/* Geometric pattern overlay */}
+        <GeometricPattern color="#FFFFFF" />
+
+        {/* Bottom gradient: transparent → rgba(0,0,0,0.3) */}
+        <div
           style={{
             position: 'absolute',
-            top: 164,
-            left: 20,
-            width: 72,
-            height: 72,
+            inset: 0,
+            background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.3) 100%)',
+          }}
+        />
+
+        {/* Back button - circle 36x36, glassmorphism */}
+        <button
+          onClick={onBack}
+          style={{
+            position: 'absolute',
+            top: 48,
+            left: 16,
+            width: 36,
+            height: 36,
             borderRadius: '50%',
-            background: tienda.logoColor,
+            background: 'var(--lf-glass-bg)',
+            backdropFilter: `blur(var(--lf-glass-blur))`,
+            WebkitBackdropFilter: `blur(var(--lf-glass-blur))`,
+            border: '1px solid var(--lf-glass-border)',
+            color: 'var(--text)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
-            fontFamily: "'Syne', sans-serif",
-            fontWeight: 700,
-            fontSize: 22,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-            border: '3px solid var(--surface)',
+            cursor: 'pointer',
             zIndex: 2,
           }}
         >
-          {tienda.logoIniciales}
-        </motion.div>
+          <ArrowLeft size={18} />
+        </button>
+
+        {/* Favorite button - circle 36x36, glassmorphism */}
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={handleToggleFavorite}
+          style={{
+            position: 'absolute',
+            top: 48,
+            right: 60,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: 'var(--lf-glass-bg)',
+            backdropFilter: `blur(var(--lf-glass-blur))`,
+            WebkitBackdropFilter: `blur(var(--lf-glass-blur))`,
+            border: '1px solid var(--lf-glass-border)',
+            color: isFavorite ? 'var(--peligro)' : 'var(--text)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 2,
+          }}
+        >
+          <Heart size={17} fill={isFavorite ? 'var(--peligro)' : 'none'} />
+          {favAnimating && (
+            <motion.span
+              initial={{ scale: 0, opacity: 1 }}
+              animate={{ scale: 2, opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                position: 'absolute',
+                width: 17,
+                height: 17,
+                borderRadius: '50%',
+                background: 'var(--peligro)',
+              }}
+            />
+          )}
+        </motion.button>
+
+        {/* Share button - circle 36x36, glassmorphism */}
+        <button
+          style={{
+            position: 'absolute',
+            top: 48,
+            right: 16,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: 'var(--lf-glass-bg)',
+            backdropFilter: `blur(var(--lf-glass-blur))`,
+            WebkitBackdropFilter: `blur(var(--lf-glass-blur))`,
+            border: '1px solid var(--lf-glass-border)',
+            color: 'var(--text)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 2,
+          }}
+        >
+          <Share2 size={17} />
+        </button>
       </div>
 
-      {/* ─── Store Info Section ─── */}
-      <div style={{ padding: '48px 20px 16px 20px' }}>
-        {/* Name */}
+      {/* ════════════════════════════════════════════
+          2. LOGO + INFO (debajo de portada)
+          ════════════════════════════════════════════ */}
+
+      {/* Logo: 72x72, border-radius 22px, border 4px surface, top -32px left 20px */}
+      <motion.div
+        initial={{ scale: 0.5, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+        style={{
+          position: 'relative',
+          top: -32,
+          left: 20,
+          width: 72,
+          height: 72,
+          borderRadius: 22,
+          background: tienda.logoColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#fff',
+          fontFamily: "'Syne', sans-serif",
+          fontWeight: 700,
+          fontSize: 22,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+          border: '4px solid var(--surface)',
+          zIndex: 2,
+        }}
+      >
+        {tienda.logoIniciales}
+      </motion.div>
+
+      {/* Name: Syne 24px bold, margin-top -8px, padding 0 20px */}
+      <div style={{ padding: '0 20px', marginTop: -8 }}>
         <h1
           style={{
             fontFamily: "'Syne', sans-serif",
@@ -316,140 +410,111 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
           {tienda.nombre}
         </h1>
 
-        {/* Category + rating + orders + time */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            marginTop: 8,
-            flexWrap: 'wrap',
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: 13,
-              color: 'var(--text-secondary)',
-            }}
-          >
-            {categoriaLabel(tienda.categoria)}
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <StarsDisplay rating={tienda.calificacion} size={13} />
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600, color: 'var(--text)', marginLeft: 2 }}>
-              {tienda.calificacion}
+        {/* Badges: fila de pills debajo del nombre, gap 6px */}
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+          {tienda.verificado && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '3px 10px',
+                borderRadius: 20,
+                background: 'rgba(0, 200, 83, 0.1)',
+                color: 'var(--exito)',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              <Check size={11} /> Verificado
             </span>
-          </span>
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--text-muted)' }}>
-            {tienda.totalPedidos} pedidos
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            <Clock size={12} style={{ color: 'var(--text-muted)' }} />
-            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--text-muted)' }}>
-              {tienda.tiempoEstimado}
+          )}
+          {tienda.popular && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                padding: '3px 10px',
+                borderRadius: 20,
+                background: 'rgba(255, 87, 34, 0.08)',
+                color: 'var(--primario)',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              <Star size={10} fill="var(--primario)" color="var(--primario)" strokeWidth={0} /> Popular
             </span>
-          </span>
+          )}
+          {tienda.badges?.includes('Nuevo') && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                padding: '3px 10px',
+                borderRadius: 20,
+                background: 'rgba(41, 121, 255, 0.08)',
+                color: 'var(--info)',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              <Sparkles size={10} /> Nuevo
+            </span>
+          )}
         </div>
 
-        {/* Badges */}
-        {tienda.badges.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-            {tienda.verificado && (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '3px 10px',
-                  borderRadius: 20,
-                  background: 'rgba(0, 200, 83, 0.1)',
-                  color: 'var(--exito)',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                <Check size={11} /> Verificado
-              </span>
-            )}
-            {tienda.badges.map((badge) => {
-              let bgColor = 'var(--primario-soft)';
-              let textColor = 'var(--primario)';
-              if (badge === 'Popular') {
-                bgColor = 'rgba(255, 87, 34, 0.08)';
-                textColor = 'var(--primario)';
-              } else if (badge === 'Nuevo') {
-                bgColor = 'rgba(41, 121, 255, 0.08)';
-                textColor = 'var(--info)';
-              }
-              return (
-                <span
-                  key={badge}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 3,
-                    padding: '3px 10px',
-                    borderRadius: 20,
-                    background: bgColor,
-                    color: textColor,
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}
-                >
-                  {badge === 'Popular' && <Star size={10} fill={textColor} color={textColor} />}
-                  {badge === 'Nuevo' && <Sparkles size={10} style={{ display: 'inline', verticalAlign: '-1px' }} />}
-                  {badge}
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Address + Distance */}
+        {/* Meta: Star + rating + punto + categoria + punto + pedidos totales */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            marginTop: 12,
+            marginTop: 8,
+            flexWrap: 'wrap',
           }}
         >
-          <MapPin size={14} style={{ color: 'var(--primario)', flexShrink: 0 }} />
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text-secondary)' }}>
-            {tienda.direccion}
+          <Star size={14} fill="#FFB300" color="#FFB300" strokeWidth={0} />
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+            {tienda.calificacion}
           </span>
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--primario)', fontWeight: 600, marginLeft: 4 }}>
-            1.2 km de ti
+          <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-muted)', display: 'inline-block' }} />
+          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text-secondary)' }}>
+            {categoriaLabel(tienda.categoria)}
+          </span>
+          <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-muted)', display: 'inline-block' }} />
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: 'var(--text-muted)' }}>
+            {tienda.totalPedidos} pedidos
           </span>
         </div>
 
-        {/* Horario */}
+        {/* Status: "Abierto hasta 9:00 PM" con punto verde pulsante / "Cerrado" con punto rojo */}
         <div
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
             marginTop: 8,
-            padding: '4px 10px',
-            borderRadius: 8,
-            background: storeOpenInfo.open ? 'rgba(0, 200, 83, 0.08)' : 'rgba(255, 23, 68, 0.08)',
           }}
         >
-          <div
+          <span
             style={{
-              width: 7,
-              height: 7,
+              width: 8,
+              height: 8,
               borderRadius: '50%',
               background: storeOpenInfo.open ? 'var(--exito)' : 'var(--peligro)',
+              display: 'inline-block',
+              animation: storeOpenInfo.open ? 'pulse-dot 2s ease-in-out infinite' : 'none',
             }}
           />
           <span
             style={{
               fontFamily: "'DM Sans', sans-serif",
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 600,
               color: storeOpenInfo.open ? 'var(--exito)' : 'var(--peligro)',
             }}
@@ -457,168 +522,220 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
             {storeOpenInfo.text}
           </span>
         </div>
-
-        {/* Action buttons row */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            marginTop: 16,
-          }}
-        >
-          {/* Hacer pedido */}
-          <button
-            onClick={() => setActiveTab('productos')}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              borderRadius: 14,
-              background: 'var(--primario)',
-              color: '#fff',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 700,
-              fontSize: 14,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              boxShadow: 'var(--shadow-primario)',
-            }}
-          >
-            <ShoppingBag size={16} />
-            Hacer pedido
-          </button>
-
-          {/* Favorito */}
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={handleToggleFavorite}
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              background: isFavorite ? 'rgba(255, 23, 68, 0.1)' : 'var(--surface)',
-              border: `1.5px solid ${isFavorite ? 'var(--peligro)' : 'var(--border)'}`,
-              color: isFavorite ? 'var(--peligro)' : 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              position: 'relative',
-            }}
-          >
-            <Heart size={20} fill={isFavorite ? 'var(--peligro)' : 'none'} />
-            {favAnimating && (
-              <motion.span
-                initial={{ scale: 0, opacity: 1 }}
-                animate={{ scale: 2, opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                style={{
-                  position: 'absolute',
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: 'var(--peligro)',
-                }}
-              />
-            )}
-          </motion.button>
-
-          {/* Compartir */}
-          <button
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              background: 'var(--surface)',
-              border: '1.5px solid var(--border)',
-              color: 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <Share2 size={20} />
-          </button>
-
-          {/* Llamar */}
-          <button
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              background: 'var(--surface)',
-              border: '1.5px solid var(--border)',
-              color: 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <Phone size={20} />
-          </button>
-        </div>
       </div>
 
-      {/* ─── TABS ─── */}
+      {/* ════════════════════════════════════════════
+          3. BARRA DE PROMO (si tiene)
+          ════════════════════════════════════════════ */}
+      {(hasPromo || tienda.badges?.includes('Popular')) && (
+        <div
+          style={{
+            margin: '12px 20px 0 20px',
+            padding: '10px 16px',
+            borderRadius: 12,
+            background: 'var(--primario-soft)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--text-secondary)' }}>
+            20% OFF con codigo <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>LOGI20</span>
+          </span>
+          <button
+            style={{
+              background: 'none',
+              border: 'none',
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 14,
+              fontWeight: 700,
+              color: 'var(--primario)',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            Aplicar
+          </button>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════
+          4. ACCIONES RAPIDAS (4 pills en fila)
+          ════════════════════════════════════════════ */}
       <div
         style={{
           display: 'flex',
-          gap: 6,
-          padding: '0 20px',
-          marginTop: 8,
+          gap: 8,
+          padding: '16px 20px 0 20px',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}
       >
-        {(['productos', 'info', 'resenas'] as const).map((tab) => {
+        {/* Hacer pedido (primario, relleno) */}
+        <button
+          onClick={() => setActiveTab('menu')}
+          style={{
+            padding: '10px 16px',
+            borderRadius: 12,
+            background: 'var(--primario)',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 13,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap',
+            boxShadow: 'var(--shadow-primario)',
+          }}
+        >
+          <ShoppingBag size={15} />
+          Hacer pedido
+        </button>
+
+        {/* Llamar (outline, Phone) */}
+        <button
+          style={{
+            padding: '10px 16px',
+            borderRadius: 12,
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            border: '1.5px solid var(--border)',
+            cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 13,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Phone size={15} />
+          Llamar
+        </button>
+
+        {/* Direccion (outline, MapPin) */}
+        <button
+          style={{
+            padding: '10px 16px',
+            borderRadius: 12,
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            border: '1.5px solid var(--border)',
+            cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 13,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <MapPin size={15} />
+          Direccion
+        </button>
+
+        {/* Compartir (outline, Share2) */}
+        <button
+          style={{
+            padding: '10px 16px',
+            borderRadius: 12,
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            border: '1.5px solid var(--border)',
+            cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 13,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Share2 size={15} />
+          Compartir
+        </button>
+      </div>
+
+      {/* ════════════════════════════════════════════
+          5. TABS DE NAVEGACION (sticky)
+          ════════════════════════════════════════════ */}
+      <div
+        ref={tabsRef}
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          background: 'var(--bg)',
+          display: 'flex',
+          borderBottom: '1px solid var(--border)',
+          marginTop: 16,
+        }}
+      >
+        {(['menu', 'info', 'resenas'] as const).map((tab) => {
           const isActive = activeTab === tab;
-          const labels = { productos: 'Productos', info: 'Info', resenas: 'Reseñas' };
+          const labels = { menu: 'Menu', info: 'Info', resenas: 'Resenas' };
           return (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                padding: '8px 18px',
-                borderRadius: 24,
+                flex: 1,
+                padding: '14px 0 12px 0',
                 border: 'none',
-                background: isActive ? 'var(--primario)' : 'var(--surface)',
-                color: isActive ? '#fff' : 'var(--text-secondary)',
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 600,
-                fontSize: 13,
+                background: 'transparent',
+                color: isActive ? 'var(--primario)' : 'var(--text-muted)',
+                fontFamily: isActive ? "'DM Sans', sans-serif" : "'DM Sans', sans-serif",
+                fontWeight: isActive ? 700 : 500,
+                fontSize: 14,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: isActive ? '0 2px 8px rgba(255,87,34,0.25)' : 'var(--shadow-sm)',
+                position: 'relative',
+                transition: 'color 0.2s',
               }}
             >
               {labels[tab]}
+              {/* Sliding underline indicator */}
+              {isActive && (
+                <motion.div
+                  layoutId="tienda-tab-indicator"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '20%',
+                    right: '20%',
+                    height: 2.5,
+                    borderRadius: 2,
+                    background: 'var(--primario)',
+                  }}
+                />
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* ─── TAB CONTENT ─── */}
-      <div style={{ padding: '16px 20px 120px 20px' }}>
+      {/* ════════════════════════════════════════════
+          6. TAB: MENU (PRODUCTOS)
+          ════════════════════════════════════════════ */}
+      <div style={{ padding: '0 20px 120px 20px' }}>
         <AnimatePresence mode="wait">
-          {/* ════════════ PRODUCTS TAB ════════════ */}
-          {activeTab === 'productos' && (
+          {activeTab === 'menu' && (
             <motion.div
-              key="productos"
+              key="menu"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Search */}
-              <div
-                style={{
-                  position: 'relative',
-                  marginBottom: 12,
-                }}
-              >
+              {/* Buscador interno: pill pequena */}
+              <div style={{ position: 'relative', marginTop: 12 }}>
                 <input
                   type="text"
                   placeholder={`Buscar en ${tienda.nombre}...`}
@@ -626,8 +743,8 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '11px 16px 11px 40px',
-                    borderRadius: 12,
+                    padding: '10px 16px 10px 40px',
+                    borderRadius: 28,
                     border: '1.5px solid var(--border)',
                     background: 'var(--surface)',
                     color: 'var(--text)',
@@ -639,13 +756,15 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                   onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--primario)')}
                   onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                 />
-                <SearchIcon
+                <Search
+                  size={16}
                   style={{
                     position: 'absolute',
-                    left: 14,
+                    left: 16,
                     top: '50%',
                     transform: 'translateY(-50%)',
                     color: 'var(--text-muted)',
+                    pointerEvents: 'none',
                   }}
                 />
                 {searchQuery && (
@@ -668,22 +787,23 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                 )}
               </div>
 
-              {/* Category sticky tabs */}
+              {/* NAV DE CATEGORIAS (sticky debajo de tabs) */}
               <div
                 style={{
                   display: 'flex',
-                  gap: 6,
+                  gap: 4,
                   overflowX: 'auto',
-                  paddingBottom: 8,
-                  marginBottom: 8,
+                  paddingBottom: 4,
+                  marginBottom: 12,
+                  marginTop: 12,
                   scrollbarWidth: 'none',
                   msOverflowStyle: 'none',
                   WebkitOverflowScrolling: 'touch',
                   position: 'sticky',
-                  top: 0,
-                  zIndex: 10,
+                  top: 49,
+                  zIndex: 15,
                   background: 'var(--bg)',
-                  paddingTop: 4,
+                  paddingTop: 8,
                 }}
               >
                 {productCategories.map((cat) => {
@@ -695,25 +815,40 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                       style={{
                         padding: '6px 14px',
                         borderRadius: 20,
-                        border: '1.5px solid',
-                        borderColor: isActive ? 'var(--primario)' : 'var(--border)',
-                        background: isActive ? 'var(--primario-soft)' : 'var(--surface)',
+                        border: 'none',
+                        background: 'transparent',
                         color: isActive ? 'var(--primario)' : 'var(--text-secondary)',
                         fontFamily: "'DM Sans', sans-serif",
-                        fontWeight: 600,
-                        fontSize: 12,
+                        fontWeight: isActive ? 700 : 500,
+                        fontSize: 13,
                         cursor: 'pointer',
                         whiteSpace: 'nowrap',
-                        transition: 'all 0.2s',
+                        position: 'relative',
+                        transition: 'color 0.2s',
                       }}
                     >
                       {cat}
+                      {isActive && (
+                        <motion.div
+                          layoutId="cat-underline"
+                          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                          style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: '20%',
+                            right: '20%',
+                            height: 2,
+                            borderRadius: 1,
+                            background: 'var(--primario)',
+                          }}
+                        />
+                      )}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Products grouped by category */}
+              {/* LISTA DE PRODUCTOS */}
               {Object.keys(groupedProducts).length === 0 && (
                 <div
                   style={{
@@ -729,7 +864,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               )}
 
               {Object.entries(groupedProducts).map(([catName, prods]) => (
-                <div key={catName} style={{ marginBottom: 20 }}>
+                <div key={catName} style={{ marginBottom: 24 }}>
                   {/* Category header */}
                   <h3
                     style={{
@@ -737,7 +872,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                       fontWeight: 700,
                       fontSize: 16,
                       color: 'var(--text)',
-                      marginBottom: 4,
+                      marginBottom: 8,
                     }}
                   >
                     {catName}
@@ -760,8 +895,9 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                           alignItems: 'center',
                         }}
                       >
-                        {/* Info */}
+                        {/* Info (flex 1) */}
                         <div style={{ flex: 1, minWidth: 0 }}>
+                          {/* nombre 15px bold */}
                           <div
                             style={{
                               fontSize: 15,
@@ -772,6 +908,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                           >
                             {producto.nombre}
                           </div>
+                          {/* desc 13px muted (2 lineas max) */}
                           <div
                             style={{
                               fontSize: 13,
@@ -787,12 +924,13 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                           >
                             {producto.descripcion}
                           </div>
+                          {/* precio JetBrains Mono 16px bold + precio tachado si hay descuento */}
                           <div
                             style={{
                               display: 'flex',
                               alignItems: 'center',
                               gap: 8,
-                              marginTop: 4,
+                              marginTop: 6,
                             }}
                           >
                             {producto.precioOriginal && (
@@ -818,75 +956,29 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                               C${producto.precio}
                             </span>
                           </div>
-
-                          {/* Product badges */}
-                          <div style={{ display: 'flex', gap: 5, marginTop: 6 }}>
-                            {producto.esNuevo && (
-                              <span
-                                style={{
-                                  padding: '2px 7px',
-                                  borderRadius: 6,
-                                  background: 'rgba(41, 121, 255, 0.08)',
-                                  color: 'var(--info)',
-                                  fontFamily: "'DM Sans', sans-serif",
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                }}
-                              >
-                                Nuevo
-                              </span>
-                            )}
-                            {producto.esPopular && (
-                              <span
-                                style={{
-                                  padding: '2px 7px',
-                                  borderRadius: 6,
-                                  background: 'var(--primario-soft)',
-                                  color: 'var(--primario)',
-                                  fontFamily: "'DM Sans', sans-serif",
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                }}
-                              >
-                                Popular
-                              </span>
-                            )}
-                            {producto.stock !== null && producto.stock <= 5 && (
-                              <span
-                                style={{
-                                  padding: '2px 7px',
-                                  borderRadius: 6,
-                                  background: 'rgba(255, 179, 0, 0.1)',
-                                  color: 'var(--warning)',
-                                  fontFamily: "'DM Sans', sans-serif",
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                }}
-                              >
-                                Últimas unidades
-                              </span>
-                            )}
-                          </div>
                         </div>
 
-                        {/* Image + Add button */}
-                        <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
+                        {/* Imagen (derecha, 88x88): border-radius 16px, color de fondo */}
+                        <div style={{ position: 'relative', width: 88, height: 88, flexShrink: 0 }}>
                           <div
                             style={{
-                              width: 90,
-                              height: 90,
-                              borderRadius: 14,
+                              width: 88,
+                              height: 88,
+                              borderRadius: 16,
                               background: producto.imagenColor,
                             }}
                           />
+
+                          {/* Boton "+": 32x32, var(--primario), border-radius 50% */}
+                          {/* Si ya en carrito: control [-] [cantidad] [+] */}
                           {qtyInCart === 0 ? (
                             <motion.button
                               whileTap={{ scale: 0.85 }}
                               onClick={() => handleAddToCart(producto)}
                               style={{
                                 position: 'absolute',
-                                bottom: -8,
-                                right: -8,
+                                bottom: -6,
+                                right: -6,
                                 width: 32,
                                 height: 32,
                                 borderRadius: '50%',
@@ -903,11 +995,14 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                               <Plus size={16} />
                             </motion.button>
                           ) : (
-                            <div
+                            <motion.div
+                              initial={{ scale: 0.8 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                               style={{
                                 position: 'absolute',
-                                bottom: -8,
-                                right: -8,
+                                bottom: -6,
+                                right: -6,
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 0,
@@ -966,8 +1061,9 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                               >
                                 <Plus size={13} />
                               </button>
-                            </div>
+                            </motion.div>
                           )}
+
                           {/* Just added check animation */}
                           <AnimatePresence>
                             {justAdded && (
@@ -1003,7 +1099,9 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
             </motion.div>
           )}
 
-          {/* ════════════ INFO TAB ════════════ */}
+          {/* ════════════════════════════════════════════
+              7. TAB: INFO
+              ════════════════════════════════════════════ */}
           {activeTab === 'info' && (
             <motion.div
               key="info"
@@ -1017,7 +1115,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                 style={{
                   width: '100%',
                   height: 160,
-                  borderRadius: 16,
+                  borderRadius: 'var(--lf-card-radius)',
                   background: `linear-gradient(135deg, ${tienda.logoColor}22, ${tienda.portadaColor}22)`,
                   border: '1.5px solid var(--border)',
                   display: 'flex',
@@ -1025,6 +1123,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
+                  marginTop: 16,
                   marginBottom: 20,
                 }}
               >
@@ -1043,7 +1142,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               </div>
 
               {/* Address */}
-              <InfoRow icon={<MapPin size={16} style={{ color: 'var(--primario)' }} />} label="Dirección" value={tienda.direccion} />
+              <InfoRow icon={<MapPin size={16} style={{ color: 'var(--primario)' }} />} label="Direccion" value={tienda.direccion} />
 
               {/* Hours */}
               <div style={{ marginBottom: 20 }}>
@@ -1063,7 +1162,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                 <div
                   style={{
                     background: 'var(--surface)',
-                    borderRadius: 12,
+                    borderRadius: 'var(--lf-card-radius)',
                     border: '1px solid var(--border)',
                     overflow: 'hidden',
                   }}
@@ -1110,7 +1209,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               </div>
 
               {/* Phone */}
-              <InfoRow icon={<Phone size={16} style={{ color: 'var(--primario)' }} />} label="Teléfono" value={tienda.telefono} />
+              <InfoRow icon={<Phone size={16} style={{ color: 'var(--primario)' }} />} label="Telefono" value={tienda.telefono} />
 
               {/* Email */}
               <InfoRow
@@ -1130,7 +1229,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                     marginBottom: 6,
                   }}
                 >
-                  Descripción
+                  Descripcion
                 </div>
                 <p
                   style={{
@@ -1156,24 +1255,24 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                     marginBottom: 10,
                   }}
                 >
-                  Políticas de pedido
+                  Politicas de pedido
                 </div>
                 <div
                   style={{
                     background: 'var(--surface)',
-                    borderRadius: 12,
+                    borderRadius: 'var(--lf-card-radius)',
                     border: '1px solid var(--border)',
                     overflow: 'hidden',
                   }}
                 >
                   <PolicyRow
                     icon={<ShoppingBag size={16} style={{ color: 'var(--primario)' }} />}
-                    label="Pedido mínimo"
+                    label="Pedido minimo"
                     value={`C$${tienda.pedidoMinimo}`}
                   />
                   <PolicyRow
                     icon={<Truck size={16} style={{ color: 'var(--primario)' }} />}
-                    label="Costo de envío"
+                    label="Costo de envio"
                     value={`C$${tienda.costoEnvio}`}
                   />
                   <PolicyRow
@@ -1219,7 +1318,9 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
             </motion.div>
           )}
 
-          {/* ════════════ REVIEWS TAB ════════════ */}
+          {/* ════════════════════════════════════════════
+              8. TAB: RESENAS
+              ════════════════════════════════════════════ */}
           {activeTab === 'resenas' && (
             <motion.div
               key="resenas"
@@ -1228,20 +1329,23 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Average rating */}
+              {/* Calificacion promedio grande + distribucion */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 16,
-                  padding: 20,
+                  gap: 20,
+                  padding: 24,
                   background: 'var(--surface)',
-                  borderRadius: 16,
+                  borderRadius: 'var(--lf-card-radius)',
                   border: '1px solid var(--border)',
+                  marginTop: 16,
                   marginBottom: 16,
+                  boxShadow: 'var(--lf-shadow-card)',
                 }}
               >
-                <div style={{ textAlign: 'center' }}>
+                {/* Big rating */}
+                <div style={{ textAlign: 'center', minWidth: 80 }}>
                   <div
                     style={{
                       fontFamily: "'Syne', sans-serif",
@@ -1262,7 +1366,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                       marginTop: 4,
                     }}
                   >
-                    ({tiendaResenas.length} reseñas)
+                    ({tiendaResenas.length} resenas)
                   </div>
                 </div>
 
@@ -1293,7 +1397,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                         >
                           {star}
                         </span>
-                        <Star size={11} fill="#FFB300" color="#FFB300" />
+                        <Star size={11} fill="#FFB300" color="#FFB300" strokeWidth={0} />
                         <div
                           style={{
                             flex: 1,
@@ -1342,7 +1446,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                       fontSize: 14,
                     }}
                   >
-                    Aún no hay reseñas para esta tienda
+                    Aun no hay resenas para esta tienda
                   </div>
                 )}
                 {tiendaResenas.map((resena, idx) => (
@@ -1422,7 +1526,9 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
         </AnimatePresence>
       </div>
 
-      {/* ─── FLOATING CART BUTTON ─── */}
+      {/* ════════════════════════════════════════════
+          FLOATING CART BUTTON with badge count
+          ════════════════════════════════════════════ */}
       <AnimatePresence>
         {cartItemCount > 0 && (
           <motion.button
@@ -1434,42 +1540,47 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
             onClick={onOpenCart}
             style={{
               position: 'fixed',
-              bottom: 24,
-              right: 24,
-              width: 56,
-              height: 56,
-              borderRadius: '50%',
+              bottom: 'calc(72px + env(safe-area-inset-bottom, 0px) + 16px)',
+              right: 20,
+              height: 52,
+              paddingLeft: 20,
+              paddingRight: 20,
+              borderRadius: 28,
               background: 'var(--primario)',
               border: 'none',
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: 10,
               cursor: 'pointer',
-              boxShadow: 'var(--shadow-primario)',
+              boxShadow: 'var(--lf-shadow-float)',
               zIndex: 50,
             }}
           >
-            <ShoppingBag size={24} />
-            {/* Badge */}
+            <ShoppingBag size={20} />
             <span
               style={{
-                position: 'absolute',
-                top: -4,
-                right: -4,
-                minWidth: 20,
-                height: 20,
-                borderRadius: 10,
-                background: 'var(--peligro)',
-                color: '#fff',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              Ver carrito
+            </span>
+            <span
+              style={{
+                minWidth: 22,
+                height: 22,
+                borderRadius: 11,
+                background: 'rgba(255,255,255,0.25)',
                 fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '0 5px',
-                border: '2px solid var(--surface)',
+                padding: '0 6px',
               }}
             >
               {cartItemCount}
@@ -1477,6 +1588,14 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* Pulse dot animation keyframes */}
+      <style>{`
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.3); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -1557,24 +1676,5 @@ function PolicyRow({ icon, label, value }: { icon: React.ReactNode; label: strin
         {value}
       </span>
     </div>
-  );
-}
-
-function SearchIcon({ style }: { style?: React.CSSProperties }) {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={style}
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
   );
 }

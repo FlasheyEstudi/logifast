@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Home,
-  PlusCircle,
+  PackagePlus,
   Package,
   User,
   Bell,
@@ -118,11 +118,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'inicio', label: 'Inicio', icon: <Home size={20} /> },
-  { key: 'explorar', label: 'Explorar', icon: <Search size={20} /> },
-  { key: 'solicitar', label: 'Enviar', icon: <PlusCircle size={20} /> },
-  { key: 'pedidos', label: 'Pedidos', icon: <Package size={20} /> },
-  { key: 'perfil', label: 'Perfil', icon: <User size={20} /> },
+  { key: 'inicio', label: 'Inicio', icon: <Home size={22} /> },
+  { key: 'explorar', label: 'Explorar', icon: <Search size={22} /> },
+  { key: 'solicitar', label: 'Enviar', icon: <PackagePlus size={22} /> },
+  { key: 'pedidos', label: 'Pedidos', icon: <Package size={22} /> },
+  { key: 'perfil', label: 'Perfil', icon: <User size={22} /> },
 ];
 
 /* ═══════════════════════════════════════════════
@@ -187,11 +187,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   const handleNav = useCallback(
     (mod: ClientModuleKey) => {
       setClientActiveModule(mod);
-      setTrackingOrder(null); // Close tracking overlay when navigating
-      // Only close tienda overlay when navigating AWAY from explorar
-      // (clicking a store card on explorar calls onNavigate('explorar') which should NOT close the tienda)
+      setTrackingOrder(null);
       if (mod !== 'explorar') {
         setTiendaSeleccionada(null);
+      }
+      // Haptic feedback on nav tap
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate(20); } catch { /* ignore */ }
       }
     },
     [setClientActiveModule, setTrackingOrder, setTiendaSeleccionada]
@@ -899,7 +901,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         style={{
           flex: 1,
           paddingTop: 60,
-          paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
           minHeight: '100vh',
           transition: 'padding 0.3s ease',
         }}
@@ -930,7 +932,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         </div>
       </main>
 
-      {/* ─── BOTTOM NAV (mobile) ─── */}
+      {/* ─── BOTTOM NAV (mobile) — Glassmorphism Mobile 2026 ─── */}
       <nav
         className="lf-client-bottom-nav"
         style={{
@@ -938,15 +940,15 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           bottom: 0,
           left: 0,
           right: 0,
-          height: 64,
+          height: 72,
           zIndex: 50,
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'space-around',
-          background: 'color-mix(in srgb, var(--surface) 85%, transparent)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '1px solid var(--border)',
+          background: 'var(--lf-glass-bg)',
+          backdropFilter: 'blur(var(--lf-glass-blur))',
+          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+          borderTop: '1px solid var(--lf-glass-border)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           transition: 'background-color 0.3s ease, border-color 0.3s ease',
         }}
@@ -955,6 +957,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           const isActive = clientActiveModule === item.key;
           const isEnviar = item.key === 'solicitar';
 
+          /* ─── CENTER: Enviar protagonist button ─── */
           if (isEnviar) {
             return (
               <button
@@ -962,32 +965,45 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 onClick={() => handleNav(item.key)}
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 2,
+                  width: 52,
+                  height: 52,
                   border: 'none',
                   cursor: 'pointer',
-                  background: isActive ? 'var(--primario)' : 'var(--primario)',
+                  background: 'var(--primario)',
                   color: '#FFFFFF',
                   borderRadius: 16,
-                  padding: '10px 20px',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  transform: 'translateY(-8px)',
-                  boxShadow: 'var(--shadow-primario)',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                  transform: 'translateY(-12px)',
+                  boxShadow: 'var(--lf-shadow-fab)',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                   position: 'relative',
                   zIndex: 2,
+                  flexShrink: 0,
                 }}
+                onMouseDown={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(0.92)';
+                }}
+                onMouseUp={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
+                }}
+                onTouchStart={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(0.92)';
+                }}
+                onTouchEnd={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
+                }}
+                aria-label="Enviar"
               >
-                <PlusCircle size={22} />
-                <span>Enviar</span>
+                <PackagePlus size={24} />
               </button>
             );
           }
 
+          /* ─── REGULAR NAV ITEMS ─── */
           return (
             <button
               key={item.key}
@@ -997,29 +1013,54 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 2,
+                gap: 3,
                 border: 'none',
                 cursor: 'pointer',
                 background: 'transparent',
                 color: isActive ? 'var(--primario)' : 'var(--text-muted)',
-                padding: '8px 16px',
+                padding: '6px 0',
                 fontFamily: "'DM Sans', sans-serif",
-                fontSize: 11,
-                fontWeight: isActive ? 600 : 500,
+                fontSize: isActive ? 11 : 10,
+                fontWeight: isActive ? 600 : 400,
                 transition: 'color 0.2s ease',
                 position: 'relative',
                 flex: 1,
-                maxWidth: 80,
+                maxWidth: 72,
+                minHeight: 48,
               }}
             >
-              <span style={{ position: 'relative' }}>
+              <span style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {item.icon}
+                {/* Notification badge on Inicio tab */}
+                {item.key === 'inicio' && unreadCount > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -3,
+                      right: -8,
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      background: 'var(--peligro)',
+                      color: '#FFFFFF',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
                 {/* Cart count badge on Explorar tab */}
                 {item.key === 'explorar' && getCartItemCount() > 0 && (
                   <span
                     style={{
                       position: 'absolute',
-                      top: -4,
+                      top: -3,
                       right: -8,
                       width: 16,
                       height: 16,
@@ -1040,18 +1081,19 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 )}
               </span>
               <span>{item.label}</span>
+              {/* Active indicator: horizontal line below icon */}
               {isActive && (
                 <motion.div
-                  layoutId="client-nav-dot"
+                  layoutId="client-nav-indicator"
                   style={{
                     position: 'absolute',
-                    bottom: 2,
-                    width: 4,
-                    height: 4,
-                    borderRadius: '50%',
+                    bottom: 0,
+                    width: 16,
+                    height: 2.5,
+                    borderRadius: 2,
                     background: 'var(--primario)',
                   }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
             </button>

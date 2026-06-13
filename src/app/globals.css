@@ -39,6 +39,30 @@
   /* Grain */
   --grain-opacity: 0.025;
 
+  /* ─── Mobile 2026 Tokens ─── */
+  --lf-sheet-radius: 28px;
+  --lf-card-radius: 22px;
+  --lf-pill-radius: 100px;
+  --lf-input-radius: 16px;
+  --lf-button-radius: 16px;
+  --lf-fab-size: 60px;
+  --lf-bottom-nav-height: 72px;
+  --lf-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --lf-sheet-snap-1: 30vh;
+  --lf-sheet-snap-2: 60vh;
+  --lf-sheet-snap-3: 92vh;
+
+  /* Glassmorphism */
+  --lf-glass-bg: rgba(255,255,255,0.72);
+  --lf-glass-border: rgba(255,255,255,0.18);
+  --lf-glass-blur: 24px;
+
+  /* Shadow mobile */
+  --lf-shadow-card: 0 2px 12px rgba(0,0,0,0.06);
+  --lf-shadow-float: 0 8px 32px rgba(0,0,0,0.12);
+  --lf-shadow-sheet: 0 -12px 48px rgba(0,0,0,0.18);
+  --lf-shadow-fab: 0 6px 24px rgba(255,87,34,0.35);
+
   /* Keep shadcn compatibility */
   --radius: 0.75rem;
   --background: #FAF8F5;
@@ -90,6 +114,16 @@
 
   /* Navbar */
   --nav-bg: transparent;
+
+  /* ─── Mobile 2026 Tokens (Dark) ─── */
+  --lf-glass-bg: rgba(10,10,15,0.82);
+  --lf-glass-border: rgba(255,255,255,0.08);
+  --lf-glass-blur: 24px;
+
+  --lf-shadow-card: 0 2px 12px rgba(0,0,0,0.2);
+  --lf-shadow-float: 0 8px 32px rgba(0,0,0,0.35);
+  --lf-shadow-sheet: 0 -12px 48px rgba(0,0,0,0.5);
+  --lf-shadow-fab: 0 6px 24px rgba(255,110,64,0.25);
 
   /* Grain */
   --grain-opacity: 0.03;

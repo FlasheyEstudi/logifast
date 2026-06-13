@@ -1,0 +1,1322 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useState, useMemo, useRef, useEffect } from 'react';
+     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→import {
+     6→     6→  User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
+     7→     7→  LogOut, Shield, Bell, Moon, Sun, Globe, ChevronRight, AlertTriangle,
+     8→     8→  Star, Banknote, CreditCard,
+     9→     9→} from 'lucide-react';
+    10→    10→import {
+    11→    11→  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+    12→    12→} from 'recharts';
+    13→    13→import { useStore } from '@/lib/store';
+    14→    14→import type { DireccionGuardada } from '@/lib/store';
+    15→    15→
+    16→    16→/* ═══════════════════════════════════════════════
+    17→    17→   PROPS
+    18→    18→   ═══════════════════════════════════════════════ */
+    19→    19→interface ClientPerfilProps {
+    20→    20→  isDark: boolean;
+    21→    21→  userName: string;
+    22→    22→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+    23→    23→  onLogout: () => void;
+    24→    24→  onOpenTracking?: (orderId: string) => void;
+    25→    25→  onOpenChat?: (orderId: string) => void;
+    26→    26→}
+    27→    27→
+    28→    28→/* ═══════════════════════════════════════════════
+    29→    29→   MOCK CHART DATA
+    30→    30→   ═══════════════════════════════════════════════ */
+    31→    31→const MONTHLY_DATA = [
+    32→    32→  { mes: 'Ene', envios: 3 },
+    33→    33→  { mes: 'Feb', envios: 5 },
+    34→    34→  { mes: 'Mar', envios: 2 },
+    35→    35→  { mes: 'Abr', envios: 4 },
+    36→    36→  { mes: 'May', envios: 6 },
+    37→    37→  { mes: 'Jun', envios: 4 },
+    38→    38→];
+    39→    39→
+    40→    40→/* ═══════════════════════════════════════════════
+    41→    41→   CUSTOM TOGGLE
+    42→    42→   ═══════════════════════════════════════════════ */
+    43→    43→function Toggle({ on, onToggle, disabled = false }: { on: boolean; onToggle: () => void; disabled?: boolean }) {
+    44→    44→  return (
+    45→    45→    <button
+    46→    46→      type="button"
+    47→    47→      role="switch"
+    48→    48→      aria-checked={on}
+    49→    49→      disabled={disabled}
+    50→    50→      onClick={onToggle}
+    51→    51→      style={{
+    52→    52→        width: 44,
+    53→    53→        height: 24,
+    54→    54→        borderRadius: 12,
+    55→    55→        border: '1px solid var(--border)',
+    56→    56→        background: on ? 'var(--primario)' : 'var(--text-muted, #999)',
+    57→    57→        position: 'relative',
+    58→    58→        cursor: disabled ? 'not-allowed' : 'pointer',
+    59→    59→        transition: 'background 0.2s',
+    60→    60→        opacity: disabled ? 0.5 : 1,
+    61→    61→        flexShrink: 0,
+    62→    62→      }}
+    63→    63→    >
+    64→    64→      <motion.div
+    65→    65→        animate={{ x: on ? 20 : 2 }}
+    66→    66→        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+    67→    67→        style={{
+    68→    68→          width: 18,
+    69→    69→          height: 18,
+    70→    70→          borderRadius: '50%',
+    71→    71→          background: '#fff',
+    72→    72→          position: 'absolute',
+    73→    73→          top: 2,
+    74→    74→        }}
+    75→    75→      />
+    76→    76→    </button>
+    77→    77→  );
+    78→    78→}
+    79→    79→
+    80→    80→/* ═══════════════════════════════════════════════
+    81→    81→   MODAL
+    82→    82→   ═══════════════════════════════════════════════ */
+    83→    83→function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+    84→    84→  return (
+    85→    85→    <motion.div
+    86→    86→      initial={{ opacity: 0 }}
+    87→    87→      animate={{ opacity: 1 }}
+    88→    88→      exit={{ opacity: 0 }}
+    89→    89→      style={{
+    90→    90→        position: 'fixed', inset: 0, zIndex: 9999,
+    91→    91→        background: 'rgba(0,0,0,0.5)', display: 'flex',
+    92→    92→        alignItems: 'center', justifyContent: 'center', padding: 16,
+    93→    93→      }}
+    94→    94→      onClick={onClose}
+    95→    95→    >
+    96→    96→      <motion.div
+    97→    97→        initial={{ scale: 0.9, opacity: 0 }}
+    98→    98→        animate={{ scale: 1, opacity: 1 }}
+    99→    99→        exit={{ scale: 0.9, opacity: 0 }}
+   100→   100→        onClick={(e) => e.stopPropagation()}
+   101→   101→        style={{
+   102→   102→          background: 'var(--surface)', borderRadius: 20,
+   103→   103→          padding: 24, maxWidth: 400, width: '100%',
+   104→   104→          border: '1px solid var(--border)',
+   105→   105→        }}
+   106→   106→      >
+   107→   107→        {children}
+   108→   108→      </motion.div>
+   109→   109→    </motion.div>
+   110→   110→  );
+   111→   111→}
+   112→   112→
+   113→   113→/* ═══════════════════════════════════════════════
+   114→   114→   TOOLTIP CUSTOM (Recharts)
+   115→   115→   ═══════════════════════════════════════════════ */
+   116→   116→function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
+   117→   117→  if (!active || !payload?.length) return null;
+   118→   118→  return (
+   119→   119→    <div
+   120→   120→      style={{
+   121→   121→        background: 'var(--surface)',
+   122→   122→        border: '1px solid var(--border)',
+   123→   123→        borderRadius: 10,
+   124→   124→        padding: '6px 10px',
+   125→   125→        fontSize: 13,
+   126→   126→        fontFamily: "'JetBrains Mono', monospace",
+   127→   127→        color: 'var(--text)',
+   128→   128→      }}
+   129→   129→    >
+   130→   130→      <span style={{ color: 'var(--primario)', fontWeight: 700 }}>{payload[0].value}</span>
+   131→   131→      <span style={{ color: 'var(--text-muted)', marginLeft: 4 }}>envíos</span>
+   132→   132→      <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{label}</div>
+   133→   133→    </div>
+   134→   134→  );
+   135→   135→}
+   136→   136→
+   137→   137→/* ═══════════════════════════════════════════════
+   138→   138→   MAIN COMPONENT
+   139→   139→   ═══════════════════════════════════════════════ */
+   140→   140→export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }: ClientPerfilProps) {
+   141→   141→  const {
+   142→   142→    direccionesGuardadas,
+   143→   143→    addDireccionGuardada,
+   144→   144→    removeDireccionGuardada,
+   145→   145→    direccionesSugerencias,
+   146→   146→    orders,
+   147→   147→    fidelizacion,
+   148→   148→    referidos,
+   149→   149→    calificaciones,
+   150→   150→    canjearPuntos,
+   151→   151→  } = useStore();
+   152→   152→
+   153→   153→  /* ─── Edit profile state ─── */
+   154→   154→  const [editing, setEditing] = useState(false);
+   155→   155→  const [editName, setEditName] = useState(userName);
+   156→   156→  const [editPhone, setEditPhone] = useState('+505 8888-1234');
+   157→   157→  const [editAddress, setEditAddress] = useState('Col. Los Robles, Managua');
+   158→   158→  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+   159→   159→  const [showAddressSugg, setShowAddressSugg] = useState(false);
+   160→   160→
+   161→   161→  /* ─── Add address state ─── */
+   162→   162→  const [addingAddr, setAddingAddr] = useState(false);
+   163→   163→  const [newAddr, setNewAddr] = useState('');
+   164→   164→  const [newAddrLabel, setNewAddrLabel] = useState<'Casa' | 'Trabajo' | 'Otro'>('Casa');
+   165→   165→  const [newAddrSuggestions, setNewAddrSuggestions] = useState<string[]>([]);
+   166→   166→  const [showNewAddrSugg, setShowNewAddrSugg] = useState(false);
+   167→   167→
+   168→   168→  /* ─── Settings state ─── */
+   169→   169→  const [pushNotif, setPushNotif] = useState(true);
+   170→   170→  const [emailPromo, setEmailPromo] = useState(true);
+   171→   171→  const [prefPayment, setPrefPayment] = useState<'efectivo' | 'transferencia'>('efectivo');
+   172→   172→  const [prefPaymentInited, setPrefPaymentInited] = useState(false);
+   173→   173→
+   174→   174→  /* ─── Modals ─── */
+   175→   175→  const [logoutModal, setLogoutModal] = useState(false);
+   176→   176→  const [deleteModal, setDeleteModal] = useState(false);
+   177→   177→  const [deleteText, setDeleteText] = useState('');
+   178→   178→
+   179→   179→  /* ─── Toast state ─── */
+   180→   180→  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+   181→   181→
+   182→   182→  useEffect(() => {
+   183→   183→    if (toast) {
+   184→   184→      const timer = setTimeout(() => setToast(null), 3000);
+   185→   185→      return () => clearTimeout(timer);
+   186→   186→    }
+   187→   187→  }, [toast]);
+   188→   188→
+   189→   189→  /* ─── Computed metrics ─── */
+   190→   190→  const clientOrders = useMemo(
+   191→   191→    () => orders.filter((o) => o.cliente === userName || o.cliente === 'María López' || o.cliente === 'Maria López'),
+   192→   192→    [orders, userName],
+   193→   193→  );
+   194→   194→
+   195→   195→  const metrics = useMemo(() => {
+   196→   196→    const total = clientOrders.length;
+   197→   197→    const totalSpent = clientOrders.reduce((s, o) => s + o.monto, 0);
+   198→   198→    const avg = total > 0 ? Math.round(totalSpent / total) : 0;
+   199→   199→
+   200→   200→    // Most frequent zone: most common destination barrio
+   201→   201→    const zoneCount: Record<string, number> = {};
+   202→   202→    clientOrders.forEach((o) => {
+   203→   203→      const zone = o.destino.split(',')[0].trim();
+   204→   204→      zoneCount[zone] = (zoneCount[zone] || 0) + 1;
+   205→   205→    });
+   206→   206→    const topZone = Object.entries(zoneCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+   207→   207→
+   208→   208→    // Most used payment method
+   209→   209→    const payCount: Record<string, number> = {};
+   210→   210→    clientOrders.forEach((o) => {
+   211→   211→      payCount[o.metodoPago] = (payCount[o.metodoPago] || 0) + 1;
+   212→   212→    });
+   213→   213→    const topPayment = (Object.entries(payCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'efectivo') as 'efectivo' | 'transferencia';
+   214→   214→
+   215→   215→    return { total, totalSpent, avg, topZone, topPayment };
+   216→   216→  }, [clientOrders]);
+   217→   217→
+   218→   218→  // Initialize preferred payment from order history (once)
+   219→   219→  if (!prefPaymentInited && metrics.topPayment) {
+   220→   220→    setPrefPayment(metrics.topPayment);
+   221→   221→    setPrefPaymentInited(true);
+   222→   222→  }
+   223→   223→
+   224→   224→  /* ─── Autocomplete helpers ─── */
+   225→   225→  const filterSuggestions = (val: string) => {
+   226→   226→    if (!val || val.length < 2) return [];
+   227→   227→    const lower = val.toLowerCase();
+   228→   228→    return direccionesSugerencias
+   229→   229→      .filter((d) => d.direccion.toLowerCase().includes(lower))
+   230→   230→      .map((d) => d.direccion)
+   231→   231→      .slice(0, 5);
+   232→   232→  };
+   233→   233→
+   234→   234→  const handleEditAddrChange = (val: string) => {
+   235→   235→    setEditAddress(val);
+   236→   236→    const s = filterSuggestions(val);
+   237→   237→    setAddressSuggestions(s);
+   238→   238→    setShowAddressSugg(s.length > 0);
+   239→   239→  };
+   240→   240→
+   241→   241→  const handleNewAddrChange = (val: string) => {
+   242→   242→    setNewAddr(val);
+   243→   243→    const s = filterSuggestions(val);
+   244→   244→    setNewAddrSuggestions(s);
+   245→   245→    setShowNewAddrSugg(s.length > 0);
+   246→   246→  };
+   247→   247→
+   248→   248→  /* ─── Init helpers ─── */
+   249→   249→  const initials = useMemo(() => {
+   250→   250→    const parts = userName.split(' ');
+   251→   251→    return parts.length >= 2
+   252→   252→      ? (parts[0][0] + parts[1][0]).toUpperCase()
+   253→   253→      : userName.slice(0, 2).toUpperCase();
+   254→   254→  }, [userName]);
+   255→   255→
+   256→   256→  const email = 'cliente@logifast.com';
+   257→   257→
+   258→   258→  /* ─── Save address ─── */
+   259→   259→  const handleAddAddress = () => {
+   260→   260→    if (!newAddr.trim()) return;
+   261→   261→    const match = direccionesSugerencias.find((d) => d.direccion === newAddr);
+   262→   262→    addDireccionGuardada({
+   263→   263→      id: `DG-${Date.now()}`,
+   264→   264→      etiqueta: newAddrLabel,
+   265→   265→      direccion: newAddr,
+   266→   266→      lat: match?.lat ?? 12.12,
+   267→   267→      lng: match?.lng ?? -86.25,
+   268→   268→    });
+   269→   269→    setNewAddr('');
+   270→   270→    setNewAddrLabel('Casa');
+   271→   271→    setAddingAddr(false);
+   272→   272→  };
+   273→   273→
+   274→   274→  /* ─── Toggle theme ─── */
+   275→   275→  const toggleThemeLocal = () => {
+   276→   276→    const next = !isDark;
+   277→   277→    localStorage.setItem('logifast-theme', next ? 'dark' : 'light');
+   278→   278→    document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
+   279→   279→    // Dispatch storage event for parent
+   280→   280→    window.dispatchEvent(new Event('storage'));
+   281→   281→  };
+   282→   282→
+   283→   283→  /* ─── Loyalty computations ─── */
+   284→   284→  const nivelColor = useMemo(() => {
+   285→   285→    switch (fidelizacion.nivel) {
+   286→   286→      case 'bronce': return '#CD7F32';
+   287→   287→      case 'plata': return '#C0C0C0';
+   288→   288→      case 'oro': return '#FFD700';
+   289→   289→      case 'platino': return '#E5E4E2';
+   290→   290→      default: return '#CD7F32';
+   291→   291→    }
+   292→   292→  }, [fidelizacion.nivel]);
+   293→   293→
+   294→   294→  const nivelIcon = useMemo(() => {
+   295→   295→    switch (fidelizacion.nivel) {
+   296→   296→      case 'bronce': return '';
+   297→   297→      case 'plata': return '';
+   298→   298→      case 'oro': return '';
+   299→   299→      case 'platino': return '';
+   300→   300→      default: return '';
+   301→   301→    }
+   302→   302→  }, [fidelizacion.nivel]);
+   303→   303→
+   304→   304→  const capitalizedNivel = fidelizacion.nivel.charAt(0).toUpperCase() + fidelizacion.nivel.slice(1);
+   305→   305→
+   306→   306→  const { progressPercent, pointsToNext } = useMemo(() => {
+   307→   307→    const thresholds = { bronce: 0, plata: 100, oro: 300, platino: 600 };
+   308→   308→    const levelOrder: Array<'bronce' | 'plata' | 'oro' | 'platino'> = ['bronce', 'plata', 'oro', 'platino'];
+   309→   309→    const currentIdx = levelOrder.indexOf(fidelizacion.nivel);
+   310→   310→    const currentThreshold = thresholds[fidelizacion.nivel];
+   311→   311→    const nextIdx = currentIdx + 1;
+   312→   312→
+   313→   313→    if (nextIdx >= levelOrder.length) {
+   314→   314→      // Already at max level
+   315→   315→      return { progressPercent: 100, pointsToNext: 0 };
+   316→   316→    }
+   317→   317→
+   318→   318→    const nextLevel = levelOrder[nextIdx];
+   319→   319→    const nextThreshold = thresholds[nextLevel];
+   320→   320→    const range = nextThreshold - currentThreshold;
+   321→   321→    const progress = fidelizacion.puntos - currentThreshold;
+   322→   322→    const pct = Math.min(Math.max((progress / range) * 100, 0), 100);
+   323→   323→    const remaining = Math.max(nextThreshold - fidelizacion.puntos, 0);
+   324→   324→
+   325→   325→    return { progressPercent: pct, pointsToNext: remaining };
+   326→   326→  }, [fidelizacion.nivel, fidelizacion.puntos]);
+   327→   327→
+   328→   328→  const benefitsText = useMemo(() => {
+   329→   329→    switch (fidelizacion.nivel) {
+   330→   330→      case 'bronce': return 'Bronce: 1 punto por cada C$100 gastados. Gana 10 puntos por envío completado.';
+   331→   331→      case 'plata': return 'Plata: 2 puntos por cada C$100 gastados. Gana 15 puntos por envío completado. Envío prioritario.';
+   332→   332→      case 'oro': return 'Oro: 3 puntos por cada C$100 gastados. Gana 20 puntos por envío completado. Envío prioritario + soporte VIP.';
+   333→   333→      case 'platino': return 'Platino: 5 puntos por cada C$100 gastados. Gana 25 puntos por envío completado. Envío prioritario + soporte VIP + descuentos exclusivos.';
+   334→   334→      default: return '';
+   335→   335→    }
+   336→   336→  }, [fidelizacion.nivel]);
+   337→   337→
+   338→   338→  const pillButtonStyle: React.CSSProperties = {
+   339→   339→    padding: '6px 14px',
+   340→   340→    borderRadius: 20,
+   341→   341→    border: '1px solid var(--primario)',
+   342→   342→    background: 'var(--primario-soft, rgba(255,87,34,0.12))',
+   343→   343→    color: 'var(--primario)',
+   344→   344→    fontWeight: 600,
+   345→   345→    fontSize: 12,
+   346→   346→    cursor: 'pointer',
+   347→   347→    fontFamily: "'DM Sans', sans-serif",
+   348→   348→  };
+   349→   349→
+   350→   350→  const handleCanjear = (puntos: number) => {
+   351→   351→    const ok = canjearPuntos(puntos);
+   352→   352→    if (ok) {
+   353→   353→      setToast({ message: `Se canjearon ${puntos} puntos correctamente`, type: 'success' });
+   354→   354→    } else {
+   355→   355→      setToast({ message: 'No tienes suficientes puntos', type: 'error' });
+   356→   356→    }
+   357→   357→  };
+   358→   358→
+   359→   359→  const handleCopyCode = () => {
+   360→   360→    navigator.clipboard.writeText(referidos.codigo).then(() => {
+   361→   361→      setToast({ message: 'Código copiado: ' + referidos.codigo, type: 'success' });
+   362→   362→    }).catch(() => {
+   363→   363→      setToast({ message: 'Código: ' + referidos.codigo, type: 'success' });
+   364→   364→    });
+   365→   365→  };
+   366→   366→
+   367→   367→  const handleShare = () => {
+   368→   368→    const shareData = {
+   369→   369→      title: 'LOGIFAST - Envíos en moto',
+   370→   370→      text: `¡Únete a LOGIFAST con mi código ${referidos.codigo} y gana 20 puntos en tu primer envío!`,
+   371→   371→      url: referidos.link,
+   372→   372→    };
+   373→   373→    if (typeof navigator !== 'undefined' && navigator.share) {
+   374→   374→      navigator.share(shareData).catch(() => {
+   375→   375→        navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
+   376→   376→          setToast({ message: 'Enlace copiado al portapapeles', type: 'success' });
+   377→   377→        });
+   378→   378→      });
+   379→   379→    } else {
+   380→   380→      navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
+   381→   381→        setToast({ message: 'Enlace copiado al portapapeles', type: 'success' });
+   382→   382→      }).catch(() => {
+   383→   383→        setToast({ message: 'Código: ' + referidos.codigo + ' | Link: ' + referidos.link, type: 'success' });
+   384→   384→      });
+   385→   385→    }
+   386→   386→  };
+   387→   387→
+   388→   388→  /* ═══════════════════════════════════════════════
+   389→   389→     STYLES
+   390→   390→     ═══════════════════════════════════════════════ */
+   391→   391→  const section: React.CSSProperties = {
+   392→   392→    background: 'var(--surface)',
+   393→   393→    borderRadius: 20,
+   394→   394→    border: '1px solid var(--border)',
+   395→   395→    padding: 24,
+   396→   396→  };
+   397→   397→
+   398→   398→  const inputStyle: React.CSSProperties = {
+   399→   399→    width: '100%',
+   400→   400→    padding: '10px 14px',
+   401→   401→    borderRadius: 12,
+   402→   402→    border: '1px solid var(--border)',
+   403→   403→    background: 'var(--bg-alt)',
+   404→   404→    color: 'var(--text)',
+   405→   405→    fontSize: 14,
+   406→   406→    fontFamily: "'DM Sans', sans-serif",
+   407→   407→    outline: 'none',
+   408→   408→  };
+   409→   409→
+   410→   410→  const btnPrimary: React.CSSProperties = {
+   411→   411→    padding: '10px 20px',
+   412→   412→    borderRadius: 12,
+   413→   413→    border: 'none',
+   414→   414→    background: 'var(--primario)',
+   415→   415→    color: '#fff',
+   416→   416→    fontWeight: 600,
+   417→   417→    fontSize: 14,
+   418→   418→    fontFamily: "'DM Sans', sans-serif",
+   419→   419→    cursor: 'pointer',
+   420→   420→    display: 'inline-flex',
+   421→   421→    alignItems: 'center',
+   422→   422→    gap: 6,
+   423→   423→  };
+   424→   424→
+   425→   425→  const btnGhost: React.CSSProperties = {
+   426→   426→    padding: '10px 20px',
+   427→   427→    borderRadius: 12,
+   428→   428→    border: '1px solid var(--border)',
+   429→   429→    background: 'transparent',
+   430→   430→    color: 'var(--text-secondary)',
+   431→   431→    fontWeight: 500,
+   432→   432→    fontSize: 14,
+   433→   433→    fontFamily: "'DM Sans', sans-serif",
+   434→   434→    cursor: 'pointer',
+   435→   435→    display: 'inline-flex',
+   436→   436→    alignItems: 'center',
+   437→   437→    gap: 6,
+   438→   438→  };
+   439→   439→
+   440→   440→  /* ═══════════════════════════════════════════════
+   441→   441→     RENDER
+   442→   442→     ═══════════════════════════════════════════════ */
+   443→   443→  return (
+   444→   444→    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 600, margin: '0 auto', padding: '0 4px' }}>
+   445→   445→      {/* ─── 1. PERSONAL INFO ─── */}
+   446→   446→      <div style={section}>
+   447→   447→        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+   448→   448→          {/* Avatar */}
+   449→   449→          <div
+   450→   450→            style={{
+   451→   451→              width: 80, height: 80, borderRadius: '50%',
+   452→   452→              background: 'var(--primario-soft, rgba(255,87,34,0.12))',
+   453→   453→              display: 'flex', alignItems: 'center', justifyContent: 'center',
+   454→   454→              color: 'var(--primario)',
+   455→   455→              fontFamily: "'Syne', sans-serif",
+   456→   456→              fontWeight: 700,
+   457→   457→              fontSize: 28,
+   458→   458→              flexShrink: 0,
+   459→   459→            }}
+   460→   460→          >
+   461→   461→            {initials}
+   462→   462→          </div>
+   463→   463→
+   464→   464→          <AnimatePresence mode="wait">
+   465→   465→            {!editing ? (
+   466→   466→              <motion.div
+   467→   467→                key="view"
+   468→   468→                initial={{ opacity: 0, y: 8 }}
+   469→   469→                animate={{ opacity: 1, y: 0 }}
+   470→   470→                exit={{ opacity: 0, y: -8 }}
+   471→   471→                style={{ textAlign: 'center', width: '100%' }}
+   472→   472→              >
+   473→   473→                <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif" }}>
+   474→   474→                  {userName}
+   475→   475→                </div>
+   476→   476→                <div style={{ fontSize: 15, color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+   477→   477→                  <Mail size={14} /> {email}
+   478→   478→                </div>
+   479→   479→                <button
+   480→   480→                  onClick={() => {
+   481→   481→                    setEditName(userName);
+   482→   482→                    setEditPhone('+505 8888-1234');
+   483→   483→                    setEditAddress('Col. Los Robles, Managua');
+   484→   484→                    setEditing(true);
+   485→   485→                  }}
+   486→   486→                  style={{
+   487→   487→                    ...btnGhost,
+   488→   488→                    marginTop: 16,
+   489→   489→                    color: 'var(--primario)',
+   490→   490→                    borderColor: 'var(--primario)',
+   491→   491→                  }}
+   492→   492→                >
+   493→   493→                  <Edit3 size={15} /> Editar perfil
+   494→   494→                </button>
+   495→   495→              </motion.div>
+   496→   496→            ) : (
+   497→   497→              <motion.div
+   498→   498→                key="edit"
+   499→   499→                initial={{ opacity: 0, y: 8 }}
+   500→   500→                animate={{ opacity: 1, y: 0 }}
+   501→   501→                exit={{ opacity: 0, y: -8 }}
+   502→   502→                style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}
+   503→   503→              >
+   504→   504→                {/* Name */}
+   505→   505→                <div>
+   506→   506→                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+   507→   507→                    <User size={12} /> Nombre
+   508→   508→                  </label>
+   509→   509→                  <input
+   510→   510→                    style={inputStyle}
+   511→   511→                    value={editName}
+   512→   512→                    onChange={(e) => setEditName(e.target.value)}
+   513→   513→                  />
+   514→   514→                </div>
+   515→   515→                {/* Email (disabled) */}
+   516→   516→                <div>
+   517→   517→                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+   518→   518→                    <Mail size={12} /> Correo
+   519→   519→                  </label>
+   520→   520→                  <div style={{ position: 'relative' }}>
+   521→   521→                    <input
+   522→   522→                      style={{ ...inputStyle, paddingRight: 36, opacity: 0.6 }}
+   523→   523→                      value={email}
+   524→   524→                      disabled
+   525→   525→                    />
+   526→   526→                    <Shield
+   527→   527→                      size={14}
+   528→   528→                      style={{
+   529→   529→                        position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+   530→   530→                        color: 'var(--text-muted)',
+   531→   531→                      }}
+   532→   532→                    />
+   533→   533→                  </div>
+   534→   534→                </div>
+   535→   535→                {/* Phone */}
+   536→   536→                <div>
+   537→   537→                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+   538→   538→                    <Phone size={12} /> Teléfono
+   539→   539→                  </label>
+   540→   540→                  <input
+   541→   541→                    style={inputStyle}
+   542→   542→                    value={editPhone}
+   543→   543→                    onChange={(e) => setEditPhone(e.target.value)}
+   544→   544→                  />
+   545→   545→                </div>
+   546→   546→                {/* Address with autocomplete */}
+   547→   547→                <div style={{ position: 'relative' }}>
+   548→   548→                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+   549→   549→                    <MapPin size={12} /> Dirección principal
+   550→   550→                  </label>
+   551→   551→                  <input
+   552→   552→                    style={inputStyle}
+   553→   553→                    value={editAddress}
+   554→   554→                    onChange={(e) => handleEditAddrChange(e.target.value)}
+   555→   555→                    onBlur={() => setTimeout(() => setShowAddressSugg(false), 200)}
+   556→   556→                    onFocus={() => {
+   557→   557→                      const s = filterSuggestions(editAddress);
+   558→   558→                      if (s.length) setShowAddressSugg(true);
+   559→   559→                    }}
+   560→   560→                  />
+   561→   561→                  <AnimatePresence>
+   562→   562→                    {showAddressSugg && addressSuggestions.length > 0 && (
+   563→   563→                      <motion.div
+   564→   564→                        initial={{ opacity: 0, y: -4 }}
+   565→   565→                        animate={{ opacity: 1, y: 0 }}
+   566→   566→                        exit={{ opacity: 0, y: -4 }}
+   567→   567→                        style={{
+   568→   568→                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+   569→   569→                          background: 'var(--surface)', border: '1px solid var(--border)',
+   570→   570→                          borderRadius: 12, marginTop: 4, overflow: 'hidden',
+   571→   571→                        }}
+   572→   572→                      >
+   573→   573→                        {addressSuggestions.map((s, i) => (
+   574→   574→                          <button
+   575→   575→                            key={i}
+   576→   576→                            onClick={() => {
+   577→   577→                              setEditAddress(s);
+   578→   578→                              setShowAddressSugg(false);
+   579→   579→                            }}
+   580→   580→                            style={{
+   581→   581→                              display: 'flex', alignItems: 'center', gap: 8,
+   582→   582→                              padding: '8px 14px', width: '100%', border: 'none',
+   583→   583→                              background: 'transparent', color: 'var(--text)',
+   584→   584→                              cursor: 'pointer', fontSize: 13, textAlign: 'left',
+   585→   585→                              fontFamily: "'DM Sans', sans-serif",
+   586→   586→                            }}
+   587→   587→                            onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-alt)')}
+   588→   588→                            onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
+   589→   589→                          >
+   590→   590→                            <MapPin size={13} style={{ color: 'var(--primario)', flexShrink: 0 }} /> {s}
+   591→   591→                          </button>
+   592→   592→                        ))}
+   593→   593→                      </motion.div>
+   594→   594→                    )}
+   595→   595→                  </AnimatePresence>
+   596→   596→                </div>
+   597→   597→                {/* Buttons */}
+   598→   598→                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+   599→   599→                  <button style={btnGhost} onClick={() => setEditing(false)}>
+   600→   600→                    <X size={15} /> Cancelar
+   601→   601→                  </button>
+   602→   602→                  <button style={btnPrimary} onClick={() => setEditing(false)}>
+   603→   603→                    <Save size={15} /> Guardar cambios
+   604→   604→                  </button>
+   605→   605→                </div>
+   606→   606→              </motion.div>
+   607→   607→            )}
+   608→   608→          </AnimatePresence>
+   609→   609→        </div>
+   610→   610→      </div>
+   611→   611→
+   612→   612→      {/* ─── 2. METRICS ─── */}
+   613→   613→      <div style={section}>
+   614→   614→        <h3
+   615→   615→          style={{
+   616→   616→            fontSize: 16, fontWeight: 700, color: 'var(--text)',
+   617→   617→            fontFamily: "'Syne', sans-serif", marginBottom: 16,
+   618→   618→          }}
+   619→   619→        >
+   620→   620→          Mis métricas
+   621→   621→        </h3>
+   622→   622→
+   623→   623→        {/* Bar chart */}
+   624→   624→        <div style={{ height: 120, marginBottom: 20, minWidth: 0, minHeight: 120 }}>
+   625→   625→          <ResponsiveContainer width="100%" height="100%">
+   626→   626→            <BarChart data={MONTHLY_DATA} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+   627→   627→              <XAxis
+   628→   628→                dataKey="mes"
+   629→   629→                tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}
+   630→   630→                axisLine={false}
+   631→   631→                tickLine={false}
+   632→   632→              />
+   633→   633→              <YAxis
+   634→   634→                tick={{ fontSize: 10, fill: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}
+   635→   635→                axisLine={false}
+   636→   636→                tickLine={false}
+   637→   637→                width={25}
+   638→   638→              />
+   639→   639→              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--primario-soft, rgba(255,87,34,0.08))' }} />
+   640→   640→              <Bar dataKey="envios" fill="var(--primario)" radius={[6, 6, 0, 0]} />
+   641→   641→            </BarChart>
+   642→   642→          </ResponsiveContainer>
+   643→   643→        </div>
+   644→   644→
+   645→   645→        {/* Stats grid */}
+   646→   646→        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+   647→   647→          <StatCard label="Envíos totales" value={String(metrics.total)} />
+   648→   648→          <StatCard label="Total gastado" value={`C$${metrics.totalSpent.toLocaleString()}`} />
+   649→   649→          <StatCard label="Promedio/envío" value={`C$${metrics.avg}`} />
+   650→   650→          <StatCard label="Zona frecuente" value={metrics.topZone} />
+   651→   651→        </div>
+   652→   652→      </div>
+   653→   653→
+   654→   654→      {/* ─── Puntos LOGIFAST ─── */}
+   655→   655→      <div style={{ marginTop: 24 }}>
+   656→   656→        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
+   657→   657→          Puntos LOGIFAST
+   658→   658→        </h3>
+   659→   659→        <div style={{ padding: 20, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)' }}>
+   660→   660→          {/* Level card */}
+   661→   661→          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+   662→   662→            <div style={{ 
+   663→   663→              width: 48, height: 48, borderRadius: 12, 
+   664→   664→              background: nivelColor, 
+   665→   665→              display: 'flex', alignItems: 'center', justifyContent: 'center',
+   666→   666→              fontSize: 22
+   667→   667→            }}>
+   668→   668→              {nivelIcon}
+   669→   669→            </div>
+   670→   670→            <div>
+   671→   671→              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--text)' }}>
+   672→   672→                Nivel {capitalizedNivel}
+   673→   673→              </div>
+   674→   674→              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700, color: 'var(--primario)' }}>
+   675→   675→                {fidelizacion.puntos} puntos
+   676→   676→              </div>
+   677→   677→            </div>
+   678→   678→          </div>
+   679→   679→          {/* Progress bar */}
+   680→   680→          <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-alt)', overflow: 'hidden', marginBottom: 8 }}>
+   681→   681→            <div style={{ 
+   682→   682→              height: '100%', borderRadius: 4, 
+   683→   683→              background: 'linear-gradient(90deg, var(--primario), var(--primario-hover))',
+   684→   684→              width: `${progressPercent}%`,
+   685→   685→              transition: 'width 0.5s ease'
+   686→   686→            }} />
+   687→   687→          </div>
+   688→   688→          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+   689→   689→            {pointsToNext} puntos para el siguiente nivel
+   690→   690→          </div>
+   691→   691→          {/* Benefits */}
+   692→   692→          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+   693→   693→            {benefitsText}
+   694→   694→          </div>
+   695→   695→          {/* Points history */}
+   696→   696→          <div style={{ marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+   697→   697→            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
+   698→   698→              Historial de puntos
+   699→   699→            </div>
+   700→   700→            <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+   701→   701→              {fidelizacion.historial.slice(0, 8).map(h => (
+   702→   702→                <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+   703→   703→                  <div>
+   704→   704→                    <div style={{ fontSize: 12, color: 'var(--text)' }}>{h.accion}</div>
+   705→   705→                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{h.fecha}</div>
+   706→   706→                  </div>
+   707→   707→                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: h.puntos > 0 ? 'var(--exito)' : 'var(--peligro)' }}>
+   708→   708→                    {h.puntos > 0 ? '+' : ''}{h.puntos}
+   709→   709→                  </div>
+   710→   710→                </div>
+   711→   711→              ))}
+   712→   712→            </div>
+   713→   713→          </div>
+   714→   714→          {/* Canjear puntos */}
+   715→   715→          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+   716→   716→            <button onClick={() => handleCanjear(100)} disabled={fidelizacion.puntos < 100}
+   717→   717→              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 100 ? 0.5 : 1 }}>
+   718→   718→              100 pts = C$20
+   719→   719→            </button>
+   720→   720→            <button onClick={() => handleCanjear(200)} disabled={fidelizacion.puntos < 200}
+   721→   721→              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 200 ? 0.5 : 1 }}>
+   722→   722→              200 pts = C$50
+   723→   723→            </button>
+   724→   724→            <button onClick={() => handleCanjear(500)} disabled={fidelizacion.puntos < 500}
+   725→   725→              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 500 ? 0.5 : 1 }}>
+   726→   726→              500 pts = Envío gratis
+   727→   727→            </button>
+   728→   728→          </div>
+   729→   729→        </div>
+   730→   730→      </div>
+   731→   731→
+   732→   732→      {/* ─── Invitar Amigos ─── */}
+   733→   733→      <div style={{ marginTop: 24 }}>
+   734→   734→        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
+   735→   735→          Invitar amigos
+   736→   736→        </h3>
+   737→   737→        <div style={{ 
+   738→   738→          padding: 20, borderRadius: 16, 
+   739→   739→          background: 'linear-gradient(135deg, var(--primario), #FF8A65)',
+   740→   740→          color: '#FFFFFF' 
+   741→   741→        }}>
+   742→   742→          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+   743→   743→            Invita a un amigo, gana 50 puntos
+   744→   744→          </div>
+   745→   745→          <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 16 }}>
+   746→   746→            Tu amigo también recibe 20 puntos en su primer envío
+   747→   747→          </div>
+   748→   748→          {/* Referral code */}
+   749→   749→          <div style={{ 
+   750→   750→            display: 'flex', alignItems: 'center', gap: 8, 
+   751→   751→            background: 'rgba(255,255,255,0.15)', borderRadius: 10, 
+   752→   752→            padding: '8px 12px', marginBottom: 12 
+   753→   753→          }}>
+   754→   754→            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700, letterSpacing: '1px' }}>
+   755→   755→              {referidos.codigo}
+   756→   756→            </span>
+   757→   757→            <button onClick={handleCopyCode} style={{ 
+   758→   758→              padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.3)',
+   759→   759→              background: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 12, cursor: 'pointer' 
+   760→   760→            }}>
+   761→   761→              Copiar
+   762→   762→            </button>
+   763→   763→          </div>
+   764→   764→          {/* Share button */}
+   765→   765→          <button onClick={handleShare} style={{
+   766→   766→            padding: '10px 20px', borderRadius: 10, border: 'none',
+   767→   767→            background: '#FFFFFF', color: 'var(--primario)', fontSize: 14, fontWeight: 600, cursor: 'pointer'
+   768→   768→          }}>
+   769→   769→            Compartir
+   770→   770→          </button>
+   771→   771→          {/* Stats */}
+   772→   772→          <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+   773→   773→            <div>
+   774→   774→              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.referidos.length}</div>
+   775→   775→              <div style={{ fontSize: 11, opacity: 0.8 }}>Invitados</div>
+   776→   776→            </div>
+   777→   777→            <div>
+   778→   778→              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>
+   779→   779→                {referidos.referidos.filter(r => r.primerEnvio).length}
+   780→   780→              </div>
+   781→   781→              <div style={{ fontSize: 11, opacity: 0.8 }}>Registrados</div>
+   782→   782→            </div>
+   783→   783→            <div>
+   784→   784→              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.puntosGanados}</div>
+   785→   785→              <div style={{ fontSize: 11, opacity: 0.8 }}>Pts ganados</div>
+   786→   786→            </div>
+   787→   787→          </div>
+   788→   788→        </div>
+   789→   789→      </div>
+   790→   790→
+   791→   791→      {/* ─── Mis Calificaciones ─── */}
+   792→   792→      <div style={{ marginTop: 24 }}>
+   793→   793→        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
+   794→   794→          Mis calificaciones
+   795→   795→        </h3>
+   796→   796→        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+   797→   797→          {calificaciones.map(cal => (
+   798→   798→            <div key={cal.id} style={{ 
+   799→   799→              padding: '12px 16px', background: 'var(--surface)', borderRadius: 12, 
+   800→   800→              border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
+   801→   801→            }}>
+   802→   802→              <div>
+   803→   803→                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{cal.repartidorNombre}</div>
+   804→   804→                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{cal.fecha} · {cal.orderId}</div>
+   805→   805→                {cal.comentario && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>{cal.comentario}</div>}
+   806→   806→              </div>
+   807→   807→              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+   808→   808→                {Array.from({ length: 5 }).map((_, i) => (
+   809→   809→                  <Star key={i} size={14} fill={i < cal.estrellas ? 'var(--primario)' : 'none'} color={i < cal.estrellas ? 'var(--primario)' : 'var(--border)'} />
+   810→   810→                ))}
+   811→   811→              </div>
+   812→   812→            </div>
+   813→   813→          ))}
+   814→   814→        </div>
+   815→   815→      </div>
+   816→   816→
+   817→   817→      {/* ─── 3. SAVED ADDRESSES ─── */}
+   818→   818→      <div style={section}>
+   819→   819→        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+   820→   820→          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", margin: 0 }}>
+   821→   821→            Direcciones guardadas
+   822→   822→          </h3>
+   823→   823→          <button
+   824→   824→            onClick={() => setAddingAddr(true)}
+   825→   825→            style={{
+   826→   826→              ...btnGhost,
+   827→   827→              padding: '6px 12px',
+   828→   828→              fontSize: 13,
+   829→   829→              color: 'var(--primario)',
+   830→   830→              borderColor: 'var(--primario)',
+   831→   831→            }}
+   832→   832→          >
+   833→   833→            <Plus size={14} /> Agregar
+   834→   834→          </button>
+   835→   835→        </div>
+   836→   836→
+   837→   837→        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+   838→   838→          {direccionesGuardadas.map((d) => (
+   839→   839→            <div
+   840→   840→              key={d.id}
+   841→   841→              style={{
+   842→   842→                display: 'flex', alignItems: 'center', gap: 10,
+   843→   843→                padding: '10px 14px', borderRadius: 14,
+   844→   844→                background: 'var(--bg-alt)', border: '1px solid var(--border)',
+   845→   845→              }}
+   846→   846→            >
+   847→   847→              <MapPin size={16} style={{ color: 'var(--primario)', flexShrink: 0 }} />
+   848→   848→              <div style={{ flex: 1, minWidth: 0 }}>
+   849→   849→                <div style={{ fontSize: 14, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   850→   850→                  {d.direccion}
+   851→   851→                </div>
+   852→   852→              </div>
+   853→   853→              <span
+   854→   854→                style={{
+   855→   855→                  fontSize: 11,
+   856→   856→                  padding: '2px 8px',
+   857→   857→                  borderRadius: 8,
+   858→   858→                  background: d.etiqueta === 'Casa' ? 'var(--primario-soft, rgba(255,87,34,0.12))'
+   859→   859→                    : d.etiqueta === 'Trabajo' ? 'rgba(41,121,255,0.12)'
+   860→   860→                    : 'var(--bg)',
+   861→   861→                  color: d.etiqueta === 'Casa' ? 'var(--primario)'
+   862→   862→                    : d.etiqueta === 'Trabajo' ? 'var(--info, #2979FF)'
+   863→   863→                    : 'var(--text-muted)',
+   864→   864→                  fontWeight: 600,
+   865→   865→                  whiteSpace: 'nowrap',
+   866→   866→                  fontFamily: "'DM Sans', sans-serif",
+   867→   867→                }}
+   868→   868→              >
+   869→   869→                {d.etiqueta}
+   870→   870→              </span>
+   871→   871→              <button
+   872→   872→                onClick={() => removeDireccionGuardada(d.id)}
+   873→   873→                style={{
+   874→   874→                  background: 'none', border: 'none', cursor: 'pointer',
+   875→   875→                  padding: 4, display: 'flex', color: 'var(--text-muted)',
+   876→   876→                }}
+   877→   877→                title="Eliminar"
+   878→   878→              >
+   879→   879→                <X size={14} />
+   880→   880→              </button>
+   881→   881→            </div>
+   882→   882→          ))}
+   883→   883→        </div>
+   884→   884→
+   885→   885→        {/* Add address form */}
+   886→   886→        <AnimatePresence>
+   887→   887→          {addingAddr && (
+   888→   888→            <motion.div
+   889→   889→              initial={{ height: 0, opacity: 0 }}
+   890→   890→              animate={{ height: 'auto', opacity: 1 }}
+   891→   891→              exit={{ height: 0, opacity: 0 }}
+   892→   892→              style={{ overflow: 'hidden', marginTop: 12 }}
+   893→   893→            >
+   894→   894→              <div
+   895→   895→                style={{
+   896→   896→                  padding: 16, borderRadius: 14,
+   897→   897→                  background: 'var(--bg-alt)', border: '1px solid var(--border)',
+   898→   898→                  display: 'flex', flexDirection: 'column', gap: 10,
+   899→   899→                }}
+   900→   900→              >
+   901→   901→                {/* Address input with autocomplete */}
+   902→   902→                <div style={{ position: 'relative' }}>
+   903→   903→                  <input
+   904→   904→                    style={inputStyle}
+   905→   905→                    placeholder="Buscar dirección..."
+   906→   906→                    value={newAddr}
+   907→   907→                    onChange={(e) => handleNewAddrChange(e.target.value)}
+   908→   908→                    onBlur={() => setTimeout(() => setShowNewAddrSugg(false), 200)}
+   909→   909→                    onFocus={() => {
+   910→   910→                      const s = filterSuggestions(newAddr);
+   911→   911→                      if (s.length) setShowNewAddrSugg(true);
+   912→   912→                    }}
+   913→   913→                  />
+   914→   914→                  <AnimatePresence>
+   915→   915→                    {showNewAddrSugg && newAddrSuggestions.length > 0 && (
+   916→   916→                      <motion.div
+   917→   917→                        initial={{ opacity: 0, y: -4 }}
+   918→   918→                        animate={{ opacity: 1, y: 0 }}
+   919→   919→                        exit={{ opacity: 0, y: -4 }}
+   920→   920→                        style={{
+   921→   921→                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+   922→   922→                          background: 'var(--surface)', border: '1px solid var(--border)',
+   923→   923→                          borderRadius: 12, marginTop: 4, overflow: 'hidden',
+   924→   924→                        }}
+   925→   925→                      >
+   926→   926→                        {newAddrSuggestions.map((s, i) => (
+   927→   927→                          <button
+   928→   928→                            key={i}
+   929→   929→                            onClick={() => {
+   930→   930→                              setNewAddr(s);
+   931→   931→                              setShowNewAddrSugg(false);
+   932→   932→                            }}
+   933→   933→                            style={{
+   934→   934→                              display: 'flex', alignItems: 'center', gap: 8,
+   935→   935→                              padding: '8px 14px', width: '100%', border: 'none',
+   936→   936→                              background: 'transparent', color: 'var(--text)',
+   937→   937→                              cursor: 'pointer', fontSize: 13, textAlign: 'left',
+   938→   938→                              fontFamily: "'DM Sans', sans-serif",
+   939→   939→                            }}
+   940→   940→                            onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-alt)')}
+   941→   941→                            onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
+   942→   942→                          >
+   943→   943→                            <MapPin size={13} style={{ color: 'var(--primario)', flexShrink: 0 }} /> {s}
+   944→   944→                          </button>
+   945→   945→                        ))}
+   946→   946→                      </motion.div>
+   947→   947→                    )}
+   948→   948→                  </AnimatePresence>
+   949→   949→                </div>
+   950→   950→
+   951→   951→                {/* Label select */}
+   952→   952→                <div style={{ display: 'flex', gap: 8 }}>
+   953→   953→                  {(['Casa', 'Trabajo', 'Otro'] as const).map((lbl) => (
+   954→   954→                    <button
+   955→   955→                      key={lbl}
+   956→   956→                      onClick={() => setNewAddrLabel(lbl)}
+   957→   957→                      style={{
+   958→   958→                        padding: '6px 14px', borderRadius: 10,
+   959→   959→                        border: '1px solid',
+   960→   960→                        borderColor: newAddrLabel === lbl ? 'var(--primario)' : 'var(--border)',
+   961→   961→                        background: newAddrLabel === lbl ? 'var(--primario-soft, rgba(255,87,34,0.12))' : 'transparent',
+   962→   962→                        color: newAddrLabel === lbl ? 'var(--primario)' : 'var(--text-secondary)',
+   963→   963→                        fontWeight: 600, fontSize: 13, cursor: 'pointer',
+   964→   964→                        fontFamily: "'DM Sans', sans-serif",
+   965→   965→                      }}
+   966→   966→                    >
+   967→   967→                      {lbl}
+   968→   968→                    </button>
+   969→   969→                  ))}
+   970→   970→                </div>
+   971→   971→
+   972→   972→                {/* Action buttons */}
+   973→   973→                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+   974→   974→                  <button style={{ ...btnGhost, padding: '8px 14px' }} onClick={() => { setAddingAddr(false); setNewAddr(''); }}>
+   975→   975→                    Cancelar
+   976→   976→                  </button>
+   977→   977→                  <button
+   978→   978→                    style={{ ...btnPrimary, padding: '8px 14px' }}
+   979→   979→                    onClick={handleAddAddress}
+   980→   980→                    disabled={!newAddr.trim()}
+   981→   981→                  >
+   982→   982→                    <Plus size={14} /> Agregar
+   983→   983→                  </button>
+   984→   984→                </div>
+   985→   985→              </div>
+   986→   986→            </motion.div>
+   987→   987→          )}
+   988→   988→        </AnimatePresence>
+   989→   989→      </div>
+   990→   990→
+   991→   991→      {/* ─── 4. PREFERRED PAYMENT ─── */}
+   992→   992→      <div style={section}>
+   993→   993→        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 12 }}>
+   994→   994→          Método de pago preferido
+   995→   995→        </h3>
+   996→   996→        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+   997→   997→          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+   998→   998→            <div
+   999→   999→              style={{
+  1000→  1000→                width: 40, height: 40, borderRadius: 12,
+  1001→  1001→                background: prefPayment === 'efectivo' ? 'var(--primario-soft, rgba(255,87,34,0.12))' : 'rgba(41,121,255,0.12)',
+  1002→  1002→                display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1003→  1003→              }}
+  1004→  1004→            >
+  1005→  1005→              <span style={{ fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+  1006→  1006→                {prefPayment === 'efectivo' ? <Banknote size={20} style={{ color: 'var(--text-secondary)' }} /> : <CreditCard size={20} style={{ color: 'var(--text-secondary)' }} />}
+  1007→  1007→              </span>
+  1008→  1008→            </div>
+  1009→  1009→            <div>
+  1010→  1010→              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+  1011→  1011→                {prefPayment === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+  1012→  1012→              </div>
+  1013→  1013→              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+  1014→  1014→                Más usado en tus envíos
+  1015→  1015→              </div>
+  1016→  1016→            </div>
+  1017→  1017→          </div>
+  1018→  1018→          <button
+  1019→  1019→            onClick={() => setPrefPayment((p) => (p === 'efectivo' ? 'transferencia' : 'efectivo'))}
+  1020→  1020→            style={{
+  1021→  1021→              ...btnGhost,
+  1022→  1022→              padding: '8px 14px',
+  1023→  1023→              fontSize: 13,
+  1024→  1024→            }}
+  1025→  1025→          >
+  1026→  1026→            Cambiar
+  1027→  1027→          </button>
+  1028→  1028→        </div>
+  1029→  1029→      </div>
+  1030→  1030→
+  1031→  1031→      {/* ─── 5. SETTINGS ─── */}
+  1032→  1032→      <div style={section}>
+  1033→  1033→        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+  1034→  1034→          Configuración
+  1035→  1035→        </h3>
+  1036→  1036→        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+  1037→  1037→          {/* Push notifications */}
+  1038→  1038→          <SettingsRow
+  1039→  1039→            icon={<Bell size={18} />}
+  1040→  1040→            label="Recibir notificaciones push"
+  1041→  1041→            right={<Toggle on={pushNotif} onToggle={() => setPushNotif((p) => !p)} />}
+  1042→  1042→          />
+  1043→  1043→          {/* Email promos */}
+  1044→  1044→          <SettingsRow
+  1045→  1045→            icon={<Mail size={18} />}
+  1046→  1046→            label="Recibir promociones por email"
+  1047→  1047→            right={<Toggle on={emailPromo} onToggle={() => setEmailPromo((p) => !p)} />}
+  1048→  1048→          />
+  1049→  1049→          {/* Dark mode */}
+  1050→  1050→          <SettingsRow
+  1051→  1051→            icon={isDark ? <Moon size={18} /> : <Sun size={18} />}
+  1052→  1052→            label="Modo oscuro"
+  1053→  1053→            right={<Toggle on={isDark} onToggle={toggleThemeLocal} />}
+  1054→  1054→          />
+  1055→  1055→          {/* Language */}
+  1056→  1056→          <SettingsRow
+  1057→  1057→            icon={<Globe size={18} />}
+  1058→  1058→            label="Idioma"
+  1059→  1059→            right={
+  1060→  1060→              <div style={{
+  1061→  1061→                display: 'flex', alignItems: 'center', gap: 4,
+  1062→  1062→                color: 'var(--text-muted)', fontSize: 14,
+  1063→  1063→                fontFamily: "'DM Sans', sans-serif",
+  1064→  1064→              }}>
+  1065→  1065→                Español <ChevronRight size={14} />
+  1066→  1066→              </div>
+  1067→  1067→            }
+  1068→  1068→            disabled
+  1069→  1069→          />
+  1070→  1070→          {/* Privacy */}
+  1071→  1071→          <SettingsRow
+  1072→  1072→            icon={<Shield size={18} />}
+  1073→  1073→            label="Política de privacidad"
+  1074→  1074→            right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
+  1075→  1075→            onClick={() => {}}
+  1076→  1076→          />
+  1077→  1077→          {/* Terms */}
+  1078→  1078→          <SettingsRow
+  1079→  1079→            icon={<AlertTriangle size={18} />}
+  1080→  1080→            label="Términos de servicio"
+  1081→  1081→            right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
+  1082→  1082→            onClick={() => {}}
+  1083→  1083→          />
+  1084→  1084→        </div>
+  1085→  1085→      </div>
+  1086→  1086→
+  1087→  1087→      {/* ─── 6. DANGER ZONE ─── */}
+  1088→  1088→      <div style={{ ...section, borderColor: 'var(--peligro, #FF1744)', borderWidth: 1, borderStyle: 'solid' }}>
+  1089→  1089→        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--peligro, #FF1744)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+  1090→  1090→          Zona de peligro
+  1091→  1091→        </h3>
+  1092→  1092→
+  1093→  1093→        {/* Logout */}
+  1094→  1094→        <button
+  1095→  1095→          onClick={() => setLogoutModal(true)}
+  1096→  1096→          style={{
+  1097→  1097→            width: '100%', padding: '12px 20px', borderRadius: 14,
+  1098→  1098→            border: '1px solid var(--peligro, #FF1744)',
+  1099→  1099→            background: 'transparent', color: 'var(--peligro, #FF1744)',
+  1100→  1100→            fontWeight: 600, fontSize: 15, cursor: 'pointer',
+  1101→  1101→            fontFamily: "'DM Sans', sans-serif",
+  1102→  1102→            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+  1103→  1103→          }}
+  1104→  1104→        >
+  1105→  1105→          <LogOut size={18} /> Cerrar sesión
+  1106→  1106→        </button>
+  1107→  1107→
+  1108→  1108→        {/* Delete account */}
+  1109→  1109→        <button
+  1110→  1110→          onClick={() => { setDeleteModal(true); setDeleteText(''); }}
+  1111→  1111→          style={{
+  1112→  1112→            background: 'none', border: 'none', cursor: 'pointer',
+  1113→  1113→            color: 'var(--peligro, #FF1744)', fontSize: 13, marginTop: 12,
+  1114→  1114→            opacity: 0.6, fontFamily: "'DM Sans', sans-serif",
+  1115→  1115→            display: 'block', margin: '12px auto 0',
+  1116→  1116→          }}
+  1117→  1117→        >
+  1118→  1118→          Eliminar cuenta
+  1119→  1119→        </button>
+  1120→  1120→      </div>
+  1121→  1121→
+  1122→  1122→      {/* ─── LOGOUT MODAL ─── */}
+  1123→  1123→      <AnimatePresence>
+  1124→  1124→        {logoutModal && (
+  1125→  1125→          <Modal onClose={() => setLogoutModal(false)}>
+  1126→  1126→            <div style={{ textAlign: 'center' }}>
+  1127→  1127→              <div style={{
+  1128→  1128→                width: 56, height: 56, borderRadius: '50%',
+  1129→  1129→                background: 'rgba(255,23,68,0.1)', margin: '0 auto 16px',
+  1130→  1130→                display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1131→  1131→              }}>
+  1132→  1132→                <LogOut size={24} style={{ color: 'var(--peligro, #FF1744)' }} />
+  1133→  1133→              </div>
+  1134→  1134→              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 8 }}>
+  1135→  1135→                ¿Cerrar sesión?
+  1136→  1136→              </h3>
+  1137→  1137→              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>
+  1138→  1138→                Se cerrará tu sesión actual.
+  1139→  1139→              </p>
+  1140→  1140→              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+  1141→  1141→                <button style={btnGhost} onClick={() => setLogoutModal(false)}>
+  1142→  1142→                  Cancelar
+  1143→  1143→                </button>
+  1144→  1144→                <button
+  1145→  1145→                  style={{
+  1146→  1146→                    ...btnPrimary,
+  1147→  1147→                    background: 'var(--peligro, #FF1744)',
+  1148→  1148→                  }}
+  1149→  1149→                  onClick={() => {
+  1150→  1150→                    setLogoutModal(false);
+  1151→  1151→                    onLogout();
+  1152→  1152→                  }}
+  1153→  1153→                >
+  1154→  1154→                  Confirmar
+  1155→  1155→                </button>
+  1156→  1156→              </div>
+  1157→  1157→            </div>
+  1158→  1158→          </Modal>
+  1159→  1159→        )}
+  1160→  1160→      </AnimatePresence>
+  1161→  1161→
+  1162→  1162→      {/* ─── DELETE ACCOUNT MODAL ─── */}
+  1163→  1163→      <AnimatePresence>
+  1164→  1164→        {deleteModal && (
+  1165→  1165→          <Modal onClose={() => setDeleteModal(false)}>
+  1166→  1166→            <div style={{ textAlign: 'center' }}>
+  1167→  1167→              <div style={{
+  1168→  1168→                width: 56, height: 56, borderRadius: '50%',
+  1169→  1169→                background: 'rgba(255,23,68,0.1)', margin: '0 auto 16px',
+  1170→  1170→                display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1171→  1171→              }}>
+  1172→  1172→                <Trash2 size={24} style={{ color: 'var(--peligro, #FF1744)' }} />
+  1173→  1173→              </div>
+  1174→  1174→              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 8 }}>
+  1175→  1175→                Eliminar cuenta
+  1176→  1176→              </h3>
+  1177→  1177→              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>
+  1178→  1178→                Esta acción es irreversible. Se eliminarán todos tus datos.
+  1179→  1179→              </p>
+  1180→  1180→              <div style={{ textAlign: 'left', marginBottom: 8 }}>
+  1181→  1181→                <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+  1182→  1182→                  Escribe <strong style={{ color: 'var(--peligro, #FF1744)' }}>ELIMINAR</strong> para confirmar
+  1183→  1183→                </label>
+  1184→  1184→                <input
+  1185→  1185→                  style={inputStyle}
+  1186→  1186→                  value={deleteText}
+  1187→  1187→                  onChange={(e) => setDeleteText(e.target.value)}
+  1188→  1188→                  placeholder="ELIMINAR"
+  1189→  1189→                />
+  1190→  1190→              </div>
+  1191→  1191→              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
+  1192→  1192→                <button style={btnGhost} onClick={() => setDeleteModal(false)}>
+  1193→  1193→                  Cancelar
+  1194→  1194→                </button>
+  1195→  1195→                <button
+  1196→  1196→                  style={{
+  1197→  1197→                    ...btnPrimary,
+  1198→  1198→                    background: deleteText === 'ELIMINAR' ? 'var(--peligro, #FF1744)' : 'var(--text-muted)',
+  1199→  1199→                    cursor: deleteText === 'ELIMINAR' ? 'pointer' : 'not-allowed',
+  1200→  1200→                    opacity: deleteText === 'ELIMINAR' ? 1 : 0.5,
+  1201→  1201→                  }}
+  1202→  1202→                  disabled={deleteText !== 'ELIMINAR'}
+  1203→  1203→                  onClick={() => {
+  1204→  1204→                    setDeleteModal(false);
+  1205→  1205→                    onLogout();
+  1206→  1206→                  }}
+  1207→  1207→                >
+  1208→  1208→                  <Trash2 size={14} /> Eliminar permanentemente
+  1209→  1209→                </button>
+  1210→  1210→              </div>
+  1211→  1211→            </div>
+  1212→  1212→          </Modal>
+  1213→  1213→        )}
+  1214→  1214→      </AnimatePresence>
+  1215→  1215→
+  1216→  1216→      {/* ─── TOAST NOTIFICATION ─── */}
+  1217→  1217→      <AnimatePresence>
+  1218→  1218→        {toast && (
+  1219→  1219→          <motion.div
+  1220→  1220→            initial={{ opacity: 0, y: 20 }}
+  1221→  1221→            animate={{ opacity: 1, y: 0 }}
+  1222→  1222→            exit={{ opacity: 0, y: 20 }}
+  1223→  1223→            transition={{ duration: 0.3 }}
+  1224→  1224→            style={{
+  1225→  1225→              position: 'fixed',
+  1226→  1226→              bottom: 100,
+  1227→  1227→              left: '50%',
+  1228→  1228→              transform: 'translateX(-50%)',
+  1229→  1229→              padding: '12px 24px',
+  1230→  1230→              borderRadius: 12,
+  1231→  1231→              background: toast.type === 'success' ? 'var(--exito, #00C853)' : 'var(--peligro, #FF1744)',
+  1232→  1232→              color: '#fff',
+  1233→  1233→              fontSize: 14,
+  1234→  1234→              fontFamily: "'DM Sans', sans-serif",
+  1235→  1235→              fontWeight: 500,
+  1236→  1236→              zIndex: 9999,
+  1237→  1237→              boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+  1238→  1238→              maxWidth: '90vw',
+  1239→  1239→              textAlign: 'center',
+  1240→  1240→            }}
+  1241→  1241→          >
+  1242→  1242→            {toast.message}
+  1243→  1243→          </motion.div>
+  1244→  1244→        )}
+  1245→  1245→      </AnimatePresence>
+  1246→  1246→    </div>
+  1247→  1247→  );
+  1248→  1248→}
+  1249→  1249→
+  1250→  1250→/* ═══════════════════════════════════════════════
+  1251→  1251→   SUB-COMPONENTS
+  1252→  1252→   ═══════════════════════════════════════════════ */
+  1253→  1253→
+  1254→  1254→function StatCard({ label, value }: { label: string; value: string }) {
+  1255→  1255→  return (
+  1256→  1256→    <div
+  1257→  1257→      style={{
+  1258→  1258→        padding: '12px 14px',
+  1259→  1259→        borderRadius: 14,
+  1260→  1260→        background: 'var(--bg-alt)',
+  1261→  1261→        border: '1px solid var(--border)',
+  1262→  1262→      }}
+  1263→  1263→    >
+  1264→  1264→      <div
+  1265→  1265→        style={{
+  1266→  1266→          fontSize: 20,
+  1267→  1267→          fontWeight: 700,
+  1268→  1268→          color: 'var(--text)',
+  1269→  1269→          fontFamily: "'JetBrains Mono', monospace",
+  1270→  1270→        }}
+  1271→  1271→      >
+  1272→  1272→        {value}
+  1273→  1273→      </div>
+  1274→  1274→      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+  1275→  1275→        {label}
+  1276→  1276→      </div>
+  1277→  1277→    </div>
+  1278→  1278→  );
+  1279→  1279→}
+  1280→  1280→
+  1281→  1281→function SettingsRow({
+  1282→  1282→  icon,
+  1283→  1283→  label,
+  1284→  1284→  right,
+  1285→  1285→  onClick,
+  1286→  1286→  disabled = false,
+  1287→  1287→}: {
+  1288→  1288→  icon: React.ReactNode;
+  1289→  1289→  label: string;
+  1290→  1290→  right: React.ReactNode;
+  1291→  1291→  onClick?: () => void;
+  1292→  1292→  disabled?: boolean;
+  1293→  1293→}) {
+  1294→  1294→  return (
+  1295→  1295→    <div
+  1296→  1296→      onClick={onClick}
+  1297→  1297→      role={onClick ? 'button' : undefined}
+  1298→  1298→      tabIndex={onClick ? 0 : undefined}
+  1299→  1299→      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+  1300→  1300→      style={{
+  1301→  1301→        display: 'flex',
+  1302→  1302→        alignItems: 'center',
+  1303→  1303→        justifyContent: 'space-between',
+  1304→  1304→        padding: '12px 0',
+  1305→  1305→        border: 'none',
+  1306→  1306→        background: 'transparent',
+  1307→  1307→        width: '100%',
+  1308→  1308→        cursor: disabled ? 'default' : onClick ? 'pointer' : 'default',
+  1309→  1309→        textAlign: 'left',
+  1310→  1310→        borderBottom: '1px solid var(--border)',
+  1311→  1311→        fontFamily: "'DM Sans', sans-serif",
+  1312→  1312→      }}
+  1313→  1313→    >
+  1314→  1314→      <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text)' }}>
+  1315→  1315→        <span style={{ color: 'var(--text-secondary)' }}>{icon}</span>
+  1316→  1316→        <span style={{ fontSize: 14, color: disabled ? 'var(--text-muted)' : 'var(--text)' }}>{label}</span>
+  1317→  1317→      </div>
+  1318→  1318→      {right}
+  1319→  1319→    </div>
+  1320→  1320→  );
+  1321→  1321→}
+  1322→  1322→

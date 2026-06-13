@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
   LogOut, Shield, Bell, Moon, Sun, Globe, ChevronRight, AlertTriangle,
-  Star, Banknote, CreditCard,
+  Star, Banknote, CreditCard, Copy, Home, Building, ShoppingBag, Package,
+  Heart, ShoppingCart, Gift, Users,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { useStore } from '@/lib/store';
 import type { DireccionGuardada } from '@/lib/store';
+import { useMarketplaceStore } from '@/lib/marketplace-store';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -49,28 +51,30 @@ function Toggle({ on, onToggle, disabled = false }: { on: boolean; onToggle: () 
       disabled={disabled}
       onClick={onToggle}
       style={{
-        width: 44,
-        height: 24,
-        borderRadius: 12,
+        width: 48,
+        height: 26,
+        borderRadius: 13,
         border: '1px solid var(--border)',
         background: on ? 'var(--primario)' : 'var(--text-muted, #999)',
         position: 'relative',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'background 0.2s',
+        transition: 'background 0.25s ease',
         opacity: disabled ? 0.5 : 1,
         flexShrink: 0,
+        padding: 0,
       }}
     >
       <motion.div
-        animate={{ x: on ? 20 : 2 }}
+        animate={{ x: on ? 22 : 2 }}
         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         style={{
-          width: 18,
-          height: 18,
+          width: 20,
+          height: 20,
           borderRadius: '50%',
           background: '#fff',
           position: 'absolute',
           top: 2,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
         }}
       />
     </button>
@@ -99,9 +103,11 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'var(--surface)', borderRadius: 20,
+          background: 'var(--surface)',
+          borderRadius: 'var(--lf-card-radius, 22px)',
           padding: 24, maxWidth: 400, width: '100%',
           border: '1px solid var(--border)',
+          boxShadow: 'var(--lf-shadow-float)',
         }}
       >
         {children}
@@ -120,19 +126,31 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
       style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
-        borderRadius: 10,
+        borderRadius: 12,
         padding: '6px 10px',
         fontSize: 13,
         fontFamily: "'JetBrains Mono', monospace",
         color: 'var(--text)',
+        boxShadow: 'var(--lf-shadow-card)',
       }}
     >
       <span style={{ color: 'var(--primario)', fontWeight: 700 }}>{payload[0].value}</span>
-      <span style={{ color: 'var(--text-muted)', marginLeft: 4 }}>envíos</span>
+      <span style={{ color: 'var(--text-muted)', marginLeft: 4 }}>envios</span>
       <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{label}</div>
     </div>
   );
 }
+
+/* ═══════════════════════════════════════════════
+   SHARED CARD STYLE
+   ═══════════════════════════════════════════════ */
+const sectionCard: React.CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 'var(--lf-card-radius, 22px)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 24,
+};
 
 /* ═══════════════════════════════════════════════
    MAIN COMPONENT
@@ -150,6 +168,16 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     canjearPuntos,
   } = useStore();
 
+  const {
+    tiendas,
+    productos,
+    favoritosTiendas,
+    favoritosProductos,
+    toggleFavoritoTienda,
+    toggleFavoritoProducto,
+    addToCart,
+  } = useMarketplaceStore();
+
   /* ─── Edit profile state ─── */
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(userName);
@@ -164,6 +192,9 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
   const [newAddrLabel, setNewAddrLabel] = useState<'Casa' | 'Trabajo' | 'Otro'>('Casa');
   const [newAddrSuggestions, setNewAddrSuggestions] = useState<string[]>([]);
   const [showNewAddrSugg, setShowNewAddrSugg] = useState(false);
+
+  /* ─── Favorites tabs ─── */
+  const [favTab, setFavTab] = useState<'tiendas' | 'productos'>('tiendas');
 
   /* ─── Settings state ─── */
   const [pushNotif, setPushNotif] = useState(true);
@@ -188,7 +219,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
 
   /* ─── Computed metrics ─── */
   const clientOrders = useMemo(
-    () => orders.filter((o) => o.cliente === userName || o.cliente === 'María López' || o.cliente === 'Maria López'),
+    () => orders.filter((o) => o.cliente === userName || o.cliente === 'Maria Lopez' || o.cliente === 'Maria Lopez'),
     [orders, userName],
   );
 
@@ -196,26 +227,21 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     const total = clientOrders.length;
     const totalSpent = clientOrders.reduce((s, o) => s + o.monto, 0);
     const avg = total > 0 ? Math.round(totalSpent / total) : 0;
-
-    // Most frequent zone: most common destination barrio
+    const thisMonth = clientOrders.filter((o) => o.fecha.startsWith('2026-06')).length;
     const zoneCount: Record<string, number> = {};
     clientOrders.forEach((o) => {
       const zone = o.destino.split(',')[0].trim();
       zoneCount[zone] = (zoneCount[zone] || 0) + 1;
     });
     const topZone = Object.entries(zoneCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
-
-    // Most used payment method
     const payCount: Record<string, number> = {};
     clientOrders.forEach((o) => {
       payCount[o.metodoPago] = (payCount[o.metodoPago] || 0) + 1;
     });
     const topPayment = (Object.entries(payCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'efectivo') as 'efectivo' | 'transferencia';
-
-    return { total, totalSpent, avg, topZone, topPayment };
+    return { total, totalSpent, avg, thisMonth, topZone, topPayment };
   }, [clientOrders]);
 
-  // Initialize preferred payment from order history (once)
   if (!prefPaymentInited && metrics.topPayment) {
     setPrefPayment(metrics.topPayment);
     setPrefPaymentInited(true);
@@ -276,7 +302,6 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     const next = !isDark;
     localStorage.setItem('logifast-theme', next ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
-    // Dispatch storage event for parent
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -291,16 +316,6 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     }
   }, [fidelizacion.nivel]);
 
-  const nivelIcon = useMemo(() => {
-    switch (fidelizacion.nivel) {
-      case 'bronce': return '';
-      case 'plata': return '';
-      case 'oro': return '';
-      case 'platino': return '';
-      default: return '';
-    }
-  }, [fidelizacion.nivel]);
-
   const capitalizedNivel = fidelizacion.nivel.charAt(0).toUpperCase() + fidelizacion.nivel.slice(1);
 
   const { progressPercent, pointsToNext } = useMemo(() => {
@@ -309,37 +324,23 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     const currentIdx = levelOrder.indexOf(fidelizacion.nivel);
     const currentThreshold = thresholds[fidelizacion.nivel];
     const nextIdx = currentIdx + 1;
-
     if (nextIdx >= levelOrder.length) {
-      // Already at max level
       return { progressPercent: 100, pointsToNext: 0 };
     }
-
     const nextLevel = levelOrder[nextIdx];
     const nextThreshold = thresholds[nextLevel];
     const range = nextThreshold - currentThreshold;
     const progress = fidelizacion.puntos - currentThreshold;
     const pct = Math.min(Math.max((progress / range) * 100, 0), 100);
     const remaining = Math.max(nextThreshold - fidelizacion.puntos, 0);
-
     return { progressPercent: pct, pointsToNext: remaining };
   }, [fidelizacion.nivel, fidelizacion.puntos]);
 
-  const benefitsText = useMemo(() => {
-    switch (fidelizacion.nivel) {
-      case 'bronce': return 'Bronce: 1 punto por cada C$100 gastados. Gana 10 puntos por envío completado.';
-      case 'plata': return 'Plata: 2 puntos por cada C$100 gastados. Gana 15 puntos por envío completado. Envío prioritario.';
-      case 'oro': return 'Oro: 3 puntos por cada C$100 gastados. Gana 20 puntos por envío completado. Envío prioritario + soporte VIP.';
-      case 'platino': return 'Platino: 5 puntos por cada C$100 gastados. Gana 25 puntos por envío completado. Envío prioritario + soporte VIP + descuentos exclusivos.';
-      default: return '';
-    }
-  }, [fidelizacion.nivel]);
-
   const pillButtonStyle: React.CSSProperties = {
     padding: '6px 14px',
-    borderRadius: 20,
+    borderRadius: 'var(--lf-pill-radius, 100px)',
     border: '1px solid var(--primario)',
-    background: 'var(--primario-soft, rgba(255,87,34,0.12))',
+    background: 'var(--primario-soft)',
     color: 'var(--primario)',
     fontWeight: 600,
     fontSize: 12,
@@ -358,16 +359,16 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(referidos.codigo).then(() => {
-      setToast({ message: 'Código copiado: ' + referidos.codigo, type: 'success' });
+      setToast({ message: 'Codigo copiado: ' + referidos.codigo, type: 'success' });
     }).catch(() => {
-      setToast({ message: 'Código: ' + referidos.codigo, type: 'success' });
+      setToast({ message: 'Codigo: ' + referidos.codigo, type: 'success' });
     });
   };
 
   const handleShare = () => {
     const shareData = {
-      title: 'LOGIFAST - Envíos en moto',
-      text: `¡Únete a LOGIFAST con mi código ${referidos.codigo} y gana 20 puntos en tu primer envío!`,
+      title: 'LOGIFAST - Envios en moto',
+      text: `Unete a LOGIFAST con mi codigo ${referidos.codigo} y gana 20 puntos en tu primer envio!`,
       url: referidos.link,
     };
     if (typeof navigator !== 'undefined' && navigator.share) {
@@ -380,25 +381,27 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
       navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
         setToast({ message: 'Enlace copiado al portapapeles', type: 'success' });
       }).catch(() => {
-        setToast({ message: 'Código: ' + referidos.codigo + ' | Link: ' + referidos.link, type: 'success' });
+        setToast({ message: 'Codigo: ' + referidos.codigo + ' | Link: ' + referidos.link, type: 'success' });
       });
     }
   };
 
-  /* ═══════════════════════════════════════════════
-     STYLES
-     ═══════════════════════════════════════════════ */
-  const section: React.CSSProperties = {
-    background: 'var(--surface)',
-    borderRadius: 20,
-    border: '1px solid var(--border)',
-    padding: 24,
-  };
+  /* ─── Favorite tiendas/productos computed ─── */
+  const favoriteTiendas = useMemo(
+    () => tiendas.filter(t => favoritosTiendas.some(f => f.tiendaId === t.id)),
+    [tiendas, favoritosTiendas]
+  );
 
+  const favoriteProductos = useMemo(
+    () => productos.filter(p => favoritosProductos.some(f => f.productoId === p.id)),
+    [productos, favoritosProductos]
+  );
+
+  /* ─── Styles ─── */
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 14px',
-    borderRadius: 12,
+    borderRadius: 'var(--lf-input-radius, 16px)',
     border: '1px solid var(--border)',
     background: 'var(--bg-alt)',
     color: 'var(--text)',
@@ -409,7 +412,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
 
   const btnPrimary: React.CSSProperties = {
     padding: '10px 20px',
-    borderRadius: 12,
+    borderRadius: 'var(--lf-button-radius, 16px)',
     border: 'none',
     background: 'var(--primario)',
     color: '#fff',
@@ -424,7 +427,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
 
   const btnGhost: React.CSSProperties = {
     padding: '10px 20px',
-    borderRadius: 12,
+    borderRadius: 'var(--lf-button-radius, 16px)',
     border: '1px solid var(--border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
@@ -442,25 +445,31 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
      ═══════════════════════════════════════════════ */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 600, margin: '0 auto', padding: '0 4px' }}>
-      {/* ─── 1. PERSONAL INFO ─── */}
-      <div style={section}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          {/* Avatar */}
-          <div
-            style={{
-              width: 80, height: 80, borderRadius: '50%',
-              background: 'var(--primario-soft, rgba(255,87,34,0.12))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--primario)',
-              fontFamily: "'Syne', sans-serif",
-              fontWeight: 700,
-              fontSize: 28,
-              flexShrink: 0,
-            }}
-          >
-            {initials}
-          </div>
 
+      {/* ═══════════════════════════════════════════
+          HEADER: Avatar + Name + Email
+          ═══════════════════════════════════════════ */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 8 }}>
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: 'var(--primario-soft)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--primario)',
+            fontFamily: "'Syne', sans-serif",
+            fontWeight: 700,
+            fontSize: 28,
+            flexShrink: 0,
+            border: '3px solid var(--primario)',
+          }}
+        >
+          {initials}
+        </div>
+        <div style={{ textAlign: 'center' }}>
           <AnimatePresence mode="wait">
             {!editing ? (
               <motion.div
@@ -468,12 +477,11 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                style={{ textAlign: 'center', width: '100%' }}
               >
                 <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif" }}>
                   {userName}
                 </div>
-                <div style={{ fontSize: 15, color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                   <Mail size={14} /> {email}
                 </div>
                 <button
@@ -485,12 +493,14 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                   }}
                   style={{
                     ...btnGhost,
-                    marginTop: 16,
+                    marginTop: 14,
+                    padding: '8px 18px',
                     color: 'var(--primario)',
                     borderColor: 'var(--primario)',
+                    fontSize: 13,
                   }}
                 >
-                  <Edit3 size={15} /> Editar perfil
+                  <Edit3 size={14} /> Editar perfil
                 </button>
               </motion.div>
             ) : (
@@ -499,54 +509,32 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}
+                style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8, textAlign: 'left' }}
               >
-                {/* Name */}
                 <div>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <User size={12} /> Nombre
                   </label>
-                  <input
-                    style={inputStyle}
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                  />
+                  <input style={inputStyle} value={editName} onChange={(e) => setEditName(e.target.value)} />
                 </div>
-                {/* Email (disabled) */}
                 <div>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Mail size={12} /> Correo
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <input
-                      style={{ ...inputStyle, paddingRight: 36, opacity: 0.6 }}
-                      value={email}
-                      disabled
-                    />
-                    <Shield
-                      size={14}
-                      style={{
-                        position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                        color: 'var(--text-muted)',
-                      }}
-                    />
+                    <input style={{ ...inputStyle, paddingRight: 36, opacity: 0.6 }} value={email} disabled />
+                    <Shield size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   </div>
                 </div>
-                {/* Phone */}
                 <div>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Phone size={12} /> Teléfono
+                    <Phone size={12} /> Telefono
                   </label>
-                  <input
-                    style={inputStyle}
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                  />
+                  <input style={inputStyle} value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
                 </div>
-                {/* Address with autocomplete */}
                 <div style={{ position: 'relative' }}>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <MapPin size={12} /> Dirección principal
+                    <MapPin size={12} /> Direccion principal
                   </label>
                   <input
                     style={inputStyle}
@@ -573,10 +561,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                         {addressSuggestions.map((s, i) => (
                           <button
                             key={i}
-                            onClick={() => {
-                              setEditAddress(s);
-                              setShowAddressSugg(false);
-                            }}
+                            onClick={() => { setEditAddress(s); setShowAddressSugg(false); }}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 8,
                               padding: '8px 14px', width: '100%', border: 'none',
@@ -594,13 +579,12 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                     )}
                   </AnimatePresence>
                 </div>
-                {/* Buttons */}
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                   <button style={btnGhost} onClick={() => setEditing(false)}>
                     <X size={15} /> Cancelar
                   </button>
                   <button style={btnPrimary} onClick={() => setEditing(false)}>
-                    <Save size={15} /> Guardar cambios
+                    <Save size={15} /> Guardar
                   </button>
                 </div>
               </motion.div>
@@ -609,19 +593,106 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
         </div>
       </div>
 
-      {/* ─── 2. METRICS ─── */}
-      <div style={section}>
-        <h3
-          style={{
-            fontSize: 16, fontWeight: 700, color: 'var(--text)',
-            fontFamily: "'Syne', sans-serif", marginBottom: 16,
-          }}
-        >
-          Mis métricas
+      {/* ═══════════════════════════════════════════
+          1. PUNTOS LOGIFAST
+          ═══════════════════════════════════════════ */}
+      <div style={sectionCard}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 14,
+            background: nivelColor,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Star size={24} style={{ color: '#fff' }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: 'var(--primario)', lineHeight: 1.1 }}>
+                {fidelizacion.puntos}
+              </span>
+              <span style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>puntos</span>
+            </div>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '2px 10px',
+                borderRadius: 'var(--lf-pill-radius, 100px)',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: "'DM Sans', sans-serif",
+                background: `${nivelColor}20`,
+                color: nivelColor,
+                marginTop: 4,
+              }}
+            >
+              Nivel {capitalizedNivel}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-alt)', overflow: 'hidden', marginBottom: 6 }}>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            style={{
+              height: '100%',
+              borderRadius: 4,
+              background: 'linear-gradient(90deg, var(--primario), var(--primario-hover))',
+            }}
+          />
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginBottom: 16 }}>
+          {pointsToNext} puntos para {fidelizacion.nivel === 'bronce' ? 'Plata' : fidelizacion.nivel === 'plata' ? 'Oro' : 'Platino'}
+        </div>
+
+        {/* Canjear puntos */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => handleCanjear(100)} disabled={fidelizacion.puntos < 100}
+            style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 100 ? 0.5 : 1 }}>
+            100 pts = C$20
+          </button>
+          <button onClick={() => handleCanjear(200)} disabled={fidelizacion.puntos < 200}
+            style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 200 ? 0.5 : 1 }}>
+            200 pts = C$50
+          </button>
+          <button onClick={() => handleCanjear(500)} disabled={fidelizacion.puntos < 500}
+            style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 500 ? 0.5 : 1 }}>
+            500 pts = Envio gratis
+          </button>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════
+          2. METRICAS
+          ═══════════════════════════════════════════ */}
+      <div style={sectionCard}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+          Metricas
         </h3>
 
+        {/* 3 stats in row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+          {[
+            { value: String(metrics.total), label: 'Envios totales' },
+            { value: `C$${metrics.totalSpent.toLocaleString()}`, label: 'Gastados' },
+            { value: String(metrics.thisMonth), label: 'Este mes' },
+          ].map((m, i) => (
+            <div key={i} style={{ textAlign: 'center', padding: '12px 8px', borderRadius: 14, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+                {m.value}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>
+                {m.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Bar chart */}
-        <div style={{ height: 120, marginBottom: 20, minWidth: 0, minHeight: 120 }}>
+        <div style={{ height: 120, marginBottom: 0, minWidth: 0, minHeight: 120 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={MONTHLY_DATA} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
               <XAxis
@@ -636,186 +707,17 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                 tickLine={false}
                 width={25}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--primario-soft, rgba(255,87,34,0.08))' }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--primario-soft)' }} />
               <Bar dataKey="envios" fill="var(--primario)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-
-        {/* Stats grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <StatCard label="Envíos totales" value={String(metrics.total)} />
-          <StatCard label="Total gastado" value={`C$${metrics.totalSpent.toLocaleString()}`} />
-          <StatCard label="Promedio/envío" value={`C$${metrics.avg}`} />
-          <StatCard label="Zona frecuente" value={metrics.topZone} />
-        </div>
       </div>
 
-      {/* ─── Puntos LOGIFAST ─── */}
-      <div style={{ marginTop: 24 }}>
-        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
-          Puntos LOGIFAST
-        </h3>
-        <div style={{ padding: 20, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)' }}>
-          {/* Level card */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-            <div style={{ 
-              width: 48, height: 48, borderRadius: 12, 
-              background: nivelColor, 
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 22
-            }}>
-              {nivelIcon}
-            </div>
-            <div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--text)' }}>
-                Nivel {capitalizedNivel}
-              </div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700, color: 'var(--primario)' }}>
-                {fidelizacion.puntos} puntos
-              </div>
-            </div>
-          </div>
-          {/* Progress bar */}
-          <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-alt)', overflow: 'hidden', marginBottom: 8 }}>
-            <div style={{ 
-              height: '100%', borderRadius: 4, 
-              background: 'linear-gradient(90deg, var(--primario), var(--primario-hover))',
-              width: `${progressPercent}%`,
-              transition: 'width 0.5s ease'
-            }} />
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-            {pointsToNext} puntos para el siguiente nivel
-          </div>
-          {/* Benefits */}
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            {benefitsText}
-          </div>
-          {/* Points history */}
-          <div style={{ marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
-              Historial de puntos
-            </div>
-            <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-              {fidelizacion.historial.slice(0, 8).map(h => (
-                <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div>
-                    <div style={{ fontSize: 12, color: 'var(--text)' }}>{h.accion}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{h.fecha}</div>
-                  </div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: h.puntos > 0 ? 'var(--exito)' : 'var(--peligro)' }}>
-                    {h.puntos > 0 ? '+' : ''}{h.puntos}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Canjear puntos */}
-          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={() => handleCanjear(100)} disabled={fidelizacion.puntos < 100}
-              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 100 ? 0.5 : 1 }}>
-              100 pts = C$20
-            </button>
-            <button onClick={() => handleCanjear(200)} disabled={fidelizacion.puntos < 200}
-              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 200 ? 0.5 : 1 }}>
-              200 pts = C$50
-            </button>
-            <button onClick={() => handleCanjear(500)} disabled={fidelizacion.puntos < 500}
-              style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 500 ? 0.5 : 1 }}>
-              500 pts = Envío gratis
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Invitar Amigos ─── */}
-      <div style={{ marginTop: 24 }}>
-        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
-          Invitar amigos
-        </h3>
-        <div style={{ 
-          padding: 20, borderRadius: 16, 
-          background: 'linear-gradient(135deg, var(--primario), #FF8A65)',
-          color: '#FFFFFF' 
-        }}>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
-            Invita a un amigo, gana 50 puntos
-          </div>
-          <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 16 }}>
-            Tu amigo también recibe 20 puntos en su primer envío
-          </div>
-          {/* Referral code */}
-          <div style={{ 
-            display: 'flex', alignItems: 'center', gap: 8, 
-            background: 'rgba(255,255,255,0.15)', borderRadius: 10, 
-            padding: '8px 12px', marginBottom: 12 
-          }}>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700, letterSpacing: '1px' }}>
-              {referidos.codigo}
-            </span>
-            <button onClick={handleCopyCode} style={{ 
-              padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.3)',
-              background: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 12, cursor: 'pointer' 
-            }}>
-              Copiar
-            </button>
-          </div>
-          {/* Share button */}
-          <button onClick={handleShare} style={{
-            padding: '10px 20px', borderRadius: 10, border: 'none',
-            background: '#FFFFFF', color: 'var(--primario)', fontSize: 14, fontWeight: 600, cursor: 'pointer'
-          }}>
-            Compartir
-          </button>
-          {/* Stats */}
-          <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
-            <div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.referidos.length}</div>
-              <div style={{ fontSize: 11, opacity: 0.8 }}>Invitados</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>
-                {referidos.referidos.filter(r => r.primerEnvio).length}
-              </div>
-              <div style={{ fontSize: 11, opacity: 0.8 }}>Registrados</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.puntosGanados}</div>
-              <div style={{ fontSize: 11, opacity: 0.8 }}>Pts ganados</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Mis Calificaciones ─── */}
-      <div style={{ marginTop: 24 }}>
-        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 12 }}>
-          Mis calificaciones
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {calificaciones.map(cal => (
-            <div key={cal.id} style={{ 
-              padding: '12px 16px', background: 'var(--surface)', borderRadius: 12, 
-              border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
-            }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{cal.repartidorNombre}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{cal.fecha} · {cal.orderId}</div>
-                {cal.comentario && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>{cal.comentario}</div>}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} size={14} fill={i < cal.estrellas ? 'var(--primario)' : 'none'} color={i < cal.estrellas ? 'var(--primario)' : 'var(--border)'} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── 3. SAVED ADDRESSES ─── */}
-      <div style={section}>
+      {/* ═══════════════════════════════════════════
+          3. DIRECCIONES GUARDADAS
+          ═══════════════════════════════════════════ */}
+      <div style={sectionCard}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", margin: 0 }}>
             Direcciones guardadas
@@ -835,51 +737,36 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
-          {direccionesGuardadas.map((d) => (
-            <div
-              key={d.id}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 14px', borderRadius: 14,
-                background: 'var(--bg-alt)', border: '1px solid var(--border)',
-              }}
-            >
-              <MapPin size={16} style={{ color: 'var(--primario)', flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {d.direccion}
+          {direccionesGuardadas.map((d) => {
+            const Icon = d.etiqueta === 'Casa' ? Home : d.etiqueta === 'Trabajo' ? Building : MapPin;
+            return (
+              <div
+                key={d.id}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 14px', borderRadius: 14,
+                  background: 'var(--bg-alt)', border: '1px solid var(--border)',
+                }}
+              >
+                <Icon size={18} style={{ color: 'var(--primario)', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    {d.etiqueta}
+                  </span>
+                  <div style={{ fontSize: 14, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {d.direccion}
+                  </div>
                 </div>
+                <button
+                  onClick={() => removeDireccionGuardada(d.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', color: 'var(--text-muted)' }}
+                  title="Eliminar"
+                >
+                  <X size={14} />
+                </button>
               </div>
-              <span
-                style={{
-                  fontSize: 11,
-                  padding: '2px 8px',
-                  borderRadius: 8,
-                  background: d.etiqueta === 'Casa' ? 'var(--primario-soft, rgba(255,87,34,0.12))'
-                    : d.etiqueta === 'Trabajo' ? 'rgba(41,121,255,0.12)'
-                    : 'var(--bg)',
-                  color: d.etiqueta === 'Casa' ? 'var(--primario)'
-                    : d.etiqueta === 'Trabajo' ? 'var(--info, #2979FF)'
-                    : 'var(--text-muted)',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >
-                {d.etiqueta}
-              </span>
-              <button
-                onClick={() => removeDireccionGuardada(d.id)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  padding: 4, display: 'flex', color: 'var(--text-muted)',
-                }}
-                title="Eliminar"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Add address form */}
@@ -898,11 +785,10 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                   display: 'flex', flexDirection: 'column', gap: 10,
                 }}
               >
-                {/* Address input with autocomplete */}
                 <div style={{ position: 'relative' }}>
                   <input
                     style={inputStyle}
-                    placeholder="Buscar dirección..."
+                    placeholder="Buscar direccion..."
                     value={newAddr}
                     onChange={(e) => handleNewAddrChange(e.target.value)}
                     onBlur={() => setTimeout(() => setShowNewAddrSugg(false), 200)}
@@ -926,10 +812,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                         {newAddrSuggestions.map((s, i) => (
                           <button
                             key={i}
-                            onClick={() => {
-                              setNewAddr(s);
-                              setShowNewAddrSugg(false);
-                            }}
+                            onClick={() => { setNewAddr(s); setShowNewAddrSugg(false); }}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 8,
                               padding: '8px 14px', width: '100%', border: 'none',
@@ -947,8 +830,6 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                     )}
                   </AnimatePresence>
                 </div>
-
-                {/* Label select */}
                 <div style={{ display: 'flex', gap: 8 }}>
                   {(['Casa', 'Trabajo', 'Otro'] as const).map((lbl) => (
                     <button
@@ -958,7 +839,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                         padding: '6px 14px', borderRadius: 10,
                         border: '1px solid',
                         borderColor: newAddrLabel === lbl ? 'var(--primario)' : 'var(--border)',
-                        background: newAddrLabel === lbl ? 'var(--primario-soft, rgba(255,87,34,0.12))' : 'transparent',
+                        background: newAddrLabel === lbl ? 'var(--primario-soft)' : 'transparent',
                         color: newAddrLabel === lbl ? 'var(--primario)' : 'var(--text-secondary)',
                         fontWeight: 600, fontSize: 13, cursor: 'pointer',
                         fontFamily: "'DM Sans', sans-serif",
@@ -968,17 +849,11 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                     </button>
                   ))}
                 </div>
-
-                {/* Action buttons */}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                   <button style={{ ...btnGhost, padding: '8px 14px' }} onClick={() => { setAddingAddr(false); setNewAddr(''); }}>
                     Cancelar
                   </button>
-                  <button
-                    style={{ ...btnPrimary, padding: '8px 14px' }}
-                    onClick={handleAddAddress}
-                    disabled={!newAddr.trim()}
-                  >
+                  <button style={{ ...btnPrimary, padding: '8px 14px' }} onClick={handleAddAddress} disabled={!newAddr.trim()}>
                     <Plus size={14} /> Agregar
                   </button>
                 </div>
@@ -988,138 +863,460 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
         </AnimatePresence>
       </div>
 
-      {/* ─── 4. PREFERRED PAYMENT ─── */}
-      <div style={section}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 12 }}>
-          Método de pago preferido
+      {/* ═══════════════════════════════════════════
+          4. FAVORITOS
+          ═══════════════════════════════════════════ */}
+      <div style={sectionCard}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+          Favoritos
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: prefPayment === 'efectivo' ? 'var(--primario-soft, rgba(255,87,34,0.12))' : 'rgba(41,121,255,0.12)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <span style={{ fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {prefPayment === 'efectivo' ? <Banknote size={20} style={{ color: 'var(--text-secondary)' }} /> : <CreditCard size={20} style={{ color: 'var(--text-secondary)' }} />}
-              </span>
-            </div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-                {prefPayment === 'efectivo' ? 'Efectivo' : 'Transferencia'}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Más usado en tus envíos
-              </div>
-            </div>
+
+        {/* Tabs: Tiendas / Productos with sliding underline */}
+        <div style={{ position: 'relative', marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 0 }}>
+            {(['tiendas', 'productos'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setFavTab(tab)}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  border: 'none',
+                  background: 'transparent',
+                  color: favTab === tab ? 'var(--text)' : 'var(--text-muted)',
+                  fontSize: 14,
+                  fontWeight: favTab === tab ? 700 : 500,
+                  cursor: 'pointer',
+                  fontFamily: "'Syne', sans-serif",
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  transition: 'color 0.2s ease',
+                }}
+              >
+                {tab === 'tiendas' ? <ShoppingBag size={14} /> : <Package size={14} />}
+                {tab === 'tiendas' ? 'Tiendas' : 'Productos'}
+                {favTab === tab && (
+                  <motion.div
+                    layoutId="fav-tab-underline"
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: '25%',
+                      right: '25%',
+                      height: 3,
+                      borderRadius: 2,
+                      background: 'var(--primario)',
+                    }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </button>
+            ))}
           </div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: 'var(--border)', zIndex: -1 }} />
+        </div>
+
+        {/* Content */}
+        <AnimatePresence mode="wait">
+          {favTab === 'tiendas' && (
+            <motion.div
+              key="tiendas"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {favoriteTiendas.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                  <Heart size={28} style={{ marginBottom: 8, opacity: 0.4 }} />
+                  <p>No tienes tiendas favoritas</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {favoriteTiendas.map((t) => (
+                    <div
+                      key={t.id}
+                      style={{
+                        padding: '12px',
+                        borderRadius: 14,
+                        background: 'var(--bg-alt)',
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 10,
+                          background: t.logoColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span style={{ color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 11 }}>
+                          {t.logoIniciales}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.nombre}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {favTab === 'productos' && (
+            <motion.div
+              key="productos"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {favoriteProductos.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                  <Heart size={28} style={{ marginBottom: 8, opacity: 0.4 }} />
+                  <p>No tienes productos favoritos</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {favoriteProductos.map((p) => {
+                    const tienda = tiendas.find(t => t.id === p.tiendaId);
+                    return (
+                      <div
+                        key={p.id}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '12px 14px', borderRadius: 14,
+                          background: 'var(--bg-alt)', border: '1px solid var(--border)',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            background: p.imagenColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Package size={16} style={{ color: '#fff' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {p.nombre}
+                          </div>
+                          <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)', fontWeight: 600 }}>
+                            C$ {p.precio}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (tienda) addToCart(p, tienda);
+                            setToast({ message: `${p.nombre} agregado al carrito`, type: 'success' });
+                          }}
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 10,
+                            border: '1px solid var(--primario)',
+                            background: 'var(--primario-soft)',
+                            color: 'var(--primario)',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Sans', sans-serif",
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            flexShrink: 0,
+                          }}
+                        >
+                          <ShoppingCart size={12} />
+                          Agregar
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ═══════════════════════════════════════════
+          5. REFERIDOS
+          ═══════════════════════════════════════════ */}
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 'var(--lf-card-radius, 22px)',
+          background: 'linear-gradient(135deg, var(--primario), #FF8A65)',
+          color: '#FFFFFF',
+          boxShadow: 'var(--shadow-primario)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+          <Gift size={20} />
+          <span style={{ fontSize: 17, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+            Invita amigos, gana puntos
+          </span>
+        </div>
+        <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 18, lineHeight: 1.5 }}>
+          Tu amigo recibe 20 puntos en su primer envio. Tu ganas 50 puntos por cada referido.
+        </div>
+
+        {/* Referral code */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: 14,
+            padding: '10px 14px',
+            marginBottom: 14,
+          }}
+        >
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 700, letterSpacing: '2px', flex: 1 }}>
+            {referidos.codigo}
+          </span>
           <button
-            onClick={() => setPrefPayment((p) => (p === 'efectivo' ? 'transferencia' : 'efectivo'))}
+            onClick={handleCopyCode}
             style={{
-              ...btnGhost,
               padding: '8px 14px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: 'rgba(255,255,255,0.1)',
+              color: '#fff',
               fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            Cambiar
+            <Copy size={14} /> Copiar
           </button>
+        </div>
+
+        {/* Share button */}
+        <button
+          onClick={handleShare}
+          style={{
+            padding: '12px 24px',
+            borderRadius: 'var(--lf-button-radius, 16px)',
+            border: 'none',
+            background: '#FFFFFF',
+            color: 'var(--primario)',
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <Users size={16} /> Compartir
+        </button>
+
+        {/* Stats */}
+        <div style={{ display: 'flex', gap: 20, marginTop: 18 }}>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.referidos.length}</div>
+            <div style={{ fontSize: 11, opacity: 0.8, fontFamily: "'DM Sans', sans-serif" }}>Invitados</div>
+          </div>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>
+              {referidos.referidos.filter(r => r.primerEnvio).length}
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.8, fontFamily: "'DM Sans', sans-serif" }}>Registrados</div>
+          </div>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.puntosGanados}</div>
+            <div style={{ fontSize: 11, opacity: 0.8, fontFamily: "'DM Sans', sans-serif" }}>Pts ganados</div>
+          </div>
         </div>
       </div>
 
-      {/* ─── 5. SETTINGS ─── */}
-      <div style={section}>
+      {/* ═══════════════════════════════════════════
+          6. CALIFICACIONES
+          ═══════════════════════════════════════════ */}
+      <div style={sectionCard}>
         <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
-          Configuración
+          Calificaciones
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {/* Push notifications */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto' }}>
+          {calificaciones.map(cal => (
+            <div
+              key={cal.id}
+              style={{
+                padding: '14px 16px',
+                background: 'var(--bg-alt)',
+                borderRadius: 14,
+                border: '1px solid var(--border)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>{cal.repartidorNombre}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+                  {cal.fecha}
+                </div>
+                {cal.comentario && (
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>
+                    {cal.comentario}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0, marginLeft: 12 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={14} fill={i < cal.estrellas ? 'var(--primario)' : 'none'} color={i < cal.estrellas ? 'var(--primario)' : 'var(--border)'} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════
+          7. CONFIGURACION
+          ═══════════════════════════════════════════ */}
+      <div style={sectionCard}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+          Configuracion
+        </h3>
+
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Notificaciones */}
           <SettingsRow
             icon={<Bell size={18} />}
-            label="Recibir notificaciones push"
+            label="Notificaciones"
             right={<Toggle on={pushNotif} onToggle={() => setPushNotif((p) => !p)} />}
           />
-          {/* Email promos */}
+          {/* Promociones */}
           <SettingsRow
             icon={<Mail size={18} />}
-            label="Recibir promociones por email"
+            label="Promociones"
             right={<Toggle on={emailPromo} onToggle={() => setEmailPromo((p) => !p)} />}
           />
-          {/* Dark mode */}
+          {/* Modo oscuro */}
           <SettingsRow
             icon={isDark ? <Moon size={18} /> : <Sun size={18} />}
             label="Modo oscuro"
             right={<Toggle on={isDark} onToggle={toggleThemeLocal} />}
           />
-          {/* Language */}
+          {/* Metodo de pago preferido */}
+          <SettingsRow
+            icon={prefPayment === 'efectivo' ? <Banknote size={18} /> : <CreditCard size={18} />}
+            label="Pago preferido"
+            right={
+              <button
+                onClick={() => setPrefPayment((p) => (p === 'efectivo' ? 'transferencia' : 'efectivo'))}
+                style={{
+                  padding: '4px 12px',
+                  borderRadius: 10,
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  fontSize: 13,
+                  fontFamily: "'DM Sans', sans-serif",
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                {prefPayment === 'efectivo' ? 'Efectivo' : 'Transferencia'} <ChevronRight size={14} />
+              </button>
+            }
+          />
+          {/* Idioma */}
           <SettingsRow
             icon={<Globe size={18} />}
             label="Idioma"
             right={
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                color: 'var(--text-muted)', fontSize: 14,
-                fontFamily: "'DM Sans', sans-serif",
-              }}>
-                Español <ChevronRight size={14} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>
+                Espanol <ChevronRight size={14} />
               </div>
             }
             disabled
           />
-          {/* Privacy */}
+          {/* Privacidad */}
           <SettingsRow
             icon={<Shield size={18} />}
-            label="Política de privacidad"
-            right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
-            onClick={() => {}}
-          />
-          {/* Terms */}
-          <SettingsRow
-            icon={<AlertTriangle size={18} />}
-            label="Términos de servicio"
+            label="Politica de privacidad"
             right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
             onClick={() => {}}
           />
         </div>
-      </div>
 
-      {/* ─── 6. DANGER ZONE ─── */}
-      <div style={{ ...section, borderColor: 'var(--peligro, #FF1744)', borderWidth: 1, borderStyle: 'solid' }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--peligro, #FF1744)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
-          Zona de peligro
-        </h3>
-
-        {/* Logout */}
+        {/* Cerrar sesion */}
         <button
           onClick={() => setLogoutModal(true)}
           style={{
-            width: '100%', padding: '12px 20px', borderRadius: 14,
-            border: '1px solid var(--peligro, #FF1744)',
-            background: 'transparent', color: 'var(--peligro, #FF1744)',
-            fontWeight: 600, fontSize: 15, cursor: 'pointer',
+            width: '100%',
+            padding: '12px 20px',
+            borderRadius: 'var(--lf-button-radius, 16px)',
+            border: '1px solid var(--peligro)',
+            background: 'transparent',
+            color: 'var(--peligro)',
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer',
             fontFamily: "'DM Sans', sans-serif",
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            marginTop: 16,
           }}
         >
-          <LogOut size={18} /> Cerrar sesión
+          <LogOut size={18} /> Cerrar sesion
         </button>
 
-        {/* Delete account */}
+        {/* Eliminar cuenta */}
         <button
           onClick={() => { setDeleteModal(true); setDeleteText(''); }}
           style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--peligro, #FF1744)', fontSize: 13, marginTop: 12,
-            opacity: 0.6, fontFamily: "'DM Sans', sans-serif",
-            display: 'block', margin: '12px auto 0',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--peligro)',
+            fontSize: 12,
+            marginTop: 12,
+            opacity: 0.6,
+            fontFamily: "'DM Sans', sans-serif",
+            display: 'block',
+            margin: '12px auto 0',
           }}
         >
           Eliminar cuenta
         </button>
       </div>
 
-      {/* ─── LOGOUT MODAL ─── */}
+      {/* ═══════════════════════════════════════════
+          LOGOUT MODAL
+          ═══════════════════════════════════════════ */}
       <AnimatePresence>
         {logoutModal && (
           <Modal onClose={() => setLogoutModal(false)}>
@@ -1129,23 +1326,20 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                 background: 'rgba(255,23,68,0.1)', margin: '0 auto 16px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <LogOut size={24} style={{ color: 'var(--peligro, #FF1744)' }} />
+                <LogOut size={24} style={{ color: 'var(--peligro)' }} />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 8 }}>
-                ¿Cerrar sesión?
+                Cerrar sesion?
               </h3>
-              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>
-                Se cerrará tu sesión actual.
+              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>
+                Se cerrara tu sesion actual.
               </p>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
                 <button style={btnGhost} onClick={() => setLogoutModal(false)}>
                   Cancelar
                 </button>
                 <button
-                  style={{
-                    ...btnPrimary,
-                    background: 'var(--peligro, #FF1744)',
-                  }}
+                  style={{ ...btnPrimary, background: 'var(--peligro)' }}
                   onClick={() => {
                     setLogoutModal(false);
                     onLogout();
@@ -1159,7 +1353,9 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
         )}
       </AnimatePresence>
 
-      {/* ─── DELETE ACCOUNT MODAL ─── */}
+      {/* ═══════════════════════════════════════════
+          DELETE ACCOUNT MODAL
+          ═══════════════════════════════════════════ */}
       <AnimatePresence>
         {deleteModal && (
           <Modal onClose={() => setDeleteModal(false)}>
@@ -1169,24 +1365,19 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                 background: 'rgba(255,23,68,0.1)', margin: '0 auto 16px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <Trash2 size={24} style={{ color: 'var(--peligro, #FF1744)' }} />
+                <Trash2 size={24} style={{ color: 'var(--peligro)' }} />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 8 }}>
                 Eliminar cuenta
               </h3>
-              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>
-                Esta acción es irreversible. Se eliminarán todos tus datos.
+              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16, fontFamily: "'DM Sans', sans-serif" }}>
+                Esta accion es irreversible. Se eliminaran todos tus datos.
               </p>
               <div style={{ textAlign: 'left', marginBottom: 8 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
-                  Escribe <strong style={{ color: 'var(--peligro, #FF1744)' }}>ELIMINAR</strong> para confirmar
+                <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+                  Escribe <strong style={{ color: 'var(--peligro)' }}>ELIMINAR</strong> para confirmar
                 </label>
-                <input
-                  style={inputStyle}
-                  value={deleteText}
-                  onChange={(e) => setDeleteText(e.target.value)}
-                  placeholder="ELIMINAR"
-                />
+                <input style={inputStyle} value={deleteText} onChange={(e) => setDeleteText(e.target.value)} placeholder="ELIMINAR" />
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
                 <button style={btnGhost} onClick={() => setDeleteModal(false)}>
@@ -1195,7 +1386,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                 <button
                   style={{
                     ...btnPrimary,
-                    background: deleteText === 'ELIMINAR' ? 'var(--peligro, #FF1744)' : 'var(--text-muted)',
+                    background: deleteText === 'ELIMINAR' ? 'var(--peligro)' : 'var(--text-muted)',
                     cursor: deleteText === 'ELIMINAR' ? 'pointer' : 'not-allowed',
                     opacity: deleteText === 'ELIMINAR' ? 1 : 0.5,
                   }}
@@ -1213,7 +1404,9 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
         )}
       </AnimatePresence>
 
-      {/* ─── TOAST NOTIFICATION ─── */}
+      {/* ═══════════════════════════════════════════
+          TOAST NOTIFICATION
+          ═══════════════════════════════════════════ */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -1227,14 +1420,14 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
               left: '50%',
               transform: 'translateX(-50%)',
               padding: '12px 24px',
-              borderRadius: 12,
-              background: toast.type === 'success' ? 'var(--exito, #00C853)' : 'var(--peligro, #FF1744)',
+              borderRadius: 14,
+              background: toast.type === 'success' ? 'var(--exito)' : 'var(--peligro)',
               color: '#fff',
               fontSize: 14,
               fontFamily: "'DM Sans', sans-serif",
               fontWeight: 500,
               zIndex: 9999,
-              boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+              boxShadow: 'var(--shadow-lg)',
               maxWidth: '90vw',
               textAlign: 'center',
             }}
@@ -1248,36 +1441,8 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
 }
 
 /* ═══════════════════════════════════════════════
-   SUB-COMPONENTS
+   SETTINGS ROW
    ═══════════════════════════════════════════════ */
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        padding: '12px 14px',
-        borderRadius: 14,
-        background: 'var(--bg-alt)',
-        border: '1px solid var(--border)',
-      }}
-    >
-      <div
-        style={{
-          fontSize: 20,
-          fontWeight: 700,
-          color: 'var(--text)',
-          fontFamily: "'JetBrains Mono', monospace",
-        }}
-      >
-        {value}
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-        {label}
-      </div>
-    </div>
-  );
-}
-
 function SettingsRow({
   icon,
   label,
@@ -1301,7 +1466,7 @@ function SettingsRow({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '12px 0',
+        padding: '14px 0',
         border: 'none',
         background: 'transparent',
         width: '100%',

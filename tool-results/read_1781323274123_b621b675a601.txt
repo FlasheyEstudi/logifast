@@ -1,0 +1,1059 @@
+     1→PROMPT REEDISENO MOBILE 2026 — CLIENTE + DELIVERY (REPARTIDOR)
+     2→
+     3→CONTEXTO:
+     4→LOGIFAST necesita un reediseño mobile-first para los roles de CLIENTE y REPARTIDOR (delivery). No quiero algo basico ni generico. Quiero interfaces que se sientan como las apps mas avanzadas de 2026: micro-interacciones fluidas, layouts no convencionales, profundidad visual con glassmorphism y layers, animaciones choreografiadas, y una experiencia que haga que el usuario diga "wow, esto se siente caro".
+     5→
+     6→Referencias de nivel: Uber Eats 2026, Glovo Pro, Rappi Prime, Grab Superapp, DoorDash DashPass, Bolt Food, Getir, o cualquier app de delivery que este innovando en UX mobile.
+     7→
+     8→Este prompt es PURAMENTE VISUAL Y DE INTERACCION. Define como se VEA y SE SIENTA cada pantalla, cada transicion, cada micro-interaccion. La logica ya esta construida en prompts anteriores.
+     9→
+    10→Mismas tokens, paleta, tipografia. Nuevas reglas de diseno mobile explicitas.
+    11→
+    12→DEPENDENCIAS ADICIONALES NECESARIAS:
+    13→- framer-motion (ya instalado) — para animaciones complejas
+    14→- react-leaflet (ya instalado) — para mapas
+    15→- haptic feedback: navigator.vibrate() nativo del browser
+    16→- CSS: scroll-snap, backdrop-filter, CSS containment, view transitions API
+    17→
+    18→=====================================================
+    19→PRINCIPIOS DE DISENO MOBILE 2026
+    20→=====================================================
+    21→
+    22→1. DEPTH LAYERS: la app tiene 3 capas de profundidad
+    23→   - Capa 0: mapa/fondo (siempre detras)
+    24→   - Capa 1: contenido principal (scrollable)
+    25→   - Capa 2: elementos flotantes (FAB, bottom nav, bottom sheet)
+    26→   Cada capa tiene su propio nivel de elevacion (sombra + blur)
+    27→
+    28→2. GLASSMORPHISM INTELIGENTE: no es poner blur en todo. Es usar blur SOLO en elementos que flotan sobre contenido dinamico (mapa, imagenes, video). El contenido estatico NO necesita blur.
+    29→
+    30→3. SNAP INTERACTIONS: todo lo que sube desde abajo (bottom sheets, keyboards, panels) tiene snap points. El usuario puede arrastrar a 3 posiciones: minimizado, medio, completo.
+    31→
+    32→4. GESTURE-FIRST: la interfaz responde a gestos, no solo a taps. Swipe, pull, drag, long-press. Cada gesto tiene feedback visual Y haptic.
+    33→
+    34→5. RHYTHM: las animaciones tienen ritmo. No todo se mueve al mismo tiempo. Hay un patron temporal: primero el header, luego el contenido, luego los detalles. Stagger inteligente.
+    35→
+    36→6. SKEUOMORPHIC TOUCH: elementos tactiles se sienten fisicos. Botones que se "hunden" al tocar, cards que se "elevan" al arrastrar, switches que "saltan" al cambiar.
+    37→
+    38→=====================================================
+    39→TOKENS MOBILE ESPECIFICOS
+    40→=====================================================
+    41→
+    42→Agregar a los tokens existentes:
+    43→
+    44→--lf-sheet-radius: 28px
+    45→--lf-card-radius: 22px
+    46→--lf-pill-radius: 100px
+    47→--lf-input-radius: 16px
+    48→--lf-button-radius: 16px
+    49→--lf-fab-size: 60px
+    50→--lf-bottom-nav-height: 72px
+    51→--lf-safe-bottom: env(safe-area-inset-bottom, 0px)
+    52→--lf-sheet-snap-1: 30vh
+    53→--lf-sheet-snap-2: 60vh
+    54→--lf-sheet-snap-3: 92vh
+    55→
+    56→Glassmorphism tokens:
+    57→--lf-glass-bg: rgba(255,255,255,0.72)
+    58→--lf-glass-bg-dark: rgba(10,10,15,0.82)
+    59→--lf-glass-blur: 24px
+    60→--lf-glass-border: rgba(255,255,255,0.18)
+    61→--lf-glass-border-dark: rgba(255,255,255,0.08)
+    62→
+    63→Shadow tokens mobile:
+    64→--lf-shadow-card: 0 2px 12px rgba(0,0,0,0.06)
+    65→--lf-shadow-float: 0 8px 32px rgba(0,0,0,0.12)
+    66→--lf-shadow-sheet: 0 -12px 48px rgba(0,0,0,0.18)
+    67→--lf-shadow-fab: 0 6px 24px rgba(255,87,34,0.35)
+    68→
+    69→=====================================================
+    70→SECCION A — ROL CLIENTE: REEDISENO MOBILE COMPLETO
+    71→=====================================================
+    72→
+    73→=====================================================
+    74→A.1 — PANTALLA: INICIO (Feed del Cliente)
+    75→=====================================================
+    76→
+    77→Esta es la pantalla que el cliente ve al abrir la app. Debe impactar en el primer segundo.
+    78→
+    79→LAYOUT VERTICAL (de arriba a abajo):
+    80→
+    81→1. STATUS BAR AREA (simulada, 44px):
+    82→   - Background: transparente (se ve el contenido debajo)
+    83→   - "9:41" alineado izquierda, monospace 14px, --text
+    84→   - Iconos de bateria/wifi/senal alineados derecha, SVG Lucide 14px
+    85→   - En modo oscuro: texto blanco
+    86→
+    87→2. HEADER DE UBICACION (64px, glassmorphism):
+    88→   - Fondo: --lf-glass-bg con backdrop-filter blur(--lf-glass-blur)
+    89→   - En modo oscuro: --lf-glass-bg-dark
+    90→   - Borde inferior: 1px solid --lf-glass-border
+    91→   - Layout:
+    92→     Izquierda: "Entregar en:" 11px muted, uppercase, letter-spacing 0.1em
+    93→     Debajo: "Col. Los Robles" 18px Syne bold + icono chevron-down 16px animado (rota 180deg al abrir dropdown)
+    94→   - Derecha: icono campana (notificaciones) 22px con badge contador (circulo 18px, --lf-danger, numero blanco 11px mono)
+    95→   - El badge tiene animacion de bounce cuando hay nueva notificacion
+    96→   - Al tocar la ubicacion: dropdown con direcciones guardadas
+    97→     El dropdown es un bottom sheet (NO un select nativo)
+    98→     Snap points: 30vh (solo direcciones) → 60vh (direcciones + mapa para nueva)
+    99→     Cada direccion: icono (casa/trabajo/otro SVG) + nombre 15px bold + direccion completa 13px muted
+   100→     "Usar ubicacion actual" con icono target
+   101→     "Agregar nueva direccion" con icono +
+   102→     Al seleccionar: sheet se cierra con spring animation, el nombre cambia con crossfade
+   103→
+   104→3. BUSCADOR (52px, posicionado debajo del header):
+   105→   - NO es un input normal. Es una pill glassmorphism.
+   106→   - Fondo: --lf-glass-bg, backdrop-filter blur(16px)
+   107→   - Border-radius: 28px
+   108→   - Padding: 14px 20px 14px 48px
+   109→   - Icono search: 20px, --muted, absolute left 18px
+   110→   - Texto: "Buscar tiendas, productos, envios..." 15px, --muted
+   111→   - Al tocar: transicion a pantalla de busqueda completa
+   112→     La pill se EXPANDE horizontalmente hasta llenar el ancho (width 100%)
+   113→     El placeholder se convierte en input real
+   114→     Aparece boton "Cancelar" a la derecha con slide-in
+   115→     Debajo: busqueda reciente (3-5 terminos) + sugerencias populares
+   116→     Resultados: lista con tipo (tienda/producto/envio) + nombre + info secundaria
+   117→   - Animacion de expansion: 0.3s cubic-bezier(0.16, 1, 0.3, 1)
+   118→
+   119→4. CARRUSEL DE BANNERS (180px):
+   120→   - Scroll horizontal con snap
+   121→   - Cada banner: calc(100vw - 48px) de ancho (deja ver el siguiente parcialmente a la derecha)
+   122→   - Gap entre banners: 12px
+   123→   - Padding horizontal: 16px
+   124→   - Cada banner: border-radius 24px, min-height 170px, overflow hidden
+   125→   - Fondo: gradiente del color de la campana
+   126→   - Overlay: patron geometrico SVG sutil (opacidad 0.04)
+   127→   - Contenido: titulo Syne 24px bold blanco + subtitulo DM Sans 14px blanco 75% + pill CTA blanca
+   128→   - Los dots NO son circulos. Son una barra de progreso horizontal debajo del carrusel:
+   129→     Barra completa: 100% ancho, height 3px, --border
+   130→     Barra activa: se llena proporcionalmente al slide actual, --primario, border-radius 2px
+   131→     Transicion suave al cambiar de slide
+   132→   - Auto-slide cada 5 segundos, pausa al tocar
+   133→   - Parallax effect: el fondo del banner se mueve levemente al hacer scroll vertical (transform: translateY(valor * 0.3))
+   134→
+   135→5. QUICK ACTIONS DUAL (100px):
+   136→   - 2 tarjetas lado a lado
+   137→   - Cada una: border-radius 20px, padding 18px, min-height 100px
+   138→   - "Enviar": gradiente diagonal #FF5722→#FF8A65
+   139→   - "Comprar": gradiente diagonal #1B1B2F→#3949AB
+   140→   - Patron geometrico overlay en ambas (lineas diagonales, opacidad 0.05)
+   141→   - Icono: cuadrado 36x36 con fondo rgba(255,255,255,0.18), border-radius 10px, icono SVG blanco 20px
+   142→   - Titulo: Syne 18px bold blanco
+   143→   - Desc: DM Sans 12px blanco 65%
+   144→   - Al tocar: la tarjeta se "hunde" (scale 0.97, 0.1s), luego navega
+   145→   - Haptic feedback: navigator.vibrate(10)
+   146→
+   147→6. SECCION: CATEGORIAS (90px):
+   148→   - Header: "Explora" Syne 17px bold + "Ver todas" link 14px --primario
+   149→   - Scroll horizontal de pills:
+   150→     Cada pill: icono 24px + nombre 13px medium
+   151→     Fondo: --surface, borde 1.5px --border, border-radius 16px, padding 12px 16px
+   152→     Selected: borde --primario, fondo --primario-soft, nombre --primario 600
+   153→     Gap: 10px
+   154→   - Al seleccionar: las tiendas de abajo se filtran con animacion de crossfade
+   155→
+   156→7. SECCION: TIENDAS DESTACADAS:
+   157→   - Header: "Populares cerca de ti" Syne 17px bold + "Ver todas" link
+   158→   - Scroll horizontal de tarjetas de tienda:
+   159→     Cada tarjeta: width 220px
+   160→     Cover: 120px con color de la tienda + patron sutil
+   161→     Logo: 44x44 circulo, border 3px --surface, position absolute bottom -18px left 14px
+   162→     Badge (si tiene): top 10px right 10px, pill pequena con backdrop-blur
+   163→     Body: padding 24px 14px 14px (24px top para el logo que sobresale)
+   164→       Nombre: 15px Syne bold
+   165→       Meta: rating estrella SVG + "4.7" + punto + "25-35 min" + punto + "Envio C$20"
+   166→       Si tiene promo: pill "20% OFF" verde 11px font-weight 600
+   167→     Hover/active: translateY(-3px), sombra mas profunda
+   168→   - Snap scroll
+   169→
+   170→8. SECCION: OFERTAS RELAMPAGO:
+   171→   - Header: "Ofertas de hoy" Syne 17px bold + TIMER pill roja
+   172→     Timer: icono reloj SVG 14px + "02:15:33" JetBrains Mono 13px bold
+   173→     Fondo pill: --lf-danger, texto blanco, border-radius 100px, padding 4px 12px
+   174→     El timer cuenta regresivo en tiempo real, actualiza cada segundo
+   175→     Cuando quedan menos de 30 minutos: la pill parpadea (opacity 1→0.7→1, 0.8s)
+   176→   - Scroll horizontal de tarjetas de oferta:
+   177→     Cada tarjeta: width 180px
+   178→     Borde superior: 3px --lf-danger
+   179→     Descuento: pill roja "30% OFF" JetBrains Mono 12px bold
+   180→     Nombre producto: 14px bold
+   181→     Tienda: 12px muted con logo pequeno
+   182→     Precios: "C$180" tachado muted + "C$126" JetBrains Mono 18px bold --lf-danger
+   183→     Timer individual: "Quedan 2h 15m" 11px muted con reloj
+   184→     Al tocar: va al producto en la tienda
+   185→
+   186→9. SECCION: PRODUCTOS POPULARES:
+   187→   - Header: "Lo mas pedido" Syne 17px bold
+   188→   - Grid 2 columnas (NO scroll horizontal aqui, es grid):
+   189→     Cada producto: borde-radius 20px, borde 1px --border, overflow hidden
+   190→     Imagen: 140px (color de fondo del producto)
+   191→     Boton "+": 34x34, --primario, border-radius 50%, position absolute bottom 8px right 8px
+   192→       Al tocar: animacion bounce (scale 1→1.3→0.9→1, 0.35s), haptic(15ms)
+   193→       Vuelo al carrito: si hay icono de carrito visible, un circulo naranja vuela hacia el (animation con translate calculado)
+   194→     Body: padding 12px
+   195→       Nombre: 14px bold, max 2 lineas, ellipsis
+   196→       Tienda: 12px muted
+   197→       Precio: JetBrains Mono 16px bold
+   198→
+   199→10. SECCION: FEED DE CONTENIDO:
+   200→    - Header: "Para ti" Syne 17px bold
+   201→    - Items apilados verticalmente:
+   202→      Cada item: tarjeta con borde 1px --border, border-radius 18px, padding 16px
+   203→      Layout: icono 40x40 (color segun tipo) | titulo 14px bold + desc 13px muted | badge tipo (pill 10px) | timestamp 11px muted
+   204→      Si tiene boton CTA: pill pequena al final "Ver" / "Usar" / "Reordenar"
+   205→      Hover: borde --primario
+   206→
+   207→11. SECCION: ENVIO ACTIVO (si hay):
+   208→    - NO es una card aparte. Es una BARRA FLOTANTE glassmorphism que se pega al bottom, encima del bottom nav.
+   209→    - Fondo: --lf-glass-bg + blur(20px)
+   210→    - Border-radius: 20px 20px 0 0
+   211→    - Padding: 14px 20px
+   212→    - Layout: punto pulsante azul (8px) + "LF-2847 En camino" 14px bold + ETA "12 min" JetBrains Mono 16px bold --primario + icono flecha-derecha
+   213→    - Al tocar: se EXPANDE a pantalla completa de tracking (transicion: el sheet sube desde abajo, 0.4s spring)
+   214→    - Si no hay envio activo pero hay pedido activo (compra): misma barra pero "Pedido en Pizza Express · ~25 min"
+   215→
+   216→12. BOTTOM NAV (72px + safe-area):
+   217→    - Glassmorphism: fondo rgba(255,255,255,0.78) con blur(24px)
+   218→    - En modo oscuro: rgba(10,10,15,0.85)
+   219→    - Borde superior: 1px solid rgba(255,255,255,0.15)
+   220→    - 5 items: Inicio / Explorar / Enviar / Pedidos / Perfil
+   221→    - El boton "Enviar" es el protagonista:
+   222→      Elevado 12px (translateY(-12px))
+   223→      Fondo: --lf-primario
+   224→      Size: 52x52
+   225→      Border-radius: 16px (NO circular — es cuadrado redondeado)
+   226→      Icono: package-plus SVG blanco 24px
+   227→      Sombra: --lf-shadow-fab
+   228→      Al tocar: scale(0.92) → scale(1), 0.15s, haptic(20ms)
+   229→    - Items activos: icono --primario + label --primario 11px 600
+   230→      Indicador: NO es un punto. Es una linea horizontal de 16px debajo del icono, --primario, border-radius 2px, height 2.5px
+   231→      Animacion al cambiar: la linea se desliza de un item a otro (translateX, 0.3s spring)
+   232→    - Items inactivos: icono --muted 22px + label --muted 10px
+   233→    - Badge notificaciones: sobre el icono de Inicio, circulo 16px --lf-danger
+   234→
+   235→=====================================================
+   236→A.2 — PANTALLA: EXPLORAR (Marketplace)
+   237→=====================================================
+   238→
+   239→La pantalla de exploracion de tiendas y productos. Debe sentirse como abrir Uber Eats.
+   240→
+   241→LAYOUT:
+   242→
+   243→1. HEADER (glassmorphism, 56px):
+   244→   - "Explorar" Syne 22px bold izquierda
+   245→   - Icono filtro (sliders-horizontal) derecha — al tocar: slide panel de filtros desde la derecha
+   246→   - Debajo: ubicacion actual en texto pequeno muted
+   247→
+   248→2. BUSCADOR (debajo del header, 48px):
+   249→   - Mismo estilo glassmorphism pill
+   250→   - Al tocar: expansion a pantalla de busqueda
+   251→
+   252→3. CATEGORIAS HORIZONTALES (sticky al hacer scroll):
+   253→   - Scroll horizontal de categorias
+   254→   - Cada categoria: pill con icono SVG (NO emoji) + nombre
+   255→   - "Todas" seleccionada por defecto
+   256→   - Sticky: se pega debajo del header al hacer scroll (position sticky, top 56px, z-index 10)
+   257→   - Fondo al ser sticky: glassmorphism (para que no se vea feo al flotar sobre contenido)
+   258→   - Indicador de seleccion: underline animado que se desliza (igual que tabs de admin pero horizontal)
+   259→
+   260→4. FILTROS SECUNDARIOS (debajo de categorias):
+   261→   - Pills pequenas en scroll horizontal: "Cerca de mi" / "Mejor calificados" / "Envio gratis" / "Abierto ahora" / "Con promo"
+   262→   - Multiples seleccionables
+   263→   - Selected: fondo --primario, texto blanco
+   264→   - Deselected: borde --border, texto muted
+   265→
+   266→5. LISTA DE TIENDAS:
+   267→   - Cada tienda como tarjeta horizontal con profundidad:
+   268→
+   269→   TARJETA DE TIENDA:
+   270→   - Margen horizontal: 16px
+   271→   - Margin-bottom: 12px
+   272→   - Border-radius: 22px
+   273→   - Background: --surface
+   274→   - Border: 1px --border
+   275→   - Box-shadow: --lf-shadow-card
+   276→   - Overflow: hidden
+   277→   - Transition: transform 0.2s, shadow 0.2s
+   278→   - Active state: transform scale(0.98), 0.1s
+   279→
+   280→   CONTENIDO DE LA TARJETA:
+   281→   - Layout: fila horizontal
+   282→
+   283→   Portada (izquierda, 100x100):
+   284→   - Border-radius: 22px (solo esquinas izquierdas, o todas si la tarjeta no tiene border-radius en el contenido)
+   285→   - Mejor: la portada es un area con background-color de la tienda
+   286→   - Dentro de la portada: iniciales de la tienda centradas, Syne bold 28px, blanco, opacidad 0.2 (watermark sutil)
+   287→   - Si la tienda tiene badge: pill en la esquina superior izquierda de la portada, con backdrop-blur
+   288→
+   289→   Info (derecha, flex 1):
+   290→   - Padding: 14px 16px
+   291→   - Fila 1: nombre 16px Syne bold + icono verificado (check-circle SVG 14px --info) si aplica
+   292→   - Fila 2: categoria 13px muted + estrella SVG 12px #FFB300 + "4.7" 13px + punto + "287 pedidos" 12px muted
+   293→   - Fila 3: reloj SVG 12px + "25-35 min" 13px + punto + "Envio C$20" 13px muted + punto + "Min. C$50" 13px muted
+   294→   - Fila 4 (si tiene promo): pill "20% OFF" background --lf-success-soft, texto --lf-success, 11px 600
+   295→   - Fila 5 (derecha): icono corazon (favorito) — 20x20, --muted por defecto, --lf-danger al activar
+   296→     Al tocar: el corazon se llena con animacion de scale bounce (1→1.4→1→1.2→1, 0.4s), haptic(10ms)
+   297→
+   298→   MAPA DE TIENDAS (toggle):
+   299→   - Boton en la esquina inferior derecha: FAB pequeno (48x48), icono mapa, --surface, borde, sombra
+   300→   - Al tocar: la vista cambia a mapa fullscreen con transicion suave
+   301→   - Mapa: Leaflet con marcadores custom de cada tienda
+   302→   - Marcador: circulo con iniciales + color de la tienda, borde blanco 2px
+   303→   - Al tocar marcador: bottom sheet con preview de la tienda (logo + nombre + rating + "Ver tienda")
+   304→   - Boton para volver a lista: FAB con icono lista
+   305→
+   306→=====================================================
+   307→A.3 — PANTALLA: PERFIL DE TIENDA
+   308→=====================================================
+   309→
+   310→Al tocar una tienda, esta pantalla se abre con una transicion hero desde la tarjeta.
+   311→
+   312→TRANSICION DE ENTRADA:
+   313→- La portada de la tienda se EXPANDE desde la tarjeta (hero animation)
+   314→- El contenido debajo hace slide-up con fade, stagger 0.05s por elemento
+   315→- Duracion total: 0.4s, spring easing
+   316→
+   317→LAYOUT:
+   318→
+   319→1. PORTADA (200px):
+   320→   - Background-color de la tienda
+   321→   - Patron geometrico overlay (opacidad 0.04)
+   322→   - Gradiente inferior: transparente → rgba(0,0,0,0.3) (para que el logo sea visible)
+   323→   - Boton back: circulo 36x36, glassmorphism, icono arrow-left SVG, position absolute top 48px left 16px
+   324→   - Boton compartir: circulo 36x36, glassmorphism, icono share-2 SVG, position absolute top 48px right 16px
+   325→   - Boton favorito: circulo 36x36, glassmorphism, icono heart SVG, position absolute top 48px right 60px
+   326→
+   327→2. LOGO + INFO (debajo de portada):
+   328→   - Logo: 72x72, border-radius 22px, borde 4px --surface, position relative top -32px left 20px
+   329→   - Sombra: 0 4px 16px rgba(0,0,0,0.15)
+   330→   - Nombre: Syne 24px bold, margin-top -8px, padding 0 20px
+   331→   - Badges: fila de pills (Verificado, Popular, Nuevo) debajo del nombre, gap 6px
+   332→   - Meta: fila con estrella + rating + punto + categoria + punto + pedidos totales
+   333→   - Status: "Abierto hasta 9:00 PM" con punto verde pulsante / "Cerrado" con punto rojo
+   334→
+   335→3. BARRA DE PROMO (si tiene):
+   336→   - Fondo: --lf-primario-soft
+   337→   - Padding: 10px 16px
+   338→   - Texto: "20% OFF con codigo LOGI20" 14px + "Aplicar" link bold --primario
+   339→   - Al tocar "Aplicar": se anima a "Aplicado" con check verde, haptic
+   340→
+   341→4. ACCIONES RAPIDAS (4 pills en fila):
+   342→   - "Hacer pedido" (primario, relleno)
+   343→   - "Llamar" (outline, icono telefono)
+   344→   - "Direccion" (outline, icono mapa)
+   345→   - "Compartir" (outline, icono share)
+   346→   - Cada pill: padding 10px 16px, border-radius 12px, font-size 13px 600
+   347→
+   348→5. TABS DE NAVEGACION (sticky):
+   349→   - "Menu" / "Info" / "Resenas"
+   350→   - Sticky debajo de la barra de status/header
+   351→   - Indicador underline que se desliza entre tabs
+   352→
+   353→6. TAB: MENU (PRODUCTOS):
+   354→
+   355→   Buscador interno: pill pequena, "Buscar en [tienda]..."
+   356→
+   357→   NAV DE CATEGORIAS (sticky debajo de tabs):
+   358→   - Scroll horizontal de categorias de producto
+   359→   - Cada una: texto 14px, selected = bold + underline --primario
+   360→   - Al tocar: scroll suave a la seccion de esa categoria (scrollIntoView)
+   361→
+   362→   LISTA DE PRODUCTOS:
+   363→   - Separados por categoria con header: nombre de categoria 16px bold + linea decorativa
+   364→   - Cada producto:
+   365→     Layout horizontal
+   366→     Info (flex 1): nombre 15px bold + desc 13px muted (2 lineas max) + precio JetBrains Mono 16px bold + precio tachado si hay descuento
+   367→     Imagen (derecha, 88x88): border-radius 16px, color de fondo
+   368→     Boton "+": 32x32, --primario, border-radius 50%, position absolute
+   369→       Al tocar: bounce animation, haptic, toast "Producto agregado" con link "Ver carrito"
+   370→       Si el producto ya esta en el carrito: se cambia a control [-] [cantidad] [+]
+   371→         [-] y [+]: 26x26, circulo, borde --border
+   372→         Cantidad: JetBrains Mono 15px bold
+   373→         Transicion: el boton "+" se MORFOSEA al control de cantidad (width expand, 0.2s)
+   374→
+   375→   PRODUCTO CON VARIANTES:
+   376→   - Al tocar el producto (no el +): abre bottom sheet de personalizacion
+   377→   - Sheet: imagen del producto arriba + nombre + precio base
+   378→   - Variantes: cada variante como grupo de pills seleccionables
+   379→   - Cantidad: stepper [-] [n] [+]
+   380→   - Precio actualizado en vivo
+   381→   - "Agregar al carrito C$XXX" boton grande al fondo
+   382→
+   383→7. TAB: INFO:
+   384→   - Direccion + mapa pequeno (Leaflet 160px)
+   385→   - Horarios: tabla Lun-Dom con horas
+   386→   - Telefono + email
+   387→   - Descripcion
+   388→   - Politicas: pedido minimo, envio, tiempo
+   389→
+   390→8. TAB: RESENAS:
+   391→   - Calificacion promedio: "4.7" Syne 48px bold + estrellas grandes
+   392→   - "(287 resenas)" 14px muted
+   393→   - Grafico de distribucion: 5 filas (5★→1★), barra horizontal + porcentaje
+   394→   - Lista de resenas: avatar + nombre + estrellas + fecha + comentario
+   395→
+   396→=====================================================
+   397→A.4 — PANTALLA: CARRITO
+   398→=====================================================
+   399→
+   400→Se abre como pantalla completa con transicion slide-from-right.
+   401→
+   402→TRANSICION: translateX(100%) → translateX(0), 0.35s, cubic-bezier(0.16, 1, 0.3, 1)
+   403→
+   404→LAYOUT:
+   405→
+   406→1. HEADER (56px):
+   407→   - Boton back (arrow-left SVG) + "Tu carrito" Syne 20px bold + "Limpiar" link 14px muted
+   408→   - Badge de cantidad: pill pequena con numero
+   409→
+   410→2. SI CARRITO VACIO:
+   411→   - Empty state con ilustracion SVG de bolsa vacia (formas geometricas)
+   412→   - "Tu carrito esta vacio" 20px bold
+   413→   - "Explora tiendas y agrega productos" 14px muted
+   414→   - Boton: "Explorar tiendas" primario
+   415→
+   416→3. GRUPOS POR TIENDA:
+   417→   - Los productos se agrupan por tienda
+   418→   - Cada grupo: tarjeta surface, border-radius 22px, borde 1px, overflow hidden
+   419→
+   420→   Header del grupo: logo 28x28 + nombre 15px bold + "Ver tienda" link 13px --primario
+   421→
+   422→   Items del grupo:
+   423→   - Cada item: fila con padding 14px 16px, borde inferior --border
+   424→   - Layout: imagen 52x52 border-radius 12px | info (nombre + variante + precio unitario) | controles cantidad + precio total
+   425→
+   426→   Controles de cantidad: [-] [cantidad] [+]
+   427→   - Animacion al agregar/quitar: el numero cambia con slide vertical (el viejo slide up + fade, el nuevo slide up from bottom)
+   428→   - Al llegar a 0: el item hace fadeOut + colapsa height (0.3s)
+   429→
+   430→   Eliminar: swipe izquierda revela boton rojo "Eliminar"
+   431→   - Implementar con touch events: onTouchStart, onTouchMove, onTouchEnd
+   432→   - El boton aparece con slide desde la derecha
+   433→   - Al soltar: si el swipe es > 40% del ancho, se elimina. Si no, vuelve.
+   434→
+   435→4. CODIGO PROMOCIONAL:
+   436→   - Expandible: "¿Tienes un codigo?" link muted
+   437→   - Al expandir: input con monospace + boton "Aplicar"
+   438→   - Exitoso: animacion de check + "Codigo LOGI20: -20%" verde
+   439→   - El descuento se anima apareciendo en el resumen
+   440→
+   441→5. DIRECCION DE ENTREGA:
+   442→   - Tarjeta con icono mapa + direccion actual + "Cambiar" link
+   443→   - Al tocar: bottom sheet con direcciones guardadas
+   444→
+   445→6. HORARIO:
+   446→   - "Lo antes posible" (default) con ETA "~25-35 min"
+   447→   - "Programar" expandible con selector fecha + hora
+   448→
+   449→7. INSTRUCCIONES:
+   450→   - Textarea pequeno expandible
+   451→
+   452→8. RESUMEN DE COSTOS:
+   453→   - Tarjeta: border-radius 22px, padding 20px
+   454→   - Filas: label izquierda muted + valor derecha mono
+   455→   - Descuento en verde
+   456→   - Linea separadora
+   457→   - TOTAL: Syne 32px bold --primario
+   458→   - Animacion: los numeros cuentan de 0 al valor (countUp, 0.6s)
+   459→
+   460→9. METODO DE PAGO:
+   461→   - 2 tarjetas: Efectivo / Transferencia
+   462→   - Seleccionada: borde --primario, fondo --primario-soft
+   463→   - Icono + nombre + descripcion
+   464→
+   465→10. BOTON "Hacer pedido":
+   466→    - Fijo en la parte inferior (position sticky bottom)
+   467→    - Full-width menos 32px (margen 16px cada lado)
+   468→    - Padding: 18px
+   469→    - Background: --lf-primario
+   470→    - Texto: "Hacer pedido · C$156" Syne bold 17px blanco
+   471→    - Border-radius: 18px
+   472→    - Sombra: --lf-shadow-fab
+   473→    - Hover/active: scale(0.98), haptic(15ms)
+   474→    - Disabled: opacidad 0.5
+   475→    - Shimmer effect en hover: gradiente que se desliza
+   476→
+   477→11. CONFIRMACION DE PEDIDO:
+   478→    - Transicion: el carrito hace fadeOut, la confirmacion hace fadeIn
+   479→    - Animacion especial:
+   480→      Fase 1 (0-0.3s): circulo SVG se dibuja (stroke-dashoffset)
+   481→      Fase 2 (0.3-0.6s): checkmark SVG aparece dentro del circulo (scale 0→1)
+   482→      Fase 3 (0.6-0.8s): confetti cae (8-12 piezas SVG de colores de la paleta)
+   483→      Fase 4 (0.8-1.2s): titulo + info hace fadeUp con stagger
+   484→    - Haptic: patron largo (50ms)
+   485→    - Contenido:
+   486→      "Pedido confirmado" Syne 28px bold --success
+   487→      "Pedido #LF-CXXX" mono 14px muted
+   488→      Tienda: logo + nombre
+   489→      ETA: "~30 minutos" Syne 20px bold
+   490→      Resumen: 3 productos + total
+   491→      Botones: "Rastrear pedido" (primario) / "Volver al inicio" (ghost)
+   492→
+   493→=====================================================
+   494→A.5 — PANTALLA: TRACKING INMERSIVO
+   495→=====================================================
+   496→
+   497→La pantalla mas compleja y visualmente impactante. El mapa domina.
+   498→
+   499→TRANSICION: slide-up desde la barra flotante del Inicio, 0.4s spring
+   500→
+   501→LAYOUT:
+   502→
+   503→1. MAPA (55% de la pantalla en mobile):
+   504→   - Leaflet fullscreen como fondo
+   505→   - Tiles con estilo (en modo oscuro: filtro CSS invert + hue-rotate)
+   506→   - Marcadores animados:
+   507→     Repartidor: icono custom (circulo blanco 40x40 con icono moto SVG dentro, borde --primario 2px, sombra)
+   508→       Tiene un arco de direccion (cono semitransparente que indica hacia donde va)
+   509→       Movimiento: cada 5 segundos, interpolacion suave de posicion (CSS transition en la posicion del marker, 1s ease)
+   510→       Anillo pulsante: circulo que se expande y desvanece desde el marcador (ring pulse, 2s loop)
+   511→     Recogida: pin custom (circulo 20x20, --lf-success, borde blanco 3px)
+   512→     Entrega: pin custom (circulo 20x20, --lf-primario, borde blanco 3px)
+   513→   - Ruta: polilinea con estilo:
+   514→     Grosor: 5px
+   515→     Color: --lf-primario
+   516→     Opacity: 0.85
+   517→     DashArray: "10 6" (linea punteada elegante)
+   518→     Sombra de la ruta: misma linea pero 12px, opacidad 0.08 (efecto de profundidad)
+   519→   - ETA flotante: pill glassmorphism cerca del marcador del repartidor
+   520→     Fondo: glass, border-radius 14px, padding 8px 14px
+   521→     Contenido: reloj SVG 14px + "~12 min" mono 14px bold
+   522→     Se actualiza cada 10 segundos
+   523→
+   524→2. BOTTOM SHEET (45% de la pantalla):
+   525→   - El componente MAS complejo. Es un sheet con 3 snap points.
+   526→   - Snap 1 (minimizado, ~120px): solo handle + ETA grande + badge estado
+   527→   - Snap 2 (medio, ~50%): ETA + timeline + info repartidor
+   528→   - Snap 3 (completo, ~92%): todo + detalles + acciones
+   529→
+   530→   Implementacion:
+   531→   - onTouchStart: guardar posicion inicial
+   532→   - onTouchMove: calcular delta Y, mover el sheet con transform
+   533→   - onTouchEnd: snap al punto mas cercano
+   534→   - Transicion al snap: spring animation (damping 25, stiffness 300)
+   535→
+   536→   CONTENIDO DEL SHEET (snap completo):
+   537→
+   538→   Handle bar: 40px x 5px, --border, border-radius 3px, centrado
+   539→
+   540→   a) ETA (siempre visible):
+   541→      "Tu paquete llega en" 13px muted, centrado
+   542→      "~12 minutos" Syne 36px bold --primario, centrado
+   543→      Barra de progreso: height 4px, borde-radius 2px, gradiente --primario
+   544→      Se llena segun progreso de la orden
+   545→
+   546→   b) TIMELINE VERTICAL:
+   547→      8 pasos con iconos SVG, NO emojis:
+   548→
+   549→      Paso 1: [check SVG] Orden creada — 14:20 — completado (verde)
+   550→      Paso 2: [check SVG] Repartidor asignado: Carlos M. — 14:21
+   551→      Paso 3: [check SVG] En camino a recoger — 14:23
+   552→      Paso 4: [moto SVG] Recogiendo paquete — 14:31 — ACTUAL (pulsante naranja)
+   553→      Paso 5: [paquete SVG] Paquete recogido — pendiente (gris)
+   554→      Paso 6: [ruta SVG] En camino a destino — pendiente
+   555→      Paso 7: [map-pin SVG] En punto de entrega — pendiente
+   556→      Paso 8: [check-circle SVG] Entregado — pendiente
+   557→
+   558→      Cada paso: dot (28x28, circulo) + linea conectora (2px, 24px) + texto + timestamp
+   559→      Completado: dot relleno --lf-success, icono check blanco
+   560→      Actual: dot borde --lf-primario, icono --lf-primario, animacion pulse
+   561→      Pendiente: dot borde --border, icono --muted
+   562→      Linea: completada = --lf-primario, pendiente = --border
+   563→      Al avanzar: la linea se rellena con animacion (width 0→100%, 0.4s), el dot hace scaleIn
+   564→
+   565→   c) INFO DEL REPARTIDOR:
+   566→      Tarjeta: borde 1px --border, border-radius 18px, padding 16px
+   567→      Layout: avatar 52x52 (color unico) + nombre 16px bold + moto 13px muted + calificacion 4.8 ★ en amarillo
+   568→      Stats: "287 entregas" 12px muted
+   569→      Botones de accion (3 pills en fila):
+   570→        "Llamar" (icono phone, borde --border)
+   571→        "Mensaje" (icono message-circle, borde --border)
+   572→        "Compartir" (icono share-2, borde --border)
+   573→      Al tocar "Mensaje": se abre chat inline (ver seccion A.6)
+   574→
+   575→   d) DETALLES (expandible):
+   576→      "Ver detalles" link muted
+   577→      Al expandir: descripcion paquete, tamano, fragil, instrucciones, metodo pago, total
+   578→
+   579→   e) ACCIONES:
+   580→      "Reportar problema" — ghost, texto --lf-danger
+   581→      "Cancelar envio" — ghost, texto muted (solo si estado = Pendiente)
+   582→
+   583→3. BOTON BACK:
+   584→   - Circulo 40x40, glassmorphism, icono arrow-down SVG (indica que se minimiza)
+   585→   - Position: top-left del mapa, debajo de la status bar
+   586→   - Al tocar: el sheet se minimiza, luego se cierra la pantalla con slide-down
+   587→
+   588→=====================================================
+   589→A.6 — CHAT CLIENTE-REPARTIDOR (inline)
+   590→=====================================================
+   591→
+   592→Se abre como un bottom sheet encima del tracking.
+   593→
+   594→LAYOUT:
+   595→- Header: avatar repartidor + nombre + "En linea" punto verde + boton X
+   596→- Mensajes: burbujas estilo iMessage/WhatsApp
+   597→  Del otro: izquierda, fondo --bg-alt, border-radius 20px 20px 20px 4px
+   598→  Del usuario: derecha, fondo --lf-primario, texto blanco, border-radius 20px 20px 4px 20px
+   599→  Timestamp: centrado, 11px muted, agrupa mensajes por tiempo
+   600→  Sistema: centrado, 12px muted, pill --bg-alt
+   601→- Mensajes rapidos (chips): scroll horizontal sobre el input
+   602→  "¿Ya vienes?" / "¿Cuanto falta?" / "Estoy en la puerta" / "Gracias!"
+   603→  Al tocar: se envia directamente, haptic
+   604→- Input: textarea auto-resize + boton enviar (circulo --primario, icono send SVG)
+   605→  Al enviar: el mensaje aparece con slideUp + fadeIn, el scroll baja automatico
+   606→  Indicador "escribiendo...": 3 dots que rebotan secuencialmente
+   607→
+   608→=====================================================
+   609→A.7 — PANTALLA: MIS PEDIDOS
+   610→=====================================================
+   611→
+   612→Tabs: "Activos" / "Historial"
+   613→
+   614→TAB ACTIVOS:
+   615→- Cada pedido activo como tarjeta prominente:
+   616→  - Si es envio: icono paquete SVG + ruta + repartidor + ETA grande + boton "Rastrear"
+   617→  - Si es compra: logo tienda + resumen productos + estado + ETA + boton "Rastrear"
+   618→  - El boton "Rastrear" es primario y lleva al tracking inmersivo
+   619→- Si no hay activos: empty state con ilustracion + "Sin pedidos activos" + boton
+   620→
+   621→TAB HISTORIAL:
+   622→- Filtros: pills "Todos" / "Envios" / "Compras" / "Entregados" / "Cancelados"
+   623→- Cada item: tarjeta compacta
+   624→  Fila 1: ID mono muted + badge estado + fecha derecha
+   625→  Fila 2: destino o tienda + monto mono bold
+   626→  Fila 3: repartidor avatar + nombre + calificacion (si califico)
+   627→  Botones: "Reenviar" / "Reordenar" / "Calificar" (si no ha calificado)
+   628→  Al expandir: detalles completos con timeline y mapa historico
+   629→
+   630→=====================================================
+   631→A.8 — PANTALLA: MI PERFIL
+   632→=====================================================
+   633→
+   634→HEADER: avatar grande 80x80 (iniciales Syne bold 28px, fondo --primario-soft, texto --primario) + nombre 22px bold + email 14px muted
+   635→
+   636→SECCIONES apiladas verticalmente, cada una como tarjeta surface borde-radius 22px:
+   637→
+   638→1. Puntos LOGIFAST:
+   639→   - "245 puntos" JetBrains Mono 28px bold + nivel "Plata" badge
+   640→   - Barra de progreso al siguiente nivel
+   641→   - "55 puntos para Oro" 13px muted
+   642→
+   643→2. Metricas:
+   644→   - 3 stats en fila: envios totales / gastados / este mes
+   645→   - Grafico pequeno (barras): envios por mes, 6 meses
+   646→
+   647→3. Direcciones guardadas:
+   648→   - Lista de direcciones con etiqueta + icono + direccion
+   649→   - "Agregar" boton
+   650→
+   651→4. Favoritos:
+   652→   - Tabs: Tiendas / Productos
+   653→   - Grid de tiendas favoritas (mini tarjetas)
+   654→   - Lista de productos favoritos con boton "Agregar al carrito"
+   655→
+   656→5. Referidos:
+   657→   - "Invita amigos, gana puntos" tarjeta con gradiente --primario
+   658→   - Codigo: "MARIA-LF" monospace grande + boton copiar
+   659→
+   660→6. Calificaciones:
+   661→   - Historial de calificaciones dadas
+   662→
+   663→7. Configuracion:
+   664→   - Toggles: notificaciones, promociones, modo oscuro
+   665→   - "Cambiar contrasena"
+   666→   - "Cerrar sesion" (ghost, --lf-danger)
+   667→   - "Eliminar cuenta" (link pequeno, --lf-danger)
+   668→
+   669→=====================================================
+   670→SECCION B — ROL REPARTIDOR (DELIVERY): REEDISENO MOBILE COMPLETO
+   671→=====================================================
+   672→
+   673→El repartidor es la persona que conduce la moto y entrega los paquetes/pedidos. Su interfaz debe ser:
+   674→- RAPIDA: puede ver la info con un vistazo mientras conduce
+   675→- SEGURA: botones grandes, acciones claras, sin confusion
+   676→- INFORMATIVA: siempre sabe que hacer siguiente
+   677→- PROFESIONAL: se siente como un conductor de Uber, no como un mensajero improvisado
+   678→
+   679→=====================================================
+   680→B.1 — PANTALLA: ESTADO DE ESPERA
+   681→=====================================================
+   682→
+   683→Cuando el repartidor no tiene orden activa. Debe sentirse como la pantalla de espera de un conductor de Uber.
+   684→
+   685→LAYOUT PANTALLA COMPLETA:
+   686→
+   687→1. MAPA COMO FONDO (100% de la pantalla):
+   688→   - Leaflet centrado en la ubicacion actual del repartidor
+   689→   - Marcador del repartidor: icono moto custom, centrado
+   690→   - Circulo de cobertura: area semitransparente (opacidad 0.06) alrededor del repartidor mostrando su zona de alcance
+   691→   - Tiles del mapa en estilo claro (o oscuro si modo noche)
+   692→
+   693→2. HEADER GLASSMORPHISM (sobre el mapa):
+   694→   - Fondo: glass, 56px
+   695→   - Izquierda: "LOGIFAST" Syne 16px bold + badge "En linea" punto verde
+   696→   - Derecha: toggle conexion (switch on/off) + icono notificaciones + avatar
+   697→
+   698→3. CARD DE ESTADO (centrada sobre el mapa):
+   699→   - Fondo: --lf-glass-bg + blur(24px)
+   700→   - Border-radius: 28px
+   701→   - Padding: 32px
+   702→   - Text-align: center
+   703→   - Max-width: 320px
+   704→   - Margin: auto (centrada vertical y horizontalmente)
+   705→
+   706→   Contenido:
+   707→   - Animacion de espera: 3 anillos concentricos que pulsan desde el centro
+   708→     Circulo 1: 80px, borde 2px --lf-primario, opacidad 0.3, animation pulse 2s infinite
+   709→     Circulo 2: 110px, borde 2px --lf-primario, opacidad 0.15, animation pulse 2s 0.3s infinite
+   710→     Circulo 3: 140px, borde 2px --lf-primario, opacidad 0.08, animation pulse 2s 0.6s infinite
+   711→     Centro: icono moto SVG 32px --lf-primario
+   712→
+   713→   - "Esperando asignacion" Syne 18px bold --text
+   714→   - "Estas en linea y listo para recibir ordenes" 14px muted
+   715→   - Stats del dia: "5 entregas hoy · 42 km · C$850 ganados" JetBrains Mono 13px muted
+   716→
+   717→4. PANEL INFERIOR (bottom sheet con snap points):
+   718→   - Snap 1 (minimizado): solo handle + "Servicios de hoy" + numero
+   719→   - Snap 2 (medio): lista de servicios completados hoy
+   720→   - Snap 3 (completo): detalles + stats del dia
+   721→
+   722→   CONTENIDO (snap 2+):
+   723→
+   724→   a) "Servicios de hoy" 16px bold + contador badge
+   725→   b) Lista de servicios completados:
+   726→      Cada servicio: tarjeta compacta
+   727→        Fila 1: ID mono + hora + badge estado (Entregado/Incidencia)
+   728→        Fila 2: ruta (origen → destino) 14px
+   729→        Fila 3: km recorridos mono + costo mono bold
+   730→   c) Stats del dia:
+   731→      4 mini stats en grid 2x2:
+   732→        Entregas: 5
+   733→        Km: 42
+   734→        Ganancias: C$850
+   735→        Tiempo activo: 4h 32m
+   736→
+   737→5. TOGGLE DE CONEXION:
+   738→   - Switch grande (56x30) en el header
+   739→   - ON: fondo --lf-success, "En linea" debajo
+   740→   - OFF: fondo --lf-muted, "Desconectado" debajo
+   741→   - Al cambiar: animacion de la card de estado (aparece/desaparece)
+   742→   - Haptic: patron largo al cambiar
+   743→
+   744→=====================================================
+   745→B.2 — NUEVA ORDEN ASIGNADA (Notificacion de orden)
+   746→=====================================================
+   747→
+   748→Cuando el sistema asigna una orden al repartidor. Es el momento MAS critico de la interfaz.
+   749→
+   750→NOTIFICACION FULL-SCREEN:
+   751→- NO es un toast ni un modal. Es una PANTALLA COMPLETA que reemplaza todo.
+   752→- Fondo: gradiente oscuro (rgba(0,0,0,0.7)) con blur del mapa detras
+   753→- Animacion de entrada: la pantalla emerge desde abajo con spring animation
+   754→
+   755→CONTENIDO (centrado):
+   756→
+   757→1. SONIDO/VIBRACION: patron de vibracion [100, 50, 100, 50, 200] + si es posible, tono de notificacion
+   758→
+   759→2. HEADER: "Nueva orden" Syne 24px bold blanco + icono paquete SVG animado (bounce)
+   760→
+   761→3. TARJETA DE ORDEN (glassmorphism, border-radius 28px, padding 28px):
+   762→   - Fondo: glass oscuro (rgba(255,255,255,0.12), blur 24px)
+   763→   - Borde: 1px rgba(255,255,255,0.15)
+   764→
+   765→   Contenido:
+   766→   a) TIPO: badge "Envio de paquete" o "Pedido de [Tienda]"
+   767→
+   768→   b) RUTA (visual, NO solo texto):
+   769→      Punto verde (grande 24px) + "Col. Los Robles" 16px bold blanco
+   770→      Linea vertical punteada (40px, rgba(255,255,255,0.3))
+   771→      Punto naranja (grande 24px) + "Barrio Monseñor Lezcano" 16px bold blanco
+   772→
+   773→   c) DATOS EN GRID 2x2:
+   774→      "Distancia" / "3.2 km" mono 20px bold blanco
+   775→      "Tiempo" / "~15 min" mono 20px bold blanco
+   776→      "Ganancia" / "C$120" mono 20px bold #69F0AE
+   777→      "Paquete" / "Mediano" mono 16px blanco
+   778→
+   779→   d) CLIENTE: "Maria Lopez" + "Efectivo" badge
+   780→
+   781→   e) Si es compra: PRODUCTOS — lista resumida de lo que debe recoger
+   782→
+   783→4. TIMER DE ACEPTACION:
+   784→   - Barra de progreso que se reduce de 100% a 0% en 30 segundos
+   785→   - Color: --lf-primario, se pone rojo cuando quedan 10 segundos
+   786→   - Cuando llega a 0: la orden se rechaza automaticamente
+   787→   - Numeros: "23s" JetBrains Mono bold, cuenta regresiva
+   788→
+   789→5. BOTONES:
+   790→   - "Aceptar orden" — boton GRANDE, full-width, fondo --lf-primario, texto blanco, Syne bold 18px, padding 20px
+   791→     Al tocar: haptic(50ms), animacion de exito, transicion al flujo de entrega
+   792→   - "Rechazar" — ghost, texto blanco al 60%, debajo del boton aceptar
+   793→
+   794→ANIMACION DE ACEPTACION:
+   795→- El boton hace scale bounce
+   796→- La tarjeta hace zoom-out (scale 1→0.8, opacity 1→0)
+   797→- El mapa aparece con fade
+   798→- La barra de progreso de la orden aparece slide-up
+   799→- Duracion total: 0.6s
+   800→
+   801→=====================================================
+   802→B.3 — FLUJO DE ENTREGA (Pantalla principal durante entrega)
+   803→=====================================================
+   804→
+   805→La pantalla que el repartidor ve MIENTRAS ejecuta la entrega. Debe ser clara, con la info justa, y con acciones obvias.
+   806→
+   807→LAYOUT:
+   808→
+   809→1. MAPA (60% de la pantalla):
+   810→   - Ruta dibujada desde ubicacion actual hasta destino
+   811→   - Marcador del repartidor (moto, animado)
+   812→   - Marcador del destino (pin)
+   813→   - ETA sobre la ruta
+   814→   - Boton "Centrar en mi" (FAB 44x44, glassmorphism, icono target)
+   815→
+   816→2. BOTTOM SHEET (40% inicial, expandible):
+   817→
+   818→   HANDLE + INDICADOR DE PASO:
+   819→   - Handle bar
+   820→   - Debajo: badge grande con el paso actual:
+   821→     "Camino a recoger" / "En punto de recogida" / "Paquete recogido" / "Camino a entregar" / "En punto de entrega"
+   822→   - El badge cambia de color segun el paso
+   823→
+   824→   BARRA DE PROGRESO DE 4 PASOS:
+   825→   - 4 circulos conectados por lineas
+   826→   - Circulo actual: --lf-primario, pulsante
+   827→   - Circulo completado: --lf-success, check SVG
+   828→   - Circulo pendiente: --border
+   829→   - Linea completada: --lf-primario
+   830→   - La linea entre pasos se anima al avanzar (width 0→100%)
+   831→
+   832→   INFO DE LA ORDEN:
+   833→   - ID: mono 13px muted
+   834→   - Destino actual: 16px bold (recogida o entrega, segun el paso)
+   835→   - Direccion: 14px secondary
+   836→   - Si es recogida: nombre del cliente + telefono
+   837→   - Si es entrega: nombre del cliente + telefono + instrucciones
+   838→
+   839→   CONTADOR DE KILOMETROS:
+   840→   - "Km recorridos" 12px muted
+   841→   - "2.4 km" JetBrains Mono 28px bold --text
+   842→   - Barra de progreso visual: se llena segun km vs distancia total
+   843→   - Gradiente naranja de la barra
+   844→   - Animacion: los numeros cuentan suavemente (interpola de valor actual al nuevo, 0.5s)
+   845→
+   846→   BOTON DE ACCION PRINCIPAL (el boton que avanza el paso):
+   847→   - Full-width, padding 20px, border-radius 18px
+   848→   - Cambia de texto y color segun el paso:
+   849→
+   850→     Paso "Camino a recoger":
+   851→       Texto: "Llegue al punto de recogida"
+   852→       Color: --lf-primario
+   853→
+   854→     Paso "En punto de recogida":
+   855→       Texto: "Recoger paquete"
+   856→       Color: --lf-info (azul)
+   857→
+   858→     Paso "Paquete recogido":
+   859→       Texto: "Iniciar entrega"
+   860→       Color: --lf-primario
+   861→
+   862→     Paso "Camino a entregar":
+   863→       Texto: "Llegue al punto de entrega"
+   864→       Color: --lf-primario
+   865→
+   866→     Paso "En punto de entrega":
+   867→       Texto: "Confirmar entrega"
+   868→       Color: --lf-success (verde)
+   869→       Es el paso final — boton mas grande, con sombra verde
+   870→
+   871→   - Al tocar: haptic(20ms), el paso avanza con animacion, la barra de progreso se actualiza
+   872→
+   873→   BOTON SECUNDARIO: "Reportar incidencia" — ghost, texto --lf-danger, debajo del boton principal
+   874→
+   875→3. INFO DEL CLIENTE (accesible por swipe up del sheet):
+   876→   - Avatar + nombre + telefono
+   877→   - Boton "Llamar" (icono phone, abre tel:)
+   878→   - Boton "Mensaje" (abre chat inline)
+   879→   - Boton "Navegar" (abre Google Maps con la ruta)
+   880→
+   881→=====================================================
+   882→B.4 — REPORTE DE INCIDENCIA
+   883→=====================================================
+   884→
+   885→Bottom sheet que se abre al tocar "Reportar incidencia".
+   886→
+   887→CONTENIDO:
+   888→- "Reportar incidencia" Syne 20px bold + icono alert-triangle SVG rojo
+   889→- Opciones como tarjetas seleccionables:
+   890→  "Falla mecanica" — icono wrench SVG + descripcion
+   891→  "Problema con cliente" — icono user-x SVG
+   892→  "Accidente" — icono alert-octagon SVG
+   893→  "Otro" — icono more-horizontal SVG
+   894→- Campo de texto: "Describe que paso" textarea
+   895→- Boton: "Enviar reporte" danger (fondo --lf-danger)
+   896→- Al enviar: la orden cambia a estado "Incidencia", la moto vuelve a "DISPONIBLE", toast de confirmacion
+   897→
+   898→=====================================================
+   899→B.5 — PANTALLA: HISTORIAL DEL DIA
+   900→=====================================================
+   901→
+   902→Accesible desde el bottom sheet de espera, o como tab en la navegacion.
+   903→
+   904→LAYOUT:
+   905→- Header: "Hoy" Syne 24px bold + fecha actual 14px muted
+   906→- STATS DEL DIA (4 KPIs en grid 2x2):
+   907→  "5" / "Entregas" — grande mono
+   908→  "42 km" / "Recorridos"
+   909→  "C$850" / "Ganancias"
+   910→  "4h 32m" / "Tiempo activo"
+   911→  Cada stat: tarjeta surface, border-radius 18px, padding 16px
+   912→
+   913→- LISTA DE SERVICIOS:
+   914→  Cada servicio como timeline item:
+   915→  - Hora: JetBrains Mono 13px muted, alineada a la izquierda
+   916→  - Punto: circulo 10px (color segun estado)
+   917→  - Info: ID + ruta + monto
+   918→  - Badge: Entregado (verde) / Incidencia (rojo)
+   919→
+   920→- GRAFICO PEQUENO (opcional):
+   921→  - BarChart: entregas por hora del dia, barras naranjas
+   922→
+   923→=====================================================
+   924→B.6 — PANTALLA: PERFIL DEL REPARTIDOR
+   925→=====================================================
+   926→
+   927→HEADER: avatar 72x72 + nombre 22px bold + "Repartidor" badge + moto asignada
+   928→
+   929→SECCIONES:
+   930→
+   931→1. ESTADISTICAS:
+   932→   - Tarjeta con stats del repartidor:
+   933→     Entregas totales, km totales, calificacion promedio (estrellas), tiempo promedio de entrega
+   934→   - Grafico pequeno: entregas por dia, ultima semana
+   935→
+   936→2. MOTO ASIGNADA:
+   937→   - Tarjeta: nombre de la moto + modelo + km acumulados + estado
+   938→   - Ultimo mantenimiento
+   939→   - Proximo mantenimiento (si hay alerta)
+   940→
+   941→3. CALIFICACION:
+   942→   - "4.8 ★" grande
+   943→   - Distribucion de estrellas (barras)
+   944→   - Ultimas resenas de clientes
+   945→
+   946→4. CONFIGURACION:
+   947→   - Toggle: "Sonido de notificaciones"
+   948→   - Toggle: "Vibracion"
+   949→   - "Zona preferida" — selector de zona
+   950→   - "Cerrar sesion"
+   951→
+   952→=====================================================
+   953→B.7 — NAVEGACION DEL REPARTIDOR
+   954→=====================================================
+   955→
+   956→NO tiene bottom nav con 5 items como el cliente. Tiene una navegacion mas simple.
+   957→
+   958→OPCION A — Bottom nav con 3 items:
+   959→1. Icono mapa + "Inicio" (pantalla de espera/tracking)
+   960→2. Icono paquete + "Servicios" (historial del dia)
+   961→3. Icono persona + "Perfil"
+   962→
+   963→OPCION B — Sin bottom nav, navegacion por gestos:
+   964→- Swipe desde la derecha: perfil
+   965→- Swipe desde la izquierda: historial
+   966→- La pantalla principal (mapa) es siempre el foco
+   967→
+   968→La opcion A es mas segura. Implementar A.
+   969→
+   970→=====================================================
+   971→ANIMACIONES CRITICAS PARA AMBOS ROLES
+   972→=====================================================
+   973→
+   974→1. HERO TRANSITIONS:
+   975→   - Al tocar una tienda en la lista: la portada se expande desde la tarjeta hasta ocupar la pantalla
+   976→   - Implementar con View Transition API o Framer Motion layoutId
+   977→   - La portada comparte el mismo layoutId en la lista y en el perfil
+   978→   - Duracion: 0.4s spring
+   979→
+   980→2. SHEET INTERACTIONS:
+   981→   - Todos los sheets responden a arrastre vertical
+   982→   - Snap points con spring animation
+   983→   - Overlays aparecen/desaparecen con el sheet
+   984→   - Detras del sheet: el contenido se desenfoca (blur 4px)
+   985→
+   986→3. LIST ITEM ANIMATIONS:
+   987→   - Al agregar/quitar items de una lista: el item entra/sale con fade + height animation
+   988→   - Los items restantes se reorganizan suavemente (layout animation)
+   989→   - Implementar con Framer Motion AnimatePresence + layout prop
+   990→
+   991→4. BUTTON FEEDBACK:
+   992→   - Todos los botones tienen active state: scale(0.97), 0.1s
+   993→   - Los botones primarios adicionan haptic feedback
+   994→   - Los botones con loading state muestran 3 dots rebotando en vez del texto
+   995→
+   996→5. NUMBER TRANSITIONS:
+   997→   - Cuando un numero cambia (contador, precio, km): el viejo slide-up + fade, el nuevo slide-up from bottom
+   998→   - Implementar con Framer Motion AnimatePresence + key prop que cambia con el valor
+   999→
+  1000→6. PAGE TRANSITIONS:
+  1001→   - Entre pantallas principales: fade 0.2s
+  1002→   - A pantallas de detalle: slide-from-right 0.35s
+  1003→   - A bottom sheets: slide-up 0.3s spring
+  1004→   - A modales: scale-in 0.25s
+  1005→   - Volver atras: reversa de la animacion de entrada
+  1006→
+  1007→7. NOTIFICATION TRANSITIONS:
+  1008→   - Toast: slide-up from bottom + fade-in, 0.3s
+  1009→   - Badge update: bounce scale, 0.3s
+  1010→   - Full-screen notification (nueva orden repartidor): emerge from bottom, 0.4s spring
+  1011→
+  1012→8. MAP ANIMATIONS:
+  1013→   - Marcador del repartidor: transicion CSS de posicion (1s ease)
+  1014→   - Ruta: se "dibuja" de origen a destino (stroke-dashoffset animation, 1.5s)
+  1015→   - Marcadores aparecen: scale-in desde 0, 0.3s, con stagger de 0.1s
+  1016→   - ETA: fade al cambiar valor
+  1017→
+  1018→=====================================================
+  1019→GESTOS Y HAPTIC FEEDBACK
+  1020→=====================================================
+  1021→
+  1022→GESTOS:
+  1023→- Pull to refresh: en Inicio, Historial, lista de tiendas
+  1024→  Indicador: circulo que rota, --lf-primario
+  1025→  Al soltar: recarga datos, haptic(10ms)
+  1026→- Swipe left en item de carrito: revela boton eliminar
+  1027→- Swipe left en item de historial: revela "Reenviar"
+  1028→- Long press en direccion guardada: abre menu contextual (editar/eliminar/compartir)
+  1029→- Swipe down en bottom sheet: cierra/minimiza
+  1030→- Tap en mapa: cierra cualquier sheet abierto
+  1031→
+  1032→HAPTIC:
+  1033→- navigator.vibrate(10) — feedback ligero: seleccion de categoria, cambio de tab
+  1034→- navigator.vibrate(15) — feedback medio: agregar al carrito, aceptar orden
+  1035→- navigator.vibrate(20) — feedback fuerte: confirmar pedido, confirmar entrega
+  1036→- navigator.vibrate([50, 30, 50]) — patron: nueva orden asignada al repartidor
+  1037→- navigator.vibrate(50) — feedback largo: cambio de estado importante
+  1038→
+  1039→=====================================================
+  1040→REGLAS ESPECIFICAS MOBILE 2026
+  1041→=====================================================
+  1042→
+  1043→1. NINGUN boton primario tiene padding menor a 16px vertical. Son BOTONES GRANDES.
+  1044→2. NINGUN input tiene altura menor a 52px. Faciles de tocar.
+  1045→3. NINGUN texto legible es menor a 13px.
+  1046→4. SIEMPRE hay feedback al tocar: visual (scale/opacity) + haptic (vibrate)
+  1047→5. SIEMPRE hay transicion entre pantallas. NUNCA un salto instantaneo.
+  1048→6. SIEMPRE hay skeleton loader antes de contenido real.
+  1049→7. SIEMPRE hay empty state cuando no hay datos.
+  1050→8. Los bottom sheets SIEMPRE tienen handle bar y responden a arrastre.
+  1051→9. Los mapas SIEMPRE son interactivos (zoom, pan, marcadores clickeables).
+  1052→10. Los colores de estado SON CONSISTENTES entre cliente y repartidor:
+  1053→    Pendiente = amarillo | En camino = azul | Recogido/preparando = naranja | Entregado = verde | Incidencia/cancelado = rojo
+  1054→11. Las animaciones NUNCA exceden 0.5s excepto mapas y contadores.
+  1055→12. El modo oscuro RECALIBRA todos los colores, no invierte.
+  1056→13. Los gradientes son para HEROES y CTAs. NO para cada card.
+  1057→14. Los iconos SON SVG de Lucide. NUNCA emojis. NUNCA Font Awesome.
+  1058→15. El glassmorphism es para elementos FLOTANTES (sheets, headers, FABs). NO para contenido regular.
+  1059→

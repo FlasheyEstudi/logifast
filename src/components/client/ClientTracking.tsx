@@ -6,12 +6,9 @@ import {
   Phone,
   MessageCircle,
   Share2,
-  X,
   ChevronDown,
-  ChevronUp,
   MapPin,
   Package,
-  Home,
   Bike,
   Clock,
   Target,
@@ -19,6 +16,9 @@ import {
   CheckCircle,
   Star,
   Navigation,
+  Check,
+  ArrowDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/lib/store';
 
@@ -41,8 +41,8 @@ const REPARTIDOR_MAP: Record<string, RepartidorInfo> = {
   'CM': { id: 'r1', nombre: 'Carlos Mendoza', initials: 'CM', color: '#4CAF50', calificacion: 4.8, totalEntregas: 287, moto: 'Honda Wave 125', telefono: '+505 8888-1111', lat: 12.1120, lng: -86.2400 },
   'AT': { id: 'r2', nombre: 'Ana Torres', initials: 'AT', color: '#E91E63', calificacion: 4.9, totalEntregas: 312, moto: 'Yamaha NMAX', telefono: '+505 8888-2222', lat: 12.1080, lng: -86.2480 },
   'LR': { id: 'r3', nombre: 'Luis Ramos', initials: 'LR', color: '#2196F3', calificacion: 4.6, totalEntregas: 195, moto: 'Suzuki AX4', telefono: '+505 8888-3333', lat: 12.1200, lng: -86.2600 },
-  'JP': { id: 'r4', nombre: 'Jorge Pérez', initials: 'JP', color: '#FF9800', calificacion: 4.7, totalEntregas: 256, moto: 'Honda PCX', telefono: '+505 8888-4444', lat: 12.0950, lng: -86.2300 },
-  'RD': { id: 'r5', nombre: 'Rosa Díaz', initials: 'RD', color: '#9C27B0', calificacion: 4.5, totalEntregas: 143, moto: 'TVS Ntorq', telefono: '+505 8888-5555', lat: 12.1100, lng: -86.2350 },
+  'JP': { id: 'r4', nombre: 'Jorge Perez', initials: 'JP', color: '#FF9800', calificacion: 4.7, totalEntregas: 256, moto: 'Honda PCX', telefono: '+505 8888-4444', lat: 12.0950, lng: -86.2300 },
+  'RD': { id: 'r5', nombre: 'Rosa Diaz', initials: 'RD', color: '#9C27B0', calificacion: 4.5, totalEntregas: 143, moto: 'TVS Ntorq', telefono: '+505 8888-5555', lat: 12.1100, lng: -86.2350 },
   'MS': { id: 'r6', nombre: 'Miguel Sevilla', initials: 'MS', color: '#00BCD4', calificacion: 4.4, totalEntregas: 98, moto: 'Honda Click', telefono: '+505 8888-6666', lat: 12.1300, lng: -86.2700 },
 };
 
@@ -54,7 +54,7 @@ function getRepartidorInfo(initials: string): RepartidorInfo {
     color: '#FF5722',
     calificacion: 4.5,
     totalEntregas: 100,
-    moto: 'Moto estándar',
+    moto: 'Moto estandar',
     telefono: '+505 0000-0000',
     lat: 12.1140,
     lng: -86.2400,
@@ -77,54 +77,44 @@ function statusBadge(estado: string): { label: string; color: string } {
   }
 }
 
-function getStepIcon(step: TrackingStep, index: number) {
-  if (step.status === 'completed') {
-    return <CheckCircle size={18} style={{ color: 'var(--exito)' }} />;
+/* Map each tracking step to a specific Lucide icon */
+const STEP_ICONS = [
+  Check,       // s1: Orden creada
+  Check,       // s2: Repartidor asignado
+  Check,       // s3: En camino a recoger
+  Bike,        // s4: Recogiendo paquete
+  Package,     // s5: Paquete recogido
+  Navigation,  // s6: En camino a destino
+  MapPin,      // s7: En punto de entrega
+  CheckCircle, // s8: Entregado
+];
+
+/* ═══════════════════════════════════════════════
+   HAPTIC FEEDBACK
+   ═══════════════════════════════════════════════ */
+
+function haptic(style: 'light' | 'medium' | 'heavy' = 'light') {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    const ms = style === 'heavy' ? 30 : style === 'medium' ? 15 : 8;
+    navigator.vibrate(ms);
   }
-  if (step.status === 'current') {
-    return (
-      <motion.div
-        animate={{ scale: [1, 1.3, 1] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-        style={{
-          width: 18,
-          height: 18,
-          borderRadius: '50%',
-          border: '2.5px solid var(--primario)',
-          background: 'var(--primario-soft)',
-        }}
-      />
-    );
-  }
-  return (
-    <div
-      style={{
-        width: 18,
-        height: 18,
-        borderRadius: '50%',
-        border: '2px solid var(--border)',
-        background: 'transparent',
-      }}
-    />
-  );
 }
 
 /* ═══════════════════════════════════════════════
-   CSS MAP COMPONENT (No Leaflet)
+   CSS MAP COMPONENT — A.5 Immersive Map
    ═══════════════════════════════════════════════ */
 
 function VisualMap({
   isDark,
   order,
   currentStepIndex,
+  eta,
 }: {
   isDark: boolean;
   order: Order | null;
   currentStepIndex: number;
+  eta: number;
 }) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [centered, setCentered] = useState(false);
-
   // Calculate rider position based on step progress (0 to 7)
   const progress = Math.min(currentStepIndex / 7, 1);
 
@@ -132,7 +122,7 @@ function VisualMap({
   const pickupX = 15;
   const pickupY = 65;
   const destX = 82;
-  const destY = 30;
+  const destY = 28;
 
   // Rider position interpolates along a curved path
   const riderX = pickupX + (destX - pickupX) * progress;
@@ -151,7 +141,6 @@ function VisualMap({
 
   return (
     <div
-      ref={mapRef}
       style={{
         position: 'relative',
         width: '100%',
@@ -160,7 +149,7 @@ function VisualMap({
         overflow: 'hidden',
       }}
     >
-      {/* Grid pattern */}
+      {/* Grid pattern + roads */}
       <svg
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         xmlns="http://www.w3.org/2000/svg"
@@ -192,7 +181,7 @@ function VisualMap({
           </>
         )}
 
-        {/* Dotted path from pickup to destination */}
+        {/* Dashed path from pickup to destination */}
         <path
           d={`M ${pickupX}% ${pickupY}% Q ${ctrlX}% ${ctrlY}% ${destX}% ${destY}%`}
           fill="none"
@@ -214,7 +203,7 @@ function VisualMap({
         )}
       </svg>
 
-      {/* Pickup Marker */}
+      {/* ─── Pickup Marker: circulo 20x20, var(--exito), borde blanco 3px ─── */}
       <div
         style={{
           position: 'absolute',
@@ -230,18 +219,14 @@ function VisualMap({
       >
         <div
           style={{
-            width: 36,
-            height: 36,
+            width: 20,
+            height: 20,
             borderRadius: '50%',
             background: 'var(--exito)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            border: '3px solid #fff',
             boxShadow: '0 2px 8px rgba(0,200,83,0.35)',
           }}
-        >
-          <Package size={18} color="#fff" />
-        </div>
+        />
         <span
           style={{
             fontFamily: "'DM Sans', sans-serif",
@@ -258,7 +243,7 @@ function VisualMap({
         </span>
       </div>
 
-      {/* Destination Marker */}
+      {/* ─── Destination Marker: circulo 20x20, var(--primario), borde blanco 3px ─── */}
       <div
         style={{
           position: 'absolute',
@@ -274,18 +259,14 @@ function VisualMap({
       >
         <div
           style={{
-            width: 36,
-            height: 36,
+            width: 20,
+            height: 20,
             borderRadius: '50%',
-            background: '#FF9800',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(255,152,0,0.35)',
+            background: 'var(--primario)',
+            border: '3px solid #fff',
+            boxShadow: '0 2px 8px rgba(255,87,34,0.35)',
           }}
-        >
-          <Home size={18} color="#fff" />
-        </div>
+        />
         <span
           style={{
             fontFamily: "'DM Sans', sans-serif",
@@ -298,11 +279,11 @@ function VisualMap({
             whiteSpace: 'nowrap',
           }}
         >
-          Destino
+          Entrega
         </span>
       </div>
 
-      {/* Rider Marker */}
+      {/* ─── Rider Marker: circulo blanco 40x40, Bike SVG, borde var(--primario) 2px ─── */}
       <motion.div
         animate={{ y: [0, -4, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -318,8 +299,9 @@ function VisualMap({
           zIndex: 20,
         }}
       >
-        {/* Pulse ring */}
+        {/* Pulsing ring — 2s loop */}
         <div
+          className="lf-ring-pulse"
           style={{
             position: 'absolute',
             width: 48,
@@ -327,7 +309,6 @@ function VisualMap({
             borderRadius: '50%',
             border: '2px solid var(--primario)',
             opacity: 0.4,
-            animation: 'pulse-ring 1.8s ease-out infinite',
           }}
         />
         <div
@@ -339,7 +320,7 @@ function VisualMap({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '3px solid var(--primario)',
+            border: '2px solid var(--primario)',
             boxShadow: '0 2px 12px rgba(255,87,34,0.3)',
           }}
         >
@@ -347,11 +328,11 @@ function VisualMap({
         </div>
       </motion.div>
 
-      {/* ETA Pill near rider */}
+      {/* ─── ETA Pill: glassmorphism near rider ─── */}
       <div
         style={{
           position: 'absolute',
-          left: `${Math.min(riderX + 8, 90)}%`,
+          left: `${Math.min(riderX + 8, 85)}%`,
           top: `${Math.max(riderY - 10, 5)}%`,
           transform: 'translate(0, -100%)',
           zIndex: 25,
@@ -362,30 +343,32 @@ function VisualMap({
             display: 'flex',
             alignItems: 'center',
             gap: 4,
-            background: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.92)',
-            backdropFilter: 'blur(8px)',
-            padding: '4px 10px',
-            borderRadius: 20,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            background: 'var(--lf-glass-bg)',
+            backdropFilter: 'blur(var(--lf-glass-blur))',
+            WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+            border: '1px solid var(--lf-glass-border)',
+            padding: '8px 14px',
+            borderRadius: 14,
+            boxShadow: 'var(--lf-shadow-float)',
           }}
         >
-          <Clock size={13} style={{ color: 'var(--primario)' }} />
+          <Clock size={14} style={{ color: 'var(--primario)' }} />
           <span
             style={{
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 700,
               color: 'var(--primario)',
             }}
           >
-            ~{useStore.getState().trackingETA} min
+            ~{eta} min
           </span>
         </div>
       </div>
 
       {/* Center on rider FAB */}
       <button
-        onClick={() => setCentered((c) => !c)}
+        onClick={() => haptic('light')}
         style={{
           position: 'absolute',
           bottom: 12,
@@ -393,13 +376,15 @@ function VisualMap({
           width: 40,
           height: 40,
           borderRadius: '50%',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
+          background: 'var(--lf-glass-bg)',
+          backdropFilter: 'blur(var(--lf-glass-blur))',
+          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+          border: '1px solid var(--lf-glass-border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          boxShadow: 'var(--shadow-md)',
+          boxShadow: 'var(--lf-shadow-float)',
           zIndex: 30,
         }}
         aria-label="Centrar en repartidor"
@@ -407,35 +392,14 @@ function VisualMap({
         <Target size={18} style={{ color: 'var(--primario)' }} />
       </button>
 
-      {/* Back button */}
-      <button
-        onClick={() => useStore.getState().setTrackingOrder(null)}
-        style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          width: 36,
-          height: 36,
-          borderRadius: '50%',
-          background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(8px)',
-          border: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          zIndex: 30,
-        }}
-        aria-label="Cerrar seguimiento"
-      >
-        <X size={18} style={{ color: isDark ? '#fff' : '#1B1B2F' }} />
-      </button>
-
       {/* Pulse animation keyframes */}
       <style>{`
-        @keyframes pulse-ring {
+        @keyframes lf-ring-pulse {
           0% { transform: scale(1); opacity: 0.4; }
           100% { transform: scale(1.8); opacity: 0; }
+        }
+        .lf-ring-pulse {
+          animation: lf-ring-pulse 2s ease-out infinite;
         }
       `}</style>
     </div>
@@ -443,8 +407,146 @@ function VisualMap({
 }
 
 /* ═══════════════════════════════════════════════
+   TIMELINE STEP COMPONENT — A.5 Spec
+   ═══════════════════════════════════════════════ */
+
+function TimelineStep({
+  step,
+  index,
+  isLast,
+  isDark,
+}: {
+  step: TrackingStep;
+  index: number;
+  isLast: boolean;
+  isDark: boolean;
+}) {
+  const IconComponent = STEP_ICONS[index] ?? Check;
+  const isCompleted = step.status === 'completed';
+  const isCurrent = step.status === 'current';
+
+  /* Dot: 28x28 circle */
+  const dotStyle: React.CSSProperties = isCompleted
+    ? {
+        width: 28,
+        height: 28,
+        borderRadius: '50%',
+        background: 'var(--exito)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }
+    : isCurrent
+    ? {
+        width: 28,
+        height: 28,
+        borderRadius: '50%',
+        border: '2px solid var(--primario)',
+        background: 'var(--primario-soft)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        animation: 'lf-step-pulse 2s ease-in-out infinite',
+      }
+    : {
+        width: 28,
+        height: 28,
+        borderRadius: '50%',
+        border: '2px solid var(--border)',
+        background: 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      };
+
+  const iconColor = isCompleted ? '#fff' : isCurrent ? 'var(--primario)' : 'var(--text-muted)';
+
+  /* Connector line: 2px width, 24px min-height */
+  const lineStyle: React.CSSProperties = {
+    width: 2,
+    minHeight: 24,
+    flex: 1,
+    background: isCompleted ? 'var(--primario)' : 'var(--border)',
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 12,
+        position: 'relative',
+      }}
+    >
+      {/* Left: dot + connector */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: 28,
+          flexShrink: 0,
+        }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${step.id}-${step.status}`}
+            initial={isCompleted ? { scale: 0 } : { scale: 1 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            style={dotStyle}
+          >
+            <IconComponent size={14} style={{ color: iconColor }} />
+          </motion.div>
+        </AnimatePresence>
+        {!isLast && <div style={lineStyle} />}
+      </div>
+
+      {/* Right: text + timestamp */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flex: 1,
+          paddingTop: 4,
+          paddingBottom: isLast ? 0 : 8,
+          minWidth: 0,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 13,
+            fontWeight: isCurrent ? 600 : isCompleted ? 500 : 400,
+            color: step.status === 'pending' ? 'var(--text-muted)' : 'var(--text)',
+          }}
+        >
+          {step.label}
+        </span>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            color: 'var(--text-muted)',
+            flexShrink: 0,
+            marginLeft: 8,
+          }}
+        >
+          {step.timestamp}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
+
+type SheetSnap = 'minimized' | 'medium' | 'full';
 
 export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: ClientTrackingProps) {
   const {
@@ -456,6 +558,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     updateTrackingETA,
   } = useStore();
 
+  const [sheetSnap, setSheetSnap] = useState<SheetSnap>('medium');
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -485,6 +588,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
 
     intervalRef.current = setInterval(() => {
       advanceTrackingStep();
+      haptic('medium');
     }, 15000);
 
     etaIntervalRef.current = setInterval(() => {
@@ -499,6 +603,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
 
   // Copy tracking link
   const handleShare = useCallback(() => {
+    haptic('light');
     const link = `${window.location.origin}/track/${trackingOrderId ?? ''}`;
     navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
@@ -526,6 +631,22 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         ))}
       </span>
     );
+  };
+
+  // Sheet height mapping
+  const sheetHeights: Record<SheetSnap, string> = {
+    minimized: '120px',
+    medium: '50vh',
+    full: '92vh',
+  };
+
+  const cycleSheet = () => {
+    haptic('light');
+    setSheetSnap((prev) => {
+      if (prev === 'minimized') return 'medium';
+      if (prev === 'medium') return 'full';
+      return 'minimized';
+    });
   };
 
   /* ─── DELIVERY CONFIRMED SCREEN ─── */
@@ -576,7 +697,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             margin: 0,
           }}
         >
-          ¡Entregado!
+          Entregado!
         </motion.h2>
 
         <motion.p
@@ -677,11 +798,11 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 300, marginTop: 12 }}
         >
           <button
-            onClick={() => onRate(order.id)}
+            onClick={() => { haptic('medium'); onRate(order.id); }}
             style={{
               width: '100%',
               padding: '14px 0',
-              borderRadius: 12,
+              borderRadius: 'var(--lf-button-radius)',
               border: 'none',
               background: 'var(--primario)',
               color: '#fff',
@@ -697,11 +818,11 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             Calificar servicio
           </button>
           <button
-            onClick={onBack}
+            onClick={() => { haptic('light'); onBack(); }}
             style={{
               width: '100%',
               padding: '14px 0',
-              borderRadius: 12,
+              borderRadius: 'var(--lf-button-radius)',
               border: '1px solid var(--border)',
               background: 'transparent',
               color: 'var(--text)',
@@ -719,7 +840,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     );
   }
 
-  /* ─── MAIN TRACKING LAYOUT ─── */
+  /* ─── MAIN TRACKING LAYOUT — A.5 Immersive ─── */
   return (
     <div
       data-theme={isDark ? 'dark' : 'light'}
@@ -730,15 +851,16 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         flexDirection: 'column',
         background: 'var(--bg)',
         overflow: 'hidden',
+        position: 'relative',
       }}
       className="md:!flex-row"
     >
-      {/* ─── MAP AREA ─── */}
+      {/* ═══════ MAP AREA — 55% mobile ═══════ */}
       <div
         style={{
           position: 'relative',
           width: '100%',
-          height: '50vh',
+          height: '55vh',
           flexShrink: 0,
         }}
         className="md:!h-full md:!w-[60%]"
@@ -747,122 +869,100 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           isDark={isDark}
           order={order}
           currentStepIndex={currentStepIdx >= 0 ? currentStepIdx : 0}
+          eta={trackingETA}
         />
-        {/* Back button overlaid on map */}
+
+        {/* ─── Back Button: circle 40x40 glassmorphism, ArrowDown icon ─── */}
         <button
-          onClick={onBack}
+          onClick={() => { haptic('light'); onBack(); }}
           style={{
             position: 'absolute',
             top: 12,
             left: 12,
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             borderRadius: '50%',
-            background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.85)',
-            backdropFilter: 'blur(8px)',
-            border: 'none',
+            background: 'var(--lf-glass-bg)',
+            backdropFilter: 'blur(var(--lf-glass-blur))',
+            WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+            border: '1px solid var(--lf-glass-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
+            boxShadow: 'var(--lf-shadow-float)',
             zIndex: 30,
           }}
-          aria-label="Volver"
+          aria-label="Minimizar seguimiento"
         >
-          <X size={18} style={{ color: isDark ? '#fff' : '#1B1B2F' }} />
+          <ArrowDown size={18} style={{ color: isDark ? '#fff' : '#1B1B2F' }} />
         </button>
       </div>
 
-      {/* ─── BOTTOM SHEET ─── */}
-      <div
+      {/* ═══════ BOTTOM SHEET — 45% of screen ═══════ */}
+      <motion.div
+        animate={{ height: sheetHeights[sheetSnap] }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         style={{
-          flex: 1,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
           background: 'var(--bg)',
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
+          borderTopLeftRadius: 'var(--lf-sheet-radius)',
+          borderTopRightRadius: 'var(--lf-sheet-radius)',
           display: 'flex',
           flexDirection: 'column',
-          marginTop: -20,
-          position: 'relative',
           zIndex: 10,
           overflow: 'hidden',
+          boxShadow: 'var(--lf-shadow-sheet)',
         }}
-        className="md:!mt-0 md:!rounded-none md:!border-l md:!border-[var(--border)]"
+        className="md:!relative md:!bottom-auto md:!left-auto md:!right-auto md:!h-full md:!w-[40%] md:!rounded-none md:!border-l md:!border-[var(--border)] md:!shadow-none"
       >
-        {/* Handle bar */}
-        <div
+        {/* Handle bar: 40px x 5px, var(--border), border-radius 3px, centered */}
+        <button
+          onClick={cycleSheet}
           style={{
             display: 'flex',
-            justifyContent: 'center',
+            flexDirection: 'column',
+            alignItems: 'center',
             paddingTop: 10,
-            paddingBottom: 4,
+            paddingBottom: 8,
             flexShrink: 0,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            width: '100%',
           }}
+          aria-label="Cambiar tamano del panel"
         >
           <div
             style={{
               width: 40,
-              height: 4,
-              borderRadius: 2,
+              height: 5,
+              borderRadius: 3,
               background: 'var(--border)',
             }}
           />
-        </div>
+        </button>
 
-        {/* Scrollable content */}
+        {/* Scrollable content — only when not minimized */}
         <div
           style={{
             flex: 1,
-            overflowY: 'auto',
+            overflowY: sheetSnap === 'minimized' ? 'hidden' : 'auto',
             paddingLeft: 20,
             paddingRight: 20,
             paddingBottom: 32,
           }}
           className="lf-scrollbar"
         >
-          {/* ─── ORDER HEADER ─── */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 16,
-              marginTop: 4,
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 14,
-                color: 'var(--text-muted)',
-              }}
-            >
-              {order?.id ?? '—'}
-            </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 12px',
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif",
-                color: '#fff',
-                background: badge.color,
-              }}
-            >
-              {badge.label}
-            </span>
-          </div>
-
-          {/* ─── ETA SECTION ─── */}
-          <div style={{ marginBottom: 20 }}>
+          {/* ═══════ ETA — always visible ═══════ */}
+          <div style={{ marginBottom: 20, textAlign: 'center' }}>
             <p
               style={{
                 fontFamily: "'DM Sans', sans-serif",
-                fontSize: 14,
+                fontSize: 13,
                 color: 'var(--text-muted)',
                 margin: '0 0 4px 0',
               }}
@@ -892,12 +992,12 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
               </motion.h2>
             </AnimatePresence>
 
-            {/* Progress bar */}
+            {/* Progress bar: height 4px, gradient var(--primario) */}
             <div
               style={{
                 width: '100%',
-                height: 6,
-                borderRadius: 3,
+                height: 4,
+                borderRadius: 2,
                 background: 'var(--bg-alt)',
                 overflow: 'hidden',
               }}
@@ -908,7 +1008,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                 transition={{ duration: 0.6, ease: 'easeOut' }}
                 style={{
                   height: '100%',
-                  borderRadius: 3,
+                  borderRadius: 2,
                   background: `linear-gradient(90deg, var(--primario), var(--primario-hover))`,
                 }}
               />
@@ -918,7 +1018,6 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: 11,
                 color: 'var(--text-muted)',
-                marginTop: 4,
                 margin: '4px 0 0 0',
               }}
             >
@@ -926,104 +1025,61 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             </p>
           </div>
 
-          {/* ─── 8-STEP TIMELINE ─── */}
-          <div style={{ marginBottom: 24 }}>
-            {trackingSteps.map((step, i) => (
-              <div
-                key={step.id}
+          {/* ─── Order ID + Status (when medium/full) ─── */}
+          {sheetSnap !== 'minimized' && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 16,
+              }}
+            >
+              <span
                 style={{
-                  display: 'flex',
-                  gap: 12,
-                  position: 'relative',
-                  minHeight: 44,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 14,
+                  color: 'var(--text-muted)',
                 }}
               >
-                {/* Left: Icon + connector */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    width: 24,
-                    flexShrink: 0,
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={`${step.id}-${step.status}`}
-                      initial={step.status === 'completed' ? { scale: 0 } : { scale: 1 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 24,
-                        height: 24,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {getStepIcon(step, i)}
-                    </motion.div>
-                  </AnimatePresence>
+                {order?.id ?? '—'}
+              </span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 12px',
+                  borderRadius: 'var(--lf-pill-radius)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: "'DM Sans', sans-serif",
+                  color: '#fff',
+                  background: badge.color,
+                }}
+              >
+                {badge.label}
+              </span>
+            </div>
+          )}
 
-                  {/* Connector line */}
-                  {i < trackingSteps.length - 1 && (
-                    <div
-                      style={{
-                        width: 2,
-                        flex: 1,
-                        minHeight: 20,
-                        background: step.status === 'completed'
-                          ? 'var(--primario)'
-                          : 'transparent',
-                        borderLeft: step.status !== 'completed'
-                          ? '2px dashed var(--border)'
-                          : 'none',
-                      }}
-                    />
-                  )}
-                </div>
+          {/* ═══════ 8-STEP TIMELINE ═══════ */}
+          {sheetSnap !== 'minimized' && (
+            <div style={{ marginBottom: 24 }}>
+              {trackingSteps.map((step, i) => (
+                <TimelineStep
+                  key={step.id}
+                  step={step}
+                  index={i}
+                  isLast={i === trackingSteps.length - 1}
+                  isDark={isDark}
+                />
+              ))}
+            </div>
+          )}
 
-                {/* Right: Step text + timestamp */}
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    flex: 1,
-                    paddingTop: 2,
-                    paddingBottom: i < trackingSteps.length - 1 ? 0 : 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontSize: 13,
-                      fontWeight: step.status === 'current' ? 600 : step.status === 'completed' ? 500 : 400,
-                      color: step.status === 'pending' ? 'var(--text-muted)' : 'var(--text)',
-                    }}
-                  >
-                    {step.label}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 11,
-                      color: 'var(--text-muted)',
-                      flexShrink: 0,
-                      marginLeft: 8,
-                    }}
-                  >
-                    {step.timestamp}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* ─── DRIVER INFO CARD ─── */}
-          {repartidor && (
+          {/* ═══════ REPARTIDOR INFO CARD ═══════ */}
+          {sheetSnap !== 'minimized' && repartidor && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1031,24 +1087,24 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
-                borderRadius: 16,
+                borderRadius: 18,
                 padding: 16,
                 marginBottom: 20,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                {/* Avatar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                {/* Avatar 52x52 */}
                 <div
                   style={{
-                    width: 48,
-                    height: 48,
+                    width: 52,
+                    height: 52,
                     borderRadius: '50%',
                     background: repartidor.color,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontFamily: "'Syne', sans-serif",
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: 700,
                     color: '#fff',
                     flexShrink: 0,
@@ -1069,56 +1125,46 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                   >
                     {repartidor.nombre}
                   </p>
-                  <p
+                  {/* Rating with Star icons */}
+                  <div
                     style={{
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontSize: 13,
-                      color: 'var(--text-muted)',
-                      margin: '2px 0 0 0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      marginTop: 4,
                     }}
                   >
-                    {repartidor.moto}
-                  </p>
+                    <Star size={14} fill="var(--warning)" stroke="var(--warning)" strokeWidth={0} />
+                    <span
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: 'var(--text)',
+                      }}
+                    >
+                      {repartidor.calificacion}
+                    </span>
+                    {renderStars(repartidor.calificacion)}
+                    <span
+                      style={{
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: 12,
+                        color: 'var(--text-muted)',
+                        marginLeft: 4,
+                      }}
+                    >
+                      {repartidor.totalEntregas} entregas
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Rating row */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  marginBottom: 12,
-                }}
-              >
-                <Star size={14} style={{ color: '#FF9800' }} />
-                <span
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--text)',
-                  }}
-                >
-                  {repartidor.calificacion}
-                </span>
-                {renderStars(repartidor.calificacion)}
-                <span
-                  style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 12,
-                    color: 'var(--text-muted)',
-                    marginLeft: 4,
-                  }}
-                >
-                  {repartidor.totalEntregas} entregas
-                </span>
-              </div>
-
-              {/* Action pills */}
+              {/* Action pills — 3 in a row */}
               <div style={{ display: 'flex', gap: 8 }}>
                 <a
                   href={`tel:${repartidor.telefono}`}
+                  onClick={() => haptic('light')}
                   style={{
                     flex: 1,
                     display: 'flex',
@@ -1126,7 +1172,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                     justifyContent: 'center',
                     gap: 6,
                     padding: '10px 0',
-                    borderRadius: 10,
+                    borderRadius: 'var(--lf-pill-radius)',
                     border: '1px solid var(--border)',
                     background: 'var(--bg-alt)',
                     color: 'var(--text)',
@@ -1142,7 +1188,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                   Llamar
                 </a>
                 <button
-                  onClick={() => order && onOpenChat(order.id)}
+                  onClick={() => { haptic('light'); if (order) onOpenChat(order.id); }}
                   style={{
                     flex: 1,
                     display: 'flex',
@@ -1150,7 +1196,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                     justifyContent: 'center',
                     gap: 6,
                     padding: '10px 0',
-                    borderRadius: 10,
+                    borderRadius: 'var(--lf-pill-radius)',
                     border: '1px solid var(--border)',
                     background: 'var(--bg-alt)',
                     color: 'var(--text)',
@@ -1173,7 +1219,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                     justifyContent: 'center',
                     gap: 6,
                     padding: '10px 0',
-                    borderRadius: 10,
+                    borderRadius: 'var(--lf-pill-radius)',
                     border: '1px solid var(--border)',
                     background: 'var(--bg-alt)',
                     color: 'var(--text)',
@@ -1185,17 +1231,17 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                   }}
                 >
                   <Share2 size={15} style={{ color: 'var(--primario)' }} />
-                  {copied ? '¡Copiado!' : 'Compartir'}
+                  {copied ? 'Copiado!' : 'Compartir'}
                 </button>
               </div>
             </motion.div>
           )}
 
-          {/* ─── ORDER DETAILS (expandable) ─── */}
-          {order && (
+          {/* ═══════ DETALLES (expandible) ═══════ */}
+          {sheetSnap !== 'minimized' && order && (
             <div style={{ marginBottom: 20 }}>
               <button
-                onClick={() => setDetailsExpanded((v) => !v)}
+                onClick={() => { haptic('light'); setDetailsExpanded((v) => !v); }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1210,17 +1256,17 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
               >
                 <span
                   style={{
-                    fontFamily: "'Syne', sans-serif",
-                    fontSize: 14,
-                    fontWeight: 600,
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 13,
+                    color: 'var(--text-muted)',
                   }}
                 >
-                  Detalles del envío
+                  Ver detalles
                 </span>
                 {detailsExpanded ? (
-                  <ChevronUp size={18} style={{ color: 'var(--text-muted)' }} />
+                  <ChevronUp size={16} style={{ color: 'var(--text-muted)' }} />
                 ) : (
-                  <ChevronDown size={18} style={{ color: 'var(--text-muted)' }} />
+                  <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} />
                 )}
               </button>
 
@@ -1243,15 +1289,15 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                       }}
                     >
                       {[
-                        { label: 'Descripción', value: order.descripcion || 'Paquete estándar' },
-                        { label: 'Tamaño', value: 'Mediano (30×30×30cm)' },
+                        { label: 'Descripcion', value: order.descripcion || 'Paquete estandar' },
+                        { label: 'Tamano', value: 'Mediano (30x30x30cm)' },
                         { label: 'Fragil', value: 'No' },
                         { label: 'Instrucciones', value: 'Dejar en portería' },
                         {
                           label: 'Pago',
                           value: `${order.metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia'} — C$${order.monto}`,
                         },
-                        { label: 'Código promo', value: '—' },
+                        { label: 'Codigo promo', value: '—' },
                       ].map((detail, i) => (
                         <div key={i}>
                           <p
@@ -1284,38 +1330,18 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             </div>
           )}
 
-          {/* ─── ACTION BUTTONS ─── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-            <button
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '12px 0',
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                color: 'var(--peligro)',
-                transition: 'background 0.2s',
-              }}
-            >
-              <AlertTriangle size={15} />
-              Reportar problema
-            </button>
-            {order && (order.estado === 'pendiente' || order.estado === 'programada') && (
+          {/* ─── Action buttons ─── */}
+          {sheetSnap !== 'minimized' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
               <button
+                onClick={() => haptic('medium')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 6,
                   padding: '12px 0',
-                  borderRadius: 10,
+                  borderRadius: 'var(--lf-button-radius)',
                   border: '1px solid var(--border)',
                   background: 'transparent',
                   fontFamily: "'DM Sans', sans-serif",
@@ -1326,13 +1352,45 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                   transition: 'background 0.2s',
                 }}
               >
-                <X size={15} />
-                Cancelar envío
+                <AlertTriangle size={15} />
+                Reportar problema
               </button>
-            )}
-          </div>
+              {order && (order.estado === 'pendiente' || order.estado === 'programada') && (
+                <button
+                  onClick={() => haptic('heavy')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    padding: '12px 0',
+                    borderRadius: 'var(--lf-button-radius)',
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    color: 'var(--peligro)',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  <ChevronDown size={15} />
+                  Cancelar envio
+                </button>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+
+        {/* Step pulse animation keyframes */}
+        <style>{`
+          @keyframes lf-step-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,87,34,0.3); }
+            50% { box-shadow: 0 0 0 8px rgba(255,87,34,0); }
+          }
+        `}</style>
+      </motion.div>
     </div>
   );
 }

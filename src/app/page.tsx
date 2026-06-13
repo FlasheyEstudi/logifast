@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useRef, useCallback, useSyncExternalStore, Component } from 'react';
 import Dashboard from './dashboard';
 import ClientDashboard from './client-dashboard';
+import dynamic from 'next/dynamic';
+
+const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false });
 
 /* ═══════════════════════════════════════════════════════
    SVG ICONS
@@ -94,7 +97,7 @@ interface ToastItem {
 
 const demoCredentials: Record<string, { email: string; password: string; name: string }> = {
   cliente: { email: 'cliente@logifast.com', password: '123456', name: 'María López' },
-  repartidor: { email: 'repartidor@logifast.com', password: '123456', name: 'Repartidor Demo' },
+  repartidor: { email: 'repartidor@logifast.com', password: '123456', name: 'Carlos Mendoza' },
   admin: { email: 'admin@logifast.com', password: '123456', name: 'Administrador' },
   ingeniero: { email: 'ingeniero@logifast.com', password: '123456', name: 'Ingeniero Demo' },
 };
@@ -517,6 +520,11 @@ export default function Home() {
     if (loginRole === 'cliente') {
       return (
         <ClientDashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
+      );
+    }
+    if (loginRole === 'repartidor') {
+      return (
+        <RepartidorApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
       );
     }
     return (
