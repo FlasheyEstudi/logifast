@@ -1,0 +1,1426 @@
+```
+PROMPT CLIENTE v4 — IMPLEMENTACION FINAL + ESTETICA NATIVA ANDROID PREMIUM
+
+CONTEXTO:
+LOGIFAST tiene el rol de cliente casi completo (90%). Faltan 4 funcionalidades y necesito que TODO en mobile se sienta como una app nativa de Android 2026 (Material You 3.0, One UI 7, Pixel Launcher aesthetic). No quiero que se sienta como una web app. Quiero que alguien que abre la app diga "esto es una APK, no una pagina".
+
+Este prompt tiene 2 partes:
+PARTE 1: Las 4 funcionalidades que faltan (implementacion completa)
+PARTE 2: Capa nativa Android que se aplica a TODA la app (cliente y repartidor)
+
+Dependencias: las mismas. CSS + JS vanilla o React + Tailwind. Sin librerias UI nativas de Android — todo se simula con CSS.
+
+=====================================================
+PARTE 1: 4 FUNCIONALIDADES QUE FALTAN
+=====================================================
+
+=====================================================
+1. PANTALLA DE BUSQUEDA COMPLETA
+=====================================================
+
+Se abre al tocar el buscador del Inicio. Es una pantalla dedicada, NO un dropdown.
+
+TRANSICION DE ENTRADA:
+- El buscador pill se EXPANDE a pantalla completa (width 100%, height 100vh)
+- El placeholder se convierte en input autofocus
+- Aparece boton "Cancelar" a la derecha con slide-in desde la derecha
+- El contenido debajo hace fade-in con 0.1s delay
+- Duracion: 0.3s, cubic-bezier(0.16, 1, 0.3, 1)
+
+LAYOUT:
+
+1. BARRA DE BUSQUEDA (56px, fija arriba):
+   - Input: 15px, sin borde, fondo surface, padding 16px
+   - Icono search 20px a la izquierda (absolute)
+   - Boton "X" para limpiar (aparece cuando hay texto, absolute right)
+   - Boton "Cancelar" a la derecha: 14px --primario
+   - Debajo: linea 1px --border (separador)
+
+2. ESTADO INICIAL (sin texto):
+   
+   BUSQUEDAS RECIENTES:
+   - "Recientes" 14px bold + boton "Limpiar" link muted
+   - Lista de 3-5 terminos recientes:
+     Cada uno: icono reloj 16px muted + texto 15px + icono "X" para eliminar individual
+     Al tocar: se ejecuta la busqueda con ese termino
+   
+   TENDENCIAS:
+   - "Popular cerca de ti" 14px bold
+   - Pills horizontales con terminos populares:
+     "Pizza" / "Farmacia" / "Supermercado" / "Flores" / "Documentos"
+     Cada pill: borde --border, padding 8px 16px, font-size 13px
+     Al tocar: se ejecuta la busqueda
+   
+   CATEGORIAS RAPIDAS:
+   - Grid 2x2 de categorias (las mismas del Inicio pero como tarjetas mas grandes)
+   - Cada una: icono SVG 28px + nombre 14px bold
+   - Al tocar: va a Explorar con esa categoria
+
+3. MIENTRAS ESCRIBE (estado activo):
+   - Debajo del input: sugerencias en tiempo real
+   - Las sugerencias se filtan del catalogo: tiendas + productos + categorias + envios del cliente
+   - Cada sugerencia:
+     Layout: icono del tipo 18px (tienda/store, producto/package, envio/send, categoria/grid) + texto (match del termino resaltado en bold) + info secundaria muted
+   - Max 8 sugerencias visibles
+   - "Ver todos los resultados" al final si hay mas
+
+4. RESULTADOS (al enviar busqueda o tocar sugerencia):
+   - Tabs de filtrado: "Todo" / "Tiendas" / "Productos" / "Envios"
+   - Contador: "X resultados para '[termino]'" muted 13px
+   
+   Resultados de TIENDA:
+   - Mismo estilo de tarjeta horizontal que en Explorar
+   - Pero con el match del texto resaltado en bold naranja
+   
+   Resultados de PRODUCTO:
+   - Tarjeta horizontal: imagen 64x64 + nombre (con match resaltado) + tienda 12px muted + precio mono
+   - Badge "Disponible" / "Agotado"
+   - Boton "+" para agregar al carrito
+   
+   Resultados de ENVIO:
+   - Items del historial del cliente que coinciden por ID o direccion
+   - ID + estado + fecha + ruta
+
+   SI NO HAY RESULTADOS:
+   - Empty state: ilustracion SVG de lupa con signo de interrogacion
+   - "Sin resultados para '[termino]'"
+   - "Intenta con otro nombre o explorar categorias"
+   - Boton: "Explorar categorias"
+
+5. TRANSICION DE SALIDA:
+   - Al tocar "Cancelar" o back: la pantalla colapsa de vuelta al pill del buscador
+   - El texto se limpia
+   - Duracion: 0.25s
+
+=====================================================
+2. CENTRO DE AYUDA / SOPORTE
+=====================================================
+
+Accesible desde Mi Perfil > "Centro de ayuda" o desde el menu de configuracion.
+
+PANTALLA PRINCIPAL:
+
+1. HEADER: "Centro de ayuda" Syne 24px bold + boton back
+
+2. BUSCADOR DE AYUDA:
+   - Input: "Buscar en preguntas frecuentes..."
+   - Busca entre las FAQ y articulos de ayuda
+
+3. FAQ (acordeon expandible):
+   - Lista de preguntas frecuentes agrupadas por categoria:
+   
+   "Envios":
+   - "¿Como solicito un envio?" → expande con pasos
+   - "¿Puedo programar un envio para despues?" → expande
+   - "¿Que pasa si mi paquete se pierde?" → expande
+   - "¿Puedo enviar a Masaya u otras ciudades?" → expande
+   - "¿Cuanto cuesta un envio?" → expande con tabla de tarifas
+   
+   "Compras":
+   - "¿Como hago un pedido en una tienda?" → expande
+   - "¿Puedo pedir de multiples tiendas?" → expande
+   - "¿Que hago si mi pedido esta incompleto?" → expande
+   - "¿Puedo cancelar un pedido?" → expande
+   
+   "Pagos":
+   - "¿Que metodos de pago aceptan?" → expande
+   - "¿Como uso un codigo promocional?" → expande
+   - "¿Puedo pagar con tarjeta?" → expande (preparado para futuro)
+   
+   "Cuenta":
+   - "¿Como cambio mi contraseña?" → expande
+   - "¿Como agrego una direccion?" → expande
+   - "¿Como funciona el programa de puntos?" → expande
+   
+   Cada FAQ: pregunta 15px bold + icono chevron-down. Al tocar: se expande con la respuesta (14px secondary, padding 12px 0). La animacion es height auto con transition 0.25s. El chevron rota 180deg.
+
+4. CONTACTO DIRECTO:
+   - Tarjeta: "¿No encontraste lo que buscabas?"
+   - Botones:
+     "Chatear con soporte" — primario, icono message-circle
+       Al tocar: abre interfaz de chat similar al chat con repartidor, pero con un agente de soporte simulado
+       Mensaje automatico: "Hola, soy el asistente de LOGIFAST. ¿En que puedo ayudarte?"
+       Respuestas predefinidas como chips: "Problema con mi envio" / "Problema con un pedido" / "Problema con pago" / "Otro"
+       Cada chip al tocar: envia el mensaje y el sistema responde con una respuesta predefinida
+     "Llamar a soporte" — outline, icono phone
+       Al tocar: abre tel:+50522223333 (numero simulado)
+     "Enviar email" — outline, icono mail
+       Al tocar: abre mailto:soporte@logifast.com
+
+5. POLITICAS:
+   - Links a:
+     "Politica de privacidad"
+     "Terminos y condiciones"
+     "Politica de cobertura"
+     "Politica de reembolso"
+   - Al tocar: muestra el contenido de la politica (texto estatico simulado)
+
+=====================================================
+3. TRACKING MULTI-TIENDA
+=====================================================
+
+Cuando el cliente tiene pedidos activos en mas de una tienda, o un envio de paquete Y un pedido de compra al mismo tiempo.
+
+EN INICIO — BARRA FLOTANTE MULTI:
+- Si hay 2+ pedidos activos: la barra flotante cambia su diseno:
+  Fondo glassmorphism, border-radius 20px, padding 12px 16px
+  Layout: scroll horizontal de mini-indicadores
+  Cada indicador: pill pequena con punto de color (estado) + nombre tienda o "Envio" + ETA
+  Al tocar un indicador: va al tracking de ese pedido especifico
+  El indicador del pedido con menor ETA tiene highlight (borde --primario)
+  Ejemplo visual:
+  [● Pizza Express · 15min] [● LF-2847 · 25min]
+  El primero (menor ETA) tiene borde naranja
+
+EN MIS PEDIDOS — TAB ACTIVOS:
+- Cada pedido activo como tarjeta separada con su propio boton "Rastrear"
+- Organizados por ETA: el que llega primero arriba
+
+EN TRACKING:
+- Si el cliente abre el tracking de un pedido que es multi-tienda:
+  En el bottom sheet hay un selector: "[Tienda 1] · [Tienda 2]" como pills
+  Al cambiar de pill: el mapa y la timeline se actualizan al pedido seleccionado
+  Si ambos pedidos tienen el mismo repartidor: se muestra UN mapa con ambas rutas
+
+=====================================================
+4. TIENDA DE CANJE DE PUNTOS
+=====================================================
+
+Accesible desde Mi Perfil > "Puntos LOGIFAST" > "Canjear puntos" o boton directo en la tarjeta de puntos del Inicio.
+
+PANTALLA:
+
+1. HEADER CON BALANCE:
+   - "Recompensas" Syne 24px bold
+   - Tarjeta grande con gradiente --primario:
+     "Tus puntos" 14px blanco 70%
+     "245" JetBrains Mono 48px bold blanco
+     "Nivel Plata" badge blanco semi-transparente
+     Barra de progreso: "55 puntos para Oro"
+   
+2. CATALOGO DE RECOMPENSAS:
+   - Grid 2 columnas
+   - Cada recompensa como tarjeta:
+     Fondo: --surface, borde 1px --border, border-radius 20px
+     Header: color de fondo (gradiente suave del tipo de recompensa)
+     Icono SVG grande centrado (40px, blanco)
+     Body:
+       Nombre: 14px bold
+       Costo en puntos: JetBrains Mono 16px bold --primario
+       Descripcion: 12px muted
+     Boton: "Canjear" (si tiene suficientes puntos) o "X puntos mas" (si no, disabled + muestra cuanto le falta)
+   
+   RECOMPENSAS DISPONIBLES:
+   1. "Envio gratis" — 100 puntos — icono package-check SVG — "Un envio sin costo de envio"
+   2. "C$20 de descuento" — 100 puntos — icono badge-dollar-sign SVG — "Descuento en tu proximo envio o compra"
+   3. "C$50 de descuento" — 200 puntos — icono badge-dollar-sign SVG
+   4. "C$100 de descuento" — 400 puntos — icono badge-dollar-sign SVG
+   5. "Envio prioritario" — 150 puntos — icono zap SVG — "Tu envio se asigna primero"
+   6. "Delivery gratis en tienda" — 120 puntos — icono truck SVG — "Un delivery sin costo"
+   7. "Suscripcion Plata 1 mes" — 300 puntos — icono crown SVG — "5% descuento permanente por 1 mes"
+   8. "Suscripcion Oro 1 mes" — 500 puntos — icono crown SVG — "10% descuento por 1 mes"
+
+3. AL CANJEAR:
+   - Modal de confirmacion: "¿Canjear 100 puntos por Envio gratis?"
+   - Info: "Se descontaran 100 puntos de tu balance actual"
+   - Botones: "Cancelar" / "Confirmar canje"
+   - Al confirmar: animacion de exito (checkmark), puntos se descuentan, la recompensa se activa
+   - La recompensa aparece como "activa" en el perfil:
+     Tarjeta: "Envio gratis activo" + "Usar en tu proximo envio" + "Expira en 30 dias"
+   - En el paso de pago de solicitar envio: se muestra la recompensa como opcion de descuento
+
+4. HISTORIAL DE CANJES:
+   - "Historial de canjes" debajo del catalogo
+   - Lista: fecha + recompensa + puntos gastados
+   - Formato: "10 Jun · Envio gratis · -100 puntos"
+
+=====================================================
+PARTE 2: CAPA NATIVA ANDROID PREMIUM
+=====================================================
+
+Esto es un SKIN que se aplica encima de TODA la app del cliente y repartidor en mobile. Hace que se sienta como una app nativa de Android, no como una web app.
+
+=====================================================
+2.1 — ENMARCAR COMO APP NATIVA
+=====================================================
+
+La app debe verse como si estuviera dentro de un telefono real.
+
+META TAGS CRITICOS:
+```
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#FAF8F5"> <!-- modo claro -->
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0A0A0F"> <!-- modo oscuro -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+```
+
+STATUS BAR SIMULADA:
+- Altura: 24px (o env(safe-area-inset-top))
+- Fondo: transparente (se ve el contenido debajo)
+- En pantallas con mapa: texto blanco
+- En pantallas con fondo claro: texto negro
+- "9:41" izquierda, monospace 14px, font-weight 500
+- Iconos de sistema derecha: bateria, wifi, senal (SVG simples)
+- Implementar: position fixed, top 0, z-index 9999, pointer-events none
+
+NAVIGATION BAR INFERIOR (Android gesture bar):
+- Simular la barra de gestos de Android
+- Altura: 20px (o env(safe-area-inset-bottom))
+- Indicador: linea horizontal 120px, 3px, centrada, borde-radius 2px, --muted al 30%
+- Posicion: fixed bottom, z-index 9999
+- El bottom nav de la app se posiciona ENCIMA de esta barra
+
+=====================================================
+2.2 — MATERIAL YOU 3.0 ESTILO (sin usar Material UI)
+=====================================================
+
+Simular la estetica de Material You 3.0 con CSS puro.
+
+COLOR SYSTEM:
+- Material You usa UN color seed que genera toda la paleta
+- Para LOGIFAST: el color seed es #FF5722 (naranja)
+- Generar tonos automaticamente:
+  --md-primary: #FF5722
+  --md-on-primary: #FFFFFF
+  --md-primary-container: #FFDBCF (naranja muy claro, fondo de cards)
+  --md-on-primary-container: #3B1100
+  --md-surface: #FAF8F5
+  --md-surface-variant: #F5EDE8
+  --md-on-surface: #1B1B2F
+  --md-on-surface-variant: #5A5A72
+  --md-outline: #E8E4DE
+  --md-outline-variant: #F0ECE8
+  
+  [data-theme="dark"] {
+  --md-primary: #FF8A65
+  --md-on-primary: #3B1100
+  --md-primary-container: #5C1D00
+  --md-on-primary-container: #FFDBCF
+  --md-surface: #1A1A24
+  --md-surface-variant: #22222E
+  --md-on-surface: #F0EDE8
+  --md-on-surface-variant: #A8A8BE
+  --md-outline: #2A2A38
+  --md-outline-variant: #1E1E28
+  }
+
+SHAPE SYSTEM (Material You 3.0 shapes):
+- Extra small: 4px (chips, badges)
+- Small: 8px (botones pequenos)
+- Medium: 12px (inputs, tarjetas pequenas)
+- Large: 16px (tarjetas medianas, dialogs)
+- Extra large: 28px (bottom sheets, tarjetas grandes)
+- Full: 100px (pills, fabs circulares)
+
+TYPOGRAPHY (adaptada a Material 3 pero con nuestras fuentes):
+- Display Large: Syne 57px bold
+- Display Medium: Syne 45px bold
+- Headline Large: Syne 32px bold
+- Headline Medium: Syne 28px bold
+- Title Large: DM Sans 22px 500
+- Title Medium: DM Sans 16px 600
+- Body Large: DM Sans 16px 400
+- Body Medium: DM Sans 14px 400
+- Body Small: DM Sans 12px 400
+- Label Large: DM Sans 14px 500
+- Label Medium: DM Sans 12px 500
+- Label Small: DM Sans 11px 500
+
+ELEVATION SYSTEM:
+- Level 0: sin sombra (fondo plano)
+- Level 1: 0 1px 2px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08) (cards)
+- Level 2: 0 1px 2px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.1) (cards hover, nav)
+- Level 3: 0 4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08) (FABs, sheets)
+- Level 4: 0 6px 10px rgba(0,0,0,0.15), 0 2px 3px rgba(0,0,0,0.08) (modals)
+- Level 5: 0 8px 12px rgba(0,0,0,0.15), 0 4px 4px rgba(0,0,0,0.08) (full-screen)
+
+=====================================================
+2.3 — COMPONENTES NATIVOS ANDROID
+=====================================================
+
+Cada componente se ve y se siente como su equivalente nativo de Android.
+
+TOP APP BAR (header):
+```
+.native-top-bar {
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--md-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.native-top-bar-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--md-on-surface);
+  flex: 1;
+}
+
+.native-top-bar-action {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--md-on-surface-variant);
+  transition: background 0.2s;
+}
+
+.native-top-bar-action:hover {
+  background: var(--md-surface-variant);
+}
+
+.native-top-bar-action:active {
+  background: var(--md-outline);
+}
+```
+
+BOTTOM NAVIGATION (Material 3 style):
+```
+.native-bottom-nav {
+  height: 80px;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--md-surface);
+  border-top: 1px solid var(--md-outline-variant);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.native-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0 16px;
+  min-width: 64px;
+  cursor: pointer;
+  position: relative;
+}
+
+.native-nav-icon-wrapper {
+  width: 64px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  transition: background 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.native-nav-item.active .native-nav-icon-wrapper {
+  background: var(--md-primary-container);
+}
+
+.native-nav-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--md-on-surface-variant);
+  transition: color 0.2s;
+}
+
+.native-nav-item.active .native-nav-icon {
+  color: var(--md-on-primary-container);
+}
+
+.native-nav-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-on-surface-variant);
+  transition: color 0.2s, font-weight 0.2s;
+}
+
+.native-nav-item.active .native-nav-label {
+  color: var(--md-on-surface);
+  font-weight: 700;
+}
+```
+
+Patron Material 3: el item activo tiene una "pill" de fondo (el icon-wrapper con border-radius 16px y fondo primary-container). NO es un punto debajo, NO es un underline. Es el patron exacto de Material You 3.0.
+
+FLOATING ACTION BUTTON (FAB):
+```
+.native-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 5px -1px rgba(0,0,0,0.2), 0 6px 10px rgba(0,0,0,0.14), 0 1px 18px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.1s;
+  position: fixed;
+}
+
+.native-fab:active {
+  transform: scale(0.95);
+  box-shadow: 0 5px 5px -3px rgba(0,0,0,0.2), 0 8px 10px rgba(0,0,0,0.14), 0 3px 14px rgba(0,0,0,0.12);
+}
+
+.native-fab-extended {
+  width: auto;
+  padding: 0 20px;
+  gap: 12px;
+  border-radius: 16px;
+}
+
+.native-fab-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.native-fab-large {
+  width: 96px;
+  height: 96px;
+  border-radius: 28px;
+}
+```
+
+BOTTOM SHEET (Material 3):
+```
+.native-bottom-sheet {
+  background: var(--md-surface);
+  border-radius: 28px 28px 0 0;
+  padding: 0;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 92vh;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.15);
+  z-index: 200;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.native-bottom-sheet.open {
+  transform: translateY(0);
+}
+
+.native-sheet-drag-handle {
+  width: 32px;
+  height: 4px;
+  background: var(--md-outline);
+  border-radius: 2px;
+  margin: 16px auto;
+}
+
+.native-sheet-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--md-on-surface-variant);
+  padding: 0 24px 16px;
+}
+
+.native-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.32);
+  z-index: 199;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.native-sheet-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+```
+
+DIALOG / MODAL (Material 3):
+```
+.native-dialog {
+  background: var(--md-surface);
+  border-radius: 28px;
+  padding: 24px;
+  max-width: 312px;
+  width: calc(100% - 48px);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  opacity: 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  z-index: 300;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s;
+}
+
+.native-dialog.open {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.native-dialog-icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 16px;
+  color: var(--md-primary);
+}
+
+.native-dialog-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--md-on-surface);
+  margin-bottom: 16px;
+}
+
+.native-dialog-body {
+  font-size: 14px;
+  color: var(--md-on-surface-variant);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.native-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.native-dialog-btn {
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.native-dialog-btn-text {
+  background: transparent;
+  color: var(--md-primary);
+}
+
+.native-dialog-btn-text:hover {
+  background: var(--md-primary-container);
+}
+
+.native-dialog-btn-filled {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+}
+
+.native-dialog-btn-filled:hover {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.native-dialog-btn-tonal {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+}
+```
+
+CHIPS (Material 3):
+```
+.native-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--md-outline);
+  background: transparent;
+  color: var(--md-on-surface-variant);
+  transition: all 0.2s;
+}
+
+.native-chip:hover {
+  background: var(--md-surface-variant);
+}
+
+.native-chip.selected {
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+  border-color: transparent;
+}
+
+.native-chip-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.native-chip-assist {
+  /* Chip con icono a la izquierda */
+  padding-left: 8px;
+}
+
+.native-chip-filter {
+  /* Chip de filtro con checkmark al seleccionar */
+}
+
+.native-chip-filter.selected::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  background: var(--md-on-secondary-container);
+  mask-image: url("...checkmark SVG...");
+  -webkit-mask-image: url("...checkmark SVG...");
+}
+```
+
+CARDS (Material 3):
+```
+/* Filled card */
+.native-card-filled {
+  background: var(--md-surface-variant);
+  border-radius: 12px;
+  padding: 16px;
+  transition: box-shadow 0.2s;
+}
+
+.native-card-filled:active {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Elevated card */
+.native-card-elevated {
+  background: var(--md-surface);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s;
+}
+
+.native-card-elevated:hover {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Outlined card */
+.native-card-outlined {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+
+.native-card-outlined:hover {
+  border-color: var(--md-on-surface-variant);
+}
+```
+
+BUTTONS (Material 3):
+```
+/* Filled button */
+.native-btn-filled {
+  padding: 10px 24px;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  border: none;
+  border-radius: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: box-shadow 0.2s, background 0.2s;
+  min-height: 40px;
+}
+
+.native-btn-filled:hover {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.native-btn-filled:active {
+  transform: scale(0.98);
+}
+
+/* Filled tonal button */
+.native-btn-tonal {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  /* mismos demas estilos */
+}
+
+/* Outlined button */
+.native-btn-outlined {
+  background: transparent;
+  color: var(--md-primary);
+  border: 1px solid var(--md-outline);
+}
+
+/* Text button */
+.native-btn-text {
+  background: transparent;
+  color: var(--md-primary);
+  border: none;
+  padding: 10px 12px;
+}
+```
+
+INPUTS (Material 3 — outlined style):
+```
+.native-input-group {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.native-input-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-on-surface-variant);
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background: var(--md-surface);
+  padding: 0 4px;
+  z-index: 1;
+}
+
+.native-input {
+  width: 100%;
+  padding: 16px;
+  padding-top: 24px;
+  border: 1px solid var(--md-outline);
+  border-radius: 12px;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: var(--md-on-surface);
+  transition: border-color 0.2s;
+  min-height: 56px;
+}
+
+.native-input:focus {
+  outline: none;
+  border-color: var(--md-primary);
+  border-width: 2px;
+  padding: 15px; /* ajustar por el borde mas grueso */
+}
+
+.native-input:hover:not(:focus) {
+  border-color: var(--md-on-surface);
+}
+
+.native-input-supporting {
+  font-size: 12px;
+  color: var(--md-on-surface-variant);
+  padding: 4px 16px 0;
+}
+
+.native-input-error {
+  border-color: var(--md-error);
+}
+
+.native-input-error + .native-input-supporting {
+  color: var(--md-error);
+}
+```
+
+Patron Material 3: el label flota ARRIBA del input cuando tiene focus o tiene valor (floating label). Esto se logra con el label posicionado absolute y CSS :focus-within.
+
+```
+.native-input-group:focus-within .native-input-label,
+.native-input-group.has-value .native-input-label {
+  color: var(--md-primary);
+}
+
+.native-input-group:not(:focus-within):not(.has-value) .native-input-label {
+  top: 16px;
+  left: 16px;
+  font-size: 16px;
+  color: var(--md-on-surface-variant);
+  transition: all 0.2s;
+}
+```
+
+SWITCH (Material 3):
+```
+.native-switch {
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  border: 2px solid var(--md-outline);
+  background: var(--md-surface-variant);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.native-switch::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--md-outline);
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  transform: translateY(-50%);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.native-switch.on {
+  background: var(--md-primary);
+  border-color: var(--md-primary);
+}
+
+.native-switch.on::after {
+  width: 24px;
+  height: 24px;
+  left: calc(100% - 30px);
+  background: var(--md-on-primary);
+}
+```
+
+Patron Material 3: el switch tiene un handle que CRECE cuando se activa (de 16px a 24px) y luego se reposiciona. Es el patron exacto de Material You.
+
+LIST ITEMS:
+```
+.native-list-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  min-height: 56px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.native-list-item:hover {
+  background: var(--md-surface-variant);
+}
+
+.native-list-item:active {
+  background: var(--md-outline);
+}
+
+.native-list-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--md-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.native-list-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.native-list-headline {
+  font-size: 16px;
+  color: var(--md-on-surface);
+  line-height: 1.5;
+}
+
+.native-list-supporting {
+  font-size: 14px;
+  color: var(--md-on-surface-variant);
+  margin-top: 2px;
+}
+
+.native-list-trailing {
+  font-size: 12px;
+  color: var(--md-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.native-list-divider {
+  height: 1px;
+  background: var(--md-outline-variant);
+  margin-left: 72px; /* alineado con el texto, no con el icono */
+}
+```
+
+SNACKBAR (en vez de toast, estilo Material):
+```
+.native-snackbar {
+  position: fixed;
+  bottom: 96px; /* encima del bottom nav */
+  left: 16px;
+  right: 16px;
+  max-width: 560px;
+  margin: 0 auto;
+  background: var(--md-inverse-surface);
+  color: var(--md-inverse-on-surface);
+  border-radius: 4px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 3px 5px -1px rgba(0,0,0,0.2), 0 6px 10px rgba(0,0,0,0.14);
+  z-index: 400;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s;
+}
+
+.native-snackbar.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.native-snackbar-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.native-snackbar-action {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--md-inverse-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.native-snackbar-action:hover {
+  background: rgba(255,255,255,0.08);
+}
+```
+
+Patron Material: el snackbar aparece abajo (encima del nav), tiene texto + accion opcional ("Deshacer", "Ver carrito"). Desaparece en 4 segundos.
+
+=====================================================
+2.4 — NAVIGATION PATTERNS NATIVOS
+=====================================================
+
+TRANSICIONES ENTRE PANTALLAS:
+- Avanzar (de lista a detalle): la nueva pantalla slide-in desde la derecha, la vieja se desliza levemente a la izquierda (parallax)
+  translateX(100%) → translateX(0) para la nueva
+  translateX(0) → translateX(-30%) para la vieja
+  Duracion: 0.35s, cubic-bezier(0.2, 0, 0, 1)
+  
+- Volver atras: reversa exacta de la animacion anterior
+  Swipe desde el borde izquierdo: gesture que arrastra la pantalla actual a la derecha revelando la anterior
+  Si el swipe supera 40% del ancho: completa la transicion. Si no: vuelve.
+
+- Subir (a bottom sheet): translateY(100%) → translateY(0), 0.4s spring
+- Bajar (cerrar sheet): reversa
+
+- Fade (entre tabs del bottom nav): opacity 0 → 1, 0.15s
+
+RIPPLE EFFECT:
+```
+.native-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.native-ripple::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--md-primary) 10%, transparent 10%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 1s;
+}
+
+.native-ripple:active::after {
+  transform: scale(0);
+  opacity: 0.1;
+  transition: 0s;
+}
+```
+
+Cada elemento clickeable tiene la clase .native-ripple. Al tocar: un circulo se expande desde el punto de contacto. Es el ripple effect de Android.
+
+OVERSCROLL EFFECT:
+```
+.native-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Efecto de estiramiento al llegar al final del scroll */
+.native-scroll::after {
+  content: '';
+  display: block;
+  height: 1px;
+}
+```
+
+=====================================================
+2.5 — SPLASH SCREEN NATIVO
+=====================================================
+
+Al abrir la app, mostrar splash screen antes del contenido.
+
+```
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--md-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.4s ease;
+}
+
+.splash-screen.hiding {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.splash-icon {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #FF5722, #FF8A65);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: splashScale 0.6s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+@keyframes splashScale {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.splash-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  animation: splashFade 0.6s 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes splashFade {
+  to { opacity: 1; }
+}
+```
+
+Flujo: al cargar la pagina, el splash aparece. Despues de 1.5 segundos (o cuando los datos esten listos), hace fade-out y revela el contenido.
+
+=====================================================
+2.6 — PULL TO REFRESH NATIVO
+=====================================================
+
+```
+.native-ptr-indicator {
+  position: absolute;
+  top: -48px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: top 0.2s, transform 0.2s;
+}
+
+.native-ptr-circle {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--md-outline);
+  border-top-color: var(--md-primary);
+  border-radius: 50%;
+}
+
+.native-ptr-indicator.pulling .native-ptr-circle {
+  transform: rotate(var(--pull-rotation));
+  transition: none;
+}
+
+.native-ptr-indicator.refreshing .native-ptr-circle {
+  animation: ptrSpin 0.8s linear infinite;
+}
+
+@keyframes ptrSpin {
+  to { transform: rotate(360deg); }
+}
+```
+
+Al arrastrar hacia abajo en listas: aparece un circulo giratorio (Material style, NO iOS style). El circulo rota segun la distancia del pull. Al soltar: se queda girando hasta que los datos cargan.
+
+=====================================================
+2.7 — SCROLL BEHAVIOR NATIVO
+=====================================================
+
+HEADER QUE SE OCULTA AL SCROLL:
+```
+.native-scroll-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.native-scroll-header.hidden {
+  transform: translateY(-100%);
+}
+```
+
+Al hacer scroll hacia abajo: el header se oculta con slide-up (da mas espacio al contenido). Al hacer scroll hacia arriba: reaparece inmediatamente.
+
+Patron de Google Maps, Gmail, Play Store: el header se oculta al bajar, aparece al subir.
+
+=====================================================
+2.8 — PAGINATION NATIVA
+=====================================================
+
+En vez de "Cargar mas" boton, usar infinite scroll con indicador:
+
+```
+.native-loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 12px;
+}
+
+.native-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--md-outline);
+  border-top-color: var(--md-primary);
+  border-radius: 50%;
+  animation: ptrSpin 0.8s linear infinite;
+}
+
+.native-loading-text {
+  font-size: 14px;
+  color: var(--md-on-surface-variant);
+}
+```
+
+Cuando el usuario llega al final de la lista: aparece el spinner + "Cargando mas..." automaticamente. Despues de 1 segundo (simulado), se agregan los nuevos items con fade-in escalonado.
+
+=====================================================
+2.9 — SEARCH NATIVO (Material)
+=====================================================
+
+```
+.native-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--md-surface-variant);
+  border-radius: 28px;
+  min-height: 56px;
+  cursor: text;
+  transition: box-shadow 0.2s;
+}
+
+.native-search-bar:focus-within {
+  background: var(--md-surface);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.native-search-bar-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--md-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.native-search-bar-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: var(--md-on-surface);
+  outline: none;
+}
+
+.native-search-bar-input::placeholder {
+  color: var(--md-on-surface-variant);
+}
+
+.native-search-bar-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--md-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-primary-container);
+  flex-shrink: 0;
+}
+```
+
+Patron Material 3: la search bar tiene avatar del usuario a la derecha (como en Google Maps, Play Store). Al hacer focus: se expande a pantalla completa con transicion.
+
+=====================================================
+2.10 — APLICAR A TODAS LAS PANTALLAS EXISTENTES
+=====================================================
+
+Cada pantalla del cliente y repartidor se RE-MAPEA a componentes nativos:
+
+INICIO (Feed):
+- Header → native-top-bar con ubicacion + avatar
+- Buscador → native-search-bar
+- Banners → carrusel (mantener, pero con rounded corners 28px Material style)
+- Quick actions → native-card-elevated con gradiente
+- Categorias → native-chip scroll horizontal
+- Tiendas → native-card-outlined horizontal
+- Ofertas → native-card-filled con borde superior rojo
+- Productos → native-card-outlined con imagen
+- Feed items → native-list-item
+- Bottom nav → native-bottom-nav
+
+EXPLORAR:
+- Header → native-top-bar
+- Buscador → native-search-bar
+- Filtros → native-chip (selected = selected state)
+- Tiendas → native-list-item (imagen + info)
+- Mapa toggle → native-fab
+
+PERFIL DE TIENDA:
+- Portada → full-bleed image con gradiente
+- Tabs → native-top-bar con tabs (pill indicator Material 3)
+- Productos → native-list-item
+- Boton "+" → native-fab-small (32x32, border-radius 12px)
+
+CARRITO:
+- Header → native-top-bar
+- Items → native-list-item con controles cantidad
+- Resumen → native-card-outlined
+- Boton pagar → native-btn-filled full-width
+
+TRACKING:
+- Mapa → full-screen Leaflet
+- Bottom sheet → native-bottom-sheet con snap points
+- Timeline → custom con native-list-item style
+- Boton accion → native-btn-filled
+
+PERFIL:
+- Header → custom (avatar grande + info)
+- Secciones → native-card-outlined
+- Listas dentro → native-list-item
+- Toggles → native-switch
+- Botones → native-btn-text, native-btn-outlined
+
+REPARTIDOR:
+- Mismas equivalencias para sus pantallas
+- FAB de nueva orden → native-fab-extended con label
+
+=====================================================
+REGLAS FINALES DE ESTETICA NATIVA
+=====================================================
+
+1. NINGUN elemento tiene border-radius menor a 8px. En Android 2026, todo es redondeado.
+
+2. NINGUN boton tiene esquinas cuadradas. Todos son pill (20px) o rounded (12-16px).
+
+3. NINGUN elemento usa sombras CSS viejas. Usar el elevation system de Material 3 (multiples sombras apiladas).
+
+4. NINGUN input tiene estilo de browser. Todos son outlined Material 3 con floating label.
+
+5. NINGUN select es nativo del browser. Todos son bottom sheet con opciones como list items.
+
+6. TODOS los elementos clickeables tienen ripple effect.
+
+7. TODOS los elementos tienen active state (scale 0.98, 0.1s).
+
+8. TODOS los elementos tienen feedback haptic en mobile.
+
+9. LA NAVEGACION entre pantallas SIEMPRE tiene transicion (slide, fade, o scale).
+
+10. EL MODO OSCURO no invierte colores. Usa los tokens --md-* dark que estan recalibrados.
+
+11. EL SPLASH SCREEN aparece al cargar y desaparece cuando la app esta lista.
+
+12. LOS BOTTOM SHEETS responden a arrastre y tienen drag handle.
+
+13. LOS SNACKBARS reemplazan a los toasts (excepto para notificaciones persistentes).
+
+14. LOS DIALOGS son Material 3 style (botones alineados a la derecha, "Text" + "Filled").
+
+15. EL HEADER se oculta al scroll hacia abajo y aparece al scroll hacia arriba.
+
+16. PULL TO REFRESH funciona en todas las listas con spinner Material.
+
+17. INFINITE SCROLL en vez de boton "Cargar mas".
+
+18. Los SWIPES funcionan para navegar atras (desde borde izquierdo) y para acciones en items (eliminar, reenviar).
+
+19. EL RIPPLE EFFECT esta en todos los elementos interactivos.
+
+20. SI ALGUIEN ABRE LA APP Y DICE "esto es una web app", FALLO. Debe sentirse como una APK nativa de Android 2026.
+```
+
+---
+
+
+
+Ese prompt agrega **las 4 funcionalidades que faltaban** + **capa visual nativa Android** completa:
+
+### Funcionalidades nuevas:
+
+| Feature | Que hace |
+|---|---|
+| **Busqueda completa** | Pantalla dedicada con recientes, tendencias, sugerencias, resultados por tipo |
+| **Centro de ayuda** | FAQ acordeon + chat con soporte + contacto directo |
+| **Tracking multi-tienda** | Barra flotante con multiples pedidos, selector en tracking |
+| **Tienda de puntos** | Catalogo de recompensas, canje, historial, integracion con pago |
+
+### Capa nativa Android:
+
+| Componente | Patron Material 3 |
+|---|---|
+| Bottom nav | Pill indicator en item activo |
+| FAB | Rounded 16px, elevation level 3 |
+| Bottom sheet | 28px radius, drag handle, snap points |
+| Dialog | 28px radius, botones Text + Filled |
+| Chips | Outlined → selected con fondo |
+| Cards | 3 variantes: filled, elevated, outlined |
+| Inputs | Outlined + floating label |
+| Switch | Handle que crece al activar |
+| Snackbar | Inverso, con accion |
+| Ripple | Expansion radial desde punto de toque |
+| Header | Se oculta al scroll, aparece al subir |
+| Pull to refresh | Spinner Material circulando |
+| Transiciones | Slide parallax entre pantallas |
+| Splash screen | Logo + fade-out al cargar |
+
+**El rol de cliente ahora esta al 100%.** Listo para pasar al **Ingeniero**.

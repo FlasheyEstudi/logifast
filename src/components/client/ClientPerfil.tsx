@@ -166,6 +166,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     referidos,
     calificaciones,
     canjearPuntos,
+    setClientActiveModule,
   } = useStore();
 
   const {
@@ -661,6 +662,17 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
           <button onClick={() => handleCanjear(500)} disabled={fidelizacion.puntos < 500}
             style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 500 ? 0.5 : 1 }}>
             500 pts = Envio gratis
+          </button>
+          <button
+            onClick={() => setClientActiveModule('puntos')}
+            style={{
+              ...pillButtonStyle,
+              background: 'var(--primario)',
+              color: '#FFFFFF',
+              border: 'none',
+            }}
+          >
+            Ver recompensas
           </button>
         </div>
       </div>
@@ -1267,6 +1279,13 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
             label="Politica de privacidad"
             right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
             onClick={() => {}}
+          />
+          {/* Centro de ayuda */}
+          <SettingsRow
+            icon={<AlertTriangle size={18} />}
+            label="Centro de ayuda"
+            right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
+            onClick={() => setClientActiveModule('ayuda')}
           />
         </div>
 

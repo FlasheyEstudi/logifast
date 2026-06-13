@@ -686,3 +686,118 @@ Stage Summary:
 - All 20 LOGIFAST design rules followed
 - Design system tokens properly applied throughout
 - Production-ready visual redesign
+
+---
+Task ID: V4
+Agent: fullstack-developer
+Task: Build ClientBusqueda.tsx — Full search screen per spec section 1
+
+Work Log:
+- Created /src/components/client/ClientBusqueda.tsx
+- Full-screen search overlay with Framer Motion enter/exit animations (0.3s cubic-bezier(0.16,1,0.3,1) enter, 0.25s exit)
+- Search bar (56px fixed top): Search icon 20px absolute left, input 15px no border, X clear button (animated), "Cancelar" button slides in from right
+- Initial state (no text): Recent Searches with "Recientes" header + "Limpiar" link + Clock icons + X delete per item; Trends "Popular cerca de ti" with horizontal pills; Quick Categories 2-column grid with Lucide icons 28px
+- While typing: Real-time suggestions filtered from tiendas + productos + categorias + envios, max 8, with type icons (Store/Package/Grid3X3/Truck 18px), match highlighted bold, secondary info muted, "Ver todos los resultados" link
+- Results state: Filter tabs (Todo/Tiendas/Productos/Envios) with Framer Motion layoutId sliding underline; counter "X resultados para '[term]'"; Tienda cards (logo + name highlighted + rating + time); Producto cards (64x64 image + name + tienda + price mono + add-to-cart button); Envio cards (ID + status badge + route + date); Compra cards (logo + ID + status + items + total)
+- No results: SVG illustration + "Sin resultados" + "Explorar categorias" button
+- Uses Material You 3 CSS variables (var(--md-primary), var(--md-surface), etc.)
+- Fonts: Syne headings, DM Sans body, JetBrains Mono numbers/prices
+- NO emojis — Lucide SVG icons only
+- Mobile-first responsive design
+- Integration with useMarketplaceStore (tiendas, productos, ordenesCompra) and useStore (orders)
+- Local state: query, recentSearches, activeTab, showResults
+- ESLint passes with 0 errors
+
+Stage Summary:
+- Complete full-screen search experience per spec
+- Three states: initial (recent/trends/categories), typing (suggestions), results (filtered tabs)
+- Smooth animations and Material You 3 aesthetic throughout
+
+---
+Task ID: V2+V3
+Agent: fullstack-developer
+Task: Update ClientShell.tsx — Splash screen, native status bar, Android gesture bar, Material 3 bottom nav
+
+Work Log:
+- Added splash screen: Fixed fullscreen overlay with var(--md-surface) background, 72x72 rounded logo (gradient #FF5722→#FF8A65 + Bike icon 32px white), "LOGIFAST" Syne 24px bold, logo scales 0.8→1 (0.6s), text fades in (0.6s + 0.3s delay), fades out after 1.5s (0.4s), removed from DOM after 1.9s
+- Added native status bar: Fixed 24px bar at top, "9:41" JetBrains Mono 14px, inline SVG icons (signal bars, wifi, battery), pointer-events none, z-index 9999, hidden on desktop via @media
+- Added Android gesture bar: Fixed 20px bar at bottom, 120px×3px rounded line at 30% opacity, pointer-events none, z-index 9999, hidden on desktop
+- Updated bottom nav to Material 3 pill indicator: Active icon wrapped in 64×32px border-radius 16px pill with var(--md-primary-container) bg + var(--md-on-primary-container) icon; Inactive: transparent bg + var(--md-on-surface-variant) icon; Active label font-weight 700 var(--md-on-surface); Inactive label font-weight 500 var(--md-on-surface-variant); Height 80px (was 72px); Background var(--md-surface) with border-top var(--md-outline-variant)
+- Updated Enviar center button: var(--md-primary-container) bg, var(--md-on-primary-container) icon, border-radius 16px, 52×52, var(--md-elevation-3) shadow, translateY(-12px)
+- Added Material 3 snackbar system: SnackbarContext + useSnackbar hook, fixed bottom:96px left:16px right:16px, var(--md-inverse-surface) bg, var(--md-inverse-on-surface) text, border-radius 4px, padding 14px 16px, var(--md-elevation-3) shadow, optional action button in var(--md-inverse-primary), auto-dismiss 4s, animation translateY(100px)→0 0.3s cubic-bezier(0.2,0,0,1)
+- Added dynamic imports: ClientBusqueda, ClientAyuda, ClientPuntos (ssr: false)
+- Created placeholder components for ClientBusqueda.tsx, ClientAyuda.tsx, ClientPuntos.tsx (overlay screens)
+- Updated CSS: status bar/gesture bar shown only on mobile (hidden ≥1024px), header offset for status bar on mobile, content padding updated for 80px bottom nav, snackbar max-width on desktop
+- All existing functionality preserved
+- Lint: 0 errors, 1 pre-existing warning
+- Server: 200 OK
+
+Stage Summary:
+- Splash screen with animated logo + brand text
+- Simulated native status bar (mobile only) with time + signal/wifi/battery SVGs
+- Android gesture bar (mobile only)
+- Material 3 bottom nav with pill indicator pattern for active items
+- Material 3 snackbar system with context provider
+- Dynamic imports for Busqueda/Ayuda/Puntos overlay components
+- All Material Design 3 tokens properly applied
+
+---
+Task ID: V5+V6
+Agent: Main
+Task: Build ClientAyuda.tsx (Help Center) + ClientPuntos.tsx (Points Store)
+
+Work Log:
+- Created /src/components/client/ClientAyuda.tsx with full Help Center implementation
+  - Header with "Centro de ayuda" Syne 24px bold + ArrowLeft back button
+  - Search input for filtering FAQ questions
+  - FAQ Accordion grouped by 4 categories (Envios 5q, Compras 4q, Pagos 3q, Cuenta 3q)
+  - ChevronDown rotation animation + height animation 0.25s
+  - Contact card with "Chatear con soporte" primary button, "Llamar" and "Email" outline buttons
+  - Support chat overlay with auto-message, quick chips, typing indicator, bubble style matching repartidor chat
+  - Policies section (Privacy, Terms, Coverage, Refund) with slide-in viewer
+- Created /src/components/client/ClientPuntos.tsx with full Points Store implementation
+  - Header "Recompensas" Syne 24px bold + back button
+  - Large gradient balance card with points, level badge, progress bar
+  - 8 reward cards in 2-column grid with gradient headers, icons, costs, descriptions
+  - "Canjear" button (if enough points) or "X pts mas" (disabled)
+  - Confirmation dialog with reward details
+  - Animated checkmark success overlay
+  - Active rewards section with expiration indicator
+  - Redemption history from store historial (negative entries)
+- Added 'ayuda' and 'puntos' to ClientModuleKey type in store.ts
+- Registered both components in ClientShell.tsx renderModule switch
+- Added "Ver recompensas" button in ClientPerfil Puntos section
+- Added "Centro de ayuda" SettingsRow in ClientPerfil Configuracion section
+- Both components use useStore for fidelizacion state
+- Material You 3.0 aesthetic with CSS variables
+- Lucide SVG icons only (no emojis)
+- Mobile-first responsive design
+- Framer Motion animations throughout
+
+Stage Summary:
+- ClientAyuda: Complete Help Center with FAQ search/accordion, support chat, and policy viewer
+- ClientPuntos: Complete Points Store with balance card, 8 rewards catalog, redeem flow with confirmation/success animations, active rewards, and redemption history
+- Both integrated into ClientShell navigation and accessible from ClientPerfil
+- ClientModuleKey extended with 'ayuda' | 'puntos'
+
+---
+Task ID: V4-V10
+Agent: Main + Subagents
+Task: Implement v4 spec — 4 new features + Native Android Material You 3.0 layer
+
+Work Log:
+- Added Material You 3.0 CSS tokens to globals.css (light + dark): --md-primary, --md-on-primary, --md-primary-container, --md-on-primary-container, --md-surface, --md-surface-variant, --md-on-surface, --md-on-surface-variant, --md-outline, --md-outline-variant, --md-inverse-surface, --md-inverse-on-surface, --md-error, --md-success, --md-warning, --md-elevation-1 through 5
+- Built ClientBusqueda.tsx: full search screen with recents, trends, quick categories, real-time suggestions, results by type (Tiendas/Productos/Envios), no-results state, Material 3 search bar
+- Built ClientAyuda.tsx: FAQ accordion (4 categories, 15 questions), support chat with simulated agent, phone/email contact, policy viewers
+- Built ClientPuntos.tsx: gradient balance card with 245 pts, 8 rewards catalog (Envio gratis, C$20-100 descuento, Prioritario, Delivery gratis, Suscripciones Plata/Oro), redeem confirmation + success animation, redemption history
+- Updated ClientShell.tsx: splash screen (1.5s fade), native status bar (9:41 + SVG icons), Android gesture bar, Material 3 bottom nav (pill indicator pattern), snackbar system (SnackbarContext + useSnackbar hook), dynamic imports for new components
+- Added 'ayuda' and 'puntos' to ClientModuleKey in store.ts
+- Registered new modules in ClientShell renderModule switch
+- Lint: 0 errors, 1 pre-existing warning
+- Zero emoji violations confirmed
+
+Stage Summary:
+- ALL 4 new features implemented: Search, Help Center, Multi-Store Tracking (via existing floating bar), Points Store
+- Native Android Material You 3.0 layer applied: CSS tokens, splash screen, status bar, gesture bar, pill nav, snackbar
+- Client experience now at 100% per v4 spec
+- VLM verified: premium 2026 native Android app feel, no emojis, professional design

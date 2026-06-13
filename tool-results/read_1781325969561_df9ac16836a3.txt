@@ -1,0 +1,1487 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useMemo, useEffect } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
+     7→  LogOut, Shield, Bell, Moon, Sun, Globe, ChevronRight, AlertTriangle,
+     8→  Star, Banknote, CreditCard, Copy, Home, Building, ShoppingBag, Package,
+     9→  Heart, ShoppingCart, Gift, Users,
+    10→} from 'lucide-react';
+    11→import {
+    12→  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+    13→} from 'recharts';
+    14→import { useStore } from '@/lib/store';
+    15→import type { DireccionGuardada } from '@/lib/store';
+    16→import { useMarketplaceStore } from '@/lib/marketplace-store';
+    17→
+    18→/* ═══════════════════════════════════════════════
+    19→   PROPS
+    20→   ═══════════════════════════════════════════════ */
+    21→interface ClientPerfilProps {
+    22→  isDark: boolean;
+    23→  userName: string;
+    24→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
+    25→  onLogout: () => void;
+    26→  onOpenTracking?: (orderId: string) => void;
+    27→  onOpenChat?: (orderId: string) => void;
+    28→}
+    29→
+    30→/* ═══════════════════════════════════════════════
+    31→   MOCK CHART DATA
+    32→   ═══════════════════════════════════════════════ */
+    33→const MONTHLY_DATA = [
+    34→  { mes: 'Ene', envios: 3 },
+    35→  { mes: 'Feb', envios: 5 },
+    36→  { mes: 'Mar', envios: 2 },
+    37→  { mes: 'Abr', envios: 4 },
+    38→  { mes: 'May', envios: 6 },
+    39→  { mes: 'Jun', envios: 4 },
+    40→];
+    41→
+    42→/* ═══════════════════════════════════════════════
+    43→   CUSTOM TOGGLE
+    44→   ═══════════════════════════════════════════════ */
+    45→function Toggle({ on, onToggle, disabled = false }: { on: boolean; onToggle: () => void; disabled?: boolean }) {
+    46→  return (
+    47→    <button
+    48→      type="button"
+    49→      role="switch"
+    50→      aria-checked={on}
+    51→      disabled={disabled}
+    52→      onClick={onToggle}
+    53→      style={{
+    54→        width: 48,
+    55→        height: 26,
+    56→        borderRadius: 13,
+    57→        border: '1px solid var(--border)',
+    58→        background: on ? 'var(--primario)' : 'var(--text-muted, #999)',
+    59→        position: 'relative',
+    60→        cursor: disabled ? 'not-allowed' : 'pointer',
+    61→        transition: 'background 0.25s ease',
+    62→        opacity: disabled ? 0.5 : 1,
+    63→        flexShrink: 0,
+    64→        padding: 0,
+    65→      }}
+    66→    >
+    67→      <motion.div
+    68→        animate={{ x: on ? 22 : 2 }}
+    69→        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+    70→        style={{
+    71→          width: 20,
+    72→          height: 20,
+    73→          borderRadius: '50%',
+    74→          background: '#fff',
+    75→          position: 'absolute',
+    76→          top: 2,
+    77→          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+    78→        }}
+    79→      />
+    80→    </button>
+    81→  );
+    82→}
+    83→
+    84→/* ═══════════════════════════════════════════════
+    85→   MODAL
+    86→   ═══════════════════════════════════════════════ */
+    87→function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+    88→  return (
+    89→    <motion.div
+    90→      initial={{ opacity: 0 }}
+    91→      animate={{ opacity: 1 }}
+    92→      exit={{ opacity: 0 }}
+    93→      style={{
+    94→        position: 'fixed', inset: 0, zIndex: 9999,
+    95→        background: 'rgba(0,0,0,0.5)', display: 'flex',
+    96→        alignItems: 'center', justifyContent: 'center', padding: 16,
+    97→      }}
+    98→      onClick={onClose}
+    99→    >
+   100→      <motion.div
+   101→        initial={{ scale: 0.9, opacity: 0 }}
+   102→        animate={{ scale: 1, opacity: 1 }}
+   103→        exit={{ scale: 0.9, opacity: 0 }}
+   104→        onClick={(e) => e.stopPropagation()}
+   105→        style={{
+   106→          background: 'var(--surface)',
+   107→          borderRadius: 'var(--lf-card-radius, 22px)',
+   108→          padding: 24, maxWidth: 400, width: '100%',
+   109→          border: '1px solid var(--border)',
+   110→          boxShadow: 'var(--lf-shadow-float)',
+   111→        }}
+   112→      >
+   113→        {children}
+   114→      </motion.div>
+   115→    </motion.div>
+   116→  );
+   117→}
+   118→
+   119→/* ═══════════════════════════════════════════════
+   120→   TOOLTIP CUSTOM (Recharts)
+   121→   ═══════════════════════════════════════════════ */
+   122→function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
+   123→  if (!active || !payload?.length) return null;
+   124→  return (
+   125→    <div
+   126→      style={{
+   127→        background: 'var(--surface)',
+   128→        border: '1px solid var(--border)',
+   129→        borderRadius: 12,
+   130→        padding: '6px 10px',
+   131→        fontSize: 13,
+   132→        fontFamily: "'JetBrains Mono', monospace",
+   133→        color: 'var(--text)',
+   134→        boxShadow: 'var(--lf-shadow-card)',
+   135→      }}
+   136→    >
+   137→      <span style={{ color: 'var(--primario)', fontWeight: 700 }}>{payload[0].value}</span>
+   138→      <span style={{ color: 'var(--text-muted)', marginLeft: 4 }}>envios</span>
+   139→      <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{label}</div>
+   140→    </div>
+   141→  );
+   142→}
+   143→
+   144→/* ═══════════════════════════════════════════════
+   145→   SHARED CARD STYLE
+   146→   ═══════════════════════════════════════════════ */
+   147→const sectionCard: React.CSSProperties = {
+   148→  background: 'var(--surface)',
+   149→  borderRadius: 'var(--lf-card-radius, 22px)',
+   150→  border: '1px solid var(--border)',
+   151→  boxShadow: 'var(--lf-shadow-card)',
+   152→  padding: 24,
+   153→};
+   154→
+   155→/* ═══════════════════════════════════════════════
+   156→   MAIN COMPONENT
+   157→   ═══════════════════════════════════════════════ */
+   158→export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }: ClientPerfilProps) {
+   159→  const {
+   160→    direccionesGuardadas,
+   161→    addDireccionGuardada,
+   162→    removeDireccionGuardada,
+   163→    direccionesSugerencias,
+   164→    orders,
+   165→    fidelizacion,
+   166→    referidos,
+   167→    calificaciones,
+   168→    canjearPuntos,
+   169→  } = useStore();
+   170→
+   171→  const {
+   172→    tiendas,
+   173→    productos,
+   174→    favoritosTiendas,
+   175→    favoritosProductos,
+   176→    toggleFavoritoTienda,
+   177→    toggleFavoritoProducto,
+   178→    addToCart,
+   179→  } = useMarketplaceStore();
+   180→
+   181→  /* ─── Edit profile state ─── */
+   182→  const [editing, setEditing] = useState(false);
+   183→  const [editName, setEditName] = useState(userName);
+   184→  const [editPhone, setEditPhone] = useState('+505 8888-1234');
+   185→  const [editAddress, setEditAddress] = useState('Col. Los Robles, Managua');
+   186→  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+   187→  const [showAddressSugg, setShowAddressSugg] = useState(false);
+   188→
+   189→  /* ─── Add address state ─── */
+   190→  const [addingAddr, setAddingAddr] = useState(false);
+   191→  const [newAddr, setNewAddr] = useState('');
+   192→  const [newAddrLabel, setNewAddrLabel] = useState<'Casa' | 'Trabajo' | 'Otro'>('Casa');
+   193→  const [newAddrSuggestions, setNewAddrSuggestions] = useState<string[]>([]);
+   194→  const [showNewAddrSugg, setShowNewAddrSugg] = useState(false);
+   195→
+   196→  /* ─── Favorites tabs ─── */
+   197→  const [favTab, setFavTab] = useState<'tiendas' | 'productos'>('tiendas');
+   198→
+   199→  /* ─── Settings state ─── */
+   200→  const [pushNotif, setPushNotif] = useState(true);
+   201→  const [emailPromo, setEmailPromo] = useState(true);
+   202→  const [prefPayment, setPrefPayment] = useState<'efectivo' | 'transferencia'>('efectivo');
+   203→  const [prefPaymentInited, setPrefPaymentInited] = useState(false);
+   204→
+   205→  /* ─── Modals ─── */
+   206→  const [logoutModal, setLogoutModal] = useState(false);
+   207→  const [deleteModal, setDeleteModal] = useState(false);
+   208→  const [deleteText, setDeleteText] = useState('');
+   209→
+   210→  /* ─── Toast state ─── */
+   211→  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+   212→
+   213→  useEffect(() => {
+   214→    if (toast) {
+   215→      const timer = setTimeout(() => setToast(null), 3000);
+   216→      return () => clearTimeout(timer);
+   217→    }
+   218→  }, [toast]);
+   219→
+   220→  /* ─── Computed metrics ─── */
+   221→  const clientOrders = useMemo(
+   222→    () => orders.filter((o) => o.cliente === userName || o.cliente === 'Maria Lopez' || o.cliente === 'Maria Lopez'),
+   223→    [orders, userName],
+   224→  );
+   225→
+   226→  const metrics = useMemo(() => {
+   227→    const total = clientOrders.length;
+   228→    const totalSpent = clientOrders.reduce((s, o) => s + o.monto, 0);
+   229→    const avg = total > 0 ? Math.round(totalSpent / total) : 0;
+   230→    const thisMonth = clientOrders.filter((o) => o.fecha.startsWith('2026-06')).length;
+   231→    const zoneCount: Record<string, number> = {};
+   232→    clientOrders.forEach((o) => {
+   233→      const zone = o.destino.split(',')[0].trim();
+   234→      zoneCount[zone] = (zoneCount[zone] || 0) + 1;
+   235→    });
+   236→    const topZone = Object.entries(zoneCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+   237→    const payCount: Record<string, number> = {};
+   238→    clientOrders.forEach((o) => {
+   239→      payCount[o.metodoPago] = (payCount[o.metodoPago] || 0) + 1;
+   240→    });
+   241→    const topPayment = (Object.entries(payCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'efectivo') as 'efectivo' | 'transferencia';
+   242→    return { total, totalSpent, avg, thisMonth, topZone, topPayment };
+   243→  }, [clientOrders]);
+   244→
+   245→  if (!prefPaymentInited && metrics.topPayment) {
+   246→    setPrefPayment(metrics.topPayment);
+   247→    setPrefPaymentInited(true);
+   248→  }
+   249→
+   250→  /* ─── Autocomplete helpers ─── */
+   251→  const filterSuggestions = (val: string) => {
+   252→    if (!val || val.length < 2) return [];
+   253→    const lower = val.toLowerCase();
+   254→    return direccionesSugerencias
+   255→      .filter((d) => d.direccion.toLowerCase().includes(lower))
+   256→      .map((d) => d.direccion)
+   257→      .slice(0, 5);
+   258→  };
+   259→
+   260→  const handleEditAddrChange = (val: string) => {
+   261→    setEditAddress(val);
+   262→    const s = filterSuggestions(val);
+   263→    setAddressSuggestions(s);
+   264→    setShowAddressSugg(s.length > 0);
+   265→  };
+   266→
+   267→  const handleNewAddrChange = (val: string) => {
+   268→    setNewAddr(val);
+   269→    const s = filterSuggestions(val);
+   270→    setNewAddrSuggestions(s);
+   271→    setShowNewAddrSugg(s.length > 0);
+   272→  };
+   273→
+   274→  /* ─── Init helpers ─── */
+   275→  const initials = useMemo(() => {
+   276→    const parts = userName.split(' ');
+   277→    return parts.length >= 2
+   278→      ? (parts[0][0] + parts[1][0]).toUpperCase()
+   279→      : userName.slice(0, 2).toUpperCase();
+   280→  }, [userName]);
+   281→
+   282→  const email = 'cliente@logifast.com';
+   283→
+   284→  /* ─── Save address ─── */
+   285→  const handleAddAddress = () => {
+   286→    if (!newAddr.trim()) return;
+   287→    const match = direccionesSugerencias.find((d) => d.direccion === newAddr);
+   288→    addDireccionGuardada({
+   289→      id: `DG-${Date.now()}`,
+   290→      etiqueta: newAddrLabel,
+   291→      direccion: newAddr,
+   292→      lat: match?.lat ?? 12.12,
+   293→      lng: match?.lng ?? -86.25,
+   294→    });
+   295→    setNewAddr('');
+   296→    setNewAddrLabel('Casa');
+   297→    setAddingAddr(false);
+   298→  };
+   299→
+   300→  /* ─── Toggle theme ─── */
+   301→  const toggleThemeLocal = () => {
+   302→    const next = !isDark;
+   303→    localStorage.setItem('logifast-theme', next ? 'dark' : 'light');
+   304→    document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
+   305→    window.dispatchEvent(new Event('storage'));
+   306→  };
+   307→
+   308→  /* ─── Loyalty computations ─── */
+   309→  const nivelColor = useMemo(() => {
+   310→    switch (fidelizacion.nivel) {
+   311→      case 'bronce': return '#CD7F32';
+   312→      case 'plata': return '#C0C0C0';
+   313→      case 'oro': return '#FFD700';
+   314→      case 'platino': return '#E5E4E2';
+   315→      default: return '#CD7F32';
+   316→    }
+   317→  }, [fidelizacion.nivel]);
+   318→
+   319→  const capitalizedNivel = fidelizacion.nivel.charAt(0).toUpperCase() + fidelizacion.nivel.slice(1);
+   320→
+   321→  const { progressPercent, pointsToNext } = useMemo(() => {
+   322→    const thresholds = { bronce: 0, plata: 100, oro: 300, platino: 600 };
+   323→    const levelOrder: Array<'bronce' | 'plata' | 'oro' | 'platino'> = ['bronce', 'plata', 'oro', 'platino'];
+   324→    const currentIdx = levelOrder.indexOf(fidelizacion.nivel);
+   325→    const currentThreshold = thresholds[fidelizacion.nivel];
+   326→    const nextIdx = currentIdx + 1;
+   327→    if (nextIdx >= levelOrder.length) {
+   328→      return { progressPercent: 100, pointsToNext: 0 };
+   329→    }
+   330→    const nextLevel = levelOrder[nextIdx];
+   331→    const nextThreshold = thresholds[nextLevel];
+   332→    const range = nextThreshold - currentThreshold;
+   333→    const progress = fidelizacion.puntos - currentThreshold;
+   334→    const pct = Math.min(Math.max((progress / range) * 100, 0), 100);
+   335→    const remaining = Math.max(nextThreshold - fidelizacion.puntos, 0);
+   336→    return { progressPercent: pct, pointsToNext: remaining };
+   337→  }, [fidelizacion.nivel, fidelizacion.puntos]);
+   338→
+   339→  const pillButtonStyle: React.CSSProperties = {
+   340→    padding: '6px 14px',
+   341→    borderRadius: 'var(--lf-pill-radius, 100px)',
+   342→    border: '1px solid var(--primario)',
+   343→    background: 'var(--primario-soft)',
+   344→    color: 'var(--primario)',
+   345→    fontWeight: 600,
+   346→    fontSize: 12,
+   347→    cursor: 'pointer',
+   348→    fontFamily: "'DM Sans', sans-serif",
+   349→  };
+   350→
+   351→  const handleCanjear = (puntos: number) => {
+   352→    const ok = canjearPuntos(puntos);
+   353→    if (ok) {
+   354→      setToast({ message: `Se canjearon ${puntos} puntos correctamente`, type: 'success' });
+   355→    } else {
+   356→      setToast({ message: 'No tienes suficientes puntos', type: 'error' });
+   357→    }
+   358→  };
+   359→
+   360→  const handleCopyCode = () => {
+   361→    navigator.clipboard.writeText(referidos.codigo).then(() => {
+   362→      setToast({ message: 'Codigo copiado: ' + referidos.codigo, type: 'success' });
+   363→    }).catch(() => {
+   364→      setToast({ message: 'Codigo: ' + referidos.codigo, type: 'success' });
+   365→    });
+   366→  };
+   367→
+   368→  const handleShare = () => {
+   369→    const shareData = {
+   370→      title: 'LOGIFAST - Envios en moto',
+   371→      text: `Unete a LOGIFAST con mi codigo ${referidos.codigo} y gana 20 puntos en tu primer envio!`,
+   372→      url: referidos.link,
+   373→    };
+   374→    if (typeof navigator !== 'undefined' && navigator.share) {
+   375→      navigator.share(shareData).catch(() => {
+   376→        navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
+   377→          setToast({ message: 'Enlace copiado al portapapeles', type: 'success' });
+   378→        });
+   379→      });
+   380→    } else {
+   381→      navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
+   382→        setToast({ message: 'Enlace copiado al portapapeles', type: 'success' });
+   383→      }).catch(() => {
+   384→        setToast({ message: 'Codigo: ' + referidos.codigo + ' | Link: ' + referidos.link, type: 'success' });
+   385→      });
+   386→    }
+   387→  };
+   388→
+   389→  /* ─── Favorite tiendas/productos computed ─── */
+   390→  const favoriteTiendas = useMemo(
+   391→    () => tiendas.filter(t => favoritosTiendas.some(f => f.tiendaId === t.id)),
+   392→    [tiendas, favoritosTiendas]
+   393→  );
+   394→
+   395→  const favoriteProductos = useMemo(
+   396→    () => productos.filter(p => favoritosProductos.some(f => f.productoId === p.id)),
+   397→    [productos, favoritosProductos]
+   398→  );
+   399→
+   400→  /* ─── Styles ─── */
+   401→  const inputStyle: React.CSSProperties = {
+   402→    width: '100%',
+   403→    padding: '10px 14px',
+   404→    borderRadius: 'var(--lf-input-radius, 16px)',
+   405→    border: '1px solid var(--border)',
+   406→    background: 'var(--bg-alt)',
+   407→    color: 'var(--text)',
+   408→    fontSize: 14,
+   409→    fontFamily: "'DM Sans', sans-serif",
+   410→    outline: 'none',
+   411→  };
+   412→
+   413→  const btnPrimary: React.CSSProperties = {
+   414→    padding: '10px 20px',
+   415→    borderRadius: 'var(--lf-button-radius, 16px)',
+   416→    border: 'none',
+   417→    background: 'var(--primario)',
+   418→    color: '#fff',
+   419→    fontWeight: 600,
+   420→    fontSize: 14,
+   421→    fontFamily: "'DM Sans', sans-serif",
+   422→    cursor: 'pointer',
+   423→    display: 'inline-flex',
+   424→    alignItems: 'center',
+   425→    gap: 6,
+   426→  };
+   427→
+   428→  const btnGhost: React.CSSProperties = {
+   429→    padding: '10px 20px',
+   430→    borderRadius: 'var(--lf-button-radius, 16px)',
+   431→    border: '1px solid var(--border)',
+   432→    background: 'transparent',
+   433→    color: 'var(--text-secondary)',
+   434→    fontWeight: 500,
+   435→    fontSize: 14,
+   436→    fontFamily: "'DM Sans', sans-serif",
+   437→    cursor: 'pointer',
+   438→    display: 'inline-flex',
+   439→    alignItems: 'center',
+   440→    gap: 6,
+   441→  };
+   442→
+   443→  /* ═══════════════════════════════════════════════
+   444→     RENDER
+   445→     ═══════════════════════════════════════════════ */
+   446→  return (
+   447→    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 600, margin: '0 auto', padding: '0 4px' }}>
+   448→
+   449→      {/* ═══════════════════════════════════════════
+   450→          HEADER: Avatar + Name + Email
+   451→          ═══════════════════════════════════════════ */}
+   452→      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 8 }}>
+   453→        <div
+   454→          style={{
+   455→            width: 80,
+   456→            height: 80,
+   457→            borderRadius: '50%',
+   458→            background: 'var(--primario-soft)',
+   459→            display: 'flex',
+   460→            alignItems: 'center',
+   461→            justifyContent: 'center',
+   462→            color: 'var(--primario)',
+   463→            fontFamily: "'Syne', sans-serif",
+   464→            fontWeight: 700,
+   465→            fontSize: 28,
+   466→            flexShrink: 0,
+   467→            border: '3px solid var(--primario)',
+   468→          }}
+   469→        >
+   470→          {initials}
+   471→        </div>
+   472→        <div style={{ textAlign: 'center' }}>
+   473→          <AnimatePresence mode="wait">
+   474→            {!editing ? (
+   475→              <motion.div
+   476→                key="view"
+   477→                initial={{ opacity: 0, y: 8 }}
+   478→                animate={{ opacity: 1, y: 0 }}
+   479→                exit={{ opacity: 0, y: -8 }}
+   480→              >
+   481→                <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif" }}>
+   482→                  {userName}
+   483→                </div>
+   484→                <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+   485→                  <Mail size={14} /> {email}
+   486→                </div>
+   487→                <button
+   488→                  onClick={() => {
+   489→                    setEditName(userName);
+   490→                    setEditPhone('+505 8888-1234');
+   491→                    setEditAddress('Col. Los Robles, Managua');
+   492→                    setEditing(true);
+   493→                  }}
+   494→                  style={{
+   495→                    ...btnGhost,
+   496→                    marginTop: 14,
+   497→                    padding: '8px 18px',
+   498→                    color: 'var(--primario)',
+   499→                    borderColor: 'var(--primario)',
+   500→                    fontSize: 13,
+   501→                  }}
+   502→                >
+   503→                  <Edit3 size={14} /> Editar perfil
+   504→                </button>
+   505→              </motion.div>
+   506→            ) : (
+   507→              <motion.div
+   508→                key="edit"
+   509→                initial={{ opacity: 0, y: 8 }}
+   510→                animate={{ opacity: 1, y: 0 }}
+   511→                exit={{ opacity: 0, y: -8 }}
+   512→                style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8, textAlign: 'left' }}
+   513→              >
+   514→                <div>
+   515→                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+   516→                    <User size={12} /> Nombre
+   517→                  </label>
+   518→                  <input style={inputStyle} value={editName} onChange={(e) => setEditName(e.target.value)} />
+   519→                </div>
+   520→                <div>
+   521→                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+   522→                    <Mail size={12} /> Correo
+   523→                  </label>
+   524→                  <div style={{ position: 'relative' }}>
+   525→                    <input style={{ ...inputStyle, paddingRight: 36, opacity: 0.6 }} value={email} disabled />
+   526→                    <Shield size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+   527→                  </div>
+   528→                </div>
+   529→                <div>
+   530→                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+   531→                    <Phone size={12} /> Telefono
+   532→                  </label>
+   533→                  <input style={inputStyle} value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+   534→                </div>
+   535→                <div style={{ position: 'relative' }}>
+   536→                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+   537→                    <MapPin size={12} /> Direccion principal
+   538→                  </label>
+   539→                  <input
+   540→                    style={inputStyle}
+   541→                    value={editAddress}
+   542→                    onChange={(e) => handleEditAddrChange(e.target.value)}
+   543→                    onBlur={() => setTimeout(() => setShowAddressSugg(false), 200)}
+   544→                    onFocus={() => {
+   545→                      const s = filterSuggestions(editAddress);
+   546→                      if (s.length) setShowAddressSugg(true);
+   547→                    }}
+   548→                  />
+   549→                  <AnimatePresence>
+   550→                    {showAddressSugg && addressSuggestions.length > 0 && (
+   551→                      <motion.div
+   552→                        initial={{ opacity: 0, y: -4 }}
+   553→                        animate={{ opacity: 1, y: 0 }}
+   554→                        exit={{ opacity: 0, y: -4 }}
+   555→                        style={{
+   556→                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+   557→                          background: 'var(--surface)', border: '1px solid var(--border)',
+   558→                          borderRadius: 12, marginTop: 4, overflow: 'hidden',
+   559→                        }}
+   560→                      >
+   561→                        {addressSuggestions.map((s, i) => (
+   562→                          <button
+   563→                            key={i}
+   564→                            onClick={() => { setEditAddress(s); setShowAddressSugg(false); }}
+   565→                            style={{
+   566→                              display: 'flex', alignItems: 'center', gap: 8,
+   567→                              padding: '8px 14px', width: '100%', border: 'none',
+   568→                              background: 'transparent', color: 'var(--text)',
+   569→                              cursor: 'pointer', fontSize: 13, textAlign: 'left',
+   570→                              fontFamily: "'DM Sans', sans-serif",
+   571→                            }}
+   572→                            onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-alt)')}
+   573→                            onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
+   574→                          >
+   575→                            <MapPin size={13} style={{ color: 'var(--primario)', flexShrink: 0 }} /> {s}
+   576→                          </button>
+   577→                        ))}
+   578→                      </motion.div>
+   579→                    )}
+   580→                  </AnimatePresence>
+   581→                </div>
+   582→                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+   583→                  <button style={btnGhost} onClick={() => setEditing(false)}>
+   584→                    <X size={15} /> Cancelar
+   585→                  </button>
+   586→                  <button style={btnPrimary} onClick={() => setEditing(false)}>
+   587→                    <Save size={15} /> Guardar
+   588→                  </button>
+   589→                </div>
+   590→              </motion.div>
+   591→            )}
+   592→          </AnimatePresence>
+   593→        </div>
+   594→      </div>
+   595→
+   596→      {/* ═══════════════════════════════════════════
+   597→          1. PUNTOS LOGIFAST
+   598→          ═══════════════════════════════════════════ */}
+   599→      <div style={sectionCard}>
+   600→        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+   601→          <div style={{
+   602→            width: 48, height: 48, borderRadius: 14,
+   603→            background: nivelColor,
+   604→            display: 'flex', alignItems: 'center', justifyContent: 'center',
+   605→          }}>
+   606→            <Star size={24} style={{ color: '#fff' }} />
+   607→          </div>
+   608→          <div style={{ flex: 1 }}>
+   609→            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   610→              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: 'var(--primario)', lineHeight: 1.1 }}>
+   611→                {fidelizacion.puntos}
+   612→              </span>
+   613→              <span style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>puntos</span>
+   614→            </div>
+   615→            <span
+   616→              style={{
+   617→                display: 'inline-flex',
+   618→                alignItems: 'center',
+   619→                padding: '2px 10px',
+   620→                borderRadius: 'var(--lf-pill-radius, 100px)',
+   621→                fontSize: 12,
+   622→                fontWeight: 600,
+   623→                fontFamily: "'DM Sans', sans-serif",
+   624→                background: `${nivelColor}20`,
+   625→                color: nivelColor,
+   626→                marginTop: 4,
+   627→              }}
+   628→            >
+   629→              Nivel {capitalizedNivel}
+   630→            </span>
+   631→          </div>
+   632→        </div>
+   633→
+   634→        {/* Progress bar */}
+   635→        <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-alt)', overflow: 'hidden', marginBottom: 6 }}>
+   636→          <motion.div
+   637→            initial={{ width: 0 }}
+   638→            animate={{ width: `${progressPercent}%` }}
+   639→            transition={{ duration: 0.8, ease: 'easeOut' }}
+   640→            style={{
+   641→              height: '100%',
+   642→              borderRadius: 4,
+   643→              background: 'linear-gradient(90deg, var(--primario), var(--primario-hover))',
+   644→            }}
+   645→          />
+   646→        </div>
+   647→        <div style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginBottom: 16 }}>
+   648→          {pointsToNext} puntos para {fidelizacion.nivel === 'bronce' ? 'Plata' : fidelizacion.nivel === 'plata' ? 'Oro' : 'Platino'}
+   649→        </div>
+   650→
+   651→        {/* Canjear puntos */}
+   652→        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+   653→          <button onClick={() => handleCanjear(100)} disabled={fidelizacion.puntos < 100}
+   654→            style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 100 ? 0.5 : 1 }}>
+   655→            100 pts = C$20
+   656→          </button>
+   657→          <button onClick={() => handleCanjear(200)} disabled={fidelizacion.puntos < 200}
+   658→            style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 200 ? 0.5 : 1 }}>
+   659→            200 pts = C$50
+   660→          </button>
+   661→          <button onClick={() => handleCanjear(500)} disabled={fidelizacion.puntos < 500}
+   662→            style={{ ...pillButtonStyle, opacity: fidelizacion.puntos < 500 ? 0.5 : 1 }}>
+   663→            500 pts = Envio gratis
+   664→          </button>
+   665→        </div>
+   666→      </div>
+   667→
+   668→      {/* ═══════════════════════════════════════════
+   669→          2. METRICAS
+   670→          ═══════════════════════════════════════════ */}
+   671→      <div style={sectionCard}>
+   672→        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+   673→          Metricas
+   674→        </h3>
+   675→
+   676→        {/* 3 stats in row */}
+   677→        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+   678→          {[
+   679→            { value: String(metrics.total), label: 'Envios totales' },
+   680→            { value: `C$${metrics.totalSpent.toLocaleString()}`, label: 'Gastados' },
+   681→            { value: String(metrics.thisMonth), label: 'Este mes' },
+   682→          ].map((m, i) => (
+   683→            <div key={i} style={{ textAlign: 'center', padding: '12px 8px', borderRadius: 14, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
+   684→              <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+   685→                {m.value}
+   686→              </div>
+   687→              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>
+   688→                {m.label}
+   689→              </div>
+   690→            </div>
+   691→          ))}
+   692→        </div>
+   693→
+   694→        {/* Bar chart */}
+   695→        <div style={{ height: 120, marginBottom: 0, minWidth: 0, minHeight: 120 }}>
+   696→          <ResponsiveContainer width="100%" height="100%">
+   697→            <BarChart data={MONTHLY_DATA} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+   698→              <XAxis
+   699→                dataKey="mes"
+   700→                tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}
+   701→                axisLine={false}
+   702→                tickLine={false}
+   703→              />
+   704→              <YAxis
+   705→                tick={{ fontSize: 10, fill: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}
+   706→                axisLine={false}
+   707→                tickLine={false}
+   708→                width={25}
+   709→              />
+   710→              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--primario-soft)' }} />
+   711→              <Bar dataKey="envios" fill="var(--primario)" radius={[6, 6, 0, 0]} />
+   712→            </BarChart>
+   713→          </ResponsiveContainer>
+   714→        </div>
+   715→      </div>
+   716→
+   717→      {/* ═══════════════════════════════════════════
+   718→          3. DIRECCIONES GUARDADAS
+   719→          ═══════════════════════════════════════════ */}
+   720→      <div style={sectionCard}>
+   721→        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+   722→          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", margin: 0 }}>
+   723→            Direcciones guardadas
+   724→          </h3>
+   725→          <button
+   726→            onClick={() => setAddingAddr(true)}
+   727→            style={{
+   728→              ...btnGhost,
+   729→              padding: '6px 12px',
+   730→              fontSize: 13,
+   731→              color: 'var(--primario)',
+   732→              borderColor: 'var(--primario)',
+   733→            }}
+   734→          >
+   735→            <Plus size={14} /> Agregar
+   736→          </button>
+   737→        </div>
+   738→
+   739→        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+   740→          {direccionesGuardadas.map((d) => {
+   741→            const Icon = d.etiqueta === 'Casa' ? Home : d.etiqueta === 'Trabajo' ? Building : MapPin;
+   742→            return (
+   743→              <div
+   744→                key={d.id}
+   745→                style={{
+   746→                  display: 'flex', alignItems: 'center', gap: 12,
+   747→                  padding: '12px 14px', borderRadius: 14,
+   748→                  background: 'var(--bg-alt)', border: '1px solid var(--border)',
+   749→                }}
+   750→              >
+   751→                <Icon size={18} style={{ color: 'var(--primario)', flexShrink: 0 }} />
+   752→                <div style={{ flex: 1, minWidth: 0 }}>
+   753→                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: 0.5 }}>
+   754→                    {d.etiqueta}
+   755→                  </span>
+   756→                  <div style={{ fontSize: 14, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   757→                    {d.direccion}
+   758→                  </div>
+   759→                </div>
+   760→                <button
+   761→                  onClick={() => removeDireccionGuardada(d.id)}
+   762→                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', color: 'var(--text-muted)' }}
+   763→                  title="Eliminar"
+   764→                >
+   765→                  <X size={14} />
+   766→                </button>
+   767→              </div>
+   768→            );
+   769→          })}
+   770→        </div>
+   771→
+   772→        {/* Add address form */}
+   773→        <AnimatePresence>
+   774→          {addingAddr && (
+   775→            <motion.div
+   776→              initial={{ height: 0, opacity: 0 }}
+   777→              animate={{ height: 'auto', opacity: 1 }}
+   778→              exit={{ height: 0, opacity: 0 }}
+   779→              style={{ overflow: 'hidden', marginTop: 12 }}
+   780→            >
+   781→              <div
+   782→                style={{
+   783→                  padding: 16, borderRadius: 14,
+   784→                  background: 'var(--bg-alt)', border: '1px solid var(--border)',
+   785→                  display: 'flex', flexDirection: 'column', gap: 10,
+   786→                }}
+   787→              >
+   788→                <div style={{ position: 'relative' }}>
+   789→                  <input
+   790→                    style={inputStyle}
+   791→                    placeholder="Buscar direccion..."
+   792→                    value={newAddr}
+   793→                    onChange={(e) => handleNewAddrChange(e.target.value)}
+   794→                    onBlur={() => setTimeout(() => setShowNewAddrSugg(false), 200)}
+   795→                    onFocus={() => {
+   796→                      const s = filterSuggestions(newAddr);
+   797→                      if (s.length) setShowNewAddrSugg(true);
+   798→                    }}
+   799→                  />
+   800→                  <AnimatePresence>
+   801→                    {showNewAddrSugg && newAddrSuggestions.length > 0 && (
+   802→                      <motion.div
+   803→                        initial={{ opacity: 0, y: -4 }}
+   804→                        animate={{ opacity: 1, y: 0 }}
+   805→                        exit={{ opacity: 0, y: -4 }}
+   806→                        style={{
+   807→                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+   808→                          background: 'var(--surface)', border: '1px solid var(--border)',
+   809→                          borderRadius: 12, marginTop: 4, overflow: 'hidden',
+   810→                        }}
+   811→                      >
+   812→                        {newAddrSuggestions.map((s, i) => (
+   813→                          <button
+   814→                            key={i}
+   815→                            onClick={() => { setNewAddr(s); setShowNewAddrSugg(false); }}
+   816→                            style={{
+   817→                              display: 'flex', alignItems: 'center', gap: 8,
+   818→                              padding: '8px 14px', width: '100%', border: 'none',
+   819→                              background: 'transparent', color: 'var(--text)',
+   820→                              cursor: 'pointer', fontSize: 13, textAlign: 'left',
+   821→                              fontFamily: "'DM Sans', sans-serif",
+   822→                            }}
+   823→                            onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-alt)')}
+   824→                            onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
+   825→                          >
+   826→                            <MapPin size={13} style={{ color: 'var(--primario)', flexShrink: 0 }} /> {s}
+   827→                          </button>
+   828→                        ))}
+   829→                      </motion.div>
+   830→                    )}
+   831→                  </AnimatePresence>
+   832→                </div>
+   833→                <div style={{ display: 'flex', gap: 8 }}>
+   834→                  {(['Casa', 'Trabajo', 'Otro'] as const).map((lbl) => (
+   835→                    <button
+   836→                      key={lbl}
+   837→                      onClick={() => setNewAddrLabel(lbl)}
+   838→                      style={{
+   839→                        padding: '6px 14px', borderRadius: 10,
+   840→                        border: '1px solid',
+   841→                        borderColor: newAddrLabel === lbl ? 'var(--primario)' : 'var(--border)',
+   842→                        background: newAddrLabel === lbl ? 'var(--primario-soft)' : 'transparent',
+   843→                        color: newAddrLabel === lbl ? 'var(--primario)' : 'var(--text-secondary)',
+   844→                        fontWeight: 600, fontSize: 13, cursor: 'pointer',
+   845→                        fontFamily: "'DM Sans', sans-serif",
+   846→                      }}
+   847→                    >
+   848→                      {lbl}
+   849→                    </button>
+   850→                  ))}
+   851→                </div>
+   852→                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+   853→                  <button style={{ ...btnGhost, padding: '8px 14px' }} onClick={() => { setAddingAddr(false); setNewAddr(''); }}>
+   854→                    Cancelar
+   855→                  </button>
+   856→                  <button style={{ ...btnPrimary, padding: '8px 14px' }} onClick={handleAddAddress} disabled={!newAddr.trim()}>
+   857→                    <Plus size={14} /> Agregar
+   858→                  </button>
+   859→                </div>
+   860→              </div>
+   861→            </motion.div>
+   862→          )}
+   863→        </AnimatePresence>
+   864→      </div>
+   865→
+   866→      {/* ═══════════════════════════════════════════
+   867→          4. FAVORITOS
+   868→          ═══════════════════════════════════════════ */}
+   869→      <div style={sectionCard}>
+   870→        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+   871→          Favoritos
+   872→        </h3>
+   873→
+   874→        {/* Tabs: Tiendas / Productos with sliding underline */}
+   875→        <div style={{ position: 'relative', marginBottom: 16 }}>
+   876→          <div style={{ display: 'flex', gap: 0 }}>
+   877→            {(['tiendas', 'productos'] as const).map((tab) => (
+   878→              <button
+   879→                key={tab}
+   880→                onClick={() => setFavTab(tab)}
+   881→                style={{
+   882→                  flex: 1,
+   883→                  padding: '10px 0',
+   884→                  border: 'none',
+   885→                  background: 'transparent',
+   886→                  color: favTab === tab ? 'var(--text)' : 'var(--text-muted)',
+   887→                  fontSize: 14,
+   888→                  fontWeight: favTab === tab ? 700 : 500,
+   889→                  cursor: 'pointer',
+   890→                  fontFamily: "'Syne', sans-serif",
+   891→                  position: 'relative',
+   892→                  display: 'flex',
+   893→                  alignItems: 'center',
+   894→                  justifyContent: 'center',
+   895→                  gap: 6,
+   896→                  transition: 'color 0.2s ease',
+   897→                }}
+   898→              >
+   899→                {tab === 'tiendas' ? <ShoppingBag size={14} /> : <Package size={14} />}
+   900→                {tab === 'tiendas' ? 'Tiendas' : 'Productos'}
+   901→                {favTab === tab && (
+   902→                  <motion.div
+   903→                    layoutId="fav-tab-underline"
+   904→                    style={{
+   905→                      position: 'absolute',
+   906→                      bottom: 0,
+   907→                      left: '25%',
+   908→                      right: '25%',
+   909→                      height: 3,
+   910→                      borderRadius: 2,
+   911→                      background: 'var(--primario)',
+   912→                    }}
+   913→                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+   914→                  />
+   915→                )}
+   916→              </button>
+   917→            ))}
+   918→          </div>
+   919→          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: 'var(--border)', zIndex: -1 }} />
+   920→        </div>
+   921→
+   922→        {/* Content */}
+   923→        <AnimatePresence mode="wait">
+   924→          {favTab === 'tiendas' && (
+   925→            <motion.div
+   926→              key="tiendas"
+   927→              initial={{ opacity: 0, x: -10 }}
+   928→              animate={{ opacity: 1, x: 0 }}
+   929→              exit={{ opacity: 0, x: 10 }}
+   930→              transition={{ duration: 0.2 }}
+   931→            >
+   932→              {favoriteTiendas.length === 0 ? (
+   933→                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+   934→                  <Heart size={28} style={{ marginBottom: 8, opacity: 0.4 }} />
+   935→                  <p>No tienes tiendas favoritas</p>
+   936→                </div>
+   937→              ) : (
+   938→                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+   939→                  {favoriteTiendas.map((t) => (
+   940→                    <div
+   941→                      key={t.id}
+   942→                      style={{
+   943→                        padding: '12px',
+   944→                        borderRadius: 14,
+   945→                        background: 'var(--bg-alt)',
+   946→                        border: '1px solid var(--border)',
+   947→                        display: 'flex',
+   948→                        alignItems: 'center',
+   949→                        gap: 10,
+   950→                        cursor: 'pointer',
+   951→                      }}
+   952→                    >
+   953→                      <div
+   954→                        style={{
+   955→                          width: 36,
+   956→                          height: 36,
+   957→                          borderRadius: 10,
+   958→                          background: t.logoColor,
+   959→                          display: 'flex',
+   960→                          alignItems: 'center',
+   961→                          justifyContent: 'center',
+   962→                          flexShrink: 0,
+   963→                        }}
+   964→                      >
+   965→                        <span style={{ color: '#fff', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 11 }}>
+   966→                          {t.logoIniciales}
+   967→                        </span>
+   968→                      </div>
+   969→                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   970→                        {t.nombre}
+   971→                      </span>
+   972→                    </div>
+   973→                  ))}
+   974→                </div>
+   975→              )}
+   976→            </motion.div>
+   977→          )}
+   978→
+   979→          {favTab === 'productos' && (
+   980→            <motion.div
+   981→              key="productos"
+   982→              initial={{ opacity: 0, x: -10 }}
+   983→              animate={{ opacity: 1, x: 0 }}
+   984→              exit={{ opacity: 0, x: 10 }}
+   985→              transition={{ duration: 0.2 }}
+   986→            >
+   987→              {favoriteProductos.length === 0 ? (
+   988→                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+   989→                  <Heart size={28} style={{ marginBottom: 8, opacity: 0.4 }} />
+   990→                  <p>No tienes productos favoritos</p>
+   991→                </div>
+   992→              ) : (
+   993→                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+   994→                  {favoriteProductos.map((p) => {
+   995→                    const tienda = tiendas.find(t => t.id === p.tiendaId);
+   996→                    return (
+   997→                      <div
+   998→                        key={p.id}
+   999→                        style={{
+  1000→                          display: 'flex', alignItems: 'center', gap: 12,
+  1001→                          padding: '12px 14px', borderRadius: 14,
+  1002→                          background: 'var(--bg-alt)', border: '1px solid var(--border)',
+  1003→                        }}
+  1004→                      >
+  1005→                        <div
+  1006→                          style={{
+  1007→                            width: 36,
+  1008→                            height: 36,
+  1009→                            borderRadius: 10,
+  1010→                            background: p.imagenColor,
+  1011→                            display: 'flex',
+  1012→                            alignItems: 'center',
+  1013→                            justifyContent: 'center',
+  1014→                            flexShrink: 0,
+  1015→                          }}
+  1016→                        >
+  1017→                          <Package size={16} style={{ color: '#fff' }} />
+  1018→                        </div>
+  1019→                        <div style={{ flex: 1, minWidth: 0 }}>
+  1020→                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+  1021→                            {p.nombre}
+  1022→                          </div>
+  1023→                          <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)', fontWeight: 600 }}>
+  1024→                            C$ {p.precio}
+  1025→                          </div>
+  1026→                        </div>
+  1027→                        <button
+  1028→                          onClick={() => {
+  1029→                            if (tienda) addToCart(p, tienda);
+  1030→                            setToast({ message: `${p.nombre} agregado al carrito`, type: 'success' });
+  1031→                          }}
+  1032→                          style={{
+  1033→                            padding: '6px 10px',
+  1034→                            borderRadius: 10,
+  1035→                            border: '1px solid var(--primario)',
+  1036→                            background: 'var(--primario-soft)',
+  1037→                            color: 'var(--primario)',
+  1038→                            fontSize: 12,
+  1039→                            fontWeight: 600,
+  1040→                            cursor: 'pointer',
+  1041→                            fontFamily: "'DM Sans', sans-serif",
+  1042→                            display: 'flex',
+  1043→                            alignItems: 'center',
+  1044→                            gap: 4,
+  1045→                            flexShrink: 0,
+  1046→                          }}
+  1047→                        >
+  1048→                          <ShoppingCart size={12} />
+  1049→                          Agregar
+  1050→                        </button>
+  1051→                      </div>
+  1052→                    );
+  1053→                  })}
+  1054→                </div>
+  1055→              )}
+  1056→            </motion.div>
+  1057→          )}
+  1058→        </AnimatePresence>
+  1059→      </div>
+  1060→
+  1061→      {/* ═══════════════════════════════════════════
+  1062→          5. REFERIDOS
+  1063→          ═══════════════════════════════════════════ */}
+  1064→      <div
+  1065→        style={{
+  1066→          padding: 24,
+  1067→          borderRadius: 'var(--lf-card-radius, 22px)',
+  1068→          background: 'linear-gradient(135deg, var(--primario), #FF8A65)',
+  1069→          color: '#FFFFFF',
+  1070→          boxShadow: 'var(--shadow-primario)',
+  1071→        }}
+  1072→      >
+  1073→        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+  1074→          <Gift size={20} />
+  1075→          <span style={{ fontSize: 17, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+  1076→            Invita amigos, gana puntos
+  1077→          </span>
+  1078→        </div>
+  1079→        <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 18, lineHeight: 1.5 }}>
+  1080→          Tu amigo recibe 20 puntos en su primer envio. Tu ganas 50 puntos por cada referido.
+  1081→        </div>
+  1082→
+  1083→        {/* Referral code */}
+  1084→        <div
+  1085→          style={{
+  1086→            display: 'flex',
+  1087→            alignItems: 'center',
+  1088→            gap: 10,
+  1089→            background: 'rgba(255,255,255,0.15)',
+  1090→            borderRadius: 14,
+  1091→            padding: '10px 14px',
+  1092→            marginBottom: 14,
+  1093→          }}
+  1094→        >
+  1095→          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 22, fontWeight: 700, letterSpacing: '2px', flex: 1 }}>
+  1096→            {referidos.codigo}
+  1097→          </span>
+  1098→          <button
+  1099→            onClick={handleCopyCode}
+  1100→            style={{
+  1101→              padding: '8px 14px',
+  1102→              borderRadius: 10,
+  1103→              border: '1px solid rgba(255,255,255,0.3)',
+  1104→              background: 'rgba(255,255,255,0.1)',
+  1105→              color: '#fff',
+  1106→              fontSize: 13,
+  1107→              fontWeight: 600,
+  1108→              cursor: 'pointer',
+  1109→              fontFamily: "'DM Sans', sans-serif",
+  1110→              display: 'flex',
+  1111→              alignItems: 'center',
+  1112→              gap: 4,
+  1113→            }}
+  1114→          >
+  1115→            <Copy size={14} /> Copiar
+  1116→          </button>
+  1117→        </div>
+  1118→
+  1119→        {/* Share button */}
+  1120→        <button
+  1121→          onClick={handleShare}
+  1122→          style={{
+  1123→            padding: '12px 24px',
+  1124→            borderRadius: 'var(--lf-button-radius, 16px)',
+  1125→            border: 'none',
+  1126→            background: '#FFFFFF',
+  1127→            color: 'var(--primario)',
+  1128→            fontSize: 14,
+  1129→            fontWeight: 600,
+  1130→            cursor: 'pointer',
+  1131→            fontFamily: "'DM Sans', sans-serif",
+  1132→            display: 'flex',
+  1133→            alignItems: 'center',
+  1134→            gap: 6,
+  1135→          }}
+  1136→        >
+  1137→          <Users size={16} /> Compartir
+  1138→        </button>
+  1139→
+  1140→        {/* Stats */}
+  1141→        <div style={{ display: 'flex', gap: 20, marginTop: 18 }}>
+  1142→          <div>
+  1143→            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.referidos.length}</div>
+  1144→            <div style={{ fontSize: 11, opacity: 0.8, fontFamily: "'DM Sans', sans-serif" }}>Invitados</div>
+  1145→          </div>
+  1146→          <div>
+  1147→            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>
+  1148→              {referidos.referidos.filter(r => r.primerEnvio).length}
+  1149→            </div>
+  1150→            <div style={{ fontSize: 11, opacity: 0.8, fontFamily: "'DM Sans', sans-serif" }}>Registrados</div>
+  1151→          </div>
+  1152→          <div>
+  1153→            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 700 }}>{referidos.puntosGanados}</div>
+  1154→            <div style={{ fontSize: 11, opacity: 0.8, fontFamily: "'DM Sans', sans-serif" }}>Pts ganados</div>
+  1155→          </div>
+  1156→        </div>
+  1157→      </div>
+  1158→
+  1159→      {/* ═══════════════════════════════════════════
+  1160→          6. CALIFICACIONES
+  1161→          ═══════════════════════════════════════════ */}
+  1162→      <div style={sectionCard}>
+  1163→        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+  1164→          Calificaciones
+  1165→        </h3>
+  1166→        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto' }}>
+  1167→          {calificaciones.map(cal => (
+  1168→            <div
+  1169→              key={cal.id}
+  1170→              style={{
+  1171→                padding: '14px 16px',
+  1172→                background: 'var(--bg-alt)',
+  1173→                borderRadius: 14,
+  1174→                border: '1px solid var(--border)',
+  1175→                display: 'flex',
+  1176→                justifyContent: 'space-between',
+  1177→                alignItems: 'center',
+  1178→              }}
+  1179→            >
+  1180→              <div style={{ flex: 1, minWidth: 0 }}>
+  1181→                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>{cal.repartidorNombre}</div>
+  1182→                <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+  1183→                  {cal.fecha}
+  1184→                </div>
+  1185→                {cal.comentario && (
+  1186→                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>
+  1187→                    {cal.comentario}
+  1188→                  </div>
+  1189→                )}
+  1190→              </div>
+  1191→              <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0, marginLeft: 12 }}>
+  1192→                {Array.from({ length: 5 }).map((_, i) => (
+  1193→                  <Star key={i} size={14} fill={i < cal.estrellas ? 'var(--primario)' : 'none'} color={i < cal.estrellas ? 'var(--primario)' : 'var(--border)'} />
+  1194→                ))}
+  1195→              </div>
+  1196→            </div>
+  1197→          ))}
+  1198→        </div>
+  1199→      </div>
+  1200→
+  1201→      {/* ═══════════════════════════════════════════
+  1202→          7. CONFIGURACION
+  1203→          ═══════════════════════════════════════════ */}
+  1204→      <div style={sectionCard}>
+  1205→        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 16 }}>
+  1206→          Configuracion
+  1207→        </h3>
+  1208→
+  1209→        <div style={{ display: 'flex', flexDirection: 'column' }}>
+  1210→          {/* Notificaciones */}
+  1211→          <SettingsRow
+  1212→            icon={<Bell size={18} />}
+  1213→            label="Notificaciones"
+  1214→            right={<Toggle on={pushNotif} onToggle={() => setPushNotif((p) => !p)} />}
+  1215→          />
+  1216→          {/* Promociones */}
+  1217→          <SettingsRow
+  1218→            icon={<Mail size={18} />}
+  1219→            label="Promociones"
+  1220→            right={<Toggle on={emailPromo} onToggle={() => setEmailPromo((p) => !p)} />}
+  1221→          />
+  1222→          {/* Modo oscuro */}
+  1223→          <SettingsRow
+  1224→            icon={isDark ? <Moon size={18} /> : <Sun size={18} />}
+  1225→            label="Modo oscuro"
+  1226→            right={<Toggle on={isDark} onToggle={toggleThemeLocal} />}
+  1227→          />
+  1228→          {/* Metodo de pago preferido */}
+  1229→          <SettingsRow
+  1230→            icon={prefPayment === 'efectivo' ? <Banknote size={18} /> : <CreditCard size={18} />}
+  1231→            label="Pago preferido"
+  1232→            right={
+  1233→              <button
+  1234→                onClick={() => setPrefPayment((p) => (p === 'efectivo' ? 'transferencia' : 'efectivo'))}
+  1235→                style={{
+  1236→                  padding: '4px 12px',
+  1237→                  borderRadius: 10,
+  1238→                  border: '1px solid var(--border)',
+  1239→                  background: 'transparent',
+  1240→                  color: 'var(--text-secondary)',
+  1241→                  fontSize: 13,
+  1242→                  fontFamily: "'DM Sans', sans-serif",
+  1243→                  cursor: 'pointer',
+  1244→                  display: 'flex',
+  1245→                  alignItems: 'center',
+  1246→                  gap: 4,
+  1247→                }}
+  1248→              >
+  1249→                {prefPayment === 'efectivo' ? 'Efectivo' : 'Transferencia'} <ChevronRight size={14} />
+  1250→              </button>
+  1251→            }
+  1252→          />
+  1253→          {/* Idioma */}
+  1254→          <SettingsRow
+  1255→            icon={<Globe size={18} />}
+  1256→            label="Idioma"
+  1257→            right={
+  1258→              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>
+  1259→                Espanol <ChevronRight size={14} />
+  1260→              </div>
+  1261→            }
+  1262→            disabled
+  1263→          />
+  1264→          {/* Privacidad */}
+  1265→          <SettingsRow
+  1266→            icon={<Shield size={18} />}
+  1267→            label="Politica de privacidad"
+  1268→            right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
+  1269→            onClick={() => {}}
+  1270→          />
+  1271→        </div>
+  1272→
+  1273→        {/* Cerrar sesion */}
+  1274→        <button
+  1275→          onClick={() => setLogoutModal(true)}
+  1276→          style={{
+  1277→            width: '100%',
+  1278→            padding: '12px 20px',
+  1279→            borderRadius: 'var(--lf-button-radius, 16px)',
+  1280→            border: '1px solid var(--peligro)',
+  1281→            background: 'transparent',
+  1282→            color: 'var(--peligro)',
+  1283→            fontWeight: 600,
+  1284→            fontSize: 14,
+  1285→            cursor: 'pointer',
+  1286→            fontFamily: "'DM Sans', sans-serif",
+  1287→            display: 'flex',
+  1288→            alignItems: 'center',
+  1289→            justifyContent: 'center',
+  1290→            gap: 8,
+  1291→            marginTop: 16,
+  1292→          }}
+  1293→        >
+  1294→          <LogOut size={18} /> Cerrar sesion
+  1295→        </button>
+  1296→
+  1297→        {/* Eliminar cuenta */}
+  1298→        <button
+  1299→          onClick={() => { setDeleteModal(true); setDeleteText(''); }}
+  1300→          style={{
+  1301→            background: 'none',
+  1302→            border: 'none',
+  1303→            cursor: 'pointer',
+  1304→            color: 'var(--peligro)',
+  1305→            fontSize: 12,
+  1306→            marginTop: 12,
+  1307→            opacity: 0.6,
+  1308→            fontFamily: "'DM Sans', sans-serif",
+  1309→            display: 'block',
+  1310→            margin: '12px auto 0',
+  1311→          }}
+  1312→        >
+  1313→          Eliminar cuenta
+  1314→        </button>
+  1315→      </div>
+  1316→
+  1317→      {/* ═══════════════════════════════════════════
+  1318→          LOGOUT MODAL
+  1319→          ═══════════════════════════════════════════ */}
+  1320→      <AnimatePresence>
+  1321→        {logoutModal && (
+  1322→          <Modal onClose={() => setLogoutModal(false)}>
+  1323→            <div style={{ textAlign: 'center' }}>
+  1324→              <div style={{
+  1325→                width: 56, height: 56, borderRadius: '50%',
+  1326→                background: 'rgba(255,23,68,0.1)', margin: '0 auto 16px',
+  1327→                display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1328→              }}>
+  1329→                <LogOut size={24} style={{ color: 'var(--peligro)' }} />
+  1330→              </div>
+  1331→              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 8 }}>
+  1332→                Cerrar sesion?
+  1333→              </h3>
+  1334→              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>
+  1335→                Se cerrara tu sesion actual.
+  1336→              </p>
+  1337→              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+  1338→                <button style={btnGhost} onClick={() => setLogoutModal(false)}>
+  1339→                  Cancelar
+  1340→                </button>
+  1341→                <button
+  1342→                  style={{ ...btnPrimary, background: 'var(--peligro)' }}
+  1343→                  onClick={() => {
+  1344→                    setLogoutModal(false);
+  1345→                    onLogout();
+  1346→                  }}
+  1347→                >
+  1348→                  Confirmar
+  1349→                </button>
+  1350→              </div>
+  1351→            </div>
+  1352→          </Modal>
+  1353→        )}
+  1354→      </AnimatePresence>
+  1355→
+  1356→      {/* ═══════════════════════════════════════════
+  1357→          DELETE ACCOUNT MODAL
+  1358→          ═══════════════════════════════════════════ */}
+  1359→      <AnimatePresence>
+  1360→        {deleteModal && (
+  1361→          <Modal onClose={() => setDeleteModal(false)}>
+  1362→            <div style={{ textAlign: 'center' }}>
+  1363→              <div style={{
+  1364→                width: 56, height: 56, borderRadius: '50%',
+  1365→                background: 'rgba(255,23,68,0.1)', margin: '0 auto 16px',
+  1366→                display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1367→              }}>
+  1368→                <Trash2 size={24} style={{ color: 'var(--peligro)' }} />
+  1369→              </div>
+  1370→              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 8 }}>
+  1371→                Eliminar cuenta
+  1372→              </h3>
+  1373→              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16, fontFamily: "'DM Sans', sans-serif" }}>
+  1374→                Esta accion es irreversible. Se eliminaran todos tus datos.
+  1375→              </p>
+  1376→              <div style={{ textAlign: 'left', marginBottom: 8 }}>
+  1377→                <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+  1378→                  Escribe <strong style={{ color: 'var(--peligro)' }}>ELIMINAR</strong> para confirmar
+  1379→                </label>
+  1380→                <input style={inputStyle} value={deleteText} onChange={(e) => setDeleteText(e.target.value)} placeholder="ELIMINAR" />
+  1381→              </div>
+  1382→              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
+  1383→                <button style={btnGhost} onClick={() => setDeleteModal(false)}>
+  1384→                  Cancelar
+  1385→                </button>
+  1386→                <button
+  1387→                  style={{
+  1388→                    ...btnPrimary,
+  1389→                    background: deleteText === 'ELIMINAR' ? 'var(--peligro)' : 'var(--text-muted)',
+  1390→                    cursor: deleteText === 'ELIMINAR' ? 'pointer' : 'not-allowed',
+  1391→                    opacity: deleteText === 'ELIMINAR' ? 1 : 0.5,
+  1392→                  }}
+  1393→                  disabled={deleteText !== 'ELIMINAR'}
+  1394→                  onClick={() => {
+  1395→                    setDeleteModal(false);
+  1396→                    onLogout();
+  1397→                  }}
+  1398→                >
+  1399→                  <Trash2 size={14} /> Eliminar permanentemente
+  1400→                </button>
+  1401→              </div>
+  1402→            </div>
+  1403→          </Modal>
+  1404→        )}
+  1405→      </AnimatePresence>
+  1406→
+  1407→      {/* ═══════════════════════════════════════════
+  1408→          TOAST NOTIFICATION
+  1409→          ═══════════════════════════════════════════ */}
+  1410→      <AnimatePresence>
+  1411→        {toast && (
+  1412→          <motion.div
+  1413→            initial={{ opacity: 0, y: 20 }}
+  1414→            animate={{ opacity: 1, y: 0 }}
+  1415→            exit={{ opacity: 0, y: 20 }}
+  1416→            transition={{ duration: 0.3 }}
+  1417→            style={{
+  1418→              position: 'fixed',
+  1419→              bottom: 100,
+  1420→              left: '50%',
+  1421→              transform: 'translateX(-50%)',
+  1422→              padding: '12px 24px',
+  1423→              borderRadius: 14,
+  1424→              background: toast.type === 'success' ? 'var(--exito)' : 'var(--peligro)',
+  1425→              color: '#fff',
+  1426→              fontSize: 14,
+  1427→              fontFamily: "'DM Sans', sans-serif",
+  1428→              fontWeight: 500,
+  1429→              zIndex: 9999,
+  1430→              boxShadow: 'var(--shadow-lg)',
+  1431→              maxWidth: '90vw',
+  1432→              textAlign: 'center',
+  1433→            }}
+  1434→          >
+  1435→            {toast.message}
+  1436→          </motion.div>
+  1437→        )}
+  1438→      </AnimatePresence>
+  1439→    </div>
+  1440→  );
+  1441→}
+  1442→
+  1443→/* ═══════════════════════════════════════════════
+  1444→   SETTINGS ROW
+  1445→   ═══════════════════════════════════════════════ */
+  1446→function SettingsRow({
+  1447→  icon,
+  1448→  label,
+  1449→  right,
+  1450→  onClick,
+  1451→  disabled = false,
+  1452→}: {
+  1453→  icon: React.ReactNode;
+  1454→  label: string;
+  1455→  right: React.ReactNode;
+  1456→  onClick?: () => void;
+  1457→  disabled?: boolean;
+  1458→}) {
+  1459→  return (
+  1460→    <div
+  1461→      onClick={onClick}
+  1462→      role={onClick ? 'button' : undefined}
+  1463→      tabIndex={onClick ? 0 : undefined}
+  1464→      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+  1465→      style={{
+  1466→        display: 'flex',
+  1467→        alignItems: 'center',
+  1468→        justifyContent: 'space-between',
+  1469→        padding: '14px 0',
+  1470→        border: 'none',
+  1471→        background: 'transparent',
+  1472→        width: '100%',
+  1473→        cursor: disabled ? 'default' : onClick ? 'pointer' : 'default',
+  1474→        textAlign: 'left',
+  1475→        borderBottom: '1px solid var(--border)',
+  1476→        fontFamily: "'DM Sans', sans-serif",
+  1477→      }}
+  1478→    >
+  1479→      <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text)' }}>
+  1480→        <span style={{ color: 'var(--text-secondary)' }}>{icon}</span>
+  1481→        <span style={{ fontSize: 14, color: disabled ? 'var(--text-muted)' : 'var(--text)' }}>{label}</span>
+  1482→      </div>
+  1483→      {right}
+  1484→    </div>
+  1485→  );
+  1486→}
+  1487→

@@ -63,6 +63,37 @@
   --lf-shadow-sheet: 0 -12px 48px rgba(0,0,0,0.18);
   --lf-shadow-fab: 0 6px 24px rgba(255,87,34,0.35);
 
+  /* ─── Material You 3.0 Tokens ─── */
+  --md-primary: #FF5722;
+  --md-on-primary: #FFFFFF;
+  --md-primary-container: #FFDBCF;
+  --md-on-primary-container: #3B1100;
+  --md-secondary-container: #F2EDE8;
+  --md-on-secondary-container: #1B1B2F;
+  --md-tertiary: #3949AB;
+  --md-surface: #FAF8F5;
+  --md-surface-variant: #F5EDE8;
+  --md-on-surface: #1B1B2F;
+  --md-on-surface-variant: #5A5A72;
+  --md-outline: #E8E4DE;
+  --md-outline-variant: #F0ECE8;
+  --md-inverse-surface: #1B1B2F;
+  --md-inverse-on-surface: #F0EDE8;
+  --md-inverse-primary: #FF8A65;
+  --md-error: #FF1744;
+  --md-on-error: #FFFFFF;
+  --md-error-container: #FFDAD6;
+  --md-on-error-container: #410002;
+  --md-success: #00C853;
+  --md-warning: #FFB300;
+
+  /* ─── Material 3 Elevation ─── */
+  --md-elevation-1: 0 1px 2px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+  --md-elevation-2: 0 1px 2px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.1);
+  --md-elevation-3: 0 4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+  --md-elevation-4: 0 6px 10px rgba(0,0,0,0.15), 0 2px 3px rgba(0,0,0,0.08);
+  --md-elevation-5: 0 8px 12px rgba(0,0,0,0.15), 0 4px 4px rgba(0,0,0,0.08);
+
   /* Keep shadcn compatibility */
   --radius: 0.75rem;
   --background: #FAF8F5;
@@ -124,6 +155,37 @@
   --lf-shadow-float: 0 8px 32px rgba(0,0,0,0.35);
   --lf-shadow-sheet: 0 -12px 48px rgba(0,0,0,0.5);
   --lf-shadow-fab: 0 6px 24px rgba(255,110,64,0.25);
+
+  /* ─── Material You 3.0 Tokens (Dark) ─── */
+  --md-primary: #FF8A65;
+  --md-on-primary: #3B1100;
+  --md-primary-container: #5C1D00;
+  --md-on-primary-container: #FFDBCF;
+  --md-secondary-container: #2A2A38;
+  --md-on-secondary-container: #E0DDD7;
+  --md-tertiary: #7986CB;
+  --md-surface: #1A1A24;
+  --md-surface-variant: #22222E;
+  --md-on-surface: #F0EDE8;
+  --md-on-surface-variant: #A8A8BE;
+  --md-outline: #2A2A38;
+  --md-outline-variant: #1E1E28;
+  --md-inverse-surface: #F0EDE8;
+  --md-inverse-on-surface: #1B1B2F;
+  --md-inverse-primary: #FF5722;
+  --md-error: #FF5252;
+  --md-on-error: #1B0000;
+  --md-error-container: #93000A;
+  --md-on-error-container: #FFDAD6;
+  --md-success: #69F0AE;
+  --md-warning: #FFD740;
+
+  /* ─── Material 3 Elevation (Dark) ─── */
+  --md-elevation-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
+  --md-elevation-2: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.25);
+  --md-elevation-3: 0 4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+  --md-elevation-4: 0 6px 10px rgba(0,0,0,0.35), 0 2px 3px rgba(0,0,0,0.2);
+  --md-elevation-5: 0 8px 12px rgba(0,0,0,0.35), 0 4px 4px rgba(0,0,0,0.2);
 
   /* Grain */
   --grain-opacity: 0.03;

@@ -404,7 +404,7 @@ export interface SolicitudEnvio {
   terminosAceptados: boolean;
 }
 
-export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil';
+export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil' | 'ayuda' | 'puntos';
 
 export interface DireccionSugerencia {
   id: string;

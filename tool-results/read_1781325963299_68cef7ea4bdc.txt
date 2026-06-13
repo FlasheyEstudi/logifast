@@ -1,0 +1,1094 @@
+     1→'use client';
+     2→import React, { useState, useMemo, useCallback } from 'react';
+     3→import { motion, AnimatePresence } from 'framer-motion';
+     4→import {
+     5→  Search, SlidersHorizontal, Heart, Star, Clock, MapPin, Truck,
+     6→  ChevronRight, X, ShoppingBag, Check, Utensils, Store, Pill,
+     7→  Gift, ShoppingCart, Smartphone, Dumbbell, Map, CheckCircle,
+     8→} from 'lucide-react';
+     9→import { useMarketplaceStore, type Tienda, type TiendaCategoria, CATEGORIAS } from '@/lib/marketplace-store';
+    10→import { useStore } from '@/lib/store';
+    11→
+    12→/* ═══════════════════════════════════════════════
+    13→   PROPS
+    14→   ═══════════════════════════════════════════════ */
+    15→
+    16→interface ClientExplorarProps {
+    17→  isDark: boolean;
+    18→  userName: string;
+    19→  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+    20→  onOpenTracking: (orderId: string) => void;
+    21→  onOpenChat: (orderId: string) => void;
+    22→}
+    23→
+    24→/* ═══════════════════════════════════════════════
+    25→   HELPERS
+    26→   ═══════════════════════════════════════════════ */
+    27→
+    28→const DIA_MAP: Record<number, string> = {
+    29→  0: 'dom',
+    30→  1: 'lun',
+    31→  2: 'mar',
+    32→  3: 'mie',
+    33→  4: 'jue',
+    34→  5: 'vie',
+    35→  6: 'sab',
+    36→};
+    37→
+    38→function isOpenNow(horario: Record<string, { abre: string; cierra: string }>): boolean {
+    39→  const now = new Date();
+    40→  const diaKey = DIA_MAP[now.getDay()];
+    41→  const h = horario[diaKey];
+    42→  if (!h || !h.abre || !h.cierra) return false;
+    43→  const currentMin = now.getHours() * 60 + now.getMinutes();
+    44→  const [abH, abM] = h.abre.split(':').map(Number);
+    45→  const [ciH, ciM] = h.cierra.split(':').map(Number);
+    46→  const abreMin = abH * 60 + abM;
+    47→  const cierraMin = ciH * 60 + ciM;
+    48→  return currentMin >= abreMin && currentMin <= cierraMin;
+    49→}
+    50→
+    51→function categoriaLabel(key: TiendaCategoria): string {
+    52→  const found = CATEGORIAS.find((c) => c.key === key);
+    53→  return found ? found.label : key;
+    54→}
+    55→
+    56→const ICON_MAP: Record<string, React.FC<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
+    57→  utensils: Utensils,
+    58→  store: Store,
+    59→  pill: Pill,
+    60→  gift: Gift,
+    61→  'shopping-cart': ShoppingCart,
+    62→  smartphone: Smartphone,
+    63→  dumbbell: Dumbbell,
+    64→};
+    65→
+    66→function CategoryIcon({ name, size = 20, style }: { name: string; size?: number; style?: React.CSSProperties }) {
+    67→  const Icon = ICON_MAP[name];
+    68→  if (!Icon) return null;
+    69→  return <Icon size={size} style={style} />;
+    70→}
+    71→
+    72→const FILTROS_SECUNDARIOS = [
+    73→  { key: 'cerca', label: 'Cerca de mi', icon: MapPin },
+    74→  { key: 'calificados', label: 'Mejor calificados', icon: Star },
+    75→  { key: 'envio_gratis', label: 'Envio gratis', icon: Truck },
+    76→  { key: 'abierto', label: 'Abierto ahora', icon: Clock },
+    77→  { key: 'promo', label: 'Con promo', icon: ShoppingBag },
+    78→] as const;
+    79→
+    80→/* ═══════════════════════════════════════════════
+    81→   HAPTIC
+    82→   ═══════════════════════════════════════════════ */
+    83→
+    84→function haptic(ms = 10) {
+    85→  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    86→    navigator.vibrate(ms);
+    87→  }
+    88→}
+    89→
+    90→/* ═══════════════════════════════════════════════
+    91→   ANIMATION VARIANTS
+    92→   ═══════════════════════════════════════════════ */
+    93→
+    94→const fadeUp = {
+    95→  hidden: { opacity: 0, y: 16 },
+    96→  visible: (i: number) => ({
+    97→    opacity: 1,
+    98→    y: 0,
+    99→    transition: { delay: i * 0.04, duration: 0.35, ease: 'easeOut' },
+   100→  }),
+   101→};
+   102→
+   103→const dropdownVariant = {
+   104→  hidden: { opacity: 0, y: -6, scale: 0.97 },
+   105→  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } },
+   106→  exit: { opacity: 0, y: -6, scale: 0.97, transition: { duration: 0.15 } },
+   107→};
+   108→
+   109→/* ═══════════════════════════════════════════════
+   110→   COMPONENT
+   111→   ═══════════════════════════════════════════════ */
+   112→
+   113→export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientExplorarProps) {
+   114→  const {
+   115→    tiendas,
+   116→    productos,
+   117→    explorarCategoria,
+   118→    explorarFiltros,
+   119→    explorarSearch,
+   120→    favoritosTiendas,
+   121→    setExplorarCategoria,
+   122→    toggleExplorarFiltro,
+   123→    setExplorarSearch,
+   124→    setTiendaSeleccionada,
+   125→    toggleFavoritoTienda,
+   126→    isFavoritoTienda,
+   127→  } = useMarketplaceStore();
+   128→
+   129→  const [searchFocused, setSearchFocused] = useState(false);
+   130→  const [localSearch, setLocalSearch] = useState(explorarSearch);
+   131→  const [showFilterPanel, setShowFilterPanel] = useState(false);
+   132→  const [pressedCard, setPressedCard] = useState<string | null>(null);
+   133→
+   134→  /* ─── Filtered tiendas ─── */
+   135→  const filteredTiendas = useMemo(() => {
+   136→    let result = tiendas.filter((t) => t.estado === 'activo');
+   137→
+   138→    if (explorarCategoria !== 'todos') {
+   139→      result = result.filter((t) => t.categoria === explorarCategoria);
+   140→    }
+   141→
+   142→    if (localSearch.trim()) {
+   143→      const q = localSearch.trim().toLowerCase();
+   144→      result = result.filter(
+   145→        (t) =>
+   146→          t.nombre.toLowerCase().includes(q) ||
+   147→          t.descripcion.toLowerCase().includes(q)
+   148→      );
+   149→    }
+   150→
+   151→    if (explorarFiltros.includes('calificados')) {
+   152→      result = [...result].sort((a, b) => b.calificacion - a.calificacion);
+   153→    }
+   154→    if (explorarFiltros.includes('envio_gratis')) {
+   155→      result = result.filter((t) => t.costoEnvio <= 20);
+   156→    }
+   157→    if (explorarFiltros.includes('abierto')) {
+   158→      result = result.filter((t) => isOpenNow(t.horario));
+   159→    }
+   160→    if (explorarFiltros.includes('promo')) {
+   161→      result = result.filter((t) => t.badges.some((b) => b === 'Promo'));
+   162→    }
+   163→    if (explorarFiltros.includes('favoritos')) {
+   164→      result = result.filter((t) => isFavoritoTienda(t.id));
+   165→    }
+   166→
+   167→    return result;
+   168→  }, [tiendas, explorarCategoria, localSearch, explorarFiltros, isFavoritoTienda]);
+   169→
+   170→  /* ─── Search results: grouped ─── */
+   171→  const searchResults = useMemo(() => {
+   172→    if (!localSearch.trim()) return { tiendas: [] as Tienda[], productos: [] as typeof productos };
+   173→    const q = localSearch.trim().toLowerCase();
+   174→    const matchedTiendas = tiendas.filter(
+   175→      (t) =>
+   176→        t.estado === 'activo' &&
+   177→        (t.nombre.toLowerCase().includes(q) || t.descripcion.toLowerCase().includes(q))
+   178→    );
+   179→    const matchedProductos = productos.filter(
+   180→      (p) =>
+   181→        p.disponible &&
+   182→        (p.nombre.toLowerCase().includes(q) || p.descripcion.toLowerCase().includes(q))
+   183→    );
+   184→    return { tiendas: matchedTiendas.slice(0, 5), productos: matchedProductos.slice(0, 5) };
+   185→  }, [localSearch, tiendas, productos]);
+   186→
+   187→  const showDropdown = searchFocused && localSearch.trim().length > 0;
+   188→
+   189→  /* ─── Handlers ─── */
+   190→  function handleSearchChange(val: string) {
+   191→    setLocalSearch(val);
+   192→    setExplorarSearch(val);
+   193→  }
+   194→
+   195→  function handleClearSearch() {
+   196→    setLocalSearch('');
+   197→    setExplorarSearch('');
+   198→  }
+   199→
+   200→  function handleTiendaClick(tiendaId: string) {
+   201→    setTiendaSeleccionada(tiendaId);
+   202→    onNavigate('explorar');
+   203→  }
+   204→
+   205→  const handleCategoryTap = useCallback((key: TiendaCategoria | 'todos') => {
+   206→    haptic(10);
+   207→    setExplorarCategoria(key);
+   208→  }, [setExplorarCategoria]);
+   209→
+   210→  const handleFilterTap = useCallback((key: string) => {
+   211→    haptic(10);
+   212→    toggleExplorarFiltro(key as typeof explorarFiltros[number]);
+   213→  }, [toggleExplorarFiltro]);
+   214→
+   215→  /* ═══════════════════════════════════════════════
+   216→     RENDER
+   217→     ═══════════════════════════════════════════════ */
+   218→
+   219→  return (
+   220→    <div style={{ position: 'relative', minHeight: '100vh' }}>
+   221→      {/* ─── 1. HEADER (glassmorphism, 56px, sticky) ─── */}
+   222→      <div
+   223→        style={{
+   224→          position: 'sticky',
+   225→          top: 0,
+   226→          zIndex: 30,
+   227→          height: 56,
+   228→          display: 'flex',
+   229→          alignItems: 'center',
+   230→          justifyContent: 'space-between',
+   231→          padding: '0 16px',
+   232→          background: 'var(--lf-glass-bg)',
+   233→          backdropFilter: 'blur(var(--lf-glass-blur))',
+   234→          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+   235→          borderBottom: '1px solid var(--lf-glass-border)',
+   236→        }}
+   237→      >
+   238→        <div>
+   239→          <h1
+   240→            style={{
+   241→              fontFamily: "'Syne', sans-serif",
+   242→              fontWeight: 700,
+   243→              fontSize: 22,
+   244→              color: 'var(--text)',
+   245→              margin: 0,
+   246→              lineHeight: 1.2,
+   247→            }}
+   248→          >
+   249→            Explorar
+   250→          </h1>
+   251→        </div>
+   252→        <button
+   253→          onClick={() => { haptic(10); setShowFilterPanel(!showFilterPanel); }}
+   254→          style={{
+   255→            width: 40,
+   256→            height: 40,
+   257→            borderRadius: 12,
+   258→            border: '1px solid var(--border)',
+   259→            background: showFilterPanel ? 'var(--primario-soft)' : 'var(--surface)',
+   260→            display: 'flex',
+   261→            alignItems: 'center',
+   262→            justifyContent: 'center',
+   263→            cursor: 'pointer',
+   264→            transition: 'all 0.2s',
+   265→          }}
+   266→        >
+   267→          <SlidersHorizontal size={18} style={{ color: showFilterPanel ? 'var(--primario)' : 'var(--text-muted)' }} />
+   268→        </button>
+   269→      </div>
+   270→
+   271→      {/* ─── Location text below header ─── */}
+   272→      <div style={{ padding: '8px 16px 0' }}>
+   273→        <button
+   274→          style={{
+   275→            display: 'flex',
+   276→            alignItems: 'center',
+   277→            gap: 5,
+   278→            background: 'none',
+   279→            border: 'none',
+   280→            cursor: 'pointer',
+   281→            padding: 0,
+   282→            color: 'var(--text-muted)',
+   283→            fontSize: 12,
+   284→            fontFamily: "'DM Sans', sans-serif",
+   285→          }}
+   286→        >
+   287→          <MapPin size={12} style={{ color: 'var(--primario)' }} />
+   288→          <span>Col. Los Robles</span>
+   289→          <ChevronRight size={12} style={{ color: 'var(--text-muted)' }} />
+   290→        </button>
+   291→      </div>
+   292→
+   293→      {/* ─── Filter panel (toggle) ─── */}
+   294→      <AnimatePresence>
+   295→        {showFilterPanel && (
+   296→          <motion.div
+   297→            initial={{ height: 0, opacity: 0 }}
+   298→            animate={{ height: 'auto', opacity: 1 }}
+   299→            exit={{ height: 0, opacity: 0 }}
+   300→            transition={{ duration: 0.25 }}
+   301→            style={{ overflow: 'hidden', padding: '0 16px' }}
+   302→          >
+   303→            <div
+   304→              style={{
+   305→                display: 'flex',
+   306→                flexWrap: 'wrap',
+   307→                gap: 8,
+   308→                padding: '12px 0',
+   309→              }}
+   310→            >
+   311→              {FILTROS_SECUNDARIOS.map((f) => {
+   312→                const isActive = explorarFiltros.includes(f.key);
+   313→                const IconComp = f.icon;
+   314→                return (
+   315→                  <button
+   316→                    key={f.key}
+   317→                    onClick={() => handleFilterTap(f.key)}
+   318→                    style={{
+   319→                      display: 'flex',
+   320→                      alignItems: 'center',
+   321→                      gap: 4,
+   322→                      padding: '6px 12px',
+   323→                      borderRadius: 16,
+   324→                      border: `1px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+   325→                      cursor: 'pointer',
+   326→                      whiteSpace: 'nowrap',
+   327→                      fontSize: 12,
+   328→                      fontWeight: 600,
+   329→                      fontFamily: "'DM Sans', sans-serif",
+   330→                      background: isActive ? 'var(--primario)' : 'var(--surface)',
+   331→                      color: isActive ? '#fff' : 'var(--text-muted)',
+   332→                      transition: 'all 0.2s',
+   333→                    }}
+   334→                  >
+   335→                    <IconComp size={13} />
+   336→                    {f.label}
+   337→                  </button>
+   338→                );
+   339→              })}
+   340→              {explorarFiltros.length > 0 && (
+   341→                <button
+   342→                  onClick={() => {
+   343→                    haptic(10);
+   344→                    explorarFiltros.forEach((f) => toggleExplorarFiltro(f));
+   345→                  }}
+   346→                  style={{
+   347→                    display: 'flex',
+   348→                    alignItems: 'center',
+   349→                    gap: 4,
+   350→                    padding: '6px 12px',
+   351→                    borderRadius: 16,
+   352→                    border: '1px solid var(--peligro)',
+   353→                    cursor: 'pointer',
+   354→                    whiteSpace: 'nowrap',
+   355→                    fontSize: 12,
+   356→                    fontWeight: 600,
+   357→                    fontFamily: "'DM Sans', sans-serif",
+   358→                    background: 'transparent',
+   359→                    color: 'var(--peligro)',
+   360→                    transition: 'all 0.2s',
+   361→                  }}
+   362→                >
+   363→                  <X size={13} />
+   364→                  Limpiar
+   365→                </button>
+   366→              )}
+   367→            </div>
+   368→          </motion.div>
+   369→        )}
+   370→      </AnimatePresence>
+   371→
+   372→      {/* ─── 2. BUSCADOR (48px, glassmorphism pill) ─── */}
+   373→      <div style={{ position: 'relative', padding: '8px 16px 0', zIndex: 20 }}>
+   374→        <div
+   375→          style={{
+   376→            display: 'flex',
+   377→            alignItems: 'center',
+   378→            background: 'var(--lf-glass-bg)',
+   379→            backdropFilter: 'blur(16px)',
+   380→            WebkitBackdropFilter: 'blur(16px)',
+   381→            border: `1.5px solid ${searchFocused ? 'var(--primario)' : 'var(--lf-glass-border)'}`,
+   382→            borderRadius: 28,
+   383→            height: 48,
+   384→            padding: '0 16px 0 44px',
+   385→            position: 'relative',
+   386→            transition: 'border-color 0.2s',
+   387→          }}
+   388→        >
+   389→          <Search
+   390→            size={18}
+   391→            style={{
+   392→              position: 'absolute',
+   393→              left: 16,
+   394→              top: '50%',
+   395→              transform: 'translateY(-50%)',
+   396→              color: searchFocused ? 'var(--primario)' : 'var(--text-muted)',
+   397→              transition: 'color 0.2s',
+   398→            }}
+   399→          />
+   400→          <input
+   401→            type="text"
+   402→            placeholder="Buscar tiendas o productos..."
+   403→            value={localSearch}
+   404→            onChange={(e) => handleSearchChange(e.target.value)}
+   405→            onFocus={() => setSearchFocused(true)}
+   406→            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+   407→            style={{
+   408→              flex: 1,
+   409→              border: 'none',
+   410→              outline: 'none',
+   411→              background: 'transparent',
+   412→              fontSize: 15,
+   413→              fontFamily: "'DM Sans', sans-serif",
+   414→              color: 'var(--text)',
+   415→            }}
+   416→          />
+   417→          {localSearch && (
+   418→            <button
+   419→              onClick={handleClearSearch}
+   420→              style={{
+   421→                background: 'var(--bg-alt)',
+   422→                border: 'none',
+   423→                cursor: 'pointer',
+   424→                color: 'var(--text-muted)',
+   425→                padding: 4,
+   426→                borderRadius: 12,
+   427→                display: 'flex',
+   428→                alignItems: 'center',
+   429→              }}
+   430→            >
+   431→              <X size={14} />
+   432→            </button>
+   433→          )}
+   434→        </div>
+   435→
+   436→        {/* Search Dropdown */}
+   437→        <AnimatePresence>
+   438→          {showDropdown && (
+   439→            <motion.div
+   440→              variants={dropdownVariant}
+   441→              initial="hidden"
+   442→              animate="visible"
+   443→              exit="exit"
+   444→              style={{
+   445→                position: 'absolute',
+   446→                top: '100%',
+   447→                left: 16,
+   448→                right: 16,
+   449→                zIndex: 50,
+   450→                marginTop: 6,
+   451→                background: 'var(--surface)',
+   452→                border: '1px solid var(--border)',
+   453→                borderRadius: 18,
+   454→                boxShadow: 'var(--lf-shadow-float)',
+   455→                overflow: 'hidden',
+   456→                maxHeight: 360,
+   457→              }}
+   458→              className="lf-scrollbar"
+   459→            >
+   460→              {/* Tiendas section */}
+   461→              {searchResults.tiendas.length > 0 && (
+   462→                <div style={{ padding: '12px 14px 6px 14px' }}>
+   463→                  <div
+   464→                    style={{
+   465→                      fontSize: 11,
+   466→                      fontWeight: 700,
+   467→                      fontFamily: "'JetBrains Mono', monospace",
+   468→                      textTransform: 'uppercase',
+   469→                      color: 'var(--text-muted)',
+   470→                      letterSpacing: 0.5,
+   471→                      marginBottom: 6,
+   472→                    }}
+   473→                  >
+   474→                    Tiendas
+   475→                  </div>
+   476→                  {searchResults.tiendas.map((t) => (
+   477→                    <button
+   478→                      key={t.id}
+   479→                      onMouseDown={() => handleTiendaClick(t.id)}
+   480→                      style={{
+   481→                        display: 'flex',
+   482→                        alignItems: 'center',
+   483→                        gap: 10,
+   484→                        width: '100%',
+   485→                        padding: '8px 6px',
+   486→                        background: 'none',
+   487→                        border: 'none',
+   488→                        cursor: 'pointer',
+   489→                        borderRadius: 10,
+   490→                        textAlign: 'left',
+   491→                      }}
+   492→                    >
+   493→                      <div
+   494→                        style={{
+   495→                          width: 36,
+   496→                          height: 36,
+   497→                          borderRadius: 10,
+   498→                          background: t.logoColor,
+   499→                          display: 'flex',
+   500→                          alignItems: 'center',
+   501→                          justifyContent: 'center',
+   502→                          flexShrink: 0,
+   503→                        }}
+   504→                      >
+   505→                        <span
+   506→                          style={{
+   507→                            fontFamily: "'Syne', sans-serif",
+   508→                            fontWeight: 700,
+   509→                            fontSize: 13,
+   510→                            color: '#fff',
+   511→                          }}
+   512→                        >
+   513→                          {t.logoIniciales}
+   514→                        </span>
+   515→                      </div>
+   516→                      <div style={{ flex: 1, minWidth: 0 }}>
+   517→                        <div
+   518→                          style={{
+   519→                            fontSize: 14,
+   520→                            fontWeight: 600,
+   521→                            color: 'var(--text)',
+   522→                            fontFamily: "'DM Sans', sans-serif",
+   523→                          }}
+   524→                        >
+   525→                          {t.nombre}
+   526→                        </div>
+   527→                        <div
+   528→                          style={{
+   529→                            fontSize: 12,
+   530→                            color: 'var(--text-muted)',
+   531→                            fontFamily: "'DM Sans', sans-serif",
+   532→                          }}
+   533→                        >
+   534→                          {categoriaLabel(t.categoria)}
+   535→                        </div>
+   536→                      </div>
+   537→                    </button>
+   538→                  ))}
+   539→                </div>
+   540→              )}
+   541→
+   542→              {/* Productos section */}
+   543→              {searchResults.productos.length > 0 && (
+   544→                <div style={{ padding: '6px 14px 12px 14px' }}>
+   545→                  <div
+   546→                    style={{
+   547→                      fontSize: 11,
+   548→                      fontWeight: 700,
+   549→                      fontFamily: "'JetBrains Mono', monospace",
+   550→                      textTransform: 'uppercase',
+   551→                      color: 'var(--text-muted)',
+   552→                      letterSpacing: 0.5,
+   553→                      marginBottom: 6,
+   554→                    }}
+   555→                  >
+   556→                    Productos
+   557→                  </div>
+   558→                  {searchResults.productos.map((p) => {
+   559→                    const tienda = tiendas.find((t) => t.id === p.tiendaId);
+   560→                    return (
+   561→                      <button
+   562→                        key={p.id}
+   563→                        onMouseDown={() => {
+   564→                          if (tienda) handleTiendaClick(tienda.id);
+   565→                        }}
+   566→                        style={{
+   567→                          display: 'flex',
+   568→                          alignItems: 'center',
+   569→                          gap: 10,
+   570→                          width: '100%',
+   571→                          padding: '8px 6px',
+   572→                          background: 'none',
+   573→                          border: 'none',
+   574→                          cursor: 'pointer',
+   575→                          borderRadius: 10,
+   576→                          textAlign: 'left',
+   577→                        }}
+   578→                      >
+   579→                        <div
+   580→                          style={{
+   581→                            width: 36,
+   582→                            height: 36,
+   583→                            borderRadius: 10,
+   584→                            background: p.imagenColor,
+   585→                            display: 'flex',
+   586→                            alignItems: 'center',
+   587→                            justifyContent: 'center',
+   588→                            flexShrink: 0,
+   589→                          }}
+   590→                        >
+   591→                          <ShoppingBag size={14} style={{ color: '#fff' }} />
+   592→                        </div>
+   593→                        <div style={{ flex: 1, minWidth: 0 }}>
+   594→                          <div
+   595→                            style={{
+   596→                              fontSize: 14,
+   597→                              fontWeight: 600,
+   598→                              color: 'var(--text)',
+   599→                              fontFamily: "'DM Sans', sans-serif",
+   600→                            }}
+   601→                          >
+   602→                            {p.nombre}
+   603→                          </div>
+   604→                          <div
+   605→                            style={{
+   606→                              fontSize: 12,
+   607→                              color: 'var(--text-muted)',
+   608→                              fontFamily: "'DM Sans', sans-serif",
+   609→                            }}
+   610→                          >
+   611→                            {tienda?.nombre} · C${p.precio}
+   612→                          </div>
+   613→                        </div>
+   614→                      </button>
+   615→                    );
+   616→                  })}
+   617→                </div>
+   618→              )}
+   619→
+   620→              {searchResults.tiendas.length === 0 && searchResults.productos.length === 0 && (
+   621→                <div
+   622→                  style={{
+   623→                    padding: 24,
+   624→                    textAlign: 'center',
+   625→                    fontSize: 14,
+   626→                    color: 'var(--text-muted)',
+   627→                    fontFamily: "'DM Sans', sans-serif",
+   628→                  }}
+   629→                >
+   630→                  No se encontraron resultados
+   631→                </div>
+   632→              )}
+   633→            </motion.div>
+   634→          )}
+   635→        </AnimatePresence>
+   636→      </div>
+   637→
+   638→      {/* ─── 3. CATEGORIAS HORIZONTALES (sticky) ─── */}
+   639→      <div
+   640→        style={{
+   641→          position: 'sticky',
+   642→          top: 56,
+   643→          zIndex: 10,
+   644→          background: 'var(--lf-glass-bg)',
+   645→          backdropFilter: 'blur(var(--lf-glass-blur))',
+   646→          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+   647→          borderBottom: '1px solid var(--lf-glass-border)',
+   648→        }}
+   649→      >
+   650→        <div
+   651→          style={{
+   652→            display: 'flex',
+   653→            gap: 8,
+   654→            overflowX: 'auto',
+   655→            padding: '10px 16px',
+   656→            scrollbarWidth: 'none',
+   657→          }}
+   658→        >
+   659→          {/* "Todas" pill */}
+   660→          <button
+   661→            onClick={() => handleCategoryTap('todos')}
+   662→            style={{
+   663→              display: 'flex',
+   664→              alignItems: 'center',
+   665→              gap: 5,
+   666→              padding: '8px 16px',
+   667→              borderRadius: 'var(--lf-pill-radius, 100px)',
+   668→              border: `1.5px solid ${explorarCategoria === 'todos' ? 'var(--primario)' : 'var(--border)'}`,
+   669→              cursor: 'pointer',
+   670→              whiteSpace: 'nowrap',
+   671→              fontSize: 13,
+   672→              fontWeight: explorarCategoria === 'todos' ? 600 : 400,
+   673→              fontFamily: "'DM Sans', sans-serif",
+   674→              background: explorarCategoria === 'todos' ? 'var(--primario-soft)' : 'transparent',
+   675→              color: explorarCategoria === 'todos' ? 'var(--primario)' : 'var(--text-muted)',
+   676→              transition: 'all 0.2s',
+   677→            }}
+   678→          >
+   679→            Todas
+   680→          </button>
+   681→
+   682→          {CATEGORIAS.map((cat) => {
+   683→            const isActive = explorarCategoria === cat.key;
+   684→            return (
+   685→              <button
+   686→                key={cat.key}
+   687→                onClick={() => handleCategoryTap(cat.key)}
+   688→                style={{
+   689→                  display: 'flex',
+   690→                  alignItems: 'center',
+   691→                  gap: 5,
+   692→                  padding: '8px 16px',
+   693→                  borderRadius: 'var(--lf-pill-radius, 100px)',
+   694→                  border: `1.5px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+   695→                  cursor: 'pointer',
+   696→                  whiteSpace: 'nowrap',
+   697→                  fontSize: 13,
+   698→                  fontWeight: isActive ? 600 : 400,
+   699→                  fontFamily: "'DM Sans', sans-serif",
+   700→                  background: isActive ? 'var(--primario-soft)' : 'transparent',
+   701→                  color: isActive ? 'var(--primario)' : 'var(--text-muted)',
+   702→                  transition: 'all 0.2s',
+   703→                }}
+   704→              >
+   705→                <CategoryIcon name={cat.icon} size={16} />
+   706→                {cat.label}
+   707→              </button>
+   708→            );
+   709→          })}
+   710→        </div>
+   711→      </div>
+   712→
+   713→      {/* ─── 4. FILTROS SECUNDARIOS (inline pills) ─── */}
+   714→      {!showFilterPanel && (
+   715→        <div
+   716→          style={{
+   717→            display: 'flex',
+   718→            gap: 8,
+   719→            overflowX: 'auto',
+   720→            padding: '10px 16px 0',
+   721→            scrollbarWidth: 'none',
+   722→          }}
+   723→        >
+   724→          {FILTROS_SECUNDARIOS.map((f) => {
+   725→            const isActive = explorarFiltros.includes(f.key);
+   726→            const IconComp = f.icon;
+   727→            return (
+   728→              <button
+   729→                key={f.key}
+   730→                onClick={() => handleFilterTap(f.key)}
+   731→                style={{
+   732→                  display: 'flex',
+   733→                  alignItems: 'center',
+   734→                  gap: 4,
+   735→                  padding: '5px 12px',
+   736→                  borderRadius: 16,
+   737→                  border: `1px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+   738→                  cursor: 'pointer',
+   739→                  whiteSpace: 'nowrap',
+   740→                  fontSize: 12,
+   741→                  fontWeight: 600,
+   742→                  fontFamily: "'DM Sans', sans-serif",
+   743→                  background: isActive ? 'var(--primario)' : 'var(--surface)',
+   744→                  color: isActive ? '#fff' : 'var(--text-muted)',
+   745→                  transition: 'all 0.2s',
+   746→                }}
+   747→              >
+   748→                <IconComp size={12} />
+   749→                {f.label}
+   750→              </button>
+   751→            );
+   752→          })}
+   753→        </div>
+   754→      )}
+   755→
+   756→      {/* ─── Results count ─── */}
+   757→      <div
+   758→        style={{
+   759→          padding: '12px 16px 0',
+   760→          fontSize: 13,
+   761→          color: 'var(--text-muted)',
+   762→          fontFamily: "'DM Sans', sans-serif",
+   763→          display: 'flex',
+   764→          alignItems: 'center',
+   765→          justifyContent: 'space-between',
+   766→        }}
+   767→      >
+   768→        <span>
+   769→          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: 'var(--text)' }}>
+   770→            {filteredTiendas.length}
+   771→          </span>{' '}
+   772→          {filteredTiendas.length === 1 ? 'tienda' : 'tiendas'}
+   773→        </span>
+   774→        {explorarFiltros.length > 0 && !showFilterPanel && (
+   775→          <button
+   776→            onClick={() => {
+   777→              haptic(10);
+   778→              explorarFiltros.forEach((f) => toggleExplorarFiltro(f));
+   779→            }}
+   780→            style={{
+   781→              fontSize: 12,
+   782→              color: 'var(--primario)',
+   783→              background: 'none',
+   784→              border: 'none',
+   785→              cursor: 'pointer',
+   786→              fontFamily: "'DM Sans', sans-serif",
+   787→              fontWeight: 600,
+   788→            }}
+   789→          >
+   790→            Limpiar filtros
+   791→          </button>
+   792→        )}
+   793→      </div>
+   794→
+   795→      {/* ─── 5. LISTA DE TIENDAS — Horizontal cards ─── */}
+   796→      <div style={{ padding: '8px 0 120px' }}>
+   797→        <AnimatePresence mode="popLayout">
+   798→          {filteredTiendas.map((tienda, idx) => {
+   799→            const isFav = isFavoritoTienda(tienda.id);
+   800→            const isPressed = pressedCard === tienda.id;
+   801→            const hasPromo = tienda.badges.includes('Promo');
+   802→
+   803→            return (
+   804→              <motion.div
+   805→                key={tienda.id}
+   806→                custom={idx}
+   807→                variants={fadeUp}
+   808→                initial="hidden"
+   809→                animate="visible"
+   810→                exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
+   811→                layout
+   812→                onClick={() => handleTiendaClick(tienda.id)}
+   813→                onMouseDown={() => setPressedCard(tienda.id)}
+   814→                onMouseUp={() => setPressedCard(null)}
+   815→                onMouseLeave={() => setPressedCard(null)}
+   816→                onTouchStart={() => setPressedCard(tienda.id)}
+   817→                onTouchEnd={() => setPressedCard(null)}
+   818→                style={{
+   819→                  display: 'flex',
+   820→                  margin: '0 16px 12px',
+   821→                  borderRadius: 'var(--lf-card-radius, 22px)',
+   822→                  background: 'var(--surface)',
+   823→                  border: '1px solid var(--border)',
+   824→                  boxShadow: 'var(--lf-shadow-card)',
+   825→                  cursor: 'pointer',
+   826→                  overflow: 'hidden',
+   827→                  transform: isPressed ? 'scale(0.98)' : 'scale(1)',
+   828→                  transition: 'transform 0.1s ease',
+   829→                }}
+   830→              >
+   831→                {/* ── Portada (izquierda, 100x100) ── */}
+   832→                <div
+   833→                  style={{
+   834→                    width: 100,
+   835→                    minWidth: 100,
+   836→                    height: 'auto',
+   837→                    minHeight: 120,
+   838→                    borderRadius: 'var(--lf-card-radius, 22px) 0 0 var(--lf-card-radius, 22px)',
+   839→                    background: tienda.logoColor,
+   840→                    display: 'flex',
+   841→                    alignItems: 'center',
+   842→                    justifyContent: 'center',
+   843→                    position: 'relative',
+   844→                    overflow: 'hidden',
+   845→                  }}
+   846→                >
+   847→                  {/* Iniciales watermark */}
+   848→                  <span
+   849→                    style={{
+   850→                      fontFamily: "'Syne', sans-serif",
+   851→                      fontWeight: 700,
+   852→                      fontSize: 28,
+   853→                      color: 'rgba(255,255,255,0.2)',
+   854→                      position: 'absolute',
+   855→                      bottom: 8,
+   856→                      right: 8,
+   857→                      lineHeight: 1,
+   858→                    }}
+   859→                  >
+   860→                    {tienda.logoIniciales}
+   861→                  </span>
+   862→
+   863→                  {/* Badge pill in top-left */}
+   864→                  {tienda.badges.length > 0 && (
+   865→                    <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
+   866→                      {tienda.badges.map((b) => (
+   867→                        <span
+   868→                          key={b}
+   869→                          style={{
+   870→                            display: 'inline-block',
+   871→                            fontSize: 9,
+   872→                            fontWeight: 700,
+   873→                            fontFamily: "'JetBrains Mono', monospace",
+   874→                            padding: '2px 6px',
+   875→                            borderRadius: 6,
+   876→                            backdropFilter: 'blur(8px)',
+   877→                            WebkitBackdropFilter: 'blur(8px)',
+   878→                            background: b === 'Promo'
+   879→                              ? 'rgba(0,200,83,0.85)'
+   880→                              : b === 'Nuevo'
+   881→                                ? 'rgba(41,121,255,0.85)'
+   882→                                : b === 'Popular'
+   883→                                  ? 'rgba(255,87,34,0.85)'
+   884→                                  : 'rgba(0,0,0,0.5)',
+   885→                            color: '#fff',
+   886→                            lineHeight: 1.3,
+   887→                          }}
+   888→                        >
+   889→                          {b === 'Promo' ? 'PROMO' : b === 'Nuevo' ? 'NUEVO' : b === 'Popular' ? 'TOP' : b}
+   890→                        </span>
+   891→                      ))}
+   892→                    </div>
+   893→                  )}
+   894→                </div>
+   895→
+   896→                {/* ── Info (derecha, flex 1) ── */}
+   897→                <div style={{ flex: 1, padding: '14px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+   898→                  {/* Fila 1: nombre + verificado */}
+   899→                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+   900→                    <span
+   901→                      style={{
+   902→                        fontSize: 16,
+   903→                        fontWeight: 700,
+   904→                        color: 'var(--text)',
+   905→                        fontFamily: "'Syne', sans-serif",
+   906→                        overflow: 'hidden',
+   907→                        textOverflow: 'ellipsis',
+   908→                        whiteSpace: 'nowrap',
+   909→                      }}
+   910→                    >
+   911→                      {tienda.nombre}
+   912→                    </span>
+   913→                    {tienda.verificado && (
+   914→                      <CheckCircle size={14} style={{ color: 'var(--info)', flexShrink: 0 }} />
+   915→                    )}
+   916→                  </div>
+   917→
+   918→                  {/* Fila 2: categoria + Star + rating + pedidos */}
+   919→                  <div
+   920→                    style={{
+   921→                      fontSize: 13,
+   922→                      color: 'var(--text-muted)',
+   923→                      fontFamily: "'DM Sans', sans-serif",
+   924→                      display: 'flex',
+   925→                      alignItems: 'center',
+   926→                      gap: 4,
+   927→                      flexWrap: 'wrap',
+   928→                    }}
+   929→                  >
+   930→                    <span>{categoriaLabel(tienda.categoria)}</span>
+   931→                    <span style={{ color: 'var(--border)' }}>&middot;</span>
+   932→                    <Star size={12} fill="var(--warning)" stroke="none" />
+   933→                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>
+   934→                      {tienda.calificacion}
+   935→                    </span>
+   936→                    <span style={{ color: 'var(--border)' }}>&middot;</span>
+   937→                    <span>{tienda.totalPedidos} pedidos</span>
+   938→                  </div>
+   939→
+   940→                  {/* Fila 3: Clock + tiempo + envio + pedido min */}
+   941→                  <div
+   942→                    style={{
+   943→                      fontSize: 12,
+   944→                      color: 'var(--text-muted)',
+   945→                      fontFamily: "'DM Sans', sans-serif",
+   946→                      display: 'flex',
+   947→                      alignItems: 'center',
+   948→                      gap: 4,
+   949→                      flexWrap: 'wrap',
+   950→                    }}
+   951→                  >
+   952→                    <Clock size={12} />
+   953→                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 500 }}>{tienda.tiempoEstimado}</span>
+   954→                    <span style={{ color: 'var(--border)' }}>&middot;</span>
+   955→                    <Truck size={12} />
+   956→                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 500 }}>C${tienda.costoEnvio}</span>
+   957→                    <span style={{ color: 'var(--border)' }}>&middot;</span>
+   958→                    <span>Min. C${tienda.pedidoMinimo}</span>
+   959→                  </div>
+   960→
+   961→                  {/* Fila 4: promo pill (si aplica) */}
+   962→                  {hasPromo && (
+   963→                    <div style={{ marginTop: 2 }}>
+   964→                      <span
+   965→                        style={{
+   966→                          display: 'inline-flex',
+   967→                          alignItems: 'center',
+   968→                          gap: 3,
+   969→                          fontSize: 11,
+   970→                          fontWeight: 700,
+   971→                          fontFamily: "'JetBrains Mono', monospace",
+   972→                          padding: '2px 8px',
+   973→                          borderRadius: 6,
+   974→                          background: 'rgba(0,200,83,0.12)',
+   975→                          color: 'var(--exito)',
+   976→                        }}
+   977→                      >
+   978→                        <ShoppingBag size={10} />
+   979→                        20% OFF
+   980→                      </span>
+   981→                    </div>
+   982→                  )}
+   983→
+   984→                  {/* Fila 5: Heart favorito */}
+   985→                  <div style={{ marginTop: 'auto', paddingTop: 2 }}>
+   986→                    <motion.button
+   987→                      onClick={(e) => {
+   988→                        e.stopPropagation();
+   989→                        haptic(10);
+   990→                        toggleFavoritoTienda(tienda.id);
+   991→                      }}
+   992→                      animate={isFav ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+   993→                      transition={isFav ? { duration: 0.35, ease: 'easeOut' } : {}}
+   994→                      style={{
+   995→                        background: 'none',
+   996→                        border: 'none',
+   997→                        cursor: 'pointer',
+   998→                        color: isFav ? 'var(--peligro)' : 'var(--text-muted)',
+   999→                        padding: 2,
+  1000→                        display: 'flex',
+  1001→                        alignItems: 'center',
+  1002→                      }}
+  1003→                    >
+  1004→                      <Heart size={18} fill={isFav ? 'var(--peligro)' : 'none'} />
+  1005→                    </motion.button>
+  1006→                  </div>
+  1007→                </div>
+  1008→              </motion.div>
+  1009→            );
+  1010→          })}
+  1011→        </AnimatePresence>
+  1012→
+  1013→        {/* ─── EMPTY STATE ─── */}
+  1014→        {filteredTiendas.length === 0 && (
+  1015→          <motion.div
+  1016→            initial={{ opacity: 0, y: 10 }}
+  1017→            animate={{ opacity: 1, y: 0 }}
+  1018→            style={{ textAlign: 'center', padding: '48px 20px' }}
+  1019→          >
+  1020→            <div
+  1021→              style={{
+  1022→                width: 64,
+  1023→                height: 64,
+  1024→                borderRadius: 20,
+  1025→                background: 'var(--bg-alt)',
+  1026→                display: 'flex',
+  1027→                alignItems: 'center',
+  1028→                justifyContent: 'center',
+  1029→                margin: '0 auto 16px auto',
+  1030→              }}
+  1031→            >
+  1032→              <Search size={28} style={{ color: 'var(--text-muted)' }} />
+  1033→            </div>
+  1034→            <div
+  1035→              style={{
+  1036→                fontSize: 16,
+  1037→                fontWeight: 600,
+  1038→                color: 'var(--text)',
+  1039→                fontFamily: "'Syne', sans-serif",
+  1040→                marginBottom: 6,
+  1041→              }}
+  1042→            >
+  1043→              No hay tiendas disponibles
+  1044→            </div>
+  1045→            <div
+  1046→              style={{
+  1047→                fontSize: 14,
+  1048→                color: 'var(--text-muted)',
+  1049→                fontFamily: "'DM Sans', sans-serif",
+  1050→              }}
+  1051→            >
+  1052→              Intenta cambiar los filtros o buscar algo diferente
+  1053→            </div>
+  1054→          </motion.div>
+  1055→        )}
+  1056→      </div>
+  1057→
+  1058→      {/* ─── 6. MAPA toggle (FAB) ─── */}
+  1059→      <div
+  1060→        style={{
+  1061→          position: 'fixed',
+  1062→          bottom: 'calc(var(--lf-bottom-nav-height, 72px) + 16px + env(safe-area-inset-bottom, 0px))',
+  1063→          right: 16,
+  1064→          zIndex: 20,
+  1065→        }}
+  1066→      >
+  1067→        <button
+  1068→          onClick={() => haptic(10)}
+  1069→          style={{
+  1070→            width: 48,
+  1071→            height: 48,
+  1072→            borderRadius: 16,
+  1073→            background: 'var(--surface)',
+  1074→            border: '1px solid var(--border)',
+  1075→            boxShadow: 'var(--lf-shadow-float)',
+  1076→            display: 'flex',
+  1077→            alignItems: 'center',
+  1078→            justifyContent: 'center',
+  1079→            cursor: 'pointer',
+  1080→            transition: 'transform 0.15s',
+  1081→          }}
+  1082→          onMouseDown={(e) => { (e.currentTarget.style.transform = 'scale(0.92)'); }}
+  1083→          onMouseUp={(e) => { (e.currentTarget.style.transform = 'scale(1)'); }}
+  1084→          onMouseLeave={(e) => { (e.currentTarget.style.transform = 'scale(1)'); }}
+  1085→          onTouchStart={(e) => { (e.currentTarget.style.transform = 'scale(0.92)'); }}
+  1086→          onTouchEnd={(e) => { (e.currentTarget.style.transform = 'scale(1)'); }}
+  1087→        >
+  1088→          <Map size={22} style={{ color: 'var(--text)' }} />
+  1089→        </button>
+  1090→      </div>
+  1091→    </div>
+  1092→  );
+  1093→}
+  1094→
