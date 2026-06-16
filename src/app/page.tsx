@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useSyncExternalStore, Component } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Component } from 'react';
 import Dashboard from './dashboard';
 import ClientDashboard from './client-dashboard';
 import dynamic from 'next/dynamic';
+import { useConfigStore, aplicarTema } from '@/store/configStore';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false });
 
@@ -302,14 +303,17 @@ export default function Home() {
   const [showRegPassword, setShowRegPassword] = useState(false);
 
   /* ─── Theme ─── */
-  const themeListeners = useRef(new Set<() => void>());
-  const subscribeTheme = useCallback((cb: () => void) => {
-    themeListeners.current.add(cb);
-    return () => { themeListeners.current.delete(cb); };
-  }, []);
-  const getThemeSnapshot = useCallback(() => localStorage.getItem('logifast-theme') === 'dark', []);
-  const getThemeServerSnapshot = useCallback(() => false, []);
-  const isDark = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
+  // Theme is owned by the global configStore. We read `tema` here and derive
+  // `isDark` so the landing-page UI can render the right sun/moon icon. The
+  // actual data-theme attribute is applied by configStore.setTema + the
+  // <ThemeProvider> in layout.tsx; the fallback useEffect below only fires
+  // on first mount in case the store hasn't hydrated yet.
+  const tema = useConfigStore((s) => s.tema);
+  const isDark =
+    tema === 'dark' ||
+    (tema === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   /* ─── Toasts ─── */
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -324,16 +328,16 @@ export default function Home() {
     }, 4000);
   }, []);
 
-  /* ─── Apply theme ─── */
+  /* ─── Apply theme (fallback in case configStore hasn't initialized yet) ─── */
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : '');
-  }, [isDark]);
+    if (typeof window === 'undefined') return;
+    aplicarTema(tema);
+  }, [tema]);
 
   const toggleTheme = useCallback(() => {
-    const next = !isDark;
-    localStorage.setItem('logifast-theme', next ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
-    themeListeners.current.forEach((cb) => cb());
+    // Route through configStore so the choice persists + the data-theme
+    // attribute is applied via the store's aplicarTema helper.
+    useConfigStore.getState().setTema(isDark ? 'light' : 'dark');
   }, [isDark]);
 
   /* ─── Navbar scroll ─── */

@@ -227,6 +227,7 @@ export default function RepartidorDetalleServicio() {
             </div>
           </div>
           <span
+            className={`lf-badge ${isEntregado ? 'lf-badge-entregado' : 'lf-badge-incidencia'}`}
             style={{
               padding: '4px 10px',
               borderRadius: 100,
@@ -271,6 +272,7 @@ export default function RepartidorDetalleServicio() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
+                className={`lf-badge ${s.tipo === 'compra' ? 'lf-badge-en-camino' : 'lf-badge-preparando'}`}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

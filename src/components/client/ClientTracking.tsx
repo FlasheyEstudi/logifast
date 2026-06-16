@@ -908,14 +908,16 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           bottom: 0,
           left: 0,
           right: 0,
-          background: 'var(--bg)',
+          background: 'var(--surface)',
           borderTopLeftRadius: 'var(--lf-sheet-radius)',
           borderTopRightRadius: 'var(--lf-sheet-radius)',
           display: 'flex',
           flexDirection: 'column',
           zIndex: 10,
           overflow: 'hidden',
-          boxShadow: 'var(--lf-shadow-sheet)',
+          boxShadow: '0 -12px 48px rgba(0,0,0,0.15)',
+          border: '1px solid var(--border)',
+          borderBottom: 'none',
         }}
         className="md:!relative md:!bottom-auto md:!left-auto md:!right-auto md:!h-full md:!w-[40%] md:!rounded-none md:!border-l md:!border-[var(--border)] md:!shadow-none"
       >
@@ -1045,18 +1047,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                 {order?.id ?? '—'}
               </span>
               <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '4px 12px',
-                  borderRadius: 'var(--lf-pill-radius)',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  fontFamily: "'DM Sans', sans-serif",
-                  color: '#fff',
-                  background: badge.color,
-                }}
+                className={`lf-badge lf-badge-${(order?.estado ?? '').replace('encamino', 'en-camino')}`}
               >
                 {badge.label}
               </span>

@@ -75,11 +75,7 @@ function TypingIndicator({ isDark }: { isDark: boolean }) {
       className="flex justify-start mb-1"
     >
       <div
-        className="px-5 py-3 flex items-center gap-[5px]"
-        style={{
-          background: 'var(--bg-alt)',
-          borderRadius: '20px 20px 20px 4px',
-        }}
+        className="chat-bubble-other px-5 py-3 flex items-center gap-[5px]"
       >
         {[0, 1, 2].map((i) => (
           <motion.span
@@ -122,11 +118,7 @@ function MessageBubble({
         className="flex justify-center my-3"
       >
         <span
-          className="text-[12px] px-4 py-1.5 rounded-full"
-          style={{
-            background: 'var(--bg-alt)',
-            color: 'var(--text-muted)',
-          }}
+          className="chat-bubble-system text-[12px] px-4 py-1.5 rounded-full"
         >
           {msg.content}
         </span>
@@ -144,9 +136,8 @@ function MessageBubble({
     >
       <div className="max-w-[80%] relative">
         <div
-          className="px-4 py-2.5 text-[14px] leading-relaxed break-words"
+          className={`px-4 py-2.5 text-[14px] leading-relaxed break-words ${isClient ? 'chat-bubble-self' : 'chat-bubble-other'}`}
           style={{
-            background: isClient ? 'var(--primario)' : 'var(--bg-alt)',
             color: isClient ? '#FFFFFF' : 'var(--text)',
             borderRadius: isClient
               ? '20px 20px 4px 20px'
@@ -378,13 +369,8 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
       {chatOpen && (
         <>
           {/* ── BACKDROP ───────────────────────────── */}
-          <motion.div
-            key="chat-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          <div
+            className="bottom-sheet-overlay visible fixed inset-0 z-40"
             onClick={handleClose}
           />
 
@@ -395,11 +381,12 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-            className="fixed inset-0 z-50 flex flex-col"
+            className="fixed inset-0 z-50 flex flex-col lf-bottom-sheet open"
             style={{
-              background: 'var(--bg)',
+              background: 'var(--surface)',
               borderTopLeftRadius: 'var(--lf-sheet-radius)',
               borderTopRightRadius: 'var(--lf-sheet-radius)',
+              boxShadow: '0 -12px 48px rgba(0,0,0,0.15)',
             }}
           >
             {/* ── HEADER (Glassmorphism) ──────────────── */}
@@ -608,7 +595,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                 )}
 
                 {/* Input area */}
-                <div className="flex items-end gap-2 px-4 py-3">
+                <div className="chat-input-area flex items-end gap-2 px-4 py-3">
                   <textarea
                     ref={textareaRef}
                     value={input}
@@ -616,24 +603,15 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                     onKeyDown={handleKeyDown}
                     placeholder="Escribe un mensaje..."
                     rows={1}
-                    className="flex-1 resize-none rounded-2xl px-4 py-2.5 text-[14px] outline-none transition-colors"
-                    style={{
-                      background: 'var(--bg-alt)',
-                      color: 'var(--text)',
-                      border: '1px solid var(--border)',
-                      maxHeight: '96px',
-                      fontFamily: "'DM Sans', sans-serif",
-                    }}
+                    className="chat-input flex-1 resize-none px-4 py-2.5 text-[14px] outline-none transition-colors"
                   />
                   <motion.button
                     onClick={handleSend}
                     disabled={!input.trim()}
                     whileTap={{ scale: 0.9 }}
-                    className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors"
+                    className="chat-send-btn w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors"
                     style={{
-                      background: input.trim() ? 'var(--primario)' : 'var(--bg-alt)',
-                      color: input.trim() ? '#FFFFFF' : 'var(--text-muted)',
-                      boxShadow: input.trim() ? 'var(--shadow-primario)' : 'none',
+                      opacity: input.trim() ? 1 : 0.5,
                     }}
                     aria-label="Enviar mensaje"
                   >

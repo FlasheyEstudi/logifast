@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
-  LogOut, Shield, Bell, Moon, Sun, Globe, ChevronRight, AlertTriangle,
+  LogOut, Shield, Bell, Globe, ChevronRight, AlertTriangle,
   Star, Banknote, CreditCard, Copy, Home, Building, ShoppingBag, Package,
   Heart, ShoppingCart, Gift, Users,
 } from 'lucide-react';
@@ -14,12 +14,16 @@ import {
 import { useStore } from '@/lib/store';
 import type { DireccionGuardada } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
+import { useConfigStore } from '@/store/configStore';
+import { TemaToggle } from '@/components/ui/TemaToggle';
+import { SonidoToggle } from '@/components/ui/SonidoToggle';
 
 /* ═══════════════════════════════════════════════
    PROPS
    ═══════════════════════════════════════════════ */
 interface ClientPerfilProps {
-  isDark: boolean;
+  /** Kept for backward-compat with the parent shell — theme is now owned by configStore. */
+  isDark?: boolean;
   userName: string;
   onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
   onLogout: () => void;
@@ -90,9 +94,10 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      className="modal-overlay visible"
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.5)', display: 'flex',
+        display: 'flex',
         alignItems: 'center', justifyContent: 'center', padding: 16,
       }}
       onClick={onClose}
@@ -102,12 +107,10 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
+        className="lf-modal open"
         style={{
           background: 'var(--surface)',
-          borderRadius: 'var(--lf-card-radius, 22px)',
           padding: 24, maxWidth: 400, width: '100%',
-          border: '1px solid var(--border)',
-          boxShadow: 'var(--lf-shadow-float)',
         }}
       >
         {children}
@@ -155,7 +158,7 @@ const sectionCard: React.CSSProperties = {
 /* ═══════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
-export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }: ClientPerfilProps) {
+export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientPerfilProps) {
   const {
     direccionesGuardadas,
     addDireccionGuardada,
@@ -198,10 +201,16 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
   const [favTab, setFavTab] = useState<'tiendas' | 'productos'>('tiendas');
 
   /* ─── Settings state ─── */
-  const [pushNotif, setPushNotif] = useState(true);
-  const [emailPromo, setEmailPromo] = useState(true);
   const [prefPayment, setPrefPayment] = useState<'efectivo' | 'transferencia'>('efectivo');
   const [prefPaymentInited, setPrefPaymentInited] = useState(false);
+
+  /* ─── Configuración global (configStore) ─── */
+  const notificacionesPush = useConfigStore((s) => s.notificacionesPush);
+  const toggleNotificacionesPush = useConfigStore((s) => s.toggleNotificacionesPush);
+  const notificacionesEmail = useConfigStore((s) => s.notificacionesEmail);
+  const toggleNotificacionesEmail = useConfigStore((s) => s.toggleNotificacionesEmail);
+  const compartirUbicacion = useConfigStore((s) => s.compartirUbicacion);
+  const toggleCompartirUbicacion = useConfigStore((s) => s.toggleCompartirUbicacion);
 
   /* ─── Modals ─── */
   const [logoutModal, setLogoutModal] = useState(false);
@@ -296,14 +305,6 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
     setNewAddr('');
     setNewAddrLabel('Casa');
     setAddingAddr(false);
-  };
-
-  /* ─── Toggle theme ─── */
-  const toggleThemeLocal = () => {
-    const next = !isDark;
-    localStorage.setItem('logifast-theme', next ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
-    window.dispatchEvent(new Event('storage'));
   };
 
   /* ─── Loyalty computations ─── */
@@ -516,14 +517,14 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <User size={12} /> Nombre
                   </label>
-                  <input style={inputStyle} value={editName} onChange={(e) => setEditName(e.target.value)} />
+                  <input className="lf-input" style={inputStyle} value={editName} onChange={(e) => setEditName(e.target.value)} />
                 </div>
                 <div>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Mail size={12} /> Correo
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <input style={{ ...inputStyle, paddingRight: 36, opacity: 0.6 }} value={email} disabled />
+                    <input className="lf-input" style={{ ...inputStyle, paddingRight: 36, opacity: 0.6 }} value={email} disabled />
                     <Shield size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   </div>
                 </div>
@@ -531,13 +532,14 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Phone size={12} /> Telefono
                   </label>
-                  <input style={inputStyle} value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+                  <input className="lf-input" style={inputStyle} value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
                 </div>
                 <div style={{ position: 'relative' }}>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <MapPin size={12} /> Direccion principal
                   </label>
                   <input
+                    className="lf-input"
                     style={inputStyle}
                     value={editAddress}
                     onChange={(e) => handleEditAddrChange(e.target.value)}
@@ -799,6 +801,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
               >
                 <div style={{ position: 'relative' }}>
                   <input
+                    className="lf-input"
                     style={inputStyle}
                     placeholder="Buscar direccion..."
                     value={newAddr}
@@ -1219,23 +1222,23 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
         </h3>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {/* Notificaciones */}
+          {/* Notificaciones push — wired to configStore */}
           <SettingsRow
             icon={<Bell size={18} />}
-            label="Notificaciones"
-            right={<Toggle on={pushNotif} onToggle={() => setPushNotif((p) => !p)} />}
+            label="Notificaciones push"
+            right={<Toggle on={notificacionesPush} onToggle={() => toggleNotificacionesPush()} />}
           />
-          {/* Promociones */}
+          {/* Notificaciones por email — wired to configStore */}
           <SettingsRow
             icon={<Mail size={18} />}
-            label="Promociones"
-            right={<Toggle on={emailPromo} onToggle={() => setEmailPromo((p) => !p)} />}
+            label="Notificaciones por email"
+            right={<Toggle on={notificacionesEmail} onToggle={() => toggleNotificacionesEmail()} />}
           />
-          {/* Modo oscuro */}
+          {/* Compartir ubicación — wired to configStore */}
           <SettingsRow
-            icon={isDark ? <Moon size={18} /> : <Sun size={18} />}
-            label="Modo oscuro"
-            right={<Toggle on={isDark} onToggle={toggleThemeLocal} />}
+            icon={<MapPin size={18} />}
+            label="Compartir ubicación"
+            right={<Toggle on={compartirUbicacion} onToggle={() => toggleCompartirUbicacion()} />}
           />
           {/* Metodo de pago preferido */}
           <SettingsRow
@@ -1287,6 +1290,25 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
             right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
             onClick={() => setClientActiveModule('ayuda')}
           />
+        </div>
+
+        {/* Tema — 3-state segmented control wired to configStore */}
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6, fontFamily: "'DM Sans', sans-serif" }}>
+            Tema
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+            Claro, oscuro o seguir al sistema
+          </div>
+          <TemaToggle />
+        </div>
+
+        {/* Sonido — toggle + volume slider + test button wired to configStore */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
+            Sonido
+          </div>
+          <SonidoToggle />
         </div>
 
         {/* Cerrar sesion */}
@@ -1396,7 +1418,7 @@ export default function ClientPerfil({ isDark, userName, onNavigate, onLogout }:
                 <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
                   Escribe <strong style={{ color: 'var(--peligro)' }}>ELIMINAR</strong> para confirmar
                 </label>
-                <input style={inputStyle} value={deleteText} onChange={(e) => setDeleteText(e.target.value)} placeholder="ELIMINAR" />
+                <input className="lf-input" style={inputStyle} value={deleteText} onChange={(e) => setDeleteText(e.target.value)} placeholder="ELIMINAR" />
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
                 <button style={btnGhost} onClick={() => setDeleteModal(false)}>

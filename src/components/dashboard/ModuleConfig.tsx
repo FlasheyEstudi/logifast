@@ -8,13 +8,18 @@ import {
   Mail, Smartphone, Clock, Puzzle, Database,
   Send, Eye, Monitor, ChevronRight, AlertTriangle,
   Download, FileText, HardDrive, CheckCircle2, Circle,
-  MessageCircle, CreditCard, Map,
+  MessageCircle, CreditCard, Map, Bell, Volume2,
 } from 'lucide-react';
 import { useStore, type MaintenanceRule, type Zone, type CompanyData, type SystemUser, type ConfiguracionHorario, type Feriado, type Integracion } from '@/lib/store';
+import { useConfigStore } from '@/store/configStore';
+import { TemaToggle } from '@/components/ui/TemaToggle';
+import { SonidoToggle } from '@/components/ui/SonidoToggle';
+import { Switch } from '@/components/ui/switch';
 
-type ConfigTab = 'mantenimiento' | 'tarifas' | 'zonas' | 'empresa' | 'usuarios' | 'emails' | 'app' | 'horarios' | 'integraciones' | 'backup';
+type ConfigTab = 'apariencia' | 'mantenimiento' | 'tarifas' | 'zonas' | 'empresa' | 'usuarios' | 'emails' | 'app' | 'horarios' | 'integraciones' | 'backup';
 
 const TABS: { key: ConfigTab; label: string; icon: typeof Settings }[] = [
+  { key: 'apariencia', label: 'Apariencia', icon: Monitor },
   { key: 'mantenimiento', label: 'Mantenimiento', icon: Wrench },
   { key: 'tarifas', label: 'Tarifas y Costos', icon: DollarSign },
   { key: 'zonas', label: 'Zonas', icon: MapPin },
@@ -125,6 +130,16 @@ export default function ModuleConfig() {
 
   // ─── 9E: Backup State ───
   const [confirmCleanOpen, setConfirmCleanOpen] = useState(false);
+
+  // ─── Apariencia: user preferences wired to global configStore ───
+  const notificacionesPush = useConfigStore((s) => s.notificacionesPush);
+  const toggleNotificacionesPush = useConfigStore((s) => s.toggleNotificacionesPush);
+  const notificacionesEmail = useConfigStore((s) => s.notificacionesEmail);
+  const toggleNotificacionesEmail = useConfigStore((s) => s.toggleNotificacionesEmail);
+  const notificacionesSonido = useConfigStore((s) => s.notificacionesSonido);
+  const toggleNotificacionesSonido = useConfigStore((s) => s.toggleNotificacionesSonido);
+  const compartirUbicacion = useConfigStore((s) => s.compartirUbicacion);
+  const toggleCompartirUbicacion = useConfigStore((s) => s.toggleCompartirUbicacion);
 
   // ─── Existing handlers ───
   const openUserModal = (user?: SystemUser) => {
@@ -274,6 +289,7 @@ export default function ModuleConfig() {
 
   const modalStyle: React.CSSProperties = {
     background: 'var(--lf-surface)', borderRadius: 16, padding: 24, width: '90%', maxWidth: 560,
+    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
   };
 
   return (
@@ -300,6 +316,110 @@ export default function ModuleConfig() {
       {/* Tab content */}
       <AnimatePresence mode="wait">
         <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
+
+          {/* ═══ APARIENCIA (user preferences wired to configStore) ═══ */}
+          {activeTab === 'apariencia' && (
+            <div>
+              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Apariencia y preferencias</h3>
+              <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', marginBottom: 16 }}>
+                Estas preferencias se guardan en tu dispositivo y se aplican a toda la app.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+
+                {/* Left column: Tema + Sonido */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* Tema */}
+                  <div style={cardStyle}>
+                    <label style={{ ...labelStyle, marginBottom: 6 }}>Tema</label>
+                    <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', marginBottom: 12 }}>
+                      Claro, oscuro o seguir al sistema operativo.
+                    </p>
+                    <TemaToggle />
+                  </div>
+
+                  {/* Sonido */}
+                  <div style={cardStyle}>
+                    <label style={{ ...labelStyle, marginBottom: 6 }}>Sonido</label>
+                    <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', marginBottom: 12 }}>
+                      Activa o desactiva los efectos de sonido y ajusta el volumen.
+                    </p>
+                    <SonidoToggle />
+                  </div>
+                </div>
+
+                {/* Right column: notification + location toggles */}
+                <div style={cardStyle}>
+                  <label style={{ ...labelStyle, marginBottom: 12 }}>Notificaciones y ubicación</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                    {/* Notificaciones push */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: 'var(--lf-bg-alt)', color: 'var(--lf-text-secondary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <Bell size={16} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--lf-text-main)' }}>Notificaciones push</div>
+                        <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Alertas en el dispositivo</div>
+                      </div>
+                      <Switch checked={notificacionesPush} onCheckedChange={() => toggleNotificacionesPush()} aria-label="Notificaciones push" />
+                    </div>
+
+                    {/* Notificaciones por email */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: 'var(--lf-bg-alt)', color: 'var(--lf-text-secondary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <Mail size={16} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--lf-text-main)' }}>Notificaciones por email</div>
+                        <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Recibir copia por correo</div>
+                      </div>
+                      <Switch checked={notificacionesEmail} onCheckedChange={() => toggleNotificacionesEmail()} aria-label="Notificaciones por email" />
+                    </div>
+
+                    {/* Sonido de notificaciones */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: 'var(--lf-bg-alt)', color: 'var(--lf-text-secondary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <Volume2 size={16} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--lf-text-main)' }}>Sonido de notificaciones</div>
+                        <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Reproducir tono al recibir alertas</div>
+                      </div>
+                      <Switch checked={notificacionesSonido} onCheckedChange={() => toggleNotificacionesSonido()} aria-label="Sonido de notificaciones" />
+                    </div>
+
+                    {/* Compartir ubicación */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: 'var(--lf-bg-alt)', color: 'var(--lf-text-secondary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <MapPin size={16} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--lf-text-main)' }}>Compartir ubicación</div>
+                        <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Ubicación en tiempo real durante servicio</div>
+                      </div>
+                      <Switch checked={compartirUbicacion} onCheckedChange={() => toggleCompartirUbicacion()} aria-label="Compartir ubicación" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ═══ MANTENIMIENTO ═══ */}
           {activeTab === 'mantenimiento' && (

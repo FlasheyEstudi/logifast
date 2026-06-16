@@ -96,7 +96,38 @@ const cardStyle: React.CSSProperties = {
    STATUS BADGE COMPONENT
    ═══════════════════════════════════════════════ */
 
-function StatusBadge({ label, color }: { label: string; color: string }) {
+function StatusBadge({ label, color, estado }: { label: string; color?: string; estado?: string }) {
+  const lfClass = (() => {
+    if (!estado) return '';
+    switch (estado) {
+      case 'pendiente': return 'lf-badge-pendiente';
+      case 'encamino':
+      case 'en_camino': return 'lf-badge-en-camino';
+      case 'recogido': return 'lf-badge-recogido';
+      case 'recibido': return 'lf-badge-recibido';
+      case 'preparando': return 'lf-badge-preparando';
+      case 'listo': return 'lf-badge-listo';
+      case 'entregado': return 'lf-badge-entregado';
+      case 'incidencia': return 'lf-badge-incidencia';
+      case 'programada': return 'lf-badge-programada';
+      default: return '';
+    }
+  })();
+  if (lfClass) {
+    return (
+      <span
+        className={`lf-badge ${lfClass}`}
+        style={{
+          padding: '3px 10px',
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: 0.2,
+        }}
+      >
+        {label}
+      </span>
+    );
+  }
   return (
     <span
       style={{
@@ -108,8 +139,8 @@ function StatusBadge({ label, color }: { label: string; color: string }) {
         fontSize: 11,
         fontWeight: 600,
         fontFamily: "'DM Sans', sans-serif",
-        background: `${color}18`,
-        color,
+        color: color || 'var(--text)',
+        background: 'var(--bg-alt)',
         letterSpacing: 0.2,
       }}
     >
@@ -165,7 +196,7 @@ function ActiveEnvioCard({
               <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
                 {order.id}
               </span>
-              <StatusBadge label={envioStatusLabel(order.estado)} color={statusBg} />
+              <StatusBadge label={envioStatusLabel(order.estado)} color={statusBg} estado={order.estado} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shortenLocation(order.origen)}</span>
@@ -331,7 +362,7 @@ function ActiveCompraCard({
               <span style={{ fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: 'var(--text)' }}>
                 {oc.tiendaNombre}
               </span>
-              <StatusBadge label={compraStatusLabel(oc.estado)} color={color} />
+              <StatusBadge label={compraStatusLabel(oc.estado)} color={color} estado={oc.estado} />
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {oc.items.map(i => i.nombreProducto).join(', ')}
@@ -452,7 +483,7 @@ function HistoryEnvioItem({
             <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
               {order.id}
             </span>
-            <StatusBadge label={badge.label} color={statusBg} />
+            <StatusBadge label={badge.label} color={statusBg} estado={order.estado} />
           </div>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
             {order.fecha}
@@ -620,7 +651,7 @@ function CompraHistoryItem({
             <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
               {oc.id}
             </span>
-            <StatusBadge label={compraStatusLabel(oc.estado)} color={color} />
+            <StatusBadge label={compraStatusLabel(oc.estado)} color={color} estado={oc.estado} />
           </div>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
             {oc.fecha}

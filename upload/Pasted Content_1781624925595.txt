@@ -1,0 +1,1659 @@
+```
+PROMPT AUDITORIA Y DISENO COMPLETO — FORMULARIOS, MODALES Y COMPONENTES SIN ESTILO EN LOS 3 ROLES
+
+CONTEXTO:
+LOGIFAST tiene 3 roles implementados: Administrador, Cliente, Repartidor. Hay un problema GRAVE: muchos formularios, modales, inputs, selects, botones, y componentes dentro de ellos NO tienen diseno aplicado. Se ven como HTML crudo del browser — bordes feos, font del sistema, sin estilizar, sin estados de hover/focus/error, sin responsividad. Esto arruina toda la experiencia que hemos construido.
+
+Este prompt es una AUDITORIA COMPLETA. Revisa CADA componente de CADA modulo de CADA rol, identifica lo que falta de diseno, y aplica el estilo correcto. Despues se asegura que TODO se vea bien en mobile (360px-640px), tablet (640px-1024px), y desktop (1024px+).
+
+=====================================================
+REGLAS GLOBALES (aplicar a TODO)
+=====================================================
+
+NADA se queda sin diseno. CADA elemento HTML visible DEBE tener estilo custom. Si un input, select, textarea, boton, checkbox, radio, toggle, o cualquier otro elemento se ve como el default del browser, ESTA MAL y debe corregirse.
+
+CHECKLIST DE ELEMENTOS QUE DEBEN ESTAR ESTILIZADOS:
+- [ ] Inputs de texto (email, password, nombre, telefono, direccion, descripcion)
+- [ ] Textareas (observaciones, instrucciones, comentarios, descripcion)
+- [ ] Selects / dropdowns (seleccion de rol, categoria, zona, repartidor, metodo pago)
+- [ ] Checkboxes (terminos, seleccion multiple, filtros)
+- [ ] Radio buttons (tipo de mantenimiento, metodo de pago, tipo de banner)
+- [ ] Toggles / switches (configuracion, disponibilidad, notificaciones)
+- [ ] Botones (primario, secundario, ghost, danger, pill, icon-only)
+- [ ] Badges / pills de estado (cada estado con su color)
+- [ ] Tablas (headers, filas, hover, zebra, responsive)
+- [ ] Modales (overlay, contenido, header, body, footer, botones)
+- [ ] Formularios completos (labels, inputs, errores, validacion, submit)
+- [ ] Cards / tarjetas (fondo, borde, border-radius, padding, hover)
+- [ ] Listas (items, separadores, hover, activo)
+- [ ] Navegacion (tabs, sidebar, bottom nav)
+- [ ] Mapas (popups, controles, leyendas)
+- [ ] Graficos (tooltips, ejes, leyendas, colores)
+- [ ] Banners (fondos, textos, CTAs)
+- [ ] Empty states (ilustraciones, textos, botones)
+- [ ] Skeleton loaders (shimmer, formas)
+- [ ] Tooltips (fondo solido, texto legible)
+- [ ] Progress bars (barras de progreso, indicadores)
+- [ ] Breadcrumbs (si existen)
+- [ ] Paginacion (botones, numeros, activo)
+- [ ] Filtros (pills, chips, search)
+- [ ] File inputs (si existen)
+- [ ] Date pickers / time pickers (si existen)
+- [ ] Rating / estrellas (calificaciones)
+
+=====================================================
+SISTEMA DE ESTILOS UNIFICADO PARA TODOS LOS COMPONENTES
+=====================================================
+
+Estos son los estilos CORRECTOS que deben aplicarse. Si el componente actual no tiene estos estilos, AGREGARLOS. Si ya los tiene pero estan incompletos, COMPLETARLOS.
+
+=====================================================
+1. INPUTS DE TEXTO
+=====================================================
+
+DONDE APARECEN EN CADA ROL:
+
+ADMIN:
+- Crear/editar tienda: nombre, descripcion, telefono, email, direccion
+- Crear/editar producto: nombre, descripcion, precio, stock
+- Crear campana: titulo, cuerpo, codigo
+- Crear codigo promocional: codigo, valor, max usos
+- Crear/editar banner: titulo, subtitulo, boton texto, link
+- Crear/editar feed item: titulo, descripcion, link
+- Gestion de usuarios: nombre, email, telefono
+- Configuracion: todos los campos editables
+- Login/registro (compartido)
+
+CLIENTE:
+- Solicitar envio: direccion recogida, direccion entrega, descripcion paquete, instrucciones
+- Carrito: codigo promocional, instrucciones
+- Perfil: nombre, telefono, direccion
+- Calificacion: comentario
+- Busqueda: input de busqueda
+- Chat: input de mensaje
+
+REPARTIDOR:
+- Perfil: configuracion
+- Incidencia: descripcion
+- Chat: input de mensaje
+
+ESTILO CORRECTO:
+```css
+.lf-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 16px 16px;
+  background: #FFFFFF;
+  border: 1.5px solid #E8E4DE;
+  border-radius: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: #1B1B2F;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.lf-input::placeholder {
+  color: #8E8EA0;
+  font-weight: 400;
+}
+
+.lf-input:hover {
+  border-color: #C8C4BE;
+}
+
+.lf-input:focus {
+  border-color: #FF5722;
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.08);
+  background: #FFFFFF;
+}
+
+.lf-input:disabled {
+  background: #F2EDE8;
+  color: #8E8EA0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.lf-input.error {
+  border-color: #FF1744;
+  box-shadow: 0 0 0 3px rgba(255, 23, 68, 0.08);
+}
+
+/* Input con icono a la izquierda */
+.lf-input-icon-wrapper {
+  position: relative;
+}
+
+.lf-input-icon-wrapper .lf-input {
+  padding-left: 48px;
+}
+
+.lf-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #8E8EA0;
+  pointer-events: none;
+}
+
+/* Input con boton a la derecha (ej: ojo de password) */
+.lf-input-action-wrapper {
+  position: relative;
+}
+
+.lf-input-action-wrapper .lf-input {
+  padding-right: 48px;
+}
+
+.lf-input-action {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #8E8EA0;
+  transition: color 0.2s, background 0.2s;
+}
+
+.lf-input-action:hover {
+  color: #1B1B2F;
+  background: #F2EDE8;
+}
+
+/* Label del input */
+.lf-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1B1B2F;
+  margin-bottom: 8px;
+}
+
+/* Texto de error */
+.lf-input-error-text {
+  font-size: 13px;
+  color: #FF1744;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Texto de ayuda */
+.lf-input-help {
+  font-size: 12px;
+  color: #8E8EA0;
+  margin-top: 4px;
+}
+
+/* Contador de caracteres */
+.lf-input-counter {
+  font-size: 12px;
+  color: #8E8EA0;
+  text-align: right;
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .lf-input {
+  background: #1A1A24;
+  border-color: #2A2A38;
+  color: #F0EDE8;
+}
+
+[data-theme="dark"] .lf-input:hover {
+  border-color: #3A3A48;
+}
+
+[data-theme="dark"] .lf-input:focus {
+  background: #1A1A24;
+}
+
+[data-theme="dark"] .lf-input:disabled {
+  background: #12121A;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .lf-input {
+    min-height: 56px;
+    font-size: 16px; /* previene zoom en iOS */
+    padding: 16px 18px;
+  }
+}
+```
+
+=====================================================
+2. TEXTAREA
+=====================================================
+
+DONDE APARECEN:
+
+ADMIN: descripcion de tienda, descripcion de producto, contenido de campana, contenido de plantilla, observaciones de mantenimiento
+CLIENTE: descripcion del paquete, instrucciones especiales, comentario de calificacion
+REPARTIDOR: descripcion de incidencia
+
+```css
+.lf-textarea {
+  width: 100%;
+  min-height: 100px;
+  max-height: 300px;
+  padding: 14px 16px;
+  background: #FFFFFF;
+  border: 1.5px solid #E8E4DE;
+  border-radius: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: #1B1B2F;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  line-height: 1.6;
+}
+
+.lf-textarea::placeholder {
+  color: #8E8EA0;
+}
+
+.lf-textarea:focus {
+  border-color: #FF5722;
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.08);
+}
+
+.lf-textarea.error {
+  border-color: #FF1744;
+  box-shadow: 0 0 0 3px rgba(255, 23, 68, 0.08);
+}
+
+[data-theme="dark"] .lf-textarea {
+  background: #1A1A24;
+  border-color: #2A2A38;
+  color: #F0EDE8;
+}
+```
+
+=====================================================
+3. SELECT / DROPDOWN CUSTOM
+=====================================================
+
+DONDE APARECEN:
+
+ADMIN: selector de categoria de tienda, selector de tienda, selector de repartidor, selector de periodo, selector de zona, selector de rol, selector de tipo de banner, selector de tipo de mantenimiento, selector de segmento, filtros de tablas
+CLIENTE: selector de direccion guardada, selector de tamano de paquete, selector de horario
+REPARTIDOR: selector de zona preferida
+
+```css
+.lf-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 44px 14px 16px;
+  background: #FFFFFF;
+  border: 1.5px solid #E8E4DE;
+  border-radius: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: #1B1B2F;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238E8EA0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+
+.lf-select:hover {
+  border-color: #C8C4BE;
+}
+
+.lf-select:focus {
+  border-color: #FF5722;
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.08);
+}
+
+.lf-select.error {
+  border-color: #FF1744;
+}
+
+.lf-select:disabled {
+  background-color: #F2EDE8;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .lf-select {
+  background-color: #1A1A24;
+  border-color: #2A2A38;
+  color: #F0EDE8;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6B80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+```
+
+=====================================================
+4. CHECKBOX CUSTOM
+=====================================================
+
+DONDE APARECEN:
+
+ADMIN: seleccion multiple en tablas (bulk actions), seleccion de repuestos en mantenimiento, seleccion de zonas de cobertura, seleccion de permisos, seleccion de productos para feed
+CLIENTE: aceptar terminos, seleccion de productos favoritos
+REPARTIDOR: checklist de productos al recoger en tienda
+
+```css
+.lf-checkbox-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.lf-checkbox {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border: 2px solid #E8E4DE;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-top: 1px;
+}
+
+.lf-checkbox:hover {
+  border-color: #FF5722;
+}
+
+.lf-checkbox.checked {
+  background: #FF5722;
+  border-color: #FF5722;
+}
+
+.lf-checkbox.checked svg {
+  width: 14px;
+  height: 14px;
+  color: #FFFFFF;
+  opacity: 0;
+  transform: scale(0.5);
+  animation: checkIn 0.2s ease forwards;
+}
+
+@keyframes checkIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lf-checkbox.indeterminate {
+  background: #FF5722;
+  border-color: #FF5722;
+}
+
+.lf-checkbox-label {
+  font-size: 14px;
+  color: #1B1B2F;
+  line-height: 1.5;
+  user-select: none;
+}
+
+.lf-checkbox-wrapper.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .lf-checkbox {
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-checkbox-label {
+  color: #F0EDE8;
+}
+```
+
+=====================================================
+5. RADIO BUTTONS CUSTOM
+=====================================================
+
+DONDE APARECEN:
+
+ADMIN: tipo de mantenimiento (preventivo/correctivo), tipo de banner, tipo de descuento (porcentaje/monto), fuente de tiendas (manual/automatica)
+CLIENTE: metodo de pago (efectivo/transferencia), seleccion de rol en registro, tamano de paquete, horario de entrega (ahora/programar)
+
+```css
+.lf-radio-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.lf-radio {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border: 2px solid #E8E4DE;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease;
+  margin-top: 1px;
+}
+
+.lf-radio:hover {
+  border-color: #FF5722;
+}
+
+.lf-radio.selected {
+  border-color: #FF5722;
+}
+
+.lf-radio.selected::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FF5722;
+  animation: radioIn 0.2s ease;
+}
+
+@keyframes radioIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.lf-radio-label {
+  font-size: 14px;
+  color: #1B1B2F;
+  line-height: 1.5;
+  user-select: none;
+}
+
+[data-theme="dark"] .lf-radio {
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-radio-label {
+  color: #F0EDE8;
+}
+```
+
+=====================================================
+6. TOGGLE / SWITCH
+=====================================================
+
+DONDE APARECEN:
+
+ADMIN: activar/desactivar tienda, activar/desactivar banner, activar/desactivar feed section, activar/desactivar notificacion automatica, activar/desactivar campana, destacada, verificada, popular
+CLIENTE: notificaciones push, promociones email, modo oscuro, compartir ubicacion, repartidor favorito preferido
+REPARTIDOR: conexion/disconexion, sonido, vibracion, compartir ubicacion
+
+```css
+.lf-switch {
+  width: 48px;
+  height: 28px;
+  min-width: 48px;
+  border-radius: 14px;
+  border: 2px solid #E8E4DE;
+  background: #E8E4DE;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.lf-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.lf-switch.on {
+  background: #FF5722;
+  border-color: #FF5722;
+}
+
+.lf-switch.on::after {
+  left: calc(100% - 24px);
+}
+
+.lf-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .lf-switch {
+  background: #2A2A38;
+  border-color: #2A2A38;
+}
+```
+
+=====================================================
+7. BOTONES (TODAS LAS VARIANTES)
+=====================================================
+
+DONDE APARECEN EN TODOS LOS ROLES — accion principal, secundaria, ghost, danger, pill, icon-only, loading state.
+
+```css
+/* Base comun */
+.lf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.lf-btn:active {
+  transform: scale(0.97);
+}
+
+.lf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Primario */
+.lf-btn-primary {
+  background: #FF5722;
+  color: #FFFFFF;
+}
+
+.lf-btn-primary:hover:not(:disabled) {
+  background: #E64A19;
+  box-shadow: 0 4px 16px rgba(255, 87, 34, 0.25);
+}
+
+/* Shimmer en hover */
+.lf-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 0.5s ease;
+}
+
+.lf-btn-primary:hover::before {
+  left: 100%;
+}
+
+/* Secundario (outlined) */
+.lf-btn-secondary {
+  background: transparent;
+  color: #1B1B2F;
+  border: 1.5px solid #E8E4DE;
+}
+
+.lf-btn-secondary:hover:not(:disabled) {
+  border-color: #FF5722;
+  color: #FF5722;
+  background: rgba(255, 87, 34, 0.04);
+}
+
+[data-theme="dark"] .lf-btn-secondary {
+  color: #F0EDE8;
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-btn-secondary:hover:not(:disabled) {
+  border-color: #FF6E40;
+  color: #FF6E40;
+}
+
+/* Ghost */
+.lf-btn-ghost {
+  background: transparent;
+  color: #5A5A72;
+  border: none;
+  padding: 10px 16px;
+}
+
+.lf-btn-ghost:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.04);
+  color: #1B1B2F;
+}
+
+[data-theme="dark"] .lf-btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #F0EDE8;
+}
+
+/* Danger */
+.lf-btn-danger {
+  background: #FF1744;
+  color: #FFFFFF;
+}
+
+.lf-btn-danger:hover:not(:disabled) {
+  background: #E0103A;
+  box-shadow: 0 4px 16px rgba(255, 23, 68, 0.25);
+}
+
+/* Tonal (fondo suave del color) */
+.lf-btn-tonal {
+  background: rgba(255, 87, 34, 0.08);
+  color: #FF5722;
+}
+
+.lf-btn-tonal:hover:not(:disabled) {
+  background: rgba(255, 87, 34, 0.14);
+}
+
+[data-theme="dark"] .lf-btn-tonal {
+  background: rgba(255, 110, 64, 0.12);
+  color: #FF6E40;
+}
+
+/* Pill (pequeno, para filtros y acciones rapidas) */
+.lf-btn-pill {
+  padding: 8px 18px;
+  min-height: 36px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Icon only */
+.lf-btn-icon {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 12px;
+}
+
+.lf-btn-icon-sm {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border-radius: 10px;
+}
+
+/* Full width */
+.lf-btn-block {
+  width: 100%;
+}
+
+/* Loading state */
+.lf-btn.loading {
+  color: transparent;
+  pointer-events: none;
+}
+
+.lf-btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: btnSpin 0.7s linear infinite;
+}
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Sizes */
+.lf-btn-sm {
+  min-height: 36px;
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.lf-btn-lg {
+  min-height: 52px;
+  padding: 16px 32px;
+  font-size: 17px;
+  border-radius: 16px;
+}
+
+/* Boton grande para acciones principales en mobile */
+.lf-btn-xl {
+  min-height: 56px;
+  padding: 18px 36px;
+  font-size: 17px;
+  font-weight: 700;
+  border-radius: 16px;
+}
+```
+
+=====================================================
+8. BADGE / PILL DE ESTADO
+=====================================================
+
+DONDE APARECEN EN TODOS LOS ROLES — cada vez que se muestra un estado de orden, moto, tienda, pedido, campana, codigo, incidencia.
+
+```css
+.lf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.lf-badge-pendiente {
+  background: rgba(255, 179, 0, 0.1);
+  color: #E6A200;
+  border: 1px solid rgba(255, 179, 0, 0.2);
+}
+
+.lf-badge-en-camino {
+  background: rgba(41, 121, 255, 0.1);
+  color: #2979FF;
+  border: 1px solid rgba(41, 121, 255, 0.2);
+}
+
+.lf-badge-preparando {
+  background: rgba(255, 87, 34, 0.1);
+  color: #FF5722;
+  border: 1px solid rgba(255, 87, 34, 0.2);
+}
+
+.lf-badge-listo {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8B5CF6;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.lf-badge-recogido {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8B5CF6;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.lf-badge-recibido {
+  background: rgba(41, 121, 255, 0.1);
+  color: #2979FF;
+  border: 1px solid rgba(41, 121, 255, 0.2);
+}
+
+.lf-badge-entregado {
+  background: rgba(0, 200, 83, 0.1);
+  color: #00C853;
+  border: 1px solid rgba(0, 200, 83, 0.2);
+}
+
+.lf-badge-cancelado {
+  background: rgba(142, 142, 160, 0.1);
+  color: #8E8EA0;
+  border: 1px solid rgba(142, 142, 160, 0.2);
+}
+
+.lf-badge-incidencia {
+  background: rgba(255, 23, 68, 0.1);
+  color: #FF1744;
+  border: 1px solid rgba(255, 23, 68, 0.2);
+}
+
+.lf-badge-programada {
+  background: rgba(41, 121, 255, 0.1);
+  color: #2979FF;
+  border: 1px solid rgba(41, 121, 255, 0.2);
+}
+
+.lf-badge-disponible {
+  background: rgba(0, 200, 83, 0.1);
+  color: #00C853;
+  border: 1px solid rgba(0, 200, 83, 0.2);
+}
+
+.lf-badge-en-servicio {
+  background: rgba(255, 87, 34, 0.1);
+  color: #FF5722;
+  border: 1px solid rgba(255, 87, 34, 0.2);
+}
+
+.lf-badge-mantenimiento {
+  background: rgba(255, 179, 0, 0.1);
+  color: #E6A200;
+  border: 1px solid rgba(255, 179, 0, 0.2);
+}
+
+.lf-badge-activo {
+  background: rgba(0, 200, 83, 0.1);
+  color: #00C853;
+  border: 1px solid rgba(0, 200, 83, 0.2);
+}
+
+.lf-badge-inactivo {
+  background: rgba(142, 142, 160, 0.1);
+  color: #8E8EA0;
+  border: 1px solid rgba(142, 142, 160, 0.2);
+}
+
+/* Badge con punto pulsante */
+.lf-badge-pulse::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: badgePulse 2s ease infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+```
+
+=====================================================
+9. MODALES — ESTILO COMPLETO CON FORMULARIOS DENTRO
+=====================================================
+
+Muchos modales de LOGIFAST tienen formularios dentro. Estos formularios necesitan estar COMPLETAMENTE disenados.
+
+MODALES QUE CONTIENEN FORMULARIOS Y DEBEN VERIFICARSE:
+
+ADMIN:
+- [ ] Modal crear/editar tienda: 4 pasos con inputs, selects, mapa, color pickers
+- [ ] Modal crear/editar producto: inputs, textarea, toggles, variantes dinamicas
+- [ ] Modal crear/editar campana: selector de tipo, textarea, selector de segmento, selector de fecha
+- [ ] Modal crear codigo promocional: inputs, select tipo, select segmento, date pickers
+- [ ] Modal crear/editar banner: selector tipo, inputs, selector color, selector enlace
+- [ ] Modal crear/editar feed item: selector tipo, inputs, selector segmento
+- [ ] Modal reasignar repartidor: lista con radio buttons
+- [ ] Modal detalle de orden: info layout + timeline
+- [ ] Modal detalle de compra: info layout + productos + timeline
+- [ ] Modal gestionar categorias: lista editable
+- [ ] Modal gestionar permisos: toggles multiples
+- [ ] Modal gestionar horarios: grid dia/hora
+- [ ] Modal agregar feriado: input fecha + nombre
+- [ ] Modal de confirmacion destructiva: "Escribe CONFIRMAR"
+- [ ] Modal editar perfil: inputs
+- [ ] Modal cambiar contrasena: inputs password
+
+CLIENTE:
+- [ ] Modal seleccionar direccion: lista + mapa + input
+- [ ] Modal agregar direccion guardada: inputs + selector etiqueta + mapa
+- [ ] Modal personalizar producto: variantes + cantidad + precio
+- [ ] Modal calificacion: estrellas + etiquetas + textarea
+- [ ] Modal reportar problema: selector opciones + textarea
+- [ ] Modal cancelar orden: confirmacion
+- [ ] Modal confirmar pedido: resumen
+- [ ] Modal cambiar contrasena: inputs
+- [ ] Modal eliminar cuenta: confirmacion destructiva
+
+REPARTIDOR:
+- [ ] Modal nueva orden (full-screen): timer + info + botones
+- [ ] Modal incidencia: selector opciones + textarea
+- [ ] Modal detalle de servicio: info + timeline + mapa
+- [ ] Modal checklist productos tienda: checkboxes + boton confirmar
+
+ESTILO COMPLETO DEL MODAL CON FORMULARIO:
+
+```css
+/* Estructura del modal */
+.lf-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  width: calc(100% - 32px);
+  max-width: 520px;
+  max-height: 85vh;
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.1);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.lf-modal.open {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+/* Header del modal */
+.lf-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px 0;
+  flex-shrink: 0;
+}
+
+.lf-modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1B1B2F;
+}
+
+.lf-modal-close {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #8E8EA0;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lf-modal-close:hover {
+  background: #F2EDE8;
+  color: #1B1B2F;
+}
+
+/* Body del modal (scrollable) */
+.lf-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+/* Footer del modal */
+.lf-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 28px 24px;
+  border-top: 1px solid #E8E4DE;
+  flex-shrink: 0;
+}
+
+/* Formulario dentro del modal */
+.lf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lf-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lf-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.lf-form-section {
+  padding-top: 16px;
+  border-top: 1px solid #E8E4DE;
+  margin-top: 4px;
+}
+
+.lf-form-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1B1B2F;
+  margin-bottom: 16px;
+}
+
+/* Steps dentro del modal (wizards) */
+.lf-modal-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 28px 16px;
+}
+
+.lf-modal-step {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #E8E4DE;
+  transition: background 0.3s ease;
+}
+
+.lf-modal-step.completed {
+  background: #FF5722;
+}
+
+.lf-modal-step.current {
+  background: #FF5722;
+  animation: stepPulse 1.5s ease infinite;
+}
+
+@keyframes stepPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .lf-modal {
+  background: #1A1A24;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .lf-modal-title {
+  color: #F0EDE8;
+}
+
+[data-theme="dark"] .lf-modal-footer {
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-form-section {
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-form-section-title {
+  color: #F0EDE8;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .lf-modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 24px 24px 0 0;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    transform: translateY(100%);
+  }
+
+  .lf-modal.open {
+    transform: translateY(0);
+  }
+
+  .lf-form-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .lf-modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .lf-modal-footer .lf-btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lf-modal-lg {
+    max-width: 680px;
+  }
+
+  .lf-modal-xl {
+    max-width: 900px;
+  }
+}
+```
+
+=====================================================
+10. TABLAS RESPONSIVAS
+=====================================================
+
+```css
+/* Desktop: tabla */
+.lf-table-wrapper {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid #E8E4DE;
+}
+
+.lf-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lf-table thead {
+  background: #F5F0EB;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.lf-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8E8EA0;
+  border-bottom: 1px solid #E8E4DE;
+  white-space: nowrap;
+}
+
+.lf-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #1B1B2F;
+  border-bottom: 1px solid #E8E4DE;
+}
+
+.lf-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.lf-table tbody tr:hover {
+  background: rgba(255, 87, 34, 0.03);
+}
+
+.lf-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Mobile: convertir a lista */
+@media (max-width: 640px) {
+  .lf-table thead {
+    display: none;
+  }
+
+  .lf-table,
+  .lf-table tbody,
+  .lf-table tr,
+  .lf-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .lf-table tr {
+    padding: 16px;
+    border-bottom: 1px solid #E8E4DE;
+  }
+
+  .lf-table td {
+    padding: 4px 0;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .lf-table td::before {
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: 600;
+    color: #8E8EA0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+[data-theme="dark"] .lf-table-wrapper {
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-table thead {
+  background: #12121A;
+}
+
+[data-theme="dark"] .lf-table th {
+  color: #6B6B80;
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-table td {
+  color: #F0EDE8;
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-table tbody tr:hover {
+  background: rgba(255, 110, 64, 0.04);
+}
+```
+
+=====================================================
+11. CARDS / TARJETAS — TODAS LAS VARIANTES
+=====================================================
+
+```css
+/* Base */
+.lf-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  border: 1px solid #E8E4DE;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Elevated (con sombra) */
+.lf-card-elevated {
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lf-card-elevated:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+}
+
+/* Filled (fondo de color suave) */
+.lf-card-filled {
+  background: #F5F0EB;
+  border-radius: 20px;
+  border: none;
+}
+
+/* Stat card (borde lateral de color) */
+.lf-stat-card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid #E8E4DE;
+  border-left: 4px solid var(--stat-color);
+  padding: 16px 20px;
+}
+
+[data-theme="dark"] .lf-card,
+[data-theme="dark"] .lf-card-elevated,
+[data-theme="dark"] .lf-stat-card {
+  background: #1A1A24;
+  border-color: #2A2A38;
+}
+
+[data-theme="dark"] .lf-card-filled {
+  background: #22222E;
+}
+```
+
+=====================================================
+12. EMPTY STATES
+=====================================================
+
+```css
+.lf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 32px;
+  text-align: center;
+}
+
+.lf-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 24px;
+  background: #F5F0EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.lf-empty-icon svg {
+  width: 36px;
+  height: 36px;
+  color: #8E8EA0;
+}
+
+.lf-empty-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1B1B2F;
+  margin-bottom: 8px;
+}
+
+.lf-empty-desc {
+  font-size: 14px;
+  color: #8E8EA0;
+  max-width: 300px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+[data-theme="dark"] .lf-empty-icon {
+  background: #22222E;
+}
+
+[data-theme="dark"] .lf-empty-title {
+  color: #F0EDE8;
+}
+```
+
+=====================================================
+13. SKELETON LOADERS
+=====================================================
+
+```css
+.lf-skeleton {
+  background: linear-gradient(90deg, #F2EDE8 25%, #E8E4DE 50%, #F2EDE8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.lf-skeleton-text {
+  height: 14px;
+  margin-bottom: 10px;
+}
+
+.lf-skeleton-text.short {
+  width: 60%;
+}
+
+.lf-skeleton-text.shorter {
+  width: 40%;
+}
+
+.lf-skeleton-title {
+  height: 22px;
+  width: 50%;
+  margin-bottom: 16px;
+}
+
+.lf-skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.lf-skeleton-card {
+  height: 180px;
+  border-radius: 20px;
+}
+
+.lf-skeleton-image {
+  height: 120px;
+  border-radius: 16px;
+}
+
+.lf-skeleton-btn {
+  height: 44px;
+  width: 120px;
+  border-radius: 14px;
+}
+
+[data-theme="dark"] .lf-skeleton {
+  background: linear-gradient(90deg, #22222E 25%, #2A2A38 50%, #22222E 75%);
+  background-size: 200% 100%;
+}
+```
+
+=====================================================
+14. PROGRESS BARS
+=====================================================
+
+```css
+.lf-progress {
+  width: 100%;
+  height: 6px;
+  background: #E8E4DE;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.lf-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #FF5722, #FF8A65);
+  transition: width 0.5s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.lf-progress-sm {
+  height: 4px;
+  border-radius: 2px;
+}
+
+.lf-progress-lg {
+  height: 8px;
+  border-radius: 4px;
+}
+
+/* Barra de fortaleza de password */
+.lf-strength-bar {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.lf-strength-segment {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #E8E4DE;
+  transition: background 0.3s ease;
+}
+
+.lf-strength-segment.active.weak { background: #FF1744; }
+.lf-strength-segment.active.medium { background: #FFB300; }
+.lf-strength-segment.active.good { background: #FFB300; }
+.lf-strength-segment.active.strong { background: #00C853; }
+
+[data-theme="dark"] .lf-progress {
+  background: #2A2A38;
+}
+```
+
+=====================================================
+15. PAGINACION
+=====================================================
+
+```css
+.lf-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 20px 0;
+}
+
+.lf-pagination-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5A5A72;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lf-pagination-btn:hover {
+  background: #F2EDE8;
+  color: #1B1B2F;
+}
+
+.lf-pagination-btn.active {
+  background: #FF5722;
+  color: #FFFFFF;
+}
+
+.lf-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lf-pagination-info {
+  font-size: 13px;
+  color: #8E8EA0;
+  margin: 0 12px;
+}
+
+[data-theme="dark"] .lf-pagination-btn:hover {
+  background: #2A2A38;
+  color: #F0EDE8;
+}
+```
+
+=====================================================
+VERIFICACION POR ROL — CHECKLIST COMPLETO
+=====================================================
+
+Despues de aplicar TODO lo anterior, verificar cada pantalla de cada rol:
+
+ADMIN — VERIFICAR:
+- [ ] Login: inputs email/password estilizados, botones demo estilizados, toggle tema
+- [ ] Vista General: KPIs con stat-cards, panel derecho con fondo solido, mapa con popups custom
+- [ ] Pedidos: tabla responsive, badges de estado, filtros pills, modal reasignacion con lista radio
+- [ ] Flota: lista de motos con cards, mapa con marcadores custom, modal crear/editar moto
+- [ ] Repartidores: lista con cards, modal crear/editar, switches de conexion
+- [ ] Tiendas: grid/lista cards, modal crear/editar tienda CON TODOS LOS 4 PASOS estilizados
+- [ ] Productos: lista, modal crear/editar CON TODOS LOS CAMPOS estilizados, variantes dinamicas
+- [ ] Marketplace > Pedidos compra: tabla, badges, modal detalle
+- [ ] Marketplace > Feed editor: secciones draggable con diseno, preview phone
+- [ ] Marketplace > Analitica: graficos estilizados, tooltips custom
+- [ ] Reportes: graficos Recharts con colores custom, tooltips, exportar
+- [ ] Marketing > Campanas: lista, modal crear CON PASOS estilizados
+- [ ] Marketing > Codigos: tabla, modal crear CON CAMPOS estilizados
+- [ ] Marketing > Banners: lista preview, modal crear/editar CON SELECTOR VISUAL estilizado
+- [ ] Marketing > Feed: lista, modal crear/editar CON CAMPOS estilizados
+- [ ] Marketing > Analitica: graficos
+- [ ] Comunicaciones > Chat: burbujas solidas, input area, mensajes rapidos
+- [ ] Comunicaciones > Plantillas: lista, modal crear/editar
+- [ ] Config > Horarios: grid dia/hora estilizado
+- [ ] Config > Feriados: lista + modal agregar
+- [ ] Config > Integraciones: cards con estado
+- [ ] Command palette: overlay + panel solido + resultados
+- [ ] Todas las tablas: responsive en mobile (convertir a lista)
+- [ ] Todos los filtros: pills/chips estilizados
+- [ ] Todas las paginaciones: estilizadas
+
+CLIENTE — VERIFICAR:
+- [ ] Inicio: buscador pill, banners con fondo solido, categorias pills, tarjetas tienda, feed items
+- [ ] Explorar: filtros pills, tarjetas tienda, toggle mapa/lista
+- [ ] Perfil tienda: header + info + tabs + productos con boton "+"
+- [ ] Carrito: grupos por tienda, items, controles cantidad, resumen, metodo pago, CTA
+- [ ] Solicitar envio: 4 pasos con TODOS los inputs/selects estilizados, mapa, cotizacion
+- [ ] Tracking: bottom sheet solido, timeline, info repartidor, chat bubbles solidos
+- [ ] Pedidos: tabs, filtros, items, badges
+- [ ] Perfil: stats, direcciones, favoritos, puntos, referidos, config con toggles, cerrar sesion
+- [ ] Busqueda: pantalla completa con recientes, sugerencias, resultados
+- [ ] Centro de ayuda: FAQ acordeon, botones contacto, chat soporte
+- [ ] Tienda puntos: tarjeta balance, grid recompensas, historial
+- [ ] Calificacion: estrellas, etiquetas chips, textarea, enviar
+- [ ] Onboarding: 3 pantallas con ilustraciones, dots, botones
+- [ ] Todos los modales: fondo solido, formularios estilizados
+
+REPARTIDOR — VERIFICAR:
+- [ ] Espera: mapa fullscreen, anillos pulsantes, card glassmorphism solida, bottom sheet servicios
+- [ ] Nueva orden: overlay oscuro, card glass, timer, botones grandes, info ruta visual
+- [ ] Entrega: mapa, bottom sheet con snap, barra progreso, timeline, boton accion grande, km contador
+- [ ] Incidencia: sheet con opciones cards, textarea, boton danger
+- [ ] Historial: stats cards, lista timeline, filtros
+- [ ] Perfil: stats, moto card, calificaciones, config con toggles
+- [ ] Chat: burbujas solidas, input area, mensajes rapidos
+- [ ] Notificaciones: lista con iconos, badges
+
+=====================================================
+RESPONSIVE — VERIFICAR EN 3 TAMAÑOS
+=====================================================
+
+MOBILE (360px - 640px):
+- [ ] Todos los modales se convierten en bottom sheets (borde superior redondeado, se arrastran)
+- [ ] Todos los formularios en modales: inputs full-width, filas de 2 columnas se convierten en 1
+- [ ] Las tablas se convierten en listas (header oculto, cada td muestra label)
+- [ ] Los filtros pills hacen scroll horizontal
+- [ ] Los botones del footer del modal se apilan verticalmente
+- [ ] Los botones primarios son full-width
+- [ ] Los inputs tienen min-height 56px (facil de tocar)
+- [ ] El bottom nav tiene safe-area-inset-bottom
+- [ ] Los graficos son scroll horizontal si no caben
+- [ ] Los popups del mapa se ajustan al ancho disponible
+
+TABLET (640px - 1024px):
+- [ ] Los modales mantienen max-width centrado
+- [ ] Las tablas mantienen formato tabla pero con columnas ajustadas
+- [ ] Los grids se reducen a 2 columnas
+- [ ] Los formularios con 2 columnas se mantienen
+- [ ] El sidebar (si existe) se colapsa
+
+DESKTOP (1024px+):
+- [ ] Los modales mantienen max-width con mucho espacio alrededor
+- [ ] Las tablas muestran todas las columnas
+- [ ] Los grids muestran 3-4 columnas
+- [ ] Los formularios en wizard muestran los pasos lado a lado (pasos a la izquierda, formulario a la derecha)
+- [ ] El feed del admin muestra preview del telefono al lado del editor
+- [ ] Los graficos muestran todas las etiquetas de ejes
+```
+
+---
+
+
+
+Ese prompt es una **auditoria total** que cubre **15 componentes base** y verifica **60+ pantallas** en los 3 roles:
+
+| Componente | Donde se aplica |
+|---|---|
+| **Inputs** | 25+ campos en Admin, 12+ en Cliente, 3+ en Repartidor |
+| **Textareas** | 15+ campos entre los 3 roles |
+| **Selects** | 20+ selectores en Admin, 6+ en Cliente, 2+ en Repartidor |
+| **Checkboxes** | 10+ en Admin, 3+ en Cliente, 5+ en Repartidor |
+| **Radios** | 8+ en Admin, 6+ en Cliente |
+| **Toggles** | 10+ en Admin, 5+ en Cliente, 4+ en Repartidor |
+| **Botones** | TODOS los roles, TODAS las variantes |
+| **Badges** | TODOS los estados en TODOS los roles |
+| **Modales** | 20+ en Admin, 10+ en Cliente, 4+ en Repartidor |
+| **Tablas** | 8+ en Admin, 3+ en Cliente |
+| **Cards** | TODOS los roles |
+| **Empty states** | TODAS las listas vacias |
+| **Skeletons** | TODAS las cargas |
+| **Progress bars** | Tracking, password, pasos |
+| **Paginacion** | Todas las tablas/listas largas |
+
+Y la **verificacion responsive** en mobile, tablet, y desktop para CADA pantalla.
+
+Mandaselo a tu agente. Es el prompt mas importante para que TODO se vea profesional.

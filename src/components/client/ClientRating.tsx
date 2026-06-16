@@ -416,26 +416,11 @@ function RatingForm({ isDark, repartidorNombre, ratingOrderId, order, onClose }:
                     }}
                     placeholder="Cuéntanos más (opcional)"
                     rows={3}
+                    className="lf-textarea"
                     style={{
                       width: '100%',
-                      padding: '12px 14px',
                       paddingRight: 50,
-                      borderRadius: 12,
-                      border: '1.5px solid var(--border)',
-                      background: 'var(--bg-alt, var(--bg))',
-                      color: 'var(--text)',
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontSize: 14,
-                      resize: 'none',
-                      outline: 'none',
-                      transition: 'border-color 0.2s',
                       boxSizing: 'border-box',
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--primario)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border)';
                     }}
                   />
                   <span
@@ -562,10 +547,10 @@ export default function ClientRating({ isDark, onClose }: ClientRatingProps) {
           animate="visible"
           exit="exit"
           onClick={onClose}
+          className="modal-overlay visible"
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.5)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -579,17 +564,14 @@ export default function ClientRating({ isDark, onClose }: ClientRatingProps) {
             animate="visible"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
+            className="lf-modal open"
             style={{
-              background: 'var(--bg)',
-              borderRadius: 16,
+              background: 'var(--surface)',
               width: '100%',
               maxWidth: 448,
               maxHeight: '90vh',
               overflowY: 'auto',
               position: 'relative',
-              boxShadow: isDark
-                ? '0 25px 60px rgba(0,0,0,0.5)'
-                : '0 25px 60px rgba(0,0,0,0.15)',
             }}
           >
             {/* ─── CLOSE BUTTON ─── */}

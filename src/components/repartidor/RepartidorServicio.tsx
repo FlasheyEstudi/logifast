@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin,
@@ -8,7 +9,6 @@ import {
   PackagePlus,
   Navigation,
   Clock,
-  Bike,
   Power,
   MessageSquare,
   AlertTriangle,
@@ -18,7 +18,33 @@ import {
   Zap,
 } from 'lucide-react';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
+import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
+
+/* ═══════════════════════════════════════════════
+   REAL LEAFLET MAP (dynamic, ssr:false — Leaflet needs window)
+   ═══════════════════════════════════════════════ */
+
+const RepartidorMap = dynamic(() => import('./RepartidorMap'), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        height: 300,
+        width: '100%',
+        background: 'var(--md-surface-variant)',
+        borderRadius: 16,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'var(--text-muted)',
+        fontSize: 13,
+      }}
+    >
+      Cargando mapa…
+    </div>
+  ),
+});
 
 /* ═══════════════════════════════════════════════
    ESTADO → COLOR MAPPING
@@ -106,244 +132,6 @@ const MOCK_ORDENES: OrdenActiva[] = [
 let mockOrdenIndex = 0;
 
 /* ═══════════════════════════════════════════════
-   STYLIZED MAP COMPONENT
-   ═══════════════════════════════════════════════ */
-
-interface StylizedMapProps {
-  repartidorPos: { x: number; y: number };
-  destinoPos?: { x: number; y: number };
-  origenPos?: { x: number; y: number };
-  showRoute: 'recoger' | 'entregar' | null;
-  destinoLabel?: string;
-}
-
-function StylizedMap({ repartidorPos, destinoPos, origenPos, showRoute, destinoLabel }: StylizedMapProps) {
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        background:
-          'linear-gradient(135deg, var(--md-surface-variant) 0%, var(--md-surface) 100%)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Grid lines (streets) */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'linear-gradient(to right, var(--md-outline-variant) 1px, transparent 1px), linear-gradient(to bottom, var(--md-outline-variant) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-          opacity: 0.6,
-        }}
-      />
-      {/* Diagonal "main road" */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '20%',
-          left: '-10%',
-          right: '-10%',
-          height: 6,
-          background: 'var(--md-outline)',
-          opacity: 0.5,
-          transform: 'rotate(-12deg)',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '60%',
-          left: '-10%',
-          right: '-10%',
-          height: 4,
-          background: 'var(--md-outline-variant)',
-          opacity: 0.7,
-          transform: 'rotate(8deg)',
-        }}
-      />
-      {/* "Lake" blob */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '8%',
-          right: '6%',
-          width: 90,
-          height: 70,
-          borderRadius: '50%',
-          background: 'color-mix(in srgb, var(--info, #2979FF) 12%, transparent)',
-          border: '1px solid color-mix(in srgb, var(--info, #2979FF) 24%, transparent)',
-        }}
-      />
-      {/* "Park" blob */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '14%',
-          left: '8%',
-          width: 110,
-          height: 80,
-          borderRadius: 24,
-          background: 'color-mix(in srgb, var(--exito, #00C853) 10%, transparent)',
-          border: '1px solid color-mix(in srgb, var(--exito, #00C853) 20%, transparent)',
-        }}
-      />
-
-      {/* Route line (SVG) */}
-      {showRoute && destinoPos && (
-        <svg
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-          preserveAspectRatio="none"
-        >
-          <motion.line
-            x1={`${repartidorPos.x}%`}
-            y1={`${repartidorPos.y}%`}
-            x2={`${destinoPos.x}%`}
-            y2={`${destinoPos.y}%`}
-            stroke={showRoute === 'recoger' ? 'var(--info, #2979FF)' : 'var(--primario)'}
-            strokeWidth={3}
-            strokeDasharray="8 6"
-            strokeLinecap="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 0.9 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-          />
-        </svg>
-      )}
-
-      {/* Origen pin (pickup) */}
-      {origenPos && (
-        <motion.div
-          initial={{ scale: 0, y: -10 }}
-          animate={{ scale: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-          style={{
-            position: 'absolute',
-            left: `${origenPos.x}%`,
-            top: `${origenPos.y}%`,
-            transform: 'translate(-50%, -100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <div
-            style={{
-              padding: '4px 10px',
-              borderRadius: 100,
-              background: 'var(--exito, #00C853)',
-              color: '#fff',
-              fontSize: 11,
-              fontWeight: 600,
-              fontFamily: "'DM Sans', sans-serif",
-              whiteSpace: 'nowrap',
-              marginBottom: 2,
-            }}
-          >
-            Recogida
-          </div>
-          <Store size={24} color="var(--exito, #00C853)" strokeWidth={2.4} fill="var(--md-surface)" />
-        </motion.div>
-      )}
-
-      {/* Destino pin */}
-      {destinoPos && (
-        <motion.div
-          initial={{ scale: 0, y: -10 }}
-          animate={{ scale: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.1 }}
-          style={{
-            position: 'absolute',
-            left: `${destinoPos.x}%`,
-            top: `${destinoPos.y}%`,
-            transform: 'translate(-50%, -100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <div
-            style={{
-              padding: '4px 10px',
-              borderRadius: 100,
-              background: 'var(--primario)',
-              color: '#fff',
-              fontSize: 11,
-              fontWeight: 600,
-              fontFamily: "'DM Sans', sans-serif",
-              whiteSpace: 'nowrap',
-              marginBottom: 2,
-            }}
-          >
-            {destinoLabel || 'Entrega'}
-          </div>
-          <MapPin size={26} color="var(--primario)" strokeWidth={2.4} fill="var(--md-surface)" />
-        </motion.div>
-      )}
-
-      {/* Repartidor marker (pulsing dot) */}
-      <motion.div
-        animate={{
-          left: `${repartidorPos.x}%`,
-          top: `${repartidorPos.y}%`,
-        }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{
-          position: 'absolute',
-          transform: 'translate(-50%, -50%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {/* Pulsing rings */}
-        <motion.span
-          animate={{ scale: [1, 2.2], opacity: [0.6, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
-          style={{
-            position: 'absolute',
-            width: 24,
-            height: 24,
-            borderRadius: '50%',
-            background: 'var(--primario)',
-          }}
-        />
-        <motion.span
-          animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
-          style={{
-            position: 'absolute',
-            width: 24,
-            height: 24,
-            borderRadius: '50%',
-            background: 'var(--primario)',
-          }}
-        />
-        {/* Solid dot */}
-        <div
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: '50%',
-            background: 'var(--primario)',
-            border: '3px solid var(--md-surface)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Bike size={9} color="#fff" strokeWidth={3} />
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
    TIEMPO DISPLAY (1s timer, keyed by ordenId)
    ═══════════════════════════════════════════════ */
 
@@ -419,6 +207,8 @@ export default function RepartidorServicio() {
     estado,
     conectado,
     ordenActiva,
+    lat,
+    lng,
     kmRecorridos,
     eta,
     statsHoy,
@@ -434,26 +224,54 @@ export default function RepartidorServicio() {
 
   const showSnackbar = useRepartidorSnackbar();
 
-  /* ─── Marker positions (simulated by estado) ─── */
-  const repPos = useMemo(() => {
-    switch (estado) {
-      case 'EN_CAMINO_RECOGER':
-        return { x: 30, y: 70 };
-      case 'EN_PUNTO_RECOGIDA':
-        return { x: 20, y: 30 };
-      case 'RECOGIDO':
-        return { x: 50, y: 50 };
-      case 'EN_PUNTO_ENTREGA':
-        return { x: 78, y: 28 };
-      default:
-        return { x: 50, y: 60 };
-    }
-  }, [estado]);
+  /* ─── Real route polyline (OSRM, with straight-line fallback) ─── */
+  const [rutaCoordenadas, setRutaCoordenadas] = useState<[number, number][]>([]);
 
-  const origenPos = ordenActiva ? { x: 20, y: 30 } : undefined;
-  const destinoPos = ordenActiva ? { x: 78, y: 28 } : undefined;
-  const showRoute: 'recoger' | 'entregar' | null =
-    estado === 'EN_CAMINO_RECOGER' ? 'recoger' : estado === 'RECOGIDO' ? 'entregar' : null;
+  useEffect(() => {
+    // Only fetch a route when we have an active order and we're moving
+    // towards either the pickup or the delivery point.
+    if (!ordenActiva) {
+      setRutaCoordenadas([]);
+      return;
+    }
+    if (estado !== 'EN_CAMINO_RECOGER' && estado !== 'RECOGIDO') {
+      // Keep the previously-fetched route visible at the pickup/dropoff points
+      return;
+    }
+
+    let cancelled = false;
+    const destino =
+      estado === 'EN_CAMINO_RECOGER'
+        ? { lat: ordenActiva.origenLat, lng: ordenActiva.origenLng }
+        : { lat: ordenActiva.destinoLat, lng: ordenActiva.destinoLng };
+
+    obtenerRuta({ lat, lng }, destino)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.exito && res.coordenadas.length > 1) {
+          setRutaCoordenadas(res.coordenadas);
+        } else {
+          // Fallback to straight line so the map always shows something
+          setRutaCoordenadas(rutaLineaRecta({ lat, lng }, destino));
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRutaCoordenadas(rutaLineaRecta({ lat, lng }, destino));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ordenActiva, estado, lat, lng]);
+
+  /* Origen/destino positions for the map (only when we have an order) */
+  const origenPos: [number, number] | undefined = ordenActiva
+    ? [ordenActiva.origenLat, ordenActiva.origenLng]
+    : undefined;
+  const destinoPos: [number, number] | undefined = ordenActiva
+    ? [ordenActiva.destinoLat, ordenActiva.destinoLng]
+    : undefined;
 
   /* ─── Handlers ─── */
   const handleConectar = () => {
@@ -505,14 +323,26 @@ export default function RepartidorServicio() {
         overflow: 'hidden',
       }}
     >
-      {/* MAP (background, always) */}
-      <StylizedMap
-        repartidorPos={repPos}
-        destinoPos={destinoPos}
-        origenPos={origenPos}
-        showRoute={showRoute}
-        destinoLabel={ordenActiva?.destino}
-      />
+      {/* MAP (background, always) — real Leaflet map, wrapped to prevent
+          horizontal scroll on mobile and to clip the rounded corners. */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          overflow: 'hidden',
+          background: 'var(--md-surface-variant)',
+        }}
+      >
+        <RepartidorMap
+          repartidorPos={[lat, lng]}
+          origenPos={origenPos}
+          destinoPos={destinoPos}
+          rutaCoordenadas={rutaCoordenadas.length > 1 ? rutaCoordenadas : undefined}
+          estado={estado}
+          altura={300}
+          seguirRepartidor
+        />
+      </div>
 
       {/* FAB: Chat (top-right) when active order */}
       {ordenActiva && (
@@ -683,10 +513,11 @@ export default function RepartidorServicio() {
               transform: 'translateY(-50%)',
               padding: 20,
               borderRadius: 20,
-              background: 'var(--lf-glass-bg)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid var(--lf-glass-border)',
+              background: 'rgba(255, 255, 255, 0.88)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(255, 255, 255, 0.6)',
+              boxShadow: '0 12px 36px rgba(0,0,0,0.1)',
               textAlign: 'center',
             }}
           >
@@ -723,6 +554,7 @@ export default function RepartidorServicio() {
             initial={{ y: 200 }}
             animate={{ y: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="lf-bottom-sheet open bottom-sheet open"
             style={{
               position: 'absolute',
               bottom: 0,
@@ -730,12 +562,13 @@ export default function RepartidorServicio() {
               right: 0,
               padding: 16,
               paddingBottom: 20,
-              borderRadius: '24px 24px 0 0',
+              borderRadius: '28px 28px 0 0',
               background: 'var(--md-surface)',
-              boxShadow: 'var(--lf-shadow-sheet)',
+              boxShadow: '0 -12px 48px rgba(0,0,0,0.15)',
             }}
           >
             <div
+              className="lf-sheet-handle bottom-sheet-handle"
               style={{
                 width: 40,
                 height: 4,
@@ -893,6 +726,7 @@ export default function RepartidorServicio() {
           </div>
           {/* Progress bar */}
           <div
+            className="lf-progress lf-progress-sm"
             style={{
               height: 6,
               borderRadius: 3,
@@ -902,6 +736,7 @@ export default function RepartidorServicio() {
             }}
           >
             <motion.div
+              className="lf-progress-fill"
               animate={{
                 width: `${Math.min(100, (kmRecorridos / Math.max(0.1, ordenActiva.kmEstimados)) * 100)}%`,
               }}
@@ -1004,17 +839,19 @@ export default function RepartidorServicio() {
       {/* ─── ORDEN_ASIGNADA / INCIDENCIA: handled by overlays ─── */}
       {(estado === 'ORDEN_ASIGNADA' || estado === 'INCIDENCIA') && (
         <div
+          className="modal-overlay visible lf-modal-overlay visible"
           style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'color-mix(in srgb, var(--md-surface) 60%, transparent)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
           }}
         >
-          <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <div style={{ textAlign: 'center', color: '#fff' }}>
             <TrendingUp size={28} color="var(--primario)" style={{ margin: '0 auto 8px' }} />
             <div className="font-syne" style={{ fontSize: 14, fontWeight: 700 }}>
               {estado === 'ORDEN_ASIGNADA' ? 'Revisando orden…' : 'Procesando incidencia…'}
@@ -1036,6 +873,7 @@ function BottomSheet({ children }: { children: React.ReactNode }) {
       initial={{ y: 300 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
+      className="lf-bottom-sheet open bottom-sheet open"
       style={{
         position: 'absolute',
         bottom: 0,
@@ -1043,14 +881,15 @@ function BottomSheet({ children }: { children: React.ReactNode }) {
         right: 0,
         padding: 16,
         paddingBottom: 20,
-        borderRadius: '24px 24px 0 0',
+        borderRadius: '28px 28px 0 0',
         background: 'var(--md-surface)',
-        boxShadow: 'var(--lf-shadow-sheet)',
+        boxShadow: '0 -12px 48px rgba(0,0,0,0.15)',
         maxHeight: '70%',
         overflowY: 'auto',
       }}
     >
       <div
+        className="lf-sheet-handle bottom-sheet-handle"
         style={{
           width: 40,
           height: 4,

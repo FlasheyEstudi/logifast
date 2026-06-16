@@ -741,20 +741,15 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                   placeholder={`Buscar en ${tienda.nombre}...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="lf-input"
                   style={{
                     width: '100%',
                     padding: '10px 16px 10px 40px',
                     borderRadius: 28,
-                    border: '1.5px solid var(--border)',
                     background: 'var(--surface)',
                     color: 'var(--text)',
-                    fontFamily: "'DM Sans', sans-serif",
                     fontSize: 14,
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
                   }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--primario)')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                 />
                 <Search
                   size={16}

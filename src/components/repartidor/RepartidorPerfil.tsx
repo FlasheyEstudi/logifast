@@ -11,17 +11,19 @@ import {
   Wrench,
   AlertTriangle,
   ChevronDown,
-  Bell,
   Vibrate,
   MapPin,
+  Bell,
+  Mail,
   HelpCircle,
   LogOut,
-  Sun,
-  Moon,
   TrendingUp,
   ChevronRight,
 } from 'lucide-react';
 import { useRepartidorStore } from '@/lib/repartidor-store';
+import { useConfigStore } from '@/store/configStore';
+import { TemaToggle } from '@/components/ui/TemaToggle';
+import { SonidoToggle } from '@/components/ui/SonidoToggle';
 import { Switch } from '@/components/ui/switch';
 
 /* ═══════════════════════════════════════════════
@@ -63,8 +65,10 @@ export function StarRating({ value, size = 16 }: { value: number; size?: number 
    ═══════════════════════════════════════════════ */
 
 interface RepartidorPerfilProps {
-  isDark: boolean;
-  toggleTheme: () => void;
+  /** Kept for backward-compat with the parent shell — theme is now owned by configStore. */
+  isDark?: boolean;
+  /** Kept for backward-compat — toggling routes through configStore.setTema via <TemaToggle/>. */
+  toggleTheme?: () => void;
   onLogout: () => void;
   userName: string;
 }
@@ -285,9 +289,19 @@ const RATING_DIST = [
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
-export default function RepartidorPerfil({ isDark, toggleTheme, onLogout, userName }: RepartidorPerfilProps) {
+export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfilProps) {
   const { perfil, moto, calificaciones, actualizarConfig, zonasDisponibles } = useRepartidorStore();
   const [zonaOpen, setZonaOpen] = useState(false);
+
+  /* ─── Configuración global (configStore) ─── */
+  const vibracionActiva = useConfigStore((s) => s.vibracionActiva);
+  const toggleVibracion = useConfigStore((s) => s.toggleVibracion);
+  const compartirUbicacion = useConfigStore((s) => s.compartirUbicacion);
+  const toggleCompartirUbicacion = useConfigStore((s) => s.toggleCompartirUbicacion);
+  const notificacionesPush = useConfigStore((s) => s.notificacionesPush);
+  const toggleNotificacionesPush = useConfigStore((s) => s.toggleNotificacionesPush);
+  const notificacionesEmail = useConfigStore((s) => s.notificacionesEmail);
+  const toggleNotificacionesEmail = useConfigStore((s) => s.toggleNotificacionesEmail);
 
   return (
     <div style={{ paddingBottom: 16 }}>
@@ -473,6 +487,13 @@ export default function RepartidorPerfil({ isDark, toggleTheme, onLogout, userNa
             <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{moto.modelo}</div>
           </div>
           <span
+            className={`lf-badge ${
+              moto.estado === 'DISPONIBLE'
+                ? 'lf-badge-disponible'
+                : moto.estado === 'EN_SERVICIO'
+                  ? 'lf-badge-en-servicio'
+                  : 'lf-badge-mantenimiento'
+            }`}
             style={{
               padding: '4px 10px',
               borderRadius: 100,
@@ -480,13 +501,13 @@ export default function RepartidorPerfil({ isDark, toggleTheme, onLogout, userNa
                 moto.estado === 'DISPONIBLE'
                   ? 'color-mix(in srgb, var(--exito, #00C853) 14%, transparent)'
                   : moto.estado === 'EN_SERVICIO'
-                    ? 'color-mix(in srgb, var(--info, #2979FF) 14%, transparent)'
+                    ? 'color-mix(in srgb, var(--primario) 14%, transparent)'
                     : 'color-mix(in srgb, var(--warning, #FFB300) 14%, transparent)',
               color:
                 moto.estado === 'DISPONIBLE'
                   ? 'var(--exito, #00C853)'
                   : moto.estado === 'EN_SERVICIO'
-                    ? 'var(--info, #2979FF)'
+                    ? 'var(--primario)'
                     : 'var(--warning, #FFB300)',
               fontSize: 11,
               fontWeight: 700,
@@ -677,26 +698,52 @@ export default function RepartidorPerfil({ isDark, toggleTheme, onLogout, userNa
 
       {/* ─── 4. CONFIGURACIÓN ─── */}
       <SectionCard title="Configuración">
-        <ConfigToggle
-          icon={<Bell size={16} />}
-          label="Sonido de notificaciones"
-          desc="Reproducir sonido al recibir órdenes"
-          checked={perfil.sonidoActivo}
-          onChange={(v) => actualizarConfig('sonidoActivo', v)}
-        />
+        {/* Tema — 3-state segmented control wired to configStore */}
+        <div style={{ padding: '12px 0', borderBottom: '1px solid var(--md-outline-variant)' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+            Tema
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
+            Claro, oscuro o seguir al sistema
+          </div>
+          <TemaToggle />
+        </div>
+
+        {/* Sonido — toggle + volume slider + test button wired to configStore */}
+        <div style={{ padding: '12px 0', borderBottom: '1px solid var(--md-outline-variant)' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>
+            Sonido
+          </div>
+          <SonidoToggle />
+        </div>
+
         <ConfigToggle
           icon={<Vibrate size={16} />}
           label="Vibración"
           desc="Vibrar al recibir notificaciones"
-          checked={perfil.vibracionActiva}
-          onChange={(v) => actualizarConfig('vibracionActiva', v)}
+          checked={vibracionActiva}
+          onChange={() => toggleVibracion()}
         />
         <ConfigToggle
           icon={<MapPin size={16} />}
           label="Compartir ubicación"
           desc="Compartir ubicación en tiempo real durante servicio"
-          checked={perfil.ubicacionActiva}
-          onChange={(v) => actualizarConfig('ubicacionActiva', v)}
+          checked={compartirUbicacion}
+          onChange={() => toggleCompartirUbicacion()}
+        />
+        <ConfigToggle
+          icon={<Bell size={16} />}
+          label="Notificaciones push"
+          desc="Recibir alertas push en el dispositivo"
+          checked={notificacionesPush}
+          onChange={() => toggleNotificacionesPush()}
+        />
+        <ConfigToggle
+          icon={<Mail size={16} />}
+          label="Notificaciones por email"
+          desc="Recibir copia de notificaciones por correo"
+          checked={notificacionesEmail}
+          onChange={() => toggleNotificacionesEmail()}
         />
 
         {/* Zona preferida */}
@@ -826,40 +873,6 @@ export default function RepartidorPerfil({ isDark, toggleTheme, onLogout, userNa
             /* abriría FAQ */
           }}
         />
-
-        {/* Dark mode toggle */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '12px 0',
-            borderBottom: '1px solid var(--md-outline-variant)',
-          }}
-        >
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'var(--md-surface-variant)',
-              color: 'var(--text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            {isDark ? <Moon size={16} /> : <Sun size={16} />}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Modo oscuro</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {isDark ? 'Activado' : 'Desactivado'}
-            </div>
-          </div>
-          <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Modo oscuro" />
-        </div>
 
         {/* Cerrar sesión */}
         <button

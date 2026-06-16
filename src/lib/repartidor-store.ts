@@ -1,4 +1,38 @@
 import { create } from 'zustand';
+import { reproducirSiActivo, vibrarSiActivo, type SonidoTipo } from '@/services/audio';
+import { useConfigStore } from '@/store/configStore';
+
+/* ═══════════════════════════════════════════════════════
+   AUDIO + VIBRATION FEEDBACK HELPER
+   ═══════════════════════════════════════════════════════ */
+
+/**
+ * Reads the current configStore snapshot and triggers a sound + optional
+ * vibration pattern. SSR-safe (no-op on the server) and fully wrapped in
+ * try/catch so a sound/vibration failure never breaks the state transition.
+ *
+ * Pass `patron === null` to skip vibration (used for subtle confirms like
+ * enviarMensaje where haptic feedback would be too noisy).
+ */
+function dispararFeedback(
+  sonido: SonidoTipo,
+  patron: number | number[] | null,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const cfg = useConfigStore.getState();
+    reproducirSiActivo(sonido, {
+      sonidoActivo: cfg.sonidoActivo,
+      volumenSonido: cfg.volumenSonido,
+      notificacionesSonido: cfg.notificacionesSonido,
+    });
+    if (patron !== null) {
+      vibrarSiActivo(patron, cfg.vibracionActiva);
+    }
+  } catch (err) {
+    console.warn('repartidor-store: audio/vibration feedback failed', err);
+  }
+}
 
 /* ═══════════════════════════════════════════════════════
    TYPES
@@ -562,6 +596,8 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       estado: 'ORDEN_ASIGNADA',
       tiempoAceptacion: 30,
     });
+    // URGENT pattern: alternating 880/1100 sound + long pulse vibration
+    dispararFeedback('nueva_orden', [100, 50, 100, 50, 200]);
   },
 
   aceptarOrden: () => {
@@ -577,6 +613,8 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       eta: calcularETA(orden.kmEstimados),
       moto: { ...get().moto, estado: 'EN_SERVICIO' },
     });
+    // Ascending C-E-G major arpeggio + short vibration
+    dispararFeedback('orden_aceptada', 80);
   },
 
   rechazarOrden: () => {
@@ -602,6 +640,8 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
           ]
         : get().notificaciones,
     });
+    // Descending toggle_off sound + short vibration
+    dispararFeedback('toggle_off', 40);
   },
 
   timeoutOrden: () => {
@@ -615,6 +655,8 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       pausado,
       pausaHasta: pausado ? Date.now() + 15 * 60 * 1000 : null,
     });
+    // Harsh error sound + double-pulse vibration
+    dispararFeedback('error', [200, 100, 200]);
   },
 
   llegarRecogida: () => {
@@ -668,6 +710,8 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       tiempoTranscurrido: 0,
       eta: 0,
     });
+    // Completion fanfare (4 ascending notes) + short pulse pattern
+    dispararFeedback('orden_entregada', [60, 40, 60, 40, 150]);
   },
 
   reportarIncidencia: (tipo, desc) => {
@@ -719,6 +763,8 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
         ...get().notificaciones,
       ],
     });
+    // Harsh error sound + long double-pulse vibration
+    dispararFeedback('error', [300, 100, 300]);
   },
 
   actualizarPosicion: (lat, lng) => {
@@ -825,6 +871,8 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       enviadoEn: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' }),
     };
     set({ mensajes: [...get().mensajes, nuevoMensaje] });
+    // Subtle confirm sound — NO vibration (too noisy on every message)
+    dispararFeedback('toggle_on', null);
   },
 
   toggleIncidencia: (open) => {

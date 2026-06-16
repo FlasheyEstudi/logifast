@@ -1332,7 +1332,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 100 }}
               transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-              className="lf-snackbar"
+              className="lf-snackbar visible"
               style={{
                 position: 'fixed',
                 bottom: 96,

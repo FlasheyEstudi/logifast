@@ -258,13 +258,18 @@ export default function RepartidorNotificacionOrden() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
+      className="order-notification visible lf-order-notification visible"
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'linear-gradient(160deg, var(--primario) 0%, var(--secundario) 100%)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'stretch',
+        justifyContent: 'flex-start',
         overflowY: 'auto',
       }}
     >
@@ -334,14 +339,15 @@ export default function RepartidorNotificacionOrden() {
         <motion.div
           animate={{ scale: [1, 1.015, 1] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          className="order-notification-card lf-order-notification-card"
           style={{
-            background: 'rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.18)',
+            background: 'rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255,255,255,0.2)',
             borderRadius: 24,
             padding: 20,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.45)',
           }}
         >
           {/* Order ID + Tipo badge */}

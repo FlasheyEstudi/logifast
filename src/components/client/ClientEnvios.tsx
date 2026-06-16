@@ -88,8 +88,19 @@ function shortenLocation(loc: string): string {
 
 function StatusBadge({ estado }: { estado: string }) {
   const s = STATUS_BADGE[estado] ?? STATUS_BADGE.pendiente;
+  const lfClass = (() => {
+    switch (estado) {
+      case 'pendiente': return 'lf-badge-pendiente';
+      case 'encamino': return 'lf-badge-en-camino';
+      case 'recogido': return 'lf-badge-recogido';
+      case 'entregado': return 'lf-badge-entregado';
+      case 'incidencia': return 'lf-badge-incidencia';
+      case 'programada': return 'lf-badge-programada';
+      default: return 'lf-badge-pendiente';
+    }
+  })();
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}>
+    <span className={`lf-badge ${lfClass} inline-flex items-center px-2 py-0.5 text-xs font-semibold`} aria-label={s.label}>
       {s.label}
     </span>
   );
@@ -299,16 +310,14 @@ function ReportModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      className="modal-overlay visible fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={() => setState((s) => ({ ...s, open: false }))}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="w-full max-w-md rounded-2xl p-6"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        className="lf-modal open w-full max-w-md p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-5">
@@ -342,15 +351,7 @@ function ReportModal({
           placeholder="Describe el problema (opcional)..."
           value={state.description}
           onChange={(e) => setState((s) => ({ ...s, description: e.target.value }))}
-          className="w-full rounded-xl px-4 py-3 text-sm resize-none h-20 outline-none transition-all"
-          style={{
-            background: 'var(--bg-alt)',
-            color: 'var(--text)',
-            border: '1px solid var(--border)',
-            fontFamily: 'DM Sans',
-          }}
-          onFocus={(e) => (e.target.style.borderColor = 'var(--primario)')}
-          onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}
+          className="lf-textarea w-full h-20"
         />
 
         <div className="flex gap-3 mt-5">

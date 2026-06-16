@@ -1,0 +1,902 @@
+     1→'use client';
+     2→
+     3→import React, { useState } from 'react';
+     4→import { motion } from 'framer-motion';
+     5→import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+     6→import {
+     7→  Star,
+     8→  Bike,
+     9→  Route as RouteIcon,
+    10→  Clock,
+    11→  Wrench,
+    12→  AlertTriangle,
+    13→  ChevronDown,
+    14→  Bell,
+    15→  Vibrate,
+    16→  MapPin,
+    17→  HelpCircle,
+    18→  LogOut,
+    19→  Sun,
+    20→  Moon,
+    21→  TrendingUp,
+    22→  ChevronRight,
+    23→} from 'lucide-react';
+    24→import { useRepartidorStore } from '@/lib/repartidor-store';
+    25→import { Switch } from '@/components/ui/switch';
+    26→
+    27→/* ═══════════════════════════════════════════════
+    28→   STAR RATING (exported for reuse)
+    29→   ═══════════════════════════════════════════════ */
+    30→
+    31→export function StarRating({ value, size = 16 }: { value: number; size?: number }) {
+    32→  return (
+    33→    <div style={{ display: 'inline-flex', gap: 2 }} aria-label={`${value} de 5 estrellas`}>
+    34→      {[0, 1, 2, 3, 4].map((i) => {
+    35→        const filled = i < Math.floor(value);
+    36→        const half = !filled && i < value;
+    37→        return (
+    38→          <span key={i} style={{ position: 'relative', display: 'inline-flex' }}>
+    39→            <Star size={size} color="var(--warning, #FFB300)" fill="none" strokeWidth={2} />
+    40→            {(filled || half) && (
+    41→              <span
+    42→                style={{
+    43→                  position: 'absolute',
+    44→                  top: 0,
+    45→                  left: 0,
+    46→                  width: half ? '50%' : '100%',
+    47→                  overflow: 'hidden',
+    48→                  display: 'inline-flex',
+    49→                }}
+    50→              >
+    51→                <Star size={size} color="var(--warning, #FFB300)" fill="var(--warning, #FFB300)" strokeWidth={2} />
+    52→              </span>
+    53→            )}
+    54→          </span>
+    55→        );
+    56→      })}
+    57→    </div>
+    58→  );
+    59→}
+    60→
+    61→/* ═══════════════════════════════════════════════
+    62→   PROPS
+    63→   ═══════════════════════════════════════════════ */
+    64→
+    65→interface RepartidorPerfilProps {
+    66→  isDark: boolean;
+    67→  toggleTheme: () => void;
+    68→  onLogout: () => void;
+    69→  userName: string;
+    70→}
+    71→
+    72→/* ═══════════════════════════════════════════════
+    73→   SECTION CARD
+    74→   ═══════════════════════════════════════════════ */
+    75→
+    76→function SectionCard({
+    77→  title,
+    78→  children,
+    79→  action,
+    80→}: {
+    81→  title: string;
+    82→  children: React.ReactNode;
+    83→  action?: React.ReactNode;
+    84→}) {
+    85→  return (
+    86→    <section
+    87→      style={{
+    88→        padding: 16,
+    89→        borderRadius: 20,
+    90→        background: 'var(--md-surface)',
+    91→        border: '1px solid var(--md-outline-variant)',
+    92→        marginBottom: 12,
+    93→      }}
+    94→    >
+    95→      <div
+    96→        style={{
+    97→          display: 'flex',
+    98→          alignItems: 'center',
+    99→          justifyContent: 'space-between',
+   100→          marginBottom: 12,
+   101→        }}
+   102→      >
+   103→        <h2
+   104→          className="font-syne"
+   105→          style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.2px' }}
+   106→        >
+   107→          {title}
+   108→        </h2>
+   109→        {action}
+   110→      </div>
+   111→      {children}
+   112→    </section>
+   113→  );
+   114→}
+   115→
+   116→function StatBox({
+   117→  label,
+   118→  value,
+   119→  icon,
+   120→  color,
+   121→}: {
+   122→  label: string;
+   123→  value: string;
+   124→  icon: React.ReactNode;
+   125→  color: string;
+   126→}) {
+   127→  return (
+   128→    <div
+   129→      style={{
+   130→        padding: 12,
+   131→        borderRadius: 14,
+   132→        background: 'var(--md-surface-variant)',
+   133→        display: 'flex',
+   134→        flexDirection: 'column',
+   135→        gap: 4,
+   136→      }}
+   137→    >
+   138→      <div
+   139→        style={{
+   140→          display: 'flex',
+   141→          alignItems: 'center',
+   142→          gap: 4,
+   143→          fontSize: 11,
+   144→          color: 'var(--text-muted)',
+   145→          fontWeight: 600,
+   146→          textTransform: 'uppercase',
+   147→          letterSpacing: '0.03em',
+   148→        }}
+   149→      >
+   150→        <span style={{ color }}>{icon}</span>
+   151→        {label}
+   152→      </div>
+   153→      <div
+   154→        className="font-mono"
+   155→        style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}
+   156→      >
+   157→        {value}
+   158→      </div>
+   159→    </div>
+   160→  );
+   161→}
+   162→
+   163→function ConfigToggle({
+   164→  icon,
+   165→  label,
+   166→  desc,
+   167→  checked,
+   168→  onChange,
+   169→}: {
+   170→  icon: React.ReactNode;
+   171→  label: string;
+   172→  desc?: string;
+   173→  checked: boolean;
+   174→  onChange: (v: boolean) => void;
+   175→}) {
+   176→  return (
+   177→    <div
+   178→      style={{
+   179→        display: 'flex',
+   180→        alignItems: 'center',
+   181→        gap: 12,
+   182→        padding: '12px 0',
+   183→        borderBottom: '1px solid var(--md-outline-variant)',
+   184→      }}
+   185→    >
+   186→      <div
+   187→        style={{
+   188→          width: 36,
+   189→          height: 36,
+   190→          borderRadius: 10,
+   191→          background: 'var(--md-surface-variant)',
+   192→          color: 'var(--text-secondary)',
+   193→          display: 'flex',
+   194→          alignItems: 'center',
+   195→          justifyContent: 'center',
+   196→          flexShrink: 0,
+   197→        }}
+   198→      >
+   199→        {icon}
+   200→      </div>
+   201→      <div style={{ flex: 1, minWidth: 0 }}>
+   202→        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{label}</div>
+   203→        {desc && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{desc}</div>}
+   204→      </div>
+   205→      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
+   206→    </div>
+   207→  );
+   208→}
+   209→
+   210→function ConfigLink({
+   211→  icon,
+   212→  label,
+   213→  onClick,
+   214→  color,
+   215→}: {
+   216→  icon: React.ReactNode;
+   217→  label: string;
+   218→  onClick: () => void;
+   219→  color?: string;
+   220→}) {
+   221→  return (
+   222→    <button
+   223→      onClick={onClick}
+   224→      style={{
+   225→        width: '100%',
+   226→        display: 'flex',
+   227→        alignItems: 'center',
+   228→        gap: 12,
+   229→        padding: '12px 0',
+   230→        background: 'transparent',
+   231→        border: 'none',
+   232→        borderBottom: '1px solid var(--md-outline-variant)',
+   233→        cursor: 'pointer',
+   234→        fontFamily: "'DM Sans', sans-serif",
+   235→        textAlign: 'left',
+   236→      }}
+   237→    >
+   238→      <div
+   239→        style={{
+   240→          width: 36,
+   241→          height: 36,
+   242→          borderRadius: 10,
+   243→          background: color ? `color-mix(in srgb, ${color} 12%, transparent)` : 'var(--md-surface-variant)',
+   244→          color: color || 'var(--text-secondary)',
+   245→          display: 'flex',
+   246→          alignItems: 'center',
+   247→          justifyContent: 'center',
+   248→          flexShrink: 0,
+   249→        }}
+   250→      >
+   251→        {icon}
+   252→      </div>
+   253→      <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: color || 'var(--text)' }}>
+   254→        {label}
+   255→      </span>
+   256→      <ChevronRight size={16} color="var(--text-muted)" />
+   257→    </button>
+   258→  );
+   259→}
+   260→
+   261→/* ═══════════════════════════════════════════════
+   262→   BAR CHART DATA — entregas por día (última semana)
+   263→   ═══════════════════════════════════════════════ */
+   264→
+   265→const ENTREGAS_SEMANA = [
+   266→  { x: 'L', v: 5 },
+   267→  { x: 'M', v: 7 },
+   268→  { x: 'X', v: 6 },
+   269→  { x: 'J', v: 8 },
+   270→  { x: 'V', v: 9 },
+   271→  { x: 'S', v: 2 },
+   272→  { x: 'D', v: 1 },
+   273→];
+   274→
+   275→/* Rating distribution (mock percentages) */
+   276→const RATING_DIST = [
+   277→  { stars: 5, pct: 78 },
+   278→  { stars: 4, pct: 14 },
+   279→  { stars: 3, pct: 5 },
+   280→  { stars: 2, pct: 2 },
+   281→  { stars: 1, pct: 1 },
+   282→];
+   283→
+   284→/* ═══════════════════════════════════════════════
+   285→   MAIN COMPONENT
+   286→   ═══════════════════════════════════════════════ */
+   287→
+   288→export default function RepartidorPerfil({ isDark, toggleTheme, onLogout, userName }: RepartidorPerfilProps) {
+   289→  const { perfil, moto, calificaciones, actualizarConfig, zonasDisponibles } = useRepartidorStore();
+   290→  const [zonaOpen, setZonaOpen] = useState(false);
+   291→
+   292→  return (
+   293→    <div style={{ paddingBottom: 16 }}>
+   294→      {/* ─── HEADER ─── */}
+   295→      <div
+   296→        style={{
+   297→          display: 'flex',
+   298→          alignItems: 'center',
+   299→          gap: 14,
+   300→          padding: 16,
+   301→          borderRadius: 20,
+   302→          background: 'var(--md-surface)',
+   303→          border: '1px solid var(--md-outline-variant)',
+   304→          marginBottom: 12,
+   305→        }}
+   306→      >
+   307→        <div
+   308→          style={{
+   309→            width: 72,
+   310→            height: 72,
+   311→            borderRadius: 20,
+   312→            background: `linear-gradient(135deg, ${perfil.color}, color-mix(in srgb, ${perfil.color} 70%, #000))`,
+   313→            color: '#fff',
+   314→            display: 'flex',
+   315→            alignItems: 'center',
+   316→            justifyContent: 'center',
+   317→            fontFamily: "'Syne', sans-serif",
+   318→            fontSize: 22,
+   319→            fontWeight: 700,
+   320→            flexShrink: 0,
+   321→            boxShadow: 'var(--md-elevation-2)',
+   322→          }}
+   323→        >
+   324→          {perfil.initials}
+   325→        </div>
+   326→        <div style={{ flex: 1, minWidth: 0 }}>
+   327→          <h1
+   328→            className="font-syne"
+   329→            style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}
+   330→          >
+   331→            {userName || perfil.nombre}
+   332→          </h1>
+   333→          <div
+   334→            style={{
+   335→              display: 'flex',
+   336→              alignItems: 'center',
+   337→              gap: 6,
+   338→              marginTop: 4,
+   339→              flexWrap: 'wrap',
+   340→            }}
+   341→          >
+   342→            <span
+   343→              style={{
+   344→                display: 'inline-flex',
+   345→                alignItems: 'center',
+   346→                gap: 4,
+   347→                padding: '3px 8px',
+   348→                borderRadius: 100,
+   349→                background: 'var(--md-primary-container)',
+   350→                color: 'var(--md-on-primary-container)',
+   351→                fontSize: 11,
+   352→                fontWeight: 700,
+   353→              }}
+   354→            >
+   355→              <Bike size={11} />
+   356→              Repartidor
+   357→            </span>
+   358→            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+   359→              {moto.modelo}
+   360→            </span>
+   361→          </div>
+   362→        </div>
+   363→      </div>
+   364→
+   365→      {/* ─── 1. ESTADÍSTICAS GENERALES ─── */}
+   366→      <SectionCard title="Estadísticas generales">
+   367→        <div
+   368→          style={{
+   369→            display: 'grid',
+   370→            gridTemplateColumns: '1fr 1fr',
+   371→            gap: 8,
+   372→            marginBottom: 12,
+   373→          }}
+   374→        >
+   375→          <StatBox
+   376→            label="Entregas totales"
+   377→            value={perfil.totalEntregas.toString()}
+   378→            icon={<Bike size={12} />}
+   379→            color="var(--primario)"
+   380→          />
+   381→          <StatBox
+   382→            label="Km totales"
+   383→            value={`${perfil.totalKm.toFixed(0)}`}
+   384→            icon={<RouteIcon size={12} />}
+   385→            color="var(--info, #2979FF)"
+   386→          />
+   387→          <StatBox
+   388→            label="Calificación"
+   389→            value={perfil.calificacion.toFixed(1)}
+   390→            icon={<Star size={12} />}
+   391→            color="var(--warning, #FFB300)"
+   392→          />
+   393→          <StatBox
+   394→            label="Tiempo prom."
+   395→            value={`${perfil.tiempoPromedio} min`}
+   396→            icon={<Clock size={12} />}
+   397→            color="var(--exito, #00C853)"
+   398→          />
+   399→        </div>
+   400→        <div
+   401→          style={{
+   402→            fontSize: 11,
+   403→            color: 'var(--text-muted)',
+   404→            marginBottom: 8,
+   405→            fontWeight: 600,
+   406→            textTransform: 'uppercase',
+   407→            letterSpacing: '0.03em',
+   408→          }}
+   409→        >
+   410→          Entregas últimos 7 días
+   411→        </div>
+   412→        <div style={{ height: 110, width: '100%' }}>
+   413→          <ResponsiveContainer width="100%" height="100%">
+   414→            <BarChart data={ENTREGAS_SEMANA} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
+   415→              <XAxis
+   416→                dataKey="x"
+   417→                axisLine={false}
+   418→                tickLine={false}
+   419→                tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}
+   420→              />
+   421→              <Tooltip
+   422→                cursor={{ fill: 'color-mix(in srgb, var(--primario) 8%, transparent)' }}
+   423→                contentStyle={{
+   424→                  borderRadius: 8,
+   425→                  border: '1px solid var(--md-outline-variant)',
+   426→                  background: 'var(--md-surface)',
+   427→                  fontSize: 12,
+   428→                }}
+   429→                formatter={(v: number) => [`${v} entregas`, '']}
+   430→              />
+   431→              <Bar dataKey="v" radius={[6, 6, 0, 0]} maxBarSize={24}>
+   432→                {ENTREGAS_SEMANA.map((_, i) => (
+   433→                  <Cell key={`cell-${i}`} fill="var(--primario)" />
+   434→                ))}
+   435→              </Bar>
+   436→            </BarChart>
+   437→          </ResponsiveContainer>
+   438→        </div>
+   439→      </SectionCard>
+   440→
+   441→      {/* ─── 2. MOTO ASIGNADA ─── */}
+   442→      <SectionCard title="Moto asignada">
+   443→        <div
+   444→          style={{
+   445→            display: 'flex',
+   446→            alignItems: 'center',
+   447→            gap: 12,
+   448→            marginBottom: 12,
+   449→          }}
+   450→        >
+   451→          <div
+   452→            style={{
+   453→              width: 52,
+   454→              height: 52,
+   455→              borderRadius: 14,
+   456→              background: 'color-mix(in srgb, var(--primario) 12%, transparent)',
+   457→              color: 'var(--primario)',
+   458→              display: 'flex',
+   459→              alignItems: 'center',
+   460→              justifyContent: 'center',
+   461→              flexShrink: 0,
+   462→            }}
+   463→          >
+   464→            <Bike size={26} />
+   465→          </div>
+   466→          <div style={{ flex: 1 }}>
+   467→            <div
+   468→              className="font-mono"
+   469→              style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}
+   470→            >
+   471→              {moto.nombre}
+   472→            </div>
+   473→            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{moto.modelo}</div>
+   474→          </div>
+   475→          <span
+   476→            style={{
+   477→              padding: '4px 10px',
+   478→              borderRadius: 100,
+   479→              background:
+   480→                moto.estado === 'DISPONIBLE'
+   481→                  ? 'color-mix(in srgb, var(--exito, #00C853) 14%, transparent)'
+   482→                  : moto.estado === 'EN_SERVICIO'
+   483→                    ? 'color-mix(in srgb, var(--info, #2979FF) 14%, transparent)'
+   484→                    : 'color-mix(in srgb, var(--warning, #FFB300) 14%, transparent)',
+   485→              color:
+   486→                moto.estado === 'DISPONIBLE'
+   487→                  ? 'var(--exito, #00C853)'
+   488→                  : moto.estado === 'EN_SERVICIO'
+   489→                    ? 'var(--info, #2979FF)'
+   490→                    : 'var(--warning, #FFB300)',
+   491→              fontSize: 11,
+   492→              fontWeight: 700,
+   493→            }}
+   494→          >
+   495→            {moto.estado.replace('_', ' ')}
+   496→          </span>
+   497→        </div>
+   498→        <div
+   499→          style={{
+   500→            display: 'grid',
+   501→            gridTemplateColumns: '1fr 1fr',
+   502→            gap: 8,
+   503→            fontSize: 12,
+   504→            color: 'var(--text-secondary)',
+   505→          }}
+   506→        >
+   507→          <div>
+   508→            <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Placa</div>
+   509→            <div className="font-mono" style={{ color: 'var(--text)', fontWeight: 700 }}>
+   510→              {moto.placa}
+   511→            </div>
+   512→          </div>
+   513→          <div>
+   514→            <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Km acumulados</div>
+   515→            <div className="font-mono" style={{ color: 'var(--text)', fontWeight: 700 }}>
+   516→              {moto.kmAcumulados.toLocaleString('es-NI')} km
+   517→            </div>
+   518→          </div>
+   519→          <div>
+   520→            <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Último mantenimiento</div>
+   521→            <div style={{ color: 'var(--text)', fontWeight: 600 }}>
+   522→              {new Date(moto.ultimoMantenimiento).toLocaleDateString('es-NI', {
+   523→                day: '2-digit',
+   524→                month: 'short',
+   525→                year: 'numeric',
+   526→              })}
+   527→            </div>
+   528→            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{moto.tipoUltimoMantenimiento}</div>
+   529→          </div>
+   530→          <div>
+   531→            <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Próximo mantenimiento</div>
+   532→            <div className="font-mono" style={{ color: 'var(--text)', fontWeight: 700 }}>
+   533→              {moto.proximoMantenimientoKm?.toLocaleString('es-NI') || '—'} km
+   534→            </div>
+   535→          </div>
+   536→        </div>
+   537→        {moto.alertaMantenimiento && (
+   538→          <motion.div
+   539→            initial={{ opacity: 0, y: 6 }}
+   540→            animate={{ opacity: 1, y: 0 }}
+   541→            style={{
+   542→              marginTop: 12,
+   543→              padding: 12,
+   544→              borderRadius: 12,
+   545→              background: 'color-mix(in srgb, var(--warning, #FFB300) 10%, transparent)',
+   546→              border: '1px solid var(--warning, #FFB300)',
+   547→              display: 'flex',
+   548→              alignItems: 'flex-start',
+   549→              gap: 8,
+   550→            }}
+   551→          >
+   552→            <AlertTriangle size={16} color="var(--warning, #FFB300)" style={{ flexShrink: 0, marginTop: 1 }} />
+   553→            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+   554→              <strong style={{ color: 'var(--text)' }}>Mantenimiento pronto.</strong> La moto está
+   555→              cerca del próximo servicio programado.
+   556→            </div>
+   557→          </motion.div>
+   558→        )}
+   559→      </SectionCard>
+   560→
+   561→      {/* ─── 3. CALIFICACIÓN ─── */}
+   562→      <SectionCard title="Calificación">
+   563→        <div
+   564→          style={{
+   565→            display: 'flex',
+   566→            alignItems: 'center',
+   567→            gap: 16,
+   568→            marginBottom: 16,
+   569→          }}
+   570→        >
+   571→          <div
+   572→            className="font-syne"
+   573→            style={{ fontSize: 48, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}
+   574→          >
+   575→            {perfil.calificacion.toFixed(1)}
+   576→          </div>
+   577→          <div>
+   578→            <StarRating value={perfil.calificacion} size={18} />
+   579→            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+   580→              ({perfil.totalEntregas} reseñas)
+   581→            </div>
+   582→          </div>
+   583→        </div>
+   584→        {/* Distribution */}
+   585→        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+   586→          {RATING_DIST.map((d) => (
+   587→            <div key={d.stars} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   588→              <span
+   589→                style={{
+   590→                  fontSize: 11,
+   591→                  color: 'var(--text-muted)',
+   592→                  width: 24,
+   593→                  display: 'inline-flex',
+   594→                  alignItems: 'center',
+   595→                  gap: 2,
+   596→                }}
+   597→              >
+   598→                {d.stars}
+   599→                <Star size={10} color="var(--warning, #FFB300)" fill="var(--warning, #FFB300)" />
+   600→              </span>
+   601→              <div
+   602→                style={{
+   603→                  flex: 1,
+   604→                  height: 6,
+   605→                  borderRadius: 3,
+   606→                  background: 'var(--md-outline-variant)',
+   607→                  overflow: 'hidden',
+   608→                }}
+   609→              >
+   610→                <motion.div
+   611→                  initial={{ width: 0 }}
+   612→                  animate={{ width: `${d.pct}%` }}
+   613→                  transition={{ duration: 0.6, ease: 'easeOut' }}
+   614→                  style={{
+   615→                    height: '100%',
+   616→                    background: 'var(--warning, #FFB300)',
+   617→                  }}
+   618→                />
+   619→              </div>
+   620→              <span
+   621→                className="font-mono"
+   622→                style={{ fontSize: 11, color: 'var(--text-muted)', width: 32, textAlign: 'right' }}
+   623→              >
+   624→                {d.pct}%
+   625→              </span>
+   626→            </div>
+   627→          ))}
+   628→        </div>
+   629→        {/* Last 3 reviews */}
+   630→        <div
+   631→          style={{
+   632→            fontSize: 11,
+   633→            color: 'var(--text-muted)',
+   634→            marginBottom: 8,
+   635→            fontWeight: 600,
+   636→            textTransform: 'uppercase',
+   637→            letterSpacing: '0.03em',
+   638→          }}
+   639→        >
+   640→          Últimas reseñas
+   641→        </div>
+   642→        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+   643→          {calificaciones.slice(0, 3).map((c) => (
+   644→            <div
+   645→              key={c.id}
+   646→              style={{
+   647→                padding: 12,
+   648→                borderRadius: 12,
+   649→                background: 'var(--md-surface-variant)',
+   650→              }}
+   651→            >
+   652→              <div
+   653→                style={{
+   654→                  display: 'flex',
+   655→                  alignItems: 'center',
+   656→                  justifyContent: 'space-between',
+   657→                  marginBottom: 4,
+   658→                }}
+   659→              >
+   660→                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+   661→                  {c.cliente}
+   662→                </span>
+   663→                <StarRating value={c.estrellas} size={12} />
+   664→              </div>
+   665→              {c.comentario && (
+   666→                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+   667→                  {c.comentario}
+   668→                </p>
+   669→              )}
+   670→              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+   671→                {c.fecha}
+   672→              </div>
+   673→            </div>
+   674→          ))}
+   675→        </div>
+   676→      </SectionCard>
+   677→
+   678→      {/* ─── 4. CONFIGURACIÓN ─── */}
+   679→      <SectionCard title="Configuración">
+   680→        <ConfigToggle
+   681→          icon={<Bell size={16} />}
+   682→          label="Sonido de notificaciones"
+   683→          desc="Reproducir sonido al recibir órdenes"
+   684→          checked={perfil.sonidoActivo}
+   685→          onChange={(v) => actualizarConfig('sonidoActivo', v)}
+   686→        />
+   687→        <ConfigToggle
+   688→          icon={<Vibrate size={16} />}
+   689→          label="Vibración"
+   690→          desc="Vibrar al recibir notificaciones"
+   691→          checked={perfil.vibracionActiva}
+   692→          onChange={(v) => actualizarConfig('vibracionActiva', v)}
+   693→        />
+   694→        <ConfigToggle
+   695→          icon={<MapPin size={16} />}
+   696→          label="Compartir ubicación"
+   697→          desc="Compartir ubicación en tiempo real durante servicio"
+   698→          checked={perfil.ubicacionActiva}
+   699→          onChange={(v) => actualizarConfig('ubicacionActiva', v)}
+   700→        />
+   701→
+   702→        {/* Zona preferida */}
+   703→        <div style={{ padding: '12px 0', borderBottom: '1px solid var(--md-outline-variant)' }}>
+   704→          <div
+   705→            style={{
+   706→              display: 'flex',
+   707→              alignItems: 'center',
+   708→              gap: 12,
+   709→            }}
+   710→          >
+   711→            <div
+   712→              style={{
+   713→                width: 36,
+   714→                height: 36,
+   715→                borderRadius: 10,
+   716→                background: 'var(--md-surface-variant)',
+   717→                color: 'var(--text-secondary)',
+   718→                display: 'flex',
+   719→                alignItems: 'center',
+   720→                justifyContent: 'center',
+   721→                flexShrink: 0,
+   722→              }}
+   723→            >
+   724→              <MapPin size={16} />
+   725→            </div>
+   726→            <div style={{ flex: 1, minWidth: 0 }}>
+   727→              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Zona preferida</div>
+   728→              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+   729→                Recibirás órdenes prioritarias en esta zona
+   730→              </div>
+   731→            </div>
+   732→          </div>
+   733→          <div style={{ position: 'relative', marginTop: 8 }}>
+   734→            <button
+   735→              onClick={() => setZonaOpen((o) => !o)}
+   736→              style={{
+   737→                width: '100%',
+   738→                padding: '10px 12px',
+   739→                borderRadius: 12,
+   740→                background: 'var(--md-surface-variant)',
+   741→                border: '1px solid var(--md-outline-variant)',
+   742→                cursor: 'pointer',
+   743→                display: 'flex',
+   744→                alignItems: 'center',
+   745→                justifyContent: 'space-between',
+   746→                fontFamily: "'DM Sans', sans-serif",
+   747→                fontSize: 13,
+   748→                fontWeight: 600,
+   749→                color: 'var(--text)',
+   750→              }}
+   751→            >
+   752→              {perfil.zonaPreferida}
+   753→              <ChevronDown
+   754→                size={16}
+   755→                color="var(--text-muted)"
+   756→                style={{
+   757→                  transform: zonaOpen ? 'rotate(180deg)' : 'none',
+   758→                  transition: 'transform 0.2s ease',
+   759→                }}
+   760→              />
+   761→            </button>
+   762→            {zonaOpen && (
+   763→              <motion.div
+   764→                initial={{ opacity: 0, y: -4 }}
+   765→                animate={{ opacity: 1, y: 0 }}
+   766→                transition={{ duration: 0.15 }}
+   767→                style={{
+   768→                  position: 'absolute',
+   769→                  top: 'calc(100% + 4px)',
+   770→                  left: 0,
+   771→                  right: 0,
+   772→                  padding: 6,
+   773→                  borderRadius: 12,
+   774→                  background: 'var(--md-surface)',
+   775→                  border: '1px solid var(--md-outline-variant)',
+   776→                  boxShadow: 'var(--md-elevation-2)',
+   777→                  zIndex: 10,
+   778→                  maxHeight: 220,
+   779→                  overflowY: 'auto',
+   780→                }}
+   781→              >
+   782→                {zonasDisponibles.map((z) => (
+   783→                  <button
+   784→                    key={z}
+   785→                    onClick={() => {
+   786→                      actualizarConfig('zonaPreferida', z);
+   787→                      setZonaOpen(false);
+   788→                    }}
+   789→                    style={{
+   790→                      width: '100%',
+   791→                      padding: '8px 10px',
+   792→                      borderRadius: 8,
+   793→                      border: 'none',
+   794→                      background:
+   795→                        z === perfil.zonaPreferida
+   796→                          ? 'color-mix(in srgb, var(--primario) 10%, transparent)'
+   797→                          : 'transparent',
+   798→                      color:
+   799→                        z === perfil.zonaPreferida ? 'var(--primario)' : 'var(--text)',
+   800→                      fontSize: 13,
+   801→                      fontWeight: z === perfil.zonaPreferida ? 700 : 500,
+   802→                      textAlign: 'left',
+   803→                      cursor: 'pointer',
+   804→                      fontFamily: "'DM Sans', sans-serif",
+   805→                    }}
+   806→                  >
+   807→                    {z}
+   808→                  </button>
+   809→                ))}
+   810→              </motion.div>
+   811→            )}
+   812→          </div>
+   813→        </div>
+   814→
+   815→        <ConfigLink
+   816→          icon={<Wrench size={16} />}
+   817→          label="Reportar problema con moto"
+   818→          onClick={() => {
+   819→            /* abriría un formulario */
+   820→          }}
+   821→        />
+   822→        <ConfigLink
+   823→          icon={<HelpCircle size={16} />}
+   824→          label="Centro de ayuda"
+   825→          onClick={() => {
+   826→            /* abriría FAQ */
+   827→          }}
+   828→        />
+   829→
+   830→        {/* Dark mode toggle */}
+   831→        <div
+   832→          style={{
+   833→            display: 'flex',
+   834→            alignItems: 'center',
+   835→            gap: 12,
+   836→            padding: '12px 0',
+   837→            borderBottom: '1px solid var(--md-outline-variant)',
+   838→          }}
+   839→        >
+   840→          <div
+   841→            style={{
+   842→              width: 36,
+   843→              height: 36,
+   844→              borderRadius: 10,
+   845→              background: 'var(--md-surface-variant)',
+   846→              color: 'var(--text-secondary)',
+   847→              display: 'flex',
+   848→              alignItems: 'center',
+   849→              justifyContent: 'center',
+   850→              flexShrink: 0,
+   851→            }}
+   852→          >
+   853→            {isDark ? <Moon size={16} /> : <Sun size={16} />}
+   854→          </div>
+   855→          <div style={{ flex: 1 }}>
+   856→            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Modo oscuro</div>
+   857→            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+   858→              {isDark ? 'Activado' : 'Desactivado'}
+   859→            </div>
+   860→          </div>
+   861→          <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Modo oscuro" />
+   862→        </div>
+   863→
+   864→        {/* Cerrar sesión */}
+   865→        <button
+   866→          onClick={onLogout}
+   867→          style={{
+   868→            width: '100%',
+   869→            padding: '14px 0',
+   870→            marginTop: 12,
+   871→            background: 'transparent',
+   872→            border: 'none',
+   873→            color: 'var(--peligro, #FF1744)',
+   874→            fontSize: 14,
+   875→            fontWeight: 700,
+   876→            fontFamily: "'DM Sans', sans-serif",
+   877→            cursor: 'pointer',
+   878→            display: 'flex',
+   879→            alignItems: 'center',
+   880→            justifyContent: 'center',
+   881→            gap: 8,
+   882→          }}
+   883→        >
+   884→          <LogOut size={16} />
+   885→          Cerrar sesión
+   886→        </button>
+   887→      </SectionCard>
+   888→
+   889→      <div
+   890→        style={{
+   891→          textAlign: 'center',
+   892→          fontSize: 11,
+   893→          color: 'var(--text-muted)',
+   894→          marginTop: 8,
+   895→        }}
+   896→      >
+   897→        LOGIFAST Repartidor v2.0
+   898→      </div>
+   899→    </div>
+   900→  );
+   901→}
+   902→

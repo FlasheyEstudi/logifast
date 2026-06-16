@@ -71,6 +71,7 @@ export default function RepartidorChat() {
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
+        className="lf-bottom-sheet open bottom-sheet open"
         style={{
           position: 'fixed',
           bottom: 0,
@@ -81,8 +82,8 @@ export default function RepartidorChat() {
           maxHeight: '85vh',
           zIndex: 9991,
           background: 'var(--md-surface)',
-          borderRadius: '24px 24px 0 0',
-          boxShadow: 'var(--lf-shadow-sheet)',
+          borderRadius: '28px 28px 0 0',
+          boxShadow: '0 -12px 48px rgba(0,0,0,0.18)',
           display: 'flex',
           flexDirection: 'column',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -98,6 +99,7 @@ export default function RepartidorChat() {
           }}
         >
           <div
+            className="lf-sheet-handle bottom-sheet-handle"
             style={{
               width: 40,
               height: 4,
@@ -216,17 +218,14 @@ export default function RepartidorChat() {
                 }}
               >
                 <div
+                  className={isRepartidor ? 'chat-bubble-self lf-chat-bubble-self' : 'chat-bubble-other lf-chat-bubble-other'}
                   style={{
                     maxWidth: '78%',
-                    padding: '8px 12px',
-                    borderRadius: 14,
-                    background: isRepartidor ? 'var(--primario)' : 'var(--md-surface)',
-                    color: isRepartidor ? '#fff' : 'var(--text)',
-                    fontSize: 14,
-                    lineHeight: 1.4,
+                    padding: '10px 14px',
+                    borderRadius: 18,
+                    borderBottomRightRadius: isRepartidor ? 4 : 18,
+                    borderBottomLeftRadius: isRepartidor ? 18 : 4,
                     boxShadow: 'var(--md-elevation-1)',
-                    borderBottomRightRadius: isRepartidor ? 4 : 14,
-                    borderBottomLeftRadius: isRepartidor ? 14 : 4,
                   }}
                 >
                   <div>{m.contenido}</div>
@@ -249,6 +248,7 @@ export default function RepartidorChat() {
 
         {/* Input bar */}
         <div
+          className="chat-input-area lf-chat-input-area"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -261,9 +261,9 @@ export default function RepartidorChat() {
           <button
             aria-label="Llamar"
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
+              width: 44,
+              height: 44,
+              borderRadius: 14,
               border: '1px solid var(--md-outline-variant)',
               background: 'var(--md-surface)',
               color: 'var(--text-secondary)',
@@ -282,28 +282,31 @@ export default function RepartidorChat() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Escribe un mensaje…"
+            className="chat-input lf-chat-input"
             style={{
               flex: 1,
-              minHeight: 40,
-              padding: '0 14px',
-              borderRadius: 12,
-              border: '1px solid var(--md-outline-variant)',
+              minHeight: 44,
+              padding: '0 18px',
+              borderRadius: 22,
+              border: '1.5px solid transparent',
               background: 'var(--md-surface-variant)',
               color: 'var(--text)',
-              fontSize: 14,
+              fontSize: 15,
               fontFamily: "'DM Sans', sans-serif",
               outline: 'none',
+              transition: 'border-color 0.2s, background 0.2s',
             }}
           />
           <motion.button
-            whileTap={{ scale: 0.94 }}
+            whileTap={{ scale: 0.92 }}
             onClick={handleSend}
             disabled={!input.trim()}
             aria-label="Enviar mensaje"
+            className="chat-send-btn lf-chat-send-btn"
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
               border: 'none',
               background: input.trim() ? 'var(--primario)' : 'var(--md-outline-variant)',
               color: '#fff',
@@ -314,7 +317,7 @@ export default function RepartidorChat() {
               flexShrink: 0,
             }}
           >
-            <Send size={16} />
+            <Send size={18} />
           </motion.button>
         </div>
       </motion.div>

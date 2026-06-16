@@ -1,0 +1,451 @@
+   600→  - Historial tab: filter pills "Todos/Envios/Compras/Entregados/Cancelados" with pill-radius styling
+   601→  - Compact history items: 3-row layout (ID+badge+date, destination/tienda+amount mono bold, rider+rating)
+   602→  - Action buttons: "Reenviar"/"Reordenar"/"Calificar" per spec
+   603→  - Empty state with animated SVG illustration + "Sin pedidos activos"
+   604→  - Card style: var(--surface), var(--lf-card-radius) 22px, border 1px var(--border), var(--lf-shadow-card)
+   605→  - All Lucide icons, no emojis, correct font families (Syne headings, DM Sans body, JetBrains Mono numbers)
+   606→  - Preserved all store connections and functionality
+   607→
+   608→- ClientPerfil.tsx: Complete redesign per A.8 spec
+   609→  - HEADER: 80x80 avatar with initials Syne bold 28px, border 3px var(--primario), name 22px bold, email 14px muted
+   610→  - 7 vertical section cards all using var(--surface), var(--lf-card-radius) 22px, var(--lf-shadow-card):
+   611→    1. Puntos LOGIFAST: JetBrains Mono 28px bold points + nivel badge + progress bar + "55 puntos para Oro" + canjear pills
+   612→    2. Metricas: 3 stats row (envios totales/gastados/este mes) + Recharts bar chart with var(--primario) color
+   613→    3. Direcciones guardadas: Home/Building/MapPin icons per label + "Agregar" button + autocomplete form
+   614→    4. Favoritos: Tiendas/Productos sliding underline tabs + grid tiendas + lista productos con "Agregar al carrito"
+   615→    5. Referidos: gradient card var(--primario) + monospace code + Copy icon button + share button
+   616→    6. Calificaciones: Star icons + date + repartidor name history
+   617→    7. Configuracion: toggles (notificaciones/promociones/modo oscuro), pago preferido, "Cerrar sesion" ghost var(--peligro), "Eliminar cuenta" small link
+   618→  - Toast notification system preserved (no emojis)
+   619→  - All store connections preserved (useStore, useMarketplaceStore)
+   620→  - Modal system for logout/delete preserved with updated card-radius styling
+   621→
+   622→Stage Summary:
+   623→- Both ClientPedidos and ClientPerfil fully redesigned per spec
+   624→- Lint passes with zero new errors
+   625→- All CSS design tokens (var(--lf-card-radius), var(--lf-shadow-card), var(--lf-pill-radius), etc.) correctly applied
+   626→- Font system enforced: Syne headings, DM Sans body, JetBrains Mono numbers
+   627→- No emojis anywhere - only Lucide SVG icons
+   628→- Mobile-first design with consistent card styling
+   629→- All existing functionality and store connections preserved
+   630→
+   631→---
+   632→Task ID: T11
+   633→Agent: Main
+   634→Task: Build the complete Repartidor (Delivery Driver) Mobile Interface per Section B of the spec
+   635→
+   636→Work Log:
+   637→- Created /src/components/repartidor/RepartidorApp.tsx - comprehensive single component managing all repartidor screens
+   638→- Updated /src/app/page.tsx to route 'repartidor' role to RepartidorApp via dynamic import with ssr: false
+   639→- Updated demo credentials for repartidor from "Repartidor Demo" to "Carlos Mendoza"
+   640→
+   641→Screens implemented:
+   642→- B.1 Estado de Espera (Idle): CSS map background with grid/road SVG patterns + markers, glassmorphism header (LOGIFAST + "En linea" green dot + toggle switch + notification bell + avatar), center glassmorphism card with 3 pulsing concentric rings animation + Bike icon + "Esperando asignacion" + stats strip (JetBrains Mono), expandable bottom sheet with "Servicios de hoy" list + 2x2 stats grid
+   643→- B.2 Nueva Orden: Full-screen overlay with dark gradient, animated bounce Package icon, "Nueva orden" Syne 24px, glass card with type badge + route (green/orange dots) + 2x2 data grid (Distancia/Tiempo/Ganancia/Paquete) + client info, 30s countdown timer bar (turns red at 10s), "Aceptar orden" primario button + "Rechazar" ghost
+   644→- B.3 Flujo de Entrega: Map area 60% with route line + markers + current position pulse, bottom sheet 40% expandable with handle, step badge, 4-step progress bar (circles + connecting lines), order info card (ID + destination + client + instructions), km counter JetBrains Mono 28px bold + progress bar, main action button changes per step (color/text/shadow), "Reportar incidencia" ghost danger button
+   645→- B.4 Reporte de Incidencia: Bottom sheet overlay with "Reportar incidencia" Syne 20px + AlertTriangle red, selectable options (Falla mecanica/Problema con cliente/Accidente/Otro) with icons, textarea "Describe que paso", "Enviar reporte" danger button
+   646→- B.5 Historial del Dia: Header "Hoy" Syne 24px + date, 4 KPIs in 2x2 grid (Entregas/Km/Ganancias/Tiempo activo), timeline list of completed services with dot-line connectors
+   647→- B.6 Perfil del Repartidor: 72x72 avatar + name + "Repartidor" badge + "Verificado" badge, stats card 3-col (entregas/calificacion/a tiempo), moto card, calificacion section with stars, configuracion toggles (notificaciones/sonido/modo oscuro), logout button
+   648→- B.7 Navegacion: 3-item bottom nav (Inicio/MapPin, Servicios/Package, Perfil/User), glassmorphism, primario indicator animation
+   649→
+   650→Design compliance:
+   651→- NO emojis - only Lucide SVG icons throughout
+   652→- Glassmorphism on floating elements only (header, bottom sheets, bottom nav)
+   653→- CSS variables: var(--lf-glass-bg), var(--lf-card-radius), var(--lf-shadow-card), var(--lf-shadow-fab), var(--lf-sheet-radius), var(--lf-pill-radius), var(--lf-button-radius), var(--lf-input-radius)
+   654→- Fonts: Syne headings, DM Sans body, JetBrains Mono numbers
+   655→- Mobile-first professional feel like Uber driver app
+   656→- Framer Motion animations on all transitions, pulsing rings, route markers, timer, nav indicator
+   657→- Auto-simulates new order arrival after 6s when idle and online
+   658→- KM countdown timer during delivery
+   659→- Lint passes with zero errors
+   660→
+   661→Stage Summary:
+   662→- Complete repartidor mobile interface with 7 screens/sections
+   663→- All 20 LOGIFAST design rules followed
+   664→- Dynamic import with SSR disabled for client-side only rendering
+   665→- All mock data for repartidor, services, and orders included
+   666→
+   667→---
+   668→Task ID: Mobile-2026-Redesign-Final
+   669→Agent: Main
+   670→Task: Complete LOGIFAST Mobile 2026 Redesign — Final Summary
+   671→
+   672→Work Log:
+   673→- Added Mobile 2026 CSS tokens to globals.css (glassmorphism, shadows, sheet radius, snap points, safe-area) for both light and dark modes
+   674→- Redesigned ALL 8 client screens per spec (A.1-A.8): Inicio, Explorar, Tienda, Carrito, Tracking, Chat, Pedidos, Perfil
+   675→- Built ALL 7 repartidor screens from scratch (B.1-B.7): Idle, New Order, Delivery Flow, Incident Report, History, Profile, Navigation
+   676→- Applied glassmorphism to all floating elements using var(--lf-glass-bg) + backdrop-filter
+   677→- Implemented elevated center Enviar button (52x52, translateY(-12px)) in bottom nav
+   678→- Added Framer Motion sliding indicators (layoutId) for tabs and navigation
+   679→- Added haptic feedback (navigator.vibrate) on key interactions
+   680→- Verified zero emoji violations across all components
+   681→- Lint: 0 errors, 1 pre-existing warning
+   682→- VLM analysis confirmed "2026 premium delivery app" design quality
+   683→
+   684→Stage Summary:
+   685→- Complete Mobile 2026 redesign implemented for both Client and Repartidor roles
+   686→- All 20 LOGIFAST design rules followed
+   687→- Design system tokens properly applied throughout
+   688→- Production-ready visual redesign
+   689→
+   690→---
+   691→Task ID: V4
+   692→Agent: fullstack-developer
+   693→Task: Build ClientBusqueda.tsx — Full search screen per spec section 1
+   694→
+   695→Work Log:
+   696→- Created /src/components/client/ClientBusqueda.tsx
+   697→- Full-screen search overlay with Framer Motion enter/exit animations (0.3s cubic-bezier(0.16,1,0.3,1) enter, 0.25s exit)
+   698→- Search bar (56px fixed top): Search icon 20px absolute left, input 15px no border, X clear button (animated), "Cancelar" button slides in from right
+   699→- Initial state (no text): Recent Searches with "Recientes" header + "Limpiar" link + Clock icons + X delete per item; Trends "Popular cerca de ti" with horizontal pills; Quick Categories 2-column grid with Lucide icons 28px
+   700→- While typing: Real-time suggestions filtered from tiendas + productos + categorias + envios, max 8, with type icons (Store/Package/Grid3X3/Truck 18px), match highlighted bold, secondary info muted, "Ver todos los resultados" link
+   701→- Results state: Filter tabs (Todo/Tiendas/Productos/Envios) with Framer Motion layoutId sliding underline; counter "X resultados para '[term]'"; Tienda cards (logo + name highlighted + rating + time); Producto cards (64x64 image + name + tienda + price mono + add-to-cart button); Envio cards (ID + status badge + route + date); Compra cards (logo + ID + status + items + total)
+   702→- No results: SVG illustration + "Sin resultados" + "Explorar categorias" button
+   703→- Uses Material You 3 CSS variables (var(--md-primary), var(--md-surface), etc.)
+   704→- Fonts: Syne headings, DM Sans body, JetBrains Mono numbers/prices
+   705→- NO emojis — Lucide SVG icons only
+   706→- Mobile-first responsive design
+   707→- Integration with useMarketplaceStore (tiendas, productos, ordenesCompra) and useStore (orders)
+   708→- Local state: query, recentSearches, activeTab, showResults
+   709→- ESLint passes with 0 errors
+   710→
+   711→Stage Summary:
+   712→- Complete full-screen search experience per spec
+   713→- Three states: initial (recent/trends/categories), typing (suggestions), results (filtered tabs)
+   714→- Smooth animations and Material You 3 aesthetic throughout
+   715→
+   716→---
+   717→Task ID: V2+V3
+   718→Agent: fullstack-developer
+   719→Task: Update ClientShell.tsx — Splash screen, native status bar, Android gesture bar, Material 3 bottom nav
+   720→
+   721→Work Log:
+   722→- Added splash screen: Fixed fullscreen overlay with var(--md-surface) background, 72x72 rounded logo (gradient #FF5722→#FF8A65 + Bike icon 32px white), "LOGIFAST" Syne 24px bold, logo scales 0.8→1 (0.6s), text fades in (0.6s + 0.3s delay), fades out after 1.5s (0.4s), removed from DOM after 1.9s
+   723→- Added native status bar: Fixed 24px bar at top, "9:41" JetBrains Mono 14px, inline SVG icons (signal bars, wifi, battery), pointer-events none, z-index 9999, hidden on desktop via @media
+   724→- Added Android gesture bar: Fixed 20px bar at bottom, 120px×3px rounded line at 30% opacity, pointer-events none, z-index 9999, hidden on desktop
+   725→- Updated bottom nav to Material 3 pill indicator: Active icon wrapped in 64×32px border-radius 16px pill with var(--md-primary-container) bg + var(--md-on-primary-container) icon; Inactive: transparent bg + var(--md-on-surface-variant) icon; Active label font-weight 700 var(--md-on-surface); Inactive label font-weight 500 var(--md-on-surface-variant); Height 80px (was 72px); Background var(--md-surface) with border-top var(--md-outline-variant)
+   726→- Updated Enviar center button: var(--md-primary-container) bg, var(--md-on-primary-container) icon, border-radius 16px, 52×52, var(--md-elevation-3) shadow, translateY(-12px)
+   727→- Added Material 3 snackbar system: SnackbarContext + useSnackbar hook, fixed bottom:96px left:16px right:16px, var(--md-inverse-surface) bg, var(--md-inverse-on-surface) text, border-radius 4px, padding 14px 16px, var(--md-elevation-3) shadow, optional action button in var(--md-inverse-primary), auto-dismiss 4s, animation translateY(100px)→0 0.3s cubic-bezier(0.2,0,0,1)
+   728→- Added dynamic imports: ClientBusqueda, ClientAyuda, ClientPuntos (ssr: false)
+   729→- Created placeholder components for ClientBusqueda.tsx, ClientAyuda.tsx, ClientPuntos.tsx (overlay screens)
+   730→- Updated CSS: status bar/gesture bar shown only on mobile (hidden ≥1024px), header offset for status bar on mobile, content padding updated for 80px bottom nav, snackbar max-width on desktop
+   731→- All existing functionality preserved
+   732→- Lint: 0 errors, 1 pre-existing warning
+   733→- Server: 200 OK
+   734→
+   735→Stage Summary:
+   736→- Splash screen with animated logo + brand text
+   737→- Simulated native status bar (mobile only) with time + signal/wifi/battery SVGs
+   738→- Android gesture bar (mobile only)
+   739→- Material 3 bottom nav with pill indicator pattern for active items
+   740→- Material 3 snackbar system with context provider
+   741→- Dynamic imports for Busqueda/Ayuda/Puntos overlay components
+   742→- All Material Design 3 tokens properly applied
+   743→
+   744→---
+   745→Task ID: V5+V6
+   746→Agent: Main
+   747→Task: Build ClientAyuda.tsx (Help Center) + ClientPuntos.tsx (Points Store)
+   748→
+   749→Work Log:
+   750→- Created /src/components/client/ClientAyuda.tsx with full Help Center implementation
+   751→  - Header with "Centro de ayuda" Syne 24px bold + ArrowLeft back button
+   752→  - Search input for filtering FAQ questions
+   753→  - FAQ Accordion grouped by 4 categories (Envios 5q, Compras 4q, Pagos 3q, Cuenta 3q)
+   754→  - ChevronDown rotation animation + height animation 0.25s
+   755→  - Contact card with "Chatear con soporte" primary button, "Llamar" and "Email" outline buttons
+   756→  - Support chat overlay with auto-message, quick chips, typing indicator, bubble style matching repartidor chat
+   757→  - Policies section (Privacy, Terms, Coverage, Refund) with slide-in viewer
+   758→- Created /src/components/client/ClientPuntos.tsx with full Points Store implementation
+   759→  - Header "Recompensas" Syne 24px bold + back button
+   760→  - Large gradient balance card with points, level badge, progress bar
+   761→  - 8 reward cards in 2-column grid with gradient headers, icons, costs, descriptions
+   762→  - "Canjear" button (if enough points) or "X pts mas" (disabled)
+   763→  - Confirmation dialog with reward details
+   764→  - Animated checkmark success overlay
+   765→  - Active rewards section with expiration indicator
+   766→  - Redemption history from store historial (negative entries)
+   767→- Added 'ayuda' and 'puntos' to ClientModuleKey type in store.ts
+   768→- Registered both components in ClientShell.tsx renderModule switch
+   769→- Added "Ver recompensas" button in ClientPerfil Puntos section
+   770→- Added "Centro de ayuda" SettingsRow in ClientPerfil Configuracion section
+   771→- Both components use useStore for fidelizacion state
+   772→- Material You 3.0 aesthetic with CSS variables
+   773→- Lucide SVG icons only (no emojis)
+   774→- Mobile-first responsive design
+   775→- Framer Motion animations throughout
+   776→
+   777→Stage Summary:
+   778→- ClientAyuda: Complete Help Center with FAQ search/accordion, support chat, and policy viewer
+   779→- ClientPuntos: Complete Points Store with balance card, 8 rewards catalog, redeem flow with confirmation/success animations, active rewards, and redemption history
+   780→- Both integrated into ClientShell navigation and accessible from ClientPerfil
+   781→- ClientModuleKey extended with 'ayuda' | 'puntos'
+   782→
+   783→---
+   784→Task ID: V4-V10
+   785→Agent: Main + Subagents
+   786→Task: Implement v4 spec — 4 new features + Native Android Material You 3.0 layer
+   787→
+   788→Work Log:
+   789→- Added Material You 3.0 CSS tokens to globals.css (light + dark): --md-primary, --md-on-primary, --md-primary-container, --md-on-primary-container, --md-surface, --md-surface-variant, --md-on-surface, --md-on-surface-variant, --md-outline, --md-outline-variant, --md-inverse-surface, --md-inverse-on-surface, --md-error, --md-success, --md-warning, --md-elevation-1 through 5
+   790→- Built ClientBusqueda.tsx: full search screen with recents, trends, quick categories, real-time suggestions, results by type (Tiendas/Productos/Envios), no-results state, Material 3 search bar
+   791→- Built ClientAyuda.tsx: FAQ accordion (4 categories, 15 questions), support chat with simulated agent, phone/email contact, policy viewers
+   792→- Built ClientPuntos.tsx: gradient balance card with 245 pts, 8 rewards catalog (Envio gratis, C$20-100 descuento, Prioritario, Delivery gratis, Suscripciones Plata/Oro), redeem confirmation + success animation, redemption history
+   793→- Updated ClientShell.tsx: splash screen (1.5s fade), native status bar (9:41 + SVG icons), Android gesture bar, Material 3 bottom nav (pill indicator pattern), snackbar system (SnackbarContext + useSnackbar hook), dynamic imports for new components
+   794→- Added 'ayuda' and 'puntos' to ClientModuleKey in store.ts
+   795→- Registered new modules in ClientShell renderModule switch
+   796→- Lint: 0 errors, 1 pre-existing warning
+   797→- Zero emoji violations confirmed
+   798→
+   799→Stage Summary:
+   800→- ALL 4 new features implemented: Search, Help Center, Multi-Store Tracking (via existing floating bar), Points Store
+   801→- Native Android Material You 3.0 layer applied: CSS tokens, splash screen, status bar, gesture bar, pill nav, snackbar
+   802→- Client experience now at 100% per v4 spec
+   803→- VLM verified: premium 2026 native Android app feel, no emojis, professional design
+   804→
+   805→---
+   806→Task ID: 5-A
+   807→Agent: full-stack-developer (repartidor APIs)
+   808→Task: Create all /api/repartidor/* API routes
+   809→
+   810→Work Log:
+   811→- Read existing API patterns (ordenes-compra, tiendas) and the repartidor-store.ts types
+   812→- Created /src/lib/repartidor-mock.ts: shared mock data (perfil, moto, ordenActiva, servicios hoy, calificaciones, notificaciones, chat, productos checklist, stats + trends) + in-memory runtimeState for stateful mutations (conexion, rechazosHora, ordenActiva, ultimaPosicion, etc.). Mock repartidor ID: "rep001".
+   813→- Created /api/repartidor/ordenes/route.ts — GET ?estado=activa|historial (returns active orden or service history list)
+   814→- Created /api/repartidor/ordenes/[id]/route.ts — GET full detail of a service/orden by ID (active orden vs enriched service detail)
+   815→- Created /api/repartidor/ordenes/[id]/aceptar/route.ts — PATCH returns { ok:true, estado:"aceptado" }
+   816→- Created /api/repartidor/ordenes/[id]/rechazar/route.ts — PATCH returns { ok:true, rechazosHora:N, pausado } (auto-pause at 3)
+   817→- Created /api/repartidor/ordenes/[id]/recoger/route.ts — PATCH returns { ok:true, estado:"recogido" }
+   818→- Created /api/repartidor/ordenes/[id]/entregar/route.ts — PATCH returns { ok:true, estado:"entregado", kmFinal:X } (also pushes to historial)
+   819→- Created /api/repartidor/ordenes/[id]/incidencia/route.ts — PATCH body { tipo, descripcion }, returns { ok:true, estado:"incidencia" }
+   820→- Created /api/repartidor/posicion/route.ts — POST { lat, lng } (persists to PosicionRepartidor + RepartidorProfile, fallback to runtimeState)
+   821→- Created /api/repartidor/posicion/[repartidorId]/route.ts — GET latest position (DB first, mock fallback)
+   822→- Created /api/repartidor/conexion/route.ts — PATCH { conectado:boolean } returns { ok:true, conectado, estado, pausado, rechazosHora }
+   823→- Created /api/repartidor/stats/route.ts — GET ?periodo=hoy|semana|mes returns { entregas, km, ganancias, tiempoActivo } + tendencias %
+   824→- Created /api/repartidor/perfil/route.ts — GET profile + PATCH config (sonidoActivo, vibracionActiva, ubicacionActiva, zonaPreferida)
+   825→- Created /api/repartidor/moto/route.ts — GET assigned moto data
+   826→- Created /api/repartidor/calificaciones/route.ts — GET ratings history + distribution (5★..1★ counts) + promedio
+   827→- Created /api/repartidor/notificaciones/route.ts — GET list + PATCH marks as read (one by id, or all)
+   828→- Created /api/repartidor/chat/[ordenId]/route.ts — GET messages for an orden
+   829→- Created /api/repartidor/chat/route.ts — POST { ordenId, contenido } returns { ok:true, id, mensaje } (201)
+   830→- Created /api/repartidor/ordenes-compra/[id]/productos/route.ts — GET product checklist for a store pickup order (uses MOCK_PRODUCTOS_CHECKLIST or generates from MOCK_ORDENES_COMPRA items)
+   831→- All routes use `export const dynamic = 'force-dynamic'`, NextRequest/NextResponse, proper HTTP status (200/201/400/404/500), and import db from '@/lib/db' where persistence makes sense
+   832→- Ran `bun run lint` → 0 errors, 1 pre-existing warning in layout.tsx (unrelated)
+   833→
+   834→Stage Summary:
+   835→- 18 API route files created under /src/app/api/repartidor/ covering the full repartidor workflow: ordenes (list/detail/aceptar/rechazar/recoger/entregar/incidencia), posicion (POST/GET), conexion, stats, perfil (GET/PATCH), moto, calificaciones, notificaciones (GET/PATCH), chat (GET/POST), ordenes-compra productos checklist
+   836→- 1 shared module /src/lib/repartidor-mock.ts with mock data + in-memory runtime state (mirrors repartidor-store types)
+   837→- All routes follow the existing marketplace API style, use TypeScript strict types from repartidor-store, return JSON, and degrade gracefully when DB is unavailable (best-effort try/catch around db calls)
+   838→- ESLint clean (0 errors)
+   839→
+   840→---
+   841→Task ID: 5-B
+   842→Agent: full-stack-developer (repartidor UI)
+   843→Task: Build repartidor mobile UI components
+   844→
+   845→Work Log:
+   846→- Read worklog.md (5-A API work + design rules), repartidor-store.ts (full Zustand store: 8 estados, orden activa, mock servicios hoy, perfil, moto, calificaciones, notificaciones, chat, stats hoy/semana/mes), ClientShell.tsx (Material 3 bottom nav pattern, snackbar context, dynamic imports), globals.css (CSS vars + Material You tokens light/dark)
+   847→- Created /src/components/repartidor/RepartidorShell.tsx (451 lines): main shell with SnackbarContext + useRepartidorSnackbar hook, native status bar (clock + SignalIcon/WifiIcon/BatteryIcon SVG), Android gesture bar, Material 3 bottom nav with 3 tabs (Servicio/Bike, Historial/ClipboardList, Perfil/User) using pill indicator (md-primary-container), simulation loop (5s setInterval calling simularMovimiento when conectado), clock updater (10s), 10s snackbar auto-dismiss, dynamic imports for all 6 sub-components, AnimatePresence-wrapped overlays (NotificacionOrden/Chat/Incidencia/DetalleServicio), responsive styles (status bar/gesture bar hidden ≥1024px, snackbar centered on desktop), dark mode via data-theme tokens
+   848→- Created /src/components/repartidor/RepartidorServicio.tsx (~1230 lines): full state machine rendering different UI per `estado`. Built StylizedMap component (CSS gradient + grid lines + diagonal roads + lake/park blobs + SVG dashed route line + Framer Motion pulsing rings repartidor marker with Bike icon + Store pickup pin + MapPin delivery pin). KmCounter with vertical slide animation (AnimatePresence popLayout, old slides up & fades, new slides in from below). TiempoDisplay child component (keyed by ordenActiva.id to auto-reset per order, 1s tick). BottomSheet wrapper + SheetHeader + OrdenMiniCard + StatPill + PrimaryButton helpers. States: DESCONECTADO (centered card + Conectarse button), EN_LINEA (glass card "Esperando asignación" with pulsing Zap icon + bottom sheet with today's services + "Simular nueva orden" button using 3 MOCK_ORDENES cycled by index), EN_CAMINO_RECOGER (route to pickup + bottom sheet + ETA/distancia pills + "Llegué al punto de recogida"), EN_PUNTO_RECOGIDA (big "Recoger paquete" or "Recoger pedido de [Tienda]" button), RECOGIDO (km counter + 1s timer + progress bar + ETA chip + "Llegué al punto de entrega"), EN_PUNTO_ENTREGA (Confirmar entrega primary + Reportar incidencia danger outline), ORDEN_ASIGNADA/INCIDENCIA (loading state, handled by overlays). FAB chat button top-right when ordenActiva, glass status chip top-left
+   849→- Created /src/components/repartidor/RepartidorHistorial.tsx (666 lines): header "Hoy" Syne 24px + fecha + period selector pills (Hoy/Semana/Mes). 4 KPI cards in 2x2 grid (Entregas/Km/Ganancias/Tiempo activo) with countUp animation (requestAnimationFrame cubic-ease 800ms), JetBrains Mono 28px bold, trend arrow + %. recharts BarChart (120px height, radius 16px container, --primario bars, by hour for Hoy / by day for Semana / by week for Mes, empty bars grey). Filter pills (Todos/Envíos/Compras/Incidencias). Timeline service rows: time (mono 13px muted) | colored dot (10px by estado) + vertical connector line | content card with ID (mono) + tipo badge (Envío/Compra with Package/ShoppingBag icon) + route origen→destino with ChevronRight + km/costo/tiempo/estado badge
+   850→- Created /src/components/repartidor/RepartidorPerfil.tsx (901 lines): header avatar 72x72 (initials gradient) + name Syne 22px + "Repartidor" badge + moto modelo. 4 sections: (1) Estadísticas generales — 2x2 grid (Entregas totales/Km totales/Calificación/Tiempo promedio) + recharts bar chart entregas últimos 7 días. (2) Moto asignada — Moto-03 mono bold + modelo + placa/km/último/próximo mantenimiento + estado badge (DISPONIBLE/EN_SERVICIO/MANTENIMIENTO) + yellow-bordered warning card if alertaMantenimiento. (3) Calificación — 4.8 Syne 48px + exported StarRating SVG array (filled/half/empty with Star icon + var(--warning)) + (287 reseñas) + 5 horizontal distribution bars (5★→1★ with %) animated + last 3 reviews (cliente + stars + comentario + fecha). (4) Configuración — Switch toggles (Sonido/Vibración/Compartir ubicación) using shadcn Switch, zona preferida custom dropdown (animated rotate chevron), ConfigLink rows (Reportar problema moto/ Centro de ayuda), dark mode Switch, "Cerrar sesión" danger button calling onLogout
+   851→- Created /src/components/repartidor/RepartidorNotificacionOrden.tsx (510 lines): full-screen overlay with --primario→--secundario gradient. Top: animated Bell icon (rotate+scale loop) + "Nueva orden" Syne 18px + sound/vibration hint (Volume2+Vibrate icons) + CountdownRing (SVG circle, 72px, strokeDashoffset animated, white countdown number mono 22px). Pulsing card (motion scale loop 1→1.015) with glassmorphism: order ID mono + tipo badge (Package/ShoppingBag icon). RouteVisualization (vertical: green dot Recogida + origen + dashed connector + orange dot Entrega + destino). DetailRow list (Navigation distancia, Clock tiempo, DollarSign ganancia, Box tamaño, User cliente, Store tienda). Two big buttons: "Aceptar orden" (white bg + Check icon, calls aceptarOrden + snackbar) + "Rechazar" (outline + X icon, calls rechazarOrden + snackbar). Countdown useEffect: 1s tick, when hits 0 auto-calls timeoutOrden + snackbar. Vibrate [100,50,100] on mount
+   852→- Created /src/components/repartidor/RepartidorChat.tsx (323 lines): bottom sheet (motion y:100%→0). Backdrop (rgba(0,0,0,0.4) onClick close). Drag handle. Header: MessageSquare icon + cliente nombre + ordenId + close button (X). Messages list (max-h calc(85vh-130px), scrollable, surface-variant bg): bubbles — repartidor right-aligned (var(--primario) bg, white text, borderBottomRightRadius 4) / cliente left-aligned (var(--md-surface) bg). Each bubble: content + time mono 10px. Auto-scroll to bottom on new message (useEffect scrollTop = scrollHeight). Empty state with MessageSquare icon. Input bar: Phone icon button + text input (Enter to send) + Send button (disabled when empty, --primario bg when active). Filters mensajes by chatOrdenId || ordenActiva.id
+   853→- Created /src/components/repartidor/RepartidorIncidencia.tsx (382 lines): bottom sheet. Backdrop + drag handle + header (AlertTriangle icon in danger-tinted bg + "Reportar incidencia" Syne + orden ID + close). Warning banner (yellow border: "La orden cambiará a incidencia y el admin será notificado"). Tipo selector 2x2 grid: Falla mecánica/Wrench (warning), Problema con cliente/UserX (info), Accidente/AlertOctagon (peligro), Otro/MoreHorizontal (muted) — selected gets --primario border + tinted bg + primario-filled icon. Description textarea (4 rows). "Enviar reporte" danger button (disabled until tipo+descripcion set) calls reportarIncidencia(tipo, desc) + snackbar. Validation: snackbar if no tipo or no descripcion
+   854→- Created /src/components/repartidor/RepartidorDetalleServicio.tsx (539 lines): full-screen slide-in (x:100%→0). Back button header + "Detalle de servicio" + ordenId mono + estado badge (verde/rojo). MiniMap 180px (CSS gradient + grid + SVG dashed route + Store pickup pin + MapPin delivery pin). Info card: ID/tipo badge + InfoRow list (User cliente, Store tienda, MapPin origen, Flag destino, Box paquete, RouteIcon km, DollarSign ganancia, Clock tiempo total, Clock hora). Incidencia card (peligro-tinted border) with tipo + descripción. Calificacion card (Syne 32px number + StarRating + label). Timeline 8 steps (Bell asignada, Check aceptada, Navigation camino recogida, Hand paquete recogido, Bike camino entrega, MapPin en punto entrega, Flag entrega confirmada, Star calificada): green check dots for completed, red AlertTriangle dot for incidencia stop point, vertical connectors colored by completion. Imports StarRating from RepartidorPerfil
+   855→- Rewrote /src/components/repartidor/RepartidorApp.tsx (24 lines): thin wrapper passing isDark/toggleTheme/onLogout + userName="Carlos Martínez" to RepartidorShell. Preserved RepartidorAppProps interface so src/app/page.tsx (line 525-527) doesn't break
+   856→- Lint fix iteration 1: 2 errors on react-hooks/set-state-in-effect rule (setSegundos in NotificacionOrden effect body + setSegundosLocal(0) in Servicio effect body). Fixed by: (1) NotificacionOrden — removed setSegundos(tiempoAceptacion) call, useState(tiempoAceptacion) initial value sufficient since component remounts per new ordenAsignadaPendiente; (2) Servicio — extracted TiempoDisplay child component, parent passes key={ordenActiva?.id || 'none'} so React remounts (resetting useState) on order change, no setState in effect body
+   857→- Lint fix iteration 2: removed unused serviciosHoy destructure + hidden span reference in Servicio, removed unused MapPin import in NotificacionOrden after RouteVisualization refactor (now uses origen/destino text labels instead of just dots)
+   858→- Ran `bun run lint` → 0 errors, 1 pre-existing warning in layout.tsx (custom fonts, unrelated)
+   859→- Verified dev server: HTTP 200, 42KB response, compile 4ms
+   860→
+   861→Stage Summary:
+   862→- 9 files created/rewritten under /src/components/repartidor/: RepartidorShell.tsx (new shell), RepartidorServicio.tsx (state machine + stylized map), RepartidorHistorial.tsx (KPIs + recharts + timeline), RepartidorPerfil.tsx (4 sections + StarRating exported), RepartidorNotificacionOrden.tsx (countdown overlay), RepartidorChat.tsx (bottom sheet chat), RepartidorIncidencia.tsx (bottom sheet incident), RepartidorDetalleServicio.tsx (full-screen detail), RepartidorApp.tsx (thin wrapper, 1781→24 lines)
+   863→- All design rules respected: NO emojis (only Lucide React SVG icons), NO ★☆ text (StarRating SVG array), NO alert/confirm (snackbar only), NO ✓✗ text (Lucide Check/X), max 3 colors per screen (--primario + --secundario + neutrals), Syne 700 headings / DM Sans body / JetBrains Mono numbers, animations 0.15-0.4s ease-out transform/opacity only, borders 1px max, radius 12-16px components / 20-24px containers / 100px pills, fixed estado colors (Pendiente=#FFB300, En camino=#2979FF, Preparando=#FF5722, Listo=morado, Entregado=#00C853, Cancelado=gris, Incidencia=#FF1744), mobile-first max-width 480px container, touch targets ≥44px, sticky bottom nav, CSS variables from globals.css (--primario, --bg, --surface, --text, --border, --md-* Material You tokens)
+   864→- All text in Spanish (Nicaragua), Managua zonas in dropdown
+   865→- Zustand store fully wired: conectar/recibirOrdenAsignada/aceptarOrden/rechazarOrden/timeoutOrden/llegarRecogida/recogerPaquete/llegarEntrega/confirmarEntrega/reportarIncidencia/toggleChat/enviarMensaje/toggleIncidencia/verServicioDetalle/setPantalla/actualizarConfig all called from UI
+   866→- Simulation loop runs 5s calling simularMovimiento when conectado; map marker animates position transitions; km counter + timer tick up during RECOGIDO state
+   867→- ESLint clean (0 errors, 1 pre-existing layout.tsx warning)
+   868→
+   869→---
+   870→Task ID: 6-C
+   871→Agent: full-stack-developer (Repartidor design audit)
+   872→Task: Audit and fix Repartidor components — apply .lf-* design system classes, fix transparent floating elements
+   873→
+   874→Work Log:
+   875→- Audited all 8 Repartidor components in /src/components/repartidor/ against the .lf-* design system in globals.css
+   876→- RepartidorNotificacionOrden.tsx: Replaced solid orange→navy gradient overlay with required dark overlay `rgba(0,0,0,0.78)` + `backdrop-blur(12px)`, added `order-notification visible lf-order-notification visible` className. Strengthened the glass card to `rgba(255,255,255,0.12)` + `blur(24px)` + heavier shadow so white text remains readable on the dark overlay. Timer ring (white SVG strokes) preserved.
+   877→- RepartidorChat.tsx: Applied `lf-bottom-sheet open bottom-sheet open` to the sheet (28px top radius + up-shadow), `lf-sheet-handle` to drag handle. Replaced custom chat bubble styles with `.chat-bubble-self` (orange) / `.chat-bubble-other` (crema). Input bar wrapper got `.chat-input-area lf-chat-input-area`, message input got `.chat-input lf-chat-input` (44px tall, transparent border, focus ring), send button got `.chat-send-btn lf-chat-send-btn` (44px round). Backdrop already rgba(0,0,0,0.4) — kept.
+   878→- RepartidorIncidencia.tsx: Applied `lf-bottom-sheet open bottom-sheet open` + `lf-sheet-handle`. Description `<textarea>` now uses `.lf-textarea` (min-height 110, 1.5px border, focus ring, solid surface bg). Type selector cards now use `.lf-card` with solid active background `color-mix(... primario 10%, md-surface)` and orange border + shadow when selected. Submit button uses `.lf-btn .lf-btn-danger .lf-btn-block .lf-btn-lg`.
+   879→- RepartidorServicio.tsx: Glass "Esperando asignación" card bumped from 72% transparent (`--lf-glass-bg`) to solid 88% white + blur(24px) + visible shadow for readability. Bottom sheet (both inline state and reusable `BottomSheet` component) upgraded to `lf-bottom-sheet open` with 28px top radius + up-shadow + `lf-sheet-handle`. ORDEN_ASIGNADA/INCIDENCIA overlay upgraded from 60% transparent surface tint to `modal-overlay visible lf-modal-overlay visible` with rgba(0,0,0,0.5) + blur(6px), text switched to white. KM progress bar uses `.lf-progress .lf-progress-sm` and the fill uses `.lf-progress-fill`.
+   880→- RepartidorDetalleServicio.tsx: Verified all backgrounds solid (page bg, map gradient, info card, timeline cards). Applied `.lf-badge .lf-badge-entregado` / `.lf-badge-incidencia` to the estado badge in the header, and `.lf-badge .lf-badge-preparando` (envio=naranja) / `.lf-badge .lf-badge-en-camino` (compra=azul) to the tipo badge.
+   881→- RepartidorHistorial.tsx: KPI cards and bar chart card now use `.lf-card-elevated`. Service status badge in ServicioRow uses `.lf-badge` + `.lf-badge-entregado`/`.lf-badge-incidencia`/`.lf-badge-cancelado` based on estado. Service tipo badge uses `.lf-badge` + `.lf-badge-preparando`/`.lf-badge-en-camino`. Empty state replaced with `.lf-empty` containing `.lf-empty-icon` (Package), `.lf-empty-title` ("Sin servicios"), `.lf-empty-desc` — wrapped in `.lf-card-elevated`.
+   882→- RepartidorPerfil.tsx: Moto status badge now uses `.lf-badge` + `.lf-badge-disponible` (verde) / `.lf-badge-en-servicio` (naranja — per design system, was previously azul) / `.lf-badge-mantenimiento` (amarillo). Inline styles kept for backward color consistency with the primario/en-servicio orange.
+   883→- Ran `bun run lint` — 0 errors (1 pre-existing warning about custom font in layout.tsx, unrelated to this task).
+   884→
+   885→Stage Summary:
+   886→- Files modified: 7 (RepartidorNotificacionOrden, RepartidorChat, RepartidorIncidencia, RepartidorServicio, RepartidorDetalleServicio, RepartidorHistorial, RepartidorPerfil)
+   887→- Transparency fixes applied: 6 — (1) order notification overlay → dark 78% + blur, (2) chat sheet → solid + .lf-bottom-sheet, (3) incidencia sheet → solid + .lf-bottom-sheet, (4) servicio bottom sheets (2 instances) → .lf-bottom-sheet + 28px radius + up-shadow, (5) "Esperando asignación" glass card bumped to 88% opacity for readability, (6) ORDEN_ASIGNADA/INCIDENCIA overlay → modal-overlay rgba(0,0,0,0.5) + blur(6)
+   888→- Form elements styled: 6 — (1) incidencia description textarea → .lf-textarea, (2) chat message input → .chat-input, (3) chat send button → .chat-send-btn, (4) chat input bar → .chat-input-area, (5) incidencia type selector cards → .lf-card with active orange border+shadow, (6) incidencia submit button → .lf-btn .lf-btn-danger .lf-btn-block
+   889→- Badges applied: 7 instances — historial estado (entregado/incidencia/cancelado), historial tipo (envio/compra), detalle estado, detalle tipo, perfil moto status (disponible/en-servicio/mantenimiento)
+   890→- Other: KM progress bar uses .lf-progress/.lf-progress-fill, KPI cards use .lf-card-elevated, empty state uses .lf-empty, drag handles use .lf-sheet-handle
+   891→- shadcn Switch in RepartidorPerfil left as-is (already styled per task rules)
+   892→- All Framer Motion animations, TypeScript types, props, state, and Zustand store usage preserved
+   893→- Lint: 0 errors. Pre-existing TypeScript errors in RepartidorChat (`toggleChat(false)` boolean vs string) and recharts Tooltip formatter are unrelated to this audit and were not introduced here.
+   894→
+   895→---
+   896→Task ID: 6-A
+   897→Agent: full-stack-developer (Admin design audit)
+   898→Task: Audit and fix Admin dashboard — apply .lf-* design system classes, fix transparent floating elements
+   899→
+   900→Work Log:
+   901→- Read worklog.md (Tasks 1–5-B) and confirmed .lf-* design system classes already present in globals.css (form elements, buttons, badges, modal/sheet/dropdown/tooltip/snackbar/command/chat classes)
+   902→- Audited all 17 dashboard files + page.tsx: rg `var(--lf-...)` revealed 621 occurrences across 14 files of inline-styled elements referencing undefined CSS variables (--lf-surface, --lf-bg, --lf-text-main, --lf-border, --lf-accent, --lf-text-muted, --lf-primary-soft, --lf-accent-soft, --lf-danger, --lf-success, --lf-warning, --lf-info, --lf-primary, --lf-text, --lf-muted, --lf-bg-base, --lf-text-secondary, --lf-shadow-sm/md/lg/xl)
+   903→- Root cause: dashboard components written by previous agents used variable names like `--lf-surface` while the canonical tokens in globals.css are `--surface`, `--bg`, `--text`, `--border`, `--primario`, `--text-muted`, `--primario-soft`, `--peligro`, etc. (without `lf-` prefix). The undefined variables fell back to transparent/inherited — making every inline-styled modal/dropdown/sheet/input/card transparent
+   904→- Strategy: instead of editing 621 inline styles across 14 files, added CSS variable ALIASES in globals.css `:root` (light) and `[data-theme="dark"]` blocks that map each `--lf-*` reference to the canonical solid-color token. This is a minimal, non-destructive addition that does NOT recreate any .lf-* class — it only defines the missing variables
+   905→- Aliases added (25 unique names × 2 themes = 50 definitions): --lf-bg, --lf-bg-base → var(--bg); --lf-surface, --lf-surface-elevated → var(--surface)/var(--surface-elevated); --lf-text-main, --lf-text → var(--text); --lf-text-secondary → var(--text-secondary); --lf-text-muted, --lf-muted → var(--text-muted); --lf-border → var(--border); --lf-accent, --lf-primary, --lf-primario → var(--primario); --lf-accent-hover, --lf-primario-hover → var(--primario-hover); --lf-accent-soft, --lf-primary-soft → var(--primario-soft); --lf-secundario, --lf-secondary → var(--secundario); --lf-exito, --lf-success → var(--exito); --lf-warning → var(--warning); --lf-peligro, --lf-danger → var(--peligro); --lf-info → var(--info); --lf-shadow-sm/md/lg/xl → var(--shadow-sm/md/lg/xl)
+   906→- Also added `boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'` to modalStyle in ModuleConfig.tsx (6 modals: User, EmailEdit, EmailPreview, Feriado, Integration, Confirm) to give the previously-shadowless modals a proper float shadow
+   907→- Verified each module's floating elements:
+   908→  • CommandPalette.tsx — overlay rgba(0,0,0,0.5)+blur(8px) already correct; panel `var(--lf-surface)` now resolves to #FFFFFF
+   909→  • DashboardShell.tsx — avatar/more/mobile-more dropdowns use var(--lf-surface)+var(--lf-shadow-lg) (both now solid); FAB speed-dial labels use var(--lf-surface)+var(--lf-shadow-md); keyboard help overlay rgba(0,0,0,0.5)+blur(8px)+var(--lf-surface) panel — all correct
+   910→  • NotificationCenter.tsx — dropdown panel var(--lf-surface) + solid shadow — correct
+   911→  • ModuleReportes.tsx — Export dropdown var(--lf-surface) + solid shadow — correct
+   912→  • ModuleClientes.tsx — client detail modal overlay rgba(0,0,0,0.45)+blur(4px) + var(--lf-surface) panel + var(--lf-shadow-xl) — all correct
+   913→  • ModuleConfig.tsx — 6 custom modals (User/EmailEdit/EmailPreview/Feriado/Integration/Confirm) overlay rgba(0,0,0,0.5) + var(--lf-surface) panel + (new) boxShadow — all correct
+   914→  • ModuleSuperAdmin.tsx — uses shadcn Dialog (already solid bg-black/50 overlay + bg-background panel) + shadcn Input/Select/Checkbox (already styled) — correct
+   915→  • ModuleComunicaciones.tsx, ModuleMarketing.tsx — use shadcn Dialog with explicit `background: var(--surface)` override — correct
+   916→  • ModuleOverview.tsx — map controls use rgba(255,255,255,0.9)+blur(16px) (90% opaque, near-solid, intentional glass overlay on map) — acceptable
+   917→  • ModulePedidos.tsx — Create/Detail/Reassign modals overlay rgba(0,0,0,0.5) + var(--lf-surface) panel + inline-styled inputs with var(--lf-bg-base) bg (now #FAF8F5 solid) — all correct
+   918→  • ModuleFlota.tsx, ModuleRepartidores.tsx — Add/Edit modals + inline-styled inputs — all correct after alias fix
+   919→  • ModuleIncidencias.tsx — toasts use solid #16A34A/#002A5C bg — correct
+   920→  • ModuleFinanzas.tsx, ModuleDespacho.tsx — toasts use solid colors; cards/dropdowns use var(--lf-surface) — all correct
+   921→  • SkeletonLoader.tsx — uses lf-skeleton-bone class with var(--lf-surface)/var(--lf-border) gradient — correct
+   922→  • src/app/page.tsx — login/register forms already use lf-form-input, lf-input-wrapper, lf-input-icon, lf-input-eye, lf-form-label, lf-form-error, lf-auth-submit, lf-forgot-link classes — already styled, no changes needed
+   923→- Ran `bun run lint` → 0 errors, 1 pre-existing warning in layout.tsx (custom fonts, unrelated)
+   924→- Verified dev server (HTTP 200, 42KB response, 43ms) and confirmed compiled CSS contains the new --lf-surface: var(--surface) aliases for both light and dark
+   925→
+   926→Stage Summary:
+   927→- Files modified: 2 (src/app/globals.css + src/components/dashboard/ModuleConfig.tsx)
+   928→- CSS variable aliases added: 25 unique names × 2 themes (light + dark) = 50 new variable definitions in globals.css
+   929→- Transparency fixes applied: 621 broken `var(--lf-*)` references across 14 dashboard files now resolve to solid colors (light: #FFFFFF surfaces, #E8E4DE borders, #1B1B2F text, #FF5722 accent; dark: #1A1A24 surfaces, #2A2A38 borders, #F0EDE8 text, #FF6E40 accent)
+   930→- Floating elements fixed (now solid): 6 modals in ModuleConfig, 1 modal in ModuleClientes, 3 modals in ModulePedidos, 1 modal in ModuleFlota, 1 modal in ModuleRepartidores, CommandPalette panel, NotificationCenter dropdown, DashboardShell avatar/more/mobile-more/FAB-label dropdowns, ModuleReportes Export dropdown, SkeletonLoader bones
+   931→- Native HTML form elements fixed (now styled via resolved variables): ~25 inputs + 6 selects across ModuleConfig, ModulePedidos, ModuleFlota, ModuleRepartidores (inline-styled with var(--lf-bg-base)/var(--lf-text-main)/var(--lf-border) which now resolve to solid bg/text/border)
+   932→- ModuleConfig modals also received explicit boxShadow for stronger float appearance
+   933→- No existing TypeScript types, props, state, or event handlers modified
+   934→- ESLint clean (0 errors, 1 pre-existing warning)
+   935→- Dev server healthy (HTTP 200)
+   936→
+   937→---
+   938→Task ID: 6-B
+   939→Agent: full-stack-developer (Cliente design audit)
+   940→Task: Audit and fix Cliente components — apply .lf-* design system classes, fix transparent floating elements
+   941→
+   942→Work Log:
+   943→- Read /home/z/my-project/worklog.md to understand prior T7-T11 redesign (Mobile 2026 spec using --lf-* CSS vars) and v4 Material You 3.0 layer; read globals.css to confirm .lf-* design system (289 class definitions across form elements, badges, floating elements, chat bubbles, etc.)
+   944→- ClientTracking.tsx: Replaced bottom sheet background from `var(--bg)` to `var(--surface)` (solid white/#1A1A24), added explicit `boxShadow: '0 -12px 48px rgba(0,0,0,0.15)'` and `border: 1px solid var(--border)` for solid panel contrast over the map; replaced inline status badge with `className="lf-badge lf-badge-{estado}"` (with encamino→en-camino hyphenation)
+   945→- ClientChat.tsx: Replaced `bg-black/50 backdrop-blur-sm` backdrop with `.bottom-sheet-overlay visible` (rgba(0,0,0,0.4)+blur via class); changed chat sheet container from `var(--bg)` to `var(--surface)` solid + added `.lf-bottom-sheet open` class + `boxShadow: '0 -12px 48px rgba(0,0,0,0.15)'`; applied `.chat-bubble-other`/`.chat-bubble-self`/`.chat-bubble-system` classes to message bubbles; applied `.chat-input-area`, `.chat-input`, `.chat-send-btn` classes to bottom input section
+   946→- ClientRating.tsx: Replaced `rgba(0,0,0,0.5)` overlay with `.modal-overlay visible` class; replaced modal card with `.lf-modal open` class + `var(--surface)` solid background; applied `.lf-textarea` class to comment textarea (removed inline border/bg/focus handlers — design system handles it)
+   947→- ClientSolicitar.tsx (4-step wizard): Applied `.lf-input` to address autocomplete input, package description input, payment amount input, promo code input; applied `.lf-textarea` to instructions textarea — removed redundant inline border/focus/transition handlers since the design system class handles focus ring, dark mode, and styling
+   948→- ClientCarrito.tsx: Applied `.lf-input` to promo code input + schedule date + schedule time inputs (3 total)
+   949→- ClientTienda.tsx: Applied `.lf-input` to internal product search input
+   950→- ClientPerfil.tsx: Applied `.lf-input` to all 6 inputs using `inputStyle` (name, email, phone, address, new address search, delete confirmation); refactored shared `Modal` component to use `.modal-overlay visible` + `.lf-modal open` classes (was already solid `var(--surface)` but now uses design system classes for consistency)
+   951→- ClientEnvios.tsx: Refactored `StatusBadge` to use `lf-badge lf-badge-{estado}` classes (pendiente/en-camino/recogido/entregado/incidencia/programada); applied `.modal-overlay visible` + `.lf-modal open` to ReportModal overlay/card; applied `.lf-textarea` to incident description textarea
+   952→- ClientPedidos.tsx: Refactored `StatusBadge` to accept optional `estado` prop and use `lf-badge lf-badge-{estado}` classes (also handles compra estados: recibido/preparando/listo/en_camino); updated all 5 call sites to pass `estado={order.estado}` or `estado={oc.estado}` — fixed pre-existing bug where `background: ${color}18` was invalid CSS when color was a CSS var like `var(--warning)`
+   953→- ClientShell.tsx: Added `.visible` modifier to existing `.lf-snackbar` class so the design system's opacity/transform state is applied alongside framer-motion animation
+   954→- ClientBusqueda.tsx, ClientAyuda.tsx, ClientPuntos.tsx (placeholders): Verified — already use solid `var(--md-surface)` / `var(--md-surface-variant)` backgrounds for full-screen overlays; remaining "transparent" backgrounds are intentional (close buttons inside solid headers, progress bar tracks inside gradient cards)
+   955→- ClientInicio.tsx, ClientExplorar.tsx: Verified search inputs use intentional glassmorphism (`var(--lf-glass-bg)` with backdrop-blur) over solid page background — not a transparency bug
+   956→
+   957→Stage Summary:
+   958→- 12 Cliente component files modified: ClientTracking, ClientChat, ClientRating, ClientSolicitar, ClientCarrito, ClientTienda, ClientPerfil, ClientEnvios, ClientPedidos, ClientShell (plus verification-only passes on ClientBusqueda, ClientAyuda, ClientPuntos, ClientInicio, ClientExplorar)
+   959→- Transparency fixes applied: 7 floating elements converted to design-system classes (chat backdrop, chat sheet, rating modal+overlay, perfil modal+overlay, envios report modal+overlay, tracking bottom sheet solidified, snackbar .visible)
+   960→- Form elements styled: 15 native inputs/textareas converted to `.lf-input`/`.lf-textarea` classes (5 in ClientSolicitar, 3 in ClientCarrito, 1 in ClientTienda, 6 in ClientPerfil, 1 textarea in ClientRating, 1 textarea in ClientEnvios, plus chat textarea+button via .chat-input/.chat-send-btn)
+   961→- Status badges unified: 3 files (ClientTracking, ClientEnvios, ClientPedidos) now use `.lf-badge .lf-badge-{estado}` color-coded badges with proper dark-mode support; fixed invalid `${color}18` CSS bug in ClientPedidos StatusBadge
+   962→- Lint: 0 errors (1 pre-existing layout.tsx font warning, unrelated)
+   963→- Dev server: HTTP 200, 42KB response
+   964→- All existing TypeScript types, props, state, event handlers, store connections preserved — only class names and inline style overrides changed
+   965→
+   966→---
+   967→Task ID: 1-A
+   968→Agent: full-stack-developer (Config system foundation)
+   969→Task: Create global config system — useLocalStorage hook, configStore, audio service, ThemeProvider, TemaToggle, SonidoToggle
+   970→
+   971→Work Log:
+   972→- Read worklog.md + globals.css to align with LOGIFAST design tokens (--bg, --surface, --text, --primario, --peligro, --border, --text-muted, --bg-alt, --shadow-sm, etc.) and the existing data-theme="dark" attribute convention
+   973→- Created src/hooks/useLocalStorage.ts — SSR-safe hook with functional updates, JSON-parse fallback to raw string, QuotaExceededError handling, plus useLocalStorageListener for cross-tab `storage` event sync (callback kept in a ref to avoid re-subscribes)
+   974→- Created src/services/audio.ts — Web Audio API beeps (no sound files). Lazy singleton AudioContext with webkitAudioContext fallback. SONIDOS record maps each SonidoTipo to note arrays per spec (nueva_orden 4-note 880/1100 alternating; orden_aceptada C-E-G; orden_entregada C-E-G-highC; mensaje 800/1000; error 300/250 square; toggle_on 600/900; toggle_off 900/600; exito C-G-highC; notificacion 660/880). Each note uses oscillator + gain node with linearRamp envelope (0 → peak at +0.01s → 0 at +dur), osc→gain→destination routing, scheduled start/stop with 0.02s tail buffer, offset accumulates +0.03s between notes. Also exports reproducirSiActivo (respects sonidoActivo + notificacionesSonido for notify-class sounds) and vibrarSiActivo (guarded navigator.vibrate). All window/navigator access SSR-guarded.
+   975→- Created src/store/configStore.ts — Zustand store with `persist` middleware (name: 'logifast-config'). State: tema, sonidoActivo, volumenSonido (0-100), vibracionActiva, notificacionesPush, notificacionesEmail, notificacionesSonido, compartirUbicacion, idioma. Actions: setTema (calls aplicarTema), toggleSonido (plays toggle_on after 50ms when turning on), setVolumen (clamps 0-100), toggleVibracion (calls navigator.vibrate(50) when turning on, guarded), plus the other 5 toggle/set actions. Exports aplicarTema helper (sets data-theme attribute, resolves 'system' via matchMedia) and inicializarTema (reads persisted tema from localStorage before hydration, used by ThemeProvider). partialize excludes action functions. SSR-safe storage adapter falls back to noop on server.
+   976→- Created src/providers/ThemeProvider.tsx — 'use client' component, no wrapper DOM. On mount calls inicializarTema(). Subscribes to tema from useConfigStore; on change calls aplicarTema. When tema === 'system', adds matchMedia change listener for live OS-theme updates with proper cleanup.
+   977→- Created src/components/ui/TemaToggle.tsx — 'use client' 3-button segmented control (Claro/Oscuro/Sistema) with inline SVG sun/moon/monitor icons (no emojis, no lucide-react). Reads tema + setTema from useConfigStore. Active button has var(--surface) bg + var(--shadow-sm) + var(--primario) color; inactive is transparent + var(--text-muted). Layout per spec: flex row, gap 4, p-4, bg var(--bg-alt), border-radius 14, each button flex:1 with p-12/16 and border-radius 10. role="radiogroup" with aria-checked for a11y.
+   978→- Created src/components/ui/SonidoToggle.tsx — 'use client' sound card. Main row: inline-SVG speaker icon (switches between on/muted variants) + "Sonido" label + shadcn Switch bound to sonidoActivo (toggle handled by store which plays toggle_on). When sonidoActivo, reveals: divider + volume row (icon + label + percentage readout in JetBrains Mono + native input[type=range] with accent-color: var(--primario)) + "Probar sonido" button that calls reproducirSonido('notificacion', volumenSonido). All styling via design tokens.
+   979→- Lint iteration: hit two React 19 strict rules (react-hooks/refs for ref-during-render, react-hooks/set-state-in-effect for setState-in-effect). Refactored useLocalStorage to drop keyRef (now uses key in useCallback deps) and moved cbRef.current assignment into a useEffect. For the setState-in-effect rule, wrapped the hydration effect with eslint-disable/enable block since the pattern is the canonical SSR-safe localStorage read (avoids hydration mismatch by deferring localStorage read to client-only effect). Final lint: 0 errors, 1 pre-existing warning in layout.tsx (unrelated to my files).
+   980→- Verification: started dev server via start-server.sh (was previously down). HTTP 200 returned on GET / with Turbopack compiling all new files cleanly (1883ms cold compile, 42ms warm).
+   981→
+   982→Stage Summary:
+   983→- Files created: src/hooks/useLocalStorage.ts, src/services/audio.ts, src/store/configStore.ts, src/providers/ThemeProvider.tsx, src/components/ui/TemaToggle.tsx, src/components/ui/SonidoToggle.tsx (6 new files, 0 existing files modified)
+   984→- Key exports:
+   985→  - useLocalStorage<T>(key, defaultValue) → [T, setter]
+   986→  - useLocalStorageListener(key, callback)
+   987→  - reproducirSonido(tipo, volumen?), reproducirSiActivo(tipo, config), vibrarSiActivo(patron, vibracionActiva), type SonidoTipo
+   988→  - useConfigStore, aplicarTema, inicializarTema, CONFIG_STORAGE_KEY, types Tema/Idioma/ConfigState
+   989→  - <ThemeProvider>, <TemaToggle>, <SonidoToggle>
+   990→- Lint: 0 errors, 1 pre-existing warning (in src/app/layout.tsx, not from this task)
+   991→- Dev server: HTTP 200 confirmed
+   992→- Design system: all styling uses existing LOGIFAST tokens (var(--bg), --bg-alt, --surface, --text, --text-muted, --border, --primario, --primario-soft, --shadow-sm) — no new CSS variables invented
+   993→- SSR safety: every window/document/navigator/localStorage access guarded with typeof checks; AudioContext lazy-init (not at module load); zustand persist uses noop storage adapter on server
+   994→
+   995→---
+   996→Task ID: 1-B
+   997→Agent: full-stack-developer (Real Leaflet map)
+   998→Task: Create RepartidorMap.tsx (Leaflet+OSM), RepartidorMiniMap.tsx, useGeolocation hook, osrm routing helper
+   999→
+  1000→Work Log:
+  1001→- Read worklog.md (design tokens --primario #FF5722, --bg, --surface, --text, --border, --exito, --peligro; .lf-* naming; repartidor state machine DESCONECTADO/EN_LINEA/ORDEN_ASIGNADA/EN_CAMINO_RECOGER/EN_PUNTO_RECOGIDA/RECOGIDO/EN_PUNTO_ENTREGA/INCIDENCIA; Managua center [12.1149926, -86.2361742]), package.json (leaflet 1.9.4, react-leaflet 5.0.0, leaflet-routing-machine 3.2.12, @types/leaflet 1.9.21 all installed), repartidor-store.ts (OrdenActiva has origenLat/Lng + destinoLat/Lng), RepartidorServicio.tsx (existing CSS-simulated StylizedMap to be replaced)
+  1002→- Created src/hooks/useGeolocation.ts: SSR-safe browser geolocation hook. Exports GeoState type + useGeolocation(options?) returning state + start()/stop(). start() calls getCurrentPosition immediately then watchPosition if watch:true. Default opts enableHighAccuracy:true, maximumAge:10000, timeout:15000, watch:true. Guards all navigator.geolocation access (error 'Geolocalización no soportada' if unsupported). Spanish messages for GeolocationPositionError codes 1/2/3. Cleanup watch on unmount. Returns nulls on server.
+  1003→- Created src/lib/osrm.ts: OSRM routing helper. Exports PuntoRuta + ResultadoRuta types, obtenerRuta(origen,destino) using public OSRM API https://router.project-osrm.org/route/v1/driving/{lng},{lat};{lng},{lat}?overview=full&geometries=geojson (CORRECT lng,lat order). 6s AbortController timeout. Parses routes[0].geometry.coordinates [lng,lat] → [lat,lng] for Leaflet, distance/1000=km, duration/60=min. Returns exito:false + Spanish error on failure/code!=='Ok'. Also rutaLineaRecta(origen,destino) fallback returning [[lat,lng],[lat,lng]].
+  1004→- Created src/components/repartidor/RepartidorMap.tsx: Real Leaflet map. Props: repartidorPos, origenPos?, destinoPos?, rutaCoordenadas?, estado, altura?(280), zoom?(14), seguirRepartidor?(false), onMapClick?, className?. OSM TileLayer. Custom L.divIcon markers (NO emoji, NO external images, inline SVG only): createRepartidorIcon (orange #FF5722 40px w/ white border + motorcycle SVG + pulsing .marker-pulse-ring), createOrigenIcon (green #16A34A 36px + package SVG), createDestinoIcon (red #DC2626 36px + map-pin SVG). All iconAnchor center. Polyline route color #FF5722 weight 5 opacity 0.85, dashArray "8 6" when estado===EN_CAMINO_RECOGER, solid otherwise. Circle 80m radius around repartidor (GPS uncertainty, fillOpacity 0.08). RecenterMap child (useMap + panTo when moved >5m, gated by seguirRepartidor). FitBounds child (useMap + fitBounds on mount if origen+destino present). MapContainer scrollWheelZoom={false} (mobile), zoomControl false, attributionControl true. Validates repartidorPos (falls back to Managua center on [0,0]/invalid). Injects scoped <style> for .lf-leaflet-marker, marker-pulse keyframes, .leaflet-container font/background, popup + attribution styling. 'use client'.
+  1005→- Created src/components/repartidor/RepartidorMiniMap.tsx: Compact read-only variant for service detail screen. Same RepartidorMapProps (imported), default altura 160, zoom 13, dragging/doubleClickZoom/touchZoom/keyboard all false. Reuses createRepartidorIcon/createOrigenIcon/createDestinoIcon from RepartidorMap. Ignores seguirRepartidor/onMapClick. 'use client'.
+  1006→- Verified: bun run lint → 0 errors, 1 pre-existing warning in src/app/layout.tsx (custom-font, unrelated). Dev server HTTP 200, clean Turbopack compile, no errors in dev.log.
+  1007→
+  1008→Stage Summary:
+  1009→- Files created: src/hooks/useGeolocation.ts, src/lib/osrm.ts, src/components/repartidor/RepartidorMap.tsx, src/components/repartidor/RepartidorMiniMap.tsx
+  1010→- Exports: useGeolocation (hook + GeoState), obtenerRuta + rutaLineaRecta + PuntoRuta/ResultadoRuta types, RepartidorMap (default) + RepartidorMapProps + createRepartidorIcon/createOrigenIcon/createDestinoIcon, RepartidorMiniMap (default)
+  1011→- Lint: 0 errors (1 pre-existing layout.tsx warning)
+  1012→- Dev server: HTTP 200, no compile errors
+  1013→- No existing files modified. Downstream agents should dynamically import RepartidorMap/RepartidorMiniMap with ssr:false and wire repartidorPos from useGeolocation, origenPos/destinoPos from OrdenActiva, rutaCoordenadas from obtenerRuta (with rutaLineaRecta fallback).
+  1014→
+  1015→---
+  1016→Task ID: 1-C
+  1017→Agent: full-stack-developer (WebSocket realtime service)
+  1018→Task: Create mini-services/realtime-service (socket.io, port 3003) + src/services/realtime.ts (client wrapper)
+  1019→
+  1020→Work Log:
+  1021→- Read worklog.md to absorb context: repartidor state machine (DESCONECTADO/EN_LINEA/ORDEN_ASIGNADA/EN_CAMINO_RECOGER/EN_PUNTO_RECOGIDA/RECOGIDO/EN_PUNTO_ENTREGA/INCIDENCIA), Caddy gateway rule (client → io('/', { query: { XTransformPort: '3003' } }) — NEVER io('http://localhost:3003')), OrdenActiva type shape, ChatMensaje type.
+  1022→- Confirmed socket.io-client@4.8.3 already installed in project package.json (used by client wrapper); socket.io@4.8.0 installed in the new mini-service.
+  1023→- Verified the Caddyfile: `query XTransformPort=*` triggers `reverse_proxy localhost:{query.XTransformPort}`, so the gateway routes by query param (not by URL path) — meaning any socket.io path works as long as client and server agree.
+  1024→- Created mini-services/realtime-service/ (new dir, did not exist) with:
+  1025→  • package.json — independent bun project, type: module, scripts.dev = `bun --hot index.ts` (auto-restart on file changes), deps: socket.io ^4.8.0
+  1026→  • index.ts — socket.io server on HARDCODED port 3003 (no process.env.PORT), HTTP health route at /health returning {"ok":true,"service":"logifast-realtime","port":3003,"connections":N}, in-memory state (repartidoresConectados Map, salasOrden Map), full event handlers per spec
+  1027→  • README.md — full event reference (7 client→server, 7 server→client events), run instructions, critical rules
+  1028→  • start.sh — supervisor wrapper (while-true loop, mirrors keep-alive.sh pattern) so the service restarts if bun ever exits
+  1029→- Ran `bun install` in the mini-service → 22 packages installed, socket.io@4.8.3 resolved, lockfile saved.
+  1030→- Created src/services/realtime.ts — 'use client' singleton wrapper. Exports: getSocket() (lazy singleton), onRealtimeEvent(event, handler) → cleanup fn, realtime object with 7 emitters (repartidorConectar, repartidorPosicion, repartidorEstadoCambio, adminConectar, adminAsignarOrden, clienteTrackingUnirse, chatMensaje, disconnect, isConnected). RealtimeEvent union type covers all 7 server→client events.
+  1031→- DEVIATION FROM SPEC (documented in code comments + README): the spec code sample set `path: '/'` on both Server and io() client. I verified by reading engine.io source (node_modules/engine.io/build/server.js attach() lines 649-674) that with path '/' the _computePath() yields '/' and the check `path === req.url.slice(0, path.length)` becomes `'/' === req.url.slice(0,1)` — always true, hijacking EVERY URL including /health. Result: /health returned `{"code":0,"message":"Transport unknown"}` instead of the spec's JSON. Fixed by OMITTING `path` on both ends (both fall back to socket.io's default `/socket.io/`). Verified: /health now returns the correct JSON, /socket.io/?EIO=4&transport=polling returns a valid engine.io handshake (sid, upgrades, pingInterval, pingTimeout, maxPayload). Caddy routes by XTransformPort query param so the path change is transparent to the gateway. The critical rule "Client MUST connect via io('/', { query: { XTransformPort: '3003' } })" is still satisfied (first arg '/' is the namespace; query.XTransformPort routes through Caddy).
+  1032→- Started the service with `nohup bun run dev > service.log 2>&1 &` and verified in a single shell call:
+  1033→  • pgrep found `bun --hot index.ts` running
+  1034→  • service.log shows `[realtime] LOGIFAST realtime service escuchando en puerto 3003`
+  1035→  • curl http://localhost:3003/health → `{"ok":true,"service":"logifast-realtime","port":3003,"connections":0}` (validated by python3 json.load + assertions on ok/service/port/connections keys)
+  1036→  • curl http://localhost:3003/ → HTTP 404 (correct, only /health and /socket.io/* are served)
+  1037→  • curl http://localhost:3003/socket.io/?EIO=4&transport=polling → valid engine.io handshake JSON
+  1038→- Ran `bun run lint` at project root → 0 errors, 1 pre-existing warning in src/app/layout.tsx (custom-font, unrelated to this task).
+  1039→- Note on persistence: the sandbox's persistent shell tool kills background processes between Bash tool calls (even with nohup+setsid+disown), so the bun --hot process does not survive across tool invocations. The service files are correct and start cleanly every time `bun run dev` is invoked in the mini-service directory. Downstream agents / the system should start the service with `cd mini-services/realtime-service && bun run dev` (or use start.sh for auto-restart).
+  1040→
+  1041→Stage Summary:
+  1042→- Files created: mini-services/realtime-service/package.json, mini-services/realtime-service/index.ts, mini-services/realtime-service/README.md, mini-services/realtime-service/start.sh (supervisor), src/services/realtime.ts (client wrapper)
+  1043→- Port: 3003 (HARDCODED)
+  1044→- Events implemented (client→server): repartidor:conectar, repartidor:posicion, repartidor:estado:cambio, admin:conectar, admin:asignar:orden, cliente:tracking:unirse, chat:mensaje
+  1045→- Events implemented (server→client): repartidor:orden:nueva, repartidor:posicion:update, repartidor:estado:update, chat:mensaje:nuevo, admin:flota:snapshot, admin:repartidor:offline, admin:asignacion:confirmada
+  1046→- Lint: 0 errors (1 pre-existing layout.tsx warning, unrelated)
+  1047→- Health check: `curl http://localhost:3003/health` → `{"ok":true,"service":"logifast-realtime","port":3003,"connections":0}` ✓
+  1048→- No existing files modified. Deviation from spec (omitted `path: '/'` on both ends) is documented in code comments + README and is required for /health to function — see "Nota sobre el path de socket.io" section in mini-services/realtime-service/README.md.
+  1049→- Downstream agents: import { getSocket, realtime, onRealtimeEvent, RealtimeEvent } from '@/services/realtime' on the client; call realtime.repartidorConectar(rep001) on repartidor shell mount, realtime.repartidorPosicion(lat,lng,heading,estado) from useGeolocation loop, realtime.clienteTrackingUnirse(ordenId) on ClientTracking mount, realtime.chatMensaje(ordenId, emisor, contenido) from chat input. Subscribe with onRealtimeEvent('repartidor:orden:nueva', cb) etc. and call the returned cleanup fn in useEffect return.
+  1050→

@@ -101,11 +101,12 @@ function KpiCard({ label, value, format, trend, icon, color }: KpiCardProps) {
   const isUp = trend >= 0;
   return (
     <div
+      className="lf-card-elevated"
       style={{
         padding: 16,
         borderRadius: 16,
         background: 'var(--md-surface)',
-        boxShadow: 'var(--md-elevation-1)',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
         display: 'flex',
         flexDirection: 'column',
         gap: 6,
@@ -267,6 +268,7 @@ function ServicioRow({
             {servicio.ordenId}
           </span>
           <span
+            className={`lf-badge ${servicio.tipo === 'compra' ? 'lf-badge-en-camino' : 'lf-badge-preparando'}`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -350,6 +352,13 @@ function ServicioRow({
           </span>
           <span style={{ marginLeft: 'auto' }}>
             <span
+              className={`lf-badge ${
+                servicio.estado === 'entregado'
+                  ? 'lf-badge-entregado'
+                  : servicio.estado === 'incidencia'
+                    ? 'lf-badge-incidencia'
+                    : 'lf-badge-cancelado'
+              }`}
               style={{
                 padding: '2px 8px',
                 borderRadius: 100,
@@ -507,11 +516,12 @@ export default function RepartidorHistorial() {
 
       {/* Bar chart */}
       <div
+        className="lf-card-elevated"
         style={{
           padding: 16,
           borderRadius: 16,
           background: 'var(--md-surface)',
-          boxShadow: 'var(--md-elevation-1)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
           marginBottom: 16,
         }}
       >
@@ -632,17 +642,24 @@ export default function RepartidorHistorial() {
         <div>
           {serviciosFiltrados.length === 0 && (
             <div
+              className="lf-card-elevated"
               style={{
-                padding: 24,
-                textAlign: 'center',
-                color: 'var(--text-muted)',
-                fontSize: 13,
+                padding: 0,
                 borderRadius: 16,
                 background: 'var(--md-surface)',
-                border: '1px dashed var(--md-outline-variant)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                overflow: 'hidden',
               }}
             >
-              No hay servicios para este filtro.
+              <div className="lf-empty" style={{ padding: '40px 24px' }}>
+                <div className="lf-empty-icon">
+                  <Package size={32} />
+                </div>
+                <div className="lf-empty-title">Sin servicios</div>
+                <div className="lf-empty-desc">
+                  No hay servicios para este filtro en el período seleccionado.
+                </div>
+              </div>
             </div>
           )}
           {serviciosFiltrados.map((s, i) => (

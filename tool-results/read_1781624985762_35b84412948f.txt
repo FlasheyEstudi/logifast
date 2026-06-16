@@ -1,0 +1,1659 @@
+     1→     1→```
+     2→     2→PROMPT AUDITORIA Y DISENO COMPLETO — FORMULARIOS, MODALES Y COMPONENTES SIN ESTILO EN LOS 3 ROLES
+     3→     3→
+     4→     4→CONTEXTO:
+     5→     5→LOGIFAST tiene 3 roles implementados: Administrador, Cliente, Repartidor. Hay un problema GRAVE: muchos formularios, modales, inputs, selects, botones, y componentes dentro de ellos NO tienen diseno aplicado. Se ven como HTML crudo del browser — bordes feos, font del sistema, sin estilizar, sin estados de hover/focus/error, sin responsividad. Esto arruina toda la experiencia que hemos construido.
+     6→     6→
+     7→     7→Este prompt es una AUDITORIA COMPLETA. Revisa CADA componente de CADA modulo de CADA rol, identifica lo que falta de diseno, y aplica el estilo correcto. Despues se asegura que TODO se vea bien en mobile (360px-640px), tablet (640px-1024px), y desktop (1024px+).
+     8→     8→
+     9→     9→=====================================================
+    10→    10→REGLAS GLOBALES (aplicar a TODO)
+    11→    11→=====================================================
+    12→    12→
+    13→    13→NADA se queda sin diseno. CADA elemento HTML visible DEBE tener estilo custom. Si un input, select, textarea, boton, checkbox, radio, toggle, o cualquier otro elemento se ve como el default del browser, ESTA MAL y debe corregirse.
+    14→    14→
+    15→    15→CHECKLIST DE ELEMENTOS QUE DEBEN ESTAR ESTILIZADOS:
+    16→    16→- [ ] Inputs de texto (email, password, nombre, telefono, direccion, descripcion)
+    17→    17→- [ ] Textareas (observaciones, instrucciones, comentarios, descripcion)
+    18→    18→- [ ] Selects / dropdowns (seleccion de rol, categoria, zona, repartidor, metodo pago)
+    19→    19→- [ ] Checkboxes (terminos, seleccion multiple, filtros)
+    20→    20→- [ ] Radio buttons (tipo de mantenimiento, metodo de pago, tipo de banner)
+    21→    21→- [ ] Toggles / switches (configuracion, disponibilidad, notificaciones)
+    22→    22→- [ ] Botones (primario, secundario, ghost, danger, pill, icon-only)
+    23→    23→- [ ] Badges / pills de estado (cada estado con su color)
+    24→    24→- [ ] Tablas (headers, filas, hover, zebra, responsive)
+    25→    25→- [ ] Modales (overlay, contenido, header, body, footer, botones)
+    26→    26→- [ ] Formularios completos (labels, inputs, errores, validacion, submit)
+    27→    27→- [ ] Cards / tarjetas (fondo, borde, border-radius, padding, hover)
+    28→    28→- [ ] Listas (items, separadores, hover, activo)
+    29→    29→- [ ] Navegacion (tabs, sidebar, bottom nav)
+    30→    30→- [ ] Mapas (popups, controles, leyendas)
+    31→    31→- [ ] Graficos (tooltips, ejes, leyendas, colores)
+    32→    32→- [ ] Banners (fondos, textos, CTAs)
+    33→    33→- [ ] Empty states (ilustraciones, textos, botones)
+    34→    34→- [ ] Skeleton loaders (shimmer, formas)
+    35→    35→- [ ] Tooltips (fondo solido, texto legible)
+    36→    36→- [ ] Progress bars (barras de progreso, indicadores)
+    37→    37→- [ ] Breadcrumbs (si existen)
+    38→    38→- [ ] Paginacion (botones, numeros, activo)
+    39→    39→- [ ] Filtros (pills, chips, search)
+    40→    40→- [ ] File inputs (si existen)
+    41→    41→- [ ] Date pickers / time pickers (si existen)
+    42→    42→- [ ] Rating / estrellas (calificaciones)
+    43→    43→
+    44→    44→=====================================================
+    45→    45→SISTEMA DE ESTILOS UNIFICADO PARA TODOS LOS COMPONENTES
+    46→    46→=====================================================
+    47→    47→
+    48→    48→Estos son los estilos CORRECTOS que deben aplicarse. Si el componente actual no tiene estos estilos, AGREGARLOS. Si ya los tiene pero estan incompletos, COMPLETARLOS.
+    49→    49→
+    50→    50→=====================================================
+    51→    51→1. INPUTS DE TEXTO
+    52→    52→=====================================================
+    53→    53→
+    54→    54→DONDE APARECEN EN CADA ROL:
+    55→    55→
+    56→    56→ADMIN:
+    57→    57→- Crear/editar tienda: nombre, descripcion, telefono, email, direccion
+    58→    58→- Crear/editar producto: nombre, descripcion, precio, stock
+    59→    59→- Crear campana: titulo, cuerpo, codigo
+    60→    60→- Crear codigo promocional: codigo, valor, max usos
+    61→    61→- Crear/editar banner: titulo, subtitulo, boton texto, link
+    62→    62→- Crear/editar feed item: titulo, descripcion, link
+    63→    63→- Gestion de usuarios: nombre, email, telefono
+    64→    64→- Configuracion: todos los campos editables
+    65→    65→- Login/registro (compartido)
+    66→    66→
+    67→    67→CLIENTE:
+    68→    68→- Solicitar envio: direccion recogida, direccion entrega, descripcion paquete, instrucciones
+    69→    69→- Carrito: codigo promocional, instrucciones
+    70→    70→- Perfil: nombre, telefono, direccion
+    71→    71→- Calificacion: comentario
+    72→    72→- Busqueda: input de busqueda
+    73→    73→- Chat: input de mensaje
+    74→    74→
+    75→    75→REPARTIDOR:
+    76→    76→- Perfil: configuracion
+    77→    77→- Incidencia: descripcion
+    78→    78→- Chat: input de mensaje
+    79→    79→
+    80→    80→ESTILO CORRECTO:
+    81→    81→```css
+    82→    82→.lf-input {
+    83→    83→  width: 100%;
+    84→    84→  min-height: 52px;
+    85→    85→  padding: 16px 16px;
+    86→    86→  background: #FFFFFF;
+    87→    87→  border: 1.5px solid #E8E4DE;
+    88→    88→  border-radius: 14px;
+    89→    89→  font-family: 'DM Sans', sans-serif;
+    90→    90→  font-size: 15px;
+    91→    91→  color: #1B1B2F;
+    92→    92→  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    93→    93→  outline: none;
+    94→    94→}
+    95→    95→
+    96→    96→.lf-input::placeholder {
+    97→    97→  color: #8E8EA0;
+    98→    98→  font-weight: 400;
+    99→    99→}
+   100→   100→
+   101→   101→.lf-input:hover {
+   102→   102→  border-color: #C8C4BE;
+   103→   103→}
+   104→   104→
+   105→   105→.lf-input:focus {
+   106→   106→  border-color: #FF5722;
+   107→   107→  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.08);
+   108→   108→  background: #FFFFFF;
+   109→   109→}
+   110→   110→
+   111→   111→.lf-input:disabled {
+   112→   112→  background: #F2EDE8;
+   113→   113→  color: #8E8EA0;
+   114→   114→  cursor: not-allowed;
+   115→   115→  opacity: 0.6;
+   116→   116→}
+   117→   117→
+   118→   118→.lf-input.error {
+   119→   119→  border-color: #FF1744;
+   120→   120→  box-shadow: 0 0 0 3px rgba(255, 23, 68, 0.08);
+   121→   121→}
+   122→   122→
+   123→   123→/* Input con icono a la izquierda */
+   124→   124→.lf-input-icon-wrapper {
+   125→   125→  position: relative;
+   126→   126→}
+   127→   127→
+   128→   128→.lf-input-icon-wrapper .lf-input {
+   129→   129→  padding-left: 48px;
+   130→   130→}
+   131→   131→
+   132→   132→.lf-input-icon {
+   133→   133→  position: absolute;
+   134→   134→  left: 16px;
+   135→   135→  top: 50%;
+   136→   136→  transform: translateY(-50%);
+   137→   137→  width: 20px;
+   138→   138→  height: 20px;
+   139→   139→  color: #8E8EA0;
+   140→   140→  pointer-events: none;
+   141→   141→}
+   142→   142→
+   143→   143→/* Input con boton a la derecha (ej: ojo de password) */
+   144→   144→.lf-input-action-wrapper {
+   145→   145→  position: relative;
+   146→   146→}
+   147→   147→
+   148→   148→.lf-input-action-wrapper .lf-input {
+   149→   149→  padding-right: 48px;
+   150→   150→}
+   151→   151→
+   152→   152→.lf-input-action {
+   153→   153→  position: absolute;
+   154→   154→  right: 12px;
+   155→   155→  top: 50%;
+   156→   156→  transform: translateY(-50%);
+   157→   157→  width: 36px;
+   158→   158→  height: 36px;
+   159→   159→  display: flex;
+   160→   160→  align-items: center;
+   161→   161→  justify-content: center;
+   162→   162→  border-radius: 8px;
+   163→   163→  border: none;
+   164→   164→  background: transparent;
+   165→   165→  cursor: pointer;
+   166→   166→  color: #8E8EA0;
+   167→   167→  transition: color 0.2s, background 0.2s;
+   168→   168→}
+   169→   169→
+   170→   170→.lf-input-action:hover {
+   171→   171→  color: #1B1B2F;
+   172→   172→  background: #F2EDE8;
+   173→   173→}
+   174→   174→
+   175→   175→/* Label del input */
+   176→   176→.lf-label {
+   177→   177→  display: block;
+   178→   178→  font-size: 14px;
+   179→   179→  font-weight: 500;
+   180→   180→  color: #1B1B2F;
+   181→   181→  margin-bottom: 8px;
+   182→   182→}
+   183→   183→
+   184→   184→/* Texto de error */
+   185→   185→.lf-input-error-text {
+   186→   186→  font-size: 13px;
+   187→   187→  color: #FF1744;
+   188→   188→  margin-top: 6px;
+   189→   189→  display: flex;
+   190→   190→  align-items: center;
+   191→   191→  gap: 6px;
+   192→   192→}
+   193→   193→
+   194→   194→/* Texto de ayuda */
+   195→   195→.lf-input-help {
+   196→   196→  font-size: 12px;
+   197→   197→  color: #8E8EA0;
+   198→   198→  margin-top: 4px;
+   199→   199→}
+   200→   200→
+   201→   201→/* Contador de caracteres */
+   202→   202→.lf-input-counter {
+   203→   203→  font-size: 12px;
+   204→   204→  color: #8E8EA0;
+   205→   205→  text-align: right;
+   206→   206→  margin-top: 4px;
+   207→   207→  font-family: 'JetBrains Mono', monospace;
+   208→   208→}
+   209→   209→
+   210→   210→/* Modo oscuro */
+   211→   211→[data-theme="dark"] .lf-input {
+   212→   212→  background: #1A1A24;
+   213→   213→  border-color: #2A2A38;
+   214→   214→  color: #F0EDE8;
+   215→   215→}
+   216→   216→
+   217→   217→[data-theme="dark"] .lf-input:hover {
+   218→   218→  border-color: #3A3A48;
+   219→   219→}
+   220→   220→
+   221→   221→[data-theme="dark"] .lf-input:focus {
+   222→   222→  background: #1A1A24;
+   223→   223→}
+   224→   224→
+   225→   225→[data-theme="dark"] .lf-input:disabled {
+   226→   226→  background: #12121A;
+   227→   227→}
+   228→   228→
+   229→   229→/* Mobile */
+   230→   230→@media (max-width: 640px) {
+   231→   231→  .lf-input {
+   232→   232→    min-height: 56px;
+   233→   233→    font-size: 16px; /* previene zoom en iOS */
+   234→   234→    padding: 16px 18px;
+   235→   235→  }
+   236→   236→}
+   237→   237→```
+   238→   238→
+   239→   239→=====================================================
+   240→   240→2. TEXTAREA
+   241→   241→=====================================================
+   242→   242→
+   243→   243→DONDE APARECEN:
+   244→   244→
+   245→   245→ADMIN: descripcion de tienda, descripcion de producto, contenido de campana, contenido de plantilla, observaciones de mantenimiento
+   246→   246→CLIENTE: descripcion del paquete, instrucciones especiales, comentario de calificacion
+   247→   247→REPARTIDOR: descripcion de incidencia
+   248→   248→
+   249→   249→```css
+   250→   250→.lf-textarea {
+   251→   251→  width: 100%;
+   252→   252→  min-height: 100px;
+   253→   253→  max-height: 300px;
+   254→   254→  padding: 14px 16px;
+   255→   255→  background: #FFFFFF;
+   256→   256→  border: 1.5px solid #E8E4DE;
+   257→   257→  border-radius: 14px;
+   258→   258→  font-family: 'DM Sans', sans-serif;
+   259→   259→  font-size: 15px;
+   260→   260→  color: #1B1B2F;
+   261→   261→  resize: vertical;
+   262→   262→  outline: none;
+   263→   263→  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+   264→   264→  line-height: 1.6;
+   265→   265→}
+   266→   266→
+   267→   267→.lf-textarea::placeholder {
+   268→   268→  color: #8E8EA0;
+   269→   269→}
+   270→   270→
+   271→   271→.lf-textarea:focus {
+   272→   272→  border-color: #FF5722;
+   273→   273→  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.08);
+   274→   274→}
+   275→   275→
+   276→   276→.lf-textarea.error {
+   277→   277→  border-color: #FF1744;
+   278→   278→  box-shadow: 0 0 0 3px rgba(255, 23, 68, 0.08);
+   279→   279→}
+   280→   280→
+   281→   281→[data-theme="dark"] .lf-textarea {
+   282→   282→  background: #1A1A24;
+   283→   283→  border-color: #2A2A38;
+   284→   284→  color: #F0EDE8;
+   285→   285→}
+   286→   286→```
+   287→   287→
+   288→   288→=====================================================
+   289→   289→3. SELECT / DROPDOWN CUSTOM
+   290→   290→=====================================================
+   291→   291→
+   292→   292→DONDE APARECEN:
+   293→   293→
+   294→   294→ADMIN: selector de categoria de tienda, selector de tienda, selector de repartidor, selector de periodo, selector de zona, selector de rol, selector de tipo de banner, selector de tipo de mantenimiento, selector de segmento, filtros de tablas
+   295→   295→CLIENTE: selector de direccion guardada, selector de tamano de paquete, selector de horario
+   296→   296→REPARTIDOR: selector de zona preferida
+   297→   297→
+   298→   298→```css
+   299→   299→.lf-select {
+   300→   300→  appearance: none;
+   301→   301→  -webkit-appearance: none;
+   302→   302→  width: 100%;
+   303→   303→  min-height: 52px;
+   304→   304→  padding: 14px 44px 14px 16px;
+   305→   305→  background: #FFFFFF;
+   306→   306→  border: 1.5px solid #E8E4DE;
+   307→   307→  border-radius: 14px;
+   308→   308→  font-family: 'DM Sans', sans-serif;
+   309→   309→  font-size: 15px;
+   310→   310→  color: #1B1B2F;
+   311→   311→  cursor: pointer;
+   312→   312→  outline: none;
+   313→   313→  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+   314→   314→  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238E8EA0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+   315→   315→  background-repeat: no-repeat;
+   316→   316→  background-position: right 16px center;
+   317→   317→}
+   318→   318→
+   319→   319→.lf-select:hover {
+   320→   320→  border-color: #C8C4BE;
+   321→   321→}
+   322→   322→
+   323→   323→.lf-select:focus {
+   324→   324→  border-color: #FF5722;
+   325→   325→  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.08);
+   326→   326→}
+   327→   327→
+   328→   328→.lf-select.error {
+   329→   329→  border-color: #FF1744;
+   330→   330→}
+   331→   331→
+   332→   332→.lf-select:disabled {
+   333→   333→  background-color: #F2EDE8;
+   334→   334→  opacity: 0.6;
+   335→   335→  cursor: not-allowed;
+   336→   336→}
+   337→   337→
+   338→   338→[data-theme="dark"] .lf-select {
+   339→   339→  background-color: #1A1A24;
+   340→   340→  border-color: #2A2A38;
+   341→   341→  color: #F0EDE8;
+   342→   342→  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6B80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+   343→   343→}
+   344→   344→```
+   345→   345→
+   346→   346→=====================================================
+   347→   347→4. CHECKBOX CUSTOM
+   348→   348→=====================================================
+   349→   349→
+   350→   350→DONDE APARECEN:
+   351→   351→
+   352→   352→ADMIN: seleccion multiple en tablas (bulk actions), seleccion de repuestos en mantenimiento, seleccion de zonas de cobertura, seleccion de permisos, seleccion de productos para feed
+   353→   353→CLIENTE: aceptar terminos, seleccion de productos favoritos
+   354→   354→REPARTIDOR: checklist de productos al recoger en tienda
+   355→   355→
+   356→   356→```css
+   357→   357→.lf-checkbox-wrapper {
+   358→   358→  display: flex;
+   359→   359→  align-items: flex-start;
+   360→   360→  gap: 12px;
+   361→   361→  cursor: pointer;
+   362→   362→  padding: 4px 0;
+   363→   363→}
+   364→   364→
+   365→   365→.lf-checkbox {
+   366→   366→  width: 22px;
+   367→   367→  height: 22px;
+   368→   368→  min-width: 22px;
+   369→   369→  border: 2px solid #E8E4DE;
+   370→   370→  border-radius: 6px;
+   371→   371→  display: flex;
+   372→   372→  align-items: center;
+   373→   373→  justify-content: center;
+   374→   374→  transition: all 0.2s ease;
+   375→   375→  margin-top: 1px;
+   376→   376→}
+   377→   377→
+   378→   378→.lf-checkbox:hover {
+   379→   379→  border-color: #FF5722;
+   380→   380→}
+   381→   381→
+   382→   382→.lf-checkbox.checked {
+   383→   383→  background: #FF5722;
+   384→   384→  border-color: #FF5722;
+   385→   385→}
+   386→   386→
+   387→   387→.lf-checkbox.checked svg {
+   388→   388→  width: 14px;
+   389→   389→  height: 14px;
+   390→   390→  color: #FFFFFF;
+   391→   391→  opacity: 0;
+   392→   392→  transform: scale(0.5);
+   393→   393→  animation: checkIn 0.2s ease forwards;
+   394→   394→}
+   395→   395→
+   396→   396→@keyframes checkIn {
+   397→   397→  to {
+   398→   398→    opacity: 1;
+   399→   399→    transform: scale(1);
+   400→   400→  }
+   401→   401→}
+   402→   402→
+   403→   403→.lf-checkbox.indeterminate {
+   404→   404→  background: #FF5722;
+   405→   405→  border-color: #FF5722;
+   406→   406→}
+   407→   407→
+   408→   408→.lf-checkbox-label {
+   409→   409→  font-size: 14px;
+   410→   410→  color: #1B1B2F;
+   411→   411→  line-height: 1.5;
+   412→   412→  user-select: none;
+   413→   413→}
+   414→   414→
+   415→   415→.lf-checkbox-wrapper.disabled {
+   416→   416→  opacity: 0.5;
+   417→   417→  cursor: not-allowed;
+   418→   418→}
+   419→   419→
+   420→   420→[data-theme="dark"] .lf-checkbox {
+   421→   421→  border-color: #2A2A38;
+   422→   422→}
+   423→   423→
+   424→   424→[data-theme="dark"] .lf-checkbox-label {
+   425→   425→  color: #F0EDE8;
+   426→   426→}
+   427→   427→```
+   428→   428→
+   429→   429→=====================================================
+   430→   430→5. RADIO BUTTONS CUSTOM
+   431→   431→=====================================================
+   432→   432→
+   433→   433→DONDE APARECEN:
+   434→   434→
+   435→   435→ADMIN: tipo de mantenimiento (preventivo/correctivo), tipo de banner, tipo de descuento (porcentaje/monto), fuente de tiendas (manual/automatica)
+   436→   436→CLIENTE: metodo de pago (efectivo/transferencia), seleccion de rol en registro, tamano de paquete, horario de entrega (ahora/programar)
+   437→   437→
+   438→   438→```css
+   439→   439→.lf-radio-wrapper {
+   440→   440→  display: flex;
+   441→   441→  align-items: flex-start;
+   442→   442→  gap: 12px;
+   443→   443→  cursor: pointer;
+   444→   444→  padding: 4px 0;
+   445→   445→}
+   446→   446→
+   447→   447→.lf-radio {
+   448→   448→  width: 22px;
+   449→   449→  height: 22px;
+   450→   450→  min-width: 22px;
+   451→   451→  border: 2px solid #E8E4DE;
+   452→   452→  border-radius: 50%;
+   453→   453→  display: flex;
+   454→   454→  align-items: center;
+   455→   455→  justify-content: center;
+   456→   456→  transition: border-color 0.2s ease;
+   457→   457→  margin-top: 1px;
+   458→   458→}
+   459→   459→
+   460→   460→.lf-radio:hover {
+   461→   461→  border-color: #FF5722;
+   462→   462→}
+   463→   463→
+   464→   464→.lf-radio.selected {
+   465→   465→  border-color: #FF5722;
+   466→   466→}
+   467→   467→
+   468→   468→.lf-radio.selected::after {
+   469→   469→  content: '';
+   470→   470→  width: 10px;
+   471→   471→  height: 10px;
+   472→   472→  border-radius: 50%;
+   473→   473→  background: #FF5722;
+   474→   474→  animation: radioIn 0.2s ease;
+   475→   475→}
+   476→   476→
+   477→   477→@keyframes radioIn {
+   478→   478→  from {
+   479→   479→    transform: scale(0);
+   480→   480→    opacity: 0;
+   481→   481→  }
+   482→   482→  to {
+   483→   483→    transform: scale(1);
+   484→   484→    opacity: 1;
+   485→   485→  }
+   486→   486→}
+   487→   487→
+   488→   488→.lf-radio-label {
+   489→   489→  font-size: 14px;
+   490→   490→  color: #1B1B2F;
+   491→   491→  line-height: 1.5;
+   492→   492→  user-select: none;
+   493→   493→}
+   494→   494→
+   495→   495→[data-theme="dark"] .lf-radio {
+   496→   496→  border-color: #2A2A38;
+   497→   497→}
+   498→   498→
+   499→   499→[data-theme="dark"] .lf-radio-label {
+   500→   500→  color: #F0EDE8;
+   501→   501→}
+   502→   502→```
+   503→   503→
+   504→   504→=====================================================
+   505→   505→6. TOGGLE / SWITCH
+   506→   506→=====================================================
+   507→   507→
+   508→   508→DONDE APARECEN:
+   509→   509→
+   510→   510→ADMIN: activar/desactivar tienda, activar/desactivar banner, activar/desactivar feed section, activar/desactivar notificacion automatica, activar/desactivar campana, destacada, verificada, popular
+   511→   511→CLIENTE: notificaciones push, promociones email, modo oscuro, compartir ubicacion, repartidor favorito preferido
+   512→   512→REPARTIDOR: conexion/disconexion, sonido, vibracion, compartir ubicacion
+   513→   513→
+   514→   514→```css
+   515→   515→.lf-switch {
+   516→   516→  width: 48px;
+   517→   517→  height: 28px;
+   518→   518→  min-width: 48px;
+   519→   519→  border-radius: 14px;
+   520→   520→  border: 2px solid #E8E4DE;
+   521→   521→  background: #E8E4DE;
+   522→   522→  cursor: pointer;
+   523→   523→  position: relative;
+   524→   524→  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+   525→   525→}
+   526→   526→
+   527→   527→.lf-switch::after {
+   528→   528→  content: '';
+   529→   529→  position: absolute;
+   530→   530→  top: 2px;
+   531→   531→  left: 2px;
+   532→   532→  width: 20px;
+   533→   533→  height: 20px;
+   534→   534→  border-radius: 50%;
+   535→   535→  background: #FFFFFF;
+   536→   536→  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+   537→   537→  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+   538→   538→}
+   539→   539→
+   540→   540→.lf-switch.on {
+   541→   541→  background: #FF5722;
+   542→   542→  border-color: #FF5722;
+   543→   543→}
+   544→   544→
+   545→   545→.lf-switch.on::after {
+   546→   546→  left: calc(100% - 24px);
+   547→   547→}
+   548→   548→
+   549→   549→.lf-switch:disabled {
+   550→   550→  opacity: 0.5;
+   551→   551→  cursor: not-allowed;
+   552→   552→}
+   553→   553→
+   554→   554→[data-theme="dark"] .lf-switch {
+   555→   555→  background: #2A2A38;
+   556→   556→  border-color: #2A2A38;
+   557→   557→}
+   558→   558→```
+   559→   559→
+   560→   560→=====================================================
+   561→   561→7. BOTONES (TODAS LAS VARIANTES)
+   562→   562→=====================================================
+   563→   563→
+   564→   564→DONDE APARECEN EN TODOS LOS ROLES — accion principal, secundaria, ghost, danger, pill, icon-only, loading state.
+   565→   565→
+   566→   566→```css
+   567→   567→/* Base comun */
+   568→   568→.lf-btn {
+   569→   569→  display: inline-flex;
+   570→   570→  align-items: center;
+   571→   571→  justify-content: center;
+   572→   572→  gap: 8px;
+   573→   573→  min-height: 44px;
+   574→   574→  padding: 12px 24px;
+   575→   575→  border-radius: 14px;
+   576→   576→  font-family: 'DM Sans', sans-serif;
+   577→   577→  font-size: 15px;
+   578→   578→  font-weight: 600;
+   579→   579→  cursor: pointer;
+   580→   580→  border: none;
+   581→   581→  outline: none;
+   582→   582→  transition: all 0.2s ease;
+   583→   583→  position: relative;
+   584→   584→  overflow: hidden;
+   585→   585→  white-space: nowrap;
+   586→   586→}
+   587→   587→
+   588→   588→.lf-btn:active {
+   589→   589→  transform: scale(0.97);
+   590→   590→}
+   591→   591→
+   592→   592→.lf-btn:disabled {
+   593→   593→  opacity: 0.5;
+   594→   594→  cursor: not-allowed;
+   595→   595→  transform: none;
+   596→   596→}
+   597→   597→
+   598→   598→/* Primario */
+   599→   599→.lf-btn-primary {
+   600→   600→  background: #FF5722;
+   601→   601→  color: #FFFFFF;
+   602→   602→}
+   603→   603→
+   604→   604→.lf-btn-primary:hover:not(:disabled) {
+   605→   605→  background: #E64A19;
+   606→   606→  box-shadow: 0 4px 16px rgba(255, 87, 34, 0.25);
+   607→   607→}
+   608→   608→
+   609→   609→/* Shimmer en hover */
+   610→   610→.lf-btn-primary::before {
+   611→   611→  content: '';
+   612→   612→  position: absolute;
+   613→   613→  top: 0;
+   614→   614→  left: -100%;
+   615→   615→  width: 100%;
+   616→   616→  height: 100%;
+   617→   617→  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+   618→   618→  transition: left 0.5s ease;
+   619→   619→}
+   620→   620→
+   621→   621→.lf-btn-primary:hover::before {
+   622→   622→  left: 100%;
+   623→   623→}
+   624→   624→
+   625→   625→/* Secundario (outlined) */
+   626→   626→.lf-btn-secondary {
+   627→   627→  background: transparent;
+   628→   628→  color: #1B1B2F;
+   629→   629→  border: 1.5px solid #E8E4DE;
+   630→   630→}
+   631→   631→
+   632→   632→.lf-btn-secondary:hover:not(:disabled) {
+   633→   633→  border-color: #FF5722;
+   634→   634→  color: #FF5722;
+   635→   635→  background: rgba(255, 87, 34, 0.04);
+   636→   636→}
+   637→   637→
+   638→   638→[data-theme="dark"] .lf-btn-secondary {
+   639→   639→  color: #F0EDE8;
+   640→   640→  border-color: #2A2A38;
+   641→   641→}
+   642→   642→
+   643→   643→[data-theme="dark"] .lf-btn-secondary:hover:not(:disabled) {
+   644→   644→  border-color: #FF6E40;
+   645→   645→  color: #FF6E40;
+   646→   646→}
+   647→   647→
+   648→   648→/* Ghost */
+   649→   649→.lf-btn-ghost {
+   650→   650→  background: transparent;
+   651→   651→  color: #5A5A72;
+   652→   652→  border: none;
+   653→   653→  padding: 10px 16px;
+   654→   654→}
+   655→   655→
+   656→   656→.lf-btn-ghost:hover:not(:disabled) {
+   657→   657→  background: rgba(0, 0, 0, 0.04);
+   658→   658→  color: #1B1B2F;
+   659→   659→}
+   660→   660→
+   661→   661→[data-theme="dark"] .lf-btn-ghost:hover:not(:disabled) {
+   662→   662→  background: rgba(255, 255, 255, 0.06);
+   663→   663→  color: #F0EDE8;
+   664→   664→}
+   665→   665→
+   666→   666→/* Danger */
+   667→   667→.lf-btn-danger {
+   668→   668→  background: #FF1744;
+   669→   669→  color: #FFFFFF;
+   670→   670→}
+   671→   671→
+   672→   672→.lf-btn-danger:hover:not(:disabled) {
+   673→   673→  background: #E0103A;
+   674→   674→  box-shadow: 0 4px 16px rgba(255, 23, 68, 0.25);
+   675→   675→}
+   676→   676→
+   677→   677→/* Tonal (fondo suave del color) */
+   678→   678→.lf-btn-tonal {
+   679→   679→  background: rgba(255, 87, 34, 0.08);
+   680→   680→  color: #FF5722;
+   681→   681→}
+   682→   682→
+   683→   683→.lf-btn-tonal:hover:not(:disabled) {
+   684→   684→  background: rgba(255, 87, 34, 0.14);
+   685→   685→}
+   686→   686→
+   687→   687→[data-theme="dark"] .lf-btn-tonal {
+   688→   688→  background: rgba(255, 110, 64, 0.12);
+   689→   689→  color: #FF6E40;
+   690→   690→}
+   691→   691→
+   692→   692→/* Pill (pequeno, para filtros y acciones rapidas) */
+   693→   693→.lf-btn-pill {
+   694→   694→  padding: 8px 18px;
+   695→   695→  min-height: 36px;
+   696→   696→  border-radius: 100px;
+   697→   697→  font-size: 13px;
+   698→   698→  font-weight: 500;
+   699→   699→}
+   700→   700→
+   701→   701→/* Icon only */
+   702→   702→.lf-btn-icon {
+   703→   703→  width: 44px;
+   704→   704→  height: 44px;
+   705→   705→  min-height: 44px;
+   706→   706→  padding: 0;
+   707→   707→  border-radius: 12px;
+   708→   708→}
+   709→   709→
+   710→   710→.lf-btn-icon-sm {
+   711→   711→  width: 36px;
+   712→   712→  height: 36px;
+   713→   713→  min-height: 36px;
+   714→   714→  border-radius: 10px;
+   715→   715→}
+   716→   716→
+   717→   717→/* Full width */
+   718→   718→.lf-btn-block {
+   719→   719→  width: 100%;
+   720→   720→}
+   721→   721→
+   722→   722→/* Loading state */
+   723→   723→.lf-btn.loading {
+   724→   724→  color: transparent;
+   725→   725→  pointer-events: none;
+   726→   726→}
+   727→   727→
+   728→   728→.lf-btn.loading::after {
+   729→   729→  content: '';
+   730→   730→  position: absolute;
+   731→   731→  width: 20px;
+   732→   732→  height: 20px;
+   733→   733→  border: 2.5px solid rgba(255, 255, 255, 0.3);
+   734→   734→  border-top-color: #FFFFFF;
+   735→   735→  border-radius: 50%;
+   736→   736→  animation: btnSpin 0.7s linear infinite;
+   737→   737→}
+   738→   738→
+   739→   739→@keyframes btnSpin {
+   740→   740→  to { transform: rotate(360deg); }
+   741→   741→}
+   742→   742→
+   743→   743→/* Sizes */
+   744→   744→.lf-btn-sm {
+   745→   745→  min-height: 36px;
+   746→   746→  padding: 8px 16px;
+   747→   747→  font-size: 13px;
+   748→   748→  border-radius: 10px;
+   749→   749→}
+   750→   750→
+   751→   751→.lf-btn-lg {
+   752→   752→  min-height: 52px;
+   753→   753→  padding: 16px 32px;
+   754→   754→  font-size: 17px;
+   755→   755→  border-radius: 16px;
+   756→   756→}
+   757→   757→
+   758→   758→/* Boton grande para acciones principales en mobile */
+   759→   759→.lf-btn-xl {
+   760→   760→  min-height: 56px;
+   761→   761→  padding: 18px 36px;
+   762→   762→  font-size: 17px;
+   763→   763→  font-weight: 700;
+   764→   764→  border-radius: 16px;
+   765→   765→}
+   766→   766→```
+   767→   767→
+   768→   768→=====================================================
+   769→   769→8. BADGE / PILL DE ESTADO
+   770→   770→=====================================================
+   771→   771→
+   772→   772→DONDE APARECEN EN TODOS LOS ROLES — cada vez que se muestra un estado de orden, moto, tienda, pedido, campana, codigo, incidencia.
+   773→   773→
+   774→   774→```css
+   775→   775→.lf-badge {
+   776→   776→  display: inline-flex;
+   777→   777→  align-items: center;
+   778→   778→  gap: 5px;
+   779→   779→  padding: 4px 12px;
+   780→   780→  border-radius: 100px;
+   781→   781→  font-size: 12px;
+   782→   782→  font-weight: 600;
+   783→   783→  white-space: nowrap;
+   784→   784→  line-height: 1;
+   785→   785→}
+   786→   786→
+   787→   787→.lf-badge-pendiente {
+   788→   788→  background: rgba(255, 179, 0, 0.1);
+   789→   789→  color: #E6A200;
+   790→   790→  border: 1px solid rgba(255, 179, 0, 0.2);
+   791→   791→}
+   792→   792→
+   793→   793→.lf-badge-en-camino {
+   794→   794→  background: rgba(41, 121, 255, 0.1);
+   795→   795→  color: #2979FF;
+   796→   796→  border: 1px solid rgba(41, 121, 255, 0.2);
+   797→   797→}
+   798→   798→
+   799→   799→.lf-badge-preparando {
+   800→   800→  background: rgba(255, 87, 34, 0.1);
+   801→   801→  color: #FF5722;
+   802→   802→  border: 1px solid rgba(255, 87, 34, 0.2);
+   803→   803→}
+   804→   804→
+   805→   805→.lf-badge-listo {
+   806→   806→  background: rgba(139, 92, 246, 0.1);
+   807→   807→  color: #8B5CF6;
+   808→   808→  border: 1px solid rgba(139, 92, 246, 0.2);
+   809→   809→}
+   810→   810→
+   811→   811→.lf-badge-recogido {
+   812→   812→  background: rgba(139, 92, 246, 0.1);
+   813→   813→  color: #8B5CF6;
+   814→   814→  border: 1px solid rgba(139, 92, 246, 0.2);
+   815→   815→}
+   816→   816→
+   817→   817→.lf-badge-recibido {
+   818→   818→  background: rgba(41, 121, 255, 0.1);
+   819→   819→  color: #2979FF;
+   820→   820→  border: 1px solid rgba(41, 121, 255, 0.2);
+   821→   821→}
+   822→   822→
+   823→   823→.lf-badge-entregado {
+   824→   824→  background: rgba(0, 200, 83, 0.1);
+   825→   825→  color: #00C853;
+   826→   826→  border: 1px solid rgba(0, 200, 83, 0.2);
+   827→   827→}
+   828→   828→
+   829→   829→.lf-badge-cancelado {
+   830→   830→  background: rgba(142, 142, 160, 0.1);
+   831→   831→  color: #8E8EA0;
+   832→   832→  border: 1px solid rgba(142, 142, 160, 0.2);
+   833→   833→}
+   834→   834→
+   835→   835→.lf-badge-incidencia {
+   836→   836→  background: rgba(255, 23, 68, 0.1);
+   837→   837→  color: #FF1744;
+   838→   838→  border: 1px solid rgba(255, 23, 68, 0.2);
+   839→   839→}
+   840→   840→
+   841→   841→.lf-badge-programada {
+   842→   842→  background: rgba(41, 121, 255, 0.1);
+   843→   843→  color: #2979FF;
+   844→   844→  border: 1px solid rgba(41, 121, 255, 0.2);
+   845→   845→}
+   846→   846→
+   847→   847→.lf-badge-disponible {
+   848→   848→  background: rgba(0, 200, 83, 0.1);
+   849→   849→  color: #00C853;
+   850→   850→  border: 1px solid rgba(0, 200, 83, 0.2);
+   851→   851→}
+   852→   852→
+   853→   853→.lf-badge-en-servicio {
+   854→   854→  background: rgba(255, 87, 34, 0.1);
+   855→   855→  color: #FF5722;
+   856→   856→  border: 1px solid rgba(255, 87, 34, 0.2);
+   857→   857→}
+   858→   858→
+   859→   859→.lf-badge-mantenimiento {
+   860→   860→  background: rgba(255, 179, 0, 0.1);
+   861→   861→  color: #E6A200;
+   862→   862→  border: 1px solid rgba(255, 179, 0, 0.2);
+   863→   863→}
+   864→   864→
+   865→   865→.lf-badge-activo {
+   866→   866→  background: rgba(0, 200, 83, 0.1);
+   867→   867→  color: #00C853;
+   868→   868→  border: 1px solid rgba(0, 200, 83, 0.2);
+   869→   869→}
+   870→   870→
+   871→   871→.lf-badge-inactivo {
+   872→   872→  background: rgba(142, 142, 160, 0.1);
+   873→   873→  color: #8E8EA0;
+   874→   874→  border: 1px solid rgba(142, 142, 160, 0.2);
+   875→   875→}
+   876→   876→
+   877→   877→/* Badge con punto pulsante */
+   878→   878→.lf-badge-pulse::before {
+   879→   879→  content: '';
+   880→   880→  width: 6px;
+   881→   881→  height: 6px;
+   882→   882→  border-radius: 50%;
+   883→   883→  background: currentColor;
+   884→   884→  animation: badgePulse 2s ease infinite;
+   885→   885→}
+   886→   886→
+   887→   887→@keyframes badgePulse {
+   888→   888→  0%, 100% { opacity: 1; }
+   889→   889→  50% { opacity: 0.5; }
+   890→   890→}
+   891→   891→```
+   892→   892→
+   893→   893→=====================================================
+   894→   894→9. MODALES — ESTILO COMPLETO CON FORMULARIOS DENTRO
+   895→   895→=====================================================
+   896→   896→
+   897→   897→Muchos modales de LOGIFAST tienen formularios dentro. Estos formularios necesitan estar COMPLETAMENTE disenados.
+   898→   898→
+   899→   899→MODALES QUE CONTIENEN FORMULARIOS Y DEBEN VERIFICARSE:
+   900→   900→
+   901→   901→ADMIN:
+   902→   902→- [ ] Modal crear/editar tienda: 4 pasos con inputs, selects, mapa, color pickers
+   903→   903→- [ ] Modal crear/editar producto: inputs, textarea, toggles, variantes dinamicas
+   904→   904→- [ ] Modal crear/editar campana: selector de tipo, textarea, selector de segmento, selector de fecha
+   905→   905→- [ ] Modal crear codigo promocional: inputs, select tipo, select segmento, date pickers
+   906→   906→- [ ] Modal crear/editar banner: selector tipo, inputs, selector color, selector enlace
+   907→   907→- [ ] Modal crear/editar feed item: selector tipo, inputs, selector segmento
+   908→   908→- [ ] Modal reasignar repartidor: lista con radio buttons
+   909→   909→- [ ] Modal detalle de orden: info layout + timeline
+   910→   910→- [ ] Modal detalle de compra: info layout + productos + timeline
+   911→   911→- [ ] Modal gestionar categorias: lista editable
+   912→   912→- [ ] Modal gestionar permisos: toggles multiples
+   913→   913→- [ ] Modal gestionar horarios: grid dia/hora
+   914→   914→- [ ] Modal agregar feriado: input fecha + nombre
+   915→   915→- [ ] Modal de confirmacion destructiva: "Escribe CONFIRMAR"
+   916→   916→- [ ] Modal editar perfil: inputs
+   917→   917→- [ ] Modal cambiar contrasena: inputs password
+   918→   918→
+   919→   919→CLIENTE:
+   920→   920→- [ ] Modal seleccionar direccion: lista + mapa + input
+   921→   921→- [ ] Modal agregar direccion guardada: inputs + selector etiqueta + mapa
+   922→   922→- [ ] Modal personalizar producto: variantes + cantidad + precio
+   923→   923→- [ ] Modal calificacion: estrellas + etiquetas + textarea
+   924→   924→- [ ] Modal reportar problema: selector opciones + textarea
+   925→   925→- [ ] Modal cancelar orden: confirmacion
+   926→   926→- [ ] Modal confirmar pedido: resumen
+   927→   927→- [ ] Modal cambiar contrasena: inputs
+   928→   928→- [ ] Modal eliminar cuenta: confirmacion destructiva
+   929→   929→
+   930→   930→REPARTIDOR:
+   931→   931→- [ ] Modal nueva orden (full-screen): timer + info + botones
+   932→   932→- [ ] Modal incidencia: selector opciones + textarea
+   933→   933→- [ ] Modal detalle de servicio: info + timeline + mapa
+   934→   934→- [ ] Modal checklist productos tienda: checkboxes + boton confirmar
+   935→   935→
+   936→   936→ESTILO COMPLETO DEL MODAL CON FORMULARIO:
+   937→   937→
+   938→   938→```css
+   939→   939→/* Estructura del modal */
+   940→   940→.lf-modal {
+   941→   941→  position: fixed;
+   942→   942→  top: 50%;
+   943→   943→  left: 50%;
+   944→   944→  transform: translate(-50%, -50%) scale(0.96);
+   945→   945→  width: calc(100% - 32px);
+   946→   946→  max-width: 520px;
+   947→   947→  max-height: 85vh;
+   948→   948→  background: #FFFFFF;
+   949→   949→  border-radius: 24px;
+   950→   950→  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.1);
+   951→   951→  z-index: 300;
+   952→   952→  display: flex;
+   953→   953→  flex-direction: column;
+   954→   954→  opacity: 0;
+   955→   955→  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+   956→   956→}
+   957→   957→
+   958→   958→.lf-modal.open {
+   959→   959→  transform: translate(-50%, -50%) scale(1);
+   960→   960→  opacity: 1;
+   961→   961→}
+   962→   962→
+   963→   963→/* Header del modal */
+   964→   964→.lf-modal-header {
+   965→   965→  display: flex;
+   966→   966→  align-items: center;
+   967→   967→  justify-content: space-between;
+   968→   968→  padding: 24px 28px 0;
+   969→   969→  flex-shrink: 0;
+   970→   970→}
+   971→   971→
+   972→   972→.lf-modal-title {
+   973→   973→  font-family: 'Syne', sans-serif;
+   974→   974→  font-size: 22px;
+   975→   975→  font-weight: 700;
+   976→   976→  color: #1B1B2F;
+   977→   977→}
+   978→   978→
+   979→   979→.lf-modal-close {
+   980→   980→  width: 40px;
+   981→   981→  height: 40px;
+   982→   982→  display: flex;
+   983→   983→  align-items: center;
+   984→   984→  justify-content: center;
+   985→   985→  border-radius: 10px;
+   986→   986→  border: none;
+   987→   987→  background: transparent;
+   988→   988→  cursor: pointer;
+   989→   989→  color: #8E8EA0;
+   990→   990→  transition: background 0.2s, color 0.2s;
+   991→   991→}
+   992→   992→
+   993→   993→.lf-modal-close:hover {
+   994→   994→  background: #F2EDE8;
+   995→   995→  color: #1B1B2F;
+   996→   996→}
+   997→   997→
+   998→   998→/* Body del modal (scrollable) */
+   999→   999→.lf-modal-body {
+  1000→  1000→  flex: 1;
+  1001→  1001→  overflow-y: auto;
+  1002→  1002→  padding: 24px 28px;
+  1003→  1003→}
+  1004→  1004→
+  1005→  1005→/* Footer del modal */
+  1006→  1006→.lf-modal-footer {
+  1007→  1007→  display: flex;
+  1008→  1008→  justify-content: flex-end;
+  1009→  1009→  gap: 12px;
+  1010→  1010→  padding: 16px 28px 24px;
+  1011→  1011→  border-top: 1px solid #E8E4DE;
+  1012→  1012→  flex-shrink: 0;
+  1013→  1013→}
+  1014→  1014→
+  1015→  1015→/* Formulario dentro del modal */
+  1016→  1016→.lf-form {
+  1017→  1017→  display: flex;
+  1018→  1018→  flex-direction: column;
+  1019→  1019→  gap: 20px;
+  1020→  1020→}
+  1021→  1021→
+  1022→  1022→.lf-form-group {
+  1023→  1023→  display: flex;
+  1024→  1024→  flex-direction: column;
+  1025→  1025→  gap: 6px;
+  1026→  1026→}
+  1027→  1027→
+  1028→  1028→.lf-form-row {
+  1029→  1029→  display: grid;
+  1030→  1030→  grid-template-columns: 1fr 1fr;
+  1031→  1031→  gap: 16px;
+  1032→  1032→}
+  1033→  1033→
+  1034→  1034→.lf-form-section {
+  1035→  1035→  padding-top: 16px;
+  1036→  1036→  border-top: 1px solid #E8E4DE;
+  1037→  1037→  margin-top: 4px;
+  1038→  1038→}
+  1039→  1039→
+  1040→  1040→.lf-form-section-title {
+  1041→  1041→  font-size: 14px;
+  1042→  1042→  font-weight: 600;
+  1043→  1043→  color: #1B1B2F;
+  1044→  1044→  margin-bottom: 16px;
+  1045→  1045→}
+  1046→  1046→
+  1047→  1047→/* Steps dentro del modal (wizards) */
+  1048→  1048→.lf-modal-steps {
+  1049→  1049→  display: flex;
+  1050→  1050→  align-items: center;
+  1051→  1051→  gap: 8px;
+  1052→  1052→  padding: 0 28px 16px;
+  1053→  1053→}
+  1054→  1054→
+  1055→  1055→.lf-modal-step {
+  1056→  1056→  flex: 1;
+  1057→  1057→  height: 4px;
+  1058→  1058→  border-radius: 2px;
+  1059→  1059→  background: #E8E4DE;
+  1060→  1060→  transition: background 0.3s ease;
+  1061→  1061→}
+  1062→  1062→
+  1063→  1063→.lf-modal-step.completed {
+  1064→  1064→  background: #FF5722;
+  1065→  1065→}
+  1066→  1066→
+  1067→  1067→.lf-modal-step.current {
+  1068→  1068→  background: #FF5722;
+  1069→  1069→  animation: stepPulse 1.5s ease infinite;
+  1070→  1070→}
+  1071→  1071→
+  1072→  1072→@keyframes stepPulse {
+  1073→  1073→  0%, 100% { opacity: 1; }
+  1074→  1074→  50% { opacity: 0.6; }
+  1075→  1075→}
+  1076→  1076→
+  1077→  1077→/* Modo oscuro */
+  1078→  1078→[data-theme="dark"] .lf-modal {
+  1079→  1079→  background: #1A1A24;
+  1080→  1080→  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+  1081→  1081→}
+  1082→  1082→
+  1083→  1083→[data-theme="dark"] .lf-modal-title {
+  1084→  1084→  color: #F0EDE8;
+  1085→  1085→}
+  1086→  1086→
+  1087→  1087→[data-theme="dark"] .lf-modal-footer {
+  1088→  1088→  border-color: #2A2A38;
+  1089→  1089→}
+  1090→  1090→
+  1091→  1091→[data-theme="dark"] .lf-form-section {
+  1092→  1092→  border-color: #2A2A38;
+  1093→  1093→}
+  1094→  1094→
+  1095→  1095→[data-theme="dark"] .lf-form-section-title {
+  1096→  1096→  color: #F0EDE8;
+  1097→  1097→}
+  1098→  1098→
+  1099→  1099→/* Responsive */
+  1100→  1100→@media (max-width: 640px) {
+  1101→  1101→  .lf-modal {
+  1102→  1102→    max-width: 100%;
+  1103→  1103→    width: 100%;
+  1104→  1104→    max-height: 92vh;
+  1105→  1105→    border-radius: 24px 24px 0 0;
+  1106→  1106→    top: auto;
+  1107→  1107→    bottom: 0;
+  1108→  1108→    left: 0;
+  1109→  1109→    transform: translateY(100%);
+  1110→  1110→  }
+  1111→  1111→
+  1112→  1112→  .lf-modal.open {
+  1113→  1113→    transform: translateY(0);
+  1114→  1114→  }
+  1115→  1115→
+  1116→  1116→  .lf-form-row {
+  1117→  1117→    grid-template-columns: 1fr;
+  1118→  1118→    gap: 20px;
+  1119→  1119→  }
+  1120→  1120→
+  1121→  1121→  .lf-modal-footer {
+  1122→  1122→    flex-direction: column-reverse;
+  1123→  1123→  }
+  1124→  1124→
+  1125→  1125→  .lf-modal-footer .lf-btn {
+  1126→  1126→    width: 100%;
+  1127→  1127→  }
+  1128→  1128→}
+  1129→  1129→
+  1130→  1130→@media (min-width: 1024px) {
+  1131→  1131→  .lf-modal-lg {
+  1132→  1132→    max-width: 680px;
+  1133→  1133→  }
+  1134→  1134→
+  1135→  1135→  .lf-modal-xl {
+  1136→  1136→    max-width: 900px;
+  1137→  1137→  }
+  1138→  1138→}
+  1139→  1139→```
+  1140→  1140→
+  1141→  1141→=====================================================
+  1142→  1142→10. TABLAS RESPONSIVAS
+  1143→  1143→=====================================================
+  1144→  1144→
+  1145→  1145→```css
+  1146→  1146→/* Desktop: tabla */
+  1147→  1147→.lf-table-wrapper {
+  1148→  1148→  overflow-x: auto;
+  1149→  1149→  border-radius: 16px;
+  1150→  1150→  border: 1px solid #E8E4DE;
+  1151→  1151→}
+  1152→  1152→
+  1153→  1153→.lf-table {
+  1154→  1154→  width: 100%;
+  1155→  1155→  border-collapse: collapse;
+  1156→  1156→}
+  1157→  1157→
+  1158→  1158→.lf-table thead {
+  1159→  1159→  background: #F5F0EB;
+  1160→  1160→  position: sticky;
+  1161→  1161→  top: 0;
+  1162→  1162→  z-index: 5;
+  1163→  1163→}
+  1164→  1164→
+  1165→  1165→.lf-table th {
+  1166→  1166→  padding: 14px 16px;
+  1167→  1167→  text-align: left;
+  1168→  1168→  font-size: 11px;
+  1169→  1169→  font-weight: 600;
+  1170→  1170→  text-transform: uppercase;
+  1171→  1171→  letter-spacing: 0.08em;
+  1172→  1172→  color: #8E8EA0;
+  1173→  1173→  border-bottom: 1px solid #E8E4DE;
+  1174→  1174→  white-space: nowrap;
+  1175→  1175→}
+  1176→  1176→
+  1177→  1177→.lf-table td {
+  1178→  1178→  padding: 14px 16px;
+  1179→  1179→  font-size: 14px;
+  1180→  1180→  color: #1B1B2F;
+  1181→  1181→  border-bottom: 1px solid #E8E4DE;
+  1182→  1182→}
+  1183→  1183→
+  1184→  1184→.lf-table tbody tr {
+  1185→  1185→  transition: background 0.15s ease;
+  1186→  1186→}
+  1187→  1187→
+  1188→  1188→.lf-table tbody tr:hover {
+  1189→  1189→  background: rgba(255, 87, 34, 0.03);
+  1190→  1190→}
+  1191→  1191→
+  1192→  1192→.lf-table tbody tr:last-child td {
+  1193→  1193→  border-bottom: none;
+  1194→  1194→}
+  1195→  1195→
+  1196→  1196→/* Mobile: convertir a lista */
+  1197→  1197→@media (max-width: 640px) {
+  1198→  1198→  .lf-table thead {
+  1199→  1199→    display: none;
+  1200→  1200→  }
+  1201→  1201→
+  1202→  1202→  .lf-table,
+  1203→  1203→  .lf-table tbody,
+  1204→  1204→  .lf-table tr,
+  1205→  1205→  .lf-table td {
+  1206→  1206→    display: block;
+  1207→  1207→    width: 100%;
+  1208→  1208→  }
+  1209→  1209→
+  1210→  1210→  .lf-table tr {
+  1211→  1211→    padding: 16px;
+  1212→  1212→    border-bottom: 1px solid #E8E4DE;
+  1213→  1213→  }
+  1214→  1214→
+  1215→  1215→  .lf-table td {
+  1216→  1216→    padding: 4px 0;
+  1217→  1217→    border: none;
+  1218→  1218→    display: flex;
+  1219→  1219→    justify-content: space-between;
+  1220→  1220→    align-items: center;
+  1221→  1221→  }
+  1222→  1222→
+  1223→  1223→  .lf-table td::before {
+  1224→  1224→    content: attr(data-label);
+  1225→  1225→    font-size: 12px;
+  1226→  1226→    font-weight: 600;
+  1227→  1227→    color: #8E8EA0;
+  1228→  1228→    text-transform: uppercase;
+  1229→  1229→    letter-spacing: 0.05em;
+  1230→  1230→  }
+  1231→  1231→}
+  1232→  1232→
+  1233→  1233→[data-theme="dark"] .lf-table-wrapper {
+  1234→  1234→  border-color: #2A2A38;
+  1235→  1235→}
+  1236→  1236→
+  1237→  1237→[data-theme="dark"] .lf-table thead {
+  1238→  1238→  background: #12121A;
+  1239→  1239→}
+  1240→  1240→
+  1241→  1241→[data-theme="dark"] .lf-table th {
+  1242→  1242→  color: #6B6B80;
+  1243→  1243→  border-color: #2A2A38;
+  1244→  1244→}
+  1245→  1245→
+  1246→  1246→[data-theme="dark"] .lf-table td {
+  1247→  1247→  color: #F0EDE8;
+  1248→  1248→  border-color: #2A2A38;
+  1249→  1249→}
+  1250→  1250→
+  1251→  1251→[data-theme="dark"] .lf-table tbody tr:hover {
+  1252→  1252→  background: rgba(255, 110, 64, 0.04);
+  1253→  1253→}
+  1254→  1254→```
+  1255→  1255→
+  1256→  1256→=====================================================
+  1257→  1257→11. CARDS / TARJETAS — TODAS LAS VARIANTES
+  1258→  1258→=====================================================
+  1259→  1259→
+  1260→  1260→```css
+  1261→  1261→/* Base */
+  1262→  1262→.lf-card {
+  1263→  1263→  background: #FFFFFF;
+  1264→  1264→  border-radius: 20px;
+  1265→  1265→  border: 1px solid #E8E4DE;
+  1266→  1266→  overflow: hidden;
+  1267→  1267→  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  1268→  1268→}
+  1269→  1269→
+  1270→  1270→/* Elevated (con sombra) */
+  1271→  1271→.lf-card-elevated {
+  1272→  1272→  background: #FFFFFF;
+  1273→  1273→  border-radius: 20px;
+  1274→  1274→  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  1275→  1275→  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  1276→  1276→}
+  1277→  1277→
+  1278→  1278→.lf-card-elevated:hover {
+  1279→  1279→  transform: translateY(-2px);
+  1280→  1280→  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+  1281→  1281→}
+  1282→  1282→
+  1283→  1283→/* Filled (fondo de color suave) */
+  1284→  1284→.lf-card-filled {
+  1285→  1285→  background: #F5F0EB;
+  1286→  1286→  border-radius: 20px;
+  1287→  1287→  border: none;
+  1288→  1288→}
+  1289→  1289→
+  1290→  1290→/* Stat card (borde lateral de color) */
+  1291→  1291→.lf-stat-card {
+  1292→  1292→  background: #FFFFFF;
+  1293→  1293→  border-radius: 16px;
+  1294→  1294→  border: 1px solid #E8E4DE;
+  1295→  1295→  border-left: 4px solid var(--stat-color);
+  1296→  1296→  padding: 16px 20px;
+  1297→  1297→}
+  1298→  1298→
+  1299→  1299→[data-theme="dark"] .lf-card,
+  1300→  1300→[data-theme="dark"] .lf-card-elevated,
+  1301→  1301→[data-theme="dark"] .lf-stat-card {
+  1302→  1302→  background: #1A1A24;
+  1303→  1303→  border-color: #2A2A38;
+  1304→  1304→}
+  1305→  1305→
+  1306→  1306→[data-theme="dark"] .lf-card-filled {
+  1307→  1307→  background: #22222E;
+  1308→  1308→}
+  1309→  1309→```
+  1310→  1310→
+  1311→  1311→=====================================================
+  1312→  1312→12. EMPTY STATES
+  1313→  1313→=====================================================
+  1314→  1314→
+  1315→  1315→```css
+  1316→  1316→.lf-empty {
+  1317→  1317→  display: flex;
+  1318→  1318→  flex-direction: column;
+  1319→  1319→  align-items: center;
+  1320→  1320→  justify-content: center;
+  1321→  1321→  padding: 60px 32px;
+  1322→  1322→  text-align: center;
+  1323→  1323→}
+  1324→  1324→
+  1325→  1325→.lf-empty-icon {
+  1326→  1326→  width: 80px;
+  1327→  1327→  height: 80px;
+  1328→  1328→  border-radius: 24px;
+  1329→  1329→  background: #F5F0EB;
+  1330→  1330→  display: flex;
+  1331→  1331→  align-items: center;
+  1332→  1332→  justify-content: center;
+  1333→  1333→  margin-bottom: 20px;
+  1334→  1334→}
+  1335→  1335→
+  1336→  1336→.lf-empty-icon svg {
+  1337→  1337→  width: 36px;
+  1338→  1338→  height: 36px;
+  1339→  1339→  color: #8E8EA0;
+  1340→  1340→}
+  1341→  1341→
+  1342→  1342→.lf-empty-title {
+  1343→  1343→  font-family: 'Syne', sans-serif;
+  1344→  1344→  font-size: 20px;
+  1345→  1345→  font-weight: 700;
+  1346→  1346→  color: #1B1B2F;
+  1347→  1347→  margin-bottom: 8px;
+  1348→  1348→}
+  1349→  1349→
+  1350→  1350→.lf-empty-desc {
+  1351→  1351→  font-size: 14px;
+  1352→  1352→  color: #8E8EA0;
+  1353→  1353→  max-width: 300px;
+  1354→  1354→  line-height: 1.6;
+  1355→  1355→  margin-bottom: 24px;
+  1356→  1356→}
+  1357→  1357→
+  1358→  1358→[data-theme="dark"] .lf-empty-icon {
+  1359→  1359→  background: #22222E;
+  1360→  1360→}
+  1361→  1361→
+  1362→  1362→[data-theme="dark"] .lf-empty-title {
+  1363→  1363→  color: #F0EDE8;
+  1364→  1364→}
+  1365→  1365→```
+  1366→  1366→
+  1367→  1367→=====================================================
+  1368→  1368→13. SKELETON LOADERS
+  1369→  1369→=====================================================
+  1370→  1370→
+  1371→  1371→```css
+  1372→  1372→.lf-skeleton {
+  1373→  1373→  background: linear-gradient(90deg, #F2EDE8 25%, #E8E4DE 50%, #F2EDE8 75%);
+  1374→  1374→  background-size: 200% 100%;
+  1375→  1375→  animation: shimmer 1.5s ease infinite;
+  1376→  1376→  border-radius: 8px;
+  1377→  1377→}
+  1378→  1378→
+  1379→  1379→@keyframes shimmer {
+  1380→  1380→  0% { background-position: 200% 0; }
+  1381→  1381→  100% { background-position: -200% 0; }
+  1382→  1382→}
+  1383→  1383→
+  1384→  1384→.lf-skeleton-text {
+  1385→  1385→  height: 14px;
+  1386→  1386→  margin-bottom: 10px;
+  1387→  1387→}
+  1388→  1388→
+  1389→  1389→.lf-skeleton-text.short {
+  1390→  1390→  width: 60%;
+  1391→  1391→}
+  1392→  1392→
+  1393→  1393→.lf-skeleton-text.shorter {
+  1394→  1394→  width: 40%;
+  1395→  1395→}
+  1396→  1396→
+  1397→  1397→.lf-skeleton-title {
+  1398→  1398→  height: 22px;
+  1399→  1399→  width: 50%;
+  1400→  1400→  margin-bottom: 16px;
+  1401→  1401→}
+  1402→  1402→
+  1403→  1403→.lf-skeleton-avatar {
+  1404→  1404→  width: 48px;
+  1405→  1405→  height: 48px;
+  1406→  1406→  border-radius: 50%;
+  1407→  1407→}
+  1408→  1408→
+  1409→  1409→.lf-skeleton-card {
+  1410→  1410→  height: 180px;
+  1411→  1411→  border-radius: 20px;
+  1412→  1412→}
+  1413→  1413→
+  1414→  1414→.lf-skeleton-image {
+  1415→  1415→  height: 120px;
+  1416→  1416→  border-radius: 16px;
+  1417→  1417→}
+  1418→  1418→
+  1419→  1419→.lf-skeleton-btn {
+  1420→  1420→  height: 44px;
+  1421→  1421→  width: 120px;
+  1422→  1422→  border-radius: 14px;
+  1423→  1423→}
+  1424→  1424→
+  1425→  1425→[data-theme="dark"] .lf-skeleton {
+  1426→  1426→  background: linear-gradient(90deg, #22222E 25%, #2A2A38 50%, #22222E 75%);
+  1427→  1427→  background-size: 200% 100%;
+  1428→  1428→}
+  1429→  1429→```
+  1430→  1430→
+  1431→  1431→=====================================================
+  1432→  1432→14. PROGRESS BARS
+  1433→  1433→=====================================================
+  1434→  1434→
+  1435→  1435→```css
+  1436→  1436→.lf-progress {
+  1437→  1437→  width: 100%;
+  1438→  1438→  height: 6px;
+  1439→  1439→  background: #E8E4DE;
+  1440→  1440→  border-radius: 3px;
+  1441→  1441→  overflow: hidden;
+  1442→  1442→}
+  1443→  1443→
+  1444→  1444→.lf-progress-fill {
+  1445→  1445→  height: 100%;
+  1446→  1446→  border-radius: 3px;
+  1447→  1447→  background: linear-gradient(90deg, #FF5722, #FF8A65);
+  1448→  1448→  transition: width 0.5s cubic-bezier(0.2, 0, 0, 1);
+  1449→  1449→}
+  1450→  1450→
+  1451→  1451→.lf-progress-sm {
+  1452→  1452→  height: 4px;
+  1453→  1453→  border-radius: 2px;
+  1454→  1454→}
+  1455→  1455→
+  1456→  1456→.lf-progress-lg {
+  1457→  1457→  height: 8px;
+  1458→  1458→  border-radius: 4px;
+  1459→  1459→}
+  1460→  1460→
+  1461→  1461→/* Barra de fortaleza de password */
+  1462→  1462→.lf-strength-bar {
+  1463→  1463→  display: flex;
+  1464→  1464→  gap: 4px;
+  1465→  1465→  margin-top: 8px;
+  1466→  1466→}
+  1467→  1467→
+  1468→  1468→.lf-strength-segment {
+  1469→  1469→  flex: 1;
+  1470→  1470→  height: 4px;
+  1471→  1471→  border-radius: 2px;
+  1472→  1472→  background: #E8E4DE;
+  1473→  1473→  transition: background 0.3s ease;
+  1474→  1474→}
+  1475→  1475→
+  1476→  1476→.lf-strength-segment.active.weak { background: #FF1744; }
+  1477→  1477→.lf-strength-segment.active.medium { background: #FFB300; }
+  1478→  1478→.lf-strength-segment.active.good { background: #FFB300; }
+  1479→  1479→.lf-strength-segment.active.strong { background: #00C853; }
+  1480→  1480→
+  1481→  1481→[data-theme="dark"] .lf-progress {
+  1482→  1482→  background: #2A2A38;
+  1483→  1483→}
+  1484→  1484→```
+  1485→  1485→
+  1486→  1486→=====================================================
+  1487→  1487→15. PAGINACION
+  1488→  1488→=====================================================
+  1489→  1489→
+  1490→  1490→```css
+  1491→  1491→.lf-pagination {
+  1492→  1492→  display: flex;
+  1493→  1493→  align-items: center;
+  1494→  1494→  justify-content: center;
+  1495→  1495→  gap: 4px;
+  1496→  1496→  padding: 20px 0;
+  1497→  1497→}
+  1498→  1498→
+  1499→  1499→.lf-pagination-btn {
+  1500→  1500→  width: 36px;
+  1501→  1501→  height: 36px;
+  1502→  1502→  display: flex;
+  1503→  1503→  align-items: center;
+  1504→  1504→  justify-content: center;
+  1505→  1505→  border-radius: 10px;
+  1506→  1506→  border: none;
+  1507→  1507→  background: transparent;
+  1508→  1508→  font-size: 14px;
+  1509→  1509→  font-weight: 500;
+  1510→  1510→  color: #5A5A72;
+  1511→  1511→  cursor: pointer;
+  1512→  1512→  transition: background 0.15s, color 0.15s;
+  1513→  1513→}
+  1514→  1514→
+  1515→  1515→.lf-pagination-btn:hover {
+  1516→  1516→  background: #F2EDE8;
+  1517→  1517→  color: #1B1B2F;
+  1518→  1518→}
+  1519→  1519→
+  1520→  1520→.lf-pagination-btn.active {
+  1521→  1521→  background: #FF5722;
+  1522→  1522→  color: #FFFFFF;
+  1523→  1523→}
+  1524→  1524→
+  1525→  1525→.lf-pagination-btn:disabled {
+  1526→  1526→  opacity: 0.4;
+  1527→  1527→  cursor: not-allowed;
+  1528→  1528→}
+  1529→  1529→
+  1530→  1530→.lf-pagination-info {
+  1531→  1531→  font-size: 13px;
+  1532→  1532→  color: #8E8EA0;
+  1533→  1533→  margin: 0 12px;
+  1534→  1534→}
+  1535→  1535→
+  1536→  1536→[data-theme="dark"] .lf-pagination-btn:hover {
+  1537→  1537→  background: #2A2A38;
+  1538→  1538→  color: #F0EDE8;
+  1539→  1539→}
+  1540→  1540→```
+  1541→  1541→
+  1542→  1542→=====================================================
+  1543→  1543→VERIFICACION POR ROL — CHECKLIST COMPLETO
+  1544→  1544→=====================================================
+  1545→  1545→
+  1546→  1546→Despues de aplicar TODO lo anterior, verificar cada pantalla de cada rol:
+  1547→  1547→
+  1548→  1548→ADMIN — VERIFICAR:
+  1549→  1549→- [ ] Login: inputs email/password estilizados, botones demo estilizados, toggle tema
+  1550→  1550→- [ ] Vista General: KPIs con stat-cards, panel derecho con fondo solido, mapa con popups custom
+  1551→  1551→- [ ] Pedidos: tabla responsive, badges de estado, filtros pills, modal reasignacion con lista radio
+  1552→  1552→- [ ] Flota: lista de motos con cards, mapa con marcadores custom, modal crear/editar moto
+  1553→  1553→- [ ] Repartidores: lista con cards, modal crear/editar, switches de conexion
+  1554→  1554→- [ ] Tiendas: grid/lista cards, modal crear/editar tienda CON TODOS LOS 4 PASOS estilizados
+  1555→  1555→- [ ] Productos: lista, modal crear/editar CON TODOS LOS CAMPOS estilizados, variantes dinamicas
+  1556→  1556→- [ ] Marketplace > Pedidos compra: tabla, badges, modal detalle
+  1557→  1557→- [ ] Marketplace > Feed editor: secciones draggable con diseno, preview phone
+  1558→  1558→- [ ] Marketplace > Analitica: graficos estilizados, tooltips custom
+  1559→  1559→- [ ] Reportes: graficos Recharts con colores custom, tooltips, exportar
+  1560→  1560→- [ ] Marketing > Campanas: lista, modal crear CON PASOS estilizados
+  1561→  1561→- [ ] Marketing > Codigos: tabla, modal crear CON CAMPOS estilizados
+  1562→  1562→- [ ] Marketing > Banners: lista preview, modal crear/editar CON SELECTOR VISUAL estilizado
+  1563→  1563→- [ ] Marketing > Feed: lista, modal crear/editar CON CAMPOS estilizados
+  1564→  1564→- [ ] Marketing > Analitica: graficos
+  1565→  1565→- [ ] Comunicaciones > Chat: burbujas solidas, input area, mensajes rapidos
+  1566→  1566→- [ ] Comunicaciones > Plantillas: lista, modal crear/editar
+  1567→  1567→- [ ] Config > Horarios: grid dia/hora estilizado
+  1568→  1568→- [ ] Config > Feriados: lista + modal agregar
+  1569→  1569→- [ ] Config > Integraciones: cards con estado
+  1570→  1570→- [ ] Command palette: overlay + panel solido + resultados
+  1571→  1571→- [ ] Todas las tablas: responsive en mobile (convertir a lista)
+  1572→  1572→- [ ] Todos los filtros: pills/chips estilizados
+  1573→  1573→- [ ] Todas las paginaciones: estilizadas
+  1574→  1574→
+  1575→  1575→CLIENTE — VERIFICAR:
+  1576→  1576→- [ ] Inicio: buscador pill, banners con fondo solido, categorias pills, tarjetas tienda, feed items
+  1577→  1577→- [ ] Explorar: filtros pills, tarjetas tienda, toggle mapa/lista
+  1578→  1578→- [ ] Perfil tienda: header + info + tabs + productos con boton "+"
+  1579→  1579→- [ ] Carrito: grupos por tienda, items, controles cantidad, resumen, metodo pago, CTA
+  1580→  1580→- [ ] Solicitar envio: 4 pasos con TODOS los inputs/selects estilizados, mapa, cotizacion
+  1581→  1581→- [ ] Tracking: bottom sheet solido, timeline, info repartidor, chat bubbles solidos
+  1582→  1582→- [ ] Pedidos: tabs, filtros, items, badges
+  1583→  1583→- [ ] Perfil: stats, direcciones, favoritos, puntos, referidos, config con toggles, cerrar sesion
+  1584→  1584→- [ ] Busqueda: pantalla completa con recientes, sugerencias, resultados
+  1585→  1585→- [ ] Centro de ayuda: FAQ acordeon, botones contacto, chat soporte
+  1586→  1586→- [ ] Tienda puntos: tarjeta balance, grid recompensas, historial
+  1587→  1587→- [ ] Calificacion: estrellas, etiquetas chips, textarea, enviar
+  1588→  1588→- [ ] Onboarding: 3 pantallas con ilustraciones, dots, botones
+  1589→  1589→- [ ] Todos los modales: fondo solido, formularios estilizados
+  1590→  1590→
+  1591→  1591→REPARTIDOR — VERIFICAR:
+  1592→  1592→- [ ] Espera: mapa fullscreen, anillos pulsantes, card glassmorphism solida, bottom sheet servicios
+  1593→  1593→- [ ] Nueva orden: overlay oscuro, card glass, timer, botones grandes, info ruta visual
+  1594→  1594→- [ ] Entrega: mapa, bottom sheet con snap, barra progreso, timeline, boton accion grande, km contador
+  1595→  1595→- [ ] Incidencia: sheet con opciones cards, textarea, boton danger
+  1596→  1596→- [ ] Historial: stats cards, lista timeline, filtros
+  1597→  1597→- [ ] Perfil: stats, moto card, calificaciones, config con toggles
+  1598→  1598→- [ ] Chat: burbujas solidas, input area, mensajes rapidos
+  1599→  1599→- [ ] Notificaciones: lista con iconos, badges
+  1600→  1600→
+  1601→  1601→=====================================================
+  1602→  1602→RESPONSIVE — VERIFICAR EN 3 TAMAÑOS
+  1603→  1603→=====================================================
+  1604→  1604→
+  1605→  1605→MOBILE (360px - 640px):
+  1606→  1606→- [ ] Todos los modales se convierten en bottom sheets (borde superior redondeado, se arrastran)
+  1607→  1607→- [ ] Todos los formularios en modales: inputs full-width, filas de 2 columnas se convierten en 1
+  1608→  1608→- [ ] Las tablas se convierten en listas (header oculto, cada td muestra label)
+  1609→  1609→- [ ] Los filtros pills hacen scroll horizontal
+  1610→  1610→- [ ] Los botones del footer del modal se apilan verticalmente
+  1611→  1611→- [ ] Los botones primarios son full-width
+  1612→  1612→- [ ] Los inputs tienen min-height 56px (facil de tocar)
+  1613→  1613→- [ ] El bottom nav tiene safe-area-inset-bottom
+  1614→  1614→- [ ] Los graficos son scroll horizontal si no caben
+  1615→  1615→- [ ] Los popups del mapa se ajustan al ancho disponible
+  1616→  1616→
+  1617→  1617→TABLET (640px - 1024px):
+  1618→  1618→- [ ] Los modales mantienen max-width centrado
+  1619→  1619→- [ ] Las tablas mantienen formato tabla pero con columnas ajustadas
+  1620→  1620→- [ ] Los grids se reducen a 2 columnas
+  1621→  1621→- [ ] Los formularios con 2 columnas se mantienen
+  1622→  1622→- [ ] El sidebar (si existe) se colapsa
+  1623→  1623→
+  1624→  1624→DESKTOP (1024px+):
+  1625→  1625→- [ ] Los modales mantienen max-width con mucho espacio alrededor
+  1626→  1626→- [ ] Las tablas muestran todas las columnas
+  1627→  1627→- [ ] Los grids muestran 3-4 columnas
+  1628→  1628→- [ ] Los formularios en wizard muestran los pasos lado a lado (pasos a la izquierda, formulario a la derecha)
+  1629→  1629→- [ ] El feed del admin muestra preview del telefono al lado del editor
+  1630→  1630→- [ ] Los graficos muestran todas las etiquetas de ejes
+  1631→  1631→```
+  1632→  1632→
+  1633→  1633→---
+  1634→  1634→
+  1635→  1635→
+  1636→  1636→
+  1637→  1637→Ese prompt es una **auditoria total** que cubre **15 componentes base** y verifica **60+ pantallas** en los 3 roles:
+  1638→  1638→
+  1639→  1639→| Componente | Donde se aplica |
+  1640→  1640→|---|---|
+  1641→  1641→| **Inputs** | 25+ campos en Admin, 12+ en Cliente, 3+ en Repartidor |
+  1642→  1642→| **Textareas** | 15+ campos entre los 3 roles |
+  1643→  1643→| **Selects** | 20+ selectores en Admin, 6+ en Cliente, 2+ en Repartidor |
+  1644→  1644→| **Checkboxes** | 10+ en Admin, 3+ en Cliente, 5+ en Repartidor |
+  1645→  1645→| **Radios** | 8+ en Admin, 6+ en Cliente |
+  1646→  1646→| **Toggles** | 10+ en Admin, 5+ en Cliente, 4+ en Repartidor |
+  1647→  1647→| **Botones** | TODOS los roles, TODAS las variantes |
+  1648→  1648→| **Badges** | TODOS los estados en TODOS los roles |
+  1649→  1649→| **Modales** | 20+ en Admin, 10+ en Cliente, 4+ en Repartidor |
+  1650→  1650→| **Tablas** | 8+ en Admin, 3+ en Cliente |
+  1651→  1651→| **Cards** | TODOS los roles |
+  1652→  1652→| **Empty states** | TODAS las listas vacias |
+  1653→  1653→| **Skeletons** | TODAS las cargas |
+  1654→  1654→| **Progress bars** | Tracking, password, pasos |
+  1655→  1655→| **Paginacion** | Todas las tablas/listas largas |
+  1656→  1656→
+  1657→  1657→Y la **verificacion responsive** en mobile, tablet, y desktop para CADA pantalla.
+  1658→  1658→
+  1659→  1659→Mandaselo a tu agente. Es el prompt mas importante para que TODO se vea profesional.

@@ -1,0 +1,1231 @@
+     1→'use client';
+     2→
+     3→import React, { useMemo, useState, useEffect } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  MapPin,
+     7→  Package,
+     8→  PackagePlus,
+     9→  Navigation,
+    10→  Clock,
+    11→  Bike,
+    12→  Power,
+    13→  MessageSquare,
+    14→  AlertTriangle,
+    15→  CheckCircle2,
+    16→  Store,
+    17→  TrendingUp,
+    18→  Zap,
+    19→} from 'lucide-react';
+    20→import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
+    21→import { useRepartidorSnackbar } from './RepartidorShell';
+    22→
+    23→/* ═══════════════════════════════════════════════
+    24→   ESTADO → COLOR MAPPING
+    25→   ═══════════════════════════════════════════════ */
+    26→
+    27→const ESTADO_COLOR: Record<string, string> = {
+    28→  DESCONECTADO: '#9E9E9E',
+    29→  EN_LINEA: '#2979FF',
+    30→  ORDEN_ASIGNADA: '#FFB300',
+    31→  EN_CAMINO_RECOGER: '#2979FF',
+    32→  EN_PUNTO_RECOGIDA: '#FF5722',
+    33→  RECOGIDO: '#9C27B0',
+    34→  EN_PUNTO_ENTREGA: '#9C27B0',
+    35→  INCIDENCIA: '#FF1744',
+    36→};
+    37→
+    38→/* ═══════════════════════════════════════════════
+    39→   MOCK ORDEN (for "Simular nueva orden" button)
+    40→   ═══════════════════════════════════════════════ */
+    41→
+    42→const MOCK_ORDENES: OrdenActiva[] = [
+    43→  {
+    44→    id: 'LF-2848',
+    45→    tipo: 'envio',
+    46→    cliente: 'María López',
+    47→    clienteTelefono: '+505 8888-1234',
+    48→    origen: 'Col. Los Robles, Managua',
+    49→    destino: 'Barrio Monseñor Lezcano',
+    50→    origenLat: 12.1289,
+    51→    origenLng: -86.2451,
+    52→    destinoLat: 12.1421,
+    53→    destinoLng: -86.2287,
+    54→    paquete: 'Documentos importantes',
+    55→    tamano: 'Pequeño',
+    56→    fragil: false,
+    57→    metodoPago: 'efectivo',
+    58→    monto: 120,
+    59→    ganancia: 45,
+    60→    kmEstimados: 3.2,
+    61→    tiempoEstimado: 12,
+    62→  },
+    63→  {
+    64→    id: 'LF-2849',
+    65→    tipo: 'compra',
+    66→    cliente: 'Laura Fernández',
+    67→    clienteTelefono: '+505 8888-5678',
+    68→    tiendaNombre: 'Pizza Express',
+    69→    origen: 'Pizza Express, Rotonda Rubén Darío',
+    70→    destino: 'Villa Fontana',
+    71→    origenLat: 12.1189,
+    72→    origenLng: -86.2551,
+    73→    destinoLat: 12.1321,
+    74→    destinoLng: -86.2087,
+    75→    paquete: 'Pedido de comida',
+    76→    tamano: 'Mediano',
+    77→    fragil: false,
+    78→    metodoPago: 'transferencia',
+    79→    monto: 480,
+    80→    ganancia: 55,
+    81→    kmEstimados: 4.8,
+    82→    tiempoEstimado: 18,
+    83→  },
+    84→  {
+    85→    id: 'LF-2850',
+    86→    tipo: 'envio',
+    87→    cliente: 'Roberto Sáenz',
+    88→    clienteTelefono: '+505 8888-9012',
+    89→    origen: 'Bello Horizonte',
+    90→    destino: 'Monseñor Lezcano',
+    91→    origenLat: 12.1389,
+    92→    origenLng: -86.2351,
+    93→    destinoLat: 12.1421,
+    94→    destinoLng: -86.2287,
+    95→    paquete: 'Caja de libros',
+    96→    tamano: 'Grande',
+    97→    fragil: true,
+    98→    metodoPago: 'efectivo',
+    99→    monto: 200,
+   100→    ganancia: 80,
+   101→    kmEstimados: 5.4,
+   102→    tiempoEstimado: 22,
+   103→  },
+   104→];
+   105→
+   106→let mockOrdenIndex = 0;
+   107→
+   108→/* ═══════════════════════════════════════════════
+   109→   STYLIZED MAP COMPONENT
+   110→   ═══════════════════════════════════════════════ */
+   111→
+   112→interface StylizedMapProps {
+   113→  repartidorPos: { x: number; y: number };
+   114→  destinoPos?: { x: number; y: number };
+   115→  origenPos?: { x: number; y: number };
+   116→  showRoute: 'recoger' | 'entregar' | null;
+   117→  destinoLabel?: string;
+   118→}
+   119→
+   120→function StylizedMap({ repartidorPos, destinoPos, origenPos, showRoute, destinoLabel }: StylizedMapProps) {
+   121→  return (
+   122→    <div
+   123→      aria-hidden="true"
+   124→      style={{
+   125→        position: 'absolute',
+   126→        inset: 0,
+   127→        background:
+   128→          'linear-gradient(135deg, var(--md-surface-variant) 0%, var(--md-surface) 100%)',
+   129→        overflow: 'hidden',
+   130→      }}
+   131→    >
+   132→      {/* Grid lines (streets) */}
+   133→      <div
+   134→        style={{
+   135→          position: 'absolute',
+   136→          inset: 0,
+   137→          backgroundImage:
+   138→            'linear-gradient(to right, var(--md-outline-variant) 1px, transparent 1px), linear-gradient(to bottom, var(--md-outline-variant) 1px, transparent 1px)',
+   139→          backgroundSize: '48px 48px',
+   140→          opacity: 0.6,
+   141→        }}
+   142→      />
+   143→      {/* Diagonal "main road" */}
+   144→      <div
+   145→        style={{
+   146→          position: 'absolute',
+   147→          top: '20%',
+   148→          left: '-10%',
+   149→          right: '-10%',
+   150→          height: 6,
+   151→          background: 'var(--md-outline)',
+   152→          opacity: 0.5,
+   153→          transform: 'rotate(-12deg)',
+   154→        }}
+   155→      />
+   156→      <div
+   157→        style={{
+   158→          position: 'absolute',
+   159→          top: '60%',
+   160→          left: '-10%',
+   161→          right: '-10%',
+   162→          height: 4,
+   163→          background: 'var(--md-outline-variant)',
+   164→          opacity: 0.7,
+   165→          transform: 'rotate(8deg)',
+   166→        }}
+   167→      />
+   168→      {/* "Lake" blob */}
+   169→      <div
+   170→        style={{
+   171→          position: 'absolute',
+   172→          top: '8%',
+   173→          right: '6%',
+   174→          width: 90,
+   175→          height: 70,
+   176→          borderRadius: '50%',
+   177→          background: 'color-mix(in srgb, var(--info, #2979FF) 12%, transparent)',
+   178→          border: '1px solid color-mix(in srgb, var(--info, #2979FF) 24%, transparent)',
+   179→        }}
+   180→      />
+   181→      {/* "Park" blob */}
+   182→      <div
+   183→        style={{
+   184→          position: 'absolute',
+   185→          bottom: '14%',
+   186→          left: '8%',
+   187→          width: 110,
+   188→          height: 80,
+   189→          borderRadius: 24,
+   190→          background: 'color-mix(in srgb, var(--exito, #00C853) 10%, transparent)',
+   191→          border: '1px solid color-mix(in srgb, var(--exito, #00C853) 20%, transparent)',
+   192→        }}
+   193→      />
+   194→
+   195→      {/* Route line (SVG) */}
+   196→      {showRoute && destinoPos && (
+   197→        <svg
+   198→          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+   199→          preserveAspectRatio="none"
+   200→        >
+   201→          <motion.line
+   202→            x1={`${repartidorPos.x}%`}
+   203→            y1={`${repartidorPos.y}%`}
+   204→            x2={`${destinoPos.x}%`}
+   205→            y2={`${destinoPos.y}%`}
+   206→            stroke={showRoute === 'recoger' ? 'var(--info, #2979FF)' : 'var(--primario)'}
+   207→            strokeWidth={3}
+   208→            strokeDasharray="8 6"
+   209→            strokeLinecap="round"
+   210→            initial={{ pathLength: 0, opacity: 0 }}
+   211→            animate={{ pathLength: 1, opacity: 0.9 }}
+   212→            transition={{ duration: 0.5, ease: 'easeOut' }}
+   213→          />
+   214→        </svg>
+   215→      )}
+   216→
+   217→      {/* Origen pin (pickup) */}
+   218→      {origenPos && (
+   219→        <motion.div
+   220→          initial={{ scale: 0, y: -10 }}
+   221→          animate={{ scale: 1, y: 0 }}
+   222→          transition={{ duration: 0.3, ease: 'easeOut' }}
+   223→          style={{
+   224→            position: 'absolute',
+   225→            left: `${origenPos.x}%`,
+   226→            top: `${origenPos.y}%`,
+   227→            transform: 'translate(-50%, -100%)',
+   228→            display: 'flex',
+   229→            flexDirection: 'column',
+   230→            alignItems: 'center',
+   231→          }}
+   232→        >
+   233→          <div
+   234→            style={{
+   235→              padding: '4px 10px',
+   236→              borderRadius: 100,
+   237→              background: 'var(--exito, #00C853)',
+   238→              color: '#fff',
+   239→              fontSize: 11,
+   240→              fontWeight: 600,
+   241→              fontFamily: "'DM Sans', sans-serif",
+   242→              whiteSpace: 'nowrap',
+   243→              marginBottom: 2,
+   244→            }}
+   245→          >
+   246→            Recogida
+   247→          </div>
+   248→          <Store size={24} color="var(--exito, #00C853)" strokeWidth={2.4} fill="var(--md-surface)" />
+   249→        </motion.div>
+   250→      )}
+   251→
+   252→      {/* Destino pin */}
+   253→      {destinoPos && (
+   254→        <motion.div
+   255→          initial={{ scale: 0, y: -10 }}
+   256→          animate={{ scale: 1, y: 0 }}
+   257→          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.1 }}
+   258→          style={{
+   259→            position: 'absolute',
+   260→            left: `${destinoPos.x}%`,
+   261→            top: `${destinoPos.y}%`,
+   262→            transform: 'translate(-50%, -100%)',
+   263→            display: 'flex',
+   264→            flexDirection: 'column',
+   265→            alignItems: 'center',
+   266→          }}
+   267→        >
+   268→          <div
+   269→            style={{
+   270→              padding: '4px 10px',
+   271→              borderRadius: 100,
+   272→              background: 'var(--primario)',
+   273→              color: '#fff',
+   274→              fontSize: 11,
+   275→              fontWeight: 600,
+   276→              fontFamily: "'DM Sans', sans-serif",
+   277→              whiteSpace: 'nowrap',
+   278→              marginBottom: 2,
+   279→            }}
+   280→          >
+   281→            {destinoLabel || 'Entrega'}
+   282→          </div>
+   283→          <MapPin size={26} color="var(--primario)" strokeWidth={2.4} fill="var(--md-surface)" />
+   284→        </motion.div>
+   285→      )}
+   286→
+   287→      {/* Repartidor marker (pulsing dot) */}
+   288→      <motion.div
+   289→        animate={{
+   290→          left: `${repartidorPos.x}%`,
+   291→          top: `${repartidorPos.y}%`,
+   292→        }}
+   293→        transition={{ duration: 0.6, ease: 'easeOut' }}
+   294→        style={{
+   295→          position: 'absolute',
+   296→          transform: 'translate(-50%, -50%)',
+   297→          display: 'flex',
+   298→          alignItems: 'center',
+   299→          justifyContent: 'center',
+   300→        }}
+   301→      >
+   302→        {/* Pulsing rings */}
+   303→        <motion.span
+   304→          animate={{ scale: [1, 2.2], opacity: [0.6, 0] }}
+   305→          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
+   306→          style={{
+   307→            position: 'absolute',
+   308→            width: 24,
+   309→            height: 24,
+   310→            borderRadius: '50%',
+   311→            background: 'var(--primario)',
+   312→          }}
+   313→        />
+   314→        <motion.span
+   315→          animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
+   316→          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
+   317→          style={{
+   318→            position: 'absolute',
+   319→            width: 24,
+   320→            height: 24,
+   321→            borderRadius: '50%',
+   322→            background: 'var(--primario)',
+   323→          }}
+   324→        />
+   325→        {/* Solid dot */}
+   326→        <div
+   327→          style={{
+   328→            width: 18,
+   329→            height: 18,
+   330→            borderRadius: '50%',
+   331→            background: 'var(--primario)',
+   332→            border: '3px solid var(--md-surface)',
+   333→            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+   334→            display: 'flex',
+   335→            alignItems: 'center',
+   336→            justifyContent: 'center',
+   337→          }}
+   338→        >
+   339→          <Bike size={9} color="#fff" strokeWidth={3} />
+   340→        </div>
+   341→      </motion.div>
+   342→    </div>
+   343→  );
+   344→}
+   345→
+   346→/* ═══════════════════════════════════════════════
+   347→   TIEMPO DISPLAY (1s timer, keyed by ordenId)
+   348→   ═══════════════════════════════════════════════ */
+   349→
+   350→function TiempoDisplay() {
+   351→  const [segundos, setSegundos] = useState(0);
+   352→  useEffect(() => {
+   353→    const i = setInterval(() => setSegundos((s) => s + 1), 1000);
+   354→    return () => clearInterval(i);
+   355→  }, []);
+   356→  // Format mm:ss
+   357→  const m = Math.floor(segundos / 60);
+   358→  const s = segundos % 60;
+   359→  const texto = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+   360→  return (
+   361→    <div
+   362→      className="font-mono"
+   363→      style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}
+   364→    >
+   365→      {texto}
+   366→    </div>
+   367→  );
+   368→}
+   369→
+   370→/* ═══════════════════════════════════════════════
+   371→   KM COUNTER (vertical slide)
+   372→   ═══════════════════════════════════════════════ */
+   373→
+   374→function KmCounter({ value }: { value: number }) {
+   375→  const formatted = value.toFixed(2);
+   376→  return (
+   377→    <div
+   378→      style={{
+   379→        display: 'flex',
+   380→        alignItems: 'baseline',
+   381→        gap: 4,
+   382→        fontFamily: "'JetBrains Mono', monospace",
+   383→        overflow: 'hidden',
+   384→      }}
+   385→    >
+   386→      <div style={{ position: 'relative', height: 36, overflow: 'hidden', minWidth: 90 }}>
+   387→        <AnimatePresence mode="popLayout" initial={false}>
+   388→          <motion.div
+   389→            key={formatted}
+   390→            initial={{ y: 24, opacity: 0 }}
+   391→            animate={{ y: 0, opacity: 1 }}
+   392→            exit={{ y: -24, opacity: 0 }}
+   393→            transition={{ duration: 0.3, ease: 'easeOut' }}
+   394→            style={{
+   395→              position: 'absolute',
+   396→              top: 0,
+   397→              left: 0,
+   398→              fontSize: 28,
+   399→              fontWeight: 700,
+   400→              color: 'var(--text)',
+   401→              lineHeight: 1.2,
+   402→            }}
+   403→          >
+   404→            {formatted}
+   405→          </motion.div>
+   406→        </AnimatePresence>
+   407→      </div>
+   408→      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>km</span>
+   409→    </div>
+   410→  );
+   411→}
+   412→
+   413→/* ═══════════════════════════════════════════════
+   414→   MAIN COMPONENT
+   415→   ═══════════════════════════════════════════════ */
+   416→
+   417→export default function RepartidorServicio() {
+   418→  const {
+   419→    estado,
+   420→    conectado,
+   421→    ordenActiva,
+   422→    kmRecorridos,
+   423→    eta,
+   424→    statsHoy,
+   425→    conectar,
+   426→    recibirOrdenAsignada,
+   427→    llegarRecogida,
+   428→    recogerPaquete,
+   429→    llegarEntrega,
+   430→    confirmarEntrega,
+   431→    toggleChat,
+   432→    toggleIncidencia,
+   433→  } = useRepartidorStore();
+   434→
+   435→  const showSnackbar = useRepartidorSnackbar();
+   436→
+   437→  /* ─── Marker positions (simulated by estado) ─── */
+   438→  const repPos = useMemo(() => {
+   439→    switch (estado) {
+   440→      case 'EN_CAMINO_RECOGER':
+   441→        return { x: 30, y: 70 };
+   442→      case 'EN_PUNTO_RECOGIDA':
+   443→        return { x: 20, y: 30 };
+   444→      case 'RECOGIDO':
+   445→        return { x: 50, y: 50 };
+   446→      case 'EN_PUNTO_ENTREGA':
+   447→        return { x: 78, y: 28 };
+   448→      default:
+   449→        return { x: 50, y: 60 };
+   450→    }
+   451→  }, [estado]);
+   452→
+   453→  const origenPos = ordenActiva ? { x: 20, y: 30 } : undefined;
+   454→  const destinoPos = ordenActiva ? { x: 78, y: 28 } : undefined;
+   455→  const showRoute: 'recoger' | 'entregar' | null =
+   456→    estado === 'EN_CAMINO_RECOGER' ? 'recoger' : estado === 'RECOGIDO' ? 'entregar' : null;
+   457→
+   458→  /* ─── Handlers ─── */
+   459→  const handleConectar = () => {
+   460→    conectar();
+   461→    showSnackbar({ message: 'Te has conectado. Esperando asignaciones.' });
+   462→  };
+   463→
+   464→  const handleSimularOrden = () => {
+   465→    const orden = MOCK_ORDENES[mockOrdenIndex % MOCK_ORDENES.length];
+   466→    mockOrdenIndex += 1;
+   467→    recibirOrdenAsignada(orden);
+   468→  };
+   469→
+   470→  const handleLlegarRecogida = () => {
+   471→    llegarRecogida();
+   472→    showSnackbar({ message: 'Has llegado al punto de recogida.' });
+   473→  };
+   474→
+   475→  const handleRecoger = () => {
+   476→    recogerPaquete();
+   477→    showSnackbar({ message: 'Paquete recogido. En camino a entrega.' });
+   478→  };
+   479→
+   480→  const handleLlegarEntrega = () => {
+   481→    llegarEntrega();
+   482→    showSnackbar({ message: 'Has llegado al punto de entrega.' });
+   483→  };
+   484→
+   485→  const handleConfirmarEntrega = () => {
+   486→    confirmarEntrega();
+   487→    showSnackbar({ message: 'Entrega confirmada. Servicio completado.', action: 'Ver historial' });
+   488→  };
+   489→
+   490→  /* ═══════════════════════════════════════════════
+   491→     RENDER — STATE MACHINE
+   492→     ═══════════════════════════════════════════════ */
+   493→
+   494→  return (
+   495→    <div
+   496→      style={{
+   497→        position: 'fixed',
+   498→        top: 'max(24px, env(safe-area-inset-top, 24px))',
+   499→        bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+   500→        left: '50%',
+   501→        transform: 'translateX(-50%)',
+   502→        width: '100%',
+   503→        maxWidth: 480,
+   504→        zIndex: 1,
+   505→        overflow: 'hidden',
+   506→      }}
+   507→    >
+   508→      {/* MAP (background, always) */}
+   509→      <StylizedMap
+   510→        repartidorPos={repPos}
+   511→        destinoPos={destinoPos}
+   512→        origenPos={origenPos}
+   513→        showRoute={showRoute}
+   514→        destinoLabel={ordenActiva?.destino}
+   515→      />
+   516→
+   517→      {/* FAB: Chat (top-right) when active order */}
+   518→      {ordenActiva && (
+   519→        <motion.button
+   520→          initial={{ scale: 0, opacity: 0 }}
+   521→          animate={{ scale: 1, opacity: 1 }}
+   522→          transition={{ duration: 0.2, ease: 'easeOut' }}
+   523→          onClick={() => toggleChat(ordenActiva.id)}
+   524→          aria-label="Chat con cliente"
+   525→          style={{
+   526→            position: 'absolute',
+   527→            top: 16,
+   528→            right: 16,
+   529→            zIndex: 10,
+   530→            width: 48,
+   531→            height: 48,
+   532→            borderRadius: 16,
+   533→            border: 'none',
+   534→            background: 'var(--md-surface)',
+   535→            color: 'var(--primario)',
+   536→            boxShadow: 'var(--md-elevation-3)',
+   537→            cursor: 'pointer',
+   538→            display: 'flex',
+   539→            alignItems: 'center',
+   540→            justifyContent: 'center',
+   541→          }}
+   542→        >
+   543→          <MessageSquare size={22} />
+   544→        </motion.button>
+   545→      )}
+   546→
+   547→      {/* Status chip (top-left) */}
+   548→      {conectado && (
+   549→        <div
+   550→          style={{
+   551→            position: 'absolute',
+   552→            top: 16,
+   553→            left: 16,
+   554→            zIndex: 10,
+   555→            padding: '6px 12px',
+   556→            borderRadius: 100,
+   557→            background: 'var(--lf-glass-bg)',
+   558→            backdropFilter: 'blur(16px)',
+   559→            WebkitBackdropFilter: 'blur(16px)',
+   560→            border: '1px solid var(--lf-glass-border)',
+   561→            display: 'flex',
+   562→            alignItems: 'center',
+   563→            gap: 6,
+   564→            fontFamily: "'DM Sans', sans-serif",
+   565→            fontSize: 12,
+   566→            fontWeight: 600,
+   567→            color: 'var(--text)',
+   568→          }}
+   569→        >
+   570→          <span
+   571→            style={{
+   572→              width: 8,
+   573→              height: 8,
+   574→              borderRadius: '50%',
+   575→              background: ESTADO_COLOR[estado],
+   576→              boxShadow: `0 0 8px ${ESTADO_COLOR[estado]}`,
+   577→            }}
+   578→          />
+   579→          {estado === 'EN_LINEA' && 'En línea'}
+   580→          {estado === 'EN_CAMINO_RECOGER' && 'Camino a recoger'}
+   581→          {estado === 'EN_PUNTO_RECOGIDA' && 'En punto de recogida'}
+   582→          {estado === 'RECOGIDO' && 'En camino a entrega'}
+   583→          {estado === 'EN_PUNTO_ENTREGA' && 'En punto de entrega'}
+   584→        </div>
+   585→      )}
+   586→
+   587→      {/* ─── DESCONECTADO ─── */}
+   588→      {estado === 'DESCONECTADO' && (
+   589→        <motion.div
+   590→          initial={{ opacity: 0, y: 20 }}
+   591→          animate={{ opacity: 1, y: 0 }}
+   592→          transition={{ duration: 0.3 }}
+   593→          style={{
+   594→            position: 'absolute',
+   595→            inset: 0,
+   596→            display: 'flex',
+   597→            alignItems: 'center',
+   598→            justifyContent: 'center',
+   599→            padding: 24,
+   600→          }}
+   601→        >
+   602→          <div
+   603→            style={{
+   604→              width: '100%',
+   605→              maxWidth: 360,
+   606→              padding: 28,
+   607→              borderRadius: 24,
+   608→              background: 'var(--md-surface)',
+   609→              boxShadow: 'var(--md-elevation-3)',
+   610→              textAlign: 'center',
+   611→            }}
+   612→          >
+   613→            <div
+   614→              style={{
+   615→                width: 72,
+   616→                height: 72,
+   617→                borderRadius: 20,
+   618→                background: 'color-mix(in srgb, var(--primario) 12%, transparent)',
+   619→                color: 'var(--primario)',
+   620→                display: 'flex',
+   621→                alignItems: 'center',
+   622→                justifyContent: 'center',
+   623→                margin: '0 auto 16px',
+   624→              }}
+   625→            >
+   626→              <Power size={32} />
+   627→            </div>
+   628→            <h2
+   629→              className="font-syne"
+   630→              style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}
+   631→            >
+   632→              Estás desconectado
+   633→            </h2>
+   634→            <p
+   635→              style={{
+   636→                fontSize: 14,
+   637→                color: 'var(--text-secondary)',
+   638→                marginBottom: 24,
+   639→                lineHeight: 1.5,
+   640→              }}
+   641→            >
+   642→              Conéctate para empezar a recibir asignaciones de órdenes en tu zona.
+   643→            </p>
+   644→            <button
+   645→              onClick={handleConectar}
+   646→              style={{
+   647→                width: '100%',
+   648→                minHeight: 52,
+   649→                borderRadius: 16,
+   650→                border: 'none',
+   651→                background: 'var(--primario)',
+   652→                color: '#fff',
+   653→                fontSize: 15,
+   654→                fontWeight: 700,
+   655→                fontFamily: "'DM Sans', sans-serif",
+   656→                cursor: 'pointer',
+   657→                display: 'flex',
+   658→                alignItems: 'center',
+   659→                justifyContent: 'center',
+   660→                gap: 8,
+   661→              }}
+   662→            >
+   663→              <Power size={20} />
+   664→              Conectarse
+   665→            </button>
+   666→          </div>
+   667→        </motion.div>
+   668→      )}
+   669→
+   670→      {/* ─── EN_LINEA (waiting for assignment) ─── */}
+   671→      {estado === 'EN_LINEA' && (
+   672→        <>
+   673→          {/* Glass card "Esperando asignación" */}
+   674→          <motion.div
+   675→            initial={{ opacity: 0, y: 20 }}
+   676→            animate={{ opacity: 1, y: 0 }}
+   677→            transition={{ duration: 0.3 }}
+   678→            style={{
+   679→              position: 'absolute',
+   680→              top: '40%',
+   681→              left: 16,
+   682→              right: 16,
+   683→              transform: 'translateY(-50%)',
+   684→              padding: 20,
+   685→              borderRadius: 20,
+   686→              background: 'var(--lf-glass-bg)',
+   687→              backdropFilter: 'blur(20px)',
+   688→              WebkitBackdropFilter: 'blur(20px)',
+   689→              border: '1px solid var(--lf-glass-border)',
+   690→              textAlign: 'center',
+   691→            }}
+   692→          >
+   693→            <motion.div
+   694→              animate={{ scale: [1, 1.1, 1] }}
+   695→              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+   696→              style={{
+   697→                width: 56,
+   698→                height: 56,
+   699→                borderRadius: 16,
+   700→                background: 'color-mix(in srgb, var(--info, #2979FF) 14%, transparent)',
+   701→                color: 'var(--info, #2979FF)',
+   702→                display: 'flex',
+   703→                alignItems: 'center',
+   704→                justifyContent: 'center',
+   705→                margin: '0 auto 12px',
+   706→              }}
+   707→            >
+   708→              <Zap size={28} />
+   709→            </motion.div>
+   710→            <h3
+   711→              className="font-syne"
+   712→              style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}
+   713→            >
+   714→              Esperando asignación
+   715→            </h3>
+   716→            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+   717→              Te notificaremos cuando llegue una nueva orden.
+   718→            </p>
+   719→          </motion.div>
+   720→
+   721→          {/* Bottom sheet: today's services + simulate button */}
+   722→          <motion.div
+   723→            initial={{ y: 200 }}
+   724→            animate={{ y: 0 }}
+   725→            transition={{ duration: 0.3, ease: 'easeOut' }}
+   726→            style={{
+   727→              position: 'absolute',
+   728→              bottom: 0,
+   729→              left: 0,
+   730→              right: 0,
+   731→              padding: 16,
+   732→              paddingBottom: 20,
+   733→              borderRadius: '24px 24px 0 0',
+   734→              background: 'var(--md-surface)',
+   735→              boxShadow: 'var(--lf-shadow-sheet)',
+   736→            }}
+   737→          >
+   738→            <div
+   739→              style={{
+   740→                width: 40,
+   741→                height: 4,
+   742→                borderRadius: 2,
+   743→                background: 'var(--md-outline-variant)',
+   744→                margin: '0 auto 12px',
+   745→              }}
+   746→            />
+   747→            <div
+   748→              style={{
+   749→                display: 'flex',
+   750→                alignItems: 'center',
+   751→                justifyContent: 'space-between',
+   752→                marginBottom: 12,
+   753→              }}
+   754→            >
+   755→              <div>
+   756→                <div
+   757→                  className="font-syne"
+   758→                  style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}
+   759→                >
+   760→                  Servicios de hoy
+   761→                </div>
+   762→                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+   763→                  {statsHoy.entregas} entregas completadas
+   764→                </div>
+   765→              </div>
+   766→              <div
+   767→                className="font-mono"
+   768→                style={{
+   769→                  fontSize: 22,
+   770→                  fontWeight: 700,
+   771→                  color: 'var(--primario)',
+   772→                }}
+   773→              >
+   774→                {statsHoy.entregas}
+   775→              </div>
+   776→            </div>
+   777→            <button
+   778→              onClick={handleSimularOrden}
+   779→              style={{
+   780→                width: '100%',
+   781→                minHeight: 48,
+   782→                borderRadius: 14,
+   783→                border: '1px dashed var(--primario)',
+   784→                background: 'color-mix(in srgb, var(--primario) 8%, transparent)',
+   785→                color: 'var(--primario)',
+   786→                fontSize: 14,
+   787→                fontWeight: 600,
+   788→                fontFamily: "'DM Sans', sans-serif",
+   789→                cursor: 'pointer',
+   790→                display: 'flex',
+   791→                alignItems: 'center',
+   792→                justifyContent: 'center',
+   793→                gap: 8,
+   794→              }}
+   795→            >
+   796→              <PackagePlus size={18} />
+   797→              Simular nueva orden
+   798→            </button>
+   799→            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 8 }}>
+   800→              Demo: genera una asignación de prueba.
+   801→            </p>
+   802→          </motion.div>
+   803→        </>
+   804→      )}
+   805→
+   806→      {/* ─── EN_CAMINO_RECOGER ─── */}
+   807→      {estado === 'EN_CAMINO_RECOGER' && ordenActiva && (
+   808→        <BottomSheet>
+   809→          <SheetHeader
+   810→            label="Camino al punto de recogida"
+   811→            color={ESTADO_COLOR[estado]}
+   812→            icon={<Navigation size={16} />}
+   813→          />
+   814→          <OrdenMiniCard orden={ordenActiva} showRecogida />
+   815→          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+   816→            <StatPill icon={<Clock size={14} />} label="ETA" value={`${eta} min`} />
+   817→            <StatPill
+   818→              icon={<Navigation size={14} />}
+   819→              label="Distancia"
+   820→              value={`${ordenActiva.kmEstimados.toFixed(1)} km`}
+   821→            />
+   822→          </div>
+   823→          <PrimaryButton onClick={handleLlegarRecogida} icon={<CheckCircle2 size={18} />}>
+   824→            Llegué al punto de recogida
+   825→          </PrimaryButton>
+   826→        </BottomSheet>
+   827→      )}
+   828→
+   829→      {/* ─── EN_PUNTO_RECOGIDA ─── */}
+   830→      {estado === 'EN_PUNTO_RECOGIDA' && ordenActiva && (
+   831→        <BottomSheet>
+   832→          <SheetHeader
+   833→            label="En punto de recogida"
+   834→            color={ESTADO_COLOR[estado]}
+   835→            icon={<MapPin size={16} />}
+   836→          />
+   837→          <OrdenMiniCard orden={ordenActiva} showRecogida />
+   838→          <div
+   839→            style={{
+   840→              padding: 12,
+   841→              borderRadius: 12,
+   842→              background: 'color-mix(in srgb, var(--warning, #FFB300) 10%, transparent)',
+   843→              border: '1px solid color-mix(in srgb, var(--warning, #FFB300) 30%, transparent)',
+   844→              marginBottom: 12,
+   845→              fontSize: 12,
+   846→              color: 'var(--text-secondary)',
+   847→            }}
+   848→          >
+   849→            Verifica el paquete y confirma la recogida con el cliente.
+   850→          </div>
+   851→          <PrimaryButton
+   852→            onClick={handleRecoger}
+   853→            icon={ordenActiva.tipo === 'compra' ? <Store size={18} /> : <Package size={18} />}
+   854→          >
+   855→            {ordenActiva.tipo === 'compra'
+   856→              ? `Recoger pedido de ${ordenActiva.tiendaNombre || 'la tienda'}`
+   857→              : 'Recoger paquete'}
+   858→          </PrimaryButton>
+   859→        </BottomSheet>
+   860→      )}
+   861→
+   862→      {/* ─── RECOGIDO (en camino a entrega) ─── */}
+   863→      {estado === 'RECOGIDO' && ordenActiva && (
+   864→        <BottomSheet>
+   865→          <SheetHeader
+   866→            label="En camino a la entrega"
+   867→            color={ESTADO_COLOR[estado]}
+   868→            icon={<Navigation size={16} />}
+   869→          />
+   870→          {/* Km counter with vertical slide */}
+   871→          <div
+   872→            style={{
+   873→              display: 'flex',
+   874→              alignItems: 'center',
+   875→              justifyContent: 'space-between',
+   876→              padding: '12px 0',
+   877→              borderBottom: '1px solid var(--md-outline-variant)',
+   878→              marginBottom: 12,
+   879→            }}
+   880→          >
+   881→            <div>
+   882→              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
+   883→                Recorrido
+   884→              </div>
+   885→              <KmCounter value={kmRecorridos} />
+   886→            </div>
+   887→            <div style={{ textAlign: 'right' }}>
+   888→              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
+   889→                Tiempo
+   890→              </div>
+   891→              <TiempoDisplay key={ordenActiva?.id || 'none'} />
+   892→            </div>
+   893→          </div>
+   894→          {/* Progress bar */}
+   895→          <div
+   896→            style={{
+   897→              height: 6,
+   898→              borderRadius: 3,
+   899→              background: 'var(--md-outline-variant)',
+   900→              overflow: 'hidden',
+   901→              marginBottom: 4,
+   902→            }}
+   903→          >
+   904→            <motion.div
+   905→              animate={{
+   906→                width: `${Math.min(100, (kmRecorridos / Math.max(0.1, ordenActiva.kmEstimados)) * 100)}%`,
+   907→              }}
+   908→              transition={{ duration: 0.5, ease: 'easeOut' }}
+   909→              style={{ height: '100%', background: 'var(--primario)' }}
+   910→            />
+   911→          </div>
+   912→          <div
+   913→            style={{
+   914→              display: 'flex',
+   915→              justifyContent: 'space-between',
+   916→              fontSize: 11,
+   917→              color: 'var(--text-muted)',
+   918→              marginBottom: 12,
+   919→            }}
+   920→          >
+   921→            <span>{kmRecorridos.toFixed(2)} km</span>
+   922→            <span>{ordenActiva.kmEstimados.toFixed(2)} km</span>
+   923→          </div>
+   924→          {/* ETA chip */}
+   925→          <div
+   926→            style={{
+   927→              display: 'flex',
+   928→              alignItems: 'center',
+   929→              gap: 8,
+   930→              padding: '8px 12px',
+   931→              borderRadius: 12,
+   932→              background: 'color-mix(in srgb, var(--info, #2979FF) 10%, transparent)',
+   933→              marginBottom: 12,
+   934→            }}
+   935→          >
+   936→            <Clock size={16} color="var(--info, #2979FF)" />
+   937→            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+   938→              Llegada estimada en
+   939→            </span>
+   940→            <span
+   941→              className="font-mono"
+   942→              style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
+   943→            >
+   944→              {eta} min
+   945→            </span>
+   946→          </div>
+   947→          <PrimaryButton onClick={handleLlegarEntrega} icon={<CheckCircle2 size={18} />}>
+   948→            Llegué al punto de entrega
+   949→          </PrimaryButton>
+   950→        </BottomSheet>
+   951→      )}
+   952→
+   953→      {/* ─── EN_PUNTO_ENTREGA ─── */}
+   954→      {estado === 'EN_PUNTO_ENTREGA' && ordenActiva && (
+   955→        <BottomSheet>
+   956→          <SheetHeader
+   957→            label="En punto de entrega"
+   958→            color={ESTADO_COLOR[estado]}
+   959→            icon={<MapPin size={16} />}
+   960→          />
+   961→          <OrdenMiniCard orden={ordenActiva} showEntrega />
+   962→          <div
+   963→            style={{
+   964→              padding: 12,
+   965→              borderRadius: 12,
+   966→              background: 'color-mix(in srgb, var(--exito, #00C853) 10%, transparent)',
+   967→              border: '1px solid color-mix(in srgb, var(--exito, #00C853) 30%, transparent)',
+   968→              marginBottom: 12,
+   969→              fontSize: 12,
+   970→              color: 'var(--text-secondary)',
+   971→            }}
+   972→          >
+   973→            Entrega el paquete a <strong style={{ color: 'var(--text)' }}>{ordenActiva.cliente}</strong> y confirma la entrega.
+   974→          </div>
+   975→          <PrimaryButton onClick={handleConfirmarEntrega} icon={<CheckCircle2 size={18} />}>
+   976→            Confirmar entrega
+   977→          </PrimaryButton>
+   978→          <button
+   979→            onClick={() => toggleIncidencia(true)}
+   980→            style={{
+   981→              width: '100%',
+   982→              minHeight: 44,
+   983→              marginTop: 8,
+   984→              borderRadius: 14,
+   985→              border: '1px solid color-mix(in srgb, var(--peligro, #FF1744) 30%, transparent)',
+   986→              background: 'transparent',
+   987→              color: 'var(--peligro, #FF1744)',
+   988→              fontSize: 14,
+   989→              fontWeight: 600,
+   990→              fontFamily: "'DM Sans', sans-serif",
+   991→              cursor: 'pointer',
+   992→              display: 'flex',
+   993→              alignItems: 'center',
+   994→              justifyContent: 'center',
+   995→              gap: 8,
+   996→            }}
+   997→          >
+   998→            <AlertTriangle size={16} />
+   999→            Reportar incidencia
+  1000→          </button>
+  1001→        </BottomSheet>
+  1002→      )}
+  1003→
+  1004→      {/* ─── ORDEN_ASIGNADA / INCIDENCIA: handled by overlays ─── */}
+  1005→      {(estado === 'ORDEN_ASIGNADA' || estado === 'INCIDENCIA') && (
+  1006→        <div
+  1007→          style={{
+  1008→            position: 'absolute',
+  1009→            inset: 0,
+  1010→            display: 'flex',
+  1011→            alignItems: 'center',
+  1012→            justifyContent: 'center',
+  1013→            background: 'color-mix(in srgb, var(--md-surface) 60%, transparent)',
+  1014→            backdropFilter: 'blur(4px)',
+  1015→          }}
+  1016→        >
+  1017→          <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+  1018→            <TrendingUp size={28} color="var(--primario)" style={{ margin: '0 auto 8px' }} />
+  1019→            <div className="font-syne" style={{ fontSize: 14, fontWeight: 700 }}>
+  1020→              {estado === 'ORDEN_ASIGNADA' ? 'Revisando orden…' : 'Procesando incidencia…'}
+  1021→            </div>
+  1022→          </div>
+  1023→        </div>
+  1024→      )}
+  1025→    </div>
+  1026→  );
+  1027→}
+  1028→
+  1029→/* ═══════════════════════════════════════════════
+  1030→   REUSABLE UI BITS
+  1031→   ═══════════════════════════════════════════════ */
+  1032→
+  1033→function BottomSheet({ children }: { children: React.ReactNode }) {
+  1034→  return (
+  1035→    <motion.div
+  1036→      initial={{ y: 300 }}
+  1037→      animate={{ y: 0 }}
+  1038→      transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
+  1039→      style={{
+  1040→        position: 'absolute',
+  1041→        bottom: 0,
+  1042→        left: 0,
+  1043→        right: 0,
+  1044→        padding: 16,
+  1045→        paddingBottom: 20,
+  1046→        borderRadius: '24px 24px 0 0',
+  1047→        background: 'var(--md-surface)',
+  1048→        boxShadow: 'var(--lf-shadow-sheet)',
+  1049→        maxHeight: '70%',
+  1050→        overflowY: 'auto',
+  1051→      }}
+  1052→    >
+  1053→      <div
+  1054→        style={{
+  1055→          width: 40,
+  1056→          height: 4,
+  1057→          borderRadius: 2,
+  1058→          background: 'var(--md-outline-variant)',
+  1059→          margin: '0 auto 12px',
+  1060→        }}
+  1061→      />
+  1062→      {children}
+  1063→    </motion.div>
+  1064→  );
+  1065→}
+  1066→
+  1067→function SheetHeader({
+  1068→  label,
+  1069→  color,
+  1070→  icon,
+  1071→}: {
+  1072→  label: string;
+  1073→  color: string;
+  1074→  icon: React.ReactNode;
+  1075→}) {
+  1076→  return (
+  1077→    <div
+  1078→      style={{
+  1079→        display: 'flex',
+  1080→        alignItems: 'center',
+  1081→        gap: 8,
+  1082→        marginBottom: 12,
+  1083→      }}
+  1084→    >
+  1085→      <div
+  1086→        style={{
+  1087→          width: 28,
+  1088→          height: 28,
+  1089→          borderRadius: 8,
+  1090→          background: color,
+  1091→          color: '#fff',
+  1092→          display: 'flex',
+  1093→          alignItems: 'center',
+  1094→          justifyContent: 'center',
+  1095→          flexShrink: 0,
+  1096→        }}
+  1097→      >
+  1098→        {icon}
+  1099→      </div>
+  1100→      <h3 className="font-syne" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+  1101→        {label}
+  1102→      </h3>
+  1103→    </div>
+  1104→  );
+  1105→}
+  1106→
+  1107→function OrdenMiniCard({
+  1108→  orden,
+  1109→  showRecogida,
+  1110→  showEntrega,
+  1111→}: {
+  1112→  orden: OrdenActiva;
+  1113→  showRecogida?: boolean;
+  1114→  showEntrega?: boolean;
+  1115→}) {
+  1116→  return (
+  1117→    <div
+  1118→      style={{
+  1119→        padding: 12,
+  1120→        borderRadius: 14,
+  1121→        background: 'var(--md-surface-variant)',
+  1122→        marginBottom: 12,
+  1123→      }}
+  1124→    >
+  1125→      <div
+  1126→        style={{
+  1127→          display: 'flex',
+  1128→          alignItems: 'center',
+  1129→          justifyContent: 'space-between',
+  1130→          marginBottom: 8,
+  1131→        }}
+  1132→      >
+  1133→        <span
+  1134→          className="font-mono"
+  1135→          style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}
+  1136→        >
+  1137→          {orden.id}
+  1138→        </span>
+  1139→        <span
+  1140→          style={{
+  1141→            padding: '3px 10px',
+  1142→            borderRadius: 100,
+  1143→            background: orden.tipo === 'compra' ? 'var(--md-primary-container)' : 'var(--md-secondary-container)',
+  1144→            color: orden.tipo === 'compra' ? 'var(--md-on-primary-container)' : 'var(--md-on-secondary-container)',
+  1145→            fontSize: 11,
+  1146→            fontWeight: 600,
+  1147→            textTransform: 'capitalize',
+  1148→          }}
+  1149→        >
+  1150→          {orden.tipo}
+  1151→        </span>
+  1152→      </div>
+  1153→      {(showRecogida || (!showRecogida && !showEntrega)) && (
+  1154→        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+  1155→          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--exito, #00C853)', marginTop: 6, flexShrink: 0 }} />
+  1156→          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+  1157→            {orden.origen}
+  1158→          </div>
+  1159→        </div>
+  1160→      )}
+  1161→      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+  1162→        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primario)', marginTop: 6, flexShrink: 0 }} />
+  1163→        <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, lineHeight: 1.4 }}>
+  1164→          {orden.destino}
+  1165→        </div>
+  1166→      </div>
+  1167→    </div>
+  1168→  );
+  1169→}
+  1170→
+  1171→function StatPill({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  1172→  return (
+  1173→    <div
+  1174→      style={{
+  1175→        flex: 1,
+  1176→        padding: '8px 10px',
+  1177→        borderRadius: 12,
+  1178→        background: 'var(--md-surface-variant)',
+  1179→        display: 'flex',
+  1180→        flexDirection: 'column',
+  1181→        gap: 2,
+  1182→      }}
+  1183→    >
+  1184→      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 11 }}>
+  1185→        {icon}
+  1186→        {label}
+  1187→      </div>
+  1188→      <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+  1189→        {value}
+  1190→      </div>
+  1191→    </div>
+  1192→  );
+  1193→}
+  1194→
+  1195→function PrimaryButton({
+  1196→  children,
+  1197→  onClick,
+  1198→  icon,
+  1199→}: {
+  1200→  children: React.ReactNode;
+  1201→  onClick: () => void;
+  1202→  icon?: React.ReactNode;
+  1203→}) {
+  1204→  return (
+  1205→    <motion.button
+  1206→      whileTap={{ scale: 0.98 }}
+  1207→      onClick={onClick}
+  1208→      style={{
+  1209→        width: '100%',
+  1210→        minHeight: 52,
+  1211→        borderRadius: 16,
+  1212→        border: 'none',
+  1213→        background: 'var(--primario)',
+  1214→        color: '#fff',
+  1215→        fontSize: 15,
+  1216→        fontWeight: 700,
+  1217→        fontFamily: "'DM Sans', sans-serif",
+  1218→        cursor: 'pointer',
+  1219→        display: 'flex',
+  1220→        alignItems: 'center',
+  1221→        justifyContent: 'center',
+  1222→        gap: 8,
+  1223→        boxShadow: 'var(--lf-shadow-fab)',
+  1224→      }}
+  1225→    >
+  1226→      {icon}
+  1227→      {children}
+  1228→    </motion.button>
+  1229→  );
+  1230→}
+  1231→

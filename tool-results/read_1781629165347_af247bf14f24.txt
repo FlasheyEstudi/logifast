@@ -1,0 +1,1109 @@
+     1→'use client';
+     2→
+     3→import { useState } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  Settings, Wrench, DollarSign, MapPin, Building, Users,
+     7→  Plus, X, Edit2, Save, Trash2,
+     8→  Mail, Smartphone, Clock, Puzzle, Database,
+     9→  Send, Eye, Monitor, ChevronRight, AlertTriangle,
+    10→  Download, FileText, HardDrive, CheckCircle2, Circle,
+    11→  MessageCircle, CreditCard, Map,
+    12→} from 'lucide-react';
+    13→import { useStore, type MaintenanceRule, type Zone, type CompanyData, type SystemUser, type ConfiguracionHorario, type Feriado, type Integracion } from '@/lib/store';
+    14→
+    15→type ConfigTab = 'mantenimiento' | 'tarifas' | 'zonas' | 'empresa' | 'usuarios' | 'emails' | 'app' | 'horarios' | 'integraciones' | 'backup';
+    16→
+    17→const TABS: { key: ConfigTab; label: string; icon: typeof Settings }[] = [
+    18→  { key: 'mantenimiento', label: 'Mantenimiento', icon: Wrench },
+    19→  { key: 'tarifas', label: 'Tarifas y Costos', icon: DollarSign },
+    20→  { key: 'zonas', label: 'Zonas', icon: MapPin },
+    21→  { key: 'empresa', label: 'Datos Empresa', icon: Building },
+    22→  { key: 'usuarios', label: 'Usuarios', icon: Users },
+    23→  { key: 'emails', label: 'Emails', icon: Mail },
+    24→  { key: 'app', label: 'App Cliente', icon: Smartphone },
+    25→  { key: 'horarios', label: 'Horarios', icon: Clock },
+    26→  { key: 'integraciones', label: 'Integraciones', icon: Puzzle },
+    27→  { key: 'backup', label: 'Backup', icon: Database },
+    28→];
+    29→
+    30→/* ─── Email Template Data ─── */
+    31→interface EmailTemplate {
+    32→  id: string;
+    33→  nombre: string;
+    34→  preview: string;
+    35→  variables: string[];
+    36→  contenido: string;
+    37→}
+    38→
+    39→const INITIAL_EMAIL_TEMPLATES: EmailTemplate[] = [
+    40→  { id: 'ET-01', nombre: 'Confirmación de orden', preview: 'Tu orden ha sido confirmada...', variables: ['{{nombre_cliente}}', '{{orden_id}}', '{{origen}}', '{{destino}}'], contenido: '<h1>¡Orden confirmada!</h1><p>Hola {{nombre_cliente}}, tu orden <strong>{{orden_id}}</strong> ha sido confirmada.</p><p>Ruta: {{origen}} → {{destino}}</p>' },
+    41→  { id: 'ET-02', nombre: 'Orden entregada', preview: 'Tu entrega fue completada exitosamente...', variables: ['{{nombre_cliente}}', '{{orden_id}}', '{{repartidor}}', '{{hora_entrega}}'], contenido: '<h1>Entrega completada</h1><p>Hola {{nombre_cliente}}, tu orden <strong>{{orden_id}}</strong> fue entregada por {{repartidor}} a las {{hora_entrega}}.</p>' },
+    42→  { id: 'ET-03', nombre: 'Bienvenida', preview: 'Bienvenido a LOGIFAST...', variables: ['{{nombre_cliente}}'], contenido: '<h1>¡Bienvenido!</h1><p>Hola {{nombre_cliente}}, gracias por unirte a LOGIFAST.</p>' },
+    43→  { id: 'ET-04', nombre: 'Código promocional', preview: 'Tienes un descuento especial...', variables: ['{{nombre_cliente}}', '{{codigo}}', '{{descuento}}'], contenido: '<h1>¡Descuento especial!</h1><p>Hola {{nombre_cliente}}, usa el código <strong>{{codigo}}</strong> para un {{descuento}} de descuento.</p>' },
+    44→  { id: 'ET-05', nombre: 'Incidencia', preview: 'Hubo un problema con tu orden...', variables: ['{{nombre_cliente}}', '{{orden_id}}', '{{incidencia}}'], contenido: '<h1>Incidencia reportada</h1><p>Hola {{nombre_cliente}}, tu orden <strong>{{orden_id}}</strong> tiene una incidencia: {{incidencia}}.</p>' },
+    45→];
+    46→
+    47→/* ─── Dia labels ─── */
+    48→const DIA_LABELS: Record<number, string> = {
+    49→  1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 0: 'Domingo',
+    50→};
+    51→
+    52→/* ─── Integration icon map ─── */
+    53→const ICON_MAP: Record<string, typeof MessageCircle> = {
+    54→  'message-circle': MessageCircle,
+    55→  'credit-card': CreditCard,
+    56→  'map': Map,
+    57→  'smartphone': Smartphone,
+    58→  'mail': Mail,
+    59→};
+    60→
+    61→/* ─── Preset colors for app ─── */
+    62→const PRESET_COLORS = [
+    63→  '#E8553A', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6',
+    64→  '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#EF4444',
+    65→];
+    66→
+    67→export default function ModuleConfig() {
+    68→  const {
+    69→    maintenanceRules, zones, companyData, users,
+    70→    horarios, feriados, integraciones,
+    71→    updateHorario, addFeriado, deleteFeriado, addToast,
+    72→  } = useStore();
+    73→
+    74→  const [activeTab, setActiveTab] = useState<ConfigTab>('mantenimiento');
+    75→  const [toasts, setToasts] = useState<Array<{ id: number; msg: string }>>([]);
+    76→  let toastId = 0;
+    77→  const showToast = (msg: string) => {
+    78→    const id = ++toastId;
+    79→    setToasts((p) => [...p, { id, msg }]);
+    80→    setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3000);
+    81→  };
+    82→
+    83→  // Local editable state (existing)
+    84→  const [editRules, setEditRules] = useState<MaintenanceRule[]>(maintenanceRules);
+    85→  const [editZones, setEditZones] = useState<Zone[]>(zones);
+    86→  const [editCompany, setEditCompany] = useState<CompanyData>(companyData);
+    87→  const [editUsers, setEditUsers] = useState<SystemUser[]>(users);
+    88→
+    89→  // Tarifas
+    90→  const [tarifaBase, setTarifaBase] = useState('50');
+    91→  const [tarifaKm, setTarifaKm] = useState('15');
+    92→  const [tarifaMin, setTarifaMin] = useState('30');
+    93→
+    94→  // User modal
+    95→  const [userModalOpen, setUserModalOpen] = useState(false);
+    96→  const [editUserId, setEditUserId] = useState<string | null>(null);
+    97→  const [userName, setUserName] = useState('');
+    98→  const [userEmail, setUserEmail] = useState('');
+    99→  const [userRol, setUserRol] = useState('Repartidor');
+   100→
+   101→  // ─── 9A: Email Editor State ───
+   102→  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>(INITIAL_EMAIL_TEMPLATES);
+   103→  const [emailEditOpen, setEmailEditOpen] = useState(false);
+   104→  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+   105→  const [emailPreviewOpen, setEmailPreviewOpen] = useState(false);
+   106→  const [previewingTemplate, setPreviewingTemplate] = useState<EmailTemplate | null>(null);
+   107→
+   108→  // ─── 9B: App Client Config State ───
+   109→  const [appPrimaryColor, setAppPrimaryColor] = useState('#E8553A');
+   110→  const [appWelcomeText, setAppWelcomeText] = useState('Bienvenido a LOGIFAST');
+   111→  const [appOffers, setAppOffers] = useState(['Envío gratis en tu primera orden', '20% descuento zonas lejanas', 'Paquete doble sin recargo']);
+   112→
+   113→  // ─── 9C: Horarios State ───
+   114→  const [localHorarios, setLocalHorarios] = useState<ConfiguracionHorario[]>(horarios);
+   115→  const [feriadoModalOpen, setFeriadoModalOpen] = useState(false);
+   116→  const [newFeriadoFecha, setNewFeriadoFecha] = useState('');
+   117→  const [newFeriadoNombre, setNewFeriadoNombre] = useState('');
+   118→  const [newFeriadoRecargo, setNewFeriadoRecargo] = useState('30');
+   119→
+   120→  // ─── 9D: Integraciones State ───
+   121→  const [integrationModalOpen, setIntegrationModalOpen] = useState(false);
+   122→  const [editingIntegration, setEditingIntegration] = useState<Integracion | null>(null);
+   123→  const [intApiKey, setIntApiKey] = useState('');
+   124→  const [intWebhookUrl, setIntWebhookUrl] = useState('');
+   125→
+   126→  // ─── 9E: Backup State ───
+   127→  const [confirmCleanOpen, setConfirmCleanOpen] = useState(false);
+   128→
+   129→  // ─── Existing handlers ───
+   130→  const openUserModal = (user?: SystemUser) => {
+   131→    if (user) {
+   132→      setEditUserId(user.id); setUserName(user.nombre); setUserEmail(user.email); setUserRol(user.rol);
+   133→    } else {
+   134→      setEditUserId(null); setUserName(''); setUserEmail(''); setUserRol('Repartidor');
+   135→    }
+   136→    setUserModalOpen(true);
+   137→  };
+   138→
+   139→  const saveUser = () => {
+   140→    if (!userName.trim() || !userEmail.trim()) return;
+   141→    if (editUserId) {
+   142→      setEditUsers((p) => p.map((u) => u.id === editUserId ? { ...u, nombre: userName, email: userEmail, rol: userRol } : u));
+   143→    } else {
+   144→      setEditUsers((p) => [...p, { id: `U-${10 + p.length}`, nombre: userName, email: userEmail, rol: userRol, activo: true }]);
+   145→    }
+   146→    setUserModalOpen(false);
+   147→    showToast(editUserId ? 'Usuario actualizado' : 'Usuario creado');
+   148→  };
+   149→
+   150→  const toggleUser = (id: string) => {
+   151→    setEditUsers((p) => p.map((u) => u.id === id ? { ...u, activo: !u.activo } : u));
+   152→  };
+   153→
+   154→  // ─── 9A: Email handlers ───
+   155→  const openEmailEditor = (template: EmailTemplate) => {
+   156→    setEditingTemplate({ ...template });
+   157→    setEmailEditOpen(true);
+   158→  };
+   159→
+   160→  const saveEmailTemplate = () => {
+   161→    if (!editingTemplate) return;
+   162→    setEmailTemplates((p) => p.map((t) => t.id === editingTemplate.id ? editingTemplate : t));
+   163→    setEmailEditOpen(false);
+   164→    showToast('Plantilla guardada');
+   165→  };
+   166→
+   167→  const openEmailPreview = (template: EmailTemplate) => {
+   168→    setPreviewingTemplate(template);
+   169→    setEmailPreviewOpen(true);
+   170→  };
+   171→
+   172→  const sendTestEmail = (template: EmailTemplate) => {
+   173→    addToast(`Email de prueba enviado: ${template.nombre}`, 'success');
+   174→    showToast(`Email de prueba enviado: ${template.nombre}`);
+   175→  };
+   176→
+   177→  // ─── 9C: Horario handlers ───
+   178→  const handleHorarioChange = (id: string, updates: Partial<ConfiguracionHorario>) => {
+   179→    setLocalHorarios((p) => p.map((h) => h.id === id ? { ...h, ...updates } : h));
+   180→    updateHorario(id, updates);
+   181→  };
+   182→
+   183→  const handleSaveHorarios = () => {
+   184→    showToast('Horarios guardados');
+   185→  };
+   186→
+   187→  const openAddFeriado = () => {
+   188→    setNewFeriadoFecha('');
+   189→    setNewFeriadoNombre('');
+   190→    setNewFeriadoRecargo('30');
+   191→    setFeriadoModalOpen(true);
+   192→  };
+   193→
+   194→  const saveFeriado = () => {
+   195→    if (!newFeriadoFecha || !newFeriadoNombre.trim()) return;
+   196→    const newFeriado: Feriado = {
+   197→      id: `FER-${Date.now()}`,
+   198→      fecha: newFeriadoFecha,
+   199→      nombre: newFeriadoNombre,
+   200→      recargo: Number(newFeriadoRecargo) || 0,
+   201→    };
+   202→    addFeriado(newFeriado);
+   203→    setFeriadoModalOpen(false);
+   204→    showToast('Feriado agregado');
+   205→  };
+   206→
+   207→  const handleDeleteFeriado = (id: string) => {
+   208→    deleteFeriado(id);
+   209→    showToast('Feriado eliminado');
+   210→  };
+   211→
+   212→  // ─── 9D: Integration handlers ───
+   213→  const openIntegrationConfig = (integration: Integracion) => {
+   214→    setEditingIntegration(integration);
+   215→    setIntApiKey('');
+   216→    setIntWebhookUrl('');
+   217→    setIntegrationModalOpen(true);
+   218→  };
+   219→
+   220→  const saveIntegration = () => {
+   221→    setIntegrationModalOpen(false);
+   222→    showToast(`Integración ${editingIntegration?.nombre} configurada`);
+   223→  };
+   224→
+   225→  // ─── 9E: Backup handlers ───
+   226→  const exportAllData = () => {
+   227→    addToast('Exportando datos...', 'info');
+   228→    showToast('Exportando datos...');
+   229→  };
+   230→
+   231→  const exportMonthlyReport = () => {
+   232→    addToast('Generando reporte...', 'info');
+   233→    showToast('Generando reporte...');
+   234→  };
+   235→
+   236→  const cleanTestData = () => {
+   237→    setConfirmCleanOpen(false);
+   238→    addToast('Datos de prueba eliminados', 'success');
+   239→    showToast('Datos de prueba eliminados');
+   240→  };
+   241→
+   242→  /* ─── Shared styles ─── */
+   243→  const cardStyle: React.CSSProperties = {
+   244→    background: 'var(--lf-surface)',
+   245→    border: '1px solid var(--lf-border)',
+   246→    borderRadius: 12,
+   247→    padding: 16,
+   248→  };
+   249→
+   250→  const btnAccent: React.CSSProperties = {
+   251→    padding: '8px 16px', borderRadius: 8, border: 'none',
+   252→    background: 'var(--lf-accent)', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+   253→    display: 'flex', alignItems: 'center', gap: 6,
+   254→  };
+   255→
+   256→  const btnSmall: React.CSSProperties = {
+   257→    padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--lf-accent)',
+   258→    color: '#fff', fontWeight: 600, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+   259→  };
+   260→
+   261→  const labelStyle: React.CSSProperties = {
+   262→    fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)', display: 'block', marginBottom: 4,
+   263→  };
+   264→
+   265→  const inputStyle: React.CSSProperties = {
+   266→    width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--lf-border)',
+   267→    background: 'var(--lf-surface)', color: 'var(--lf-text-main)', fontSize: 14, outline: 'none',
+   268→  };
+   269→
+   270→  const overlayStyle: React.CSSProperties = {
+   271→    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200,
+   272→    display: 'flex', alignItems: 'center', justifyContent: 'center',
+   273→  };
+   274→
+   275→  const modalStyle: React.CSSProperties = {
+   276→    background: 'var(--lf-surface)', borderRadius: 16, padding: 24, width: '90%', maxWidth: 560,
+   277→    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+   278→  };
+   279→
+   280→  return (
+   281→    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '16px 20px', overflow: 'auto' }}>
+   282→      <h2 style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>Configuración</h2>
+   283→
+   284→      {/* Tabs */}
+   285→      <div style={{ display: 'flex', gap: 4, marginBottom: 20, flexWrap: 'wrap' }}>
+   286→        {TABS.map((tab) => {
+   287→          const Icon = tab.icon;
+   288→          return (
+   289→            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+   290→              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8,
+   291→              border: '1px solid var(--lf-border)', background: activeTab === tab.key ? 'var(--lf-accent-soft)' : 'transparent',
+   292→              color: activeTab === tab.key ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
+   293→              fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
+   294→            }}>
+   295→              <Icon size={14} /> {tab.label}
+   296→            </button>
+   297→          );
+   298→        })}
+   299→      </div>
+   300→
+   301→      {/* Tab content */}
+   302→      <AnimatePresence mode="wait">
+   303→        <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
+   304→
+   305→          {/* ═══ MANTENIMIENTO ═══ */}
+   306→          {activeTab === 'mantenimiento' && (
+   307→            <div>
+   308→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+   309→                <h3 style={{ fontWeight: 700, fontSize: 15 }}>Parámetros de Mantenimiento</h3>
+   310→                <button onClick={() => { setEditRules((p) => [...p, { id: `MR-${p.length + 7}`, tipo: 'Nuevo tipo', umbralKm: 5000, descripcion: 'Descripción' }]); showToast('Regla agregada'); }} style={btnSmall}><Plus size={12} /> Agregar</button>
+   311→              </div>
+   312→              <div style={{ background: 'var(--lf-surface)', border: '1px solid var(--lf-border)', borderRadius: 12, overflow: 'hidden' }}>
+   313→                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+   314→                  <thead>
+   315→                    <tr style={{ background: 'var(--lf-primary-soft)' }}>
+   316→                      {['Tipo', 'Umbral KM', 'Descripción', 'Acciones'].map((h) => (
+   317→                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>{h}</th>
+   318→                      ))}
+   319→                    </tr>
+   320→                  </thead>
+   321→                  <tbody>
+   322→                    {editRules.map((rule) => (
+   323→                      <tr key={rule.id} style={{ borderBottom: '1px solid var(--lf-border)' }}>
+   324→                        <td style={{ padding: '10px 14px' }}>
+   325→                          <input value={rule.tipo} onChange={(e) => setEditRules((p) => p.map((r) => r.id === rule.id ? { ...r, tipo: e.target.value } : r))}
+   326→                            style={{ border: 'none', background: 'transparent', color: 'var(--lf-text-main)', fontSize: 13, fontWeight: 600, outline: 'none', width: '100%' }} />
+   327→                        </td>
+   328→                        <td className="font-mono" style={{ padding: '10px 14px' }}>
+   329→                          <input value={rule.umbralKm} onChange={(e) => setEditRules((p) => p.map((r) => r.id === rule.id ? { ...r, umbralKm: Number(e.target.value) || 0 } : r))}
+   330→                            type="number" style={{ border: 'none', background: 'transparent', color: 'var(--lf-text-main)', fontSize: 13, outline: 'none', width: 80, fontFamily: "'DM Mono', monospace" }} />
+   331→                        </td>
+   332→                        <td style={{ padding: '10px 14px' }}>
+   333→                          <input value={rule.descripcion} onChange={(e) => setEditRules((p) => p.map((r) => r.id === rule.id ? { ...r, descripcion: e.target.value } : r))}
+   334→                            style={{ border: 'none', background: 'transparent', color: 'var(--lf-text-main)', fontSize: 13, outline: 'none', width: '100%' }} />
+   335→                        </td>
+   336→                        <td style={{ padding: '10px 14px' }}>
+   337→                          <button onClick={() => { setEditRules((p) => p.filter((r) => r.id !== rule.id)); showToast('Regla eliminada'); }} style={{
+   338→                            padding: '4px 8px', borderRadius: 6, border: '1px solid var(--lf-danger)',
+   339→                            background: 'transparent', cursor: 'pointer', color: 'var(--lf-danger)', fontSize: 12,
+   340→                          }}><Trash2 size={12} /></button>
+   341→                        </td>
+   342→                      </tr>
+   343→                    ))}
+   344→                  </tbody>
+   345→                </table>
+   346→              </div>
+   347→              <button onClick={() => showToast('Reglas guardadas')} style={{ marginTop: 12, ...btnAccent }}><Save size={14} /> Guardar cambios</button>
+   348→            </div>
+   349→          )}
+   350→
+   351→          {/* ═══ TARIFAS ═══ */}
+   352→          {activeTab === 'tarifas' && (
+   353→            <div>
+   354→              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Tarifas y Costos</h3>
+   355→              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, maxWidth: 600 }}>
+   356→                {[
+   357→                  { label: 'Tarifa base (C$)', value: tarifaBase, setter: setTarifaBase },
+   358→                  { label: 'Costo por KM (C$)', value: tarifaKm, setter: setTarifaKm },
+   359→                  { label: 'Tarifa mínima (C$)', value: tarifaMin, setter: setTarifaMin },
+   360→                ].map((field) => (
+   361→                  <div key={field.label}>
+   362→                    <label style={labelStyle}>{field.label}</label>
+   363→                    <input value={field.value} onChange={(e) => field.setter(e.target.value)} type="number"
+   364→                      style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }} />
+   365→                  </div>
+   366→                ))}
+   367→              </div>
+   368→              <button onClick={() => showToast('Tarifas guardadas')} style={{ marginTop: 16, ...btnAccent }}><Save size={14} /> Guardar</button>
+   369→            </div>
+   370→          )}
+   371→
+   372→          {/* ═══ ZONAS ═══ */}
+   373→          {activeTab === 'zonas' && (
+   374→            <div>
+   375→              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Zonas de Cobertura</h3>
+   376→              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 500 }}>
+   377→                {editZones.map((zone) => (
+   378→                  <div key={zone.id} style={{
+   379→                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+   380→                    background: 'var(--lf-surface)', border: '1px solid var(--lf-border)', borderRadius: 10,
+   381→                  }}>
+   382→                    <div style={{ flex: 1 }}>
+   383→                      <span style={{ fontWeight: 600, fontSize: 14 }}>{zone.nombre}</span>
+   384→                      <span className="font-mono" style={{ fontSize: 12, color: 'var(--lf-text-muted)', marginLeft: 8 }}>C${zone.tarifa}</span>
+   385→                    </div>
+   386→                    <button onClick={() => { setEditZones((p) => p.map((z) => z.id === zone.id ? { ...z, activa: !z.activa } : z)); showToast(`Zona ${zone.nombre} ${zone.activa ? 'desactivada' : 'activada'}`); }} style={{
+   387→                      width: 44, height: 24, borderRadius: 12, border: 'none',
+   388→                      background: zone.activa ? 'var(--lf-success)' : 'var(--lf-border)',
+   389→                      cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+   390→                    }}>
+   391→                      <div style={{
+   392→                        width: 18, height: 18, borderRadius: '50%', background: '#fff',
+   393→                        position: 'absolute', top: 3, left: zone.activa ? 23 : 3,
+   394→                        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+   395→                      }} />
+   396→                    </button>
+   397→                  </div>
+   398→                ))}
+   399→              </div>
+   400→            </div>
+   401→          )}
+   402→
+   403→          {/* ═══ EMPRESA ═══ */}
+   404→          {activeTab === 'empresa' && (
+   405→            <div>
+   406→              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Datos de la Empresa</h3>
+   407→              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, maxWidth: 600 }}>
+   408→                {[
+   409→                  { label: 'Nombre', value: editCompany.nombre, setter: (v: string) => setEditCompany((p) => ({ ...p, nombre: v })) },
+   410→                  { label: 'Dirección', value: editCompany.direccion, setter: (v: string) => setEditCompany((p) => ({ ...p, direccion: v })) },
+   411→                  { label: 'Teléfono', value: editCompany.telefono, setter: (v: string) => setEditCompany((p) => ({ ...p, telefono: v })) },
+   412→                  { label: 'Email', value: editCompany.email, setter: (v: string) => setEditCompany((p) => ({ ...p, email: v })) },
+   413→                ].map((field) => (
+   414→                  <div key={field.label}>
+   415→                    <label style={labelStyle}>{field.label}</label>
+   416→                    <input value={field.value} onChange={(e) => field.setter(e.target.value)} style={inputStyle} />
+   417→                  </div>
+   418→                ))}
+   419→              </div>
+   420→              <button onClick={() => showToast('Datos guardados')} style={{ marginTop: 16, ...btnAccent }}><Save size={14} /> Guardar</button>
+   421→            </div>
+   422→          )}
+   423→
+   424→          {/* ═══ USUARIOS ═══ */}
+   425→          {activeTab === 'usuarios' && (
+   426→            <div>
+   427→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+   428→                <h3 style={{ fontWeight: 700, fontSize: 15 }}>Gestión de Usuarios</h3>
+   429→                <button onClick={() => openUserModal()} style={btnSmall}><Plus size={12} /> Agregar</button>
+   430→              </div>
+   431→              <div style={{ background: 'var(--lf-surface)', border: '1px solid var(--lf-border)', borderRadius: 12, overflow: 'hidden' }}>
+   432→                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+   433→                  <thead>
+   434→                    <tr style={{ background: 'var(--lf-primary-soft)' }}>
+   435→                      {['Nombre', 'Email', 'Rol', 'Estado', 'Acciones'].map((h) => (
+   436→                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>{h}</th>
+   437→                      ))}
+   438→                    </tr>
+   439→                  </thead>
+   440→                  <tbody>
+   441→                    {editUsers.map((user) => (
+   442→                      <tr key={user.id} style={{ borderBottom: '1px solid var(--lf-border)', opacity: user.activo ? 1 : 0.5 }}>
+   443→                        <td style={{ padding: '10px 14px', fontWeight: 600, fontSize: 13 }}>{user.nombre}</td>
+   444→                        <td style={{ padding: '10px 14px', fontSize: 13, color: 'var(--lf-text-secondary)' }}>{user.email}</td>
+   445→                        <td style={{ padding: '10px 14px' }}>
+   446→                          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'var(--lf-accent-soft)', color: 'var(--lf-accent)' }}>{user.rol}</span>
+   447→                        </td>
+   448→                        <td style={{ padding: '10px 14px' }}>
+   449→                          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: user.activo ? 'rgba(22,163,74,0.1)' : 'rgba(107,114,128,0.1)', color: user.activo ? 'var(--lf-success)' : 'var(--lf-text-muted)' }}>
+   450→                            {user.activo ? 'Activo' : 'Inactivo'}
+   451→                          </span>
+   452→                        </td>
+   453→                        <td style={{ padding: '10px 14px', display: 'flex', gap: 4 }}>
+   454→                          <button onClick={() => openUserModal(user)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--lf-border)', background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)' }}><Edit2 size={12} /></button>
+   455→                          <button onClick={() => toggleUser(user.id)} style={{ padding: '4px 8px', borderRadius: 6, border: `1px solid ${user.activo ? 'var(--lf-danger)' : 'var(--lf-success)'}`, background: 'transparent', cursor: 'pointer', color: user.activo ? 'var(--lf-danger)' : 'var(--lf-success)' }}>
+   456→                            {user.activo ? <Trash2 size={12} /> : <Plus size={12} />}
+   457→                          </button>
+   458→                        </td>
+   459→                      </tr>
+   460→                    ))}
+   461→                  </tbody>
+   462→                </table>
+   463→              </div>
+   464→            </div>
+   465→          )}
+   466→
+   467→          {/* ═══ 9A: EMAILS TRANSACCIONALES ═══ */}
+   468→          {activeTab === 'emails' && (
+   469→            <div>
+   470→              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Editor de Emails Transaccionales</h3>
+   471→              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+   472→                {emailTemplates.map((template) => (
+   473→                  <motion.div key={template.id} whileHover={{ y: -2 }} style={{
+   474→                    ...cardStyle, display: 'flex', flexDirection: 'column', gap: 10,
+   475→                  }}>
+   476→                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   477→                      <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--lf-accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+   478→                        <Mail size={16} style={{ color: 'var(--lf-accent)' }} />
+   479→                      </div>
+   480→                      <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{template.nombre}</span>
+   481→                    </div>
+   482→                    <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', lineHeight: 1.4, margin: 0 }}>{template.preview}</p>
+   483→                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+   484→                      {template.variables.slice(0, 3).map((v) => (
+   485→                        <span key={v} style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'var(--lf-primary-soft)', color: 'var(--lf-text-muted)', fontFamily: "'DM Mono', monospace" }}>{v}</span>
+   486→                      ))}
+   487→                      {template.variables.length > 3 && (
+   488→                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'var(--lf-primary-soft)', color: 'var(--lf-text-muted)' }}>+{template.variables.length - 3}</span>
+   489→                      )}
+   490→                    </div>
+   491→                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+   492→                      <button onClick={() => openEmailEditor(template)} style={{
+   493→                        ...btnSmall, flex: 1, justifyContent: 'center',
+   494→                      }}><Edit2 size={12} /> Editar</button>
+   495→                      <button onClick={() => openEmailPreview(template)} style={{
+   496→                        padding: '6px 10px', borderRadius: 8, border: '1px solid var(--lf-border)',
+   497→                        background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600,
+   498→                      }}><Eye size={12} /></button>
+   499→                      <button onClick={() => sendTestEmail(template)} style={{
+   500→                        padding: '6px 10px', borderRadius: 8, border: '1px solid var(--lf-border)',
+   501→                        background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600,
+   502→                      }}><Send size={12} /></button>
+   503→                    </div>
+   504→                  </motion.div>
+   505→                ))}
+   506→              </div>
+   507→            </div>
+   508→          )}
+   509→
+   510→          {/* ═══ 9B: APP DEL CLIENTE ═══ */}
+   511→          {activeTab === 'app' && (
+   512→            <div>
+   513→              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Configuración de la App del Cliente</h3>
+   514→              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+   515→                {/* Left: Config */}
+   516→                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+   517→                  {/* Color theme */}
+   518→                  <div style={cardStyle}>
+   519→                    <label style={{ ...labelStyle, marginBottom: 8 }}>Color primario</label>
+   520→                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+   521→                      {PRESET_COLORS.map((c) => (
+   522→                        <button key={c} onClick={() => setAppPrimaryColor(c)} style={{
+   523→                          width: 28, height: 28, borderRadius: '50%', border: appPrimaryColor === c ? '3px solid var(--lf-text-main)' : '2px solid var(--lf-border)',
+   524→                          background: c, cursor: 'pointer', transition: 'all 0.2s', transform: appPrimaryColor === c ? 'scale(1.15)' : 'scale(1)',
+   525→                        }} />
+   526→                      ))}
+   527→                      <input type="color" value={appPrimaryColor} onChange={(e) => setAppPrimaryColor(e.target.value)} style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', padding: 0 }} />
+   528→                    </div>
+   529→                  </div>
+   530→
+   531→                  {/* Welcome text */}
+   532→                  <div style={cardStyle}>
+   533→                    <label style={labelStyle}>Texto de bienvenida</label>
+   534→                    <input value={appWelcomeText} onChange={(e) => setAppWelcomeText(e.target.value)} style={inputStyle} />
+   535→                  </div>
+   536→
+   537→                  {/* Featured offers */}
+   538→                  <div style={cardStyle}>
+   539→                    <label style={{ ...labelStyle, marginBottom: 8 }}>Ofertas destacadas</label>
+   540→                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+   541→                      {appOffers.map((offer, i) => (
+   542→                        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+   543→                          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--lf-text-muted)', width: 20 }}>{i + 1}.</span>
+   544→                          <input value={offer} onChange={(e) => {
+   545→                            const next = [...appOffers];
+   546→                            next[i] = e.target.value;
+   547→                            setAppOffers(next);
+   548→                          }} style={{ ...inputStyle, fontSize: 13, padding: '8px 12px' }} />
+   549→                        </div>
+   550→                      ))}
+   551→                    </div>
+   552→                  </div>
+   553→
+   554→                  {/* Map zones visibility */}
+   555→                  <div style={cardStyle}>
+   556→                    <label style={{ ...labelStyle, marginBottom: 8 }}>Visibilidad de zonas en mapa</label>
+   557→                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+   558→                      {editZones.map((zone) => (
+   559→                        <div key={zone.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   560→                          <button onClick={() => {
+   561→                            setEditZones((p) => p.map((z) => z.id === zone.id ? { ...z, activa: !z.activa } : z));
+   562→                          }} style={{
+   563→                            width: 36, height: 20, borderRadius: 10, border: 'none',
+   564→                            background: zone.activa ? 'var(--lf-success)' : 'var(--lf-border)',
+   565→                            cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+   566→                          }}>
+   567→                            <div style={{
+   568→                              width: 14, height: 14, borderRadius: '50%', background: '#fff',
+   569→                              position: 'absolute', top: 3, left: zone.activa ? 19 : 3,
+   570→                              transition: 'left 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+   571→                            }} />
+   572→                          </button>
+   573→                          <span style={{ fontSize: 13, fontWeight: 600 }}>{zone.nombre}</span>
+   574→                        </div>
+   575→                      ))}
+   576→                    </div>
+   577→                  </div>
+   578→
+   579→                  <button onClick={() => showToast('Configuración de app guardada')} style={btnAccent}><Save size={14} /> Guardar</button>
+   580→                </div>
+   581→
+   582→                {/* Right: Preview */}
+   583→                <div style={cardStyle}>
+   584→                  <label style={{ ...labelStyle, marginBottom: 12 }}>Vista previa</label>
+   585→                  <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+   586→                    {/* Desktop mockup */}
+   587→                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+   588→                      <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--lf-text-muted)' }}>Desktop</span>
+   589→                      <div style={{
+   590→                        width: 200, height: 140, borderRadius: 8, border: '2px solid var(--lf-border)',
+   591→                        background: '#fff', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+   592→                      }}>
+   593→                        <div style={{ height: 24, background: appPrimaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+   594→                          <span style={{ fontSize: 8, fontWeight: 700, color: '#fff' }}>LOGIFAST</span>
+   595→                        </div>
+   596→                        <div style={{ padding: 8, flex: 1 }}>
+   597→                          <p style={{ fontSize: 8, fontWeight: 700, margin: '0 0 4px 0', color: '#1a1a2e' }}>{appWelcomeText}</p>
+   598→                          {appOffers.map((o, i) => o ? (
+   599→                            <div key={i} style={{ fontSize: 6, padding: '2px 4px', borderRadius: 3, background: `${appPrimaryColor}15`, color: appPrimaryColor, marginBottom: 2, fontWeight: 600 }}>{o.length > 28 ? o.slice(0, 28) + '...' : o}</div>
+   600→                          ) : null)}
+   601→                        </div>
+   602→                      </div>
+   603→                    </div>
+   604→                    {/* Mobile mockup */}
+   605→                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+   606→                      <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--lf-text-muted)' }}>Mobile</span>
+   607→                      <div style={{
+   608→                        width: 90, height: 160, borderRadius: 12, border: '2px solid var(--lf-border)',
+   609→                        background: '#fff', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+   610→                      }}>
+   611→                        <div style={{ height: 20, background: appPrimaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+   612→                          <span style={{ fontSize: 6, fontWeight: 700, color: '#fff' }}>LOGIFAST</span>
+   613→                        </div>
+   614→                        <div style={{ padding: 4, flex: 1 }}>
+   615→                          <p style={{ fontSize: 5, fontWeight: 700, margin: '0 0 3px 0', color: '#1a1a2e' }}>{appWelcomeText.length > 22 ? appWelcomeText.slice(0, 22) + '...' : appWelcomeText}</p>
+   616→                          {appOffers.filter((o) => o).slice(0, 2).map((o, i) => (
+   617→                            <div key={i} style={{ fontSize: 4, padding: '1px 2px', borderRadius: 2, background: `${appPrimaryColor}15`, color: appPrimaryColor, marginBottom: 2, fontWeight: 600 }}>{o.length > 16 ? o.slice(0, 16) + '...' : o}</div>
+   618→                          ))}
+   619→                        </div>
+   620→                        <div style={{ height: 12, background: '#f5f5f5', borderTop: '1px solid var(--lf-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+   621→                          <div style={{ width: 20, height: 3, borderRadius: 2, background: 'var(--lf-border)' }} />
+   622→                        </div>
+   623→                      </div>
+   624→                    </div>
+   625→                  </div>
+   626→                </div>
+   627→              </div>
+   628→            </div>
+   629→          )}
+   630→
+   631→          {/* ═══ 9C: GESTIÓN DE HORARIOS ═══ */}
+   632→          {activeTab === 'horarios' && (
+   633→            <div>
+   634→              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Gestión de Horarios</h3>
+   635→
+   636→              {/* Weekly schedule table */}
+   637→              <div style={{ background: 'var(--lf-surface)', border: '1px solid var(--lf-border)', borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
+   638→                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+   639→                  <thead>
+   640→                    <tr style={{ background: 'var(--lf-primary-soft)' }}>
+   641→                      {['Día', 'Activo', 'Hora Inicio', 'Hora Fin', 'Recargo Nocturno (%)'].map((h) => (
+   642→                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>{h}</th>
+   643→                      ))}
+   644→                    </tr>
+   645→                  </thead>
+   646→                  <tbody>
+   647→                    {localHorarios.sort((a, b) => (a.dia === 0 ? 7 : a.dia) - (b.dia === 0 ? 7 : b.dia)).map((horario) => (
+   648→                      <tr key={horario.id} style={{ borderBottom: '1px solid var(--lf-border)', opacity: horario.activo ? 1 : 0.5 }}>
+   649→                        <td style={{ padding: '10px 14px', fontWeight: 600, fontSize: 13 }}>{DIA_LABELS[horario.dia] || 'Desconocido'}</td>
+   650→                        <td style={{ padding: '10px 14px' }}>
+   651→                          <button onClick={() => handleHorarioChange(horario.id, { activo: !horario.activo })} style={{
+   652→                            width: 44, height: 24, borderRadius: 12, border: 'none',
+   653→                            background: horario.activo ? 'var(--lf-success)' : 'var(--lf-border)',
+   654→                            cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+   655→                          }}>
+   656→                            <div style={{
+   657→                              width: 18, height: 18, borderRadius: '50%', background: '#fff',
+   658→                              position: 'absolute', top: 3, left: horario.activo ? 23 : 3,
+   659→                              transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+   660→                            }} />
+   661→                          </button>
+   662→                        </td>
+   663→                        <td style={{ padding: '10px 14px' }}>
+   664→                          <input type="time" value={horario.horaInicio} onChange={(e) => handleHorarioChange(horario.id, { horaInicio: e.target.value })}
+   665→                            style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--lf-border)', background: 'var(--lf-bg-base)', color: 'var(--lf-text-main)', fontSize: 13, outline: 'none', fontFamily: "'DM Mono', monospace" }} />
+   666→                        </td>
+   667→                        <td style={{ padding: '10px 14px' }}>
+   668→                          <input type="time" value={horario.horaFin} onChange={(e) => handleHorarioChange(horario.id, { horaFin: e.target.value })}
+   669→                            style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--lf-border)', background: 'var(--lf-bg-base)', color: 'var(--lf-text-main)', fontSize: 13, outline: 'none', fontFamily: "'DM Mono', monospace" }} />
+   670→                        </td>
+   671→                        <td style={{ padding: '10px 14px' }}>
+   672→                          <input type="number" value={horario.recargoNocturno} onChange={(e) => handleHorarioChange(horario.id, { recargoNocturno: Number(e.target.value) || 0 })}
+   673→                            style={{ width: 70, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--lf-border)', background: 'var(--lf-bg-base)', color: 'var(--lf-text-main)', fontSize: 13, outline: 'none', fontFamily: "'DM Mono', monospace" }} />
+   674→                        </td>
+   675→                      </tr>
+   676→                    ))}
+   677→                  </tbody>
+   678→                </table>
+   679→              </div>
+   680→              <button onClick={handleSaveHorarios} style={{ ...btnAccent, marginBottom: 24 }}><Save size={14} /> Guardar horarios</button>
+   681→
+   682→              {/* Feriados section */}
+   683→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+   684→                <h3 style={{ fontWeight: 700, fontSize: 15 }}>Feriados</h3>
+   685→                <button onClick={openAddFeriado} style={btnSmall}><Plus size={12} /> Agregar Feriado</button>
+   686→              </div>
+   687→              <div style={{ background: 'var(--lf-surface)', border: '1px solid var(--lf-border)', borderRadius: 12, overflow: 'hidden' }}>
+   688→                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+   689→                  <thead>
+   690→                    <tr style={{ background: 'var(--lf-primary-soft)' }}>
+   691→                      {['Fecha', 'Nombre', 'Recargo (%)', 'Acciones'].map((h) => (
+   692→                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>{h}</th>
+   693→                      ))}
+   694→                    </tr>
+   695→                  </thead>
+   696→                  <tbody>
+   697→                    {feriados.map((feriado) => (
+   698→                      <tr key={feriado.id} style={{ borderBottom: '1px solid var(--lf-border)' }}>
+   699→                        <td style={{ padding: '10px 14px', fontSize: 13, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{feriado.fecha}</td>
+   700→                        <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600 }}>{feriado.nombre}</td>
+   701→                        <td style={{ padding: '10px 14px' }}>
+   702→                          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>{feriado.recargo}%</span>
+   703→                        </td>
+   704→                        <td style={{ padding: '10px 14px' }}>
+   705→                          <button onClick={() => handleDeleteFeriado(feriado.id)} style={{
+   706→                            padding: '4px 8px', borderRadius: 6, border: '1px solid var(--lf-danger)',
+   707→                            background: 'transparent', cursor: 'pointer', color: 'var(--lf-danger)', fontSize: 12,
+   708→                          }}><Trash2 size={12} /></button>
+   709→                        </td>
+   710→                      </tr>
+   711→                    ))}
+   712→                  </tbody>
+   713→                </table>
+   714→              </div>
+   715→            </div>
+   716→          )}
+   717→
+   718→          {/* ═══ 9D: INTEGRACIONES ═══ */}
+   719→          {activeTab === 'integraciones' && (
+   720→            <div>
+   721→              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Integraciones</h3>
+   722→              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+   723→                {integraciones.map((integ) => {
+   724→                  const IconComp = ICON_MAP[integ.icono] || Puzzle;
+   725→                  const isConnected = integ.estado === 'conectado';
+   726→                  return (
+   727→                    <motion.div key={integ.id} whileHover={{ y: -2 }} style={{
+   728→                      ...cardStyle, display: 'flex', flexDirection: 'column', gap: 10,
+   729→                    }}>
+   730→                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+   731→                        <div style={{
+   732→                          width: 36, height: 36, borderRadius: 10,
+   733→                          background: isConnected ? 'rgba(22,163,74,0.1)' : 'var(--lf-primary-soft)',
+   734→                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+   735→                        }}>
+   736→                          <IconComp size={18} style={{ color: isConnected ? 'var(--lf-success)' : 'var(--lf-text-muted)' }} />
+   737→                        </div>
+   738→                        <div style={{ flex: 1 }}>
+   739→                          <span style={{ fontWeight: 700, fontSize: 14, display: 'block' }}>{integ.nombre}</span>
+   740→                          <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>{integ.descripcion}</span>
+   741→                        </div>
+   742→                      </div>
+   743→                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+   744→                        <span style={{
+   745→                          fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+   746→                          background: isConnected ? 'rgba(22,163,74,0.1)' : 'rgba(107,114,128,0.1)',
+   747→                          color: isConnected ? 'var(--lf-success)' : 'var(--lf-text-muted)',
+   748→                          display: 'flex', alignItems: 'center', gap: 4,
+   749→                        }}>
+   750→                          {isConnected ? <CheckCircle2 size={10} /> : <Circle size={10} />}
+   751→                          {isConnected ? 'Conectado' : 'No configurado'}
+   752→                        </span>
+   753→                        <button onClick={() => openIntegrationConfig(integ)} style={{
+   754→                          padding: '5px 10px', borderRadius: 6, border: '1px solid var(--lf-border)',
+   755→                          background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', fontSize: 12, fontWeight: 600,
+   756→                          display: 'flex', alignItems: 'center', gap: 4,
+   757→                        }}><Settings size={11} /> Configurar</button>
+   758→                      </div>
+   759→                    </motion.div>
+   760→                  );
+   761→                })}
+   762→              </div>
+   763→            </div>
+   764→          )}
+   765→
+   766→          {/* ═══ 9E: BACKUP Y DATOS ═══ */}
+   767→          {activeTab === 'backup' && (
+   768→            <div>
+   769→              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Backup y Datos</h3>
+   770→
+   771→              {/* Action buttons */}
+   772→              <div style={cardStyle}>
+   773→                <label style={{ ...labelStyle, marginBottom: 10 }}>Acciones</label>
+   774→                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+   775→                  <button onClick={exportAllData} style={{
+   776→                    ...btnAccent, background: 'var(--lf-success)',
+   777→                  }}><Download size={14} /> Exportar todos los datos</button>
+   778→                  <button onClick={exportMonthlyReport} style={{
+   779→                    ...btnAccent, background: '#F59E0B',
+   780→                  }}><FileText size={14} /> Exportar reporte mensual</button>
+   781→                  <button onClick={() => setConfirmCleanOpen(true)} style={{
+   782→                    padding: '8px 16px', borderRadius: 8, border: '1px solid var(--lf-danger)',
+   783→                    background: 'transparent', color: 'var(--lf-danger)', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+   784→                    display: 'flex', alignItems: 'center', gap: 6,
+   785→                  }}><Trash2 size={14} /> Limpiar datos de prueba</button>
+   786→                </div>
+   787→              </div>
+   788→
+   789→              {/* Backup history */}
+   790→              <div style={{ ...cardStyle, marginTop: 16 }}>
+   791→                <label style={{ ...labelStyle, marginBottom: 10 }}>Historial de Backups</label>
+   792→                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+   793→                  {[
+   794→                    { fecha: '2026-06-10 03:00', tipo: 'Automático', tamaño: '24.3 MB' },
+   795→                    { fecha: '2026-06-09 15:30', tipo: 'Manual', tamaño: '24.1 MB' },
+   796→                    { fecha: '2026-06-08 03:00', tipo: 'Automático', tamaño: '23.8 MB' },
+   797→                  ].map((backup, i) => (
+   798→                    <div key={i} style={{
+   799→                      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+   800→                      background: 'var(--lf-bg-base)', borderRadius: 8, border: '1px solid var(--lf-border)',
+   801→                    }}>
+   802→                      <HardDrive size={16} style={{ color: 'var(--lf-text-muted)' }} />
+   803→                      <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Mono', monospace", flex: 1 }}>{backup.fecha}</span>
+   804→                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: backup.tipo === 'Automático' ? 'rgba(22,163,74,0.1)' : 'var(--lf-accent-soft)', color: backup.tipo === 'Automático' ? 'var(--lf-success)' : 'var(--lf-accent)' }}>{backup.tipo}</span>
+   805→                      <span style={{ fontSize: 12, color: 'var(--lf-text-muted)', fontFamily: "'DM Mono', monospace" }}>{backup.tamaño}</span>
+   806→                    </div>
+   807→                  ))}
+   808→                </div>
+   809→              </div>
+   810→
+   811→              {/* Storage usage */}
+   812→              <div style={{ ...cardStyle, marginTop: 16 }}>
+   813→                <label style={{ ...labelStyle, marginBottom: 8 }}>Uso de Almacenamiento</label>
+   814→                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+   815→                  <div style={{ flex: 1, height: 10, borderRadius: 5, background: 'var(--lf-border)', overflow: 'hidden' }}>
+   816→                    <div style={{ width: '62%', height: '100%', borderRadius: 5, background: 'var(--lf-accent)', transition: 'width 0.5s' }} />
+   817→                  </div>
+   818→                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>62%</span>
+   819→                </div>
+   820→                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+   821→                  <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>24.3 MB usados</span>
+   822→                  <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>de 39.0 MB</span>
+   823→                </div>
+   824→              </div>
+   825→            </div>
+   826→          )}
+   827→        </motion.div>
+   828→      </AnimatePresence>
+   829→
+   830→      {/* ═══ User Modal ═══ */}
+   831→      <AnimatePresence>
+   832→        {userModalOpen && (
+   833→          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+   834→            style={overlayStyle}
+   835→            onClick={() => setUserModalOpen(false)}
+   836→          >
+   837→            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+   838→              style={{ ...modalStyle, maxWidth: 400 }}
+   839→              onClick={(e) => e.stopPropagation()}
+   840→            >
+   841→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+   842→                <h3 style={{ fontWeight: 700, fontSize: 18 }}>{editUserId ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
+   843→                <button onClick={() => setUserModalOpen(false)} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid var(--lf-border)', background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
+   844→              </div>
+   845→              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+   846→                <div>
+   847→                  <label style={labelStyle}>Nombre</label>
+   848→                  <input value={userName} onChange={(e) => setUserName(e.target.value)} style={inputStyle} />
+   849→                </div>
+   850→                <div>
+   851→                  <label style={labelStyle}>Email</label>
+   852→                  <input value={userEmail} onChange={(e) => setUserEmail(e.target.value)} type="email" style={inputStyle} />
+   853→                </div>
+   854→                <div>
+   855→                  <label style={labelStyle}>Rol</label>
+   856→                  <select value={userRol} onChange={(e) => setUserRol(e.target.value)} style={{ ...inputStyle, padding: '8px 12px' }}>
+   857→                    {['Administrador', 'Repartidor', 'Ingeniero', 'Cliente'].map((r) => <option key={r} value={r}>{r}</option>)}
+   858→                  </select>
+   859→                </div>
+   860→                <button onClick={saveUser} style={{ padding: '12px', borderRadius: 10, border: 'none', background: 'var(--lf-accent)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', marginTop: 4 }}>
+   861→                  {editUserId ? 'Guardar' : 'Crear Usuario'}
+   862→                </button>
+   863→              </div>
+   864→            </motion.div>
+   865→          </motion.div>
+   866→        )}
+   867→      </AnimatePresence>
+   868→
+   869→      {/* ═══ 9A: Email Edit Modal ═══ */}
+   870→      <AnimatePresence>
+   871→        {emailEditOpen && editingTemplate && (
+   872→          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+   873→            style={overlayStyle}
+   874→            onClick={() => setEmailEditOpen(false)}
+   875→          >
+   876→            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+   877→              style={{ ...modalStyle, maxWidth: 600 }}
+   878→              onClick={(e) => e.stopPropagation()}
+   879→            >
+   880→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+   881→                <h3 style={{ fontWeight: 700, fontSize: 18 }}>Editar: {editingTemplate.nombre}</h3>
+   882→                <button onClick={() => setEmailEditOpen(false)} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid var(--lf-border)', background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
+   883→              </div>
+   884→
+   885→              {/* Variables as chips */}
+   886→              <div style={{ marginBottom: 12 }}>
+   887→                <label style={labelStyle}>Variables disponibles (clic para insertar)</label>
+   888→                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+   889→                  {editingTemplate.variables.map((v) => (
+   890→                    <button key={v} onClick={() => {
+   891→                      setEditingTemplate((prev) => prev ? { ...prev, contenido: prev.contenido + v } : prev);
+   892→                    }} style={{
+   893→                      fontSize: 11, fontWeight: 600, padding: '4px 8px', borderRadius: 6,
+   894→                      background: 'var(--lf-accent-soft)', color: 'var(--lf-accent)', border: 'none',
+   895→                      cursor: 'pointer', fontFamily: "'DM Mono', monospace",
+   896→                    }}>{v}</button>
+   897→                  ))}
+   898→                </div>
+   899→              </div>
+   900→
+   901→              {/* HTML editor */}
+   902→              <div>
+   903→                <label style={labelStyle}>Contenido HTML</label>
+   904→                <textarea
+   905→                  value={editingTemplate.contenido}
+   906→                  onChange={(e) => setEditingTemplate((prev) => prev ? { ...prev, contenido: e.target.value } : prev)}
+   907→                  rows={10}
+   908→                  style={{
+   909→                    ...inputStyle, fontFamily: "'DM Mono', monospace", fontSize: 12, lineHeight: 1.6,
+   910→                    resize: 'vertical', minHeight: 180,
+   911→                  }}
+   912→                />
+   913→              </div>
+   914→
+   915→              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+   916→                <button onClick={saveEmailTemplate} style={btnAccent}><Save size={14} /> Guardar plantilla</button>
+   917→                <button onClick={() => {
+   918→                  setEmailPreviewOpen(true);
+   919→                }} style={{
+   920→                  padding: '8px 16px', borderRadius: 8, border: '1px solid var(--lf-border)',
+   921→                  background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', fontWeight: 600, fontSize: 13,
+   922→                  display: 'flex', alignItems: 'center', gap: 6,
+   923→                }}><Eye size={14} /> Vista previa</button>
+   924→              </div>
+   925→            </motion.div>
+   926→          </motion.div>
+   927→        )}
+   928→      </AnimatePresence>
+   929→
+   930→      {/* ═══ 9A: Email Preview Modal ═══ */}
+   931→      <AnimatePresence>
+   932→        {emailPreviewOpen && previewingTemplate && (
+   933→          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+   934→            style={overlayStyle}
+   935→            onClick={() => setEmailPreviewOpen(false)}
+   936→          >
+   937→            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+   938→              style={{ ...modalStyle, maxWidth: 700 }}
+   939→              onClick={(e) => e.stopPropagation()}
+   940→            >
+   941→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+   942→                <h3 style={{ fontWeight: 700, fontSize: 18 }}>Vista previa: {previewingTemplate.nombre}</h3>
+   943→                <button onClick={() => setEmailPreviewOpen(false)} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid var(--lf-border)', background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
+   944→              </div>
+   945→
+   946→              <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+   947→                {/* Desktop preview */}
+   948→                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+   949→                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+   950→                    <Monitor size={14} style={{ color: 'var(--lf-text-muted)' }} />
+   951→                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)' }}>Desktop</span>
+   952→                  </div>
+   953→                  <div style={{
+   954→                    width: 320, minHeight: 200, borderRadius: 8, border: '2px solid var(--lf-border)',
+   955→                    background: '#fff', overflow: 'hidden',
+   956→                  }}>
+   957→                    <div style={{ height: 32, background: 'var(--lf-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+   958→                      <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>LOGIFAST</span>
+   959→                    </div>
+   960→                    <div style={{ padding: 16 }}>
+   961→                      <div dangerouslySetInnerHTML={{ __html: previewingTemplate.contenido.replace(/\{\{[^}]+\}\}/g, (m) => `<span style="color:var(--lf-accent);font-weight:700">${m}</span>`) }} />
+   962→                    </div>
+   963→                  </div>
+   964→                </div>
+   965→
+   966→                {/* Mobile preview */}
+   967→                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+   968→                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+   969→                    <Smartphone size={14} style={{ color: 'var(--lf-text-muted)' }} />
+   970→                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)' }}>Mobile</span>
+   971→                  </div>
+   972→                  <div style={{
+   973→                    width: 180, minHeight: 200, borderRadius: 12, border: '2px solid var(--lf-border)',
+   974→                    background: '#fff', overflow: 'hidden',
+   975→                  }}>
+   976→                    <div style={{ height: 24, background: 'var(--lf-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+   977→                      <span style={{ fontSize: 9, fontWeight: 700, color: '#fff' }}>LOGIFAST</span>
+   978→                    </div>
+   979→                    <div style={{ padding: 10, fontSize: 11 }}>
+   980→                      <div dangerouslySetInnerHTML={{ __html: previewingTemplate.contenido.replace(/\{\{[^}]+\}\}/g, (m) => `<span style="color:var(--lf-accent);font-weight:700">${m}</span>`) }} />
+   981→                    </div>
+   982→                    <div style={{ height: 16, background: '#f5f5f5', borderTop: '1px solid var(--lf-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+   983→                      <div style={{ width: 30, height: 4, borderRadius: 2, background: 'var(--lf-border)' }} />
+   984→                    </div>
+   985→                  </div>
+   986→                </div>
+   987→              </div>
+   988→
+   989→              <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'center' }}>
+   990→                <button onClick={() => sendTestEmail(previewingTemplate)} style={btnAccent}><Send size={14} /> Enviar email de prueba</button>
+   991→              </div>
+   992→            </motion.div>
+   993→          </motion.div>
+   994→        )}
+   995→      </AnimatePresence>
+   996→
+   997→      {/* ═══ 9C: Feriado Modal ═══ */}
+   998→      <AnimatePresence>
+   999→        {feriadoModalOpen && (
+  1000→          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+  1001→            style={overlayStyle}
+  1002→            onClick={() => setFeriadoModalOpen(false)}
+  1003→          >
+  1004→            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+  1005→              style={{ ...modalStyle, maxWidth: 400 }}
+  1006→              onClick={(e) => e.stopPropagation()}
+  1007→            >
+  1008→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+  1009→                <h3 style={{ fontWeight: 700, fontSize: 18 }}>Nuevo Feriado</h3>
+  1010→                <button onClick={() => setFeriadoModalOpen(false)} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid var(--lf-border)', background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
+  1011→              </div>
+  1012→              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+  1013→                <div>
+  1014→                  <label style={labelStyle}>Fecha</label>
+  1015→                  <input type="date" value={newFeriadoFecha} onChange={(e) => setNewFeriadoFecha(e.target.value)} style={inputStyle} />
+  1016→                </div>
+  1017→                <div>
+  1018→                  <label style={labelStyle}>Nombre</label>
+  1019→                  <input value={newFeriadoNombre} onChange={(e) => setNewFeriadoNombre(e.target.value)} placeholder="Ej: Navidad" style={inputStyle} />
+  1020→                </div>
+  1021→                <div>
+  1022→                  <label style={labelStyle}>Recargo (%)</label>
+  1023→                  <input type="number" value={newFeriadoRecargo} onChange={(e) => setNewFeriadoRecargo(e.target.value)} style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }} />
+  1024→                </div>
+  1025→                <button onClick={saveFeriado} style={{ padding: '12px', borderRadius: 10, border: 'none', background: 'var(--lf-accent)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', marginTop: 4 }}>
+  1026→                  Agregar Feriado
+  1027→                </button>
+  1028→              </div>
+  1029→            </motion.div>
+  1030→          </motion.div>
+  1031→        )}
+  1032→      </AnimatePresence>
+  1033→
+  1034→      {/* ═══ 9D: Integration Config Modal ═══ */}
+  1035→      <AnimatePresence>
+  1036→        {integrationModalOpen && editingIntegration && (
+  1037→          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+  1038→            style={overlayStyle}
+  1039→            onClick={() => setIntegrationModalOpen(false)}
+  1040→          >
+  1041→            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+  1042→              style={{ ...modalStyle, maxWidth: 440 }}
+  1043→              onClick={(e) => e.stopPropagation()}
+  1044→            >
+  1045→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+  1046→                <h3 style={{ fontWeight: 700, fontSize: 18 }}>Configurar: {editingIntegration.nombre}</h3>
+  1047→                <button onClick={() => setIntegrationModalOpen(false)} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid var(--lf-border)', background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={14} /></button>
+  1048→              </div>
+  1049→              <p style={{ fontSize: 13, color: 'var(--lf-text-muted)', marginBottom: 16 }}>{editingIntegration.descripcion}</p>
+  1050→              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+  1051→                <div>
+  1052→                  <label style={labelStyle}>API Key</label>
+  1053→                  <input value={intApiKey} onChange={(e) => setIntApiKey(e.target.value)} placeholder="sk-xxxxxxxxxxxx" type="password" style={{ ...inputStyle, fontFamily: "'DM Mono', monospace", fontSize: 13 }} />
+  1054→                </div>
+  1055→                <div>
+  1056→                  <label style={labelStyle}>Webhook URL</label>
+  1057→                  <input value={intWebhookUrl} onChange={(e) => setIntWebhookUrl(e.target.value)} placeholder="https://api.example.com/webhook" style={{ ...inputStyle, fontFamily: "'DM Mono', monospace", fontSize: 13 }} />
+  1058→                </div>
+  1059→                <button onClick={saveIntegration} style={{ padding: '12px', borderRadius: 10, border: 'none', background: 'var(--lf-accent)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', marginTop: 4 }}>
+  1060→                  Guardar Configuración
+  1061→                </button>
+  1062→              </div>
+  1063→            </motion.div>
+  1064→          </motion.div>
+  1065→        )}
+  1066→      </AnimatePresence>
+  1067→
+  1068→      {/* ═══ 9E: Confirm Clean Dialog ═══ */}
+  1069→      <AnimatePresence>
+  1070→        {confirmCleanOpen && (
+  1071→          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+  1072→            style={overlayStyle}
+  1073→            onClick={() => setConfirmCleanOpen(false)}
+  1074→          >
+  1075→            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+  1076→              style={{ ...modalStyle, maxWidth: 380, textAlign: 'center' }}
+  1077→              onClick={(e) => e.stopPropagation()}
+  1078→            >
+  1079→              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+  1080→                <AlertTriangle size={24} style={{ color: 'var(--lf-danger)' }} />
+  1081→              </div>
+  1082→              <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>¿Limpiar datos de prueba?</h3>
+  1083→              <p style={{ fontSize: 13, color: 'var(--lf-text-muted)', marginBottom: 20 }}>Esta acción eliminará todos los datos de prueba. Esta operación no se puede deshacer.</p>
+  1084→              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+  1085→                <button onClick={() => setConfirmCleanOpen(false)} style={{
+  1086→                  padding: '10px 20px', borderRadius: 8, border: '1px solid var(--lf-border)',
+  1087→                  background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', fontWeight: 600, fontSize: 13,
+  1088→                }}>Cancelar</button>
+  1089→                <button onClick={cleanTestData} style={{
+  1090→                  padding: '10px 20px', borderRadius: 8, border: 'none',
+  1091→                  background: 'var(--lf-danger)', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+  1092→                }}>Eliminar</button>
+  1093→              </div>
+  1094→            </motion.div>
+  1095→          </motion.div>
+  1096→        )}
+  1097→      </AnimatePresence>
+  1098→
+  1099→      {/* Toasts */}
+  1100→      <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 300, display: 'flex', flexDirection: 'column', gap: 8 }}>
+  1101→        {toasts.map((t) => (
+  1102→          <motion.div key={t.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+  1103→            style={{ padding: '10px 16px', borderRadius: 10, background: 'var(--lf-success)', color: '#fff', fontSize: 13, fontWeight: 600 }}>{t.msg}</motion.div>
+  1104→        ))}
+  1105→      </div>
+  1106→    </div>
+  1107→  );
+  1108→}
+  1109→

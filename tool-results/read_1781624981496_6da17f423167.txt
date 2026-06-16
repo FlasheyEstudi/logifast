@@ -1,0 +1,1205 @@
+     1→```
+     2→PROMPT CORRECCION URGENTE — MODALES, OVERLAYS Y ELEMENTOS FLOTANTES TRANSPARENTES
+     3→
+     4→CONTEXTO:
+     5→En toda la app de LOGIFAST (Cliente, Repartidor, Administrador) hay un problema GRAVE de diseno: los modales, bottom sheets, dropdowns, popovers, tooltips, overlays, y cualquier elemento flotante se ven COMPLETAMENTE TRANSPARENTES. Se puede ver el contenido detras. Esto rompe la legibilidad, se ve roto, y se siente como un bug visual, no como una app profesional.
+     6→
+     7→Este problema existe en TODOS los roles y en TODOS los componentes flotantes. Este prompt lo corrige DE UNA VEZ en toda la app.
+     8→
+     9→=====================================================
+    10→DIAGNOSTICO DEL PROBLEMA
+    11→=====================================================
+    12→
+    13→Los elementos flotantes usan probablemente estos valores INCORRECTOS:
+    14→
+    15→PROBLEMA 1: Fondo con opacidad muy baja
+    16→```css
+    17→/* MAL — esto es lo que probablemente esta pasando */
+    18→background: rgba(255, 255, 255, 0.5); /* 50% opacidad — se ve transparente */
+    19→background: var(--lf-surface); /* pero --lf-surface no tiene suficiente contraste */
+    20→
+    21→/* BIEN — esto es lo que debe ser */
+    22→background: rgba(255, 255, 255, 0.92); /* 92% opacidad — casi opaco */
+    23→```
+    24→
+    25→PROBLEMA 2: Glassmorphism mal aplicado
+    26→```css
+    27→/* MAL */
+    28→backdrop-filter: blur(8px); /* blur insuficiente */
+    29→background: transparent; /* sin fondo detras del blur */
+    30→
+    31→/* BIEN */
+    32→backdrop-filter: blur(24px); /* blur suficiente */
+    33→background: rgba(255, 255, 255, 0.85); /* fondo que complementa el blur */
+    34→```
+    35→
+    36→PROBLEMA 3: Overlay de modal transparente
+    37→```css
+    38→/* MAL */
+    39→background: rgba(0, 0, 0, 0.1); /* overlay casi invisible */
+    40→
+    41→/* BIEN */
+    42→background: rgba(0, 0, 0, 0.45); /* overlay oscuro que bloquea el fondo */
+    43→backdrop-filter: blur(4px); /* blur adicional para enfocar */
+    44→```
+    45→
+    46→PROBLEMA 4: Bottom sheet sin fondo solido
+    47→```css
+    48→/* MAL */
+    49→background: transparent; /* se ve todo detras */
+    50→
+    51→/* BIEN */
+    52→background: var(--lf-surface); /* fondo solido */
+    53→box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15); /* sombra que da separacion */
+    54→```
+    55→
+    56→PROBLEMA 5: Dropdown/popover sin fondo
+    57→```css
+    58→/* MAL */
+    59→background: inherit; /* hereda fondo transparente del padre */
+    60→
+    61→/* BIEN */
+    62→background: var(--lf-surface); /* fondo solido propio */
+    63→border: 1px solid var(--lf-border); /* borde visible */
+    64→```
+    65→
+    66→=====================================================
+    67→REGLAS DE ORO PARA ELEMENTOS FLOTANTES
+    68→=====================================================
+    69→
+    70→REGLA 1: Todo elemento que flota sobre contenido DEBE tener fondo SOLIDO u opaco (minimo 90% opacidad). NUNCA transparente.
+    71→
+    72→REGLA 2: Todo elemento flotante DEBE tener sombra para separarse visualmente del fondo. Sin sombra, parece parte del fondo.
+    73→
+    74→REGLA 3: Todo overlay DEBE bloquear visualmente el fondo detras. El usuario NO debe poder leer el contenido debajo del overlay.
+    75→
+    76→REGLA 4: Glassmorphism NO es poner blur y ya. Requiere: blur(16px-24px) + fondo semi-opaco(80%-92%) + borde sutil.
+    77→
+    78→REGLA 5: En modo oscuro, los fondos flotantes son MAS opacos, no menos. El glassmorphism en oscuro usa opacidad 85%-95%.
+    79→
+    80→=====================================================
+    81→CORRECCIONES POR COMPONENTE
+    82→=====================================================
+    83→
+    84→Cada componente se corrige con el codigo CSS EXACTO. Reemplazar donde sea que este definido actualmente.
+    85→
+    86→=====================================================
+    87→1. OVERLAY DE MODAL (el fondo oscuro detras del modal)
+    88→=====================================================
+    89→
+    90→DONDE APLICA: todos los modales de Admin, Cliente, Repartidor (detalle de orden, reasignacion, crear tienda, crear producto, confirmacion, etc.)
+    91→
+    92→ANTES (MAL):
+    93→```css
+    94→.modal-overlay {
+    95→  background: rgba(0, 0, 0, 0.1);
+    96→  /* o peor: background: transparent */
+    97→}
+    98→```
+    99→
+   100→DESPUES (BIEN):
+   101→```css
+   102→.modal-overlay {
+   103→  position: fixed;
+   104→  inset: 0;
+   105→  background: rgba(0, 0, 0, 0.45);
+   106→  backdrop-filter: blur(4px);
+   107→  -webkit-backdrop-filter: blur(4px);
+   108→  z-index: 299;
+   109→  opacity: 0;
+   110→  transition: opacity 0.25s ease;
+   111→  pointer-events: none;
+   112→}
+   113→
+   114→.modal-overlay.visible {
+   115→  opacity: 1;
+   116→  pointer-events: auto;
+   117→}
+   118→
+   119→/* MODO OSCURO: overlay mas oscuro */
+   120→[data-theme="dark"] .modal-overlay {
+   121→  background: rgba(0, 0, 0, 0.6);
+   122→}
+   123→```
+   124→
+   125→CHECKLIST:
+   126→- Fondo negro al 45% opacidad en modo claro
+   127→- Fondo negro al 60% opacidad en modo oscuro
+   128→- Blur de 4px
+   129→- Transicion suave de opacidad
+   130→- Bloquea interaccion con el fondo (pointer-events)
+   131→
+   132→=====================================================
+   133→2. MODAL / DIALOG (el cuadro que aparece centrado)
+   134→=====================================================
+   135→
+   136→DONDE APLICA: modal de reasignacion, detalle de orden, crear/editar tienda, crear/editar producto, crear campana, crear codigo, confirmacion, etc.
+   137→
+   138→ANTES (MAL):
+   139→```css
+   140→.modal {
+   141→  background: var(--lf-surface);
+   142→  /* pero --lf-surface puede ser muy claro o no tener suficiente contraste */
+   143→  box-shadow: none; /* o sombra muy tenue */
+   144→}
+   145→```
+   146→
+   147→DESPUES (BIEN):
+   148→```css
+   149→.modal {
+   150→  position: fixed;
+   151→  top: 50%;
+   152→  left: 50%;
+   153→  transform: translate(-50%, -50%) scale(0.96);
+   154→  width: calc(100% - 32px);
+   155→  max-width: 520px;
+   156→  max-height: 85vh;
+   157→  overflow-y: auto;
+   158→  background: #FFFFFF;
+   159→  border-radius: 24px;
+   160→  padding: 28px;
+   161→  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.1);
+   162→  z-index: 300;
+   163→  opacity: 0;
+   164→  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+   165→}
+   166→
+   167→.modal.open {
+   168→  transform: translate(-50%, -50%) scale(1);
+   169→  opacity: 1;
+   170→}
+   171→
+   172→/* MODO OSCURO */
+   173→[data-theme="dark"] .modal {
+   174→  background: #1A1A24;
+   175→  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+   176→}
+   177→
+   178→/* SCROLLBAR DEL MODAL */
+   179→.modal::-webkit-scrollbar {
+   180→  width: 6px;
+   181→}
+   182→
+   183→.modal::-webkit-scrollbar-track {
+   184→  background: transparent;
+   185→}
+   186→
+   187→.modal::-webkit-scrollbar-thumb {
+   188→  background: var(--lf-border);
+   189→  border-radius: 3px;
+   190→}
+   191→```
+   192→
+   193→CHECKLIST:
+   194→- Fondo BLANCO solido (#FFFFFF) en modo claro, no variable
+   195→- Fondo OSCURO solido (#1A1A24) en modo oscuro
+   196→- Sombra FUERTE (dos sombras apiladas para profundidad)
+   197→- Border-radius 24px
+   198→- Overflow-y auto con scrollbar custom
+   199→- Transicion scale + opacity
+   200→
+   201→=====================================================
+   202→3. BOTTOM SHEET (paneles que suben desde abajo)
+   203→=====================================================
+   204→
+   205→DONDE APLICA: tracking del cliente, nueva orden del repartidor, filtros, chat, incidencia, seleccionar direccion, etc.
+   206→
+   207→ANTES (MAL):
+   208→```css
+   209→.bottom-sheet {
+   210→  background: transparent;
+   211→  /* o background: rgba(255,255,255,0.5) */
+   212→  backdrop-filter: blur(10px);
+   213→}
+   214→```
+   215→
+   216→DESPUES (BIEN):
+   217→```css
+   218→.bottom-sheet-overlay {
+   219→  position: fixed;
+   220→  inset: 0;
+   221→  background: rgba(0, 0, 0, 0.4);
+   222→  z-index: 199;
+   223→  opacity: 0;
+   224→  transition: opacity 0.3s ease;
+   225→  pointer-events: none;
+   226→}
+   227→
+   228→.bottom-sheet-overlay.visible {
+   229→  opacity: 1;
+   230→  pointer-events: auto;
+   231→}
+   232→
+   233→.bottom-sheet {
+   234→  position: fixed;
+   235→  bottom: 0;
+   236→  left: 0;
+   237→  right: 0;
+   238→  background: #FFFFFF;
+   239→  border-radius: 28px 28px 0 0;
+   240→  padding: 0;
+   241→  max-height: 92vh;
+   242→  overflow-y: auto;
+   243→  z-index: 200;
+   244→  transform: translateY(100%);
+   245→  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+   246→  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.15);
+   247→}
+   248→
+   249→.bottom-sheet.open {
+   250→  transform: translateY(0);
+   251→}
+   252→
+   253→.bottom-sheet-handle {
+   254→  width: 36px;
+   255→  height: 4px;
+   256→  background: #D0D0D0;
+   257→  border-radius: 2px;
+   258→  margin: 14px auto;
+   259→  flex-shrink: 0;
+   260→}
+   261→
+   262→[data-theme="dark"] .bottom-sheet {
+   263→  background: #1A1A24;
+   264→  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.4);
+   265→}
+   266→
+   267→[data-theme="dark"] .bottom-sheet-handle {
+   268→  background: #3A3A48;
+   269→}
+   270→```
+   271→
+   272→CHECKLIST:
+   273→- Fondo BLANCO solido (#FFFFFF) en modo claro
+   274→- Fondo OSCURO solido (#1A1A24) en modo oscuro
+   275→- Sombra fuerte hacia arriba (negativa Y)
+   276→- Overlay separado con 40% opacidad negro
+   277→- Border-radius 28px solo arriba
+   278→- Handle bar visible y arrastrable
+   279→- Max-height 92vh con overflow scroll
+   280→
+   281→=====================================================
+   282→4. DROPDOWN (menus desplegables, select custom)
+   283→=====================================================
+   284→
+   285→DONDE APLICA: selector de ubicacion del cliente, selector de periodo, menu de acciones en tablas, dropdown del avatar, etc.
+   286→
+   287→ANTES (MAL):
+   288→```css
+   289→.dropdown {
+   290→  background: var(--lf-surface);
+   291→  /* sin sombra o sombra muy tenue */
+   292→  /* sin borde */
+   293→}
+   294→```
+   295→
+   296→DESPUES (BIEN):
+   297→```css
+   298→.dropdown {
+   299→  position: absolute;
+   300→  top: calc(100% + 8px);
+   301→  left: 0;
+   302→  min-width: 240px;
+   303→  max-height: 320px;
+   304→  overflow-y: auto;
+   305→  background: #FFFFFF;
+   306→  border: 1px solid rgba(0, 0, 0, 0.08);
+   307→  border-radius: 16px;
+   308→  padding: 6px;
+   309→  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+   310→  z-index: 250;
+   311→  opacity: 0;
+   312→  transform: translateY(-8px) scale(0.98);
+   313→  transform-origin: top left;
+   314→  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+   315→  pointer-events: none;
+   316→}
+   317→
+   318→.dropdown.open {
+   319→  opacity: 1;
+   320→  transform: translateY(0) scale(1);
+   321→  pointer-events: auto;
+   322→}
+   323→
+   324→.dropdown-item {
+   325→  display: flex;
+   326→  align-items: center;
+   327→  gap: 12px;
+   328→  padding: 12px 14px;
+   329→  border-radius: 10px;
+   330→  font-size: 14px;
+   331→  color: var(--lf-text);
+   332→  cursor: pointer;
+   333→  transition: background 0.15s ease;
+   334→}
+   335→
+   336→.dropdown-item:hover {
+   337→  background: #F5F0EB;
+   338→}
+   339→
+   340→.dropdown-item:active {
+   341→  background: #EDE7E0;
+   342→}
+   343→
+   344→.dropdown-divider {
+   345→  height: 1px;
+   346→  background: var(--lf-border);
+   347→  margin: 4px 8px;
+   348→}
+   349→
+   350→[data-theme="dark"] .dropdown {
+   351→  background: #22222E;
+   352→  border-color: rgba(255, 255, 255, 0.08);
+   353→  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+   354→}
+   355→
+   356→[data-theme="dark"] .dropdown-item:hover {
+   357→  background: #2A2A38;
+   358→}
+   359→```
+   360→
+   361→CHECKLIST:
+   362→- Fondo solido BLANCO o OSCURO, nunca transparente
+   363→- Sombra doble (fuerte + suave) para profundidad
+   364→- Borde MUY sutil (8% opacidad)
+   365→- Border-radius 16px
+   366→- Items con padding generoso y hover visible
+   367→- Transicion de entrada: opacity + translateY + scale
+   368→
+   369→=====================================================
+   370→5. TOOLTIP
+   371→=====================================================
+   372→
+   373→DONDE APLICA: tooltips en el mapa, tooltips en graficos, tooltips al hover en tablas, etc.
+   374→
+   375→ANTES (MAL):
+   376→```css
+   377→.tooltip {
+   378→  background: rgba(0, 0, 0, 0.5);
+   379→  /* semi-transparente, se ve el contenido detras */
+   380→}
+   381→```
+   382→
+   383→DESPUES (BIEN):
+   384→```css
+   385→.tooltip {
+   386→  position: absolute;
+   387→  padding: 8px 14px;
+   388→  background: #1B1B2F;
+   389→  color: #FFFFFF;
+   390→  font-size: 13px;
+   391→  font-weight: 500;
+   392→  border-radius: 10px;
+   393→  white-space: nowrap;
+   394→  z-index: 500;
+   395→  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+   396→  pointer-events: none;
+   397→  opacity: 0;
+   398→  transform: translateY(4px);
+   399→  transition: opacity 0.15s ease, transform 0.15s ease;
+   400→}
+   401→
+   402→.tooltip.visible {
+   403→  opacity: 1;
+   404→  transform: translateY(0);
+   405→}
+   406→
+   407→.tooltip::after {
+   408→  content: '';
+   409→  position: absolute;
+   410→  bottom: -5px;
+   411→  left: 50%;
+   412→  transform: translateX(-50%);
+   413→  width: 10px;
+   414→  height: 10px;
+   415→  background: #1B1B2F;
+   416→  border-radius: 2px;
+   417→  transform: translateX(-50%) rotate(45deg);
+   418→}
+   419→
+   420→[data-theme="dark"] .tooltip {
+   421→  background: #F0EDE8;
+   422→  color: #1B1B2F;
+   423→}
+   424→
+   425→[data-theme="dark"] .tooltip::after {
+   426→  background: #F0EDE8;
+   427→}
+   428→```
+   429→
+   430→CHECKLIST:
+   431→- Fondo NAVY OSCURO solido en modo claro
+   432→- Fondo CREMA solido en modo oscuro (invertido)
+   433→- Texto blanco/negro con buen contraste
+   434→- Sombra suave
+   435→- Flechita apuntando al elemento padre
+   436→- Border-radius 10px
+   437→- NUNCA transparente
+   438→
+   439→=====================================================
+   440→6. POPOVER (menu contextual al click derecho o long press)
+   441→=====================================================
+   442→
+   443→DONDE APLICA: menu de acciones en items de lista (editar/eliminar), menu contextual en el mapa, etc.
+   444→
+   445→```css
+   446→.popover {
+   447→  position: absolute;
+   448→  min-width: 200px;
+   449→  background: #FFFFFF;
+   450→  border: 1px solid rgba(0, 0, 0, 0.06);
+   451→  border-radius: 16px;
+   452→  padding: 6px;
+   453→  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.06);
+   454→  z-index: 260;
+   455→  opacity: 0;
+   456→  transform: scale(0.95);
+   457→  transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+   458→  pointer-events: none;
+   459→}
+   460→
+   461→.popover.open {
+   462→  opacity: 1;
+   463→  transform: scale(1);
+   464→  pointer-events: auto;
+   465→}
+   466→
+   467→.popover-item {
+   468→  display: flex;
+   469→  align-items: center;
+   470→  gap: 12px;
+   471→  padding: 12px 14px;
+   472→  border-radius: 10px;
+   473→  font-size: 14px;
+   474→  cursor: pointer;
+   475→  transition: background 0.15s;
+   476→}
+   477→
+   478→.popover-item:hover {
+   479→  background: #F5F0EB;
+   480→}
+   481→
+   482→.popover-item--danger {
+   483→  color: #FF1744;
+   484→}
+   485→
+   486→.popover-item--danger:hover {
+   487→  background: #FF17440C;
+   488→}
+   489→
+   490→[data-theme="dark"] .popover {
+   491→  background: #22222E;
+   492→  border-color: rgba(255, 255, 255, 0.06);
+   493→  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+   494→}
+   495→```
+   496→
+   497→=====================================================
+   498→7. SNACKBAR / TOAST
+   499→=====================================================
+   500→
+   501→DONDE APLICA: notificaciones emergentes en todos los roles.
+   502→
+   503→ANTES (MAL):
+   504→```css
+   505→.toast {
+   506→  background: rgba(255, 255, 255, 0.7);
+   507→  /* se ve transparente */
+   508→}
+   509→```
+   510→
+   511→DESPUES (BIEN):
+   512→```css
+   513→.snackbar {
+   514→  position: fixed;
+   515→  bottom: 96px;
+   516→  left: 16px;
+   517→  right: 16px;
+   518→  max-width: 480px;
+   519→  margin: 0 auto;
+   520→  background: #1B1B2F;
+   521→  color: #FFFFFF;
+   522→  border-radius: 14px;
+   523→  padding: 14px 18px;
+   524→  display: flex;
+   525→  align-items: center;
+   526→  gap: 14px;
+   527→  z-index: 500;
+   528→  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+   529→  transform: translateY(100px);
+   530→  opacity: 0;
+   531→  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+   532→}
+   533→
+   534→.snackbar.visible {
+   535→  transform: translateY(0);
+   536→  opacity: 1;
+   537→}
+   538→
+   539→.snackbar-icon {
+   540→  width: 22px;
+   541→  height: 22px;
+   542→  flex-shrink: 0;
+   543→}
+   544→
+   545→.snackbar-text {
+   546→  flex: 1;
+   547→  font-size: 14px;
+   548→  line-height: 1.5;
+   549→}
+   550→
+   551→.snackbar-action {
+   552→  font-size: 14px;
+   553→  font-weight: 600;
+   554→  color: #FF8A65;
+   555→  background: none;
+   556→  border: none;
+   557→  cursor: pointer;
+   558→  padding: 4px 8px;
+   559→  border-radius: 6px;
+   560→  flex-shrink: 0;
+   561→}
+   562→
+   563→.snackbar-action:hover {
+   564→  background: rgba(255, 138, 101, 0.12);
+   565→}
+   566→
+   567→/* Variantes de color — borde izquierdo */
+   568→.snackbar--success { border-left: 4px solid #00C853; }
+   569→.snackbar--error { border-left: 4px solid #FF1744; }
+   570→.snackbar--warning { border-left: 4px solid #FFB300; }
+   571→.snackbar--info { border-left: 4px solid #2979FF; }
+   572→
+   573→/* Barra de progreso */
+   574→.snackbar-progress {
+   575→  position: absolute;
+   576→  bottom: 0;
+   577→  left: 0;
+   578→  height: 3px;
+   579→  border-radius: 0 0 14px 14px;
+   580→  transition: width 4s linear;
+   581→}
+   582→
+   583→.snackbar--success .snackbar-progress { background: #00C853; }
+   584→.snackbar--error .snackbar-progress { background: #FF1744; }
+   585→
+   586→[data-theme="dark"] .snackbar {
+   587→  background: #F0EDE8;
+   588→  color: #1B1B2F;
+   589→}
+   590→
+   591→[data-theme="dark"] .snackbar-action {
+   592→  color: #E64A19;
+   593→}
+   594→```
+   595→
+   596→CHECKLIST:
+   597→- Fondo NAVY OSCURO solido en modo claro (NO transparente)
+   598→- Fondo CREMA solido en modo oscuro (invertido)
+   599→- Sombra FUERTE
+   600→- Borde izquierdo de color segun variante
+   601→- Barra de progreso animada
+   602→- Border-radius 14px
+   603→
+   604→=====================================================
+   605→8. COMMAND PALETTE (Admin)
+   606→=====================================================
+   607→
+   608→DONDE APLICA: Cmd+K del admin.
+   609→
+   610→```css
+   611→.command-overlay {
+   612→  position: fixed;
+   613→  inset: 0;
+   614→  background: rgba(0, 0, 0, 0.5);
+   615→  backdrop-filter: blur(8px);
+   616→  -webkit-backdrop-filter: blur(8px);
+   617→  z-index: 999;
+   618→  display: flex;
+   619→  align-items: flex-start;
+   620→  justify-content: center;
+   621→  padding-top: 15vh;
+   622→  opacity: 0;
+   623→  transition: opacity 0.15s ease;
+   624→  pointer-events: none;
+   625→}
+   626→
+   627→.command-overlay.visible {
+   628→  opacity: 1;
+   629→  pointer-events: auto;
+   630→}
+   631→
+   632→.command-panel {
+   633→  width: calc(100% - 32px);
+   634→  max-width: 580px;
+   635→  background: #FFFFFF;
+   636→  border-radius: 20px;
+   637→  overflow: hidden;
+   638→  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25), 0 12px 32px rgba(0, 0, 0, 0.1);
+   639→  transform: scale(0.96);
+   640→  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+   641→}
+   642→
+   643→.command-overlay.visible .command-panel {
+   644→  transform: scale(1);
+   645→}
+   646→
+   647→.command-input-wrapper {
+   648→  display: flex;
+   649→  align-items: center;
+   650→  gap: 12px;
+   651→  padding: 16px 20px;
+   652→  border-bottom: 1px solid var(--lf-border);
+   653→}
+   654→
+   655→.command-input {
+   656→  flex: 1;
+   657→  border: none;
+   658→  background: transparent;
+   659→  font-size: 17px;
+   660→  color: var(--lf-text);
+   661→  outline: none;
+   662→}
+   663→
+   664→.command-results {
+   665→  max-height: 360px;
+   666→  overflow-y: auto;
+   667→  padding: 6px;
+   668→}
+   669→
+   670→.command-result-group {
+   671→  padding: 8px 14px 4px;
+   672→  font-size: 11px;
+   673→  font-weight: 600;
+   674→  text-transform: uppercase;
+   675→  letter-spacing: 0.08em;
+   676→  color: var(--lf-muted);
+   677→}
+   678→
+   679→.command-result-item {
+   680→  display: flex;
+   681→  align-items: center;
+   682→  gap: 12px;
+   683→  padding: 12px 14px;
+   684→  border-radius: 12px;
+   685→  cursor: pointer;
+   686→  transition: background 0.1s;
+   687→}
+   688→
+   689→.command-result-item:hover,
+   690→.command-result-item.selected {
+   691→  background: #F5F0EB;
+   692→}
+   693→
+   694→[data-theme="dark"] .command-panel {
+   695→  background: #1A1A24;
+   696→  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+   697→}
+   698→
+   699→[data-theme="dark"] .command-result-item:hover,
+   700→[data-theme="dark"] .command-result-item.selected {
+   701→  background: #2A2A38;
+   702→}
+   703→```
+   704→
+   705→=====================================================
+   706→9. NOTIFICACION FULL-SCREEN (Repartidor — nueva orden)
+   707→=====================================================
+   708→
+   709→DONDE APLICA: pantalla de notificacion de nueva orden asignada al repartidor.
+   710→
+   711→```css
+   712→.order-notification {
+   713→  position: fixed;
+   714→  inset: 0;
+   715→  background: rgba(0, 0, 0, 0.75);
+   716→  backdrop-filter: blur(12px);
+   717→  -webkit-backdrop-filter: blur(12px);
+   718→  z-index: 999;
+   719→  display: flex;
+   720→  flex-direction: column;
+   721→  align-items: center;
+   722→  justify-content: center;
+   723→  padding: 24px;
+   724→  opacity: 0;
+   725→  transition: opacity 0.3s ease;
+   726→}
+   727→
+   728→.order-notification.visible {
+   729→  opacity: 1;
+   730→}
+   731→
+   732→.order-notification-card {
+   733→  width: 100%;
+   734→  max-width: 360px;
+   735→  background: rgba(255, 255, 255, 0.12);
+   736→  backdrop-filter: blur(24px);
+   737→  -webkit-backdrop-filter: blur(24px);
+   738→  border: 1px solid rgba(255, 255, 255, 0.18);
+   739→  border-radius: 28px;
+   740→  padding: 28px;
+   741→  transform: scale(0.9);
+   742→  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+   743→}
+   744→
+   745→.order-notification.visible .order-notification-card {
+   746→  transform: scale(1);
+   747→}
+   748→```
+   749→
+   750→NOTA: Este componente SI usa glassmorphism porque esta sobre un overlay oscuro. El fondo semi-transparente es INTENCIONAL aqui porque el overlay detras ya bloquea todo. La tarjeta se ve como un panel de vidrio esmerilado sobre oscuridad. Esto es CORRECTO. La diferencia es que el overlay detras es MUY oscuro (75%), asi que la tarjeta se lee perfecto.
+   751→
+   752→CHECKLIST:
+   753→- Overlay: negro al 75% + blur 12px (siempre opaco)
+   754→- Card: glassmorphism sobre el overlay oscuro (correcto)
+   755→- La card tiene borde blanco sutil y blur 24px
+   756→- Texto en la card: BLANCO (porque el fondo es oscuro)
+   757→- Esto NO es lo mismo que un modal sin fondo — aqui el overlay oscuro hace el trabajo
+   758→
+   759→=====================================================
+   760→10. MAP POPUP (Leaflet)
+   761→=====================================================
+   762→
+   763→DONDE APLICA: popups al hacer click en marcadores del mapa.
+   764→
+   765→```css
+   766→/* Override del popup default de Leaflet */
+   767→.leaflet-popup-content-wrapper {
+   768→  background: #FFFFFF !important;
+   769→  border-radius: 14px !important;
+   770→  padding: 0 !important;
+   771→  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15) !important;
+   772→  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+   773→}
+   774→
+   775→.leaflet-popup-content {
+   776→  margin: 14px 16px !important;
+   777→  font-family: 'DM Sans', sans-serif !important;
+   778→  font-size: 14px !important;
+   779→  color: var(--lf-text) !important;
+   780→  line-height: 1.5 !important;
+   781→}
+   782→
+   783→.leaflet-popup-tip {
+   784→  background: #FFFFFF !important;
+   785→  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+   786→}
+   787→
+   788→.leaflet-popup-close-button {
+   789→  color: var(--lf-muted) !important;
+   790→  font-size: 18px !important;
+   791→  width: 28px !important;
+   792→  height: 28px !important;
+   793→  display: flex !important;
+   794→  align-items: center !important;
+   795→  justify-content: center !important;
+   796→}
+   797→
+   798→[data-theme="dark"] .leaflet-popup-content-wrapper {
+   799→  background: #22222E !important;
+   800→  border-color: rgba(255, 255, 255, 0.08) !important;
+   801→  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5) !important;
+   802→}
+   803→
+   804→[data-theme="dark"] .leaflet-popup-tip {
+   805→  background: #22222E !important;
+   806→}
+   807→
+   808→[data-theme="dark"] .leaflet-popup-content {
+   809→  color: #F0EDE8 !important;
+   810→}
+   811→```
+   812→
+   813→CHECKLIST:
+   814→- Fondo BLANCO solido (override de Leaflet)
+   815→- Sombra fuerte
+   816→- Border-radius 14px
+   817→- Tip (flecha) con mismo fondo
+   818→- En modo oscuro: fondo oscuro solido
+   819→
+   820→=====================================================
+   821→11. SELECT CUSTOM (en vez de select nativo del browser)
+   822→=====================================================
+   823→
+   824→DONDE APLICA: selectores en formularios del admin (crear tienda, crear producto, filtros, etc.)
+   825→
+   826→```css
+   827→.native-select {
+   828→  appearance: none;
+   829→  -webkit-appearance: none;
+   830→  width: 100%;
+   831→  padding: 14px 44px 14px 16px;
+   832→  background: #FFFFFF;
+   833→  border: 1.5px solid var(--lf-border);
+   834→  border-radius: 14px;
+   835→  font-family: 'DM Sans', sans-serif;
+   836→  font-size: 15px;
+   837→  color: var(--lf-text);
+   838→  cursor: pointer;
+   839→  transition: border-color 0.2s, box-shadow 0.2s;
+   840→  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238E8EA0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+   841→  background-repeat: no-repeat;
+   842→  background-position: right 16px center;
+   843→}
+   844→
+   845→.native-select:focus {
+   846→  outline: none;
+   847→  border-color: var(--lf-primario);
+   848→  box-shadow: 0 0 0 3px var(--lf-primario-soft);
+   849→}
+   850→
+   851→[data-theme="dark"] .native-select {
+   852→  background-color: #1A1A24;
+   853→  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6B80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+   854→}
+   855→```
+   856→
+   857→=====================================================
+   858→12. AUTOCOMPLETE DROPDOWN (inputs con sugerencias)
+   859→=====================================================
+   860→
+   861→DONDE APLICA: campo de direcciones del cliente, campo de busqueda, etc.
+   862→
+   863→```css
+   864→.autocomplete-dropdown {
+   865→  position: absolute;
+   866→  top: calc(100% + 6px);
+   867→  left: 0;
+   868→  right: 0;
+   869→  max-height: 260px;
+   870→  overflow-y: auto;
+   871→  background: #FFFFFF;
+   872→  border: 1px solid rgba(0, 0, 0, 0.08);
+   873→  border-radius: 14px;
+   874→  padding: 6px;
+   875→  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+   876→  z-index: 200;
+   877→  opacity: 0;
+   878→  transform: translateY(-6px);
+   879→  transition: opacity 0.2s ease, transform 0.2s ease;
+   880→  pointer-events: none;
+   881→}
+   882→
+   883→.autocomplete-dropdown.open {
+   884→  opacity: 1;
+   885→  transform: translateY(0);
+   886→  pointer-events: auto;
+   887→}
+   888→
+   889→.autocomplete-item {
+   890→  display: flex;
+   891→  align-items: center;
+   892→  gap: 12px;
+   893→  padding: 12px 14px;
+   894→  border-radius: 10px;
+   895→  cursor: pointer;
+   896→  transition: background 0.15s;
+   897→}
+   898→
+   899→.autocomplete-item:hover,
+   900→.autocomplete-item.highlighted {
+   901→  background: #F5F0EB;
+   902→}
+   903→
+   904→.autocomplete-item-icon {
+   905→  width: 20px;
+   906→  height: 20px;
+   907→  color: var(--lf-muted);
+   908→  flex-shrink: 0;
+   909→}
+   910→
+   911→.autocomplete-item-text {
+   912→  font-size: 14px;
+   913→  color: var(--lf-text);
+   914→}
+   915→
+   916→.autocomplete-item-secondary {
+   917→  font-size: 12px;
+   918→  color: var(--lf-muted);
+   919→}
+   920→
+   921→[data-theme="dark"] .autocomplete-dropdown {
+   922→  background: #22222E;
+   923→  border-color: rgba(255, 255, 255, 0.08);
+   924→  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+   925→}
+   926→
+   927→[data-theme="dark"] .autocomplete-item:hover,
+   928→[data-theme="dark"] .autocomplete-item.highlighted {
+   929→  background: #2A2A38;
+   930→}
+   931→```
+   932→
+   933→=====================================================
+   934→13. CHAT BUBBLE (chat cliente-repartidor)
+   935→=====================================================
+   936→
+   937→```css
+   938→.chat-bubble-other {
+   939→  background: #F2EDE8;
+   940→  color: #1B1B2F;
+   941→  border-radius: 20px 20px 20px 6px;
+   942→  padding: 12px 16px;
+   943→  max-width: 80%;
+   944→  font-size: 14px;
+   945→  line-height: 1.5;
+   946→}
+   947→
+   948→.chat-bubble-self {
+   949→  background: #FF5722;
+   950→  color: #FFFFFF;
+   951→  border-radius: 20px 20px 6px 20px;
+   952→  padding: 12px 16px;
+   953→  max-width: 80%;
+   954→  font-size: 14px;
+   955→  line-height: 1.5;
+   956→}
+   957→
+   958→.chat-bubble-system {
+   959→  background: #E8E4DE;
+   960→  color: #5A5A72;
+   961→  border-radius: 10px;
+   962→  padding: 6px 14px;
+   963→  font-size: 12px;
+   964→  text-align: center;
+   965→  align-self: center;
+   966→}
+   967→
+   968→[data-theme="dark"] .chat-bubble-other {
+   969→  background: #2A2A38;
+   970→  color: #F0EDE8;
+   971→}
+   972→
+   973→[data-theme="dark"] .chat-bubble-self {
+   974→  background: #FF6E40;
+   975→  color: #FFFFFF;
+   976→}
+   977→
+   978→[data-theme="dark"] .chat-bubble-system {
+   979→  background: #22222E;
+   980→  color: #A8A8BE;
+   981→}
+   982→```
+   983→
+   984→CHECKLIST:
+   985→- Burbuja del otro: fondo CREMA solido (no transparente)
+   986→- Burbuja propia: fondo NARANJA solido (no transparente)
+   987→- Sistema: fondo GRIS solido
+   988→- En modo oscuro: fondos mas oscuros pero SIEMPRE solidos
+   989→
+   990→=====================================================
+   991→14. CHAT INPUT AREA
+   992→=====================================================
+   993→
+   994→```css
+   995→.chat-input-area {
+   996→  position: sticky;
+   997→  bottom: 0;
+   998→  background: #FFFFFF;
+   999→  border-top: 1px solid var(--lf-border);
+  1000→  padding: 12px 16px;
+  1001→  display: flex;
+  1002→  align-items: flex-end;
+  1003→  gap: 10px;
+  1004→}
+  1005→
+  1006→.chat-input {
+  1007→  flex: 1;
+  1008→  min-height: 44px;
+  1009→  max-height: 120px;
+  1010→  padding: 10px 16px;
+  1011→  background: #F5F0EB;
+  1012→  border: 1.5px solid transparent;
+  1013→  border-radius: 22px;
+  1014→  font-size: 15px;
+  1015→  color: var(--lf-text);
+  1016→  resize: none;
+  1017→  outline: none;
+  1018→  transition: border-color 0.2s;
+  1019→}
+  1020→
+  1021→.chat-input:focus {
+  1022→  border-color: var(--lf-primario);
+  1023→  background: #FFFFFF;
+  1024→}
+  1025→
+  1026→.chat-send-btn {
+  1027→  width: 44px;
+  1028→  height: 44px;
+  1029→  border-radius: 50%;
+  1030→  background: #FF5722;
+  1031→  border: none;
+  1032→  display: flex;
+  1033→  align-items: center;
+  1034→  justify-content: center;
+  1035→  cursor: pointer;
+  1036→  transition: background 0.2s, transform 0.1s;
+  1037→  flex-shrink: 0;
+  1038→}
+  1039→
+  1040→.chat-send-btn:active {
+  1041→  transform: scale(0.92);
+  1042→}
+  1043→
+  1044→.chat-send-btn:disabled {
+  1045→  background: #E8E4DE;
+  1046→  cursor: not-allowed;
+  1047→}
+  1048→
+  1049→[data-theme="dark"] .chat-input-area {
+  1050→  background: #1A1A24;
+  1051→  border-color: #2A2A38;
+  1052→}
+  1053→
+  1054→[data-theme="dark"] .chat-input {
+  1055→  background: #22222E;
+  1056→}
+  1057→```
+  1058→
+  1059→=====================================================
+  1060→15. CARROUSEL / SLIDER DE BANNERS
+  1061→=====================================================
+  1062→
+  1063→```css
+  1064→.carousel-banner {
+  1065→  min-height: 170px;
+  1066→  border-radius: 24px;
+  1067→  overflow: hidden;
+  1068→  position: relative;
+  1069→}
+  1070→
+  1071→/* ASEGURAR que el fondo del banner NO sea transparente */
+  1072→.carousel-banner--orange {
+  1073→  background: linear-gradient(135deg, #FF5722 0%, #FF8A65 100%);
+  1074→}
+  1075→
+  1076→.carousel-banner--navy {
+  1077→  background: linear-gradient(135deg, #1B1B2F 0%, #3949AB 100%);
+  1078→}
+  1079→
+  1080→.carousel-banner--green {
+  1081→  background: linear-gradient(135deg, #00C853 0%, #69F0AE 100%);
+  1082→}
+  1083→
+  1084→.carousel-banner--dark {
+  1085→  background: linear-gradient(135deg, #2A2A38 0%, #1A1A24 100%);
+  1086→}
+  1087→
+  1088→/* Patron geometrico overlay */
+  1089→.carousel-banner::before {
+  1090→  content: '';
+  1091→  position: absolute;
+  1092→  inset: 0;
+  1093→  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  1094→  pointer-events: none;
+  1095→}
+  1096→```
+  1097→
+  1098→=====================================================
+  1099→CHECKLIST GLOBAL DE VERIFICACION
+  1100→=====================================================
+  1101→
+  1102→Despues de aplicar todas las correcciones, verificar CADA uno de estos elementos en modo CLARO y modo OSCURO:
+  1103→
+  1104→MODALES:
+  1105→- [ ] Overlay: visible, oscuro, bloquea fondo
+  1106→- [ ] Modal: fondo solido blanco/oscuro, sombra fuerte
+  1107→- [ ] Se puede leer el contenido del modal sin ver el fondo
+  1108→
+  1109→BOTTOM SHEETS:
+  1110→- [ ] Overlay: visible, oscuro
+  1111→- [ ] Sheet: fondo solido, sombra hacia arriba
+  1112→- [ ] Handle bar visible
+  1113→- [ ] Se puede leer el contenido sin ver el fondo
+  1114→
+  1115→DROPDOWNS:
+  1116→- [ ] Fondo solido, NO transparente
+  1117→- [ ] Sombra visible
+  1118→- [ ] Items legibles con hover claro
+  1119→
+  1120→TOOLTIPS:
+  1121→- [ ] Fondo solido oscuro (o claro en modo oscuro)
+  1122→- [ ] Texto blanco (o negro) con buen contraste
+  1123→- [ ] Flechita visible
+  1124→
+  1125→SNACKBARS/TOASTS:
+  1126→- [ ] Fondo solido, NO glassmorphism roto
+  1127→- [ ] Texto legible con buen contraste
+  1128→- [ ] Borde de color visible
+  1129→
+  1130→COMMAND PALETTE:
+  1131→- [ ] Overlay oscuro y borroso
+  1132→- [ ] Panel con fondo solido
+  1133→- [ ] Resultados legibles
+  1134→
+  1135→MAP POPUPS:
+  1136→- [ ] Fondo blanco/oscuro solido
+  1137→- [ ] Sombra
+  1138→- [ ] Contenido legible
+  1139→
+  1140→AUTOCOMPLETE:
+  1141→- [ ] Fondo solido
+  1142→- [ ] Sombra
+  1143→- [ ] Items con hover claro
+  1144→
+  1145→CHAT:
+  1146→- [ ] Burbujas con fondos solidos (NO transparentes)
+  1147→- [ ] Input area con fondo solido
+  1148→- [ ] Todo legible
+  1149→
+  1150→BANNERS:
+  1151→- [ ] Fondos de color solidos (gradientes, NO transparentes)
+  1152→- [ ] Texto blanco con buen contraste
+  1153→- [ ] Patron overlay sutil pero NO transparente
+  1154→
+  1155→SELECT:
+  1156→- [ ] Fondo blanco/oscuro solido
+  1157→- [ ] Borde visible
+  1158→- [ ] Chevron SVG visible
+  1159→
+  1160→NOTIFICACION FULL-SCREEN (Repartidor):
+  1161→- [ ] Overlay MUY oscuro (75%+)
+  1162→- [ ] Card con glassmorphism sobre oscuro (esto SI es correcto)
+  1163→- [ ] Texto blanco legible
+  1164→
+  1165→=====================================================
+  1166→REGLA FINAL
+  1167→=====================================================
+  1168→
+  1169→SI NO ESTAS SEGURO SI UN ELEMENTO SE VE TRANSPARENTE:
+  1170→
+  1171→1. Pon una imagen colorida detras del elemento
+  1172→2. Si puedes ver la imagen a traves del elemento → ESTA TRANSPARENTE, ARRÉGLALO
+  1173→3. Si no puedes ver la imagen → esta correcto
+  1174→
+  1175→EXCEPCION: El unico caso donde la transparencia es aceptable es el glassmorphism sobre un overlay oscuro (como la notificacion de nueva orden del repartidor). En ese caso, el overlay oscuro ya bloquea todo, y el efecto de vidrio esmerilado es INTENCIONAL y FUNCIONAL.
+  1176→
+  1177→En TODOS los demas casos: FONDO SOLIDO. SIEMPRE.
+  1178→```
+  1179→
+  1180→---
+  1181→
+  1182→
+  1183→
+  1184→Ese prompt **corrige el problema de transparencia** en TODA la app, componente por componente:
+  1185→
+  1186→| Componente | Fondo correcto |
+  1187→|---|---|
+  1188→| **Overlay modal** | Negro 45% + blur 4px |
+  1189→| **Modal** | Blanco solido #FFFFFF |
+  1190→| **Bottom sheet** | Blanco solido + sombra |
+  1191→| **Dropdown** | Blanco solido + sombra doble |
+  1192→| **Tooltip** | Navy solido #1B1B2F |
+  1193→| **Popover** | Blanco solido + sombra |
+  1194→| **Snackbar/Toast** | Navy solido (no glassmorphism) |
+  1195→| **Command palette** | Overlay 50% + panel blanco solido |
+  1196→| **Notificacion repartidor** | Overlay 75% + glassmorphism INTENCIONAL |
+  1197→| **Map popup** | Blanco solido (override Leaflet) |
+  1198→| **Select custom** | Blanco solido + borde |
+  1199→| **Autocomplete** | Blanco solido + sombra |
+  1200→| **Chat bubbles** | Crema/naranja SOLIDO (no transparente) |
+  1201→| **Banners** | Gradientes solidos (no transparente) |
+  1202→
+  1203→**Regla de oro:** Si puedes ver el contenido detras → esta roto. Fondos solidos SIEMPRE, glassmorphism SOLO sobre overlays oscuros.
+  1204→
+  1205→Mandaselo a tu agente ANTES de cualquier otro prompt. Es una correccion urgente.

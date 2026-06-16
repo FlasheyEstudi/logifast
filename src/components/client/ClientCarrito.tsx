@@ -529,12 +529,12 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
                           value={promoInput}
                           onChange={(e) => { setPromoInput(e.target.value); setPromoError(''); }}
                           placeholder="Ingresa tu codigo"
-                          className="flex-1 px-3.5 py-2.5 rounded-2xl text-sm outline-none transition-colors"
+                          className="lf-input flex-1"
                           style={{
                             fontFamily: "'JetBrains Mono', monospace",
-                            background: 'var(--bg)',
-                            color: 'var(--text)',
-                            border: `1px solid ${promoError ? 'var(--peligro)' : 'var(--border)'}`,
+                            padding: '10px 14px',
+                            minHeight: 40,
+                            border: `1px solid ${promoError ? 'var(--peligro)' : undefined}`,
                           }}
                           onKeyDown={(e) => { if (e.key === 'Enter') handleApplyPromo(); }}
                           autoFocus
@@ -700,24 +700,20 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
                       min={today}
                       max={nextWeek}
                       onChange={(e) => setCartScheduleDate(e.target.value)}
-                      className="flex-1 px-3 py-2.5 rounded-2xl text-sm outline-none"
+                      className="lf-input flex-1"
                       style={{
-                        fontFamily: "'DM Sans', sans-serif",
-                        background: 'var(--bg)',
-                        color: 'var(--text)',
-                        border: '1px solid var(--border)',
+                        padding: '10px 14px',
+                        minHeight: 40,
                       }}
                     />
                     <input
                       type="time"
                       value={cartScheduleTime ?? '12:00'}
                       onChange={(e) => setCartScheduleTime(e.target.value)}
-                      className="flex-1 px-3 py-2.5 rounded-2xl text-sm outline-none"
+                      className="lf-input flex-1"
                       style={{
-                        fontFamily: "'DM Sans', sans-serif",
-                        background: 'var(--bg)',
-                        color: 'var(--text)',
-                        border: '1px solid var(--border)',
+                        padding: '10px 14px',
+                        minHeight: 40,
                       }}
                     />
                   </div>

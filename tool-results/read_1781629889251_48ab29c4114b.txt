@@ -1,0 +1,935 @@
+     1→import { create } from 'zustand';
+     2→import { reproducirSiActivo, vibrarSiActivo, type SonidoTipo } from '@/services/audio';
+     3→import { useConfigStore } from '@/store/configStore';
+     4→
+     5→/* ═══════════════════════════════════════════════════════
+     6→   AUDIO + VIBRATION FEEDBACK HELPER
+     7→   ═══════════════════════════════════════════════════════ */
+     8→
+     9→/**
+    10→ * Reads the current configStore snapshot and triggers a sound + optional
+    11→ * vibration pattern. SSR-safe (no-op on the server) and fully wrapped in
+    12→ * try/catch so a sound/vibration failure never breaks the state transition.
+    13→ *
+    14→ * Pass `patron === null` to skip vibration (used for subtle confirms like
+    15→ * enviarMensaje where haptic feedback would be too noisy).
+    16→ */
+    17→function dispararFeedback(
+    18→  sonido: SonidoTipo,
+    19→  patron: number | number[] | null,
+    20→): void {
+    21→  if (typeof window === 'undefined') return;
+    22→  try {
+    23→    const cfg = useConfigStore.getState();
+    24→    reproducirSiActivo(sonido, {
+    25→      sonidoActivo: cfg.sonidoActivo,
+    26→      volumenSonido: cfg.volumenSonido,
+    27→      notificacionesSonido: cfg.notificacionesSonido,
+    28→    });
+    29→    if (patron !== null) {
+    30→      vibrarSiActivo(patron, cfg.vibracionActiva);
+    31→    }
+    32→  } catch (err) {
+    33→    console.warn('repartidor-store: audio/vibration feedback failed', err);
+    34→  }
+    35→}
+    36→
+    37→/* ═══════════════════════════════════════════════════════
+    38→   TYPES
+    39→   ═══════════════════════════════════════════════════════ */
+    40→
+    41→export type RepartidorEstado =
+    42→  | 'DESCONECTADO'
+    43→  | 'EN_LINEA'
+    44→  | 'ORDEN_ASIGNADA'
+    45→  | 'EN_CAMINO_RECOGER'
+    46→  | 'EN_PUNTO_RECOGIDA'
+    47→  | 'RECOGIDO'
+    48→  | 'EN_PUNTO_ENTREGA'
+    49→  | 'INCIDENCIA';
+    50→
+    51→export type TipoServicio = 'envio' | 'compra';
+    52→export type EstadoServicio = 'asignado' | 'aceptado' | 'recogido' | 'entregado' | 'incidencia' | 'cancelado';
+    53→export type TipoIncidencia = 'mecanica' | 'cliente' | 'accidente' | 'otro';
+    54→
+    55→export interface RepartidorProfile {
+    56→  id: string;
+    57→  nombre: string;
+    58→  email: string;
+    59→  telefono: string;
+    60→  initials: string;
+    61→  color: string;
+    62→  motoId: string;
+    63→  zonaPreferida: string;
+    64→  calificacion: number;
+    65→  totalEntregas: number;
+    66→  totalKm: number;
+    67→  totalGanancias: number;
+    68→  tiempoPromedio: number;
+    69→  sonidoActivo: boolean;
+    70→  vibracionActiva: boolean;
+    71→  ubicacionActiva: boolean;
+    72→}
+    73→
+    74→export interface MotoAsignada {
+    75→  id: string;
+    76→  nombre: string;
+    77→  modelo: string;
+    78→  placa: string;
+    79→  kmAcumulados: number;
+    80→  estado: 'DISPONIBLE' | 'EN_SERVICIO' | 'MANTENIMIENTO';
+    81→  ultimoMantenimiento: string;
+    82→  tipoUltimoMantenimiento: string;
+    83→  proximoMantenimientoKm: number | null;
+    84→  alertaMantenimiento: boolean;
+    85→}
+    86→
+    87→export interface ProductoChecklist {
+    88→  id: string;
+    89→  nombre: string;
+    90→  cantidad: number;
+    91→  verificado: boolean;
+    92→}
+    93→
+    94→export interface OrdenActiva {
+    95→  id: string;
+    96→  tipo: TipoServicio;
+    97→  cliente: string;
+    98→  clienteTelefono: string;
+    99→  tiendaNombre?: string;
+   100→  origen: string;
+   101→  destino: string;
+   102→  origenLat: number;
+   103→  origenLng: number;
+   104→  destinoLat: number;
+   105→  destinoLng: number;
+   106→  paquete?: string;
+   107→  tamano?: string;
+   108→  fragil?: boolean;
+   109→  metodoPago: 'efectivo' | 'transferencia';
+   110→  monto: number;
+   111→  ganancia: number;
+   112→  kmEstimados: number;
+   113→  tiempoEstimado: number;
+   114→  productos?: ProductoChecklist[];
+   115→}
+   116→
+   117→export interface ServicioHistorial {
+   118→  id: string;
+   119→  ordenId: string;
+   120→  tipo: TipoServicio;
+   121→  cliente: string;
+   122→  tiendaNombre?: string;
+   123→  origen: string;
+   124→  destino: string;
+   125→  hora: string;
+   126→  kmRecorridos: number;
+   127→  ganancia: number;
+   128→  tiempoTotal: number;
+   129→  estado: 'entregado' | 'incidencia';
+   130→  incidenciaTipo?: string;
+   131→  calificacion?: number;
+   132→}
+   133→
+   134→export interface StatsRepartidor {
+   135→  entregas: number;
+   136→  km: number;
+   137→  ganancias: number;
+   138→  tiempoActivo: number; // minutos
+   139→}
+   140→
+   141→export interface CalificacionRepartidor {
+   142→  id: string;
+   143→  ordenId: string;
+   144→  cliente: string;
+   145→  estrellas: number;
+   146→  etiquetas: string[];
+   147→  comentario: string | null;
+   148→  fecha: string;
+   149→}
+   150→
+   151→export interface NotificacionRepartidor {
+   152→  id: string;
+   153→  tipo: 'orden_asignada' | 'mensaje' | 'entrega_calificada' | 'incidencia' | 'cancelacion' | 'reasignacion';
+   154→  titulo: string;
+   155→  contenido: string;
+   156→  leido: boolean;
+   157→  ordenId?: string;
+   158→  tiempo: string;
+   159→}
+   160→
+   161→export interface ChatMensaje {
+   162→  id: string;
+   163→  ordenId: string;
+   164→  emisor: 'repartidor' | 'cliente';
+   165→  contenido: string;
+   166→  enviadoEn: string;
+   167→}
+   168→
+   169→/* ═══════════════════════════════════════════════════════
+   170→   MOCK DATA
+   171→   ═══════════════════════════════════════════════════════ */
+   172→
+   173→const MOCK_PERFIL: RepartidorProfile = {
+   174→  id: 'rep001',
+   175→  nombre: 'Carlos Martínez',
+   176→  email: 'repartidor@logifast.com',
+   177→  telefono: '+505 8765-4321',
+   178→  initials: 'CM',
+   179→  color: '#FF5722',
+   180→  motoId: 'moto03',
+   181→  zonaPreferida: 'Centro',
+   182→  calificacion: 4.8,
+   183→  totalEntregas: 287,
+   184→  totalKm: 4521.3,
+   185→  totalGanancias: 48750,
+   186→  tiempoPromedio: 22,
+   187→  sonidoActivo: true,
+   188→  vibracionActiva: true,
+   189→  ubicacionActiva: true,
+   190→};
+   191→
+   192→const MOCK_MOTO: MotoAsignada = {
+   193→  id: 'moto03',
+   194→  nombre: 'Moto-03',
+   195→  modelo: 'Honda Wave 110',
+   196→  placa: 'M-4521',
+   197→  kmAcumulados: 12450,
+   198→  estado: 'DISPONIBLE',
+   199→  ultimoMantenimiento: '2025-05-20',
+   200→  tipoUltimoMantenimiento: 'Cambio de aceite',
+   201→  proximoMantenimientoKm: 13500,
+   202→  alertaMantenimiento: false,
+   203→};
+   204→
+   205→const MOCK_SERVICIOS_HOY: ServicioHistorial[] = [
+   206→  {
+   207→    id: 'svc-2840',
+   208→    ordenId: 'LF-2840',
+   209→    tipo: 'envio',
+   210→    cliente: 'Pedro Ruiz',
+   211→    origen: 'Col. Los Robles',
+   212→    destino: 'Centro',
+   213→    hora: '08:15',
+   214→    kmRecorridos: 3.1,
+   215→    ganancia: 85,
+   216→    tiempoTotal: 18,
+   217→    estado: 'entregado',
+   218→    calificacion: 5,
+   219→  },
+   220→  {
+   221→    id: 'svc-2841',
+   222→    ordenId: 'LF-2841',
+   223→    tipo: 'compra',
+   224→    cliente: 'Laura Fernández',
+   225→    tiendaNombre: 'Pizza Express',
+   226→    origen: 'Pizza Express',
+   227→    destino: 'Villa Fontana',
+   228→    hora: '09:30',
+   229→    kmRecorridos: 4.2,
+   230→    ganancia: 45,
+   231→    tiempoTotal: 25,
+   232→    estado: 'entregado',
+   233→    calificacion: 5,
+   234→  },
+   235→  {
+   236→    id: 'svc-2842',
+   237→    ordenId: 'LF-2842',
+   238→    tipo: 'envio',
+   239→    cliente: 'Roberto Sáenz',
+   240→    origen: 'Bello Horizonte',
+   241→    destino: 'Monseñor Lezcano',
+   242→    hora: '11:00',
+   243→    kmRecorridos: 5.8,
+   244→    ganancia: 120,
+   245→    tiempoTotal: 32,
+   246→    estado: 'entregado',
+   247→    calificacion: 4,
+   248→  },
+   249→  {
+   250→    id: 'svc-2845',
+   251→    ordenId: 'LF-2845',
+   252→    tipo: 'compra',
+   253→    cliente: 'Sofía Vega',
+   254→    tiendaNombre: 'Farmacia San Pablo',
+   255→    origen: 'Farmacia San Pablo',
+   256→    destino: 'Los Robles',
+   257→    hora: '13:15',
+   258→    kmRecorridos: 2.1,
+   259→    ganancia: 35,
+   260→    tiempoTotal: 15,
+   261→    estado: 'entregado',
+   262→    calificacion: 5,
+   263→  },
+   264→];
+   265→
+   266→const MOCK_ORDEN_ACTIVA: OrdenActiva = {
+   267→  id: 'LF-2847',
+   268→  tipo: 'envio',
+   269→  cliente: 'María López',
+   270→  clienteTelefono: '+505 8888-1234',
+   271→  origen: 'Col. Los Robles, Managua',
+   272→  destino: 'Barrio Monseñor Lezcano',
+   273→  origenLat: 12.1289,
+   274→  origenLng: -86.2451,
+   275→  destinoLat: 12.1421,
+   276→  destinoLng: -86.2287,
+   277→  paquete: 'Documentos importantes',
+   278→  tamano: 'Pequeño',
+   279→  fragil: false,
+   280→  metodoPago: 'efectivo',
+   281→  monto: 120,
+   282→  ganancia: 45,
+   283→  kmEstimados: 3.2,
+   284→  tiempoEstimado: 12,
+   285→};
+   286→
+   287→const MOCK_CALIFICACIONES: CalificacionRepartidor[] = [
+   288→  {
+   289→    id: 'cal-1',
+   290→    ordenId: 'LF-2840',
+   291→    cliente: 'Pedro Ruiz',
+   292→    estrellas: 5,
+   293→    etiquetas: ['Rápido', 'Amable'],
+   294→    comentario: 'Muy rápido y amable',
+   295→    fecha: 'hace 1 hora',
+   296→  },
+   297→  {
+   298→    id: 'cal-2',
+   299→    ordenId: 'LF-2835',
+   300→    cliente: 'Ana Rivera',
+   301→    estrellas: 4,
+   302→    etiquetas: ['Buena ubicación'],
+   303→    comentario: null,
+   304→    fecha: 'hace 3 horas',
+   305→  },
+   306→  {
+   307→    id: 'cal-3',
+   308→    ordenId: 'LF-2830',
+   309→    cliente: 'María López',
+   310→    estrellas: 5,
+   311→    etiquetas: ['Cuidadoso'],
+   312→    comentario: 'Cuidadoso con el paquete',
+   313→    fecha: 'ayer',
+   314→  },
+   315→  {
+   316→    id: 'cal-4',
+   317→    ordenId: 'LF-2820',
+   318→    cliente: 'Laura Mendoza',
+   319→    estrellas: 3,
+   320→    etiquetas: ['Tardó mucho'],
+   321→    comentario: 'Se tardó 10 min más',
+   322→    fecha: 'ayer',
+   323→  },
+   324→  {
+   325→    id: 'cal-5',
+   326→    ordenId: 'LF-2815',
+   327→    cliente: 'Carlos Altamirano',
+   328→    estrellas: 5,
+   329→    etiquetas: ['Excelente servicio'],
+   330→    comentario: null,
+   331→    fecha: 'hace 2 días',
+   332→  },
+   333→];
+   334→
+   335→const MOCK_NOTIFICACIONES: NotificacionRepartidor[] = [
+   336→  {
+   337→    id: 'ntf-1',
+   338→    tipo: 'orden_asignada',
+   339→    titulo: 'Nueva orden asignada',
+   340→    contenido: 'LF-2847 — Envío de paquete',
+   341→    leido: false,
+   342→    ordenId: 'LF-2847',
+   343→    tiempo: 'hace 20 min',
+   344→  },
+   345→  {
+   346→    id: 'ntf-2',
+   347→    tipo: 'mensaje',
+   348→    titulo: 'Mensaje de María López',
+   349→    contenido: 'Ok, estoy en la puerta',
+   350→    leido: false,
+   351→    ordenId: 'LF-2847',
+   352→    tiempo: 'hace 15 min',
+   353→  },
+   354→  {
+   355→    id: 'ntf-3',
+   356→    tipo: 'entrega_calificada',
+   357→    titulo: 'Tu entrega LF-2845 fue calificada',
+   358→    contenido: '5 estrellas — Farmacia San Pablo',
+   359→    leido: true,
+   360→    ordenId: 'LF-2845',
+   361→    tiempo: 'hace 1 hora',
+   362→  },
+   363→];
+   364→
+   365→const MOCK_CHAT: ChatMensaje[] = [
+   366→  {
+   367→    id: 'msg-1',
+   368→    ordenId: 'LF-2847',
+   369→    emisor: 'cliente',
+   370→    contenido: 'Hola, ¿ya vas en camino?',
+   371→    enviadoEn: '14:25',
+   372→  },
+   373→  {
+   374→    id: 'msg-2',
+   375→    ordenId: 'LF-2847',
+   376→    emisor: 'repartidor',
+   377→    contenido: 'Sí, ya recogí el paquete. Llego en unos 10 min.',
+   378→    enviadoEn: '14:26',
+   379→  },
+   380→  {
+   381→    id: 'msg-3',
+   382→    ordenId: 'LF-2847',
+   383→    emisor: 'cliente',
+   384→    contenido: 'Ok, estoy en la puerta',
+   385→    enviadoEn: '14:30',
+   386→  },
+   387→];
+   388→
+   389→const ZONAS_MANAGUA = [
+   390→  'Centro',
+   391→  'Los Robles',
+   392→  'Villa Fontana',
+   393→  'Bello Horizonte',
+   394→  'Monseñor Lezcano',
+   395→  'Altamira',
+   396→  'Reparto San Juan',
+   397→  'Carretera Sur',
+   398→];
+   399→
+   400→/* ═══════════════════════════════════════════════════════
+   401→   STORE INTERFACE
+   402→   ═══════════════════════════════════════════════════════ */
+   403→
+   404→interface RepartidorStoreState {
+   405→  // Estado de conexión
+   406→  estado: RepartidorEstado;
+   407→  conectado: boolean;
+   408→  enServicio: boolean;
+   409→  pausado: boolean;
+   410→  pausaHasta: number | null;
+   411→  rechazosHora: number;
+   412→  rechazosResetEn: number;
+   413→
+   414→  // Orden activa
+   415→  ordenActiva: OrdenActiva | null;
+   416→  ordenAsignadaPendiente: OrdenActiva | null; // orden esperando aceptación (timer 30s)
+   417→  tiempoAceptacion: number; // segundos restantes para aceptar
+   418→
+   419→  // Posición
+   420→  lat: number;
+   421→  lng: number;
+   422→  heading: number;
+   423→
+   424→  // Tracking
+   425→  kmRecorridos: number;
+   426→  tiempoTranscurrido: number; // segundos desde que se aceptó
+   427→  eta: number; // minutos
+   428→
+   429→  // Stats del día
+   430→  statsHoy: StatsRepartidor;
+   431→  statsSemana: StatsRepartidor;
+   432→  statsMes: StatsRepartidor;
+   433→
+   434→  // Historial
+   435→  serviciosHoy: ServicioHistorial[];
+   436→
+   437→  // Perfil
+   438→  perfil: RepartidorProfile;
+   439→  moto: MotoAsignada;
+   440→  calificaciones: CalificacionRepartidor[];
+   441→
+   442→  // Notificaciones
+   443→  notificaciones: NotificacionRepartidor[];
+   444→  notificacionesNoLeidas: number;
+   445→
+   446→  // Chat
+   447→  mensajes: ChatMensaje[];
+   448→  chatAbierto: boolean;
+   449→  chatOrdenId: string | null;
+   450→
+   451→  // Incidencia
+   452→  incidenciaAbierta: boolean;
+   453→
+   454→  // Detalle de servicio
+   455→  servicioDetalle: ServicioHistorial | null;
+   456→
+   457→  // Pantalla activa
+   458→  pantallaActiva: 'servicio' | 'historial' | 'perfil';
+   459→  zonasDisponibles: string[];
+   460→
+   461→  // Actions
+   462→  conectar: () => void;
+   463→  desconectar: () => void;
+   464→  recibirOrdenAsignada: (orden: OrdenActiva) => void;
+   465→  aceptarOrden: () => void;
+   466→  rechazarOrden: () => void;
+   467→  timeoutOrden: () => void;
+   468→  llegarRecogida: () => void;
+   469→  recogerPaquete: () => void;
+   470→  llegarEntrega: () => void;
+   471→  confirmarEntrega: () => void;
+   472→  reportarIncidencia: (tipo: TipoIncidencia, desc: string) => void;
+   473→  actualizarPosicion: (lat: number, lng: number) => void;
+   474→  simularMovimiento: () => void;
+   475→  toggleChat: (ordenId?: string) => void;
+   476→  enviarMensaje: (contenido: string) => void;
+   477→  toggleIncidencia: (open?: boolean) => void;
+   478→  verServicioDetalle: (servicio: ServicioHistorial) => void;
+   479→  cerrarDetalle: () => void;
+   480→  setPantalla: (p: 'servicio' | 'historial' | 'perfil') => void;
+   481→  marcarNotificacionesLeidas: () => void;
+   482→  actualizarConfig: (campo: 'sonidoActivo' | 'vibracionActiva' | 'ubicacionActiva' | 'zonaPreferida', valor: boolean | string) => void;
+   483→  obtenerStats: (periodo: 'hoy' | 'semana' | 'mes') => StatsRepartidor;
+   484→  verificarProductos: (productoId: string) => void;
+   485→}
+   486→
+   487→/* ═══════════════════════════════════════════════════════
+   488→   HELPERS
+   489→   ═══════════════════════════════════════════════════════ */
+   490→
+   491→function calcularDistancia(lat1: number, lng1: number, lat2: number, lng2: number): number {
+   492→  const R = 6371; // km
+   493→  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+   494→  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+   495→  const a =
+   496→    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+   497→    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
+   498→    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+   499→  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+   500→  return R * c;
+   501→}
+   502→
+   503→function calcularETA(kmRestantes: number): number {
+   504→  const velocidadPromedio = 30; // km/h en ciudad
+   505→  return Math.max(1, Math.round((kmRestantes / velocidadPromedio) * 60));
+   506→}
+   507→
+   508→/* ═══════════════════════════════════════════════════════
+   509→   STORE
+   510→   ═══════════════════════════════════════════════════════ */
+   511→
+   512→export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
+   513→  // Estado inicial
+   514→  estado: 'DESCONECTADO',
+   515→  conectado: false,
+   516→  enServicio: false,
+   517→  pausado: false,
+   518→  pausaHasta: null,
+   519→  rechazosHora: 0,
+   520→  rechazosResetEn: Date.now() + 3600000, // 1 hora
+   521→
+   522→  ordenActiva: null,
+   523→  ordenAsignadaPendiente: null,
+   524→  tiempoAceptacion: 30,
+   525→
+   526→  lat: 12.1364,
+   527→  lng: -86.2581,
+   528→  heading: 0,
+   529→
+   530→  kmRecorridos: 0,
+   531→  tiempoTranscurrido: 0,
+   532→  eta: 0,
+   533→
+   534→  statsHoy: {
+   535→    entregas: 4,
+   536→    km: 15.2,
+   537→    ganancias: 285,
+   538→    tiempoActivo: 245, // ~4h
+   539→  },
+   540→  statsSemana: {
+   541→    entregas: 38,
+   542→    km: 142.5,
+   543→    ganancias: 2780,
+   544→    tiempoActivo: 1820,
+   545→  },
+   546→  statsMes: {
+   547→    entregas: 156,
+   548→    km: 589.3,
+   549→    ganancias: 11250,
+   550→    tiempoActivo: 7340,
+   551→  },
+   552→
+   553→  serviciosHoy: MOCK_SERVICIOS_HOY,
+   554→
+   555→  perfil: MOCK_PERFIL,
+   556→  moto: MOCK_MOTO,
+   557→  calificaciones: MOCK_CALIFICACIONES,
+   558→
+   559→  notificaciones: MOCK_NOTIFICACIONES,
+   560→  notificacionesNoLeidas: 2,
+   561→
+   562→  mensajes: MOCK_CHAT,
+   563→  chatAbierto: false,
+   564→  chatOrdenId: null,
+   565→
+   566→  incidenciaAbierta: false,
+   567→  servicioDetalle: null,
+   568→
+   569→  pantallaActiva: 'servicio',
+   570→  zonasDisponibles: ZONAS_MANAGUA,
+   571→
+   572→  // ─── Actions ───
+   573→
+   574→  conectar: () => {
+   575→    set({
+   576→      conectado: true,
+   577→      estado: 'EN_LINEA',
+   578→      moto: { ...get().moto, estado: 'DISPONIBLE' },
+   579→    });
+   580→  },
+   581→
+   582→  desconectar: () => {
+   583→    set({
+   584→      conectado: false,
+   585→      estado: 'DESCONECTADO',
+   586→      enServicio: false,
+   587→      ordenActiva: null,
+   588→      ordenAsignadaPendiente: null,
+   589→    });
+   590→  },
+   591→
+   592→  recibirOrdenAsignada: (orden) => {
+   593→    if (get().pausado) return;
+   594→    set({
+   595→      ordenAsignadaPendiente: orden,
+   596→      estado: 'ORDEN_ASIGNADA',
+   597→      tiempoAceptacion: 30,
+   598→    });
+   599→    // URGENT pattern: alternating 880/1100 sound + long pulse vibration
+   600→    dispararFeedback('nueva_orden', [100, 50, 100, 50, 200]);
+   601→  },
+   602→
+   603→  aceptarOrden: () => {
+   604→    const orden = get().ordenAsignadaPendiente;
+   605→    if (!orden) return;
+   606→    set({
+   607→      ordenActiva: orden,
+   608→      ordenAsignadaPendiente: null,
+   609→      estado: 'EN_CAMINO_RECOGER',
+   610→      enServicio: true,
+   611→      tiempoTranscurrido: 0,
+   612→      kmRecorridos: 0,
+   613→      eta: calcularETA(orden.kmEstimados),
+   614→      moto: { ...get().moto, estado: 'EN_SERVICIO' },
+   615→    });
+   616→    // Ascending C-E-G major arpeggio + short vibration
+   617→    dispararFeedback('orden_aceptada', 80);
+   618→  },
+   619→
+   620→  rechazarOrden: () => {
+   621→    const nuevosRechazos = get().rechazosHora + 1;
+   622→    const pausado = nuevosRechazos >= 3;
+   623→    set({
+   624→      ordenAsignadaPendiente: null,
+   625→      estado: pausado ? 'EN_LINEA' : 'EN_LINEA',
+   626→      rechazosHora: nuevosRechazos,
+   627→      pausado,
+   628→      pausaHasta: pausado ? Date.now() + 15 * 60 * 1000 : null,
+   629→      notificaciones: pausado
+   630→        ? [
+   631→            {
+   632→              id: `ntf-${Date.now()}`,
+   633→              tipo: 'cancelacion',
+   634→              titulo: 'Pausa automática',
+   635→              contenido: 'Has rechazado 3 órdenes. Pausa de 15 min.',
+   636→              leido: false,
+   637→              tiempo: 'ahora',
+   638→            },
+   639→            ...get().notificaciones,
+   640→          ]
+   641→        : get().notificaciones,
+   642→    });
+   643→    // Descending toggle_off sound + short vibration
+   644→    dispararFeedback('toggle_off', 40);
+   645→  },
+   646→
+   647→  timeoutOrden: () => {
+   648→    // El timeout cuenta como rechazo
+   649→    const nuevosRechazos = get().rechazosHora + 1;
+   650→    const pausado = nuevosRechazos >= 3;
+   651→    set({
+   652→      ordenAsignadaPendiente: null,
+   653→      estado: 'EN_LINEA',
+   654→      rechazosHora: nuevosRechazos,
+   655→      pausado,
+   656→      pausaHasta: pausado ? Date.now() + 15 * 60 * 1000 : null,
+   657→    });
+   658→    // Harsh error sound + double-pulse vibration
+   659→    dispararFeedback('error', [200, 100, 200]);
+   660→  },
+   661→
+   662→  llegarRecogida: () => {
+   663→    set({ estado: 'EN_PUNTO_RECOGIDA' });
+   664→  },
+   665→
+   666→  recogerPaquete: () => {
+   667→    set({
+   668→      estado: 'RECOGIDO',
+   669→      kmRecorridos: 0,
+   670→      ordenActiva: get().ordenActiva
+   671→        ? { ...get().ordenActiva! }
+   672→        : null,
+   673→    });
+   674→  },
+   675→
+   676→  llegarEntrega: () => {
+   677→    set({ estado: 'EN_PUNTO_ENTREGA' });
+   678→  },
+   679→
+   680→  confirmarEntrega: () => {
+   681→    const orden = get().ordenActiva;
+   682→    if (!orden) return;
+   683→    const nuevoServicio: ServicioHistorial = {
+   684→      id: `svc-${Date.now()}`,
+   685→      ordenId: orden.id,
+   686→      tipo: orden.tipo,
+   687→      cliente: orden.cliente,
+   688→      tiendaNombre: orden.tiendaNombre,
+   689→      origen: orden.origen,
+   690→      destino: orden.destino,
+   691→      hora: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' }),
+   692→      kmRecorridos: Math.round(get().kmRecorridos * 10) / 10,
+   693→      ganancia: orden.ganancia,
+   694→      tiempoTotal: Math.round(get().tiempoTranscurrido / 60),
+   695→      estado: 'entregado',
+   696→    };
+   697→    set({
+   698→      estado: 'EN_LINEA',
+   699→      enServicio: false,
+   700→      ordenActiva: null,
+   701→      serviciosHoy: [nuevoServicio, ...get().serviciosHoy],
+   702→      statsHoy: {
+   703→        entregas: get().statsHoy.entregas + 1,
+   704→        km: Math.round((get().statsHoy.km + get().kmRecorridos) * 10) / 10,
+   705→        ganancias: get().statsHoy.ganancias + orden.ganancia,
+   706→        tiempoActivo: get().statsHoy.tiempoActivo + Math.round(get().tiempoTranscurrido / 60),
+   707→      },
+   708→      moto: { ...get().moto, estado: 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + get().kmRecorridos },
+   709→      kmRecorridos: 0,
+   710→      tiempoTranscurrido: 0,
+   711→      eta: 0,
+   712→    });
+   713→    // Completion fanfare (4 ascending notes) + short pulse pattern
+   714→    dispararFeedback('orden_entregada', [60, 40, 60, 40, 150]);
+   715→  },
+   716→
+   717→  reportarIncidencia: (tipo, desc) => {
+   718→    const orden = get().ordenActiva;
+   719→    const tipoLabel = {
+   720→      mecanica: 'Falla mecánica',
+   721→      cliente: 'Problema con cliente',
+   722→      accidente: 'Accidente',
+   723→      otro: 'Otro',
+   724→    }[tipo];
+   725→    const nuevoServicio: ServicioHistorial = orden
+   726→      ? {
+   727→          id: `svc-${Date.now()}`,
+   728→          ordenId: orden.id,
+   729→          tipo: orden.tipo,
+   730→          cliente: orden.cliente,
+   731→          tiendaNombre: orden.tiendaNombre,
+   732→          origen: orden.origen,
+   733→          destino: orden.destino,
+   734→          hora: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' }),
+   735→          kmRecorridos: Math.round(get().kmRecorridos * 10) / 10,
+   736→          ganancia: 0,
+   737→          tiempoTotal: Math.round(get().tiempoTranscurrido / 60),
+   738→          estado: 'incidencia',
+   739→          incidenciaTipo: tipoLabel,
+   740→        }
+   741→      : null;
+   742→
+   743→    set({
+   744→      estado: 'EN_LINEA',
+   745→      enServicio: false,
+   746→      ordenActiva: null,
+   747→      incidenciaAbierta: false,
+   748→      serviciosHoy: nuevoServicio ? [nuevoServicio, ...get().serviciosHoy] : get().serviciosHoy,
+   749→      moto: { ...get().moto, estado: 'DISPONIBLE' },
+   750→      kmRecorridos: 0,
+   751→      tiempoTranscurrido: 0,
+   752→      eta: 0,
+   753→      notificaciones: [
+   754→        {
+   755→          id: `ntf-${Date.now()}`,
+   756→          tipo: 'incidencia',
+   757→          titulo: 'Incidencia reportada',
+   758→          contenido: `${tipoLabel} — ${orden?.id || ''}`,
+   759→          leido: false,
+   760→          ordenId: orden?.id,
+   761→          tiempo: 'ahora',
+   762→        },
+   763→        ...get().notificaciones,
+   764→      ],
+   765→    });
+   766→    // Harsh error sound + long double-pulse vibration
+   767→    dispararFeedback('error', [300, 100, 300]);
+   768→  },
+   769→
+   770→  actualizarPosicion: (lat, lng) => {
+   771→    const prev = { lat: get().lat, lng: get().lng };
+   772→    const distancia = calcularDistancia(prev.lat, prev.lng, lat, lng);
+   773→
+   774→    // Solo sumar km si estamos en estado RECOGIDO (en camino a entregar)
+   775→    let nuevosKm = get().kmRecorridos;
+   776→    if (get().estado === 'RECOGIDO') {
+   777→      nuevosKm += distancia;
+   778→    }
+   779→
+   780→    // Recalcular ETA
+   781→    const orden = get().ordenActiva;
+   782→    let nuevaEta = get().eta;
+   783→    if (orden) {
+   784→      if (get().estado === 'EN_CAMINO_RECOGER') {
+   785→        const kmRestantes = calcularDistancia(lat, lng, orden.origenLat, orden.origenLng);
+   786→        nuevaEta = calcularETA(kmRestantes);
+   787→      } else if (get().estado === 'RECOGIDO') {
+   788→        const kmRestantes = calcularDistancia(lat, lng, orden.destinoLat, orden.destinoLng);
+   789→        nuevaEta = calcularETA(kmRestantes);
+   790→      }
+   791→    }
+   792→
+   793→    // Calcular heading
+   794→    const heading = Math.atan2(lng - prev.lng, lat - prev.lat) * (180 / Math.PI);
+   795→
+   796→    set({
+   797→      lat,
+   798→      lng,
+   799→      heading,
+   800→      kmRecorridos: Math.round(nuevosKm * 100) / 100,
+   801→      eta: nuevaEta,
+   802→    });
+   803→  },
+   804→
+   805→  simularMovimiento: () => {
+   806→    const estado = get().estado;
+   807→    if (estado !== 'EN_CAMINO_RECOGER' && estado !== 'RECOGIDO') {
+   808→      // Si está EN_LINEA, simular pequeña variación (estacionario)
+   809→      if (estado === 'EN_LINEA') {
+   810→        const variacionLat = (Math.random() - 0.5) * 0.0002;
+   811→        const variacionLng = (Math.random() - 0.5) * 0.0002;
+   812→        get().actualizarPosicion(get().lat + variacionLat, get().lng + variacionLng);
+   813→      }
+   814→      return;
+   815→    }
+   816→
+   817→    const orden = get().ordenActiva;
+   818→    if (!orden) return;
+   819→
+   820→    const destinoLat = estado === 'EN_CAMINO_RECOGER' ? orden.origenLat : orden.destinoLat;
+   821→    const destinoLng = estado === 'EN_CAMINO_RECOGER' ? orden.origenLng : orden.destinoLng;
+   822→
+   823→    // 60% hacia el destino + 40% variación random (simula calles)
+   824→    const step = 0.00045; // ~50m
+   825→    const direccionLat = destinoLat - get().lat;
+   826→    const direccionLng = destinoLng - get().lng;
+   827→    const magnitud = Math.sqrt(direccionLat ** 2 + direccionLng ** 2) || 1;
+   828→
+   829→    const haciaDestinoLat = (direccionLat / magnitud) * step * 0.6;
+   830→    const haciaDestinoLng = (direccionLng / magnitud) * step * 0.6;
+   831→    const ruidoLat = (Math.random() - 0.5) * step * 0.4;
+   832→    const ruidoLng = (Math.random() - 0.5) * step * 0.4;
+   833→
+   834→    const nuevaLat = get().lat + haciaDestinoLat + ruidoLat;
+   835→    const nuevaLng = get().lng + haciaDestinoLng + ruidoLng;
+   836→
+   837→    // Verificar si llegó al destino
+   838→    const distanciaDestino = calcularDistancia(nuevaLat, nuevaLng, destinoLat, destinoLng);
+   839→    if (distanciaDestino < 0.05) { // menos de 50m
+   840→      // Auto-avanzar al siguiente estado
+   841→      if (estado === 'EN_CAMINO_RECOGER') {
+   842→        get().llegarRecogida();
+   843→      } else if (estado === 'RECOGIDO') {
+   844→        get().llegarEntrega();
+   845→      }
+   846→      return;
+   847→    }
+   848→
+   849→    get().actualizarPosicion(nuevaLat, nuevaLng);
+   850→
+   851→    // Incrementar tiempo transcurrido
+   852→    set({ tiempoTranscurrido: get().tiempoTranscurrido + 5 });
+   853→  },
+   854→
+   855→  toggleChat: (ordenId) => {
+   856→    if (ordenId) {
+   857→      set({ chatAbierto: true, chatOrdenId: ordenId });
+   858→    } else {
+   859→      set({ chatAbierto: !get().chatAbierto });
+   860→    }
+   861→  },
+   862→
+   863→  enviarMensaje: (contenido) => {
+   864→    const ordenId = get().chatOrdenId || get().ordenActiva?.id;
+   865→    if (!ordenId) return;
+   866→    const nuevoMensaje: ChatMensaje = {
+   867→      id: `msg-${Date.now()}`,
+   868→      ordenId,
+   869→      emisor: 'repartidor',
+   870→      contenido,
+   871→      enviadoEn: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' }),
+   872→    };
+   873→    set({ mensajes: [...get().mensajes, nuevoMensaje] });
+   874→    // Subtle confirm sound — NO vibration (too noisy on every message)
+   875→    dispararFeedback('toggle_on', null);
+   876→  },
+   877→
+   878→  toggleIncidencia: (open) => {
+   879→    set({ incidenciaAbierta: open !== undefined ? open : !get().incidenciaAbierta });
+   880→  },
+   881→
+   882→  verServicioDetalle: (servicio) => {
+   883→    set({ servicioDetalle: servicio });
+   884→  },
+   885→
+   886→  cerrarDetalle: () => {
+   887→    set({ servicioDetalle: null });
+   888→  },
+   889→
+   890→  setPantalla: (p) => {
+   891→    set({ pantallaActiva: p });
+   892→  },
+   893→
+   894→  marcarNotificacionesLeidas: () => {
+   895→    set({
+   896→      notificaciones: get().notificaciones.map((n) => ({ ...n, leido: true })),
+   897→      notificacionesNoLeidas: 0,
+   898→    });
+   899→  },
+   900→
+   901→  actualizarConfig: (campo, valor) => {
+   902→    set({
+   903→      perfil: { ...get().perfil, [campo]: valor },
+   904→    });
+   905→    if (campo === 'zonaPreferida' && typeof valor === 'string') {
+   906→      set({ perfil: { ...get().perfil, zonaPreferida: valor } });
+   907→    }
+   908→  },
+   909→
+   910→  obtenerStats: (periodo) => {
+   911→    if (periodo === 'hoy') return get().statsHoy;
+   912→    if (periodo === 'semana') return get().statsSemana;
+   913→    return get().statsMes;
+   914→  },
+   915→
+   916→  verificarProductos: (productoId) => {
+   917→    const orden = get().ordenActiva;
+   918→    if (!orden || !orden.productos) return;
+   919→    set({
+   920→      ordenActiva: {
+   921→        ...orden,
+   922→        productos: orden.productos.map((p) =>
+   923→          p.id === productoId ? { ...p, verificado: !p.verificado } : p
+   924→        ),
+   925→      },
+   926→    });
+   927→  },
+   928→}));
+   929→
+   930→/* ═══════════════════════════════════════════════════════
+   931→   EXPORT HELPERS
+   932→   ═══════════════════════════════════════════════════════ */
+   933→
+   934→export { calcularDistancia, calcularETA, ZONAS_MANAGUA };
+   935→

@@ -107,6 +107,7 @@ export default function RepartidorIncidencia() {
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
+        className="lf-bottom-sheet open bottom-sheet open"
         style={{
           position: 'fixed',
           bottom: 0,
@@ -117,8 +118,8 @@ export default function RepartidorIncidencia() {
           maxHeight: '90vh',
           zIndex: 9991,
           background: 'var(--md-surface)',
-          borderRadius: '24px 24px 0 0',
-          boxShadow: 'var(--lf-shadow-sheet)',
+          borderRadius: '28px 28px 0 0',
+          boxShadow: '0 -12px 48px rgba(0,0,0,0.18)',
           display: 'flex',
           flexDirection: 'column',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -134,6 +135,7 @@ export default function RepartidorIncidencia() {
           }}
         >
           <div
+            className="lf-sheet-handle bottom-sheet-handle"
             style={{
               width: 40,
               height: 4,
@@ -257,13 +259,15 @@ export default function RepartidorIncidencia() {
                   key={op.key}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setTipo(op.key)}
+                  className="lf-card"
                   style={{
                     padding: 14,
                     borderRadius: 14,
                     background: isActive
-                      ? `color-mix(in srgb, var(--primario) 8%, transparent)`
+                      ? 'color-mix(in srgb, var(--primario) 10%, var(--md-surface))'
                       : 'var(--md-surface-variant)',
                     border: `1.5px solid ${isActive ? 'var(--primario)' : 'transparent'}`,
+                    boxShadow: isActive ? '0 4px 16px rgba(255,87,34,0.18)' : 'none',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
@@ -324,18 +328,20 @@ export default function RepartidorIncidencia() {
             onChange={(e) => setDescripcion(e.target.value)}
             placeholder="Describe qué ocurrió…"
             rows={4}
+            className="lf-textarea"
             style={{
               width: '100%',
-              padding: 12,
+              padding: 14,
               borderRadius: 14,
-              border: '1px solid var(--md-outline-variant)',
-              background: 'var(--md-surface-variant)',
+              border: '1.5px solid var(--md-outline-variant)',
+              background: 'var(--md-surface)',
               color: 'var(--text)',
-              fontSize: 14,
+              fontSize: 15,
               fontFamily: "'DM Sans', sans-serif",
-              resize: 'none',
+              resize: 'vertical',
               outline: 'none',
-              minHeight: 100,
+              minHeight: 110,
+              transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
             }}
           />
         </div>
@@ -352,6 +358,7 @@ export default function RepartidorIncidencia() {
             whileTap={{ scale: 0.98 }}
             onClick={handleSubmit}
             disabled={!tipo || !descripcion.trim()}
+            className="lf-btn lf-btn-danger lf-btn-block lf-btn-lg"
             style={{
               width: '100%',
               minHeight: 52,

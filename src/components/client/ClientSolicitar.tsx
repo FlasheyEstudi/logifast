@@ -313,23 +313,14 @@ function AddressInput({
           }}
           onBlur={handleBlur}
           placeholder={placeholder}
+          className="lf-input"
           style={{
             width: '100%',
             padding: '16px 20px 16px 48px',
             borderRadius: 14,
-            border: `1.5px solid var(--border)`,
             background: 'var(--surface)',
             color: 'var(--text)',
             fontSize: 15,
-            fontFamily: "'DM Sans', sans-serif",
-            outline: 'none',
-            transition: 'border-color 0.2s',
-          }}
-          onFocusCapture={(e) => {
-            (e.target as HTMLInputElement).style.borderColor = 'var(--primario)';
-          }}
-          onBlurCapture={(e) => {
-            (e.target as HTMLInputElement).style.borderColor = 'var(--border)';
           }}
         />
         {value && (
@@ -1236,21 +1227,11 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                     }
                   }}
                   placeholder="Ej: Documentos legales, caja mediana..."
+                  className="lf-input"
                   style={{
                     width: '100%',
-                    padding: '14px 16px',
-                    borderRadius: 12,
-                    border: '1.5px solid var(--border)',
-                    background: 'var(--surface)',
-                    color: 'var(--text)',
-                    fontSize: 15,
-                    fontFamily: "'DM Sans', sans-serif",
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
                     paddingRight: 56,
                   }}
-                  onFocus={(e) => { e.target.style.borderColor = 'var(--primario)'; }}
-                  onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
                 />
                 <span
                   style={{
@@ -1354,21 +1335,10 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 }}
                 placeholder="Ej: Tocar timbre dos veces, dejar con el portero..."
                 rows={3}
+                className="lf-textarea"
                 style={{
                   width: '100%',
-                  padding: '14px 16px',
-                  borderRadius: 12,
-                  border: '1.5px solid var(--border)',
-                  background: 'var(--surface)',
-                  color: 'var(--text)',
-                  fontSize: 15,
-                  fontFamily: "'DM Sans', sans-serif",
-                  outline: 'none',
-                  resize: 'none',
-                  transition: 'border-color 0.2s',
                 }}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--primario)'; }}
-                onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
               />
               <div style={{ textAlign: 'right', marginTop: 4 }}>
                 <span
@@ -1529,16 +1499,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                       onChange={(e) => setMontoPagoInput(e.target.value)}
                       placeholder="0"
                       min={0}
+                      className="lf-input"
                       style={{
                         flex: 1,
                         padding: '12px 14px',
                         borderRadius: 10,
-                        border: '1.5px solid var(--border)',
-                        background: 'var(--surface)',
-                        color: 'var(--text)',
-                        fontSize: 15,
                         fontFamily: "'JetBrains Mono', monospace",
-                        outline: 'none',
                       }}
                     />
                   </div>
@@ -1677,16 +1643,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                         setPromoMessage('');
                       }}
                       placeholder="Código promocional"
+                      className="lf-input"
                       style={{
                         flex: 1,
                         padding: '12px 14px',
                         borderRadius: 10,
-                        border: '1.5px solid var(--border)',
-                        background: 'var(--surface)',
-                        color: 'var(--text)',
-                        fontSize: 14,
                         fontFamily: "'JetBrains Mono', monospace",
-                        outline: 'none',
                         textTransform: 'uppercase' as const,
                       }}
                     />
