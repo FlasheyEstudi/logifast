@@ -439,42 +439,51 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   setCartScheduleTime: (time) => set({ cartScheduleTime: time }),
 
   confirmarCompra: () => {
-    const state = get();
-    const subtotal = state.getCartSubtotal();
-    const tiendas = state.getCartTiendas();
-    const firstTienda = state.tiendas.find((t) => t.id === tiendas[0]);
-    const costoEnvio = firstTienda?.costoEnvio ?? 20;
-    const total = subtotal + costoEnvio - state.cartDescuento;
-    const orderId = `LF-C${Date.now().toString().slice(-4)}`;
-    const newOrder: OrdenCompra = {
-      id: orderId,
-      clienteId: 'cliente-1',
-      tiendaId: tiendas[0],
-      tiendaNombre: firstTienda?.nombre ?? 'Tienda',
-      tiendaLogo: firstTienda?.logoIniciales ?? 'T',
-      tiendaColor: firstTienda?.logoColor ?? '#FF5722',
-      estado: 'recibido',
-      direccionEntrega: state.cartDireccionEntrega,
-      metodoPago: state.cartMetodoPago,
-      items: state.cartItems.map((i) => ({ nombreProducto: i.nombreProducto, cantidad: i.cantidad, precioUnitario: i.precioUnitario })),
-      subtotal,
-      costoEnvio,
-      descuento: state.cartDescuento,
-      total,
-      codigoUsado: state.cartCodigoPromo || undefined,
-      repartidorNombre: 'Carlos Mendoza',
-      repartidorInitials: 'CM',
-      fecha: new Date().toISOString().split('T')[0],
-      hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
-    };
-    set((state) => ({
-      ordenesCompra: [newOrder, ...state.ordenesCompra],
-      cartItems: [],
-      cartCodigoPromo: '',
-      cartDescuento: 0,
-      compraConfirmada: true,
-      compraConfirmadaId: orderId,
-    }));
+    try {
+      const state = get();
+      const subtotal = state.getCartSubtotal() ?? 0;
+      const tiendas = state.getCartTiendas() ?? [];
+      const firstTienda = state.tiendas.find((t) => t.id === tiendas[0]);
+      const costoEnvio = firstTienda?.costoEnvio ?? 20;
+      const total = subtotal + costoEnvio - (state.cartDescuento ?? 0);
+      const orderId = `LF-C${Date.now().toString().slice(-4)}`;
+      const newOrder: OrdenCompra = {
+        id: orderId,
+        clienteId: 'cliente-1',
+        tiendaId: tiendas[0] || 'tienda-1',
+        tiendaNombre: firstTienda?.nombre ?? 'Tienda',
+        tiendaLogo: firstTienda?.logoIniciales ?? 'T',
+        tiendaColor: firstTienda?.logoColor ?? '#FF5722',
+        estado: 'recibido',
+        direccionEntrega: state.cartDireccionEntrega || 'Col. Los Robles, Managua',
+        metodoPago: state.cartMetodoPago || 'efectivo',
+        items: (state.cartItems || []).map((i) => ({
+          nombreProducto: i?.nombreProducto ?? 'Producto',
+          cantidad: i?.cantidad ?? 1,
+          precioUnitario: i?.precioUnitario ?? 0,
+        })),
+        subtotal,
+        costoEnvio,
+        descuento: state.cartDescuento ?? 0,
+        total,
+        codigoUsado: state.cartCodigoPromo || undefined,
+        repartidorNombre: 'Carlos Mendoza',
+        repartidorInitials: 'CM',
+        fecha: new Date().toISOString().split('T')[0],
+        hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
+      };
+      set((s) => ({
+        ordenesCompra: [newOrder, ...(s.ordenesCompra || [])],
+        cartItems: [],
+        cartCodigoPromo: '',
+        cartDescuento: 0,
+        compraConfirmada: true,
+        compraConfirmadaId: orderId,
+      }));
+    } catch (err) {
+      console.error("Error inside confirmarCompra:", err);
+      alert("Error al procesar el pago: " + (err as Error).message);
+    }
   },
 
   getCartSubtotal: () => {

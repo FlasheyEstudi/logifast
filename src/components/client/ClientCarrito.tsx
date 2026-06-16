@@ -73,13 +73,18 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
   };
 
   const handlePagar = () => {
-    reproducirSiActivo('orden_aceptada', {
-      sonidoActivo: config.sonidoActivo,
-      volumenSonido: config.volumenSonido,
-      notificacionesSonido: config.notificacionesSonido
-    });
-    vibrarSiActivo(50, config.vibracionActiva);
-    confirmarCompra();
+    try {
+      reproducirSiActivo('orden_aceptada', {
+        sonidoActivo: config.sonidoActivo,
+        volumenSonido: config.volumenSonido,
+        notificacionesSonido: config.notificacionesSonido
+      });
+      vibrarSiActivo(50, config.vibracionActiva);
+      confirmarCompra();
+    } catch (err) {
+      console.error("Error inside handlePagar:", err);
+      alert("Error al procesar el pago: " + (err as Error).message);
+    }
   };
 
   const handleCloseSuccess = () => {
