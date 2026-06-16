@@ -110,11 +110,12 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
     if (mapInstanceRef.current) mapInstanceRef.current.setView(MANAGUA_CENTER, 13);
   }, []);
 
-  // Show all motos
   const showAllMotos = useCallback(() => {
     const map = mapInstanceRef.current;
     if (!map || motos.length === 0 || !L) return;
-    const bounds = L.latLngBounds(motos.map((m: Moto) => [m.lat, m.lng]));
+    const validMotos = motos.filter(m => typeof m.lat === 'number' && typeof m.lng === 'number' && m.lat !== 0 && m.lng !== 0);
+    if (validMotos.length === 0) return;
+    const bounds = L.latLngBounds(validMotos.map((m: Moto) => L.latLng(m.lat, m.lng)));
     if (bounds) map.fitBounds(bounds, { padding: [40, 40] });
   }, [motos, L]);
 
@@ -266,7 +267,7 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
         zoom={13}
         style={{ width: '100%', height: '100%' }}
         zoomControl={false}
-        whenReady={(e: any) => { mapInstanceRef.current = e.target; }}
+        ref={mapInstanceRef}
       >
         <TileLayer attribution={tileAttribution} url={tileUrl} />
 

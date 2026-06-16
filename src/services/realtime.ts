@@ -9,7 +9,11 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io('/', {
+    const socketUrl = typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:3003`
+      : '/';
+
+    socket = io(socketUrl, {
       // NOTE: We intentionally do NOT set `path: '/'`.
       // The mini-service `mini-services/realtime-service/index.ts` also omits
       // `path`, so both ends use socket.io's default `/socket.io/` endpoint.

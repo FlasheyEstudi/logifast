@@ -564,7 +564,7 @@ export default function RepartidorHistorial() {
                   fontFamily: "'DM Sans', sans-serif",
                 }}
                 labelStyle={{ color: 'var(--text)' }}
-                formatter={(v: number) => [`${v} entregas`, '']}
+                formatter={(v: any) => [`${v} entregas`, '']}
               />
               <Bar dataKey="v" radius={[6, 6, 0, 0]} maxBarSize={32}>
                 {barData.map((entry, i) => (

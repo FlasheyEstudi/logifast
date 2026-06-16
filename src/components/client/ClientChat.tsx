@@ -1,9 +1,12 @@
 'use client';
 
+/* eslint-disable react-hooks/preserve-manual-memoization */
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, Send, Check, CheckCheck } from 'lucide-react';
 import { useStore, type ChatMessage, type ChatConversation } from '@/lib/store';
+import { realtime, onRealtimeEvent } from '@/services/realtime';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -270,43 +273,23 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     const trimmed = input.trim();
     if (!trimmed || !chatOrderId || !isActive || chatDeactivated) return;
 
-    sendChatMessage(chatOrderId, trimmed, 'cliente');
+    realtime.chatMensaje(chatOrderId, 'cliente', trimmed);
     setInput('');
 
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-
-    // Simulate repartidor reply
-    setIsTyping(true);
-    const delay = 2000 + Math.random() * 1000;
-    setTimeout(() => {
-      setIsTyping(false);
-      if (chatOrderId) {
-        sendChatMessage(chatOrderId, pickRandomReply(), 'repartidor');
-      }
-    }, delay);
-  }, [input, chatOrderId, isActive, chatDeactivated, sendChatMessage]);
+  }, [input, chatOrderId, isActive, chatDeactivated]);
 
   /* ── Quick reply ──────────────────────── */
   const handleQuickReply = useCallback(
     (text: string) => {
       if (!chatOrderId || !isActive || chatDeactivated) return;
       hapticTap();
-      sendChatMessage(chatOrderId, text, 'cliente');
-
-      // Simulate repartidor reply
-      setIsTyping(true);
-      const delay = 2000 + Math.random() * 1000;
-      setTimeout(() => {
-        setIsTyping(false);
-        if (chatOrderId) {
-          sendChatMessage(chatOrderId, pickRandomReply(), 'repartidor');
-        }
-      }, delay);
+      realtime.chatMensaje(chatOrderId, 'cliente', text);
     },
-    [chatOrderId, isActive, chatDeactivated, sendChatMessage]
+    [chatOrderId, isActive, chatDeactivated]
   );
 
   /* ── Keyboard handler ─────────────────── */
@@ -325,6 +308,31 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     setChatOpen(false);
     onClose();
   }, [setChatOpen, onClose]);
+
+  // Listen for real-time WebSocket chat updates
+  useEffect(() => {
+    if (!chatOrderId) return;
+    realtime.clienteTrackingUnirse(chatOrderId);
+
+    const cleanup = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
+      if (msg.ordenId === chatOrderId) {
+        // Only append if it does not exist in store to avoid duplication
+        const state = useStore.getState();
+        const conv = state.chatConversations.find((c) => c.orderId === chatOrderId);
+        const yaExiste = conv?.messages.some((m) => m.id === msg.id);
+        if (!yaExiste) {
+          sendChatMessage(chatOrderId, msg.contenido, msg.emisor);
+          if (msg.emisor === 'repartidor') {
+            hapticTap();
+          }
+        }
+      }
+    });
+
+    return () => {
+      cleanup();
+    };
+  }, [chatOrderId, sendChatMessage]);
 
   /* ── Group messages by timestamp ──────── */
   const renderMessages = useCallback(() => {

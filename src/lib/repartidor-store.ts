@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { reproducirSiActivo, vibrarSiActivo, type SonidoTipo } from '@/services/audio';
 import { useConfigStore } from '@/store/configStore';
+import { realtime } from '@/services/realtime';
 
 /* ═══════════════════════════════════════════════════════
    AUDIO + VIBRATION FEEDBACK HELPER
@@ -722,7 +723,7 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       accidente: 'Accidente',
       otro: 'Otro',
     }[tipo];
-    const nuevoServicio: ServicioHistorial = orden
+    const nuevoServicio: ServicioHistorial | null = orden
       ? {
           id: `svc-${Date.now()}`,
           ordenId: orden.id,
@@ -863,14 +864,7 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
   enviarMensaje: (contenido) => {
     const ordenId = get().chatOrdenId || get().ordenActiva?.id;
     if (!ordenId) return;
-    const nuevoMensaje: ChatMensaje = {
-      id: `msg-${Date.now()}`,
-      ordenId,
-      emisor: 'repartidor',
-      contenido,
-      enviadoEn: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' }),
-    };
-    set({ mensajes: [...get().mensajes, nuevoMensaje] });
+    realtime.chatMensaje(ordenId, 'repartidor', contenido);
     // Subtle confirm sound — NO vibration (too noisy on every message)
     dispararFeedback('toggle_on', null);
   },

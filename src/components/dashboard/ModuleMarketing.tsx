@@ -190,7 +190,7 @@ function SubCampanas() {
 
   const handleSubmit = () => {
     if (!titulo.trim() || !contCuerpo.trim()) {
-      addToast('Completa título y cuerpo', 'warning');
+      addToast('Completa título y cuerpo', 'error');
       return;
     }
     const contenido = { titulo: contTitulo || undefined, cuerpo: contCuerpo, boton: contBoton || undefined };
@@ -434,7 +434,7 @@ function SubCodigos() {
 
   const handleSubmit = () => {
     if (!codigo.trim() || !valor) {
-      addToast('Completa código y valor', 'warning');
+      addToast('Completa código y valor', 'error');
       return;
     }
     const valorNum = parseFloat(valor);
@@ -708,7 +708,7 @@ function SubBanners() {
 
   const handleSubmit = () => {
     if (!titulo.trim()) {
-      addToast('Ingresa un título', 'warning');
+      addToast('Ingresa un título', 'error');
       return;
     }
     const gradiente = useGradient ? { from: gradFrom, to: gradTo, direction: gradDirection } : undefined;
@@ -1074,7 +1074,7 @@ function SubFeed() {
 
   const handleSubmit = () => {
     if (!titulo.trim() || !descripcion.trim()) {
-      addToast('Completa título y descripción', 'warning');
+      addToast('Completa título y descripción', 'error');
       return;
     }
     if (editing) {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Phone,
@@ -21,6 +22,10 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/lib/store';
+import { realtime, onRealtimeEvent } from '@/services/realtime';
+import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
+
+const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), { ssr: false });
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -564,6 +569,34 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const etaIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
+  const [driverEstado, setDriverEstado] = useState<string>('DESCONECTADO');
+  const [rutaCoords, setRutaCoords] = useState<[number, number][] | undefined>(undefined);
+
+  // Sync client to order's tracking room & receive live driver positioning
+  useEffect(() => {
+    if (!trackingOrderId) return;
+    realtime.clienteTrackingUnirse(trackingOrderId);
+
+    const cleanupPos = onRealtimeEvent('repartidor:posicion:update', (data) => {
+      setDriverPos([data.lat, data.lng]);
+      if (data.estado) {
+        setDriverEstado(data.estado);
+      }
+    });
+
+    const cleanupEstado = onRealtimeEvent('repartidor:estado:update', (data) => {
+      if (data.estado) {
+        setDriverEstado(data.estado);
+      }
+    });
+
+    return () => {
+      cleanupPos();
+      cleanupEstado();
+    };
+  }, [trackingOrderId]);
+
   // Find the current order
   const order = trackingOrderId
     ? orders.find((o) => o.id === trackingOrderId) ?? null
@@ -572,15 +605,81 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   // Get repartidor info
   const repartidor = order ? getRepartidorInfo(order.repartidorInitials) : null;
 
+  // Fetch OSRM route dynamically
+  useEffect(() => {
+    if (!order) return;
+    const orig = { lat: order.origenLat, lng: order.origenLng };
+    const dest = { lat: order.destinoLat, lng: order.destinoLng };
+    obtenerRuta(orig, dest).then((res) => {
+      if (res.exito && res.coordenadas) {
+        setRutaCoords(res.coordenadas);
+      } else {
+        setRutaCoords(rutaLineaRecta(orig, dest));
+      }
+    });
+  }, [order]);
+
   // Current step index
   const currentStepIdx = trackingSteps.findIndex((s) => s.status === 'current');
   const completedCount = trackingSteps.filter((s) => s.status === 'completed').length;
   const allCompleted = trackingSteps.every((s) => s.status === 'completed');
   const progressPct = allCompleted ? 100 : Math.round((completedCount / trackingSteps.length) * 100);
 
-  // Simulation intervals
+  // Map driver status to client step index
+  const mapDriverEstadoToStepIndex = useCallback((estado: string): number => {
+    switch (estado) {
+      case 'DESCONECTADO':
+      case 'EN_LINEA':
+        return 0;
+      case 'ORDEN_ASIGNADA':
+        return 1;
+      case 'EN_CAMINO_RECOGER':
+        return 2;
+      case 'EN_PUNTO_RECOGIDA':
+        return 3;
+      case 'RECOGIDO':
+        return 5; // Heading to destination
+      case 'EN_PUNTO_ENTREGA':
+        return 6; // Arrived at delivery
+      default:
+        return -1;
+    }
+  }, []);
+
+  // Update client timeline based on driver's live state
   useEffect(() => {
-    if (allCompleted) {
+    if (driverPos === null) return;
+    
+    const targetIdx = mapDriverEstadoToStepIndex(driverEstado);
+    if (targetIdx >= 0) {
+      const steps = [...trackingSteps];
+      const now = new Date();
+      const fmt = () => now.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+      
+      for (let i = 0; i < steps.length; i++) {
+        if (i < targetIdx) {
+          steps[i] = { ...steps[i], status: 'completed' as const, timestamp: steps[i].timestamp || fmt() };
+        } else if (i === targetIdx) {
+          steps[i] = { ...steps[i], status: 'current' as const, timestamp: steps[i].timestamp || fmt() };
+        } else {
+          steps[i] = { ...steps[i], status: 'pending' as const, timestamp: '—' };
+        }
+      }
+      useStore.setState({ trackingSteps: steps });
+    }
+  }, [driverPos, driverEstado, mapDriverEstadoToStepIndex]);
+
+  // Handle final delivered state from DB status
+  useEffect(() => {
+    if (order?.estado === 'entregado') {
+      const steps = trackingSteps.map((s) => ({ ...s, status: 'completed' as const }));
+      useStore.setState({ trackingSteps: steps, trackingETA: 0 });
+    }
+  }, [order?.estado]);
+
+  // Simulation intervals (runs only if no live driver GPS position is active)
+  useEffect(() => {
+    if (allCompleted || driverPos !== null) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (etaIntervalRef.current) clearInterval(etaIntervalRef.current);
       return;
@@ -599,7 +698,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (etaIntervalRef.current) clearInterval(etaIntervalRef.current);
     };
-  }, [allCompleted, advanceTrackingStep, updateTrackingETA]);
+  }, [allCompleted, advanceTrackingStep, updateTrackingETA, driverPos]);
 
   // Copy tracking link
   const handleShare = useCallback(() => {
@@ -865,11 +964,14 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         }}
         className="md:!h-full md:!w-[60%]"
       >
-        <VisualMap
-          isDark={isDark}
-          order={order}
-          currentStepIndex={currentStepIdx >= 0 ? currentStepIdx : 0}
-          eta={trackingETA}
+        <RepartidorMap
+          repartidorPos={driverPos || (order ? [order.origenLat, order.origenLng] : [12.1149926, -86.2361742])}
+          origenPos={order ? [order.origenLat, order.origenLng] : undefined}
+          destinoPos={order ? [order.destinoLat, order.destinoLng] : undefined}
+          rutaCoordenadas={rutaCoords}
+          estado={driverEstado}
+          altura="100%"
+          seguirRepartidor={true}
         />
 
         {/* ─── Back Button: circle 40x40 glassmorphism, ArrowDown icon ─── */}

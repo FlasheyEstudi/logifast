@@ -12,6 +12,7 @@ import { useStore, type Order, type OrderStatus } from '@/lib/store';
 const FILTER_TABS: { key: OrderStatus | 'todos'; label: string }[] = [
   { key: 'todos', label: 'Todos' },
   { key: 'pendiente', label: 'Pendiente' },
+  { key: 'programada', label: 'Programada' },
   { key: 'encamino', label: 'En camino' },
   { key: 'recogido', label: 'Recogido' },
   { key: 'entregado', label: 'Entregado' },
@@ -20,6 +21,7 @@ const FILTER_TABS: { key: OrderStatus | 'todos'; label: string }[] = [
 
 const STATUS_CONFIG: Record<OrderStatus, { label: string; bg: string; color: string; icon: typeof Package }> = {
   pendiente: { label: 'Pendiente', bg: 'rgba(251,191,36,0.1)', color: '#D97706', icon: Clock },
+  programada: { label: 'Programada', bg: 'rgba(79,70,229,0.1)', color: '#4F46E5', icon: Clock },
   encamino: { label: 'En camino', bg: 'rgba(255,102,0,0.1)', color: '#FF6600', icon: Truck },
   recogido: { label: 'Recogido', bg: 'rgba(59,130,246,0.1)', color: '#3B82F6', icon: Package },
   entregado: { label: 'Entregado', bg: 'rgba(22,163,74,0.1)', color: '#16A34A', icon: CheckCircle },

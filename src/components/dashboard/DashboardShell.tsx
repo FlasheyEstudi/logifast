@@ -49,7 +49,7 @@ const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid; short
 const DESKTOP_NAV = NAV_ITEMS.filter((n) => n.desktop);
 const MORE_NAV = NAV_ITEMS.filter((n) => !n.desktop);
 
-const MOBILE_NAV: ModuleKey[] = ['overview', 'pedidos', 'flota', 'marketing', 'more'];
+const MOBILE_NAV: (ModuleKey | 'more')[] = ['overview', 'pedidos', 'flota', 'marketing', 'more'];
 
 const MODULE_LABELS: Record<ModuleKey, string> = {
   overview: 'Vista General',

@@ -308,12 +308,19 @@ export default function Home() {
   // actual data-theme attribute is applied by configStore.setTema + the
   // <ThemeProvider> in layout.tsx; the fallback useEffect below only fires
   // on first mount in case the store hasn't hydrated yet.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const tema = useConfigStore((s) => s.tema);
   const isDark =
-    tema === 'dark' ||
-    (tema === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
+    mounted && (
+      tema === 'dark' ||
+      (tema === 'system' &&
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+    );
 
   /* ─── Toasts ─── */
   const [toasts, setToasts] = useState<ToastItem[]>([]);

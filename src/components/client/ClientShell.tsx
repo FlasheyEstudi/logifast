@@ -329,9 +329,9 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       case 'perfil':
         return <ClientPerfil {...perfilProps} />;
       case 'ayuda':
-        return <ClientAyuda isDark={isDark} onBack={() => setClientActiveModule('perfil')} />;
+        return <ClientAyuda isDark={isDark} onClose={() => setClientActiveModule('perfil')} />;
       case 'puntos':
-        return <ClientPuntos isDark={isDark} onBack={() => setClientActiveModule('perfil')} />;
+        return <ClientPuntos isDark={isDark} onClose={() => setClientActiveModule('perfil')} />;
       default:
         return <ClientInicio {...moduleProps} />;
     }
@@ -340,6 +340,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   return (
     <SnackbarContext.Provider value={showSnackbar}>
       <div
+        className="cliente-app"
         style={{
           minHeight: '100vh',
           display: 'flex',
@@ -1435,12 +1436,18 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
         {/* ─── RESPONSIVE STYLES ─── */}
         <style>{`
-          /* ─── Status bar & gesture bar: mobile only ─── */
+          /* ─── Status bar & gesture bar: mobile simulation only ─── */
           .lf-status-bar,
           .lf-gesture-bar {
             display: flex !important;
           }
           @media (min-width: 1024px) {
+            .lf-status-bar,
+            .lf-gesture-bar {
+              display: none !important;
+            }
+          }
+          @media (pointer: coarse) {
             .lf-status-bar,
             .lf-gesture-bar {
               display: none !important;
@@ -1488,6 +1495,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             }
             .lf-client-content-padded {
               padding-top: calc(60px + max(24px, env(safe-area-inset-top, 24px))) !important;
+            }
+          }
+          @media (max-width: 1023px) and (pointer: coarse) {
+            .lf-header-bar {
+              top: env(safe-area-inset-top, 0px) !important;
+            }
+            .lf-client-content-padded {
+              padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
             }
           }
 

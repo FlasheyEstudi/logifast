@@ -9,6 +9,7 @@ import {
   Polyline,
   useMap,
   Circle,
+  useMapEvents,
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -131,11 +132,25 @@ function FitBounds({
 
   useEffect(() => {
     if (origen && destino) {
-      const bounds = L.latLngBounds([origen, destino]);
+      const bounds = L.latLngBounds(
+        L.latLng(origen[0], origen[1]),
+        L.latLng(destino[0], destino[1])
+      );
       map.fitBounds(bounds, { padding: [40, 40] });
     }
   }, [map, origen, destino]);
 
+  return null;
+}
+
+function MapEventsHandler({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => {
+      if (onMapClick) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
   return null;
 }
 
@@ -152,8 +167,8 @@ export interface RepartidorMapProps {
   rutaCoordenadas?: [number, number][];
   /** current repartidor state (DESCONECTADO/EN_LINEA/...) */
   estado: string;
-  /** height in px (default 280) */
-  altura?: number;
+  /** height in px or CSS units (default 280) */
+  altura?: number | string;
   /** default 14 */
   zoom?: number;
   /** if true, map recenters on driver */
@@ -245,8 +260,8 @@ export default function RepartidorMap({
         zoomControl={false}
         attributionControl={true}
         scrollWheelZoom={false}
-        eventHandlers={eventHandlers}
       >
+        <MapEventsHandler onMapClick={onMapClick} />
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"

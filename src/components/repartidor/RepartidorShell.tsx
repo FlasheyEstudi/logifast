@@ -5,6 +5,10 @@ import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bike, ClipboardList, User } from 'lucide-react';
 import { useRepartidorStore } from '@/lib/repartidor-store';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { realtime, onRealtimeEvent } from '@/services/realtime';
+import { useConfigStore } from '@/store/configStore';
+import { reproducirSiActivo } from '@/services/audio';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC MODULE IMPORTS
@@ -107,20 +111,112 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     incidenciaAbierta,
     servicioDetalle,
     simularMovimiento,
+    perfil,
+    actualizarPosicion,
+    estado,
   } = useRepartidorStore();
 
   const [snackbar, setSnackbar] = useState<SnackbarData | null>(null);
   const snackbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [clock, setClock] = useState('9:41');
 
-  /* ─── SIMULATION LOOP (5s) ─── */
+  // Initialize browser geolocation
+  const geo = useGeolocation({ watch: true });
+
+  // Start/stop geolocation depending on connected status
+  useEffect(() => {
+    if (conectado) {
+      geo.start();
+    } else {
+      geo.stop();
+    }
+  }, [conectado, geo.start, geo.stop]);
+
+  // Connect/disconnect socket when driver goes online/offline
+  useEffect(() => {
+    if (conectado && perfil?.id) {
+      realtime.repartidorConectar(perfil.id);
+    } else {
+      realtime.disconnect();
+    }
+  }, [conectado, perfil?.id]);
+
+  // Update store coordinates on real GPS updates
+  useEffect(() => {
+    if (conectado && geo.lat !== null && geo.lng !== null) {
+      actualizarPosicion(geo.lat, geo.lng);
+    }
+  }, [conectado, geo.lat, geo.lng, actualizarPosicion]);
+
+  // Emit driver coordinates to the server on any store coordinate changes (real or simulated)
+  const storeLat = useRepartidorStore((s) => s.lat);
+  const storeLng = useRepartidorStore((s) => s.lng);
+  const storeHeading = useRepartidorStore((s) => s.heading);
+  const storeEstado = useRepartidorStore((s) => s.estado);
+
+  useEffect(() => {
+    if (conectado) {
+      realtime.repartidorPosicion(storeLat, storeLng, storeHeading, storeEstado);
+    }
+  }, [conectado, storeLat, storeLng, storeHeading, storeEstado]);
+
+  // Emit state updates to client tracking room
+  const ordenId = useRepartidorStore((s) => s.ordenActiva?.id);
+  useEffect(() => {
+    if (conectado && ordenId) {
+      realtime.repartidorEstadoCambio(ordenId, storeEstado);
+    }
+  }, [conectado, ordenId, storeEstado]);
+
+  // Listen for realtime chat updates & new assigned orders
   useEffect(() => {
     if (!conectado) return;
+
+    // Chat listener
+    const cleanupChat = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
+      const state = useRepartidorStore.getState();
+      const yaExiste = state.mensajes.some((m) => m.id === msg.id);
+      if (!yaExiste) {
+        useRepartidorStore.setState({
+          mensajes: [...state.mensajes, msg]
+        });
+        // Play audio alert if message is incoming from customer
+        if (msg.emisor === 'cliente') {
+          const cfg = useConfigStore.getState();
+          reproducirSiActivo('mensaje', {
+            sonidoActivo: cfg.sonidoActivo,
+            volumenSonido: cfg.volumenSonido,
+            notificacionesSonido: cfg.notificacionesSonido,
+          });
+        }
+      }
+    });
+
+    // New order assignment listener
+    const cleanupOrder = onRealtimeEvent('repartidor:orden:nueva', (orden) => {
+      const state = useRepartidorStore.getState();
+      if (!state.ordenActiva && !state.ordenAsignadaPendiente) {
+        state.recibirOrdenAsignada(orden);
+      }
+    });
+
+    return () => {
+      cleanupChat();
+      cleanupOrder();
+    };
+  }, [conectado]);
+
+  /* ─── SIMULATION LOOP (5s) ─── */
+  // Falls back to simulation only if browser geolocation is not active or has failed
+  useEffect(() => {
+    if (!conectado) return;
+    if (geo.lat !== null && !geo.error) return;
+
     const interval = setInterval(() => {
       simularMovimiento();
     }, 5000);
     return () => clearInterval(interval);
-  }, [conectado, simularMovimiento]);
+  }, [conectado, simularMovimiento, geo.lat, geo.error]);
 
   /* ─── CLOCK (10s) ─── */
   useEffect(() => {
@@ -442,6 +538,16 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
               left: 50% !important;
               right: auto !important;
               transform: translateX(-50%);
+            }
+          }
+          @media (pointer: coarse) {
+            .lf-rep-status-bar,
+            .lf-rep-gesture-bar { display: none !important; }
+          }
+          @media (max-width: 1023px) and (pointer: coarse) {
+            .lf-rep-content {
+              padding-top: calc(16px + env(safe-area-inset-top, 0px)) !important;
+              padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
             }
           }
         `}</style>

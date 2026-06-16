@@ -2,12 +2,20 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Send, Phone, MessageSquare } from 'lucide-react';
+import { X, Send, Phone, MessageSquare, Zap } from 'lucide-react';
 import { useRepartidorStore, type ChatMensaje } from '@/lib/repartidor-store';
 
 /* ═══════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
+
+const MENSAJES_RAPIDOS = [
+  'Estoy llegando',
+  'Ya estoy aquí',
+  'Un momento por favor',
+  'No encuentro la dirección',
+  'Llame por favor'
+];
 
 export default function RepartidorChat() {
   const {
@@ -19,6 +27,7 @@ export default function RepartidorChat() {
   } = useRepartidorStore();
 
   const [input, setInput] = useState('');
+  const [mostrarRapidos, setMostrarRapidos] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   const ordenIdActiva = chatOrdenId || ordenActiva?.id;
@@ -56,7 +65,7 @@ export default function RepartidorChat() {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        onClick={() => toggleChat(false)}
+        onClick={() => toggleChat()}
         style={{
           position: 'fixed',
           inset: 0,
@@ -152,7 +161,7 @@ export default function RepartidorChat() {
             </div>
           </div>
           <button
-            onClick={() => toggleChat(false)}
+            onClick={() => toggleChat()}
             aria-label="Cerrar chat"
             style={{
               width: 36,
@@ -246,6 +255,48 @@ export default function RepartidorChat() {
           })}
         </div>
 
+        {/* Mensajes rápidos */}
+        {mostrarRapidos && (
+          <div
+            className="chat-rapidos"
+            style={{
+              display: 'flex',
+              gap: 8,
+              padding: '10px 16px',
+              overflowX: 'auto',
+              borderTop: '1px solid var(--md-outline-variant)',
+              background: 'var(--md-surface)',
+              flexShrink: 0,
+              scrollbarWidth: 'none',
+            }}
+          >
+            {MENSAJES_RAPIDOS.map((msg, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  enviarMensaje(msg);
+                  setMostrarRapidos(false);
+                }}
+                style={{
+                  flexShrink: 0,
+                  padding: '8px 16px',
+                  borderRadius: 100,
+                  border: '1.5px solid var(--md-outline-variant)',
+                  background: 'var(--md-surface-variant)',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {msg}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Input bar */}
         <div
           className="chat-input-area lf-chat-input-area"
@@ -259,6 +310,11 @@ export default function RepartidorChat() {
           }}
         >
           <button
+            onClick={() => {
+              if (ordenActiva?.clienteTelefono) {
+                window.open(`tel:${ordenActiva.clienteTelefono}`);
+              }
+            }}
             aria-label="Llamar"
             style={{
               width: 44,
@@ -275,6 +331,25 @@ export default function RepartidorChat() {
             }}
           >
             <Phone size={16} />
+          </button>
+          <button
+            onClick={() => setMostrarRapidos(!mostrarRapidos)}
+            aria-label="Mensajes rápidos"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              border: '1px solid var(--md-outline-variant)',
+              background: mostrarRapidos ? 'var(--md-primary-container)' : 'var(--md-surface)',
+              color: mostrarRapidos ? 'var(--md-on-primary-container)' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Zap size={16} />
           </button>
           <input
             type="text"

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   ChevronLeft,
@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { useRepartidorStore, type ServicioHistorial } from '@/lib/repartidor-store';
 import { StarRating } from './RepartidorPerfil';
+import RepartidorMiniMap from './RepartidorMiniMap';
+import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 
 /* ═══════════════════════════════════════════════
    TIMELINE STEPS
@@ -45,11 +47,29 @@ const STEPS: Step[] = [
   { label: 'Servicio calificado', icon: <Star size={14} /> },
 ];
 
-/* ═══════════════════════════════════════════════
-   STYLIZED MINI MAP
-   ═══════════════════════════════════════════════ */
+function getCoordsForLocation(locName: string, isDest: boolean): [number, number] {
+  const name = (locName || '').toLowerCase();
+  if (name.includes('robles')) return [12.1289, -86.2451];
+  if (name.includes('lezcano')) return [12.1421, -86.2287];
+  if (name.includes('fontana')) return [12.0980, -86.2310];
+  if (name.includes('centro')) return [12.1120, -86.2400];
+  if (name.includes('horizonte')) return [12.1320, -86.2220];
+  if (name.includes('pizza')) return [12.1245, -86.2520];
+  if (name.includes('farmacia')) return [12.0980, -86.2310];
+  return isDest ? [12.1421, -86.2287] : [12.1289, -86.2451];
+}
 
-function MiniMap() {
+function MiniMap({
+  origenPos,
+  destinoPos,
+  rutaCoords,
+  estado,
+}: {
+  origenPos: [number, number];
+  destinoPos: [number, number];
+  rutaCoords?: [number, number][];
+  estado: string;
+}) {
   return (
     <div
       style={{
@@ -57,44 +77,17 @@ function MiniMap() {
         borderRadius: 16,
         overflow: 'hidden',
         position: 'relative',
-        background: 'linear-gradient(135deg, var(--md-surface-variant) 0%, var(--md-surface) 100%)',
         border: '1px solid var(--md-outline-variant)',
       }}
-      aria-hidden="true"
     >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'linear-gradient(to right, var(--md-outline-variant) 1px, transparent 1px), linear-gradient(to bottom, var(--md-outline-variant) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-          opacity: 0.5,
-        }}
+      <RepartidorMiniMap
+        repartidorPos={destinoPos}
+        origenPos={origenPos}
+        destinoPos={destinoPos}
+        rutaCoordenadas={rutaCoords}
+        estado={estado}
+        altura={180}
       />
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} preserveAspectRatio="none">
-        <motion.line
-          x1="20%"
-          y1="75%"
-          x2="78%"
-          y2="25%"
-          stroke="var(--primario)"
-          strokeWidth={3}
-          strokeDasharray="6 5"
-          strokeLinecap="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-        />
-      </svg>
-      {/* Pickup */}
-      <div style={{ position: 'absolute', left: '20%', top: '75%', transform: 'translate(-50%, -100%)' }}>
-        <Store size={22} color="var(--exito, #00C853)" fill="var(--md-surface)" strokeWidth={2.4} />
-      </div>
-      {/* Delivery */}
-      <div style={{ position: 'absolute', left: '78%', top: '25%', transform: 'translate(-50%, -100%)' }}>
-        <MapPin size={24} color="var(--primario)" fill="var(--md-surface)" strokeWidth={2.4} />
-      </div>
     </div>
   );
 }
@@ -154,8 +147,27 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
 export default function RepartidorDetalleServicio() {
   const { servicioDetalle, cerrarDetalle } = useRepartidorStore();
 
-  if (!servicioDetalle) return null;
-  const s: ServicioHistorial = servicioDetalle;
+  const [rutaCoords, setRutaCoords] = useState<[number, number][] | undefined>(undefined);
+
+  const s = servicioDetalle;
+
+  const origenPos = useMemo<[number, number]>(() => s ? getCoordsForLocation(s.origen, false) : [12.1289, -86.2451], [s]);
+  const destinoPos = useMemo<[number, number]>(() => s ? getCoordsForLocation(s.destino, true) : [12.1421, -86.2287], [s]);
+
+  useEffect(() => {
+    if (!origenPos || !destinoPos) return;
+    const orig = { lat: origenPos[0], lng: origenPos[1] };
+    const dest = { lat: destinoPos[0], lng: destinoPos[1] };
+    obtenerRuta(orig, dest).then((res) => {
+      if (res.exito && res.coordenadas) {
+        setRutaCoords(res.coordenadas);
+      } else {
+        setRutaCoords(rutaLineaRecta(orig, dest));
+      }
+    });
+  }, [origenPos, destinoPos]);
+
+  if (!s) return null;
   const TipoIcon = s.tipo === 'compra' ? ShoppingBag : Package;
   const isEntregado = s.estado === 'entregado';
 
@@ -246,7 +258,7 @@ export default function RepartidorDetalleServicio() {
 
         {/* Mini map */}
         <div style={{ marginBottom: 12 }}>
-          <MiniMap />
+          <MiniMap origenPos={origenPos} destinoPos={destinoPos} rutaCoords={rutaCoords} estado={s.estado === 'entregado' ? 'RECOGIDO' : 'INCIDENCIA'} />
         </div>
 
         {/* Info card */}

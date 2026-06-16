@@ -440,7 +440,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                   background: 'var(--md-surface)',
                   fontSize: 12,
                 }}
-                formatter={(v: number) => [`${v} entregas`, '']}
+                formatter={(v: any) => [`${v} entregas`, '']}
               />
               <Bar dataKey="v" radius={[6, 6, 0, 0]} maxBarSize={24}>
                 {ENTREGAS_SEMANA.map((_, i) => (

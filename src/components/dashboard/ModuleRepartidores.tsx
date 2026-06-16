@@ -83,7 +83,7 @@ export default function ModuleRepartidores() {
           const cfg = STATUS_CONFIG[rider.status];
           const moto = motos.find((m) => m.id === rider.motoId);
           const riderOrders = orders.filter((o) => o.repartidor === rider.nombre);
-          const isDetail = riderDetail === rider.id;
+          const isDetail = riderDetail?.id === rider.id;
 
           return (
             <motion.div key={rider.id} layout style={{
@@ -155,7 +155,7 @@ export default function ModuleRepartidores() {
                     flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--lf-border)',
                     background: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main)',
                   }}>Editar</button>
-                  <button onClick={() => setRiderDetail(isDetail ? null : rider.id)} style={{
+                  <button onClick={() => setRiderDetail(isDetail ? null : rider)} style={{
                     flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--lf-accent)',
                     background: 'var(--lf-accent-soft)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
                     color: 'var(--lf-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,

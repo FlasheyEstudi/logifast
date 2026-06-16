@@ -96,13 +96,13 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.04, duration: 0.35, ease: 'easeOut' },
+    transition: { delay: i * 0.04, duration: 0.35, ease: 'easeOut' as const },
   }),
 };
 
 const dropdownVariant = {
   hidden: { opacity: 0, y: -6, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' as const } },
   exit: { opacity: 0, y: -6, scale: 0.97, transition: { duration: 0.15 } },
 };
 
