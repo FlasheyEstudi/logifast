@@ -38,7 +38,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
     getCartItemsByTienda,
   } = useMarketplaceStore();
 
-  const { validateCodigoPromo } = useStore();
+  const { validateCodigoPromo, setClientActiveModule } = useStore();
   const config = useConfigStore();
 
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
@@ -95,7 +95,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
   if (compraConfirmada) {
     return (
       <div className="fixed inset-0 z-[1000] bg-white dark:bg-black overflow-y-auto">
-        <PagoExitoso orderId={compraConfirmadaId} onClose={handleCloseSuccess} />
+        <PagoExitoso orderId={compraConfirmadaId} onClose={handleCloseSuccess} setClientActiveModule={setClientActiveModule} />
       </div>
     );
   }

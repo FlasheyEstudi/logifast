@@ -1,20 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStore } from '@/lib/store';
-import { useMarketplaceStore } from '@/lib/marketplace-store';
 
 interface PagoExitosoProps {
   orderId: string;
   onClose: () => void;
+  setClientActiveModule: (module: any) => void;
 }
 
-export default function PagoExitoso({ orderId, onClose }: PagoExitosoProps) {
+export default function PagoExitoso({ orderId, onClose, setClientActiveModule }: PagoExitosoProps) {
   const [visible, setVisible] = useState(false);
-  
-  // Safely get state and actions
-  const store = useStore();
-  const setClientActiveModule = store ? store.setClientActiveModule : null;
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 100);
@@ -22,13 +17,6 @@ export default function PagoExitoso({ orderId, onClose }: PagoExitosoProps) {
   }, []);
 
   try {
-    if (!store) {
-      throw new Error("El almacén global de la aplicación (useStore) no está disponible.");
-    }
-    if (!setClientActiveModule) {
-      throw new Error("La acción 'setClientActiveModule' no está definida en la tienda global.");
-    }
-
     const orderNum = orderId || `LF-${Math.floor(Math.random() * 9000) + 1000}`;
 
     return (
@@ -66,7 +54,9 @@ export default function PagoExitoso({ orderId, onClose }: PagoExitosoProps) {
             <button
               className="w-full min-h-[48px] py-3.5 px-6 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-xl font-semibold text-sm transition-all text-center flex items-center justify-center cursor-pointer active:scale-98"
               onClick={() => {
-                setClientActiveModule('pedidos');
+                if (typeof setClientActiveModule === 'function') {
+                  setClientActiveModule('pedidos');
+                }
                 onClose();
               }}
             >
@@ -75,7 +65,9 @@ export default function PagoExitoso({ orderId, onClose }: PagoExitosoProps) {
             <button
               className="w-full min-h-[48px] py-3.5 px-6 border border-[#E8E4DE] dark:border-[#2A2A38] text-[#1B1B2F] dark:text-[#F0EDE8] hover:bg-[#F5F0EB] dark:hover:bg-[#1A1A24] rounded-xl font-semibold text-sm transition-all text-center flex items-center justify-center cursor-pointer active:scale-98"
               onClick={() => {
-                setClientActiveModule('inicio');
+                if (typeof setClientActiveModule === 'function') {
+                  setClientActiveModule('inicio');
+                }
                 onClose();
               }}
             >
