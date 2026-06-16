@@ -1,0 +1,1781 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback } from 'react';
+     4→import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+     5→import {
+     6→  MapPin,
+     7→  Package,
+     8→  User,
+     9→  Bell,
+    10→  Bike,
+    11→  Clock,
+    12→  Navigation,
+    13→  Phone,
+    14→  MessageSquare,
+    15→  AlertTriangle,
+    16→  AlertOctagon,
+    17→  Wrench,
+    18→  UserX,
+    19→  MoreHorizontal,
+    20→  ChevronUp,
+    21→  Star,
+    22→  Settings,
+    23→  Shield,
+    24→  ToggleLeft,
+    25→  ToggleRight,
+    26→  X,
+    27→  Check,
+    28→  Route,
+    29→  Timer,
+    30→  DollarSign,
+    31→  Activity,
+    32→  LogOut,
+    33→  Sun,
+    34→  Moon,
+    35→  Hash,
+    36→  FileText,
+    37→} from 'lucide-react';
+    38→
+    39→/* ═══════════════════════════════════════════════════════
+    40→   TYPES
+    41→   ═══════════════════════════════════════════════════════ */
+    42→
+    43→type RepartidorScreen = 'idle' | 'new-order' | 'delivering' | 'history' | 'profile';
+    44→type DeliveryStep = 'to-pickup' | 'pick-up' | 'to-deliver' | 'at-delivery' | 'confirm';
+    45→type IncidentType = 'mechanical' | 'client-issue' | 'accident' | 'other';
+    46→
+    47→interface MockService {
+    48→  id: string;
+    49→  origin: string;
+    50→  destination: string;
+    51→  time: string;
+    52→  earnings: string;
+    53→  distance: string;
+    54→  status: 'completed';
+    55→}
+    56→
+    57→/* ═══════════════════════════════════════════════════════
+    58→   MOCK DATA
+    59→   ═══════════════════════════════════════════════════════ */
+    60→
+    61→const MOCK_REPARTIDOR = {
+    62→  name: 'Carlos Mendoza',
+    63→  initials: 'CM',
+    64→  rating: 4.8,
+    65→  totalDeliveries: 342,
+    66→  moto: 'Honda CB125 2023',
+    67→  plate: 'M-4521',
+    68→  phone: '+505 8812-3456',
+    69→};
+    70→
+    71→const MOCK_COMPLETED_SERVICES: MockService[] = [
+    72→  { id: 'LF-1041', origin: 'Banco Central', destination: 'Hotel Princess', time: '09:12', earnings: 'C$85', distance: '4.2 km', status: 'completed' },
+    73→  { id: 'LF-1039', origin: 'Farmacia San Jose', destination: 'Col. Centroamerica', time: '08:45', earnings: 'C$65', distance: '3.1 km', status: 'completed' },
+    74→  { id: 'LF-1036', origin: 'TecniCompras', destination: 'Altamira', time: '08:20', earnings: 'C$120', distance: '6.8 km', status: 'completed' },
+    75→  { id: 'LF-1033', origin: 'Libreria Hispano', destination: 'UCA', time: '07:55', earnings: 'C$55', distance: '2.4 km', status: 'completed' },
+    76→  { id: 'LF-1030', origin: 'Supermercado La Union', destination: 'Col. Satelite', time: '07:30', earnings: 'C$95', distance: '5.5 km', status: 'completed' },
+    77→];
+    78→
+    79→const MOCK_ORDER = {
+    80→  id: 'LF-1052',
+    81→  type: 'Paquete',
+    82→  origin: 'Metrocentro, Local B-12',
+    83→  destination: 'Col. Rubenia, Casa 45',
+    84→  distance: '7.2 km',
+    85→  estimatedTime: '18 min',
+    86→  earnings: 'C$145',
+    87→  packageSize: 'Mediano',
+    88→  clientName: 'Ana Rodriguez',
+    89→  clientPhone: '+505 8899-1122',
+    90→  instructions: 'Tocar timbre 2 veces, dejar en porton verde',
+    91→};
+    92→
+    93→const TODAY_STATS = {
+    94→  deliveries: 5,
+    95→  km: 42,
+    96→  earnings: 850,
+    97→  activeTime: '3h 24m',
+    98→};
+    99→
+   100→/* ═══════════════════════════════════════════════════════
+   101→   PROPS
+   102→   ═══════════════════════════════════════════════════════ */
+   103→
+   104→interface RepartidorAppProps {
+   105→  isDark: boolean;
+   106→  toggleTheme: () => void;
+   107→  onLogout: () => void;
+   108→}
+   109→
+   110→/* ═══════════════════════════════════════════════════════
+   111→   PULSING RINGS COMPONENT
+   112→   ═══════════════════════════════════════════════════════ */
+   113→
+   114→function PulsingRings() {
+   115→  return (
+   116→    <div style={{ position: 'relative', width: 140, height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+   117→      {[1, 2, 3].map((i) => (
+   118→        <motion.div
+   119→          key={i}
+   120→          style={{
+   121→            position: 'absolute',
+   122→            width: 50 + i * 30,
+   123→            height: 50 + i * 30,
+   124→            borderRadius: '50%',
+   125→            border: `2px solid var(--exito)`,
+   126→            opacity: 0,
+   127→          }}
+   128→          animate={{
+   129→            scale: [1, 1.5],
+   130→            opacity: [0.6, 0],
+   131→          }}
+   132→          transition={{
+   133→            duration: 2,
+   134→            repeat: Infinity,
+   135→            delay: i * 0.4,
+   136→            ease: 'easeOut',
+   137→          }}
+   138→        />
+   139→      ))}
+   140→      <motion.div
+   141→        style={{
+   142→          width: 52,
+   143→          height: 52,
+   144→          borderRadius: '50%',
+   145→          background: 'var(--exito)',
+   146→          display: 'flex',
+   147→          alignItems: 'center',
+   148→          justifyContent: 'center',
+   149→          zIndex: 1,
+   150→        }}
+   151→        animate={{ scale: [1, 1.05, 1] }}
+   152→        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+   153→      >
+   154→        <Bike size={28} color="#fff" />
+   155→      </motion.div>
+   156→    </div>
+   157→  );
+   158→}
+   159→
+   160→/* ═══════════════════════════════════════════════════════
+   161→   4-STEP PROGRESS BAR
+   162→   ═══════════════════════════════════════════════════════ */
+   163→
+   164→function StepProgressBar({ currentStep }: { currentStep: DeliveryStep }) {
+   165→  const steps: { key: DeliveryStep; label: string }[] = [
+   166→    { key: 'to-pickup', label: 'Recoger' },
+   167→    { key: 'pick-up', label: 'Paquete' },
+   168→    { key: 'to-deliver', label: 'Entrega' },
+   169→    { key: 'at-delivery', label: 'Confirmar' },
+   170→  ];
+   171→
+   172→  const stepOrder: DeliveryStep[] = ['to-pickup', 'pick-up', 'to-deliver', 'at-delivery'];
+   173→  const currentIdx = stepOrder.indexOf(currentStep);
+   174→
+   175→  return (
+   176→    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
+   177→      {steps.map((step, idx) => {
+   178→        const isActive = idx <= currentIdx;
+   179→        const isCurrent = step.key === currentStep;
+   180→        return (
+   181→          <React.Fragment key={step.key}>
+   182→            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+   183→              <div
+   184→                style={{
+   185→                  width: isCurrent ? 28 : 22,
+   186→                  height: isCurrent ? 28 : 22,
+   187→                  borderRadius: '50%',
+   188→                  background: isActive ? 'var(--primario)' : 'var(--border)',
+   189→                  display: 'flex',
+   190→                  alignItems: 'center',
+   191→                  justifyContent: 'center',
+   192→                  transition: 'all 0.3s ease',
+   193→                  boxShadow: isCurrent ? '0 0 12px rgba(255,87,34,0.3)' : 'none',
+   194→                }}
+   195→              >
+   196→                {isActive && idx < currentIdx ? (
+   197→                  <Check size={12} color="#fff" strokeWidth={3} />
+   198→                ) : (
+   199→                  <span style={{ fontSize: 10, fontWeight: 700, color: isActive ? '#fff' : 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+   200→                    {idx + 1}
+   201→                  </span>
+   202→                )}
+   203→              </div>
+   204→              <span style={{ fontSize: 10, color: isCurrent ? 'var(--primario)' : 'var(--text-muted)', fontWeight: isCurrent ? 600 : 400, fontFamily: "'DM Sans', sans-serif" }}>
+   205→                {step.label}
+   206→              </span>
+   207→            </div>
+   208→            {idx < steps.length - 1 && (
+   209→              <div
+   210→                style={{
+   211→                  flex: 1,
+   212→                  height: 2,
+   213→                  background: idx < currentIdx ? 'var(--primario)' : 'var(--border)',
+   214→                  margin: '0 2px',
+   215→                  marginBottom: 18,
+   216→                  borderRadius: 1,
+   217→                  transition: 'background 0.3s ease',
+   218→                }}
+   219→              />
+   220→            )}
+   221→          </React.Fragment>
+   222→        );
+   223→      })}
+   224→    </div>
+   225→  );
+   226→}
+   227→
+   228→/* ═══════════════════════════════════════════════════════
+   229→   MAP PLACEHOLDER
+   230→   ═══════════════════════════════════════════════════════ */
+   231→
+   232→function MapPlaceholder({ variant }: { variant: 'idle' | 'delivering' }) {
+   233→  return (
+   234→    <div
+   235→      style={{
+   236→        width: '100%',
+   237→        height: '100%',
+   238→        background: variant === 'idle'
+   239→          ? 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 30%, #a5d6a7 60%, #81c784 100%)'
+   240→          : 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 30%, #90caf9 60%, #64b5f6 100%)',
+   241→        position: 'relative',
+   242→        overflow: 'hidden',
+   243→      }}
+   244→    >
+   245→      {/* Grid lines for map feel */}
+   246→      <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.15 }}>
+   247→        <defs>
+   248→          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+   249→            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1B1B2F" strokeWidth="0.5" />
+   250→          </pattern>
+   251→        </defs>
+   252→        <rect width="100%" height="100%" fill="url(#grid)" />
+   253→      </svg>
+   254→
+   255→      {/* Road-like paths */}
+   256→      <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.2 }}>
+   257→        <path d="M 0 200 Q 150 180 300 250 T 600 200 T 900 280" fill="none" stroke="#1B1B2F" strokeWidth="8" strokeLinecap="round" />
+   258→        <path d="M 200 0 Q 250 150 180 300 T 280 600" fill="none" stroke="#1B1B2F" strokeWidth="6" strokeLinecap="round" />
+   259→        <path d="M 400 0 Q 350 200 450 400 T 380 700" fill="none" stroke="#1B1B2F" strokeWidth="5" strokeLinecap="round" />
+   260→      </svg>
+   261→
+   262→      {/* Route markers for delivering */}
+   263→      {variant === 'delivering' && (
+   264→        <>
+   265→          <motion.div
+   266→            style={{ position: 'absolute', top: '30%', left: '20%' }}
+   267→            animate={{ scale: [1, 1.2, 1] }}
+   268→            transition={{ duration: 1.5, repeat: Infinity }}
+   269→          >
+   270→            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--exito)', border: '3px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
+   271→          </motion.div>
+   272→          <motion.div
+   273→            style={{ position: 'absolute', top: '55%', right: '25%' }}
+   274→            animate={{ scale: [1, 1.2, 1] }}
+   275→            transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+   276→          >
+   277→            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--primario)', border: '3px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
+   278→          </motion.div>
+   279→          {/* Route line */}
+   280→          <svg style={{ position: 'absolute', inset: 0 }} width="100%" height="100%">
+   281→            <path d="M 120 195 Q 250 300 350 350 T 580 390" fill="none" stroke="var(--primario)" strokeWidth="4" strokeDasharray="12 6" opacity="0.7" />
+   282→          </svg>
+   283→          {/* Current position dot */}
+   284→          <motion.div
+   285→            style={{ position: 'absolute', top: '38%', left: '35%' }}
+   286→            animate={{ scale: [1, 1.3, 1] }}
+   287→            transition={{ duration: 2, repeat: Infinity }}
+   288→          >
+   289→            <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--info)', border: '3px solid #fff', boxShadow: '0 0 0 6px rgba(41,121,255,0.2), 0 2px 8px rgba(0,0,0,0.2)' }} />
+   290→          </motion.div>
+   291→        </>
+   292→      )}
+   293→
+   294→      {/* Idle: location pin markers */}
+   295→      {variant === 'idle' && (
+   296→        <>
+   297→          <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+   298→            <motion.div
+   299→              animate={{ y: [0, -6, 0] }}
+   300→              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+   301→            >
+   302→              <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--exito)', border: '3px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} />
+   303→            </motion.div>
+   304→          </div>
+   305→          {/* Scattered markers */}
+   306→          {[
+   307→            { top: '25%', left: '30%' },
+   308→            { top: '60%', left: '65%' },
+   309→            { top: '70%', left: '20%' },
+   310→          ].map((pos, i) => (
+   311→            <div key={i} style={{ position: 'absolute', top: pos.top, left: pos.left }}>
+   312→              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--text-muted)', opacity: 0.3 }} />
+   313→            </div>
+   314→          ))}
+   315→        </>
+   316→      )}
+   317→    </div>
+   318→  );
+   319→}
+   320→
+   321→/* ═══════════════════════════════════════════════════════
+   322→   MAIN COMPONENT
+   323→   ═══════════════════════════════════════════════════════ */
+   324→
+   325→export default function RepartidorApp({ isDark, toggleTheme, onLogout }: RepartidorAppProps) {
+   326→  /* ─── Screen state ─── */
+   327→  const [screen, setScreen] = useState<RepartidorScreen>('idle');
+   328→  const [isOnline, setIsOnline] = useState(true);
+   329→  const [deliveryStep, setDeliveryStep] = useState<DeliveryStep>('to-pickup');
+   330→  const [showIncident, setShowIncident] = useState(false);
+   331→  const [selectedIncident, setSelectedIncident] = useState<IncidentType | null>(null);
+   332→  const [incidentDescription, setIncidentDescription] = useState('');
+   333→  const [showNotifications, setShowNotifications] = useState(false);
+   334→  const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false);
+   335→
+   336→  /* ─── Timer for new order ─── */
+   337→  const [orderTimer, setOrderTimer] = useState(30);
+   338→  const timerRef = useRef<NodeJS.Timeout | null>(null);
+   339→
+   340→  /* ─── KM counter for delivery ─── */
+   341→  const [kmRemaining, setKmRemaining] = useState(7.2);
+   342→  const kmRef = useRef<NodeJS.Timeout | null>(null);
+   343→
+   344→  /* ─── Simulate new order arriving after 5 seconds if idle and online ─── */
+   345→  const simulateOrderRef = useRef<NodeJS.Timeout | null>(null);
+   346→
+   347→  useEffect(() => {
+   348→    if (screen === 'idle' && isOnline) {
+   349→      simulateOrderRef.current = setTimeout(() => {
+   350→        setScreen('new-order');
+   351→        setOrderTimer(30);
+   352→      }, 6000);
+   353→    }
+   354→    return () => {
+   355→      if (simulateOrderRef.current) clearTimeout(simulateOrderRef.current);
+   356→    };
+   357→  }, [screen, isOnline]);
+   358→
+   359→  /* ─── Order countdown timer ─── */
+   360→  useEffect(() => {
+   361→    if (screen === 'new-order') {
+   362→      timerRef.current = setInterval(() => {
+   363→        setOrderTimer((prev) => {
+   364→          if (prev <= 1) {
+   365→            if (timerRef.current) clearInterval(timerRef.current);
+   366→            setScreen('idle');
+   367→            return 0;
+   368→          }
+   369→          return prev - 1;
+   370→        });
+   371→      }, 1000);
+   372→    }
+   373→    return () => {
+   374→      if (timerRef.current) clearInterval(timerRef.current);
+   375→    };
+   376→  }, [screen]);
+   377→
+   378→  /* ─── KM countdown during delivery ─── */
+   379→  useEffect(() => {
+   380→    if (screen === 'delivering') {
+   381→      kmRef.current = setInterval(() => {
+   382→        setKmRemaining((prev) => {
+   383→          if (prev <= 0.1) return 0;
+   384→          return Math.round((prev - 0.1) * 10) / 10;
+   385→        });
+   386→      }, 3000);
+   387→    }
+   388→    return () => {
+   389→      if (kmRef.current) clearInterval(kmRef.current);
+   390→    };
+   391→  }, [screen]);
+   392→
+   393→  /* KM is reset in handleNextStep when step changes */
+   394→
+   395→  /* ─── Handlers ─── */
+   396→  const handleAcceptOrder = useCallback(() => {
+   397→    if (timerRef.current) clearInterval(timerRef.current);
+   398→    setScreen('delivering');
+   399→    setDeliveryStep('to-pickup');
+   400→    setKmRemaining(7.2);
+   401→  }, []);
+   402→
+   403→  const handleRejectOrder = useCallback(() => {
+   404→    if (timerRef.current) clearInterval(timerRef.current);
+   405→    setScreen('idle');
+   406→  }, []);
+   407→
+   408→  const handleNextStep = useCallback(() => {
+   409→    const steps: DeliveryStep[] = ['to-pickup', 'pick-up', 'to-deliver', 'at-delivery', 'confirm'];
+   410→    const idx = steps.indexOf(deliveryStep);
+   411→    if (idx < steps.length - 1) {
+   412→      const nextStep = steps[idx + 1];
+   413→      setDeliveryStep(nextStep);
+   414→      if (nextStep === 'to-pickup') setKmRemaining(7.2);
+   415→      else if (nextStep === 'to-deliver') setKmRemaining(4.8);
+   416→      else if (nextStep === 'at-delivery') setKmRemaining(1.2);
+   417→      else if (nextStep === 'confirm') setKmRemaining(0);
+   418→    } else {
+   419→      setScreen('idle');
+   420→      setDeliveryStep('to-pickup');
+   421→    }
+   422→  }, [deliveryStep]);
+   423→
+   424→  const handleIncidentSubmit = useCallback(() => {
+   425→    setShowIncident(false);
+   426→    setSelectedIncident(null);
+   427→    setIncidentDescription('');
+   428→    setScreen('idle');
+   429→  }, []);
+   430→
+   431→  const handleToggleOnline = useCallback(() => {
+   432→    setIsOnline((prev) => !prev);
+   433→    if (!isOnline) {
+   434→      setScreen('idle');
+   435→    }
+   436→  }, [isOnline]);
+   437→
+   438→  /* ─── Step labels and button configs ─── */
+   439→  const stepLabels: Record<DeliveryStep, string> = {
+   440→    'to-pickup': 'Camino a recoger',
+   441→    'pick-up': 'Recoger paquete',
+   442→    'to-deliver': 'Iniciar entrega',
+   443→    'at-delivery': 'Llegue al punto de entrega',
+   444→    'confirm': 'Confirmar entrega',
+   445→  };
+   446→
+   447→  const stepButtonLabels: Record<DeliveryStep, string> = {
+   448→    'to-pickup': 'Llegue al punto de recogida',
+   449→    'pick-up': 'Recoger paquete',
+   450→    'to-deliver': 'Iniciar entrega',
+   451→    'at-delivery': 'Llegue al punto de entrega',
+   452→    'confirm': 'Confirmar entrega',
+   453→  };
+   454→
+   455→  const stepButtonColors: Record<DeliveryStep, { bg: string; shadow: string; text: string }> = {
+   456→    'to-pickup': { bg: 'var(--primario)', shadow: '0 6px 20px rgba(255,87,34,0.35)', text: '#fff' },
+   457→    'pick-up': { bg: 'var(--info)', shadow: '0 6px 20px rgba(41,121,255,0.35)', text: '#fff' },
+   458→    'to-deliver': { bg: 'var(--primario)', shadow: '0 6px 20px rgba(255,87,34,0.35)', text: '#fff' },
+   459→    'at-delivery': { bg: 'var(--primario)', shadow: '0 6px 20px rgba(255,87,34,0.35)', text: '#fff' },
+   460→    'confirm': { bg: 'var(--exito)', shadow: '0 8px 28px rgba(0,200,83,0.4)', text: '#fff' },
+   461→  };
+   462→
+   463→  const stepBadgeColors: Record<DeliveryStep, string> = {
+   464→    'to-pickup': 'var(--primario)',
+   465→    'pick-up': 'var(--info)',
+   466→    'to-deliver': 'var(--primario)',
+   467→    'at-delivery': 'var(--primario)',
+   468→    'confirm': 'var(--exito)',
+   469→  };
+   470→
+   471→  /* ═══════════════════════════════════════════════════════
+   472→     RENDER
+   473→     ═══════════════════════════════════════════════════════ */
+   474→
+   475→  return (
+   476→    <div style={{
+   477→      width: '100%',
+   478→      height: '100vh',
+   479→      position: 'relative',
+   480→      overflow: 'hidden',
+   481→      fontFamily: "'DM Sans', sans-serif",
+   482→      background: 'var(--bg)',
+   483→    }}>
+   484→      {/* ═══════════════════════════════════════════
+   485→          B.1 — ESTADO DE ESPERA (Idle)
+   486→          ═══════════════════════════════════════════ */}
+   487→      <AnimatePresence mode="wait">
+   488→        {screen === 'idle' && (
+   489→          <motion.div
+   490→            key="idle"
+   491→            initial={{ opacity: 0 }}
+   492→            animate={{ opacity: 1 }}
+   493→            exit={{ opacity: 0 }}
+   494→            transition={{ duration: 0.3 }}
+   495→            style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}
+   496→          >
+   497→            {/* Map Background */}
+   498→            <div style={{ position: 'absolute', inset: 0 }}>
+   499→              <MapPlaceholder variant="idle" />
+   500→            </div>
+   501→
+   502→            {/* Glassmorphism Header */}
+   503→            <div style={{
+   504→              position: 'relative',
+   505→              zIndex: 10,
+   506→              display: 'flex',
+   507→              alignItems: 'center',
+   508→              justifyContent: 'space-between',
+   509→              padding: '12px 16px',
+   510→              background: 'var(--lf-glass-bg)',
+   511→              backdropFilter: 'blur(var(--lf-glass-blur))',
+   512→              WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+   513→              borderBottom: '1px solid var(--lf-glass-border)',
+   514→            }}>
+   515→              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   516→                <span className="font-syne" style={{ fontSize: 18, fontWeight: 800, color: 'var(--primario)', letterSpacing: '-0.5px' }}>LOGIFAST</span>
+   517→                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 100, background: isOnline ? 'rgba(0,200,83,0.1)' : 'rgba(142,142,160,0.1)' }}>
+   518→                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: isOnline ? 'var(--exito)' : 'var(--text-muted)' }} />
+   519→                  <span style={{ fontSize: 12, fontWeight: 600, color: isOnline ? 'var(--exito)' : 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+   520→                    {isOnline ? 'En linea' : 'Desconectado'}
+   521→                  </span>
+   522→                </div>
+   523→              </div>
+   524→              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+   525→                {/* Toggle switch */}
+   526→                <button
+   527→                  onClick={handleToggleOnline}
+   528→                  style={{
+   529→                    width: 44,
+   530→                    height: 24,
+   531→                    borderRadius: 12,
+   532→                    background: isOnline ? 'var(--exito)' : 'var(--border)',
+   533→                    border: 'none',
+   534→                    cursor: 'pointer',
+   535→                    position: 'relative',
+   536→                    transition: 'background 0.3s',
+   537→                    padding: 0,
+   538→                  }}
+   539→                >
+   540→                  <motion.div
+   541→                    animate={{ x: isOnline ? 20 : 2 }}
+   542→                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+   543→                    style={{
+   544→                      width: 20,
+   545→                      height: 20,
+   546→                      borderRadius: '50%',
+   547→                      background: '#fff',
+   548→                      boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+   549→                      position: 'absolute',
+   550→                      top: 2,
+   551→                    }}
+   552→                  />
+   553→                </button>
+   554→                {/* Notification bell */}
+   555→                <button
+   556→                  onClick={() => setShowNotifications(!showNotifications)}
+   557→                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', position: 'relative', padding: 4 }}
+   558→                >
+   559→                  <Bell size={20} />
+   560→                  <div style={{ position: 'absolute', top: 2, right: 2, width: 8, height: 8, borderRadius: '50%', background: 'var(--peligro)', border: '2px solid var(--lf-glass-bg)' }} />
+   561→                </button>
+   562→                {/* Avatar */}
+   563→                <div style={{
+   564→                  width: 32, height: 32, borderRadius: '50%',
+   565→                  background: 'var(--primario)',
+   566→                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+   567→                  color: '#fff', fontSize: 12, fontWeight: 700,
+   568→                  fontFamily: "'JetBrains Mono', monospace",
+   569→                }}>
+   570→                  {MOCK_REPARTIDOR.initials}
+   571→                </div>
+   572→              </div>
+   573→            </div>
+   574→
+   575→            {/* Center Card - Glassmorphism */}
+   576→            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 5, padding: 20 }}>
+   577→              <motion.div
+   578→                initial={{ scale: 0.9, opacity: 0 }}
+   579→                animate={{ scale: 1, opacity: 1 }}
+   580→                transition={{ delay: 0.2, duration: 0.4 }}
+   581→                style={{
+   582→                  background: 'var(--lf-glass-bg)',
+   583→                  backdropFilter: 'blur(var(--lf-glass-blur))',
+   584→                  WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+   585→                  border: '1px solid var(--lf-glass-border)',
+   586→                  borderRadius: 'var(--lf-card-radius)',
+   587→                  boxShadow: 'var(--lf-shadow-float)',
+   588→                  padding: '32px 24px',
+   589→                  display: 'flex',
+   590→                  flexDirection: 'column',
+   591→                  alignItems: 'center',
+   592→                  gap: 12,
+   593→                  width: '100%',
+   594→                  maxWidth: 320,
+   595→                }}
+   596→              >
+   597→                <PulsingRings />
+   598→                <span className="font-syne" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', textAlign: 'center' }}>
+   599→                  Esperando asignacion
+   600→                </span>
+   601→                <span style={{ fontSize: 14, color: 'var(--text-muted)', textAlign: 'center' }}>
+   602→                  {isOnline ? 'Estas en linea y listo' : 'Estas desconectado'}
+   603→                </span>
+   604→                <div className="font-mono" style={{
+   605→                  fontSize: 13,
+   606→                  color: 'var(--text-secondary)',
+   607→                  textAlign: 'center',
+   608→                  padding: '8px 16px',
+   609→                  background: 'var(--primario-soft)',
+   610→                  borderRadius: 'var(--lf-pill-radius)',
+   611→                  display: 'flex',
+   612→                  gap: 8,
+   613→                  alignItems: 'center',
+   614→                  flexWrap: 'wrap',
+   615→                  justifyContent: 'center',
+   616→                }}>
+   617→                  <span>{TODAY_STATS.deliveries} entregas hoy</span>
+   618→                  <span style={{ color: 'var(--border)' }}>·</span>
+   619→                  <span>{TODAY_STATS.km} km</span>
+   620→                  <span style={{ color: 'var(--border)' }}>·</span>
+   621→                  <span>C${TODAY_STATS.earnings} ganados</span>
+   622→                </div>
+   623→              </motion.div>
+   624→            </div>
+   625→
+   626→            {/* Bottom Sheet */}
+   627→            <motion.div
+   628→              style={{
+   629→                position: 'relative',
+   630→                zIndex: 10,
+   631→                background: 'var(--lf-glass-bg)',
+   632→                backdropFilter: 'blur(var(--lf-glass-blur))',
+   633→                WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+   634→                borderTop: '1px solid var(--lf-glass-border)',
+   635→                borderRadius: 'var(--lf-sheet-radius) var(--lf-sheet-radius) 0 0',
+   636→                boxShadow: 'var(--lf-shadow-sheet)',
+   637→                maxHeight: bottomSheetExpanded ? '70vh' : '45vh',
+   638→                overflow: 'hidden',
+   639→                transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+   640→              }}
+   641→            >
+   642→              {/* Handle */}
+   643→              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 6 }}>
+   644→                <button
+   645→                  onClick={() => setBottomSheetExpanded(!bottomSheetExpanded)}
+   646→                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)' }}
+   647→                >
+   648→                  <motion.div animate={{ rotate: bottomSheetExpanded ? 180 : 0 }} transition={{ duration: 0.3 }}>
+   649→                    <ChevronUp size={20} />
+   650→                  </motion.div>
+   651→                </button>
+   652→              </div>
+   653→
+   654→              <div style={{ padding: '0 20px 20px', overflowY: 'auto', maxHeight: bottomSheetExpanded ? 'calc(70vh - 50px)' : 'calc(45vh - 50px)' }}>
+   655→                {/* Header */}
+   656→                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+   657→                  <span className="font-syne" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Servicios de hoy</span>
+   658→                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{MOCK_COMPLETED_SERVICES.length} servicios</span>
+   659→                </div>
+   660→
+   661→                {/* Services list */}
+   662→                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+   663→                  {MOCK_COMPLETED_SERVICES.slice(0, bottomSheetExpanded ? 5 : 3).map((svc) => (
+   664→                    <div key={svc.id} style={{
+   665→                      display: 'flex',
+   666→                      alignItems: 'center',
+   667→                      justifyContent: 'space-between',
+   668→                      padding: '10px 12px',
+   669→                      background: 'var(--surface)',
+   670→                      borderRadius: 'var(--lf-card-radius)',
+   671→                      border: '1px solid var(--border)',
+   672→                    }}>
+   673→                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
+   674→                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   675→                          <span className="font-mono" style={{ fontSize: 12, fontWeight: 600, color: 'var(--primario)' }}>{svc.id}</span>
+   676→                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{svc.time}</span>
+   677→                        </div>
+   678→                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   679→                          {svc.origin} → {svc.destination}
+   680→                        </span>
+   681→                      </div>
+   682→                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   683→                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{svc.distance}</span>
+   684→                        <span className="font-mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--exito)' }}>{svc.earnings}</span>
+   685→                      </div>
+   686→                    </div>
+   687→                  ))}
+   688→                </div>
+   689→
+   690→                {/* 2x2 Stats grid */}
+   691→                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+   692→                  {[
+   693→                    { label: 'Entregas', value: String(TODAY_STATS.deliveries), icon: <Package size={16} color="var(--primario)" /> },
+   694→                    { label: 'Km', value: String(TODAY_STATS.km), icon: <Navigation size={16} color="var(--info)" /> },
+   695→                    { label: 'Ganancias', value: `C$${TODAY_STATS.earnings}`, icon: <DollarSign size={16} color="var(--exito)" /> },
+   696→                    { label: 'Tiempo activo', value: TODAY_STATS.activeTime, icon: <Clock size={16} color="var(--warning)" /> },
+   697→                  ].map((stat) => (
+   698→                    <div key={stat.label} style={{
+   699→                      display: 'flex',
+   700→                      alignItems: 'center',
+   701→                      gap: 10,
+   702→                      padding: '12px 14px',
+   703→                      background: 'var(--surface)',
+   704→                      borderRadius: 'var(--lf-card-radius)',
+   705→                      border: '1px solid var(--border)',
+   706→                    }}>
+   707→                      <div style={{
+   708→                        width: 36, height: 36, borderRadius: 10,
+   709→                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+   710→                        background: 'var(--primario-soft)',
+   711→                      }}>
+   712→                        {stat.icon}
+   713→                      </div>
+   714→                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+   715→                        <span className="font-mono" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{stat.value}</span>
+   716→                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{stat.label}</span>
+   717→                      </div>
+   718→                    </div>
+   719→                  ))}
+   720→                </div>
+   721→              </div>
+   722→            </motion.div>
+   723→          </motion.div>
+   724→        )}
+   725→
+   726→        {/* ═══════════════════════════════════════════
+   727→            B.2 — NUEVA ORDEN (New Order)
+   728→            ═══════════════════════════════════════════ */}
+   729→        {screen === 'new-order' && (
+   730→          <motion.div
+   731→            key="new-order"
+   732→            initial={{ opacity: 0 }}
+   733→            animate={{ opacity: 1 }}
+   734→            exit={{ opacity: 0 }}
+   735→            transition={{ duration: 0.3 }}
+   736→            style={{
+   737→              position: 'absolute',
+   738→              inset: 0,
+   739→              zIndex: 50,
+   740→              background: 'linear-gradient(180deg, rgba(27,27,47,0.95) 0%, rgba(27,27,47,0.85) 100%)',
+   741→              display: 'flex',
+   742→              flexDirection: 'column',
+   743→              alignItems: 'center',
+   744→              padding: '40px 20px 24px',
+   745→              overflowY: 'auto',
+   746→            }}
+   747→          >
+   748→            {/* Animated Package icon */}
+   749→            <motion.div
+   750→              animate={{ y: [0, -10, 0] }}
+   751→              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+   752→              style={{ marginBottom: 16 }}
+   753→            >
+   754→              <div style={{
+   755→                width: 56, height: 56, borderRadius: 16,
+   756→                background: 'var(--primario)',
+   757→                display: 'flex', alignItems: 'center', justifyContent: 'center',
+   758→                boxShadow: '0 8px 24px rgba(255,87,34,0.4)',
+   759→              }}>
+   760→                <Package size={28} color="#fff" />
+   761→              </div>
+   762→            </motion.div>
+   763→
+   764→            <span className="font-syne" style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginBottom: 24, letterSpacing: '-0.5px' }}>
+   765→              Nueva orden
+   766→            </span>
+   767→
+   768→            {/* Glass card with order details */}
+   769→            <motion.div
+   770→              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+   771→              animate={{ scale: 1, opacity: 1, y: 0 }}
+   772→              transition={{ delay: 0.15, duration: 0.4 }}
+   773→              style={{
+   774→                width: '100%',
+   775→                maxWidth: 400,
+   776→                background: 'var(--lf-glass-bg)',
+   777→                backdropFilter: 'blur(var(--lf-glass-blur))',
+   778→                WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+   779→                border: '1px solid var(--lf-glass-border)',
+   780→                borderRadius: 'var(--lf-card-radius)',
+   781→                padding: 20,
+   782→                display: 'flex',
+   783→                flexDirection: 'column',
+   784→                gap: 16,
+   785→              }}
+   786→            >
+   787→              {/* Type badge */}
+   788→              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+   789→                <span style={{
+   790→                  padding: '4px 12px',
+   791→                  borderRadius: 'var(--lf-pill-radius)',
+   792→                  background: 'var(--primario-soft)',
+   793→                  color: 'var(--primario)',
+   794→                  fontSize: 13,
+   795→                  fontWeight: 600,
+   796→                  display: 'flex',
+   797→                  alignItems: 'center',
+   798→                  gap: 6,
+   799→                }}>
+   800→                  <Package size={14} />
+   801→                  {MOCK_ORDER.type}
+   802→                </span>
+   803→                <span className="font-mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+   804→                  {MOCK_ORDER.id}
+   805→                </span>
+   806→              </div>
+   807→
+   808→              {/* Route */}
+   809→              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+   810→                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+   811→                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0, marginTop: 2 }}>
+   812→                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--exito)' }} />
+   813→                    <div style={{ width: 2, height: 24, background: 'var(--border)' }} />
+   814→                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primario)' }} />
+   815→                  </div>
+   816→                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+   817→                    <div>
+   818→                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Origen</span>
+   819→                      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{MOCK_ORDER.origin}</span>
+   820→                    </div>
+   821→                    <div>
+   822→                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Destino</span>
+   823→                      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{MOCK_ORDER.destination}</span>
+   824→                    </div>
+   825→                  </div>
+   826→                </div>
+   827→              </div>
+   828→
+   829→              {/* Data grid 2x2 */}
+   830→              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+   831→                {[
+   832→                  { label: 'Distancia', value: MOCK_ORDER.distance, icon: <Route size={14} color="var(--info)" /> },
+   833→                  { label: 'Tiempo', value: MOCK_ORDER.estimatedTime, icon: <Timer size={14} color="var(--warning)" /> },
+   834→                  { label: 'Ganancia', value: MOCK_ORDER.earnings, icon: <DollarSign size={14} color="var(--exito)" /> },
+   835→                  { label: 'Paquete', value: MOCK_ORDER.packageSize, icon: <Package size={14} color="var(--primario)" /> },
+   836→                ].map((item) => (
+   837→                  <div key={item.label} style={{
+   838→                    display: 'flex', alignItems: 'center', gap: 8,
+   839→                    padding: '8px 10px', borderRadius: 12,
+   840→                    background: 'var(--surface)',
+   841→                    border: '1px solid var(--border)',
+   842→                  }}>
+   843→                    {item.icon}
+   844→                    <div>
+   845→                      <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>{item.label}</span>
+   846→                      <span className="font-mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.value}</span>
+   847→                    </div>
+   848→                  </div>
+   849→                ))}
+   850→              </div>
+   851→
+   852→              {/* Client info */}
+   853→              <div style={{
+   854→                display: 'flex', alignItems: 'center', gap: 10,
+   855→                padding: '10px 12px', borderRadius: 12,
+   856→                background: 'var(--surface)',
+   857→                border: '1px solid var(--border)',
+   858→              }}>
+   859→                <div style={{
+   860→                  width: 34, height: 34, borderRadius: '50%',
+   861→                  background: 'var(--info)',
+   862→                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+   863→                }}>
+   864→                  <User size={16} color="#fff" />
+   865→                </div>
+   866→                <div style={{ flex: 1 }}>
+   867→                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', display: 'block' }}>{MOCK_ORDER.clientName}</span>
+   868→                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{MOCK_ORDER.clientPhone}</span>
+   869→                </div>
+   870→                <Phone size={16} color="var(--info)" />
+   871→              </div>
+   872→            </motion.div>
+   873→
+   874→            {/* Timer bar */}
+   875→            <div style={{ width: '100%', maxWidth: 400, marginTop: 20 }}>
+   876→              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+   877→                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Tiempo para aceptar</span>
+   878→                <motion.span
+   879→                  className="font-mono"
+   880→                  key={orderTimer}
+   881→                  animate={{ scale: orderTimer <= 10 ? [1, 1.2, 1] : 1 }}
+   882→                  transition={{ duration: 0.3 }}
+   883→                  style={{
+   884→                    fontSize: 16,
+   885→                    fontWeight: 700,
+   886→                    color: orderTimer <= 10 ? 'var(--peligro)' : '#fff',
+   887→                  }}
+   888→                >
+   889→                  {orderTimer}s
+   890→                </motion.span>
+   891→              </div>
+   892→              <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+   893→                <motion.div
+   894→                  animate={{ width: `${(orderTimer / 30) * 100}%` }}
+   895→                  transition={{ duration: 0.5 }}
+   896→                  style={{
+   897→                    height: '100%',
+   898→                    borderRadius: 3,
+   899→                    background: orderTimer <= 10 ? 'var(--peligro)' : 'var(--primario)',
+   900→                    transition: 'background 0.3s',
+   901→                  }}
+   902→                />
+   903→              </div>
+   904→            </div>
+   905→
+   906→            {/* Buttons */}
+   907→            <div style={{ width: '100%', maxWidth: 400, marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+   908→              <motion.button
+   909→                whileTap={{ scale: 0.96 }}
+   910→                onClick={handleAcceptOrder}
+   911→                style={{
+   912→                  width: '100%',
+   913→                  padding: '16px',
+   914→                  borderRadius: 'var(--lf-button-radius)',
+   915→                  border: 'none',
+   916→                  background: 'var(--primario)',
+   917→                  color: '#fff',
+   918→                  fontSize: 16,
+   919→                  fontWeight: 700,
+   920→                  fontFamily: "'Syne', sans-serif",
+   921→                  cursor: 'pointer',
+   922→                  boxShadow: '0 8px 24px rgba(255,87,34,0.4)',
+   923→                  display: 'flex',
+   924→                  alignItems: 'center',
+   925→                  justifyContent: 'center',
+   926→                  gap: 8,
+   927→                }}
+   928→              >
+   929→                <Check size={20} />
+   930→                Aceptar orden
+   931→              </motion.button>
+   932→
+   933→              <motion.button
+   934→                whileTap={{ scale: 0.96 }}
+   935→                onClick={handleRejectOrder}
+   936→                style={{
+   937→                  width: '100%',
+   938→                  padding: '12px',
+   939→                  borderRadius: 'var(--lf-button-radius)',
+   940→                  border: '1px solid rgba(255,255,255,0.15)',
+   941→                  background: 'transparent',
+   942→                  color: 'rgba(255,255,255,0.7)',
+   943→                  fontSize: 14,
+   944→                  fontWeight: 500,
+   945→                  fontFamily: "'DM Sans', sans-serif",
+   946→                  cursor: 'pointer',
+   947→                }}
+   948→              >
+   949→                Rechazar
+   950→              </motion.button>
+   951→            </div>
+   952→          </motion.div>
+   953→        )}
+   954→
+   955→        {/* ═══════════════════════════════════════════
+   956→            B.3 — FLUJO DE ENTREGA (Delivery Flow)
+   957→            ═══════════════════════════════════════════ */}
+   958→        {screen === 'delivering' && (
+   959→          <motion.div
+   960→            key="delivering"
+   961→            initial={{ opacity: 0 }}
+   962→            animate={{ opacity: 1 }}
+   963→            exit={{ opacity: 0 }}
+   964→            transition={{ duration: 0.3 }}
+   965→            style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}
+   966→          >
+   967→            {/* Map area (60%) */}
+   968→            <div style={{ flex: 6, position: 'relative' }}>
+   969→              <MapPlaceholder variant="delivering" />
+   970→              {/* Top bar overlay */}
+   971→              <div style={{
+   972→                position: 'absolute', top: 0, left: 0, right: 0,
+   973→                padding: '12px 16px',
+   974→                background: 'var(--lf-glass-bg)',
+   975→                backdropFilter: 'blur(var(--lf-glass-blur))',
+   976→                WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+   977→                borderBottom: '1px solid var(--lf-glass-border)',
+   978→                display: 'flex',
+   979→                alignItems: 'center',
+   980→                justifyContent: 'space-between',
+   981→              }}>
+   982→                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   983→                  <span className="font-syne" style={{ fontSize: 16, fontWeight: 800, color: 'var(--primario)' }}>LOGIFAST</span>
+   984→                </div>
+   985→                <div style={{
+   986→                  padding: '4px 10px',
+   987→                  borderRadius: 'var(--lf-pill-radius)',
+   988→                  background: `${stepBadgeColors[deliveryStep]}15`,
+   989→                  display: 'flex',
+   990→                  alignItems: 'center',
+   991→                  gap: 6,
+   992→                }}>
+   993→                  <Bike size={14} color={stepBadgeColors[deliveryStep]} />
+   994→                  <span style={{ fontSize: 12, fontWeight: 600, color: stepBadgeColors[deliveryStep], fontFamily: "'DM Sans', sans-serif" }}>
+   995→                    {stepLabels[deliveryStep]}
+   996→                  </span>
+   997→                </div>
+   998→              </div>
+   999→            </div>
+  1000→
+  1001→            {/* Bottom sheet (40%, expandable) */}
+  1002→            <motion.div
+  1003→              animate={{ height: bottomSheetExpanded ? '70%' : '40%' }}
+  1004→              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+  1005→              style={{
+  1006→                position: 'relative',
+  1007→                zIndex: 10,
+  1008→                background: 'var(--lf-glass-bg)',
+  1009→                backdropFilter: 'blur(var(--lf-glass-blur))',
+  1010→                WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+  1011→                borderTop: '1px solid var(--lf-glass-border)',
+  1012→                borderRadius: 'var(--lf-sheet-radius) var(--lf-sheet-radius) 0 0',
+  1013→                boxShadow: 'var(--lf-shadow-sheet)',
+  1014→                overflow: 'hidden',
+  1015→                display: 'flex',
+  1016→                flexDirection: 'column',
+  1017→              }}
+  1018→            >
+  1019→              {/* Handle */}
+  1020→              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, paddingBottom: 4 }}>
+  1021→                <button
+  1022→                  onClick={() => setBottomSheetExpanded(!bottomSheetExpanded)}
+  1023→                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)' }}
+  1024→                >
+  1025→                  <motion.div animate={{ rotate: bottomSheetExpanded ? 180 : 0 }} transition={{ duration: 0.3 }}>
+  1026→                    <ChevronUp size={20} />
+  1027→                  </motion.div>
+  1028→                </button>
+  1029→              </div>
+  1030→
+  1031→              <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
+  1032→                {/* Step Progress Bar */}
+  1033→                <div style={{ marginBottom: 16 }}>
+  1034→                  <StepProgressBar currentStep={deliveryStep} />
+  1035→                </div>
+  1036→
+  1037→                {/* Order Info */}
+  1038→                <div style={{
+  1039→                  padding: 14,
+  1040→                  borderRadius: 'var(--lf-card-radius)',
+  1041→                  background: 'var(--surface)',
+  1042→                  border: '1px solid var(--border)',
+  1043→                  marginBottom: 12,
+  1044→                }}>
+  1045→                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+  1046→                    <span className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: 'var(--primario)' }}>{MOCK_ORDER.id}</span>
+  1047→                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Paquete {MOCK_ORDER.packageSize}</span>
+  1048→                  </div>
+  1049→
+  1050→                  {/* Destination */}
+  1051→                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+  1052→                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primario)' }} />
+  1053→                    <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{MOCK_ORDER.destination}</span>
+  1054→                  </div>
+  1055→
+  1056→                  {/* Client info */}
+  1057→                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 12, background: 'var(--primario-soft)' }}>
+  1058→                    <div style={{
+  1059→                      width: 28, height: 28, borderRadius: '50%',
+  1060→                      background: 'var(--info)',
+  1061→                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1062→                    }}>
+  1063→                      <User size={13} color="#fff" />
+  1064→                    </div>
+  1065→                    <div style={{ flex: 1 }}>
+  1066→                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block' }}>{MOCK_ORDER.clientName}</span>
+  1067→                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{MOCK_ORDER.clientPhone}</span>
+  1068→                    </div>
+  1069→                    <Phone size={14} color="var(--info)" style={{ cursor: 'pointer' }} />
+  1070→                    <MessageSquare size={14} color="var(--info)" style={{ cursor: 'pointer' }} />
+  1071→                  </div>
+  1072→
+  1073→                  {/* Instructions */}
+  1074→                  {MOCK_ORDER.instructions && (
+  1075→                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+  1076→                      <FileText size={12} color="var(--text-muted)" style={{ marginTop: 2 }} />
+  1077→                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>{MOCK_ORDER.instructions}</span>
+  1078→                    </div>
+  1079→                  )}
+  1080→                </div>
+  1081→
+  1082→                {/* KM Counter */}
+  1083→                <div style={{
+  1084→                  padding: 14,
+  1085→                  borderRadius: 'var(--lf-card-radius)',
+  1086→                  background: 'var(--surface)',
+  1087→                  border: '1px solid var(--border)',
+  1088→                  marginBottom: 12,
+  1089→                  textAlign: 'center',
+  1090→                }}>
+  1091→                  <motion.span
+  1092→                    className="font-mono"
+  1093→                    key={kmRemaining}
+  1094→                    style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}
+  1095→                  >
+  1096→                    {kmRemaining.toFixed(1)} km
+  1097→                  </motion.span>
+  1098→                  <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'var(--border)', marginTop: 8, overflow: 'hidden' }}>
+  1099→                    <div style={{
+  1100→                      height: '100%',
+  1101→                      borderRadius: 3,
+  1102→                      background: 'var(--primario)',
+  1103→                      width: `${Math.max(5, (kmRemaining / 7.2) * 100)}%`,
+  1104→                      transition: 'width 0.5s ease',
+  1105→                    }} />
+  1106→                  </div>
+  1107→                </div>
+  1108→
+  1109→                {/* Main Action Button */}
+  1110→                <motion.button
+  1111→                  whileTap={{ scale: 0.96 }}
+  1112→                  onClick={handleNextStep}
+  1113→                  style={{
+  1114→                    width: '100%',
+  1115→                    padding: deliveryStep === 'confirm' ? '18px' : '15px',
+  1116→                    borderRadius: 'var(--lf-button-radius)',
+  1117→                    border: 'none',
+  1118→                    background: stepButtonColors[deliveryStep].bg,
+  1119→                    color: stepButtonColors[deliveryStep].text,
+  1120→                    fontSize: deliveryStep === 'confirm' ? 17 : 15,
+  1121→                    fontWeight: 700,
+  1122→                    fontFamily: "'Syne', sans-serif",
+  1123→                    cursor: 'pointer',
+  1124→                    boxShadow: stepButtonColors[deliveryStep].shadow,
+  1125→                    display: 'flex',
+  1126→                    alignItems: 'center',
+  1127→                    justifyContent: 'center',
+  1128→                    gap: 8,
+  1129→                    marginBottom: 8,
+  1130→                  }}
+  1131→                >
+  1132→                  {deliveryStep === 'confirm' && <Check size={20} />}
+  1133→                  {stepButtonLabels[deliveryStep]}
+  1134→                </motion.button>
+  1135→
+  1136→                {/* Secondary: Report incident */}
+  1137→                <motion.button
+  1138→                  whileTap={{ scale: 0.96 }}
+  1139→                  onClick={() => setShowIncident(true)}
+  1140→                  style={{
+  1141→                    width: '100%',
+  1142→                    padding: '12px',
+  1143→                    borderRadius: 'var(--lf-button-radius)',
+  1144→                    border: '1px solid rgba(255,23,68,0.2)',
+  1145→                    background: 'transparent',
+  1146→                    color: 'var(--peligro)',
+  1147→                    fontSize: 13,
+  1148→                    fontWeight: 500,
+  1149→                    fontFamily: "'DM Sans', sans-serif",
+  1150→                    cursor: 'pointer',
+  1151→                    display: 'flex',
+  1152→                    alignItems: 'center',
+  1153→                    justifyContent: 'center',
+  1154→                    gap: 6,
+  1155→                  }}
+  1156→                >
+  1157→                  <AlertTriangle size={14} />
+  1158→                  Reportar incidencia
+  1159→                </motion.button>
+  1160→              </div>
+  1161→            </motion.div>
+  1162→          </motion.div>
+  1163→        )}
+  1164→
+  1165→        {/* ═══════════════════════════════════════════
+  1166→            B.5 — HISTORIAL DEL DIA
+  1167→            ═══════════════════════════════════════════ */}
+  1168→        {screen === 'history' && (
+  1169→          <motion.div
+  1170→            key="history"
+  1171→            initial={{ opacity: 0, x: 20 }}
+  1172→            animate={{ opacity: 1, x: 0 }}
+  1173→            exit={{ opacity: 0, x: -20 }}
+  1174→            transition={{ duration: 0.3 }}
+  1175→            style={{
+  1176→              position: 'absolute',
+  1177→              inset: 0,
+  1178→              background: 'var(--bg)',
+  1179→              overflowY: 'auto',
+  1180→              paddingBottom: 'calc(var(--lf-bottom-nav-height) + 24px)',
+  1181→            }}
+  1182→          >
+  1183→            {/* Header */}
+  1184→            <div style={{
+  1185→              padding: '20px 20px 0',
+  1186→              background: 'var(--lf-glass-bg)',
+  1187→              backdropFilter: 'blur(var(--lf-glass-blur))',
+  1188→              WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+  1189→              borderBottom: '1px solid var(--lf-glass-border)',
+  1190→              paddingBottom: 20,
+  1191→            }}>
+  1192→              <span className="font-syne" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', display: 'block' }}>Hoy</span>
+  1193→              <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+  1194→                {new Date().toLocaleDateString('es-NI', { weekday: 'long', day: 'numeric', month: 'long' })}
+  1195→              </span>
+  1196→            </div>
+  1197→
+  1198→            <div style={{ padding: '20px 16px' }}>
+  1199→              {/* 4 KPIs in 2x2 */}
+  1200→              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
+  1201→                {[
+  1202→                  { label: 'Entregas', value: String(TODAY_STATS.deliveries), icon: <Package size={18} color="var(--primario)" />, bg: 'var(--primario-soft)' },
+  1203→                  { label: 'Km', value: String(TODAY_STATS.km), icon: <Navigation size={18} color="var(--info)" />, bg: 'rgba(41,121,255,0.08)' },
+  1204→                  { label: 'Ganancias', value: `C$${TODAY_STATS.earnings}`, icon: <DollarSign size={18} color="var(--exito)" />, bg: 'rgba(0,200,83,0.08)' },
+  1205→                  { label: 'Tiempo activo', value: TODAY_STATS.activeTime, icon: <Clock size={18} color="var(--warning)" />, bg: 'rgba(255,179,0,0.08)' },
+  1206→                ].map((kpi) => (
+  1207→                  <motion.div
+  1208→                    key={kpi.label}
+  1209→                    whileTap={{ scale: 0.98 }}
+  1210→                    style={{
+  1211→                      padding: 16,
+  1212→                      borderRadius: 'var(--lf-card-radius)',
+  1213→                      background: 'var(--surface)',
+  1214→                      border: '1px solid var(--border)',
+  1215→                      boxShadow: 'var(--lf-shadow-card)',
+  1216→                    }}
+  1217→                  >
+  1218→                    <div style={{
+  1219→                      width: 40, height: 40, borderRadius: 12,
+  1220→                      background: kpi.bg,
+  1221→                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1222→                      marginBottom: 10,
+  1223→                    }}>
+  1224→                      {kpi.icon}
+  1225→                    </div>
+  1226→                    <span className="font-mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', display: 'block' }}>{kpi.value}</span>
+  1227→                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{kpi.label}</span>
+  1228→                  </motion.div>
+  1229→                ))}
+  1230→              </div>
+  1231→
+  1232→              {/* Timeline */}
+  1233→              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+  1234→                <span className="font-syne" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Servicios completados</span>
+  1235→
+  1236→                {MOCK_COMPLETED_SERVICES.map((svc, idx) => (
+  1237→                  <div key={svc.id} style={{ display: 'flex', gap: 12 }}>
+  1238→                    {/* Timeline line */}
+  1239→                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+  1240→                      <div style={{
+  1241→                        width: 12, height: 12, borderRadius: '50%',
+  1242→                        background: 'var(--exito)',
+  1243→                        border: '2px solid var(--surface)',
+  1244→                        boxShadow: '0 0 0 2px var(--exito)',
+  1245→                      }} />
+  1246→                      {idx < MOCK_COMPLETED_SERVICES.length - 1 && (
+  1247→                        <div style={{ width: 2, flex: 1, background: 'var(--border)', minHeight: 40 }} />
+  1248→                      )}
+  1249→                    </div>
+  1250→
+  1251→                    {/* Content */}
+  1252→                    <div style={{
+  1253→                      flex: 1,
+  1254→                      padding: '10px 14px',
+  1255→                      borderRadius: 'var(--lf-card-radius)',
+  1256→                      background: 'var(--surface)',
+  1257→                      border: '1px solid var(--border)',
+  1258→                      marginBottom: idx < MOCK_COMPLETED_SERVICES.length - 1 ? 8 : 0,
+  1259→                    }}>
+  1260→                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+  1261→                        <span className="font-mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primario)' }}>{svc.id}</span>
+  1262→                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{svc.time}</span>
+  1263→                      </div>
+  1264→                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
+  1265→                        {svc.origin} → {svc.destination}
+  1266→                      </div>
+  1267→                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  1268→                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{svc.distance}</span>
+  1269→                        <span className="font-mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--exito)' }}>{svc.earnings}</span>
+  1270→                      </div>
+  1271→                    </div>
+  1272→                  </div>
+  1273→                ))}
+  1274→              </div>
+  1275→            </div>
+  1276→          </motion.div>
+  1277→        )}
+  1278→
+  1279→        {/* ═══════════════════════════════════════════
+  1280→            B.6 — PERFIL DEL REPARTIDOR
+  1281→            ═══════════════════════════════════════════ */}
+  1282→        {screen === 'profile' && (
+  1283→          <motion.div
+  1284→            key="profile"
+  1285→            initial={{ opacity: 0, x: 20 }}
+  1286→            animate={{ opacity: 1, x: 0 }}
+  1287→            exit={{ opacity: 0, x: -20 }}
+  1288→            transition={{ duration: 0.3 }}
+  1289→            style={{
+  1290→              position: 'absolute',
+  1291→              inset: 0,
+  1292→              background: 'var(--bg)',
+  1293→              overflowY: 'auto',
+  1294→              paddingBottom: 'calc(var(--lf-bottom-nav-height) + 24px)',
+  1295→            }}
+  1296→          >
+  1297→            {/* Header */}
+  1298→            <div style={{
+  1299→              padding: '28px 20px 20px',
+  1300→              background: 'var(--lf-glass-bg)',
+  1301→              backdropFilter: 'blur(var(--lf-glass-blur))',
+  1302→              WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+  1303→              borderBottom: '1px solid var(--lf-glass-border)',
+  1304→              display: 'flex',
+  1305→              flexDirection: 'column',
+  1306→              alignItems: 'center',
+  1307→              gap: 10,
+  1308→            }}>
+  1309→              <div style={{
+  1310→                width: 72, height: 72, borderRadius: '50%',
+  1311→                background: 'var(--primario)',
+  1312→                display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1313→                fontSize: 24, fontWeight: 700, color: '#fff',
+  1314→                fontFamily: "'JetBrains Mono', monospace",
+  1315→                boxShadow: '0 4px 16px rgba(255,87,34,0.3)',
+  1316→              }}>
+  1317→                {MOCK_REPARTIDOR.initials}
+  1318→              </div>
+  1319→              <span className="font-syne" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{MOCK_REPARTIDOR.name}</span>
+  1320→              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  1321→                <span style={{
+  1322→                  padding: '3px 10px',
+  1323→                  borderRadius: 'var(--lf-pill-radius)',
+  1324→                  background: 'var(--primario-soft)',
+  1325→                  color: 'var(--primario)',
+  1326→                  fontSize: 12,
+  1327→                  fontWeight: 600,
+  1328→                  display: 'flex',
+  1329→                  alignItems: 'center',
+  1330→                  gap: 4,
+  1331→                }}>
+  1332→                  <Bike size={12} />
+  1333→                  Repartidor
+  1334→                </span>
+  1335→                <span style={{
+  1336→                  padding: '3px 10px',
+  1337→                  borderRadius: 'var(--lf-pill-radius)',
+  1338→                  background: 'rgba(0,200,83,0.08)',
+  1339→                  color: 'var(--exito)',
+  1340→                  fontSize: 12,
+  1341→                  fontWeight: 600,
+  1342→                  display: 'flex',
+  1343→                  alignItems: 'center',
+  1344→                  gap: 4,
+  1345→                }}>
+  1346→                  <Shield size={12} />
+  1347→                  Verificado
+  1348→                </span>
+  1349→              </div>
+  1350→            </div>
+  1351→
+  1352→            <div style={{ padding: '20px 16px' }}>
+  1353→              {/* Stats card */}
+  1354→              <div style={{
+  1355→                padding: 16,
+  1356→                borderRadius: 'var(--lf-card-radius)',
+  1357→                background: 'var(--surface)',
+  1358→                border: '1px solid var(--border)',
+  1359→                boxShadow: 'var(--lf-shadow-card)',
+  1360→                marginBottom: 12,
+  1361→                display: 'grid',
+  1362→                gridTemplateColumns: '1fr 1fr 1fr',
+  1363→                gap: 12,
+  1364→              }}>
+  1365→                <div style={{ textAlign: 'center' }}>
+  1366→                  <span className="font-mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', display: 'block' }}>
+  1367→                    {MOCK_REPARTIDOR.totalDeliveries}
+  1368→                  </span>
+  1369→                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Entregas</span>
+  1370→                </div>
+  1371→                <div style={{ textAlign: 'center', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+  1372→                  <span className="font-mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', display: 'block' }}>
+  1373→                    4.8
+  1374→                  </span>
+  1375→                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Calificacion</span>
+  1376→                </div>
+  1377→                <div style={{ textAlign: 'center' }}>
+  1378→                  <span className="font-mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', display: 'block' }}>
+  1379→                    98%
+  1380→                  </span>
+  1381→                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>A tiempo</span>
+  1382→                </div>
+  1383→              </div>
+  1384→
+  1385→              {/* Moto card */}
+  1386→              <div style={{
+  1387→                padding: 16,
+  1388→                borderRadius: 'var(--lf-card-radius)',
+  1389→                background: 'var(--surface)',
+  1390→                border: '1px solid var(--border)',
+  1391→                boxShadow: 'var(--lf-shadow-card)',
+  1392→                marginBottom: 12,
+  1393→                display: 'flex',
+  1394→                alignItems: 'center',
+  1395→                gap: 14,
+  1396→              }}>
+  1397→                <div style={{
+  1398→                  width: 48, height: 48, borderRadius: 14,
+  1399→                  background: 'var(--primario-soft)',
+  1400→                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1401→                }}>
+  1402→                  <Bike size={24} color="var(--primario)" />
+  1403→                </div>
+  1404→                <div style={{ flex: 1 }}>
+  1405→                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', display: 'block' }}>{MOCK_REPARTIDOR.moto}</span>
+  1406→                  <span className="font-mono" style={{ fontSize: 13, color: 'var(--text-muted)' }}>Placa: {MOCK_REPARTIDOR.plate}</span>
+  1407→                </div>
+  1408→              </div>
+  1409→
+  1410→              {/* Calificacion section */}
+  1411→              <div style={{
+  1412→                padding: 16,
+  1413→                borderRadius: 'var(--lf-card-radius)',
+  1414→                background: 'var(--surface)',
+  1415→                border: '1px solid var(--border)',
+  1416→                boxShadow: 'var(--lf-shadow-card)',
+  1417→                marginBottom: 12,
+  1418→              }}>
+  1419→                <span className="font-syne" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 10 }}>Calificacion</span>
+  1420→                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  1421→                  <span className="font-mono" style={{ fontSize: 32, fontWeight: 700, color: 'var(--text)' }}>{MOCK_REPARTIDOR.rating}</span>
+  1422→                  <div style={{ display: 'flex', gap: 2 }}>
+  1423→                    {[1, 2, 3, 4, 5].map((star) => (
+  1424→                      <Star
+  1425→                        key={star}
+  1426→                        size={18}
+  1427→                        fill={star <= Math.floor(MOCK_REPARTIDOR.rating) ? 'var(--warning)' : 'none'}
+  1428→                        color={star <= Math.floor(MOCK_REPARTIDOR.rating) ? 'var(--warning)' : 'var(--border)'}
+  1429→                      />
+  1430→                    ))}
+  1431→                  </div>
+  1432→                </div>
+  1433→                <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Basado en {MOCK_REPARTIDOR.totalDeliveries} entregas</span>
+  1434→              </div>
+  1435→
+  1436→              {/* Configuracion toggles */}
+  1437→              <div style={{
+  1438→                padding: 16,
+  1439→                borderRadius: 'var(--lf-card-radius)',
+  1440→                background: 'var(--surface)',
+  1441→                border: '1px solid var(--border)',
+  1442→                boxShadow: 'var(--lf-shadow-card)',
+  1443→                marginBottom: 12,
+  1444→              }}>
+  1445→                <span className="font-syne" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 12 }}>Configuracion</span>
+  1446→                {[
+  1447→                  { label: 'Notificaciones push', icon: <Bell size={16} color="var(--text-secondary)" /> },
+  1448→                  { label: 'Sonido de nueva orden', icon: <Activity size={16} color="var(--text-secondary)" /> },
+  1449→                  { label: 'Modo oscuro', icon: isDark ? <Moon size={16} color="var(--text-secondary)" /> : <Sun size={16} color="var(--text-secondary)" /> },
+  1450→                ].map((item, idx) => (
+  1451→                  <div key={item.label} style={{
+  1452→                    display: 'flex',
+  1453→                    alignItems: 'center',
+  1454→                    justifyContent: 'space-between',
+  1455→                    padding: '10px 0',
+  1456→                    borderBottom: idx < 2 ? '1px solid var(--border)' : 'none',
+  1457→                  }}>
+  1458→                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1459→                      {item.icon}
+  1460→                      <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{item.label}</span>
+  1461→                    </div>
+  1462→                    {item.label === 'Modo oscuro' ? (
+  1463→                      <button
+  1464→                        onClick={toggleTheme}
+  1465→                        style={{
+  1466→                          width: 44, height: 24, borderRadius: 12,
+  1467→                          background: isDark ? 'var(--primario)' : 'var(--border)',
+  1468→                          border: 'none', cursor: 'pointer', position: 'relative', padding: 0,
+  1469→                        }}
+  1470→                      >
+  1471→                        <motion.div
+  1472→                          animate={{ x: isDark ? 20 : 2 }}
+  1473→                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+  1474→                          style={{
+  1475→                            width: 20, height: 20, borderRadius: '50%',
+  1476→                            background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+  1477→                            position: 'absolute', top: 2,
+  1478→                          }}
+  1479→                        />
+  1480→                      </button>
+  1481→                    ) : (
+  1482→                      <button
+  1483→                        style={{
+  1484→                          width: 44, height: 24, borderRadius: 12,
+  1485→                          background: 'var(--exito)', border: 'none',
+  1486→                          cursor: 'pointer', position: 'relative', padding: 0,
+  1487→                        }}
+  1488→                      >
+  1489→                        <motion.div
+  1490→                          animate={{ x: 20 }}
+  1491→                          style={{
+  1492→                            width: 20, height: 20, borderRadius: '50%',
+  1493→                            background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+  1494→                            position: 'absolute', top: 2,
+  1495→                          }}
+  1496→                        />
+  1497→                      </button>
+  1498→                    )}
+  1499→                  </div>
+  1500→                ))}
+  1501→              </div>
+  1502→
+  1503→              {/* Logout */}
+  1504→              <motion.button
+  1505→                whileTap={{ scale: 0.96 }}
+  1506→                onClick={onLogout}
+  1507→                style={{
+  1508→                  width: '100%',
+  1509→                  padding: '14px',
+  1510→                  borderRadius: 'var(--lf-button-radius)',
+  1511→                  border: '1px solid rgba(255,23,68,0.2)',
+  1512→                  background: 'transparent',
+  1513→                  color: 'var(--peligro)',
+  1514→                  fontSize: 14,
+  1515→                  fontWeight: 600,
+  1516→                  fontFamily: "'DM Sans', sans-serif",
+  1517→                  cursor: 'pointer',
+  1518→                  display: 'flex',
+  1519→                  alignItems: 'center',
+  1520→                  justifyContent: 'center',
+  1521→                  gap: 8,
+  1522→                  marginTop: 4,
+  1523→                }}
+  1524→              >
+  1525→                <LogOut size={16} />
+  1526→                Cerrar sesion
+  1527→              </motion.button>
+  1528→            </div>
+  1529→          </motion.div>
+  1530→        )}
+  1531→      </AnimatePresence>
+  1532→
+  1533→      {/* ═══════════════════════════════════════════
+  1534→          B.4 — REPORTE DE INCIDENCIA (Bottom Sheet)
+  1535→          ═══════════════════════════════════════════ */}
+  1536→      <AnimatePresence>
+  1537→        {showIncident && (
+  1538→          <motion.div
+  1539→            initial={{ opacity: 0 }}
+  1540→            animate={{ opacity: 1 }}
+  1541→            exit={{ opacity: 0 }}
+  1542→            style={{
+  1543→              position: 'fixed', inset: 0, zIndex: 100,
+  1544→              background: 'rgba(0,0,0,0.4)',
+  1545→              display: 'flex',
+  1546→              alignItems: 'flex-end',
+  1547→            }}
+  1548→            onClick={() => setShowIncident(false)}
+  1549→          >
+  1550→            <motion.div
+  1551→              initial={{ y: '100%' }}
+  1552→              animate={{ y: 0 }}
+  1553→              exit={{ y: '100%' }}
+  1554→              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+  1555→              onClick={(e) => e.stopPropagation()}
+  1556→              style={{
+  1557→                width: '100%',
+  1558→                maxHeight: '75vh',
+  1559→                background: 'var(--lf-glass-bg)',
+  1560→                backdropFilter: 'blur(var(--lf-glass-blur))',
+  1561→                WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+  1562→                borderRadius: 'var(--lf-sheet-radius) var(--lf-sheet-radius) 0 0',
+  1563→                boxShadow: 'var(--lf-shadow-sheet)',
+  1564→                overflow: 'hidden',
+  1565→                display: 'flex',
+  1566→                flexDirection: 'column',
+  1567→              }}
+  1568→            >
+  1569→              {/* Header */}
+  1570→              <div style={{
+  1571→                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  1572→                padding: '20px 20px 0',
+  1573→              }}>
+  1574→                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+  1575→                  <div style={{
+  1576→                    width: 36, height: 36, borderRadius: 10,
+  1577→                    background: 'rgba(255,23,68,0.1)',
+  1578→                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1579→                  }}>
+  1580→                    <AlertTriangle size={18} color="var(--peligro)" />
+  1581→                  </div>
+  1582→                  <span className="font-syne" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Reportar incidencia</span>
+  1583→                </div>
+  1584→                <button
+  1585→                  onClick={() => setShowIncident(false)}
+  1586→                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}
+  1587→                >
+  1588→                  <X size={20} />
+  1589→                </button>
+  1590→              </div>
+  1591→
+  1592→              <div style={{ padding: '20px', overflowY: 'auto' }}>
+  1593→                {/* Selectable options */}
+  1594→                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+  1595→                  {[
+  1596→                    { key: 'mechanical' as IncidentType, label: 'Falla mecanica', icon: <Wrench size={18} /> },
+  1597→                    { key: 'client-issue' as IncidentType, label: 'Problema con cliente', icon: <UserX size={18} /> },
+  1598→                    { key: 'accident' as IncidentType, label: 'Accidente', icon: <AlertOctagon size={18} /> },
+  1599→                    { key: 'other' as IncidentType, label: 'Otro', icon: <MoreHorizontal size={18} /> },
+  1600→                  ].map((opt) => (
+  1601→                    <motion.button
+  1602→                      key={opt.key}
+  1603→                      whileTap={{ scale: 0.98 }}
+  1604→                      onClick={() => setSelectedIncident(opt.key)}
+  1605→                      style={{
+  1606→                        display: 'flex', alignItems: 'center', gap: 12,
+  1607→                        padding: '14px 16px',
+  1608→                        borderRadius: 'var(--lf-card-radius)',
+  1609→                        border: `2px solid ${selectedIncident === opt.key ? 'var(--peligro)' : 'var(--border)'}`,
+  1610→                        background: selectedIncident === opt.key ? 'rgba(255,23,68,0.05)' : 'var(--surface)',
+  1611→                        cursor: 'pointer',
+  1612→                        transition: 'all 0.2s',
+  1613→                        color: selectedIncident === opt.key ? 'var(--peligro)' : 'var(--text)',
+  1614→                      }}
+  1615→                    >
+  1616→                      <div style={{
+  1617→                        width: 36, height: 36, borderRadius: 10,
+  1618→                        background: selectedIncident === opt.key ? 'rgba(255,23,68,0.1)' : 'var(--primario-soft)',
+  1619→                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+  1620→                        color: selectedIncident === opt.key ? 'var(--peligro)' : 'var(--text-secondary)',
+  1621→                      }}>
+  1622→                        {opt.icon}
+  1623→                      </div>
+  1624→                      <span style={{ fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>{opt.label}</span>
+  1625→                      {selectedIncident === opt.key && (
+  1626→                        <Check size={16} color="var(--peligro)" style={{ marginLeft: 'auto' }} />
+  1627→                      )}
+  1628→                    </motion.button>
+  1629→                  ))}
+  1630→                </div>
+  1631→
+  1632→                {/* Textarea */}
+  1633→                <textarea
+  1634→                  value={incidentDescription}
+  1635→                  onChange={(e) => setIncidentDescription(e.target.value)}
+  1636→                  placeholder="Describe que paso"
+  1637→                  style={{
+  1638→                    width: '100%',
+  1639→                    minHeight: 100,
+  1640→                    padding: '14px 16px',
+  1641→                    borderRadius: 'var(--lf-input-radius)',
+  1642→                    border: '1px solid var(--border)',
+  1643→                    background: 'var(--surface)',
+  1644→                    color: 'var(--text)',
+  1645→                    fontSize: 14,
+  1646→                    fontFamily: "'DM Sans', sans-serif",
+  1647→                    resize: 'none',
+  1648→                    outline: 'none',
+  1649→                  }}
+  1650→                />
+  1651→
+  1652→                {/* Submit */}
+  1653→                <motion.button
+  1654→                  whileTap={{ scale: 0.96 }}
+  1655→                  onClick={handleIncidentSubmit}
+  1656→                  disabled={!selectedIncident}
+  1657→                  style={{
+  1658→                    width: '100%',
+  1659→                    padding: '14px',
+  1660→                    borderRadius: 'var(--lf-button-radius)',
+  1661→                    border: 'none',
+  1662→                    background: selectedIncident ? 'var(--peligro)' : 'var(--border)',
+  1663→                    color: selectedIncident ? '#fff' : 'var(--text-muted)',
+  1664→                    fontSize: 15,
+  1665→                    fontWeight: 700,
+  1666→                    fontFamily: "'Syne', sans-serif",
+  1667→                    cursor: selectedIncident ? 'pointer' : 'not-allowed',
+  1668→                    marginTop: 12,
+  1669→                    boxShadow: selectedIncident ? '0 6px 20px rgba(255,23,68,0.3)' : 'none',
+  1670→                    display: 'flex',
+  1671→                    alignItems: 'center',
+  1672→                    justifyContent: 'center',
+  1673→                    gap: 8,
+  1674→                  }}
+  1675→                >
+  1676→                  <AlertTriangle size={18} />
+  1677→                  Enviar reporte
+  1678→                </motion.button>
+  1679→              </div>
+  1680→            </motion.div>
+  1681→          </motion.div>
+  1682→        )}
+  1683→      </AnimatePresence>
+  1684→
+  1685→      {/* ═══════════════════════════════════════════
+  1686→          B.7 — NAVEGACION (Bottom Nav)
+  1687→          ═══════════════════════════════════════════ */}
+  1688→      {screen !== 'new-order' && (
+  1689→        <div style={{
+  1690→          position: 'fixed',
+  1691→          bottom: 0,
+  1692→          left: 0,
+  1693→          right: 0,
+  1694→          zIndex: 40,
+  1695→          background: 'var(--lf-glass-bg)',
+  1696→          backdropFilter: 'blur(var(--lf-glass-blur))',
+  1697→          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+  1698→          borderTop: '1px solid var(--lf-glass-border)',
+  1699→          height: 'var(--lf-bottom-nav-height)',
+  1700→          display: 'flex',
+  1701→          alignItems: 'center',
+  1702→          justifyContent: 'space-around',
+  1703→          padding: '0 8px',
+  1704→          paddingBottom: 'var(--lf-safe-bottom)',
+  1705→        }}>
+  1706→          {[
+  1707→            {
+  1708→              key: 'idle' as RepartidorScreen,
+  1709→              label: 'Inicio',
+  1710→              icon: <MapPin size={22} />,
+  1711→              activeIcon: <MapPin size={22} strokeWidth={2.5} />,
+  1712→            },
+  1713→            {
+  1714→              key: 'history' as RepartidorScreen,
+  1715→              label: 'Servicios',
+  1716→              icon: <Package size={22} />,
+  1717→              activeIcon: <Package size={22} strokeWidth={2.5} />,
+  1718→            },
+  1719→            {
+  1720→              key: 'profile' as RepartidorScreen,
+  1721→              label: 'Perfil',
+  1722→              icon: <User size={22} />,
+  1723→              activeIcon: <User size={22} strokeWidth={2.5} />,
+  1724→            },
+  1725→          ].map((item) => {
+  1726→            const isActive = screen === item.key || (screen === 'delivering' && item.key === 'idle');
+  1727→            return (
+  1728→              <motion.button
+  1729→                key={item.key}
+  1730→                whileTap={{ scale: 0.9 }}
+  1731→                onClick={() => {
+  1732→                  if (screen === 'delivering') return; // Don't navigate during delivery
+  1733→                  setScreen(item.key);
+  1734→                }}
+  1735→                style={{
+  1736→                  display: 'flex',
+  1737→                  flexDirection: 'column',
+  1738→                  alignItems: 'center',
+  1739→                  gap: 3,
+  1740→                  padding: '8px 16px',
+  1741→                  background: 'none',
+  1742→                  border: 'none',
+  1743→                  cursor: screen === 'delivering' ? 'not-allowed' : 'pointer',
+  1744→                  opacity: screen === 'delivering' && !isActive ? 0.4 : 1,
+  1745→                  position: 'relative',
+  1746→                }}
+  1747→              >
+  1748→                {isActive && (
+  1749→                  <motion.div
+  1750→                    layoutId="repartidor-nav-indicator"
+  1751→                    style={{
+  1752→                      position: 'absolute',
+  1753→                      top: -2,
+  1754→                      width: 24,
+  1755→                      height: 3,
+  1756→                      borderRadius: 2,
+  1757→                      background: 'var(--primario)',
+  1758→                    }}
+  1759→                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+  1760→                  />
+  1761→                )}
+  1762→                <span style={{ color: isActive ? 'var(--primario)' : 'var(--text-muted)', display: 'flex' }}>
+  1763→                  {isActive ? item.activeIcon : item.icon}
+  1764→                </span>
+  1765→                <span style={{
+  1766→                  fontSize: 11,
+  1767→                  fontWeight: isActive ? 600 : 400,
+  1768→                  color: isActive ? 'var(--primario)' : 'var(--text-muted)',
+  1769→                  fontFamily: "'DM Sans', sans-serif",
+  1770→                }}>
+  1771→                  {item.label}
+  1772→                </span>
+  1773→              </motion.button>
+  1774→            );
+  1775→          })}
+  1776→        </div>
+  1777→      )}
+  1778→    </div>
+  1779→  );
+  1780→}
+  1781→

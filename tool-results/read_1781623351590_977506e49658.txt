@@ -1,0 +1,1513 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useRef, useEffect, useCallback, createContext, useContext } from 'react';
+     4→import dynamic from 'next/dynamic';
+     5→import { AnimatePresence, motion } from 'framer-motion';
+     6→import {
+     7→  Home,
+     8→  PackagePlus,
+     9→  Package,
+    10→  User,
+    11→  Bell,
+    12→  Sun,
+    13→  Moon,
+    14→  LogOut,
+    15→  Settings,
+    16→  CheckCircle,
+    17→  AlertTriangle,
+    18→  Bike,
+    19→  Tag,
+    20→  Heart,
+    21→  X,
+    22→  Search,
+    23→  ShoppingBag,
+    24→} from 'lucide-react';
+    25→import { useStore, type ClientModuleKey } from '@/lib/store';
+    26→import type { ClientNotificacion } from '@/lib/store';
+    27→import { useMarketplaceStore } from '@/lib/marketplace-store';
+    28→
+    29→/* ═══════════════════════════════════════════════
+    30→   DYNAMIC MODULE IMPORTS
+    31→   ═══════════════════════════════════════════════ */
+    32→
+    33→const ClientInicio = dynamic(() => import('./ClientInicio'), { ssr: false });
+    34→const ClientSolicitar = dynamic(() => import('./ClientSolicitar'), { ssr: false });
+    35→const ClientEnvios = dynamic(() => import('./ClientEnvios'), { ssr: false });
+    36→const ClientPerfil = dynamic(() => import('./ClientPerfil'), { ssr: false });
+    37→const ClientTracking = dynamic(() => import('./ClientTracking'), { ssr: false });
+    38→const ClientChat = dynamic(() => import('./ClientChat'), { ssr: false });
+    39→const ClientRating = dynamic(() => import('./ClientRating'), { ssr: false });
+    40→const ClientExplorar = dynamic(() => import('./ClientExplorar'), { ssr: false });
+    41→const ClientTienda = dynamic(() => import('./ClientTienda'), { ssr: false });
+    42→const ClientCarrito = dynamic(() => import('./ClientCarrito'), { ssr: false });
+    43→const ClientPedidos = dynamic(() => import('./ClientPedidos'), { ssr: false });
+    44→const ClientBusqueda = dynamic(() => import('./ClientBusqueda'), { ssr: false });
+    45→const ClientAyuda = dynamic(() => import('./ClientAyuda'), { ssr: false });
+    46→const ClientPuntos = dynamic(() => import('./ClientPuntos'), { ssr: false });
+    47→
+    48→/* ═══════════════════════════════════════════════
+    49→   SNACKBAR CONTEXT
+    50→   ═══════════════════════════════════════════════ */
+    51→
+    52→interface SnackbarData {
+    53→  message: string;
+    54→  action?: string;
+    55→  onAction?: () => void;
+    56→}
+    57→
+    58→const SnackbarContext = createContext<(data: SnackbarData | null) => void>(() => {});
+    59→
+    60→export function useSnackbar() {
+    61→  return useContext(SnackbarContext);
+    62→}
+    63→
+    64→/* ═══════════════════════════════════════════════
+    65→   PROPS
+    66→   ═══════════════════════════════════════════════ */
+    67→
+    68→interface ClientShellProps {
+    69→  isDark: boolean;
+    70→  toggleTheme: () => void;
+    71→  onLogout: () => void;
+    72→  userName: string;
+    73→}
+    74→
+    75→/* ═══════════════════════════════════════════════
+    76→   HELPERS
+    77→   ═══════════════════════════════════════════════ */
+    78→
+    79→function getInitials(name: string): string {
+    80→  const parts = name.trim().split(/\s+/);
+    81→  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    82→  return parts[0].substring(0, 2).toUpperCase();
+    83→}
+    84→
+    85→function relativeTime(timestamp: string): string {
+    86→  const now = Date.now();
+    87→  const then = new Date(timestamp).getTime();
+    88→  const diff = now - then;
+    89→
+    90→  const minutes = Math.floor(diff / 60000);
+    91→  if (minutes < 1) return 'Ahora mismo';
+    92→  if (minutes < 60) return `Hace ${minutes} min`;
+    93→
+    94→  const hours = Math.floor(minutes / 60);
+    95→  if (hours < 24) return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
+    96→
+    97→  const days = Math.floor(hours / 24);
+    98→  if (days < 30) return `Hace ${days} día${days > 1 ? 's' : ''}`;
+    99→
+   100→  const months = Math.floor(days / 30);
+   101→  return `Hace ${months} mes${months > 1 ? 'es' : ''}`;
+   102→}
+   103→
+   104→/* Notification icon + color by tipo */
+   105→function getNotifIcon(tipo: ClientNotificacion['tipo']): { icon: React.ReactNode; color: string } {
+   106→  const iconSize = 18;
+   107→  switch (tipo) {
+   108→    case 'orden_confirmada':
+   109→      return { icon: <CheckCircle size={iconSize} />, color: 'var(--exito)' };
+   110→    case 'repartidor_asignado':
+   111→      return { icon: <User size={iconSize} />, color: 'var(--info)' };
+   112→    case 'repartidor_camino':
+   113→      return { icon: <Bike size={iconSize} />, color: '#FF9800' };
+   114→    case 'paquete_recogido':
+   115→      return { icon: <Package size={iconSize} />, color: 'var(--info)' };
+   116→    case 'entrega_exitosa':
+   117→      return { icon: <CheckCircle size={22} />, color: 'var(--exito)' };
+   118→    case 'incidencia':
+   119→      return { icon: <AlertTriangle size={iconSize} />, color: 'var(--peligro)' };
+   120→    case 'codigo_nuevo':
+   121→      return { icon: <Tag size={iconSize} />, color: '#FF9800' };
+   122→    case 'te_extranamos':
+   123→      return { icon: <Heart size={iconSize} />, color: '#E91E63' };
+   124→    default:
+   125→      return { icon: <Bell size={iconSize} />, color: 'var(--primario)' };
+   126→  }
+   127→}
+   128→
+   129→/* ═══════════════════════════════════════════════
+   130→   NAV CONFIG
+   131→   ═══════════════════════════════════════════════ */
+   132→
+   133→interface NavItem {
+   134→  key: ClientModuleKey;
+   135→  label: string;
+   136→  icon: React.ReactNode;
+   137→}
+   138→
+   139→const NAV_ITEMS: NavItem[] = [
+   140→  { key: 'inicio', label: 'Inicio', icon: <Home size={22} /> },
+   141→  { key: 'explorar', label: 'Explorar', icon: <Search size={22} /> },
+   142→  { key: 'solicitar', label: 'Enviar', icon: <PackagePlus size={22} /> },
+   143→  { key: 'pedidos', label: 'Pedidos', icon: <Package size={22} /> },
+   144→  { key: 'perfil', label: 'Perfil', icon: <User size={22} /> },
+   145→];
+   146→
+   147→/* ═══════════════════════════════════════════════
+   148→   SVG ICONS (status bar)
+   149→   ═══════════════════════════════════════════════ */
+   150→
+   151→function SignalIcon() {
+   152→  return (
+   153→    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+   154→      <rect x="0" y="9" width="3" height="3" rx="0.5" />
+   155→      <rect x="4.5" y="6" width="3" height="6" rx="0.5" />
+   156→      <rect x="9" y="3" width="3" height="9" rx="0.5" />
+   157→      <rect x="13.5" y="0" width="3" height="12" rx="0.5" opacity="0.3" />
+   158→    </svg>
+   159→  );
+   160→}
+   161→
+   162→function WifiIcon() {
+   163→  return (
+   164→    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+   165→      <path d="M8 10.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" transform="translate(0,-2)" />
+   166→      <path d="M4.93 8.47a4.36 4.36 0 016.14 0" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" transform="translate(0,-1)" />
+   167→      <path d="M2.1 5.64a7.8 7.8 0 0111.8 0" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+   168→    </svg>
+   169→  );
+   170→}
+   171→
+   172→function BatteryIcon() {
+   173→  return (
+   174→    <svg width="22" height="12" viewBox="0 0 22 12" fill="currentColor">
+   175→      <rect x="0" y="0.5" width="19" height="11" rx="2" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" />
+   176→      <rect x="1.5" y="2" width="14" height="8" rx="1" />
+   177→      <rect x="19.5" y="3.5" width="2" height="5" rx="0.8" opacity="0.4" />
+   178→    </svg>
+   179→  );
+   180→}
+   181→
+   182→/* ═══════════════════════════════════════════════
+   183→   MAIN COMPONENT
+   184→   ═══════════════════════════════════════════════ */
+   185→
+   186→export default function ClientShell({ isDark, toggleTheme, onLogout, userName }: ClientShellProps) {
+   187→  const {
+   188→    clientActiveModule,
+   189→    clientModuleFade,
+   190→    setClientActiveModule,
+   191→    clientNotificaciones,
+   192→    clientNotifOpen,
+   193→    setClientNotifOpen,
+   194→    markClientNotifRead,
+   195→    markAllClientNotifRead,
+   196→    trackingOrderId,
+   197→    chatOpen,
+   198→    ratingModalOpen,
+   199→    setTrackingOrder,
+   200→    setChatOpen,
+   201→    setChatOrderId,
+   202→    setRatingModalOpen,
+   203→    setRatingOrderId,
+   204→  } = useStore();
+   205→
+   206→  const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount } = useMarketplaceStore();
+   207→
+   208→  /* ─── SPLASH STATE ─── */
+   209→  const [showSplash, setShowSplash] = useState(true);
+   210→  const [splashFading, setSplashFading] = useState(false);
+   211→
+   212→  /* ─── SNACKBAR STATE ─── */
+   213→  const [snackbar, setSnackbar] = useState<SnackbarData | null>(null);
+   214→
+   215→  const [avatarOpen, setAvatarOpen] = useState(false);
+   216→  const notifRef = useRef<HTMLDivElement>(null);
+   217→  const avatarRef = useRef<HTMLDivElement>(null);
+   218→  const snackbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+   219→
+   220→  const unreadCount = clientNotificaciones.filter((n) => !n.leida).length;
+   221→  const initials = getInitials(userName);
+   222→
+   223→  /* ─── SPLASH TIMER ─── */
+   224→  useEffect(() => {
+   225→    const fadeTimer = setTimeout(() => {
+   226→      setSplashFading(true);
+   227→    }, 1500);
+   228→    const removeTimer = setTimeout(() => {
+   229→      setShowSplash(false);
+   230→    }, 1900);
+   231→    return () => {
+   232→      clearTimeout(fadeTimer);
+   233→      clearTimeout(removeTimer);
+   234→    };
+   235→  }, []);
+   236→
+   237→  /* ─── SNACKBAR AUTO-DISMISS ─── */
+   238→  const showSnackbar = useCallback((data: SnackbarData | null) => {
+   239→    if (snackbarTimerRef.current) clearTimeout(snackbarTimerRef.current);
+   240→    setSnackbar(data);
+   241→    if (data) {
+   242→      snackbarTimerRef.current = setTimeout(() => {
+   243→        setSnackbar(null);
+   244→      }, 4000);
+   245→    }
+   246→  }, []);
+   247→
+   248→  /* Close dropdowns on outside click */
+   249→  useEffect(() => {
+   250→    function handleClick(e: MouseEvent) {
+   251→      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+   252→        setClientNotifOpen(false);
+   253→      }
+   254→      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+   255→        setAvatarOpen(false);
+   256→      }
+   257→    }
+   258→    document.addEventListener('mousedown', handleClick);
+   259→    return () => document.removeEventListener('mousedown', handleClick);
+   260→  }, [setClientNotifOpen]);
+   261→
+   262→  /* Close dropdowns on escape */
+   263→  useEffect(() => {
+   264→    function handleKey(e: KeyboardEvent) {
+   265→      if (e.key === 'Escape') {
+   266→        setClientNotifOpen(false);
+   267→        setAvatarOpen(false);
+   268→      }
+   269→    }
+   270→    document.addEventListener('keydown', handleKey);
+   271→    return () => document.removeEventListener('keydown', handleKey);
+   272→  }, [setClientNotifOpen]);
+   273→
+   274→  const handleNav = useCallback(
+   275→    (mod: ClientModuleKey) => {
+   276→      setClientActiveModule(mod);
+   277→      setTrackingOrder(null);
+   278→      if (mod !== 'explorar') {
+   279→        setTiendaSeleccionada(null);
+   280→      }
+   281→      // Haptic feedback on nav tap
+   282→      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+   283→        try { navigator.vibrate(20); } catch { /* ignore */ }
+   284→      }
+   285→    },
+   286→    [setClientActiveModule, setTrackingOrder, setTiendaSeleccionada]
+   287→  );
+   288→
+   289→  const handleOpenTracking = useCallback(
+   290→    (orderId: string) => {
+   291→      setTrackingOrder(orderId);
+   292→    },
+   293→    [setTrackingOrder]
+   294→  );
+   295→
+   296→  const handleCloseTracking = useCallback(
+   297→    () => setTrackingOrder(null),
+   298→    [setTrackingOrder]
+   299→  );
+   300→
+   301→  const handleOpenChat = useCallback(
+   302→    (orderId: string) => {
+   303→      setChatOrderId(orderId);
+   304→      setChatOpen(true);
+   305→    },
+   306→    [setChatOrderId, setChatOpen]
+   307→  );
+   308→
+   309→  const handleOpenRating = useCallback(
+   310→    (orderId: string) => {
+   311→      setRatingOrderId(orderId);
+   312→      setRatingModalOpen(true);
+   313→    },
+   314→    [setRatingOrderId, setRatingModalOpen]
+   315→  );
+   316→
+   317→  const renderModule = () => {
+   318→    const moduleProps = { isDark, userName, onNavigate: handleNav, onOpenTracking: handleOpenTracking, onOpenChat: handleOpenChat };
+   319→    const perfilProps = { ...moduleProps, onLogout };
+   320→    switch (clientActiveModule) {
+   321→      case 'inicio':
+   322→        return <ClientInicio {...moduleProps} />;
+   323→      case 'solicitar':
+   324→        return <ClientSolicitar {...moduleProps} />;
+   325→      case 'explorar':
+   326→        return <ClientExplorar {...moduleProps} />;
+   327→      case 'pedidos':
+   328→        return <ClientPedidos {...moduleProps} />;
+   329→      case 'perfil':
+   330→        return <ClientPerfil {...perfilProps} />;
+   331→      case 'ayuda':
+   332→        return <ClientAyuda isDark={isDark} onBack={() => setClientActiveModule('perfil')} />;
+   333→      case 'puntos':
+   334→        return <ClientPuntos isDark={isDark} onBack={() => setClientActiveModule('perfil')} />;
+   335→      default:
+   336→        return <ClientInicio {...moduleProps} />;
+   337→    }
+   338→  };
+   339→
+   340→  return (
+   341→    <SnackbarContext.Provider value={showSnackbar}>
+   342→      <div
+   343→        style={{
+   344→          minHeight: '100vh',
+   345→          display: 'flex',
+   346→          flexDirection: 'column',
+   347→          backgroundColor: 'var(--bg)',
+   348→          color: 'var(--text)',
+   349→          fontFamily: "'DM Sans', sans-serif",
+   350→          transition: 'background-color 0.4s ease, color 0.3s ease',
+   351→        }}
+   352→      >
+   353→        {/* ═══════ SPLASH SCREEN ═══════ */}
+   354→        {showSplash && (
+   355→          <motion.div
+   356→            initial={{ opacity: 1 }}
+   357→            animate={{ opacity: splashFading ? 0 : 1 }}
+   358→            transition={{ duration: 0.4, ease: 'easeOut' }}
+   359→            style={{
+   360→              position: 'fixed',
+   361→              inset: 0,
+   362→              zIndex: 99999,
+   363→              background: 'var(--md-surface)',
+   364→              display: 'flex',
+   365→              flexDirection: 'column',
+   366→              alignItems: 'center',
+   367→              justifyContent: 'center',
+   368→              pointerEvents: 'none',
+   369→            }}
+   370→          >
+   371→            {/* Logo */}
+   372→            <motion.div
+   373→              initial={{ scale: 0.8 }}
+   374→              animate={{ scale: 1 }}
+   375→              transition={{ duration: 0.6, ease: [0.2, 0, 0, 1] }}
+   376→              style={{
+   377→                width: 72,
+   378→                height: 72,
+   379→                borderRadius: 20,
+   380→                background: 'linear-gradient(135deg, #FF5722, #FF8A65)',
+   381→                display: 'flex',
+   382→                alignItems: 'center',
+   383→                justifyContent: 'center',
+   384→                color: '#FFFFFF',
+   385→                boxShadow: '0 8px 32px rgba(255, 87, 34, 0.25)',
+   386→              }}
+   387→            >
+   388→              <Bike size={32} />
+   389→            </motion.div>
+   390→            {/* Brand text */}
+   391→            <motion.span
+   392→              initial={{ opacity: 0, y: 8 }}
+   393→              animate={{ opacity: 1, y: 0 }}
+   394→              transition={{ duration: 0.6, delay: 0.3, ease: [0.2, 0, 0, 1] }}
+   395→              style={{
+   396→                fontFamily: "'Syne', sans-serif",
+   397→                fontWeight: 700,
+   398→                fontSize: 24,
+   399→                color: 'var(--md-on-surface)',
+   400→                marginTop: 20,
+   401→                letterSpacing: '-0.5px',
+   402→              }}
+   403→            >
+   404→              LOGIFAST
+   405→            </motion.span>
+   406→          </motion.div>
+   407→        )}
+   408→
+   409→        {/* ═══════ NATIVE STATUS BAR (mobile) ═══════ */}
+   410→        <div
+   411→          className="lf-status-bar"
+   412→          style={{
+   413→            position: 'fixed',
+   414→            top: 0,
+   415→            left: 0,
+   416→            right: 0,
+   417→            height: 'max(24px, env(safe-area-inset-top, 24px))',
+   418→            zIndex: 9999,
+   419→            display: 'flex',
+   420→            alignItems: 'center',
+   421→            justifyContent: 'space-between',
+   422→            padding: '0 20px',
+   423→            background: 'transparent',
+   424→            pointerEvents: 'none',
+   425→          }}
+   426→        >
+   427→          {/* Left: Time */}
+   428→          <span
+   429→            style={{
+   430→              fontFamily: "'JetBrains Mono', monospace",
+   431→              fontSize: 14,
+   432→              fontWeight: 500,
+   433→              color: 'var(--md-on-surface)',
+   434→              lineHeight: 1,
+   435→            }}
+   436→          >
+   437→            9:41
+   438→          </span>
+   439→          {/* Right: Signal + Wifi + Battery */}
+   440→          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--md-on-surface)' }}>
+   441→            <SignalIcon />
+   442→            <WifiIcon />
+   443→            <BatteryIcon />
+   444→          </div>
+   445→        </div>
+   446→
+   447→        {/* ═══════ ANDROID GESTURE BAR (mobile) ═══════ */}
+   448→        <div
+   449→          className="lf-gesture-bar"
+   450→          style={{
+   451→            position: 'fixed',
+   452→            bottom: 0,
+   453→            left: 0,
+   454→            right: 0,
+   455→            height: 'max(20px, env(safe-area-inset-bottom, 20px))',
+   456→            zIndex: 9999,
+   457→            display: 'flex',
+   458→            alignItems: 'center',
+   459→            justifyContent: 'center',
+   460→            background: 'transparent',
+   461→            pointerEvents: 'none',
+   462→          }}
+   463→        >
+   464→          <div
+   465→            style={{
+   466→              width: 120,
+   467→              height: 3,
+   468→              borderRadius: 2,
+   469→              background: 'var(--md-on-surface-variant)',
+   470→              opacity: 0.3,
+   471→            }}
+   472→          />
+   473→        </div>
+   474→
+   475→        {/* ─── HEADER ─── */}
+   476→        <header
+   477→          style={{
+   478→            position: 'fixed',
+   479→            top: 0,
+   480→            left: 0,
+   481→            right: 0,
+   482→            height: 60,
+   483→            zIndex: 50,
+   484→            display: 'flex',
+   485→            alignItems: 'center',
+   486→            justifyContent: 'space-between',
+   487→            padding: '0 16px',
+   488→            background: 'color-mix(in srgb, var(--surface) 85%, transparent)',
+   489→            backdropFilter: 'blur(16px)',
+   490→            WebkitBackdropFilter: 'blur(16px)',
+   491→            borderBottom: '1px solid var(--border)',
+   492→            transition: 'background-color 0.3s ease, border-color 0.3s ease',
+   493→          }}
+   494→          className="lf-header-bar"
+   495→        >
+   496→          {/* Left: Brand */}
+   497→          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+   498→            <div
+   499→              style={{
+   500→                width: 32,
+   501→                height: 32,
+   502→                borderRadius: 8,
+   503→                background: 'linear-gradient(135deg, #FF5722, #FF8A65)',
+   504→                display: 'flex',
+   505→                alignItems: 'center',
+   506→                justifyContent: 'center',
+   507→                color: '#FFFFFF',
+   508→                fontWeight: 700,
+   509→                fontSize: 13,
+   510→                fontFamily: "'Syne', sans-serif",
+   511→                letterSpacing: '-0.5px',
+   512→                flexShrink: 0,
+   513→              }}
+   514→            >
+   515→              LF
+   516→            </div>
+   517→            <span
+   518→              style={{
+   519→                fontFamily: "'Syne', sans-serif",
+   520→                fontWeight: 700,
+   521→                fontSize: 18,
+   522→                color: 'var(--text)',
+   523→                letterSpacing: '-0.3px',
+   524→              }}
+   525→            >
+   526→              LOGIFAST
+   527→            </span>
+   528→          </div>
+   529→
+   530→          {/* Center: Desktop Nav Pills */}
+   531→          <nav
+   532→            style={{
+   533→              display: 'none',
+   534→              alignItems: 'center',
+   535→              gap: 4,
+   536→            }}
+   537→            className="lf-desktop-nav"
+   538→          >
+   539→            {NAV_ITEMS.map((item) => {
+   540→              const isActive = clientActiveModule === item.key;
+   541→              const isEnviar = item.key === 'solicitar';
+   542→              return (
+   543→                <button
+   544→                  key={item.key}
+   545→                  onClick={() => handleNav(item.key)}
+   546→                  style={{
+   547→                    display: 'flex',
+   548→                    alignItems: 'center',
+   549→                    gap: 6,
+   550→                    padding: isEnviar ? '6px 16px' : '6px 14px',
+   551→                    borderRadius: 100,
+   552→                    border: 'none',
+   553→                    cursor: 'pointer',
+   554→                    fontFamily: "'DM Sans', sans-serif",
+   555→                    fontSize: 14,
+   556→                    fontWeight: isActive ? 600 : 500,
+   557→                    background: isEnviar
+   558→                      ? isActive
+   559→                        ? 'var(--primario)'
+   560→                        : 'color-mix(in srgb, var(--primario) 10%, transparent)'
+   561→                      : isActive
+   562→                        ? 'color-mix(in srgb, var(--primario) 10%, transparent)'
+   563→                        : 'transparent',
+   564→                    color: isEnviar
+   565→                      ? isActive
+   566→                        ? '#FFFFFF'
+   567→                        : 'var(--primario)'
+   568→                      : isActive
+   569→                        ? 'var(--primario)'
+   570→                        : 'var(--text-muted)',
+   571→                    transition: 'all 0.2s ease',
+   572→                    whiteSpace: 'nowrap',
+   573→                  }}
+   574→                  onMouseEnter={(e) => {
+   575→                    if (!isActive) {
+   576→                      (e.currentTarget as HTMLButtonElement).style.background = isEnviar
+   577→                        ? 'color-mix(in srgb, var(--primario) 15%, transparent)'
+   578→                        : 'color-mix(in srgb, var(--text-muted) 8%, transparent)';
+   579→                    }
+   580→                  }}
+   581→                  onMouseLeave={(e) => {
+   582→                    if (!isActive) {
+   583→                      (e.currentTarget as HTMLButtonElement).style.background = isEnviar
+   584→                        ? 'color-mix(in srgb, var(--primario) 10%, transparent)'
+   585→                        : 'transparent';
+   586→                    }
+   587→                  }}
+   588→                >
+   589→                  {item.icon}
+   590→                  {item.label}
+   591→                </button>
+   592→              );
+   593→            })}
+   594→          </nav>
+   595→
+   596→          {/* Right: Theme + Notif + Cart + Avatar */}
+   597→          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   598→            {/* Theme Toggle */}
+   599→            <button
+   600→              onClick={toggleTheme}
+   601→              aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
+   602→              style={{
+   603→                width: 36,
+   604→                height: 36,
+   605→                borderRadius: 10,
+   606→                border: 'none',
+   607→                background: 'transparent',
+   608→                color: 'var(--text-muted)',
+   609→                cursor: 'pointer',
+   610→                display: 'flex',
+   611→                alignItems: 'center',
+   612→                justifyContent: 'center',
+   613→                transition: 'color 0.2s ease, background 0.2s ease',
+   614→              }}
+   615→              onMouseEnter={(e) => {
+   616→                (e.currentTarget as HTMLButtonElement).style.background =
+   617→                  'color-mix(in srgb, var(--text-muted) 8%, transparent)';
+   618→                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
+   619→              }}
+   620→              onMouseLeave={(e) => {
+   621→                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+   622→                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+   623→              }}
+   624→            >
+   625→              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+   626→            </button>
+   627→
+   628→            {/* Notification Bell */}
+   629→            <div ref={notifRef} style={{ position: 'relative' }}>
+   630→              <button
+   631→                onClick={() => {
+   632→                  setClientNotifOpen(!clientNotifOpen);
+   633→                  setAvatarOpen(false);
+   634→                }}
+   635→                aria-label="Notificaciones"
+   636→                style={{
+   637→                  width: 36,
+   638→                  height: 36,
+   639→                  borderRadius: 10,
+   640→                  border: 'none',
+   641→                  background: clientNotifOpen
+   642→                    ? 'color-mix(in srgb, var(--primario) 10%, transparent)'
+   643→                    : 'transparent',
+   644→                  color: clientNotifOpen ? 'var(--primario)' : 'var(--text-muted)',
+   645→                  cursor: 'pointer',
+   646→                  display: 'flex',
+   647→                  alignItems: 'center',
+   648→                  justifyContent: 'center',
+   649→                  transition: 'color 0.2s ease, background 0.2s ease',
+   650→                  position: 'relative',
+   651→                }}
+   652→                onMouseEnter={(e) => {
+   653→                  if (!clientNotifOpen) {
+   654→                    (e.currentTarget as HTMLButtonElement).style.background =
+   655→                      'color-mix(in srgb, var(--text-muted) 8%, transparent)';
+   656→                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
+   657→                  }
+   658→                }}
+   659→                onMouseLeave={(e) => {
+   660→                  if (!clientNotifOpen) {
+   661→                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+   662→                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+   663→                  }
+   664→                }}
+   665→              >
+   666→                <Bell size={18} />
+   667→                {unreadCount > 0 && (
+   668→                  <span
+   669→                    style={{
+   670→                      position: 'absolute',
+   671→                      top: 4,
+   672→                      right: 4,
+   673→                      width: 16,
+   674→                      height: 16,
+   675→                      borderRadius: '50%',
+   676→                      background: 'var(--peligro)',
+   677→                      color: '#FFFFFF',
+   678→                      fontSize: 10,
+   679→                      fontWeight: 700,
+   680→                      display: 'flex',
+   681→                      alignItems: 'center',
+   682→                      justifyContent: 'center',
+   683→                      lineHeight: 1,
+   684→                      fontFamily: "'JetBrains Mono', monospace",
+   685→                    }}
+   686→                  >
+   687→                    {unreadCount > 9 ? '9+' : unreadCount}
+   688→                  </span>
+   689→                )}
+   690→              </button>
+   691→
+   692→              {/* Notification Dropdown */}
+   693→              <AnimatePresence>
+   694→                {clientNotifOpen && (
+   695→                  <motion.div
+   696→                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+   697→                    animate={{ opacity: 1, y: 0, scale: 1 }}
+   698→                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+   699→                    transition={{ duration: 0.2, ease: 'easeOut' }}
+   700→                    style={{
+   701→                      position: 'absolute',
+   702→                      top: 46,
+   703→                      right: 0,
+   704→                      width: 360,
+   705→                      maxHeight: 460,
+   706→                      borderRadius: 16,
+   707→                      background: 'var(--surface)',
+   708→                      border: '1px solid var(--border)',
+   709→                      boxShadow: 'var(--shadow-lg)',
+   710→                      overflow: 'hidden',
+   711→                      display: 'flex',
+   712→                      flexDirection: 'column',
+   713→                      zIndex: 60,
+   714→                    }}
+   715→                  >
+   716→                    {/* Header */}
+   717→                    <div
+   718→                      style={{
+   719→                        display: 'flex',
+   720→                        alignItems: 'center',
+   721→                        justifyContent: 'space-between',
+   722→                        padding: '14px 16px',
+   723→                        borderBottom: '1px solid var(--border)',
+   724→                      }}
+   725→                    >
+   726→                      <span
+   727→                        style={{
+   728→                          fontFamily: "'Syne', sans-serif",
+   729→                          fontWeight: 700,
+   730→                          fontSize: 15,
+   731→                          color: 'var(--text)',
+   732→                        }}
+   733→                      >
+   734→                        Notificaciones
+   735→                      </span>
+   736→                      {unreadCount > 0 && (
+   737→                        <button
+   738→                          onClick={() => markAllClientNotifRead()}
+   739→                          style={{
+   740→                            border: 'none',
+   741→                            background: 'transparent',
+   742→                            color: 'var(--primario)',
+   743→                            fontSize: 12,
+   744→                            fontWeight: 600,
+   745→                            cursor: 'pointer',
+   746→                            fontFamily: "'DM Sans', sans-serif",
+   747→                            padding: '4px 8px',
+   748→                            borderRadius: 6,
+   749→                            transition: 'background 0.15s ease',
+   750→                          }}
+   751→                          onMouseEnter={(e) => {
+   752→                            (e.currentTarget as HTMLButtonElement).style.background =
+   753→                              'var(--primario-soft)';
+   754→                          }}
+   755→                          onMouseLeave={(e) => {
+   756→                            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+   757→                          }}
+   758→                        >
+   759→                          Marcar todo como leído
+   760→                        </button>
+   761→                      )}
+   762→                    </div>
+   763→
+   764→                    {/* List */}
+   765→                    <div
+   766→                      style={{
+   767→                        flex: 1,
+   768→                        overflowY: 'auto',
+   769→                        maxHeight: 360,
+   770→                      }}
+   771→                    >
+   772→                      {clientNotificaciones.slice(0, 10).map((notif) => {
+   773→                        const { icon, color } = getNotifIcon(notif.tipo);
+   774→                        return (
+   775→                          <div
+   776→                            key={notif.id}
+   777→                            onClick={() => markClientNotifRead(notif.id)}
+   778→                            style={{
+   779→                              display: 'flex',
+   780→                              alignItems: 'flex-start',
+   781→                              gap: 12,
+   782→                              padding: '12px 16px',
+   783→                              cursor: 'pointer',
+   784→                              background: !notif.leida
+   785→                                ? 'color-mix(in srgb, var(--info) 5%, transparent)'
+   786→                                : 'transparent',
+   787→                              borderLeft: !notif.leida
+   788→                                ? '3px solid var(--info)'
+   789→                                : '3px solid transparent',
+   790→                              transition: 'background 0.15s ease',
+   791→                            }}
+   792→                            onMouseEnter={(e) => {
+   793→                              (e.currentTarget as HTMLDivElement).style.background =
+   794→                                'color-mix(in srgb, var(--text-muted) 5%, transparent)';
+   795→                            }}
+   796→                            onMouseLeave={(e) => {
+   797→                              (e.currentTarget as HTMLDivElement).style.background = !notif.leida
+   798→                                ? 'color-mix(in srgb, var(--info) 5%, transparent)'
+   799→                                : 'transparent';
+   800→                            }}
+   801→                          >
+   802→                            <div
+   803→                              style={{
+   804→                                flexShrink: 0,
+   805→                                width: 34,
+   806→                                height: 34,
+   807→                                borderRadius: 10,
+   808→                                background: `color-mix(in srgb, ${color} 12%, transparent)`,
+   809→                                display: 'flex',
+   810→                                alignItems: 'center',
+   811→                                justifyContent: 'center',
+   812→                                color: color,
+   813→                              }}
+   814→                            >
+   815→                              {icon}
+   816→                            </div>
+   817→                            <div style={{ flex: 1, minWidth: 0 }}>
+   818→                              <div
+   819→                                style={{
+   820→                                  fontSize: 14,
+   821→                                  fontWeight: 600,
+   822→                                  color: 'var(--text)',
+   823→                                  lineHeight: 1.3,
+   824→                                  marginBottom: 2,
+   825→                                }}
+   826→                              >
+   827→                                {notif.titulo}
+   828→                              </div>
+   829→                              <div
+   830→                                style={{
+   831→                                  fontSize: 13,
+   832→                                  color: 'var(--text-muted)',
+   833→                                  lineHeight: 1.4,
+   834→                                }}
+   835→                              >
+   836→                                {notif.descripcion}
+   837→                              </div>
+   838→                              <div
+   839→                                style={{
+   840→                                  fontSize: 11,
+   841→                                  color: 'var(--text-muted)',
+   842→                                  marginTop: 4,
+   843→                                  fontFamily: "'JetBrains Mono', monospace",
+   844→                                  opacity: 0.7,
+   845→                                }}
+   846→                              >
+   847→                                {relativeTime(notif.timestamp)}
+   848→                              </div>
+   849→                            </div>
+   850→                          </div>
+   851→                        );
+   852→                      })}
+   853→                      {clientNotificaciones.length === 0 && (
+   854→                        <div
+   855→                          style={{
+   856→                            padding: 32,
+   857→                            textAlign: 'center',
+   858→                            color: 'var(--text-muted)',
+   859→                            fontSize: 14,
+   860→                          }}
+   861→                        >
+   862→                          No hay notificaciones
+   863→                        </div>
+   864→                      )}
+   865→                    </div>
+   866→
+   867→                    {/* Footer */}
+   868→                    {clientNotificaciones.length > 0 && (
+   869→                      <div
+   870→                        style={{
+   871→                          borderTop: '1px solid var(--border)',
+   872→                          padding: '10px 16px',
+   873→                          display: 'flex',
+   874→                          justifyContent: 'center',
+   875→                        }}
+   876→                      >
+   877→                        <button
+   878→                          onClick={() => {
+   879→                            clientNotificaciones.forEach((n) => markClientNotifRead(n.id));
+   880→                            setClientNotifOpen(false);
+   881→                          }}
+   882→                          style={{
+   883→                            border: 'none',
+   884→                            background: 'transparent',
+   885→                            color: 'var(--text-muted)',
+   886→                            fontSize: 12,
+   887→                            fontWeight: 500,
+   888→                            cursor: 'pointer',
+   889→                            fontFamily: "'DM Sans', sans-serif",
+   890→                            padding: '4px 8px',
+   891→                            borderRadius: 6,
+   892→                            transition: 'color 0.15s ease',
+   893→                          }}
+   894→                          onMouseEnter={(e) => {
+   895→                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
+   896→                          }}
+   897→                          onMouseLeave={(e) => {
+   898→                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+   899→                          }}
+   900→                        >
+   901→                          Limpiar todo
+   902→                        </button>
+   903→                      </div>
+   904→                    )}
+   905→                  </motion.div>
+   906→                )}
+   907→              </AnimatePresence>
+   908→            </div>
+   909→
+   910→            {/* Cart Badge (desktop) */}
+   911→            <button
+   912→              onClick={() => setCarritoOpen(true)}
+   913→              style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: carritoOpen ? 'color-mix(in srgb, var(--primario) 10%, transparent)' : 'transparent', color: carritoOpen ? 'var(--primario)' : 'var(--text-muted)', cursor: 'pointer', display: 'none', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'color 0.2s ease, background 0.2s ease' }}
+   914→              className="lf-cart-desktop-btn"
+   915→              aria-label="Carrito"
+   916→            >
+   917→              <ShoppingBag size={18} />
+   918→              {getCartItemCount() > 0 && (
+   919→                <span style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, borderRadius: '50%', background: 'var(--peligro)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'JetBrains Mono', monospace" }}>{getCartItemCount() > 9 ? '9+' : getCartItemCount()}</span>
+   920→              )}
+   921→            </button>
+   922→
+   923→            {/* Avatar */}
+   924→            <div ref={avatarRef} style={{ position: 'relative' }}>
+   925→              <button
+   926→                onClick={() => {
+   927→                  setAvatarOpen(!avatarOpen);
+   928→                  setClientNotifOpen(false);
+   929→                }}
+   930→                aria-label="Menú de usuario"
+   931→                style={{
+   932→                  width: 36,
+   933→                  height: 36,
+   934→                  borderRadius: '50%',
+   935→                  border: 'none',
+   936→                  background: 'var(--primario-soft)',
+   937→                  color: 'var(--primario)',
+   938→                  fontWeight: 700,
+   939→                  fontSize: 13,
+   940→                  fontFamily: "'Syne', sans-serif",
+   941→                  cursor: 'pointer',
+   942→                  display: 'flex',
+   943→                  alignItems: 'center',
+   944→                  justifyContent: 'center',
+   945→                  transition: 'box-shadow 0.2s ease',
+   946→                  boxShadow: avatarOpen ? '0 0 0 2px var(--primario)' : 'none',
+   947→                }}
+   948→              >
+   949→                {initials}
+   950→              </button>
+   951→
+   952→              {/* Avatar Dropdown */}
+   953→              <AnimatePresence>
+   954→                {avatarOpen && (
+   955→                  <motion.div
+   956→                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+   957→                    animate={{ opacity: 1, y: 0, scale: 1 }}
+   958→                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+   959→                    transition={{ duration: 0.2, ease: 'easeOut' }}
+   960→                    style={{
+   961→                      position: 'absolute',
+   962→                      top: 46,
+   963→                      right: 0,
+   964→                      width: 200,
+   965→                      borderRadius: 14,
+   966→                      background: 'var(--surface)',
+   967→                      border: '1px solid var(--border)',
+   968→                      boxShadow: 'var(--shadow-lg)',
+   969→                      overflow: 'hidden',
+   970→                      zIndex: 60,
+   971→                    }}
+   972→                  >
+   973→                    {/* User info */}
+   974→                    <div
+   975→                      style={{
+   976→                        padding: '14px 16px',
+   977→                        borderBottom: '1px solid var(--border)',
+   978→                      }}
+   979→                    >
+   980→                      <div
+   981→                        style={{
+   982→                          fontSize: 14,
+   983→                          fontWeight: 600,
+   984→                          color: 'var(--text)',
+   985→                          lineHeight: 1.3,
+   986→                        }}
+   987→                      >
+   988→                        {userName}
+   989→                      </div>
+   990→                      <div
+   991→                        style={{
+   992→                          fontSize: 12,
+   993→                          color: 'var(--text-muted)',
+   994→                          marginTop: 2,
+   995→                        }}
+   996→                      >
+   997→                        Cliente
+   998→                      </div>
+   999→                    </div>
+  1000→
+  1001→                    {/* Menu items */}
+  1002→                    <div style={{ padding: '6px 6px' }}>
+  1003→                      <button
+  1004→                        onClick={() => {
+  1005→                          handleNav('perfil');
+  1006→                          setAvatarOpen(false);
+  1007→                        }}
+  1008→                        style={{
+  1009→                          width: '100%',
+  1010→                          display: 'flex',
+  1011→                          alignItems: 'center',
+  1012→                          gap: 10,
+  1013→                          padding: '10px 12px',
+  1014→                          border: 'none',
+  1015→                          borderRadius: 10,
+  1016→                          background: 'transparent',
+  1017→                          color: 'var(--text)',
+  1018→                          fontSize: 14,
+  1019→                          fontWeight: 500,
+  1020→                          cursor: 'pointer',
+  1021→                          fontFamily: "'DM Sans', sans-serif",
+  1022→                          transition: 'background 0.15s ease',
+  1023→                        }}
+  1024→                        onMouseEnter={(e) => {
+  1025→                          (e.currentTarget as HTMLButtonElement).style.background =
+  1026→                            'color-mix(in srgb, var(--text-muted) 6%, transparent)';
+  1027→                        }}
+  1028→                        onMouseLeave={(e) => {
+  1029→                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+  1030→                        }}
+  1031→                      >
+  1032→                        <User size={16} style={{ color: 'var(--text-muted)' }} />
+  1033→                        Mi perfil
+  1034→                      </button>
+  1035→
+  1036→                      <button
+  1037→                        onClick={() => setAvatarOpen(false)}
+  1038→                        style={{
+  1039→                          width: '100%',
+  1040→                          display: 'flex',
+  1041→                          alignItems: 'center',
+  1042→                          gap: 10,
+  1043→                          padding: '10px 12px',
+  1044→                          border: 'none',
+  1045→                          borderRadius: 10,
+  1046→                          background: 'transparent',
+  1047→                          color: 'var(--text)',
+  1048→                          fontSize: 14,
+  1049→                          fontWeight: 500,
+  1050→                          cursor: 'pointer',
+  1051→                          fontFamily: "'DM Sans', sans-serif",
+  1052→                          transition: 'background 0.15s ease',
+  1053→                        }}
+  1054→                        onMouseEnter={(e) => {
+  1055→                          (e.currentTarget as HTMLButtonElement).style.background =
+  1056→                            'color-mix(in srgb, var(--text-muted) 6%, transparent)';
+  1057→                        }}
+  1058→                        onMouseLeave={(e) => {
+  1059→                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+  1060→                        }}
+  1061→                      >
+  1062→                        <Settings size={16} style={{ color: 'var(--text-muted)' }} />
+  1063→                        Configuración
+  1064→                      </button>
+  1065→
+  1066→                      <div
+  1067→                        style={{
+  1068→                          height: 1,
+  1069→                          background: 'var(--border)',
+  1070→                          margin: '4px 0',
+  1071→                        }}
+  1072→                      />
+  1073→
+  1074→                      <button
+  1075→                        onClick={() => {
+  1076→                          setAvatarOpen(false);
+  1077→                          onLogout();
+  1078→                        }}
+  1079→                        style={{
+  1080→                          width: '100%',
+  1081→                          display: 'flex',
+  1082→                          alignItems: 'center',
+  1083→                          gap: 10,
+  1084→                          padding: '10px 12px',
+  1085→                          border: 'none',
+  1086→                          borderRadius: 10,
+  1087→                          background: 'transparent',
+  1088→                          color: 'var(--peligro)',
+  1089→                          fontSize: 14,
+  1090→                          fontWeight: 500,
+  1091→                          cursor: 'pointer',
+  1092→                          fontFamily: "'DM Sans', sans-serif",
+  1093→                          transition: 'background 0.15s ease',
+  1094→                        }}
+  1095→                        onMouseEnter={(e) => {
+  1096→                          (e.currentTarget as HTMLButtonElement).style.background =
+  1097→                            'color-mix(in srgb, var(--peligro) 6%, transparent)';
+  1098→                        }}
+  1099→                        onMouseLeave={(e) => {
+  1100→                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+  1101→                        }}
+  1102→                      >
+  1103→                        <LogOut size={16} />
+  1104→                        Cerrar sesión
+  1105→                      </button>
+  1106→                    </div>
+  1107→                  </motion.div>
+  1108→                )}
+  1109→              </AnimatePresence>
+  1110→            </div>
+  1111→          </div>
+  1112→        </header>
+  1113→
+  1114→        {/* ─── CONTENT AREA ─── */}
+  1115→        <main
+  1116→          style={{
+  1117→            flex: 1,
+  1118→            paddingTop: 60,
+  1119→            paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+  1120→            minHeight: '100vh',
+  1121→            transition: 'padding 0.3s ease',
+  1122→          }}
+  1123→          className="lf-client-content-padded"
+  1124→        >
+  1125→          <div
+  1126→            style={{
+  1127→              maxWidth: 960,
+  1128→              margin: '0 auto',
+  1129→              paddingLeft: 16,
+  1130→              paddingRight: 16,
+  1131→              paddingTop: 20,
+  1132→              paddingBottom: 20,
+  1133→            }}
+  1134→            className="lf-client-inner-pad"
+  1135→          >
+  1136→            <AnimatePresence mode="wait">
+  1137→              <motion.div
+  1138→                key={clientActiveModule}
+  1139→                initial={{ opacity: 0 }}
+  1140→                animate={{ opacity: clientModuleFade ? 0 : 1 }}
+  1141→                exit={{ opacity: 0 }}
+  1142→                transition={{ duration: 0.2, ease: 'easeInOut' }}
+  1143→              >
+  1144→                {renderModule()}
+  1145→              </motion.div>
+  1146→            </AnimatePresence>
+  1147→          </div>
+  1148→        </main>
+  1149→
+  1150→        {/* ═══════ BOTTOM NAV — Material 3 Pill Indicator ═══════ */}
+  1151→        <nav
+  1152→          className="lf-client-bottom-nav"
+  1153→          style={{
+  1154→            position: 'fixed',
+  1155→            bottom: 0,
+  1156→            left: 0,
+  1157→            right: 0,
+  1158→            height: 80,
+  1159→            zIndex: 50,
+  1160→            display: 'flex',
+  1161→            alignItems: 'flex-end',
+  1162→            justifyContent: 'space-around',
+  1163→            background: 'var(--md-surface)',
+  1164→            borderTop: '1px solid var(--md-outline-variant)',
+  1165→            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+  1166→            transition: 'background-color 0.3s ease, border-color 0.3s ease',
+  1167→          }}
+  1168→        >
+  1169→          {NAV_ITEMS.map((item) => {
+  1170→            const isActive = clientActiveModule === item.key;
+  1171→            const isEnviar = item.key === 'solicitar';
+  1172→
+  1173→            /* ─── CENTER: Enviar protagonist button (Material 3 FAB style) ─── */
+  1174→            if (isEnviar) {
+  1175→              return (
+  1176→                <button
+  1177→                  key={item.key}
+  1178→                  onClick={() => handleNav(item.key)}
+  1179→                  style={{
+  1180→                    display: 'flex',
+  1181→                    alignItems: 'center',
+  1182→                    justifyContent: 'center',
+  1183→                    width: 52,
+  1184→                    height: 52,
+  1185→                    border: 'none',
+  1186→                    cursor: 'pointer',
+  1187→                    background: 'var(--md-primary-container)',
+  1188→                    color: 'var(--md-on-primary-container)',
+  1189→                    borderRadius: 16,
+  1190→                    transform: 'translateY(-12px)',
+  1191→                    boxShadow: 'var(--md-elevation-3)',
+  1192→                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+  1193→                    position: 'relative',
+  1194→                    zIndex: 2,
+  1195→                    flexShrink: 0,
+  1196→                  }}
+  1197→                  onMouseDown={(e) => {
+  1198→                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(0.92)';
+  1199→                  }}
+  1200→                  onMouseUp={(e) => {
+  1201→                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
+  1202→                  }}
+  1203→                  onMouseLeave={(e) => {
+  1204→                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
+  1205→                  }}
+  1206→                  onTouchStart={(e) => {
+  1207→                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(0.92)';
+  1208→                  }}
+  1209→                  onTouchEnd={(e) => {
+  1210→                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
+  1211→                  }}
+  1212→                  aria-label="Enviar"
+  1213→                >
+  1214→                  <PackagePlus size={24} />
+  1215→                </button>
+  1216→              );
+  1217→            }
+  1218→
+  1219→            /* ─── REGULAR NAV ITEMS (Material 3 Pill Pattern) ─── */
+  1220→            return (
+  1221→              <button
+  1222→                key={item.key}
+  1223→                onClick={() => handleNav(item.key)}
+  1224→                style={{
+  1225→                  display: 'flex',
+  1226→                  flexDirection: 'column',
+  1227→                  alignItems: 'center',
+  1228→                  justifyContent: 'center',
+  1229→                  gap: 4,
+  1230→                  border: 'none',
+  1231→                  cursor: 'pointer',
+  1232→                  background: 'transparent',
+  1233→                  color: isActive ? 'var(--md-on-primary-container)' : 'var(--md-on-surface-variant)',
+  1234→                  padding: '6px 0 8px',
+  1235→                  fontFamily: "'DM Sans', sans-serif",
+  1236→                  fontSize: 12,
+  1237→                  fontWeight: isActive ? 700 : 500,
+  1238→                  transition: 'color 0.2s ease',
+  1239→                  position: 'relative',
+  1240→                  flex: 1,
+  1241→                  maxWidth: 72,
+  1242→                  minHeight: 56,
+  1243→                }}
+  1244→              >
+  1245→                {/* Pill indicator behind icon */}
+  1246→                <span
+  1247→                  style={{
+  1248→                    position: 'relative',
+  1249→                    display: 'flex',
+  1250→                    alignItems: 'center',
+  1251→                    justifyContent: 'center',
+  1252→                    width: 64,
+  1253→                    height: 32,
+  1254→                    borderRadius: 16,
+  1255→                    background: isActive ? 'var(--md-primary-container)' : 'transparent',
+  1256→                    transition: 'background 0.2s ease',
+  1257→                  }}
+  1258→                >
+  1259→                  {item.icon}
+  1260→                  {/* Notification badge on Inicio tab */}
+  1261→                  {item.key === 'inicio' && unreadCount > 0 && (
+  1262→                    <span
+  1263→                      style={{
+  1264→                        position: 'absolute',
+  1265→                        top: -3,
+  1266→                        right: 6,
+  1267→                        width: 16,
+  1268→                        height: 16,
+  1269→                        borderRadius: '50%',
+  1270→                        background: 'var(--peligro)',
+  1271→                        color: '#FFFFFF',
+  1272→                        fontSize: 10,
+  1273→                        fontWeight: 700,
+  1274→                        display: 'flex',
+  1275→                        alignItems: 'center',
+  1276→                        justifyContent: 'center',
+  1277→                        fontFamily: "'JetBrains Mono', monospace",
+  1278→                        lineHeight: 1,
+  1279→                      }}
+  1280→                    >
+  1281→                      {unreadCount > 9 ? '9+' : unreadCount}
+  1282→                    </span>
+  1283→                  )}
+  1284→                  {/* Cart count badge on Explorar tab */}
+  1285→                  {item.key === 'explorar' && getCartItemCount() > 0 && (
+  1286→                    <span
+  1287→                      style={{
+  1288→                        position: 'absolute',
+  1289→                        top: -3,
+  1290→                        right: 6,
+  1291→                        width: 16,
+  1292→                        height: 16,
+  1293→                        borderRadius: '50%',
+  1294→                        background: 'var(--peligro)',
+  1295→                        color: '#fff',
+  1296→                        fontSize: 9,
+  1297→                        fontWeight: 700,
+  1298→                        display: 'flex',
+  1299→                        alignItems: 'center',
+  1300→                        justifyContent: 'center',
+  1301→                        fontFamily: "'JetBrains Mono', monospace",
+  1302→                        lineHeight: 1,
+  1303→                      }}
+  1304→                    >
+  1305→                      {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
+  1306→                    </span>
+  1307→                  )}
+  1308→                </span>
+  1309→                {/* Label */}
+  1310→                <span
+  1311→                  style={{
+  1312→                    fontSize: 12,
+  1313→                    fontWeight: isActive ? 700 : 500,
+  1314→                    color: isActive ? 'var(--md-on-surface)' : 'var(--md-on-surface-variant)',
+  1315→                    transition: 'color 0.2s ease, font-weight 0.15s ease',
+  1316→                    lineHeight: 1,
+  1317→                  }}
+  1318→                >
+  1319→                  {item.label}
+  1320→                </span>
+  1321→              </button>
+  1322→            );
+  1323→          })}
+  1324→        </nav>
+  1325→
+  1326→        {/* ═══════ MATERIAL 3 SNACKBAR ═══════ */}
+  1327→        <AnimatePresence>
+  1328→          {snackbar && (
+  1329→            <motion.div
+  1330→              key="snackbar"
+  1331→              initial={{ opacity: 0, y: 100 }}
+  1332→              animate={{ opacity: 1, y: 0 }}
+  1333→              exit={{ opacity: 0, y: 100 }}
+  1334→              transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
+  1335→              className="lf-snackbar"
+  1336→              style={{
+  1337→                position: 'fixed',
+  1338→                bottom: 96,
+  1339→                left: 16,
+  1340→                right: 16,
+  1341→                zIndex: 9998,
+  1342→                background: 'var(--md-inverse-surface)',
+  1343→                color: 'var(--md-inverse-on-surface)',
+  1344→                borderRadius: 4,
+  1345→                padding: '14px 16px',
+  1346→                boxShadow: 'var(--md-elevation-3)',
+  1347→                display: 'flex',
+  1348→                alignItems: 'center',
+  1349→                justifyContent: 'space-between',
+  1350→                gap: 12,
+  1351→                fontFamily: "'DM Sans', sans-serif",
+  1352→                fontSize: 14,
+  1353→                fontWeight: 400,
+  1354→                lineHeight: 1.4,
+  1355→              }}
+  1356→            >
+  1357→              <span style={{ flex: 1, minWidth: 0 }}>{snackbar.message}</span>
+  1358→              {snackbar.action && (
+  1359→                <button
+  1360→                  onClick={() => {
+  1361→                    snackbar.onAction?.();
+  1362→                    setSnackbar(null);
+  1363→                  }}
+  1364→                  style={{
+  1365→                    border: 'none',
+  1366→                    background: 'transparent',
+  1367→                    color: 'var(--md-inverse-primary)',
+  1368→                    fontSize: 14,
+  1369→                    fontWeight: 600,
+  1370→                    cursor: 'pointer',
+  1371→                    fontFamily: "'DM Sans', sans-serif",
+  1372→                    padding: '4px 8px',
+  1373→                    borderRadius: 4,
+  1374→                    whiteSpace: 'nowrap',
+  1375→                    flexShrink: 0,
+  1376→                  }}
+  1377→                >
+  1378→                  {snackbar.action}
+  1379→                </button>
+  1380→              )}
+  1381→            </motion.div>
+  1382→          )}
+  1383→        </AnimatePresence>
+  1384→
+  1385→        {/* ─── V2 OVERLAYS ─── */}
+  1386→        <AnimatePresence>
+  1387→          {trackingOrderId && (
+  1388→            <ClientTracking
+  1389→              isDark={isDark}
+  1390→              onBack={handleCloseTracking}
+  1391→              onOpenChat={handleOpenChat}
+  1392→              onRate={handleOpenRating}
+  1393→            />
+  1394→          )}
+  1395→        </AnimatePresence>
+  1396→
+  1397→        <AnimatePresence>
+  1398→          {chatOpen && (
+  1399→            <ClientChat
+  1400→              isDark={isDark}
+  1401→              onClose={() => setChatOpen(false)}
+  1402→            />
+  1403→          )}
+  1404→        </AnimatePresence>
+  1405→
+  1406→        <AnimatePresence>
+  1407→          {ratingModalOpen && (
+  1408→            <ClientRating
+  1409→              isDark={isDark}
+  1410→              onClose={() => setRatingModalOpen(false)}
+  1411→            />
+  1412→          )}
+  1413→        </AnimatePresence>
+  1414→
+  1415→        {/* Tienda Profile Overlay */}
+  1416→        {tiendaSeleccionada && (
+  1417→          <ClientTienda
+  1418→            isDark={isDark}
+  1419→            tiendaId={tiendaSeleccionada}
+  1420→            onBack={() => setTiendaSeleccionada(null)}
+  1421→            onOpenCart={() => setCarritoOpen(true)}
+  1422→          />
+  1423→        )}
+  1424→
+  1425→        {/* Cart Overlay */}
+  1426→        <AnimatePresence>
+  1427→          {carritoOpen && (
+  1428→            <ClientCarrito
+  1429→              isDark={isDark}
+  1430→              onClose={() => setCarritoOpen(false)}
+  1431→              onBackToTienda={() => setCarritoOpen(false)}
+  1432→            />
+  1433→          )}
+  1434→        </AnimatePresence>
+  1435→
+  1436→        {/* ─── RESPONSIVE STYLES ─── */}
+  1437→        <style>{`
+  1438→          /* ─── Status bar & gesture bar: mobile only ─── */
+  1439→          .lf-status-bar,
+  1440→          .lf-gesture-bar {
+  1441→            display: flex !important;
+  1442→          }
+  1443→          @media (min-width: 1024px) {
+  1444→            .lf-status-bar,
+  1445→            .lf-gesture-bar {
+  1446→              display: none !important;
+  1447→            }
+  1448→          }
+  1449→
+  1450→          /* Desktop nav: hidden by default, shown at >1024px */
+  1451→          .lf-desktop-nav {
+  1452→            display: none !important;
+  1453→          }
+  1454→          @media (min-width: 1024px) {
+  1455→            .lf-desktop-nav {
+  1456→              display: flex !important;
+  1457→            }
+  1458→            /* Hide bottom nav on desktop */
+  1459→            .lf-client-bottom-nav {
+  1460→              display: none !important;
+  1461→            }
+  1462→            /* Remove bottom padding on desktop */
+  1463→            .lf-client-content-padded {
+  1464→              padding-bottom: 0 !important;
+  1465→            }
+  1466→            /* Wider horizontal padding on desktop */
+  1467→            .lf-client-inner-pad {
+  1468→              padding-left: 32px !important;
+  1469→              padding-right: 32px !important;
+  1470→            }
+  1471→            /* Hide snackbar on desktop (or keep — adjust as needed) */
+  1472→            .lf-snackbar {
+  1473→              max-width: 480px;
+  1474→              left: 50% !important;
+  1475→              right: auto !important;
+  1476→              transform: translateX(-50%);
+  1477→            }
+  1478→          }
+  1479→
+  1480→          /* Cart desktop button */
+  1481→          .lf-cart-desktop-btn { display: none !important; }
+  1482→          @media (min-width: 1024px) { .lf-cart-desktop-btn { display: flex !important; } }
+  1483→
+  1484→          /* Header offset for status bar on mobile */
+  1485→          @media (max-width: 1023px) {
+  1486→            .lf-header-bar {
+  1487→              top: max(24px, env(safe-area-inset-top, 24px)) !important;
+  1488→            }
+  1489→            .lf-client-content-padded {
+  1490→              padding-top: calc(60px + max(24px, env(safe-area-inset-top, 24px))) !important;
+  1491→            }
+  1492→          }
+  1493→
+  1494→          /* Notification list custom scrollbar */
+  1495→          .lf-client-bottom-nav {
+  1496→            -webkit-overflow-scrolling: touch;
+  1497→          }
+  1498→
+  1499→          /* ─── Splash keyframes (fallback) ─── */
+  1500→          @keyframes lf-splash-logo {
+  1501→            from { transform: scale(0.8); }
+  1502→            to { transform: scale(1); }
+  1503→          }
+  1504→          @keyframes lf-splash-text {
+  1505→            from { opacity: 0; transform: translateY(8px); }
+  1506→            to { opacity: 1; transform: translateY(0); }
+  1507→          }
+  1508→        `}</style>
+  1509→      </div>
+  1510→    </SnackbarContext.Provider>
+  1511→  );
+  1512→}
+  1513→

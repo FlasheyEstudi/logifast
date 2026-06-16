@@ -312,3 +312,121 @@ model ResenaTienda {
   tienda     Tienda @relation(fields: [tiendaId], references: [id])
   orden      OrdenCompra? @relation(fields: [ordenId], references: [id])
 }
+
+// ─── Repartidor Models ───
+
+model RepartidorProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  nombre          String
+  email           String
+  telefono        String?
+  motoId          String?
+  conectado       Boolean  @default(false)
+  enServicio      Boolean  @default(false)
+  pausado         Boolean  @default(false)
+  pausaHasta      DateTime?
+  lat             Float?
+  lng             Float?
+  zonaPreferida   String?
+  calificacion    Float    @default(0)
+  totalEntregas   Int      @default(0)
+  totalKm         Float    @default(0)
+  totalGanancias  Float    @default(0)
+  tiempoPromedio  Int      @default(0)
+  sonidoActivo    Boolean  @default(true)
+  vibracionActiva Boolean  @default(true)
+  ubicacionActiva Boolean  @default(true)
+  rechazosHora    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PosicionRepartidor {
+  id           String   @id @default(cuid())
+  repartidorId String
+  lat          Float
+  lng          Float
+  velocidad    Float    @default(0)
+  heading      Float    @default(0)
+  timestamp    DateTime @default(now())
+
+  @@index([repartidorId, timestamp])
+}
+
+model ServicioRepartidor {
+  id              String    @id @default(cuid())
+  repartidorId    String
+  ordenId         String
+  tipo            String    // envio, compra
+  estado          String    // asignado, aceptado, recogido, entregado, incidencia, cancelado
+  kmRecorridos    Float     @default(0)
+  kmEstimados     Float     @default(0)
+  tiempoTotal     Int       @default(0)
+  ganancia        Float     @default(0)
+  incidenciaTipo  String?
+  incidenciaDesc  String?
+  aceptadoEn      DateTime?
+  recogidoEn      DateTime?
+  entregadoEn     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([repartidorId, createdAt])
+  @@index([estado])
+}
+
+model CalificacionRepartidor {
+  id           String   @id @default(cuid())
+  repartidorId String
+  clienteId    String
+  servicioId   String
+  ordenId      String
+  estrellas    Int
+  etiquetas    String   @default("[]") // JSON array string
+  comentario   String?
+  createdAt    DateTime @default(now())
+
+  @@index([repartidorId, createdAt])
+}
+
+model MotoAsignada {
+  id                  String   @id @default(cuid())
+  repartidorId        String   @unique
+  nombre              String
+  modelo              String
+  placa               String
+  kmAcumulados        Float    @default(0)
+  estado              String   @default("DISPONIBLE") // DISPONIBLE, EN_SERVICIO, MANTENIMIENTO
+  ultimoMantenimiento DateTime?
+  tipoUltimoMantenimiento String?
+  proximoMantenimientoKm Float?
+  alertaMantenimiento Boolean @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model NotificacionRepartidor {
+  id           String   @id @default(cuid())
+  repartidorId String
+  tipo         String   // orden_asignada, mensaje, entrega_calificada, incidencia, cancelacion, reasignacion
+  titulo       String
+  contenido    String
+  leido        Boolean  @default(false)
+  ordenId      String?
+  createdAt    DateTime @default(now())
+
+  @@index([repartidorId, createdAt])
+}
+
+model ChatRepartidor {
+  id          String   @id @default(cuid())
+  ordenId     String
+  repartidorId String
+  clienteId   String
+  emisor      String   // repartidor, cliente
+  contenido   String
+  leido       Boolean  @default(false)
+  enviadoEn   DateTime @default(now())
+
+  @@index([ordenId, enviadoEn])
+}
