@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, X } from 'lucide-react';
+import { Search, X } from '@/components/icons';
 
 interface ClientBusquedaProps {
   isDark?: boolean;

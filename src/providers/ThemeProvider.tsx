@@ -24,9 +24,18 @@ import {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const tema = useConfigStore((s) => s.tema);
 
-  // 1. Apply persisted theme on first mount (client-only).
+  // 1. Apply persisted theme on first mount (client-only) and register Service Worker.
   useEffect(() => {
     inicializarTema();
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registrado con éxito:', reg.scope))
+          .catch(err => console.error('Error registrando SW:', err));
+      });
+    }
   }, []);
 
   // 2. Re-apply whenever the store tema changes (incl. after hydration).

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { HelpCircle, X, MessageCircle, Phone, Mail, ChevronRight } from 'lucide-react';
+import { HelpCircle, X, MessageCircle, Phone, Mail, ChevronRight } from '@/components/icons';
 
 interface ClientAyudaProps {
   isDark?: boolean;

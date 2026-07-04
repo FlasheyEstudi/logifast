@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutList, Package, User, MapPin, Clock, DollarSign,
   Check, X, ChevronRight, Timer, ArrowRight, Bike, Radio,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { Order, Rider } from '@/lib/store';
 

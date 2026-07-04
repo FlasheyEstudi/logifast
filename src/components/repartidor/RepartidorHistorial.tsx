@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
-import { TrendingUp, TrendingDown, Package, ShoppingBag, AlertTriangle, ChevronRight, Bike, Clock, DollarSign, Route as RouteIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Package, ShoppingBag, AlertTriangle, ChevronRight, Bike, Clock, DollarSign, Route as RouteIcon } from '@/components/icons';
 import { useRepartidorStore, type ServicioHistorial } from '@/lib/repartidor-store';
+import PullToRefresh from '@/components/ui/PullToRefresh';
+import { HistorialSkeleton } from '@/components/ui/Skeletons';
 
 /* ═══════════════════════════════════════════════
    TYPES & HELPERS
@@ -387,6 +389,7 @@ export default function RepartidorHistorial() {
   const { serviciosHoy, obtenerStats, verServicioDetalle } = useRepartidorStore();
   const [periodo, setPeriodo] = useState<Periodo>('hoy');
   const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [loading, setLoading] = useState(false);
 
   const stats = obtenerStats(periodo);
 
@@ -411,273 +414,288 @@ export default function RepartidorHistorial() {
 
   const handleOpen = (s: ServicioHistorial) => verServicioDetalle(s);
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    // Simular llamada a API
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setLoading(false);
+  };
+
   return (
-    <div style={{ paddingBottom: 16 }}>
-      {/* Header */}
-      <div style={{ marginBottom: 16 }}>
-        <h1
-          className="font-syne"
-          style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.5px' }}
-        >
-          {PERIODO_LABEL[periodo] === 'Hoy' ? 'Hoy' : PERIODO_LABEL[periodo]}
-        </h1>
-        <p
-          style={{
-            fontSize: 13,
-            color: 'var(--text-muted)',
-            textTransform: 'capitalize',
-            marginTop: 2,
-          }}
-        >
-          {fechaStr}
-        </p>
-      </div>
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div style={{ paddingBottom: 16 }}>
+        {/* Header */}
+        <div style={{ marginBottom: 16 }}>
+          <h1
+            className="font-syne"
+            style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.5px' }}
+          >
+            {PERIODO_LABEL[periodo] === 'Hoy' ? 'Hoy' : PERIODO_LABEL[periodo]}
+          </h1>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--text-muted)',
+              textTransform: 'capitalize',
+              marginTop: 2,
+            }}
+          >
+            {fechaStr}
+          </p>
+        </div>
 
-      {/* Period selector pills */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 6,
-          padding: 4,
-          borderRadius: 100,
-          background: 'var(--md-surface-variant)',
-          marginBottom: 16,
-        }}
-      >
-        {(['hoy', 'semana', 'mes'] as Periodo[]).map((p) => {
-          const isActive = periodo === p;
-          return (
-            <button
-              key={p}
-              onClick={() => setPeriodo(p)}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: 100,
-                border: 'none',
-                background: isActive ? 'var(--md-surface)' : 'transparent',
-                color: isActive ? 'var(--text)' : 'var(--text-muted)',
-                fontSize: 13,
-                fontWeight: isActive ? 700 : 500,
-                fontFamily: "'DM Sans', sans-serif",
-                cursor: 'pointer',
-                transition: 'background 0.2s ease, color 0.2s ease',
-                boxShadow: isActive ? 'var(--md-elevation-1)' : 'none',
-              }}
-            >
-              {PERIODO_LABEL[p]}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* KPI grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 10,
-          marginBottom: 16,
-        }}
-      >
-        <KpiCard
-          label="Entregas"
-          value={stats.entregas}
-          format={(v) => Math.round(v).toString()}
-          trend={12}
-          icon={<Bike size={14} />}
-          color="var(--primario)"
-        />
-        <KpiCard
-          label="Km recorridos"
-          value={stats.km}
-          format={(v) => v.toFixed(1)}
-          trend={8}
-          icon={<RouteIcon size={14} />}
-          color="var(--info, #2979FF)"
-        />
-        <KpiCard
-          label="Ganancias"
-          value={stats.ganancias}
-          format={(v) => `C$${Math.round(v)}`}
-          trend={15}
-          icon={<DollarSign size={14} />}
-          color="var(--exito, #00C853)"
-        />
-        <KpiCard
-          label="Tiempo activo"
-          value={stats.tiempoActivo}
-          format={(v) => formatTiempo(Math.round(v))}
-          trend={-3}
-          icon={<Clock size={14} />}
-          color="var(--warning, #FFB300)"
-        />
-      </div>
-
-      {/* Bar chart */}
-      <div
-        className="lf-card-elevated"
-        style={{
-          padding: 16,
-          borderRadius: 16,
-          background: 'var(--md-surface)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-          marginBottom: 16,
-        }}
-      >
+        {/* Period selector pills */}
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 12,
+            gap: 6,
+            padding: 4,
+            borderRadius: 100,
+            background: 'var(--md-surface-variant)',
+            marginBottom: 16,
           }}
         >
-          <div>
-            <div
-              className="font-syne"
-              style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
-            >
-              Entregas
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              {periodo === 'hoy' ? 'Por hora' : periodo === 'semana' ? 'Por día' : 'Por semana'}
-            </div>
-          </div>
-        </div>
-        <div style={{ height: 120, width: '100%' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={barData} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
-              <XAxis
-                dataKey="x"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}
-              />
-              <Tooltip
-                cursor={{ fill: 'color-mix(in srgb, var(--primario) 8%, transparent)' }}
-                contentStyle={{
-                  borderRadius: 8,
-                  border: '1px solid var(--md-outline-variant)',
-                  background: 'var(--md-surface)',
-                  fontSize: 12,
+          {(['hoy', 'semana', 'mes'] as Periodo[]).map((p) => {
+            const isActive = periodo === p;
+            return (
+              <button
+                key={p}
+                onClick={() => setPeriodo(p)}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: 100,
+                  border: 'none',
+                  background: isActive ? 'var(--md-surface)' : 'transparent',
+                  color: isActive ? 'var(--text)' : 'var(--text-muted)',
+                  fontSize: 13,
+                  fontWeight: isActive ? 700 : 500,
                   fontFamily: "'DM Sans', sans-serif",
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease, color 0.2s ease',
+                  boxShadow: isActive ? 'var(--md-elevation-1)' : 'none',
                 }}
-                labelStyle={{ color: 'var(--text)' }}
-                formatter={(v: any) => [`${v} entregas`, '']}
-              />
-              <Bar dataKey="v" radius={[6, 6, 0, 0]} maxBarSize={32}>
-                {barData.map((entry, i) => (
-                  <Cell
-                    key={`cell-${i}`}
-                    fill={entry.v === 0 ? 'var(--md-outline-variant)' : 'var(--primario)'}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+              >
+                {PERIODO_LABEL[p]}
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Filter pills */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 6,
-          marginBottom: 12,
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}
-      >
-        {([
-          { k: 'todos' as Filtro, label: 'Todos', icon: null },
-          { k: 'envios' as Filtro, label: 'Envíos', icon: <Package size={12} /> },
-          { k: 'compras' as Filtro, label: 'Compras', icon: <ShoppingBag size={12} /> },
-          { k: 'incidencias' as Filtro, label: 'Incidencias', icon: <AlertTriangle size={12} /> },
-        ]).map((f) => {
-          const isActive = filtro === f.k;
-          return (
-            <button
-              key={f.k}
-              onClick={() => setFiltro(f.k)}
+        {loading ? (
+          <HistorialSkeleton />
+        ) : (
+          <>
+            {/* KPI grid */}
+            <div
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '6px 12px',
-                borderRadius: 100,
-                border: `1px solid ${isActive ? 'var(--primario)' : 'var(--md-outline-variant)'}`,
-                background: isActive ? 'color-mix(in srgb, var(--primario) 10%, transparent)' : 'transparent',
-                color: isActive ? 'var(--primario)' : 'var(--text-secondary)',
-                fontSize: 12,
-                fontWeight: isActive ? 700 : 500,
-                fontFamily: "'DM Sans', sans-serif",
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 10,
+                marginBottom: 16,
               }}
             >
-              {f.icon}
-              {f.label}
-            </button>
-          );
-        })}
-      </div>
+              <KpiCard
+                label="Entregas"
+                value={stats.entregas}
+                format={(v) => Math.round(v).toString()}
+                trend={12}
+                icon={<Bike size={14} />}
+                color="var(--primario)"
+              />
+              <KpiCard
+                label="Km recorridos"
+                value={stats.km}
+                format={(v) => v.toFixed(1)}
+                trend={8}
+                icon={<RouteIcon size={14} />}
+                color="var(--info, #2979FF)"
+              />
+              <KpiCard
+                label="Ganancias"
+                value={stats.ganancias}
+                format={(v) => `C$${Math.round(v)}`}
+                trend={15}
+                icon={<DollarSign size={14} />}
+                color="var(--exito, #00C853)"
+              />
+              <KpiCard
+                label="Tiempo activo"
+                value={stats.tiempoActivo}
+                format={(v) => formatTiempo(Math.round(v))}
+                trend={-3}
+                icon={<Clock size={14} />}
+                color="var(--warning, #FFB300)"
+              />
+            </div>
 
-      {/* Services list (timeline) */}
-      <div>
-        <div
-          style={{
-            fontSize: 12,
-            color: 'var(--text-muted)',
-            marginBottom: 8,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}
-        >
-          {serviciosFiltrados.length} servicio{serviciosFiltrados.length !== 1 ? 's' : ''}
-        </div>
-        <div>
-          {serviciosFiltrados.length === 0 && (
+            {/* Bar chart */}
             <div
               className="lf-card-elevated"
               style={{
-                padding: 0,
+                padding: 16,
                 borderRadius: 16,
                 background: 'var(--md-surface)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                overflow: 'hidden',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                marginBottom: 16,
               }}
             >
-              <div className="lf-empty" style={{ padding: '40px 24px' }}>
-                <div className="lf-empty-icon">
-                  <Package size={32} />
-                </div>
-                <div className="lf-empty-title">Sin servicios</div>
-                <div className="lf-empty-desc">
-                  No hay servicios para este filtro en el período seleccionado.
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 12,
+                }}
+              >
+                <div>
+                  <div
+                    className="font-syne"
+                    style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
+                  >
+                    Entregas
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    {periodo === 'hoy' ? 'Por hora' : periodo === 'semana' ? 'Por día' : 'Por semana'}
+                  </div>
                 </div>
               </div>
+              <div style={{ height: 120, width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
+                    <XAxis
+                      dataKey="x"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'color-mix(in srgb, var(--primario) 8%, transparent)' }}
+                      contentStyle={{
+                        borderRadius: 8,
+                        border: '1px solid var(--md-outline-variant)',
+                        background: 'var(--md-surface)',
+                        fontSize: 12,
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                      labelStyle={{ color: 'var(--text)' }}
+                      formatter={(v: any) => [`${v} entregas`, '']}
+                    />
+                    <Bar dataKey="v" radius={[6, 6, 0, 0]} maxBarSize={32}>
+                      {barData.map((entry, i) => (
+                        <Cell
+                          key={`cell-${i}`}
+                          fill={entry.v === 0 ? 'var(--md-outline-variant)' : 'var(--primario)'}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          )}
-          {serviciosFiltrados.map((s, i) => (
-            <motion.div
-              key={s.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: i * 0.03 }}
+
+            {/* Filter pills */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 6,
+                marginBottom: 12,
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+              }}
             >
-              <ServicioRow
-                servicio={s}
-                isLast={i === serviciosFiltrados.length - 1}
-                onOpen={handleOpen}
-              />
-            </motion.div>
-          ))}
-        </div>
+              {([
+                { k: 'todos' as Filtro, label: 'Todos', icon: null },
+                { k: 'envios' as Filtro, label: 'Envíos', icon: <Package size={12} /> },
+                { k: 'compras' as Filtro, label: 'Compras', icon: <ShoppingBag size={12} /> },
+                { k: 'incidencias' as Filtro, label: 'Incidencias', icon: <AlertTriangle size={12} /> },
+              ]).map((f) => {
+                const isActive = filtro === f.k;
+                return (
+                  <button
+                    key={f.k}
+                    onClick={() => setFiltro(f.k)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '6px 12px',
+                      borderRadius: 100,
+                      border: `1px solid ${isActive ? 'var(--primario)' : 'var(--md-outline-variant)'}`,
+                      background: isActive ? 'color-mix(in srgb, var(--primario) 10%, transparent)' : 'transparent',
+                      color: isActive ? 'var(--primario)' : 'var(--text-secondary)',
+                      fontSize: 12,
+                      fontWeight: isActive ? 700 : 500,
+                      fontFamily: "'DM Sans', sans-serif",
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {f.icon}
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Services list (timeline) */}
+            <div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-muted)',
+                  marginBottom: 8,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {serviciosFiltrados.length} servicio{serviciosFiltrados.length !== 1 ? 's' : ''}
+              </div>
+              <div>
+                {serviciosFiltrados.length === 0 && (
+                  <div
+                    className="lf-card-elevated"
+                    style={{
+                      padding: 0,
+                      borderRadius: 16,
+                      background: 'var(--md-surface)',
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div className="lf-empty" style={{ padding: '40px 24px' }}>
+                      <div className="lf-empty-icon">
+                        <Package size={32} />
+                      </div>
+                      <div className="lf-empty-title">Sin servicios</div>
+                      <div className="lf-empty-desc">
+                        No hay servicios para este filtro en el período seleccionado.
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {serviciosFiltrados.map((s, i) => (
+                  <motion.div
+                    key={s.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: i * 0.03 }}
+                  >
+                    <ServicioRow
+                      servicio={s}
+                      isLast={i === serviciosFiltrados.length - 1}
+                      onOpen={handleOpen}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </PullToRefresh>
   );
 }

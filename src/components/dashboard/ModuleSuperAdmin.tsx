@@ -7,7 +7,7 @@ import {
   Database, HardDrive, Clock, Wifi, Plus, Edit2,
   Search, Download, AlertTriangle, Power, Check,
   AlertCircle, TrendingUp, Zap,
-} from 'lucide-react';
+} from '@/components/icons';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogFooter, DialogDescription,

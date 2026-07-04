@@ -5,7 +5,7 @@ import {
   Search, SlidersHorizontal, Heart, Star, Clock, MapPin, Truck,
   ChevronRight, X, ShoppingBag, Check, Utensils, Store, Pill,
   Gift, ShoppingCart, Smartphone, Dumbbell, Map, CheckCircle,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useMarketplaceStore, type Tienda, type TiendaCategoria, CATEGORIAS } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
 

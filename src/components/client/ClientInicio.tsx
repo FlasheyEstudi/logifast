@@ -28,7 +28,7 @@ import {
   Dumbbell,
   Send,
   Flame,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type Order, type Banner, type FeedItem } from '@/lib/store';
 import { useMarketplaceStore, CATEGORIAS, MOCK_TIENDAS, MOCK_PRODUCTOS } from '@/lib/marketplace-store';
 
@@ -164,6 +164,17 @@ const fadeUp = {
 export default function ClientInicio({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientInicioProps) {
   const orders = useStore((s) => s.orders);
   const banners = useStore((s) => s.banners);
+  
+  /* ─── Sponsored Ads State (Requirement 7) ─── */
+  const [sponsoredAds, setSponsoredAds] = useState([
+    { id: 'ad-1', title: 'Burger Boss', description: '¡Las mejores hamburguesas de Managua! Plan Comercial Activo.', image: '/logos/image3.png', category: 'Alimentos', budget: 'C$ 350 / $10 mes' },
+    { id: 'ad-2', title: 'Salud y Vida', description: 'Medicamentos y cuidado personal con entrega express prioritaria.', image: '/logos/image4.png', category: 'Farmacia', budget: 'C$ 350 / $10 mes' },
+  ]);
+  const [adModalOpen, setAdModalOpen] = useState(false);
+  const [newAdName, setNewAdName] = useState('');
+  const [newAdDesc, setNewAdDesc] = useState('');
+  const [newAdCat, setNewAdCat] = useState('Alimentos');
+  const [adSuccessMsg, setAdSuccessMsg] = useState(false);
   const feedItems = useStore((s) => s.feedItems);
   const clientSearchQuery = useStore((s) => s.clientSearchQuery);
   const setClientSearchQuery = useStore((s) => s.setClientSearchQuery);
@@ -746,6 +757,79 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
               {pointsToNext} puntos para tu proximo descuento
             </div>
+          </div>
+        </motion.div>
+
+        {/* ─────────────────────────────────────────────
+            NEGOCIOS PATROCINADOS (PUBLICIDAD - REQ 7)
+            ───────────────────────────────────────────── */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={2.8}
+          style={{ marginBottom: 28 }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text)' }}>
+              📢 Negocios Patrocinados
+            </h3>
+            <button
+              onClick={() => setAdModalOpen(true)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--primario)',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif"
+              }}
+            >
+              Anunciar mi Negocio (+C$ 350)
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {sponsoredAds.map((ad) => (
+              <div
+                key={ad.id}
+                style={{
+                  padding: 14,
+                  borderRadius: 18,
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minHeight: 120,
+                  boxShadow: 'var(--lf-shadow-card)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--primario)', background: 'color-mix(in srgb, var(--primario) 10%, transparent)', padding: '2px 6px', borderRadius: 6 }}>
+                      {ad.category}
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
+                      {ad.budget}
+                    </span>
+                  </div>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '4px 0 2px 0' }}>
+                    {ad.title}
+                  </h4>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+                    {ad.description}
+                  </p>
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--exito)', fontWeight: 700, marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--exito)' }} />
+                  Posición Prioritaria
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
 
@@ -1621,6 +1705,200 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
           <ChevronRight size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
         </motion.div>
       )}
+
+      {/* ─── MODAL ANUNCIAR NEGOCIO (REQ 7) ─── */}
+      <AnimatePresence>
+        {adModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 24,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              style={{
+                width: '100%',
+                maxWidth: 400,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 24,
+                padding: 24,
+                boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              }}
+            >
+              <h3 className="font-syne" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                📢 Anunciar mi Negocio en Logifast
+              </h3>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: 16 }}>
+                Aparece en las primeras posiciones y atrae a miles de clientes activos. Plan publicitario mensual por solo <strong>C$ 350 ($10 USD)</strong>.
+              </p>
+
+              {adSuccessMsg ? (
+                <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(0, 200, 83, 0.12)', color: 'var(--exito)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
+                    ✓
+                  </div>
+                  <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>¡Pago Confirmado Exitosamente!</h4>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                    Tu anuncio ya se encuentra en rotación prioritaria.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setAdSuccessMsg(false);
+                      setAdModalOpen(false);
+                    }}
+                    style={{
+                      marginTop: 16,
+                      padding: '8px 16px',
+                      borderRadius: 12,
+                      background: 'var(--primario)',
+                      color: '#fff',
+                      border: 'none',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Entendido
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+                      Nombre del Negocio
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Delicias Express"
+                      value={newAdName}
+                      onChange={(e) => setNewAdName(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        background: 'var(--bg-alt)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+                      Descripción
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Repostería fina y pasteles personalizados."
+                      value={newAdDesc}
+                      onChange={(e) => setNewAdDesc(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        background: 'var(--bg-alt)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+                      Categoría
+                    </label>
+                    <select
+                      value={newAdCat}
+                      onChange={(e) => setNewAdCat(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        background: 'var(--bg-alt)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                      }}
+                    >
+                      <option value="Alimentos">Alimentos & Bebidas</option>
+                      <option value="Farmacia">Farmacia</option>
+                      <option value="Supermercado">Supermercado</option>
+                      <option value="Tienda">Tienda Comercial</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button
+                      onClick={() => setAdModalOpen(false)}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        borderRadius: 12,
+                        background: 'transparent',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        fontWeight: 600,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!newAdName || !newAdDesc) return;
+                        setSponsoredAds((prev) => [
+                          ...prev,
+                          {
+                            id: `ad-${Date.now()}`,
+                            title: newAdName,
+                            description: newAdDesc,
+                            category: newAdCat,
+                            budget: 'C$ 350 / $10 mes',
+                            image: '/logo.png',
+                          },
+                        ]);
+                        setNewAdName('');
+                        setNewAdDesc('');
+                        setAdSuccessMsg(true);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        borderRadius: 12,
+                        background: 'var(--primario)',
+                        color: '#fff',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Pagar y Activar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

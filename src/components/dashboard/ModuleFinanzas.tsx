@@ -9,7 +9,7 @@ import {
 import {
   DollarSign, TrendingUp, TrendingDown, BarChart3, Wallet,
   ArrowUpRight, ArrowDownRight, Check,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { Client } from '@/lib/store';
 
@@ -203,6 +203,9 @@ function useToast() {
 export default function ModuleFinanzas() {
   const { paymentConciliations, conciliatePayment, clients } = useStore();
   const { toasts, showToast } = useToast();
+  const [activeTab, setActiveTab] = useState<'overview' | 'valuation'>('overview');
+  const [developmentMonths, setDevelopmentMonths] = useState(6);
+  const [profitMargin, setProfitMargin] = useState(50);
 
   /* Top 10 clients by montoTotal from store */
   const topClientes = useMemo(
@@ -305,7 +308,173 @@ export default function ModuleFinanzas() {
         <DollarSign size={20} style={{ color: '#FF6600' }} /> Centro Financiero
       </h2>
 
-      {/* ═══ KPI Cards ═══ */}
+      {/* Tabs Selector */}
+      <div style={{ display: 'flex', gap: 16, borderBottom: '1px solid var(--lf-border)', marginBottom: 20 }}>
+        <button
+          onClick={() => setActiveTab('overview')}
+          style={{
+            padding: '10px 16px',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: activeTab === 'overview' ? '3px solid #FF6600' : 'none',
+            color: activeTab === 'overview' ? 'var(--lf-text-main)' : 'var(--lf-text-muted)',
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontSize: '13px',
+          }}
+        >
+          Resumen Financiero
+        </button>
+        <button
+          onClick={() => setActiveTab('valuation')}
+          style={{
+            padding: '10px 16px',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: activeTab === 'valuation' ? '3px solid #FF6600' : 'none',
+            color: activeTab === 'valuation' ? 'var(--lf-text-main)' : 'var(--lf-text-muted)',
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontSize: '13px',
+          }}
+        >
+          Estructura & Valor Comercial (Req 15/16)
+        </button>
+      </div>
+
+      {activeTab === 'valuation' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Cost Items Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            {/* Monthly Operating Costs Sheet */}
+            <div style={cardStyle}>
+              <h3 style={sectionTitleStyle}>💰 Estructura de Costos del Proyecto (Mensual)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Programador Principal (Tecnológico)</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>$1,500.00 USD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Director Logístico (Operaciones)</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>$2,000.00 USD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Consumo API Google Maps (Rutas/GPS)</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>$350.00 USD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>AWS Cloud Hosting & Base de Datos</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>$150.00 USD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Taller de Mantenimiento Preventivo</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>$250.00 USD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Seguridad de Transacciones & SSL</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>$50.00 USD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 6, color: '#FF6600' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>Total Costos Operativos Mensuales</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>$4,300.00 USD</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Valuation Slider Card */}
+            <div style={cardStyle}>
+              <h3 style={sectionTitleStyle}>📈 Simulador de Valor Comercial de la Plataforma</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, color: 'var(--lf-text-main)', fontWeight: 600 }}>Meses de Desarrollo Tecnológico</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#FF6600', fontFamily: "'JetBrains Mono', monospace" }}>{developmentMonths} meses</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="3"
+                    max="24"
+                    value={developmentMonths}
+                    onChange={(e) => setDevelopmentMonths(parseInt(e.target.value))}
+                    style={{ width: '100%', accentColor: '#FF6600' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--lf-text-muted)', marginTop: 4 }}>
+                    <span>3 meses</span>
+                    <span>12 meses</span>
+                    <span>24 meses</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, color: 'var(--lf-text-main)', fontWeight: 600 }}>Margen Comercial de Venta (ROI)</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#FF6600', fontFamily: "'JetBrains Mono', monospace" }}>+{profitMargin}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="150"
+                    value={profitMargin}
+                    onChange={(e) => setProfitMargin(parseInt(e.target.value))}
+                    style={{ width: '100%', accentColor: '#FF6600' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--lf-text-muted)', marginTop: 4 }}>
+                    <span>20% (Mínimo)</span>
+                    <span>80%</span>
+                    <span>150% (Premium)</span>
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1.5px solid var(--lf-border)', paddingTop: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Costo Total Acumulado:</span>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>${(4300 * developmentMonths).toLocaleString()} USD</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--lf-text-main)' }}>Valor Estimado de Venta:</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: '#16A34A', fontFamily: "'JetBrains Mono', monospace" }}>
+                      ${Math.round((4300 * developmentMonths) * (1 + profitMargin / 100)).toLocaleString()} USD
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Business Layers Overview Card */}
+          <div style={cardStyle}>
+            <h3 style={sectionTitleStyle}>🌐 Desglose Estratégico de las 4 Capas de Valor del Sistema</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 12 }}>
+              <div style={{ padding: 12, borderRadius: 10, background: 'var(--lf-surface-variant, rgba(0,0,0,0.02))', border: '1px solid var(--lf-border)' }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: '#FF6600', marginBottom: 6 }}>1. Capa Operativa</h4>
+                <p style={{ fontSize: 11.5, color: 'var(--lf-text-muted)', lineHeight: 1.4 }}>
+                  Módulo de despacho de órdenes, geolocalización en tiempo real, app dedicada para motoristas y panel para clientes comerciales.
+                </p>
+              </div>
+              <div style={{ padding: 12, borderRadius: 10, background: 'var(--lf-surface-variant, rgba(0,0,0,0.02))', border: '1px solid var(--lf-border)' }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: '#FF6600', marginBottom: 6 }}>2. Capa Financiera</h4>
+                <p style={{ fontSize: 11.5, color: 'var(--lf-text-muted)', lineHeight: 1.4 }}>
+                  Billetera digital de comisiones automáticas por pedido (15%), códigos únicos de recarga y espacio publicitario comercial de $10/mes.
+                </p>
+              </div>
+              <div style={{ padding: 12, borderRadius: 10, background: 'var(--lf-surface-variant, rgba(0,0,0,0.02))', border: '1px solid var(--lf-border)' }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: '#FF6600', marginBottom: 6 }}>3. Infraestructura</h4>
+                <p style={{ fontSize: 11.5, color: 'var(--lf-text-muted)', lineHeight: 1.4 }}>
+                  Sincronización de base de datos en la nube, consumo controlado de datos, balanceador de carga y APIs de ruteo de mapas integradas.
+                </p>
+              </div>
+              <div style={{ padding: 12, borderRadius: 10, background: 'var(--lf-surface-variant, rgba(0,0,0,0.02))', border: '1px solid var(--lf-border)' }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: '#FF6600', marginBottom: 6 }}>4. Comercialización</h4>
+                <p style={{ fontSize: 11.5, color: 'var(--lf-text-muted)', lineHeight: 1.4 }}>
+                  Estructura replicable y empaquetada como producto tecnológico SaaS listo para comercialización o venta de franquicias a terceros.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* ═══ KPI Cards ═══ */}
       <div
         style={{
           display: 'grid',
@@ -844,6 +1013,8 @@ export default function ModuleFinanzas() {
           </table>
         </div>
       </div>
+      </>
+      )}
 
       {/* ─── Toasts ─── */}
       <div

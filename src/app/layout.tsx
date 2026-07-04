@@ -44,6 +44,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { Toaster } from "sileo";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -52,6 +54,14 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+        <meta name="theme-color" content="#0764E2" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="LOGIFAST" />
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -66,7 +76,10 @@ export default function RootLayout({
       <body
         className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <Toaster position="top-right" />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

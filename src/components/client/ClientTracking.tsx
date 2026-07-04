@@ -20,7 +20,7 @@ import {
   Check,
   ArrowDown,
   ChevronUp,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/lib/store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';

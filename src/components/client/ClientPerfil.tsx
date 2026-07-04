@@ -7,7 +7,7 @@ import {
   LogOut, Shield, Bell, Globe, ChevronRight, AlertTriangle,
   Star, Banknote, CreditCard, Copy, Home, Building, ShoppingBag, Package,
   Heart, ShoppingCart, Gift, Users,
-} from 'lucide-react';
+} from '@/components/icons';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';

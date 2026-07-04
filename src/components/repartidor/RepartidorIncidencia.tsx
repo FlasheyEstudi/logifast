@@ -10,7 +10,7 @@ import {
   MoreHorizontal,
   AlertTriangle,
   Send,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useRepartidorStore, type TipoIncidencia } from '@/lib/repartidor-store';
 import { useRepartidorSnackbar } from './RepartidorShell';
 

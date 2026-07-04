@@ -53,6 +53,13 @@ export type TipoServicio = 'envio' | 'compra';
 export type EstadoServicio = 'asignado' | 'aceptado' | 'recogido' | 'entregado' | 'incidencia' | 'cancelado';
 export type TipoIncidencia = 'mecanica' | 'cliente' | 'accidente' | 'otro';
 
+export interface RepartidorRecarga {
+  id: string;
+  monto: number;
+  codigo: string;
+  fecha: string;
+}
+
 export interface RepartidorProfile {
   id: string;
   nombre: string;
@@ -70,6 +77,9 @@ export interface RepartidorProfile {
   sonidoActivo: boolean;
   vibracionActiva: boolean;
   ubicacionActiva: boolean;
+  saldo: number;
+  contratoAceptado: boolean;
+  recargas: RepartidorRecarga[];
 }
 
 export interface MotoAsignada {
@@ -188,6 +198,11 @@ const MOCK_PERFIL: RepartidorProfile = {
   sonidoActivo: true,
   vibracionActiva: true,
   ubicacionActiva: true,
+  saldo: 350,
+  contratoAceptado: false,
+  recargas: [
+    { id: 'rec-1', monto: 150, codigo: 'LF-INICIO-150', fecha: '2026-06-15' }
+  ],
 };
 
 const MOCK_MOTO: MotoAsignada = {
@@ -462,6 +477,8 @@ interface RepartidorStoreState {
   // Actions
   conectar: () => void;
   desconectar: () => void;
+  recargarSaldo: (monto: number, codigo: string) => boolean;
+  aceptarContrato: () => void;
   recibirOrdenAsignada: (orden: OrdenActiva) => void;
   aceptarOrden: () => void;
   rechazarOrden: () => void;
@@ -573,6 +590,7 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
   // ─── Actions ───
 
   conectar: () => {
+    if (!get().perfil.contratoAceptado || get().perfil.saldo <= 0) return;
     set({
       conectado: true,
       estado: 'EN_LINEA',
@@ -588,6 +606,35 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       ordenActiva: null,
       ordenAsignadaPendiente: null,
     });
+  },
+
+  recargarSaldo: (monto, codigo) => {
+    const perfil = get().perfil;
+    const nuevaRecarga = {
+      id: `rec-${Date.now()}`,
+      monto,
+      codigo,
+      fecha: new Date().toISOString().split('T')[0]
+    };
+    set({
+      perfil: {
+        ...perfil,
+        saldo: perfil.saldo + monto,
+        recargas: [nuevaRecarga, ...perfil.recargas]
+      }
+    });
+    dispararFeedback('orden_aceptada', 80);
+    return true;
+  },
+
+  aceptarContrato: () => {
+    set({
+      perfil: {
+        ...get().perfil,
+        contratoAceptado: true
+      }
+    });
+    dispararFeedback('toggle_off', 40);
   },
 
   recibirOrdenAsignada: (orden) => {
@@ -681,6 +728,9 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
   confirmarEntrega: () => {
     const orden = get().ordenActiva;
     if (!orden) return;
+    const comision = Math.round(orden.monto * 0.15);
+    const nuevoSaldo = Math.max(0, get().perfil.saldo - comision);
+    
     const nuevoServicio: ServicioHistorial = {
       id: `svc-${Date.now()}`,
       ordenId: orden.id,
@@ -705,6 +755,10 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
         km: Math.round((get().statsHoy.km + get().kmRecorridos) * 10) / 10,
         ganancias: get().statsHoy.ganancias + orden.ganancia,
         tiempoActivo: get().statsHoy.tiempoActivo + Math.round(get().tiempoTranscurrido / 60),
+      },
+      perfil: {
+        ...get().perfil,
+        saldo: nuevoSaldo
       },
       moto: { ...get().moto, estado: 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + get().kmRecorridos },
       kmRecorridos: 0,

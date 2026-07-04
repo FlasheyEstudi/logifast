@@ -1,27 +1,28 @@
+// components/repartidor/RepartidorMiniMap.tsx
 'use client';
 
 import React, { useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 import {
-  createRepartidorIcon,
-  createOrigenIcon,
-  createDestinoIcon,
-  type RepartidorMapProps,
-} from './RepartidorMap';
-
-/* ═══════════════════════════════════════════════
-   RepartidorMiniMap — Read-only compact Leaflet map
-   for the service detail screen. Same props as
-   RepartidorMap but ignores seguirRepartidor/onMapClick.
-   Default height 160, zoom 13, no interactivity.
-   ═══════════════════════════════════════════════ */
+  Map,
+  MapMarker,
+  MarkerPopup,
+  MapRoute
+} from '@/components/ui/map';
+import { type RepartidorMapProps } from './RepartidorMap';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
-function isValidPos(
-  p: [number, number] | undefined
-): p is [number, number] {
+const MOTO_SVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="5.5" cy="17.5" r="3.5"/>
+  <circle cx="18.5" cy="17.5" r="3.5"/>
+  <path d="M15 6h2l3 6M5.5 14L10 6h4M9 6L7 14"/>
+</svg>`;
+
+const PACKAGE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>`;
+
+const MAPPIN_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3" fill="#DC2626"/></svg>`;
+
+function isValidPos(p: [number, number] | undefined): p is [number, number] {
   if (!p) return false;
   const [lat, lng] = p;
   if (typeof lat !== 'number' || typeof lng !== 'number') return false;
@@ -32,10 +33,7 @@ function isValidPos(
   return true;
 }
 
-function safePos(
-  p: [number, number] | undefined,
-  fallback: [number, number]
-): [number, number] {
+function safePos(p: [number, number] | undefined, fallback: [number, number]): [number, number] {
   return isValidPos(p) ? p : fallback;
 }
 
@@ -53,75 +51,74 @@ export default function RepartidorMiniMap({
   const origen = isValidPos(origenPos) ? origenPos : undefined;
   const destino = isValidPos(destinoPos) ? destinoPos : undefined;
 
-  const repartidorIcon = useMemo(() => createRepartidorIcon(), []);
-  const origenIcon = useMemo(() => createOrigenIcon(), []);
-  const destinoIcon = useMemo(() => createDestinoIcon(), []);
-
   // Dashed route when heading to pickup; solid otherwise
   const isDashArray = estado === 'EN_CAMINO_RECOGER';
 
-  return (
-    <div className={className} style={{ position: 'relative', width: '100%' }}>
-      <style>{`
-        .lf-leaflet-marker { background: transparent !important; border: none !important; }
-        .leaflet-container {
-          font-family: 'DM Sans', sans-serif;
-          background: var(--bg);
-          height: 100%;
-          width: 100%;
-          z-index: 0;
-        }
-        .leaflet-control-attribution {
-          font-size: 9px !important;
-          background: rgba(255,255,255,0.7) !important;
-        }
-        .leaflet-control-attribution a { color: var(--text-secondary) !important; }
-      `}</style>
-      <MapContainer
-        center={driverPos}
-        zoom={zoom}
-        style={{ height: altura, width: '100%', borderRadius: 16, zIndex: 0 }}
-        zoomControl={false}
-        attributionControl={true}
-        scrollWheelZoom={false}
-        dragging={false}
-        doubleClickZoom={false}
-        touchZoom={false}
-        keyboard={false}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
+  const mapLibreRoute = useMemo(() => {
+    if (!rutaCoordenadas || rutaCoordenadas.length < 2) return [];
+    return rutaCoordenadas.map(c => [c[1], c[0]] as [number, number]);
+  }, [rutaCoordenadas]);
 
-        {rutaCoordenadas && rutaCoordenadas.length > 1 && (
-          <Polyline
-            positions={rutaCoordenadas}
-            pathOptions={{
-              color: '#FF5722',
-              weight: 4,
-              opacity: 0.85,
-              dashArray: isDashArray ? '8 6' : undefined,
-            }}
+  return (
+    <div className={className} style={{ position: 'relative', width: '100%', height: altura }}>
+      <style>{`
+        .maplibre-popup-content {
+          font-family: 'DM Sans', sans-serif;
+          padding: 6px 10px;
+          color: var(--text);
+        }
+      `}</style>
+      <Map
+        center={[driverPos[1], driverPos[0]]}
+        zoom={zoom}
+        className="rounded-2xl overflow-hidden"
+        dragPan={false}
+        scrollZoom={false}
+        doubleClickZoom={false}
+        boxZoom={false}
+        dragRotate={false}
+        keyboard={false}
+        touchZoomRotate={false}
+      >
+        {/* Ruta del servicio */}
+        {mapLibreRoute.length > 1 && (
+          <MapRoute
+            coordinates={mapLibreRoute}
+            color="#FF5722"
+            width={4}
+            opacity={0.85}
+            dashArray={isDashArray ? [8, 6] : undefined}
           />
         )}
 
+        {/* Marcador de Origen */}
         {origen && (
-          <Marker position={origen} icon={origenIcon}>
-            <Popup>Punto de recogida</Popup>
-          </Marker>
+          <MapMarker longitude={origen[1]} latitude={origen[0]}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#16A34A', border: '2.5px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: PACKAGE_SVG }} />
+            <MarkerPopup>
+              <div className="maplibre-popup-content">Punto de recogida</div>
+            </MarkerPopup>
+          </MapMarker>
         )}
 
+        {/* Marcador de Destino */}
         {destino && (
-          <Marker position={destino} icon={destinoIcon}>
-            <Popup>Punto de entrega</Popup>
-          </Marker>
+          <MapMarker longitude={destino[1]} latitude={destino[0]}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#DC2626', border: '2.5px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: MAPPIN_SVG }} />
+            <MarkerPopup>
+              <div className="maplibre-popup-content">Punto de entrega</div>
+            </MarkerPopup>
+          </MapMarker>
         )}
 
-        <Marker position={driverPos} icon={repartidorIcon}>
-          <Popup>Repartidor</Popup>
-        </Marker>
-      </MapContainer>
+        {/* Marcador de Repartidor */}
+        <MapMarker longitude={driverPos[1]} latitude={driverPos[0]}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--lf-primario)', border: '2.5px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: MOTO_SVG }} />
+          <MarkerPopup>
+            <div className="maplibre-popup-content">Repartidor</div>
+          </MarkerPopup>
+        </MapMarker>
+      </Map>
     </div>
   );
 }

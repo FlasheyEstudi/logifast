@@ -6,7 +6,7 @@ import {
   MessageCircle, Mail, Smartphone, Bell, Send, Paperclip,
   Search, Filter, Plus, Edit2, Trash2, Check, CheckCheck,
   X, ChevronLeft,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type {
   Conversacion,

@@ -1,33 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, DollarSign, Bike, AlertTriangle, UserCheck, X,
   ChevronRight, Plus, BarChart3, Layers, Crosshair,
   Maximize2, Minimize2, Eye, EyeOff, Route, Flame, Satellite,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type Order, type Moto, type ZonePolygon } from '@/lib/store';
 
-/* ─── Dynamic Leaflet — load entire module at once to avoid chunk splitting issues ─── */
-type LeafletModule = typeof import('react-leaflet');
-
-let leafletModulePromise: Promise<LeafletModule> | null = null;
-function getLeafletModule(): Promise<LeafletModule> {
-  if (!leafletModulePromise) {
-    leafletModulePromise = import('react-leaflet');
-  }
-  return leafletModulePromise;
-}
-
-const MapContainer = dynamic(() => getLeafletModule().then((m) => m.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => getLeafletModule().then((m) => m.TileLayer), { ssr: false });
-const Marker = dynamic(() => getLeafletModule().then((m) => m.Marker), { ssr: false });
-const Popup = dynamic(() => getLeafletModule().then((m) => m.Popup), { ssr: false });
-const Polyline = dynamic(() => getLeafletModule().then((m) => m.Polyline), { ssr: false });
-const Polygon = dynamic(() => getLeafletModule().then((m) => m.Polygon), { ssr: false });
-const Circle = dynamic(() => getLeafletModule().then((m) => m.Circle), { ssr: false });
+import { Map, MapMarker, MarkerPopup, MapRoute, MapGeoJSON, MapRef } from '@/components/ui/map';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
@@ -42,31 +25,36 @@ const STATUS_LABELS: Record<string, string> = {
   maintenance: 'Mantenimiento',
 };
 
-/* ─── Leaflet map inner component ─── */
+// Define satellite basemap style specification
+const satelliteStyle = {
+  version: 8 as const,
+  sources: {
+    'satellite-tiles': {
+      type: 'raster' as const,
+      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+      tileSize: 256
+    }
+  },
+  layers: [
+    {
+      id: 'satellite-layer',
+      type: 'raster' as const,
+      source: 'satellite-tiles',
+      minzoom: 0,
+      maxzoom: 22
+    }
+  ]
+};
+
+/* ─── MapLibre map inner component ─── */
 function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRoutes, showHeatmap, showSatellite, panelOpen, orders }: {
   isDark: boolean; motos: Moto[]; activeOrders: Order[];
   zonePolygons: ZonePolygon[]; showZones: boolean; showRoutes: boolean;
   showHeatmap: boolean; showSatellite: boolean; panelOpen: boolean; orders: Order[];
 }) {
   const [routes, setRoutes] = useState<Array<{ positions: [number, number][]; order: Order }>>([]);
-  const [L, setL] = useState<any>(null);
   const updateMotoPositions = useStore((s) => s.updateMotoPositions);
-
-  useEffect(() => {
-    import('leaflet').then((leaflet) => {
-      delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
-      setL(leaflet);
-    });
-    // Load leaflet CSS via link tag for reliability in standalone builds
-    if (!document.querySelector('link[href*="leaflet"]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-      link.crossOrigin = '';
-      document.head.appendChild(link);
-    }
-  }, []);
+  const mapRef = useRef<MapRef | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => updateMotoPositions(), 8000);
@@ -102,70 +90,39 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
     return () => clearInterval(iv);
   }, [fetchRoutes]);
 
-  // Use a ref to store the map instance from MapContainer's whenReady
-  const mapInstanceRef = useRef<any>(null);
-
   // Center map on Managua
   const centerMap = useCallback(() => {
-    if (mapInstanceRef.current) mapInstanceRef.current.setView(MANAGUA_CENTER, 13);
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [MANAGUA_CENTER[1], MANAGUA_CENTER[0]],
+        zoom: 13,
+        duration: 1500
+      });
+    }
   }, []);
 
   const showAllMotos = useCallback(() => {
-    const map = mapInstanceRef.current;
-    if (!map || motos.length === 0 || !L) return;
+    const map = mapRef.current;
+    if (!map || motos.length === 0) return;
     const validMotos = motos.filter(m => typeof m.lat === 'number' && typeof m.lng === 'number' && m.lat !== 0 && m.lng !== 0);
     if (validMotos.length === 0) return;
-    const bounds = L.latLngBounds(validMotos.map((m: Moto) => L.latLng(m.lat, m.lng)));
-    if (bounds) map.fitBounds(bounds, { padding: [40, 40] });
-  }, [motos, L]);
 
-  // Satellite tile URL based on toggle state
-  const tileUrl = useMemo(() => {
-    if (showSatellite) {
-      return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-    }
-    return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  }, [showSatellite]);
-
-  const tileAttribution = useMemo(() => {
-    if (showSatellite) {
-      return '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
-    }
-    return '&copy; OpenStreetMap';
-  }, [showSatellite]);
-
-  // ─── Marker Clustering ───
-  // Group motos by proximity (grid-based: round lat/lng to 0.005)
-  const clusteredMotos = useMemo(() => {
-    if (!L) return [];
-    const GRID = 0.005;
-    const groups: Record<string, Moto[]> = {};
-    motos.forEach((moto) => {
-      const key = `${Math.round(moto.lat / GRID)},${Math.round(moto.lng / GRID)}`;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(moto);
+    let minLng = Infinity;
+    let maxLng = -Infinity;
+    let minLat = Infinity;
+    let maxLat = -Infinity;
+    validMotos.forEach(m => {
+      if (m.lng < minLng) minLng = m.lng;
+      if (m.lng > maxLng) maxLng = m.lng;
+      if (m.lat < minLat) minLat = m.lat;
+      if (m.lat > maxLat) maxLat = m.lat;
     });
-    const result: Array<{
-      type: 'single';
-      moto: Moto;
-    } | {
-      type: 'cluster';
-      count: number;
-      lat: number;
-      lng: number;
-      motos: Moto[];
-    }> = [];
-    Object.values(groups).forEach((group) => {
-      if (group.length === 1) {
-        result.push({ type: 'single', moto: group[0] });
-      } else {
-        const avgLat = group.reduce((s, m) => s + m.lat, 0) / group.length;
-        const avgLng = group.reduce((s, m) => s + m.lng, 0) / group.length;
-        result.push({ type: 'cluster', count: group.length, lat: avgLat, lng: avgLng, motos: group });
-      }
-    });
-    return result;
-  }, [motos, L]);
+
+    map.fitBounds([
+      [minLng, minLat],
+      [maxLng, maxLat]
+    ], { padding: 40, duration: 1500 });
+  }, [motos]);
 
   // ─── Heatmap data: order origin/destination coordinates ───
   const heatmapPoints = useMemo(() => {
@@ -204,222 +161,185 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
       });
   }, [routes]);
 
-  if (!L) {
-    return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lf-bg-base)' }}>
-        <div style={{ textAlign: 'center', color: 'var(--lf-text-muted)' }}>
-          <div className="lf-shimmer" style={{ width: 40, height: 40, borderRadius: '50%', margin: '0 auto 12px' }} />
-          <div>Cargando mapa...</div>
-        </div>
-      </div>
-    );
-  }
+  // Convert zone polygons to GeoJSON FeatureCollection
+  const zoneGeoJSON = useMemo(() => {
+    return {
+      type: 'FeatureCollection' as const,
+      features: zonePolygons.map(zone => {
+        const coords = zone.coords.map(c => [c[1], c[0]]);
+        if (coords.length > 0 && (coords[0][0] !== coords[coords.length - 1][0] || coords[0][1] !== coords[coords.length - 1][1])) {
+          coords.push(coords[0]);
+        }
+        return {
+          type: 'Feature' as const,
+          id: zone.id,
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [coords]
+          },
+          properties: {
+            id: zone.id,
+            nombre: zone.nombre,
+            color: zone.color
+          }
+        };
+      })
+    };
+  }, [zonePolygons]);
 
-  const createMotoIcon = (status: string) => {
-    const color = STATUS_COLORS[status] || '#6B7280';
-    const isPulse = status === 'in-service';
-    return L.divIcon({
-      className: '',
-      html: `<div style="position:relative;width:28px;height:28px;">
-        <div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="5" cy="18" r="3"/><circle cx="19" cy="18" r="3"/>
-            <path d="M5 18h3l3-6h4l2 6h2"/><path d="M11 6l2 6"/>
-          </svg>
-        </div>
-        ${isPulse ? '<div class="lf-marker-pulse" style="position:absolute;inset:-4px;border-radius:50%;"></div>' : ''}
-      </div>`,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14],
-    });
-  };
-
-  const createClusterIcon = (count: number) => {
-    return L.divIcon({
-      className: '',
-      html: `<div style="width:36px;height:36px;border-radius:50%;background:#FF6600;border:3px solid white;box-shadow:0 2px 10px rgba(255,102,0,0.5);display:flex;align-items:center;justify-content:center;">
-        <span style="color:white;font-family:'DM Sans',sans-serif;font-weight:800;font-size:13px;line-height:1;">${count}</span>
-      </div>`,
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
-    });
-  };
-
-  const originIcon = L.divIcon({
-    className: '',
-    html: '<div style="width:18px;height:18px;border-radius:50%;background:#16A34A;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',
-    iconSize: [18, 18], iconAnchor: [9, 9],
-  });
-
-  const destIcon = L.divIcon({
-    className: '',
-    html: '<div style="width:18px;height:18px;border-radius:50%;background:#FF6600;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',
-    iconSize: [18, 18], iconAnchor: [9, 9],
-  });
-
-  // Determine active vs planned orders for route styling
   const activeStatuses = ['encamino', 'recogido'];
 
   return (
-    <div className={isDark ? 'lf-dark-map' : ''} style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <MapContainer
-        center={MANAGUA_CENTER}
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <Map
+        ref={mapRef}
+        center={[MANAGUA_CENTER[1], MANAGUA_CENTER[0]]}
         zoom={13}
-        style={{ width: '100%', height: '100%' }}
-        zoomControl={false}
-        ref={mapInstanceRef}
+        className="h-full w-full"
+        theme={isDark ? 'dark' : 'light'}
+        styles={showSatellite ? { light: satelliteStyle, dark: satelliteStyle } : undefined}
       >
-        <TileLayer attribution={tileAttribution} url={tileUrl} />
-
-        {/* Heatmap circles */}
+        {/* Heatmap circles - simulated using CSS radial gradient markers */}
         {showHeatmap && heatmapPoints.map((point, i) => (
-          <Circle
-            key={`hm-l-${i}`}
-            center={[point.lat, point.lng]}
-            radius={500}
-            pathOptions={{ color: '#FF6600', fillColor: '#FF6600', fillOpacity: 0.04, weight: 0, opacity: 0 }}
-          />
-        ))}
-        {showHeatmap && heatmapPoints.map((point, i) => (
-          <Circle
-            key={`hm-m-${i}`}
-            center={[point.lat, point.lng]}
-            radius={300}
-            pathOptions={{ color: '#FF6600', fillColor: '#FF6600', fillOpacity: 0.06, weight: 0, opacity: 0 }}
-          />
-        ))}
-        {showHeatmap && heatmapPoints.map((point, i) => (
-          <Circle
-            key={`hm-s-${i}`}
-            center={[point.lat, point.lng]}
-            radius={100}
-            pathOptions={{ color: '#FF6600', fillColor: '#FF6600', fillOpacity: 0.08, weight: 0, opacity: 0 }}
-          />
+          <MapMarker key={`hm-${i}`} longitude={point.lng} latitude={point.lat}>
+            <div style={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(255,102,0,0.3) 0%, rgba(255,102,0,0) 70%)',
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none'
+            }} />
+          </MapMarker>
         ))}
 
         {/* Zone polygons */}
-        {showZones && zonePolygons.map((zone) => (
-          <Polygon
-            key={zone.id}
-            positions={zone.coords}
-            pathOptions={{
-              color: zone.color,
-              weight: 2,
-              opacity: 0.7,
-              fillColor: zone.color,
-              fillOpacity: 0.1,
-              dashArray: '6 3',
+        {showZones && (
+          <MapGeoJSON
+            data={zoneGeoJSON}
+            fillPaint={{
+              'fill-color': ['get', 'color'],
+              'fill-opacity': 0.1
             }}
-          >
-            <Popup>
-              <div style={{ fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 14, color: zone.color }}>
-                {zone.nombre}
-              </div>
-            </Popup>
-          </Polygon>
-        ))}
+            linePaint={{
+              'line-color': ['get', 'color'],
+              'line-width': 2,
+              'line-dasharray': [3, 3]
+            }}
+          />
+        )}
 
-        {/* Zone labels (as invisible markers with divIcon) */}
+        {/* Zone labels */}
         {showZones && zonePolygons.map((zone) => {
           const centerLat = zone.coords.reduce((s, c) => s + c[0], 0) / zone.coords.length;
           const centerLng = zone.coords.reduce((s, c) => s + c[1], 0) / zone.coords.length;
-          const labelIcon = L.divIcon({
-            className: '',
-            html: `<div style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:11px;color:${zone.color};text-shadow:0 1px 3px rgba(255,255,255,0.8);white-space:nowrap;text-align:center;opacity:0.9;">${zone.nombre}</div>`,
-            iconSize: [80, 16],
-            iconAnchor: [40, 8],
-          });
-          return <Marker key={`zl-${zone.id}`} position={[centerLat, centerLng]} icon={labelIcon} interactive={false} />;
-        })}
-
-        {/* Moto markers with clustering */}
-        {clusteredMotos.map((item, i) => {
-          if (item.type === 'single') {
-            return (
-              <Marker key={item.moto.id} position={[item.moto.lat, item.moto.lng]} icon={createMotoIcon(item.moto.status)}>
-                <Popup>
-                  <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 150 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{item.moto.nombre}</div>
-                    <div style={{ fontSize: 12, color: '#6B7280' }}>{item.moto.modelo} ({item.moto.anio})</div>
-                    <div style={{ fontSize: 12, color: STATUS_COLORS[item.moto.status], fontWeight: 600, marginTop: 4 }}>{STATUS_LABELS[item.moto.status]}</div>
-                    {item.moto.repartidorAsignado && <div style={{ fontSize: 12, marginTop: 2 }}>Repartidor: {item.moto.repartidorAsignado}</div>}
-                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>KM: {item.moto.km.toLocaleString()}</div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          }
-          // Cluster marker
-          const clusterPopupContent = item.motos.map((m) =>
-            `<div style="padding:3px 0;border-bottom:1px solid #eee;font-size:12px;">
-              <strong>${m.nombre}</strong> — <span style="color:${STATUS_COLORS[m.status]}">${STATUS_LABELS[m.status]}</span>
-              ${m.repartidorAsignado ? `<br/>Repartidor: ${m.repartidorAsignado}` : ''}
-            </div>`
-          ).join('');
-          const clusterIcon = createClusterIcon(item.count);
           return (
-            <Marker key={`cluster-${i}`} position={[item.lat, item.lng]} icon={clusterIcon}>
-              <Popup>
-                <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 160 }} dangerouslySetInnerHTML={{ __html: clusterPopupContent }} />
-              </Popup>
-            </Marker>
+            <MapMarker key={`zl-${zone.id}`} longitude={centerLng} latitude={centerLat}>
+              <div style={{
+                fontFamily: "'DM Sans',sans-serif",
+                fontWeight: 700,
+                fontSize: 11,
+                color: zone.color,
+                textShadow: '0 1px 3px rgba(255,255,255,0.8), 0 1px 3px rgba(0,0,0,0.1)',
+                whiteSpace: 'nowrap',
+                textAlign: 'center',
+                opacity: 0.9,
+                pointerEvents: 'none'
+              }}>
+                {zone.nombre}
+              </div>
+            </MapMarker>
           );
         })}
+
+        {/* Moto markers with popup info */}
+        {motos.map((moto) => (
+          <MapMarker key={moto.id} longitude={moto.lng} latitude={moto.lat}>
+            <div style={{ position: 'relative', width: 28, height: 28 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: STATUS_COLORS[moto.status] || '#6B7280',
+                border: '3px solid white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Bike size={14} color="white" />
+              </div>
+              {moto.status === 'in-service' && (
+                <div className="lf-marker-pulse" style={{ position: 'absolute', inset: -4, borderRadius: '50%' }}></div>
+              )}
+            </div>
+            <MarkerPopup>
+              <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 150, padding: '4px 8px', color: 'var(--text)' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{moto.nombre}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{moto.modelo} ({moto.anio})</div>
+                <div style={{ fontSize: 12, color: STATUS_COLORS[moto.status], fontWeight: 600, marginTop: 4 }}>{STATUS_LABELS[moto.status]}</div>
+                {moto.repartidorAsignado && <div style={{ fontSize: 12, marginTop: 2 }}>Repartidor: {moto.repartidorAsignado}</div>}
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>KM: {moto.km.toLocaleString()}</div>
+              </div>
+            </MarkerPopup>
+          </MapMarker>
+        ))}
 
         {/* Routes - solid orange for active, dashed for planned */}
         {showRoutes && routes.map((route) => {
           const isActive = activeStatuses.includes(route.order.estado);
+          const coords = route.positions.map(c => [c[1], c[0]] as [number, number]);
+          if (coords.length < 2) return null;
           return (
-            <Polyline
+            <MapRoute
               key={route.order.id}
-              positions={route.positions}
-              pathOptions={{
-                color: '#FF6600',
-                weight: isActive ? 4 : 3,
-                opacity: isActive ? 0.85 : 0.5,
-                dashArray: isActive ? undefined : '8 6',
-              }}
+              coordinates={coords}
+              color="#FF6600"
+              width={isActive ? 4 : 3}
+              opacity={isActive ? 0.85 : 0.5}
+              dashArray={isActive ? undefined : [8, 6]}
             />
           );
         })}
 
         {/* Route ETA labels (encamino only) */}
-        {showRoutes && etaLabels.map((eta) => {
-          const etaIcon = L.divIcon({
-            className: '',
-            html: `<div style="
-              font-family:'DM Sans',sans-serif;
-              background:rgba(0,42,92,0.85);
-              color:white;
-              padding:3px 10px;
-              border-radius:999px;
-              font-size:11px;
-              font-weight:700;
-              white-space:nowrap;
-              text-align:center;
-              box-shadow:0 2px 8px rgba(0,0,0,0.3);
-              backdrop-filter:blur(4px);
-              line-height:1.4;
-            ">
-              <div>ETA: ${eta.eta} min</div>
-              ${eta.repartidor ? `<div style="font-size:9px;font-weight:500;opacity:0.85;">${eta.repartidor}</div>` : ''}
-            </div>`,
-            iconSize: [90, 36],
-            iconAnchor: [45, 18],
-          });
-          return (
-            <Marker key={`eta-${eta.id}`} position={eta.position} icon={etaIcon} interactive={false} />
-          );
-        })}
+        {showRoutes && etaLabels.map((eta) => (
+          <MapMarker key={`eta-${eta.id}`} longitude={eta.position[1]} latitude={eta.position[0]}>
+            <div style={{
+              fontFamily: "'DM Sans',sans-serif",
+              background: 'rgba(0,42,92,0.85)',
+              color: 'white',
+              padding: '3px 10px',
+              borderRadius: 999,
+              fontSize: 11,
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              textAlign: 'center',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(4px)',
+              lineHeight: 1.4,
+              pointerEvents: 'none'
+            }}>
+              <div>ETA: {eta.eta} min</div>
+              {eta.repartidor && <div style={{ fontSize: 9, fontWeight: 500, opacity: 0.85 }}>{eta.repartidor}</div>}
+            </div>
+          </MapMarker>
+        ))}
 
         {/* Origin and destination markers */}
         {showRoutes && routes.map((route) => (
-          <Marker key={`o-${route.order.id}`} position={[route.order.origenLat, route.order.origenLng]} icon={originIcon} />
+          <Fragment key={route.order.id}>
+            <MapMarker longitude={route.order.origenLng} latitude={route.order.origenLat}>
+              <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#16A34A', border: '3px solid white', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }} />
+              <MarkerPopup>
+                <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>Origen del pedido: #{route.order.id}</div>
+              </MarkerPopup>
+            </MapMarker>
+            <MapMarker longitude={route.order.destinoLng} latitude={route.order.destinoLat}>
+              <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FF6600', border: '3px solid white', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }} />
+              <MarkerPopup>
+                <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>Destino del pedido: #{route.order.id}</div>
+              </MarkerPopup>
+            </MapMarker>
+          </Fragment>
         ))}
-        {showRoutes && routes.map((route) => (
-          <Marker key={`d-${route.order.id}`} position={[route.order.destinoLat, route.order.destinoLng]} icon={destIcon} />
-        ))}
-      </MapContainer>
+      </Map>
 
       {/* Custom map controls - top right */}
       <div style={{ position: 'absolute', top: 12, right: panelOpen ? 404 : 12, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -442,7 +362,7 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
   );
 }
 
-/* ─── Wrap MapInner with dynamic ssr:false to avoid SSR issues with Leaflet ─── */
+/* ─── Wrap MapInner with dynamic ssr:false to avoid SSR issues ─── */
 const MapComponent = dynamic(() => Promise.resolve(MapInner), { ssr: false, loading: () => (
   <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lf-bg-base)' }}>
     <div style={{ textAlign: 'center', color: 'var(--lf-text-muted)' }}>

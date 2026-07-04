@@ -6,7 +6,7 @@ import {
   ArrowLeft, Heart, Share2, Phone, Star, Clock, MapPin,
   Truck, Plus, Minus, Check, ChevronRight, X, ShoppingBag,
   MessageCircle, Sparkles, Search, Navigation,
-} from 'lucide-react';
+} from '@/components/icons';
 import {
   useMarketplaceStore,
   type Tienda,

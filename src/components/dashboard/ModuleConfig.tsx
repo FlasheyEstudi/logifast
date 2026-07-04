@@ -9,7 +9,7 @@ import {
   Send, Eye, Monitor, ChevronRight, AlertTriangle,
   Download, FileText, HardDrive, CheckCircle2, Circle,
   MessageCircle, CreditCard, Map, Bell, Volume2,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type MaintenanceRule, type Zone, type CompanyData, type SystemUser, type ConfiguracionHorario, type Feriado, type Integracion } from '@/lib/store';
 import { useConfigStore } from '@/store/configStore';
 import { TemaToggle } from '@/components/ui/TemaToggle';

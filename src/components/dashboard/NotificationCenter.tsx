@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, Bike, Users, AlertTriangle, Settings, DollarSign,
   Bell, CheckCheck,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type ActivityEvent } from '@/lib/store';
 
 /* ─── Props ─── */

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Star, Bike, Phone, Mail, Plus, X, ChevronRight,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type Rider, type RiderStatus } from '@/lib/store';
 
 const STATUS_CONFIG: Record<RiderStatus, { label: string; color: string; bg: string }> = {

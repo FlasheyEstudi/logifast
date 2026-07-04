@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Send, Phone, MessageSquare, Zap } from 'lucide-react';
+import { X, Send, Phone, MessageSquare, Zap } from '@/components/icons';
 import { useRepartidorStore, type ChatMensaje } from '@/lib/repartidor-store';
 
 /* ═══════════════════════════════════════════════

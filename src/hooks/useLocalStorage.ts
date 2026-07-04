@@ -27,7 +27,6 @@ export function useLocalStorage<T>(
   // canonical SSR-safe pattern for reading localStorage (so the
   // server's first render matches the client's first render and we
   // avoid hydration mismatches).
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -49,7 +48,7 @@ export function useLocalStorage<T>(
     // to re-read from localStorage when the key changes, not when the
     // caller passes a fresh literal each render.
   }, [key]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+
 
   const setValue = useCallback(
     (value: T | ((prev: T) => T)) => {

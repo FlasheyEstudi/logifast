@@ -24,7 +24,7 @@ import {
   Zap,
   Calendar,
   ChevronUp,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
 
@@ -46,6 +46,8 @@ interface CostBreakdown {
   base: number;
   distance: number;
   distanceKm: number;
+  pickupDistanceKm: number;
+  deliveryDistanceKm: number;
   size: number;
   fragile: number;
   subtotal: number;
@@ -143,8 +145,8 @@ const STEP_LABELS = ['Dirección', 'Detalles', 'Pago', 'Confirmar'] as const;
 
 const SIZE_OPTIONS = [
   { key: 'pequeno' as const, label: 'Pequeño', desc: 'Hasta 1 kg', icon: FileText, surcharge: 0 },
-  { key: 'mediano' as const, label: 'Mediano', desc: 'Hasta 5 kg', icon: Package, surcharge: 15 },
-  { key: 'grande' as const, label: 'Grande', desc: 'Hasta 15 kg', icon: Box, surcharge: 35 },
+  { key: 'mediano' as const, label: 'Mediano', desc: 'Hasta 5 kg', icon: Package, surcharge: 0 },
+  { key: 'grande' as const, label: 'Grande', desc: 'Hasta 15 kg', icon: Box, surcharge: 50 },
 ];
 
 /* ═══════════════════════════════════════════════
@@ -480,11 +482,15 @@ function CostCard({ breakdown, showPromo }: { breakdown: CostBreakdown; showProm
 
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginBottom: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Tarifa base</span>
-          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>{formatCordobas(breakdown.base)}</span>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Recorrido de Recogida (Taller → Origen)</span>
+          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>{breakdown.pickupDistanceKm.toFixed(1)} km</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Distancia ({breakdown.distanceKm.toFixed(1)} km × C$ 8)</span>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Recorrido de Entrega (Origen → Destino)</span>
+          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>{breakdown.deliveryDistanceKm.toFixed(1)} km</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>Distancia Total ({breakdown.distanceKm.toFixed(1)} km × C$ 15)</span>
           <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>{formatCordobas(breakdown.distance)}</span>
         </div>
         {breakdown.size > 0 && (
@@ -610,18 +616,24 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
 
   /* ─── Cost calculation ─── */
   const costBreakdown = useMemo<CostBreakdown>(() => {
-    const BASE = 50;
-    const PER_KM = 8;
+    const BASE = 0;
+    const PER_KM = 15;
 
-    const distKm =
+    const pickupDist =
+      solicitudEnvio.origenLat
+        ? haversineKm(12.1364, -86.2581, solicitudEnvio.origenLat, solicitudEnvio.origenLng)
+        : 0;
+
+    const deliveryDist =
       solicitudEnvio.origenLat && solicitudEnvio.destinoLat
         ? haversineKm(solicitudEnvio.origenLat, solicitudEnvio.origenLng, solicitudEnvio.destinoLat, solicitudEnvio.destinoLng)
         : 0;
 
-    const distanceCost = Math.round(distKm * PER_KM);
+    const totalDist = pickupDist + deliveryDist;
+    const distanceCost = Math.round(totalDist * PER_KM);
     const sizeSurcharge = SIZE_OPTIONS.find((s) => s.key === solicitudEnvio.tamano)?.surcharge ?? 0;
     const fragileSurcharge = solicitudEnvio.fragil ? 10 : 0;
-    const subtotal = BASE + distanceCost + sizeSurcharge + fragileSurcharge;
+    const subtotal = distanceCost + sizeSurcharge + fragileSurcharge;
 
     let discount = 0;
     if (promoDiscount > 0) {
@@ -633,12 +645,14 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     }
 
     const total = Math.max(0, subtotal - discount);
-    const estimatedMinutes = Math.max(8, Math.round(distKm * 4));
+    const estimatedMinutes = Math.max(8, Math.round(totalDist * 4));
 
     return {
       base: BASE,
       distance: distanceCost,
-      distanceKm: distKm,
+      distanceKm: totalDist,
+      pickupDistanceKm: pickupDist,
+      deliveryDistanceKm: deliveryDist,
       size: sizeSurcharge,
       fragile: fragileSurcharge,
       subtotal,

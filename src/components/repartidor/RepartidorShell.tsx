@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bike, ClipboardList, User } from 'lucide-react';
+import { Bike, ClipboardList, User } from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { useConfigStore } from '@/store/configStore';
 import { reproducirSiActivo } from '@/services/audio';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC MODULE IMPORTS
@@ -197,6 +198,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
       const state = useRepartidorStore.getState();
       if (!state.ordenActiva && !state.ordenAsignadaPendiente) {
         state.recibirOrdenAsignada(orden);
+        HAPTIC_PATTERNS.nuevaOrden();
       }
     });
 
@@ -243,13 +245,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   const handleNav = useCallback(
     (tab: RepartidorTab) => {
       setPantalla(tab);
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try {
-          navigator.vibrate(15);
-        } catch {
-          /* ignore */
-        }
-      }
+      HAPTIC_PATTERNS.light();
     },
     [setPantalla]
   );

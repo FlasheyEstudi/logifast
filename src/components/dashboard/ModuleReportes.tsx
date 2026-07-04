@@ -9,7 +9,7 @@ import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle, Download,
   Copy, FileDown, ImageIcon, BarChart3, Clock, MapPin, Percent,
   Truck, ChevronDown, X,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore } from '@/lib/store';
 
 /* ─── Toast hook ─── */

@@ -8,7 +8,7 @@ import {
   Compass, Eye, Route, Maximize2, Minimize2,
   ChevronsUp, Search, Radio, Shield,
   Megaphone, MessageCircle, ChevronDown, MoreHorizontal,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type ModuleKey } from '@/lib/store';
 import dynamic from 'next/dynamic';
 

@@ -5,13 +5,10 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bike, ChevronDown, ChevronUp, Plus, X, Wrench, MapPin,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type Moto, type MotoStatus } from '@/lib/store';
 
-const MapContainer = dynamic(() => import('react-leaflet').then((m) => m.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), { ssr: false });
+import { Map, MapMarker, MarkerPopup } from '@/components/ui/map';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
@@ -22,50 +19,33 @@ const STATUS_CONFIG: Record<MotoStatus, { label: string; color: string; bg: stri
 };
 
 function FlotaMap({ motos, isDark }: { motos: Moto[]; isDark: boolean }) {
-  const [L, setL] = useState<any>(null);
-
-  useEffect(() => {
-    import('leaflet').then((leaflet) => {
-      delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
-      setL(leaflet);
-    });
-    // Load leaflet CSS via link tag for reliability in standalone builds
-    if (!document.querySelector('link[href*="leaflet"]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-      link.crossOrigin = '';
-      document.head.appendChild(link);
-    }
-  }, []);
-
-  if (!L) return <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)' }}>Cargando mapa...</div>;
-
-  const createIcon = (status: MotoStatus) => {
-    const cfg = STATUS_CONFIG[status];
-    return L.divIcon({
-      className: '',
-      html: `<div style="width:24px;height:24px;border-radius:50%;background:${cfg.color};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-      iconSize: [24, 24], iconAnchor: [12, 12],
-    });
-  };
-
   return (
-    <div className={isDark ? 'lf-dark-map' : ''} style={{ height: '100%', borderRadius: 12, overflow: 'hidden' }}>
-      <MapContainer center={MANAGUA_CENTER} zoom={13} style={{ height: '100%' }} zoomControl>
-        <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+    <div style={{ height: '100%', borderRadius: 12, overflow: 'hidden' }}>
+      <Map
+        center={[MANAGUA_CENTER[1], MANAGUA_CENTER[0]]}
+        zoom={13}
+        className="rounded-xl overflow-hidden"
+        theme={isDark ? 'dark' : 'light'}
+      >
         {motos.map((moto) => (
-          <Marker key={moto.id} position={[moto.lat, moto.lng]} icon={createIcon(moto.status)}>
-            <Popup>
-              <div style={{ fontFamily: "'DM Sans',sans-serif" }}>
+          <MapMarker key={moto.id} longitude={moto.lng} latitude={moto.lat}>
+            <div style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: STATUS_CONFIG[moto.status].color,
+              border: '3px solid white',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            }} />
+            <MarkerPopup>
+              <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>
                 <div style={{ fontWeight: 700 }}>{moto.nombre}</div>
                 <div style={{ fontSize: 12, color: STATUS_CONFIG[moto.status].color }}>{STATUS_CONFIG[moto.status].label}</div>
               </div>
-            </Popup>
-          </Marker>
+            </MarkerPopup>
+          </MapMarker>
         ))}
-      </MapContainer>
+      </Map>
     </div>
   );
 }

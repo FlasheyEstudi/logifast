@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, Send, Check, CheckCheck } from 'lucide-react';
+import { X, Phone, Send, Check, CheckCheck } from '@/components/icons';
 import { useStore, type ChatMessage, type ChatConversation } from '@/lib/store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 

@@ -19,12 +19,14 @@ import {
   LogOut,
   TrendingUp,
   ChevronRight,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { useConfigStore } from '@/store/configStore';
 import { TemaToggle } from '@/components/ui/TemaToggle';
 import { SonidoToggle } from '@/components/ui/SonidoToggle';
 import { Switch } from '@/components/ui/switch';
+import PullToRefresh from '@/components/ui/PullToRefresh';
+import { PerfilSkeleton } from '@/components/ui/Skeletons';
 
 /* ═══════════════════════════════════════════════
    STAR RATING (exported for reuse)
@@ -290,8 +292,30 @@ const RATING_DIST = [
    ═══════════════════════════════════════════════ */
 
 export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfilProps) {
-  const { perfil, moto, calificaciones, actualizarConfig, zonasDisponibles } = useRepartidorStore();
+  const { perfil, moto, calificaciones, actualizarConfig, zonasDisponibles, recargarSaldo, aceptarContrato } = useRepartidorStore();
   const [zonaOpen, setZonaOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [rechargeCode, setRechargeCode] = useState('');
+  const [rechargeMsg, setRechargeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleRedeem = () => {
+    if (!rechargeCode.trim()) return;
+    const cleanCode = rechargeCode.trim().toUpperCase();
+    let amount = 0;
+    if (cleanCode === 'LF-RECARGA-500' || cleanCode === 'LFAST-500') {
+      amount = 500;
+    } else if (cleanCode === 'LF-RECARGA-1000' || cleanCode === 'LFAST-1000') {
+      amount = 1000;
+    } else {
+      setRechargeMsg({ type: 'error', text: 'Código inválido o ya utilizado.' });
+      return;
+    }
+    
+    recargarSaldo(amount, cleanCode);
+    setRechargeMsg({ type: 'success', text: `¡Éxito! Se han recargado C$ ${amount} a tu cuenta.` });
+    setRechargeCode('');
+    setTimeout(() => setRechargeMsg(null), 4000);
+  };
 
   /* ─── Configuración global (configStore) ─── */
   const vibracionActiva = useConfigStore((s) => s.vibracionActiva);
@@ -303,8 +327,18 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
   const notificacionesEmail = useConfigStore((s) => s.notificacionesEmail);
   const toggleNotificacionesEmail = useConfigStore((s) => s.toggleNotificacionesEmail);
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setLoading(false);
+  };
+
   return (
-    <div style={{ paddingBottom: 16 }}>
+    <PullToRefresh onRefresh={handleRefresh}>
+      {loading ? (
+        <PerfilSkeleton />
+      ) : (
+        <div style={{ paddingBottom: 16 }}>
       {/* ─── HEADER ─── */}
       <div
         style={{
@@ -696,6 +730,248 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
         </div>
       </SectionCard>
 
+      {/* ─── BILLETERA DIGITAL Y RECARGAS ─── */}
+      <SectionCard title="Billetera Digital y Comisiones">
+        <div
+          style={{
+            padding: '16px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, var(--primario) 0%, #d4af37 100%)',
+            color: '#fff',
+            marginBottom: '16px',
+            boxShadow: 'var(--md-elevation-1)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Saldo disponible</div>
+            <div style={{ fontSize: '26px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", marginTop: '2px' }}>
+              C$ {perfil.saldo.toLocaleString('es-NI')}
+            </div>
+          </div>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <line x1="12" y1="4" x2="12" y2="20" />
+            </svg>
+          </div>
+        </div>
+
+        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+          La comisión de la plataforma es del <strong>15% por cada pedido completado</strong>. Debes mantener saldo positivo para poder conectarte.
+        </div>
+
+        {/* Canje de Código */}
+        <div style={{ marginTop: '12px', borderBottom: '1px solid var(--md-outline-variant)', paddingBottom: '16px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: '6px' }}>
+            Canjear Código de Recarga
+          </label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              placeholder="Ej: LF-RECARGA-500"
+              value={rechargeCode}
+              onChange={(e) => setRechargeCode(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '10px 12px',
+                borderRadius: '12px',
+                background: 'var(--md-surface-variant)',
+                border: '1px solid var(--md-outline-variant)',
+                color: 'var(--text)',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '13px',
+              }}
+            />
+            <button
+              onClick={handleRedeem}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '12px',
+                background: 'var(--primario)',
+                color: '#fff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+            >
+              Canjear
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <button
+              onClick={() => setRechargeCode('LF-RECARGA-500')}
+              style={{
+                padding: '4px 8px',
+                fontSize: '11px',
+                borderRadius: '6px',
+                border: '1px dashed var(--primario)',
+                color: 'var(--primario)',
+                background: 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              Simular C$ 500
+            </button>
+            <button
+              onClick={() => setRechargeCode('LF-RECARGA-1000')}
+              style={{
+                padding: '4px 8px',
+                fontSize: '11px',
+                borderRadius: '6px',
+                border: '1px dashed var(--primario)',
+                color: 'var(--primario)',
+                background: 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              Simular C$ 1000
+            </button>
+          </div>
+
+          {rechargeMsg && (
+            <div
+              style={{
+                marginTop: '10px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 600,
+                background: rechargeMsg.type === 'success' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 23, 68, 0.1)',
+                color: rechargeMsg.type === 'success' ? '#00C853' : '#FF1744',
+                border: `1px solid ${rechargeMsg.type === 'success' ? '#00C853' : '#FF1744'}`,
+              }}
+            >
+              {rechargeMsg.text}
+            </div>
+          )}
+        </div>
+
+        {/* Historial de recargas */}
+        <div style={{ marginTop: '16px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '8px' }}>
+            Historial de Recargas
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {perfil.recargas && perfil.recargas.length > 0 ? (
+              perfil.recargas.map((r) => (
+                <div
+                  key={r.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px 12px',
+                    borderRadius: '10px',
+                    background: 'var(--md-surface-variant)',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+                      Recarga confirmada
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      Código: {r.codigo} • {r.fecha}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#00C853', fontFamily: "'JetBrains Mono', monospace" }}>
+                    +C$ {r.monto}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '12px' }}>
+                No hay recargas registradas
+              </div>
+            )}
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* ─── CONTRATO DIGITAL OBLIGATORIO ─── */}
+      <SectionCard title="Contrato Digital Obligatorio">
+        <div
+          style={{
+            padding: '12px',
+            borderRadius: '12px',
+            background: 'var(--md-surface-variant)',
+            border: '1px solid var(--md-outline-variant)',
+            maxHeight: '140px',
+            overflowY: 'auto',
+            fontSize: '11.5px',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.5,
+            marginBottom: '12px',
+          }}
+        >
+          <strong style={{ color: 'var(--text)', display: 'block', marginBottom: '4px' }}>
+            CONTRATO DE INTERMEDIACIÓN TECNOLÓGICA (LOGIFAST)
+          </strong>
+          Logifast Delivery funciona únicamente como un intermediario tecnológico entre el comercio/cliente y el motorizado prestador de servicios.
+          <br /><br />
+          Al activar su cuenta, el motorizado declara conocer y aceptar que LOGIFAST NO ASUME RESPONSABILIDAD de ningún tipo sobre:
+          <ul style={{ paddingLeft: '16px', margin: '4px 0' }}>
+            <li>Seguro médico o gastos de hospitalización.</li>
+            <li>Seguro contra terceros o daños del vehículo.</li>
+            <li>Accidentes de tránsito o incapacidad personal.</li>
+            <li>Depreciación mecánica o repuestos de la motocicleta.</li>
+            <li>Multas de tránsito o retenciones del vehículo.</li>
+            <li>Cualquier relación laboral de dependencia directa.</li>
+          </ul>
+          Este documento de deslinde legal se formula tomando en cuenta la legislación de comercio electrónico y civil aplicable en la República de Nicaragua.
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+              Aceptar Términos de Deslinde
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              Obligatorio para recibir asignaciones
+            </div>
+          </div>
+          <div>
+            {perfil.contratoAceptado ? (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 10px',
+                  borderRadius: '100px',
+                  background: 'rgba(0, 200, 83, 0.12)',
+                  color: '#00C853',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                }}
+              >
+                ✓ FIRMADO
+              </span>
+            ) : (
+              <button
+                onClick={aceptarContrato}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  background: 'var(--primario)',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Firmar Contrato
+              </button>
+            )}
+          </div>
+        </div>
+      </SectionCard>
+
       {/* ─── 4. CONFIGURACIÓN ─── */}
       <SectionCard title="Configuración">
         {/* Tema — 3-state segmented control wired to configStore */}
@@ -909,6 +1185,8 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
       >
         LOGIFAST Repartidor v2.0
       </div>
-    </div>
+        </div>
+      )}
+    </PullToRefresh>
   );
 }

@@ -6,7 +6,7 @@ import {
   Search, Download, Plus, MoreVertical, MapPin, X,
   ChevronLeft, ChevronRight, Package, Clock, CheckCircle,
   AlertCircle, Truck,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type Order, type OrderStatus } from '@/lib/store';
 
 const FILTER_TABS: { key: OrderStatus | 'todos'; label: string }[] = [

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, Star, Gift, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { X, Star, Gift, ArrowUpRight, TrendingUp } from '@/components/icons';
 
 interface ClientPuntosProps {
   isDark?: boolean;

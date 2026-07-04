@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Package, Bike, Users, Zap, ArrowRight,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type ModuleKey, type Order } from '@/lib/store';
 
 /* ─── Types ─── */

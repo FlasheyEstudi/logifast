@@ -15,7 +15,7 @@ import {
   ArrowDownRight, Sparkles, LayoutDashboard, ToggleLeft, ToggleRight,
   ChevronDown, Shuffle, Palette, Type, Image, Bell, Star,
   Gift, Heart, MapPin, CreditCard, Zap,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type {
   Campana, CodigoPromocional, Banner, FeedItem, MarketingKPI,

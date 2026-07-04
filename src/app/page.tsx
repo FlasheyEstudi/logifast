@@ -5,8 +5,10 @@ import Dashboard from './dashboard';
 import ClientDashboard from './client-dashboard';
 import dynamic from 'next/dynamic';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
+import { sileo } from "sileo";
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false });
+const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false });
 
 /* ═══════════════════════════════════════════════════════
    SVG ICONS
@@ -75,8 +77,17 @@ const IconInfo = () => (
 const IconPlay = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
 );
+const IconGlobe = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+);
+const IconTrendingUp = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+);
 const IconCheckSmall = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+);
+const IconClock = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 );
 
 /* ═══════════════════════════════════════════════════════
@@ -132,22 +143,33 @@ function useCountUp(end: number, duration = 2000, start = false) {
 
 function Logo({ large, onClick }: { large?: boolean; onClick?: () => void }) {
   return (
-    <div className={`lf-logo ${large ? 'lf-logo-lg' : ''}`} onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
-      <div className="lf-logo-icon">
-        <span className="lf-logo-icon-text">LF</span>
-        <div className="lf-logo-icon-line" />
-      </div>
-      <div className="lf-logo-wordmark">
-        <span className="lf-logo-logi">LOGI</span>
-        <span className="lf-logo-fast">
-          F
-          <span className="lf-logo-fast-a">A</span>
-          ST
-        </span>
+    <div 
+      className={`lf-logo ${large ? 'lf-logo-lg' : ''}`} 
+      onClick={onClick} 
+      style={{ 
+        cursor: onClick ? 'pointer' : 'default',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }}
+    >
+      <img 
+        src="/logo.png" 
+        alt="Logifast Logo" 
+        style={{ 
+          width: large ? '44px' : '32px', 
+          height: large ? '44px' : '32px',
+          objectFit: 'contain'
+        }} 
+      />
+      <div className="lf-logo-wordmark" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+        <span className="lf-logo-logi" style={{ color: 'var(--text, #1B1B2F)', fontWeight: 800, letterSpacing: '-0.5px' }}>LOGI</span>
+        <span className="lf-logo-fast" style={{ color: 'var(--primario, #FF5722)', fontWeight: 800, letterSpacing: '-0.5px' }}>FAST</span>
       </div>
     </div>
   );
 }
+
 
 /* ═══════════════════════════════════════════════════════
    STAT COMPONENT WITH COUNT-UP
@@ -309,8 +331,37 @@ export default function Home() {
   // <ThemeProvider> in layout.tsx; the fallback useEffect below only fires
   // on first mount in case the store hasn't hydrated yet.
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  /* ─── Unique Landing States ─── */
+  const [calcDistance, setCalcDistance] = useState(5);
+  const [calcWeight, setCalcWeight] = useState<'light' | 'medium' | 'heavy'>('light');
+  const [activeRoleTab, setActiveRoleTab] = useState<'cliente' | 'repartidor' | 'admin' | 'ingeniero'>('cliente');
+  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'done'>('idle');
+  const [scanProgress, setScanProgress] = useState(0);
+
+  const startScan = useCallback(() => {
+    if (scanStatus === 'scanning') return;
+    setScanStatus('scanning');
+    setScanProgress(0);
+    let prog = 0;
+    const interval = setInterval(() => {
+      prog += 5;
+      if (prog >= 100) {
+        clearInterval(interval);
+        setScanProgress(100);
+        setScanStatus('done');
+      } else {
+        setScanProgress(prog);
+      }
+    }, 50);
+  }, [scanStatus]);
   useEffect(() => {
     setMounted(true);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1800);
+    return () => clearTimeout(timer);
   }, []);
 
   const tema = useConfigStore((s) => s.tema);
@@ -327,6 +378,17 @@ export default function Home() {
   const toastIdRef = useRef(0);
 
   const addToast = useCallback((title: string, desc: string, variant: ToastVariant = 'success') => {
+    const msg = desc ? `${title}: ${desc}` : title;
+    if (variant === 'success') {
+      sileo.success({ title: msg });
+    } else if (variant === 'error') {
+      sileo.error({ title: msg });
+    } else if (variant === 'warning') {
+      sileo.warning({ title: msg });
+    } else {
+      sileo.info({ title: msg });
+    }
+
     const id = ++toastIdRef.current;
     setToasts((prev) => [...prev, { id, title, desc, variant }]);
     setTimeout(() => {
@@ -538,6 +600,11 @@ export default function Home() {
         <RepartidorApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
       );
     }
+    if (loginRole === 'ingeniero') {
+      return (
+        <IngenieroApp onLogout={handleLogout} userName={loginUserName} />
+      );
+    }
     return (
       <DashboardErrorBoundary onGoHome={() => setCurrentView('landing')}>
         <Dashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
@@ -555,7 +622,7 @@ export default function Home() {
 
     return (
       <>
-        <div className="lf-auth-screen">
+        <div className="lp-auth-split" style={{ opacity: isExiting ? 0 : 1, transition: 'opacity 0.25s ease' }}>
           {/* Login redirect overlay */}
           {loginRedirect && (
             <div style={{
@@ -569,256 +636,279 @@ export default function Home() {
             </div>
           )}
 
-          <div className={`lf-auth-container ${!isLogin ? 'lf-auth-container-wide' : ''}`}
-            style={{ opacity: isExiting ? 0 : 1, transform: isExiting ? 'translateX(-40px)' : isEntering ? 'translateX(0)' : 'none', transition: 'all 0.25s ease' }}>
-
-            {/* Brand */}
-            <div className="lf-auth-brand">
+          {/* Sidebar */}
+          <div className="lp-auth-sidebar">
+            <div className="lp-auth-sidebar-glow" />
+            <div>
               <Logo large />
-              <span className="lf-tagline">Tus Envíos Seguros y Rápidos</span>
+              <div style={{ marginTop: 48 }}>
+                <h2 className="lp-auth-sidebar-title">Logística inteligente para tu negocio</h2>
+                <p className="lp-auth-sidebar-text">
+                  Entregas garantizadas en menos de 25 minutos con control operativo, mantenimiento en tiempo real y facturación automatizada.
+                </p>
+              </div>
             </div>
-
-            {/* ─── LOGIN ─── */}
-            {isLogin && !loginRedirect && (
-              <div style={{ animation: isEntering ? 'slideLeft 0.25s ease' : 'none' }}>
-                <h1 className="lf-auth-title font-syne">Bienvenido de nuevo</h1>
-                <p className="lf-auth-subtitle">Ingresa tus credenciales para acceder al sistema</p>
-
-                <form onSubmit={handleLogin} noValidate>
-                  <div className="lf-form-group">
-                    <label className="lf-form-label">Correo electrónico</label>
-                    <div className="lf-input-wrapper">
-                      <input
-                        type="email"
-                        className={`lf-form-input ${loginErrors.email ? 'error' : ''}`}
-                        placeholder="tu@email.com"
-                        value={loginEmail}
-                        onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors((p) => ({ ...p, email: undefined })); }}
-                      />
-                      <span className="lf-input-icon"><IconEnvelope /></span>
-                    </div>
-                    <div className="lf-form-error">{loginErrors.email || ''}</div>
-                  </div>
-
-                  <div className="lf-form-group">
-                    <label className="lf-form-label">Contraseña</label>
-                    <div className="lf-input-wrapper">
-                      <input
-                        type={showLoginPassword ? 'text' : 'password'}
-                        className={`lf-form-input ${loginErrors.password ? 'error' : ''}`}
-                        placeholder="Tu contraseña"
-                        value={loginPassword}
-                        onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors((p) => ({ ...p, password: undefined })); }}
-                        style={{ paddingRight: 48 }}
-                      />
-                      <span className="lf-input-icon"><IconLock /></span>
-                      <button type="button" className="lf-input-eye" onClick={() => setShowLoginPassword((p) => !p)}>
-                        {showLoginPassword ? <IconEyeOff /> : <IconEye />}
-                      </button>
-                    </div>
-                    <div className="lf-form-error">{loginErrors.password || ''}</div>
-                  </div>
-
-                  <button type="button" className="lf-forgot-link">¿Olvidaste tu contraseña?</button>
-
-                  <button type="submit" className="lf-auth-submit font-syne" disabled={loginLoading}>
-                    {loginLoading ? (
-                      <>Ingresando<span className="lf-loading-dots"><span className="lf-loading-dot" /><span className="lf-loading-dot" /><span className="lf-loading-dot" /></span></>
-                    ) : 'Iniciar sesión'}
-                  </button>
-                </form>
-
-                <div className="lf-separator">
-                  <div className="lf-separator-line" />
-                  <span className="lf-separator-text">o accede rápido con</span>
-                  <div className="lf-separator-line" />
-                </div>
-
-                <div className="lf-demo-grid">
-                  {[
-                    { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
-                    { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
-                    { id: 'admin', label: 'Admin', icon: <IconShield /> },
-                    { id: 'ingeniero', label: 'Ingeniero', icon: <IconWrench /> },
-                  ].map((role) => (
-                    <button key={role.id} className="lf-demo-btn" onClick={() => handleDemoLogin(role.id)}>
-                      <span className="lf-demo-btn-icon">{role.icon}</span>
-                      <span className="lf-demo-btn-text">{role.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="lf-demo-label">Acceso rápido para demo</div>
-
-                <div className="lf-switch-link">
-                  ¿No tienes cuenta?{' '}
-                  <button className="lf-switch-link-btn" onClick={() => switchAuth('register')}>Crear cuenta</button>
-                </div>
-
-                <button className="lf-back-link" onClick={() => navigateTo('landing')}>
-                  <IconArrowLeft /> Volver al inicio
-                </button>
-              </div>
-            )}
-
-            {/* ─── REGISTER ─── */}
-            {!isLogin && !regSuccess && (
-              <div style={{ animation: isEntering ? 'slideLeft 0.25s ease' : 'none' }}>
-                <h1 className="lf-auth-title font-syne">Crea tu cuenta</h1>
-                <p className="lf-auth-subtitle">Completa los datos para empezar a usar LOGIFAST</p>
-
-                <form onSubmit={handleRegister} noValidate>
-                  <div className="lf-form-group">
-                    <label className="lf-form-label">Nombre completo</label>
-                    <div className="lf-input-wrapper">
-                      <input
-                        type="text"
-                        className={`lf-form-input ${displayRegErrors.name ? 'error' : ''}`}
-                        placeholder="Tu nombre completo"
-                        value={regName}
-                        onChange={(e) => setRegName(e.target.value)}
-                      />
-                      <span className="lf-input-icon"><IconUser /></span>
-                    </div>
-                    <div className="lf-form-error">{displayRegErrors.name || ''}</div>
-                  </div>
-
-                  <div className="lf-form-group">
-                    <label className="lf-form-label">Correo electrónico</label>
-                    <div className="lf-input-wrapper">
-                      <input
-                        type="email"
-                        className={`lf-form-input ${displayRegErrors.email ? 'error' : ''}`}
-                        placeholder="tu@email.com"
-                        value={regEmail}
-                        onChange={(e) => setRegEmail(e.target.value)}
-                      />
-                      <span className="lf-input-icon"><IconEnvelope /></span>
-                    </div>
-                    <div className="lf-form-error">{displayRegErrors.email || ''}</div>
-                  </div>
-
-                  <div className="lf-form-group">
-                    <label className="lf-form-label">Contraseña</label>
-                    <div className="lf-input-wrapper">
-                      <input
-                        type={showRegPassword ? 'text' : 'password'}
-                        className={`lf-form-input ${displayRegErrors.password ? 'error' : ''}`}
-                        placeholder="Mínimo 6 caracteres"
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        style={{ paddingRight: 48 }}
-                      />
-                      <span className="lf-input-icon"><IconLock /></span>
-                      <button type="button" className="lf-input-eye" onClick={() => setShowRegPassword((p) => !p)}>
-                        {showRegPassword ? <IconEyeOff /> : <IconEye />}
-                      </button>
-                    </div>
-                    {regPassword && (
-                      <div className="lf-strength-bar">
-                        <div className="lf-strength-segments">
-                          {[1, 2, 3, 4].map((i) => (
-                            <div
-                              key={i}
-                              className={`lf-strength-segment ${i <= pwStrength.level ? `filled-${pwStrength.cls}` : ''}`}
-                            />
-                          ))}
-                        </div>
-                        {pwStrength.label && (
-                          <span className={`lf-strength-text ${pwStrength.cls}`}>{pwStrength.label}</span>
-                        )}
-                      </div>
-                    )}
-                    <div className="lf-form-error">{displayRegErrors.password || ''}</div>
-                  </div>
-
-                  <div className="lf-form-group">
-                    <label className="lf-form-label">Confirmar contraseña</label>
-                    <div className="lf-input-wrapper">
-                      <input
-                        type="password"
-                        className={`lf-form-input ${displayRegErrors.confirm ? 'error' : ''}`}
-                        placeholder="Repite tu contraseña"
-                        value={regConfirm}
-                        onChange={(e) => setRegConfirm(e.target.value)}
-                      />
-                      <span className="lf-input-icon"><IconLock /></span>
-                    </div>
-                    <div className="lf-form-error">{displayRegErrors.confirm || ''}</div>
-                  </div>
-
-                  <div className="lf-form-group">
-                    <label className="lf-form-label">Tipo de cuenta</label>
-                    <div className="lf-role-grid">
-                      {[
-                        { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
-                        { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
-                        { id: 'admin', label: 'Administrador', icon: <IconShield /> },
-                        { id: 'ingeniero', label: 'Ingeniero', icon: <IconWrench /> },
-                      ].map((role) => (
-                        <div
-                          key={role.id}
-                          className={`lf-role-card ${regRole === role.id ? 'selected' : ''}`}
-                          onClick={() => { setRegRole(role.id); setRegErrors((p) => ({ ...p, role: '' })); }}
-                        >
-                          <div className="lf-role-card-check"><IconCheckSmall /></div>
-                          <span className="lf-role-card-icon">{role.icon}</span>
-                          <span className="lf-role-card-label">{role.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="lf-form-error">{displayRegErrors.role || ''}</div>
-                  </div>
-
-                  <div className="lf-terms">
-                    <div
-                      className={`lf-terms-checkbox ${regTerms ? 'checked' : ''}`}
-                      onClick={() => { setRegTerms((p) => !p); setRegErrors((p) => ({ ...p, terms: '' })); }}
-                    >
-                      {regTerms && <IconCheckSmall />}
-                    </div>
-                    <span className="lf-terms-text">
-                      Acepto los{' '}
-                      <a href="#" className="lf-terms-link" onClick={(e) => e.preventDefault()}>Términos de Servicio</a>
-                      {' '}y la{' '}
-                      <a href="#" className="lf-terms-link" onClick={(e) => e.preventDefault()}>Política de Privacidad</a>
-                    </span>
-                  </div>
-                  {displayRegErrors.terms && <div className="lf-form-error" style={{ marginTop: -12, marginBottom: 12 }}>{displayRegErrors.terms}</div>}
-
-                  <button type="submit" className="lf-auth-submit font-syne" disabled={regLoading}>
-                    {regLoading ? (
-                      <>Creando cuenta<span className="lf-loading-dots"><span className="lf-loading-dot" /><span className="lf-loading-dot" /><span className="lf-loading-dot" /></span></>
-                    ) : 'Crear cuenta'}
-                  </button>
-                </form>
-
-                <div className="lf-switch-link">
-                  ¿Ya tienes cuenta?{' '}
-                  <button className="lf-switch-link-btn" onClick={() => switchAuth('login')}>Iniciar sesión</button>
-                </div>
-
-                <button className="lf-back-link" onClick={() => navigateTo('landing')}>
-                  <IconArrowLeft /> Volver al inicio
-                </button>
-              </div>
-            )}
-
-            {/* ─── REGISTER SUCCESS ─── */}
-            {!isLogin && regSuccess && (
-              <div className="lf-success-screen">
-                <div className="lf-success-circle">
-                  <IconCheckLg />
-                </div>
-                <h2 className="lf-success-title font-syne">Cuenta creada</h2>
-                <p className="lf-success-desc">Ya puedes iniciar sesión con tus credenciales</p>
-                <button className="lf-auth-submit font-syne" style={{ maxWidth: 240 }} onClick={() => { setRegSuccess(false); switchAuth('login'); }}>
-                  Ir a iniciar sesión
-                </button>
-              </div>
-            )}
+            <div style={{ fontSize: '13px', opacity: 0.6 }}>
+              © 2026 LOGIFAST. Todos los derechos reservados.
+            </div>
           </div>
 
-          {/* Theme toggle in auth */}
+          {/* Form container side */}
+          <div className="lp-auth-form-side">
+            <div className="lp-auth-card" style={{ transform: isEntering ? 'translateY(15px)' : 'none', opacity: isEntering ? 0.9 : 1, transition: 'all 0.4s ease' }}>
+              
+              {/* Logo for mobile screens only */}
+              <div className="lp-auth-logo-header">
+                <Logo large />
+                <span className="lf-tagline" style={{ marginTop: 12, fontSize: '14px', color: 'var(--text-secondary)' }}>Tus Envíos Seguros y Rápidos</span>
+              </div>
+
+              {/* ─── LOGIN ─── */}
+              {isLogin && !loginRedirect && (
+                <div>
+                  <h1 className="lf-auth-title font-syne" style={{ textAlign: 'left', fontSize: '32px' }}>Bienvenido de nuevo</h1>
+                  <p className="lf-auth-subtitle" style={{ textAlign: 'left', marginBottom: 32 }}>Ingresa tus credenciales para acceder</p>
+
+                  <form onSubmit={handleLogin} noValidate>
+                    <div className="lf-form-group">
+                      <label className="lf-form-label">Correo electrónico</label>
+                      <div className="lf-input-wrapper">
+                        <input
+                          type="email"
+                          className={`lf-form-input ${loginErrors.email ? 'error' : ''}`}
+                          placeholder="tu@email.com"
+                          value={loginEmail}
+                          onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors((p) => ({ ...p, email: undefined })); }}
+                        />
+                        <span className="lf-input-icon"><IconEnvelope /></span>
+                      </div>
+                      <div className="lf-form-error">{loginErrors.email || ''}</div>
+                    </div>
+
+                    <div className="lf-form-group">
+                      <label className="lf-form-label">Contraseña</label>
+                      <div className="lf-input-wrapper">
+                        <input
+                          type={showLoginPassword ? 'text' : 'password'}
+                          className={`lf-form-input ${loginErrors.password ? 'error' : ''}`}
+                          placeholder="Tu contraseña"
+                          value={loginPassword}
+                          onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors((p) => ({ ...p, password: undefined })); }}
+                          style={{ paddingRight: 48 }}
+                        />
+                        <span className="lf-input-icon"><IconLock /></span>
+                        <button type="button" className="lf-input-eye" onClick={() => setShowLoginPassword((p) => !p)}>
+                          {showLoginPassword ? <IconEyeOff /> : <IconEye />}
+                        </button>
+                      </div>
+                      <div className="lf-form-error">{loginErrors.password || ''}</div>
+                    </div>
+
+                    <button type="button" className="lf-forgot-link" style={{ marginBottom: 24, fontSize: '13px' }}>¿Olvidaste tu contraseña?</button>
+
+                    <button type="submit" className="lf-auth-submit font-syne" disabled={loginLoading} style={{ background: 'var(--primario)', color: 'white', borderRadius: '12px', padding: '16px' }}>
+                      {loginLoading ? (
+                        <>Ingresando<span className="lf-loading-dots"><span className="lf-loading-dot" /><span className="lf-loading-dot" /><span className="lf-loading-dot" /></span></>
+                      ) : 'Iniciar sesión'}
+                    </button>
+                  </form>
+
+                  <div className="lf-separator" style={{ margin: '24px 0' }}>
+                    <div className="lf-separator-line" />
+                    <span className="lf-separator-text">Acceso rápido demo</span>
+                    <div className="lf-separator-line" />
+                  </div>
+
+                  <div className="lf-demo-grid" style={{ gap: '10px' }}>
+                    {[
+                      { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
+                      { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
+                      { id: 'admin', label: 'Admin', icon: <IconShield /> },
+                      { id: 'ingeniero', label: 'Ingeniero', icon: <IconWrench /> },
+                    ].map((role) => (
+                      <button key={role.id} className="lf-demo-btn" onClick={() => handleDemoLogin(role.id)} style={{ padding: '12px', borderRadius: '10px' }}>
+                        <span className="lf-demo-btn-icon">{role.icon}</span>
+                        <span className="lf-demo-btn-text">{role.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="lf-switch-link" style={{ marginTop: 24 }}>
+                    ¿No tienes cuenta?{' '}
+                    <button className="lf-switch-link-btn" onClick={() => switchAuth('register')}>Crear cuenta</button>
+                  </div>
+
+                  <button className="lf-back-link" onClick={() => navigateTo('landing')} style={{ marginTop: 24 }}>
+                    <IconArrowLeft /> Volver al inicio
+                  </button>
+                </div>
+              )}
+
+              {/* ─── REGISTER ─── */}
+              {!isLogin && !regSuccess && (
+                <div>
+                  <h1 className="lf-auth-title font-syne" style={{ textAlign: 'left', fontSize: '32px' }}>Crea tu cuenta</h1>
+                  <p className="lf-auth-subtitle" style={{ textAlign: 'left', marginBottom: 32 }}>Completa los datos para comenzar</p>
+
+                  <form onSubmit={handleRegister} noValidate>
+                    <div className="lf-form-group">
+                      <label className="lf-form-label">Nombre completo</label>
+                      <div className="lf-input-wrapper">
+                        <input
+                          type="text"
+                          className={`lf-form-input ${displayRegErrors.name ? 'error' : ''}`}
+                          placeholder="Tu nombre completo"
+                          value={regName}
+                          onChange={(e) => setRegName(e.target.value)}
+                        />
+                        <span className="lf-input-icon"><IconUser /></span>
+                      </div>
+                      <div className="lf-form-error">{displayRegErrors.name || ''}</div>
+                    </div>
+
+                    <div className="lf-form-group">
+                      <label className="lf-form-label">Correo electrónico</label>
+                      <div className="lf-input-wrapper">
+                        <input
+                          type="email"
+                          className={`lf-form-input ${displayRegErrors.email ? 'error' : ''}`}
+                          placeholder="tu@email.com"
+                          value={regEmail}
+                          onChange={(e) => setRegEmail(e.target.value)}
+                        />
+                        <span className="lf-input-icon"><IconEnvelope /></span>
+                      </div>
+                      <div className="lf-form-error">{displayRegErrors.email || ''}</div>
+                    </div>
+
+                    <div className="lf-form-group">
+                      <label className="lf-form-label">Contraseña</label>
+                      <div className="lf-input-wrapper">
+                        <input
+                          type={showRegPassword ? 'text' : 'password'}
+                          className={`lf-form-input ${displayRegErrors.password ? 'error' : ''}`}
+                          placeholder="Mínimo 6 caracteres"
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
+                          style={{ paddingRight: 48 }}
+                        />
+                        <span className="lf-input-icon"><IconLock /></span>
+                        <button type="button" className="lf-input-eye" onClick={() => setShowRegPassword((p) => !p)}>
+                          {showRegPassword ? <IconEyeOff /> : <IconEye />}
+                        </button>
+                      </div>
+                      {regPassword && (
+                        <div className="lf-strength-bar">
+                          <div className="lf-strength-segments">
+                            {[1, 2, 3, 4].map((i) => (
+                              <div
+                                key={i}
+                                className={`lf-strength-segment ${i <= pwStrength.level ? `filled-${pwStrength.cls}` : ''}`}
+                              />
+                            ))}
+                          </div>
+                          {pwStrength.label && (
+                            <span className={`lf-strength-text ${pwStrength.cls}`}>{pwStrength.label}</span>
+                          )}
+                        </div>
+                      )}
+                      <div className="lf-form-error">{displayRegErrors.password || ''}</div>
+                    </div>
+
+                    <div className="lf-form-group">
+                      <label className="lf-form-label">Confirmar contraseña</label>
+                      <div className="lf-input-wrapper">
+                        <input
+                          type="password"
+                          className={`lf-form-input ${displayRegErrors.confirm ? 'error' : ''}`}
+                          placeholder="Repite tu contraseña"
+                          value={regConfirm}
+                          onChange={(e) => setRegConfirm(e.target.value)}
+                        />
+                        <span className="lf-input-icon"><IconLock /></span>
+                      </div>
+                      <div className="lf-form-error">{displayRegErrors.confirm || ''}</div>
+                    </div>
+
+                    <div className="lf-form-group">
+                      <label className="lf-form-label">Tipo de cuenta</label>
+                      <div className="lf-role-grid" style={{ gap: '8px' }}>
+                        {[
+                          { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
+                          { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
+                          { id: 'admin', label: 'Admin', icon: <IconShield /> },
+                          { id: 'ingeniero', label: 'Ingeniero', icon: <IconWrench /> },
+                        ].map((role) => (
+                          <div
+                            key={role.id}
+                            className={`lf-role-card ${regRole === role.id ? 'selected' : ''}`}
+                            onClick={() => { setRegRole(role.id); setRegErrors((p) => ({ ...p, role: '' })); }}
+                            style={{ padding: '12px', borderRadius: '10px' }}
+                          >
+                            <div className="lf-role-card-check"><IconCheckSmall /></div>
+                            <span className="lf-role-card-icon">{role.icon}</span>
+                            <span className="lf-role-card-label" style={{ fontSize: '12px' }}>{role.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="lf-form-error">{displayRegErrors.role || ''}</div>
+                    </div>
+
+                    <div className="lf-terms" style={{ marginBottom: 20 }}>
+                      <div
+                        className={`lf-terms-checkbox ${regTerms ? 'checked' : ''}`}
+                        onClick={() => { setRegTerms((p) => !p); setRegErrors((p) => ({ ...p, terms: '' })); }}
+                      >
+                        {regTerms && <IconCheckSmall />}
+                      </div>
+                      <span className="lf-terms-text" style={{ fontSize: '11.5px', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
+                        Acepto los{' '}
+                        <a href="#" className="lf-terms-link" onClick={(e) => { e.preventDefault(); alert('LOGIFAST — DECLARACIÓN DE USO LÍCITO:\n\n1. La plataforma solo podrá utilizarse para actividades completamente legales.\n2. Está terminantemente prohibido el transporte de sustancias ilícitas, drogas, explosivos o cualquier objeto prohibido por la ley en Nicaragua.\n3. El usuario asume toda responsabilidad penal y civil por el contenido de sus envíos.'); }}>
+                          Términos de Uso Lícito (Sin sustancias ilícitas)
+                        </a>
+                        {' '}y la{' '}
+                        <a href="#" className="lf-terms-link" onClick={(e) => { e.preventDefault(); alert('POLÍTICA DE PRIVACIDAD:\n\nTus datos de geolocalización y cuenta son encriptados y procesados de acuerdo a la Ley de Protección de Datos Personales en Nicaragua.'); }}>
+                          Privacidad
+                        </a>
+                      </span>
+                    </div>
+                    {displayRegErrors.terms && <div className="lf-form-error" style={{ marginTop: -12, marginBottom: 12 }}>{displayRegErrors.terms}</div>}
+
+                    <button type="submit" className="lf-auth-submit font-syne" disabled={regLoading} style={{ background: 'var(--primario)', color: 'white', borderRadius: '12px', padding: '16px' }}>
+                      {regLoading ? (
+                        <>Creando cuenta<span className="lf-loading-dots"><span className="lf-loading-dot" /><span className="lf-loading-dot" /><span className="lf-loading-dot" /></span></>
+                      ) : 'Crear cuenta'}
+                    </button>
+                  </form>
+
+                  <div className="lf-switch-link" style={{ marginTop: 24 }}>
+                    ¿Ya tienes cuenta?{' '}
+                    <button className="lf-switch-link-btn" onClick={() => switchAuth('login')}>Iniciar sesión</button>
+                  </div>
+
+                  <button className="lf-back-link" onClick={() => navigateTo('landing')} style={{ marginTop: 24 }}>
+                    <IconArrowLeft /> Volver al inicio
+                  </button>
+                </div>
+              )}
+
+              {/* ─── REGISTER SUCCESS ─── */}
+              {!isLogin && regSuccess && (
+                <div className="lf-success-screen">
+                  <div className="lf-success-circle" style={{ background: 'rgba(0, 200, 83, 0.1)', color: 'var(--exito)' }}>
+                    <IconCheckLg />
+                  </div>
+                  <h2 className="lf-success-title font-syne">Cuenta creada</h2>
+                  <p className="lf-success-desc">Tu registro fue exitoso. Ya puedes acceder.</p>
+                  <button className="lf-auth-submit font-syne" style={{ maxWidth: 240, background: 'var(--primario)', color: 'white' }} onClick={() => { setRegSuccess(false); switchAuth('login'); }}>
+                    Ir a iniciar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Theme toggle */}
           <button
             className="lf-theme-toggle"
             onClick={toggleTheme}
@@ -858,360 +948,575 @@ export default function Home() {
      LANDING PAGE
      ═══════════════════════════════════════════════════════ */
   return (
-    <main className="grain-overlay" ref={revealRef} style={{ opacity: viewTransition === 'exit' ? 0 : 1, transition: 'opacity 0.3s ease' }}>
-      {/* ═══ NAVBAR ═══ */}
-      <nav className={`lf-navbar ${navScrolled ? 'scrolled' : ''}`}>
-        <Logo onClick={() => scrollTo('hero')} />
-
-        <ul className="lf-nav-links">
-          <li><a href="#como-funciona" onClick={(e) => { e.preventDefault(); scrollTo('como-funciona'); }}>Cómo funciona</a></li>
-          <li><a href="#caracteristicas" onClick={(e) => { e.preventDefault(); scrollTo('caracteristicas'); }}>Servicios</a></li>
-          <li><a href="#numeros" onClick={(e) => { e.preventDefault(); scrollTo('numeros'); }}>Precios</a></li>
-          <li><a href="#contacto" onClick={(e) => { e.preventDefault(); scrollTo('contacto'); }}>Contacto</a></li>
-        </ul>
-
-        <div className="lf-nav-actions">
-          <button className="lf-theme-toggle" onClick={toggleTheme} aria-label="Cambiar tema">
-            {isDark ? <IconSun /> : <IconMoon />}
-          </button>
-          <button className="lf-btn-ghost nav-ghost" onClick={() => navigateTo('login')}>Iniciar sesión</button>
-          <button className="lf-btn-primario" onClick={() => navigateTo('register')}>Empezar gratis</button>
-          <button className={`lf-hamburger ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen((p) => !p)} aria-label="Menú">
-            <span /><span /><span />
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile nav */}
-      <div className={`lf-mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
-        <a href="#como-funciona" onClick={(e) => { e.preventDefault(); scrollTo('como-funciona'); }}>Cómo funciona</a>
-        <a href="#caracteristicas" onClick={(e) => { e.preventDefault(); scrollTo('caracteristicas'); }}>Servicios</a>
-        <a href="#numeros" onClick={(e) => { e.preventDefault(); scrollTo('numeros'); }}>Precios</a>
-        <a href="#contacto" onClick={(e) => { e.preventDefault(); scrollTo('contacto'); }}>Contacto</a>
-        <button className="lf-btn-primario" style={{ marginTop: 24, width: 'fit-content' }} onClick={() => { setMobileMenuOpen(false); navigateTo('login'); }}>Iniciar sesión</button>
-      </div>
-
-      {/* ═══ HERO ═══ */}
-      <section className="lf-hero" id="hero">
-        <div className="lf-hero-inner">
-          <div className="lf-hero-badge reveal">
-            <span className="lf-hero-badge-dot" />
-            Operando en Managua, Nicaragua
+    <>
+      {/* Premium Loading Splash Screen */}
+      {mounted && (
+        <div className={`lf-splash-screen ${!loading ? 'lf-splash-fadeout' : ''}`}>
+          <div className="lf-splash-logo-container">
+            <div className="lf-splash-spinner" />
+            <img src="/logo.png" alt="Logifast Logo" className="lf-splash-logo" style={{ width: '96px', height: '96px' }} />
           </div>
-
-          <div className="lf-hero-title reveal reveal-delay-1">
-            <span className="lf-hero-title-line lf-hero-title-light">Tus envíos</span>
-            <span className="lf-hero-title-line lf-hero-title-bold">seguros y rápidos</span>
-          </div>
-
-          <div className="lf-hero-grid reveal reveal-delay-2">
-            <p className="lf-hero-subtitle">
-              Plataforma integral de gestión logística con flota motociclista. Solicita, rastrea y gestiona envíos urbanos con seguimiento en tiempo real, mantenimiento automático de flota y reportes operativos.
-            </p>
-            <div className="lf-hero-actions">
-              <button className="lf-btn-hero-primary" onClick={() => navigateTo('register')}>
-                Solicitar envío ahora
-                <IconArrowRight />
-              </button>
-              <button className="lf-btn-hero-outline" onClick={() => scrollTo('como-funciona')}>
-                <IconPlay /> Ver cómo funciona
-              </button>
-            </div>
-          </div>
-
-          <div className="lf-hero-stats reveal reveal-delay-3" id="hero-stats">
-            <StatCounter value={12847} label="Envíos completados" started={statsVisible} />
-            <StatCounter value={98} suffix=".2%" label="Entregas a tiempo" started={statsVisible} />
-            <StatCounter value={45} label="Motos en flota activa" started={statsVisible} />
-            <div className="lf-hero-stat">
-              <span className="lf-hero-stat-number font-mono" style={{ letterSpacing: '-1px' }}>&lt; 25 min</span>
-              <span className="lf-hero-stat-label">Tiempo promedio de entrega</span>
-            </div>
+          <div className="lf-splash-text" style={{ fontSize: '28px' }}>
+            <span style={{ color: 'var(--text)' }}>LOGI</span>
+            <span style={{ color: 'var(--primario)' }}>FAST</span>
           </div>
         </div>
-      </section>
+      )}
 
-      {/* ═══ CÓMO FUNCIONA ═══ */}
-      <section className="lf-how" id="como-funciona">
-        <div className="lf-how-inner">
-          <div className="lf-how-header reveal">
-            <span className="lf-eyebrow">Proceso</span>
-            <h2 className="lf-section-title font-syne">De tu puerta a la suya. Sin fricción.</h2>
+      <main className="ud-landing-wrapper" ref={revealRef} style={{ opacity: viewTransition === 'exit' ? 0 : 1, transition: 'opacity 0.3s ease' }}>
+        <div className="ud-grid-background" />
+
+        {/* ═══ CONTROL ROOM TICKER BAR ═══ */}
+        <div className="ud-ticker-bar">
+          <div className="ud-ticker-item">
+            <span className="ud-ticker-dot" />
+            <span>OPERACIONES EN VIVO MANAGUA</span>
           </div>
-
-          <div className="lf-steps">
-            {[
-              { num: '01', title: 'Solicita tu envío', desc: 'Ingresa dirección de recogida y entrega. El sistema calcula costo y distancia automáticamente.' },
-              { num: '02', title: 'Asignamos un repartidor', desc: 'El repartidor más cercano y disponible recibe tu orden y se dirige al punto de recogida.' },
-              { num: '03', title: 'Rastrea en tiempo real', desc: 'Sigue la ubicación de tu paquete en el mapa. Actualización cada 5 segundos.' },
-              { num: '04', title: 'Entrega confirmada', desc: 'Recibes notificación al entregar, accedes al comprobante y a tu historial.' },
-            ].map((step, i) => (
-              <div key={step.num} className={`lf-step reveal reveal-delay-${i + 1}`}>
-                <span className="lf-step-num font-syne">{step.num}</span>
-                <div className="lf-step-content">
-                  <h3 className="lf-step-title font-syne">{step.title}</h3>
-                  <p className="lf-step-desc">{step.desc}</p>
-                </div>
-                {i < 3 && <div className="lf-step-connector" />}
-              </div>
-            ))}
+          <div style={{ display: 'flex', gap: '24px' }}>
+            <span>PEDIDOS ACTIVADOS: 142</span>
+            <span>MOTOS OPERANDO: 45</span>
+            <span>TALLER MOTO: 98% OK</span>
+            <span>TIEMPO PROMEDIO: 23.4 MIN</span>
+          </div>
+          <div style={{ opacity: 0.6 }}>
+            {new Date().toLocaleDateString('es-NI', { weekday: 'long', hour: '2-digit', minute: '2-digit' }).toUpperCase()}
           </div>
         </div>
-      </section>
 
-      {/* ═══ CARACTERÍSTICAS ═══ */}
-      <section className="lf-features" id="caracteristicas">
-        <div className="lf-features-inner">
-          <div className="lf-features-header reveal">
-            <span className="lf-eyebrow">Capacidades</span>
-            <h2 className="lf-section-title font-syne">Todo lo que necesitas. Nada que sobre.</h2>
-            <p>Plataforma diseñada para cada rol operativo, con herramientas que realmente se usan.</p>
-          </div>
+        {/* ═══ NAVBAR (Glassmorphic & Large Logo) ═══ */}
+        <nav className={`lp-navbar ${navScrolled ? 'scrolled' : ''}`}>
+          <Logo onClick={() => scrollTo('hero')} />
 
-          <div className="lf-features-grid">
-            {[
-              { num: '01', title: 'Rastreo GPS en vivo', desc: 'Ubicación del repartidor actualizada cada 5 segundos con mapa interactivo y ruta calculada.' },
-              { num: '02', title: 'Mantenimiento predictivo', desc: 'Alertas automáticas basadas en kilometraje. Prevención de fallas mecánicas antes de que ocurran.' },
-              { num: '03', title: 'Multi-rol', desc: 'Interfaces optimizadas para cliente, repartidor, administrador e ingeniero. Cada uno ve lo que necesita.' },
-              { num: '04', title: 'Cotización inteligente', desc: 'Cálculo automático de costos por distancia y zona. Pagos en efectivo o transferencia.' },
-              { num: '05', title: 'Reportes operativos', desc: 'Ingresos, rendimiento por repartidor, análisis de zonas, detección de anomalías en costos.' },
-              { num: '06', title: 'Inventario de repuestos', desc: 'Control de stock, alertas de bajo inventario, registro de compras y costos unitarios.' },
-            ].map((feat, i) => (
-              <div key={feat.num} className={`lf-feature-item reveal reveal-delay-${i + 1}`}>
-                <span className="lf-feature-num font-mono">{feat.num}</span>
-                <h3 className="lf-feature-title font-syne">{feat.title}</h3>
-                <p className="lf-feature-desc">{feat.desc}</p>
-                <div className="lf-feature-line" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+          <ul className="lf-nav-links">
+            <li><a href="#calculadora" onClick={(e) => { e.preventDefault(); scrollTo('calculadora'); }}>Cotizar</a></li>
+            <li><a href="#consola" onClick={(e) => { e.preventDefault(); scrollTo('consola'); }}>Consola Interactiva</a></li>
+            <li><a href="#taller" onClick={(e) => { e.preventDefault(); scrollTo('taller'); }}>Gestión de Flota</a></li>
+            <li><a href="#contacto" onClick={(e) => { e.preventDefault(); scrollTo('contacto'); }}>Contacto</a></li>
+          </ul>
 
-      {/* ═══ ROLES ═══ */}
-      <section className="lf-roles" id="roles">
-        <div className="lf-roles-inner">
-          <div className="lf-roles-header reveal">
-            <span className="lf-eyebrow">Para cada rol</span>
-            <h2 className="lf-section-title font-syne">Cuatro roles. Cuatro experiencias.</h2>
-          </div>
-
-          {/* CLIENTE — texto izq, mockup der */}
-          <div className="lf-role-block reveal">
-            <div className="lf-role-info">
-              <h3 className="lf-role-info-title font-syne">Para clientes</h3>
-              <p className="lf-role-info-desc">Solicita envíos en segundos, obtén cotización instantánea y sigue cada movimiento de tu paquete.</p>
-              <ul className="lf-role-features">
-                {['Autocompletado de direcciones', 'Cotización instantánea', 'GPS en tiempo real', 'Historial completo'].map((f) => (
-                  <li key={f}><span className="lf-role-check"><IconCheck /></span>{f}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="lf-role-mockup">
-              <div className="lf-mockup-bar lf-mockup-bar-navy" style={{ height: 36, width: '60%' }} />
-              <div className="lf-mockup-map">
-                <div className="lf-mockup-map-grid" />
-                <div className="lf-mockup-map-route" />
-                <div className="lf-mockup-map-pin green" />
-                <div className="lf-mockup-map-pin orange" />
-              </div>
-              <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 20, width: '50%' }} />
-            </div>
-          </div>
-
-          <div className="lf-role-separator" />
-
-          {/* REPARTIDOR — mockup izq, texto der */}
-          <div className="lf-role-block reverse reveal">
-            <div className="lf-role-info">
-              <h3 className="lf-role-info-title font-syne">Para repartidores</h3>
-              <p className="lf-role-info-desc">Recibe asignaciones automáticas, navega rutas optimizadas y registra cada entrega sin fricción.</p>
-              <ul className="lf-role-features">
-                {['Asignación automática', 'Contador de kilómetros', 'Mapa de ruta', 'Reporte de incidencias'].map((f) => (
-                  <li key={f}><span className="lf-role-check"><IconCheck /></span>{f}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="lf-role-mockup">
-              <div className="lf-mockup-bar lf-mockup-bar-accent" style={{ height: 28, width: '70%' }} />
-              <div className="lf-mockup-progress" style={{ marginTop: 8 }}>
-                <div className="lf-mockup-progress-fill" style={{ width: '65%' }} />
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 32, width: '48%' }} />
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 32, width: '48%' }} />
-              </div>
-              <div className="lf-mockup-bar lf-mockup-bar-navy" style={{ height: 48, width: '85%', marginTop: 8 }} />
-              <div className="lf-mockup-bar lf-mockup-bar-accent" style={{ height: 24, width: '60%', marginTop: 8 }} />
-            </div>
-          </div>
-
-          <div className="lf-role-separator" />
-
-          {/* ADMIN — texto izq, mockup der */}
-          <div className="lf-role-block reveal">
-            <div className="lf-role-info">
-              <h3 className="lf-role-info-title font-syne">Para administradores</h3>
-              <p className="lf-role-info-desc">Visualiza toda la flota, gestiona pedidos y reasigna recursos con un dashboard operativo en tiempo real.</p>
-              <ul className="lf-role-features">
-                {['Mapa de flota en vivo', 'Gestión de pedidos', 'Reasignación inteligente', 'Reportes operativos'].map((f) => (
-                  <li key={f}><span className="lf-role-check"><IconCheck /></span>{f}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="lf-role-mockup">
-              <div className="lf-mockup-map" style={{ minHeight: 100 }}>
-                <div className="lf-mockup-map-grid" />
-                <div className="lf-mockup-map-route" />
-                <div className="lf-mockup-map-pin green" />
-                <div className="lf-mockup-map-pin orange" />
-              </div>
-              <div className="lf-mockup-chart">
-                {[40, 65, 35, 80, 55, 70, 45, 90, 60, 75].map((h, i) => (
-                  <div key={i} className="lf-mockup-chart-bar" style={{ height: `${h}%`, background: i % 2 === 0 ? 'var(--primario-soft)' : 'var(--border)' }} />
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 16, width: '30%' }} />
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 16, width: '30%' }} />
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 16, width: '30%' }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="lf-role-separator" />
-
-          {/* INGENIERO — mockup izq, texto der */}
-          <div className="lf-role-block reverse reveal">
-            <div className="lf-role-info">
-              <h3 className="lf-role-info-title font-syne">Para ingenieros</h3>
-              <p className="lf-role-info-desc">Monitorea el estado de cada moto, gestiona inventario de repuestos y programa mantenimientos preventivos.</p>
-              <ul className="lf-role-features">
-                {['Alertas por kilometraje', 'Inventario de repuestos', 'Mantenimiento programado', 'Detección de anomalías'].map((f) => (
-                  <li key={f}><span className="lf-role-check"><IconCheck /></span>{f}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="lf-role-mockup">
-              <div className="lf-mockup-alert" style={{ background: 'rgba(255,23,68,0.05)', border: '1px solid rgba(255,23,68,0.15)' }}>
-                <span className="lf-mockup-alert-dot red" />
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 12, width: '60%' }} />
-              </div>
-              <div className="lf-mockup-alert" style={{ background: 'rgba(255,179,0,0.05)', border: '1px solid rgba(255,179,0,0.15)' }}>
-                <span className="lf-mockup-alert-dot yellow" />
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 12, width: '50%' }} />
-              </div>
-              <div className="lf-mockup-alert" style={{ background: 'rgba(0,200,83,0.05)', border: '1px solid rgba(0,200,83,0.15)' }}>
-                <span className="lf-mockup-alert-dot green" />
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 12, width: '55%' }} />
-              </div>
-              <div className="lf-mockup-bar lf-mockup-bar-navy" style={{ height: 64, width: '100%', marginTop: 8 }} />
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <div className="lf-mockup-bar lf-mockup-bar-accent" style={{ height: 20, width: '40%' }} />
-                <div className="lf-mockup-bar lf-mockup-bar-muted" style={{ height: 20, width: '55%' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ NÚMEROS ═══ */}
-      <section className="lf-numeros" id="numeros">
-        <div className="lf-numeros-inner">
-          <div className="lf-numeros-grid reveal">
-            {[
-              { num: '12,847+', label: 'Envíos completados', desc: 'Desde nuestro lanzamiento' },
-              { num: '45', label: 'Motos activas', desc: 'Flota en constante crecimiento' },
-              { num: '98.2%', label: 'Entregas exitosas', desc: 'Compromiso con la calidad' },
-              { num: '< 25 min', label: 'Tiempo promedio', desc: 'De solicitud a entrega' },
-            ].map((item) => (
-              <div key={item.label} className="lf-numeros-item">
-                <span className="lf-numeros-number font-mono">{item.num}</span>
-                <span className="lf-numeros-label">{item.label}</span>
-                <span className="lf-numeros-desc">{item.desc}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ CTA ═══ */}
-      <section className="lf-cta" id="contacto">
-        <div className="lf-cta-inner reveal">
-          <h2 className="lf-cta-title font-syne">Empieza a enviar hoy.</h2>
-          <p className="lf-cta-desc">Únete a la plataforma de logística más eficiente de Managua. Configura tu cuenta en minutos.</p>
-          <button className="lf-btn-cta" onClick={() => navigateTo('register')}>
-            Crear cuenta gratis
-            <IconArrowRight />
-          </button>
-          <p className="lf-cta-note">Sin tarjeta de crédito. Configura en 2 minutos.</p>
-        </div>
-      </section>
-
-      {/* ═══ FOOTER ═══ */}
-      <footer className="lf-footer">
-        <div className="lf-footer-inner">
-          <div className="lf-footer-grid">
-            <div>
-              <Logo />
-              <p className="lf-footer-brand-tagline">Tus Envíos Seguros y Rápidos</p>
-              <p className="lf-footer-brand-location">Managua, Nicaragua</p>
-            </div>
-            <div>
-              <h4 className="lf-footer-col-title">Producto</h4>
-              <ul className="lf-footer-links">
-                <li><a href="#">Funciones</a></li>
-                <li><a href="#">Precios</a></li>
-                <li><a href="#">API</a></li>
-                <li><a href="#">Estado</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="lf-footer-col-title">Empresa</h4>
-              <ul className="lf-footer-links">
-                <li><a href="#">Nosotros</a></li>
-                <li><a href="#">Blog</a></li>
-                <li><a href="#">Contacto</a></li>
-                <li><a href="#">Alianzas</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="lf-footer-col-title">Legal</h4>
-              <ul className="lf-footer-links">
-                <li><a href="#">Privacidad</a></li>
-                <li><a href="#">Términos</a></li>
-                <li><a href="#">Cookies</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="lf-footer-bottom">
-            <span>LOGIFAST 2026</span>
-            <span>Hecho con precisión</span>
-          </div>
-        </div>
-      </footer>
-
-      {/* Toasts */}
-      <div className="lf-toast-container">
-        {toasts.map((t) => (
-          <div key={t.id} className={`lf-toast ${t.variant} ${t.leaving ? 'leaving' : ''}`}>
-            <span className="lf-toast-icon">
-              {t.variant === 'success' && <IconCheckCircle />}
-              {t.variant === 'error' && <IconXCircle />}
-              {t.variant === 'warning' && <IconAlertTriangle />}
-              {t.variant === 'info' && <IconInfo />}
-            </span>
-            <div className="lf-toast-content">
-              <div className="lf-toast-title">{t.title}</div>
-              {t.desc && <div className="lf-toast-desc">{t.desc}</div>}
-            </div>
-            <button className="lf-toast-close" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
-              <IconX />
+          <div className="lf-nav-actions">
+            <button className="lf-theme-toggle" onClick={toggleTheme} aria-label="Cambiar tema">
+              {isDark ? <IconSun /> : <IconMoon />}
             </button>
-            <div className="lf-toast-progress" />
+            <button className="lf-btn-ghost nav-ghost" onClick={() => navigateTo('login')}>Iniciar sesión</button>
+            <button className="lp-btn-primary" onClick={() => navigateTo('register')} style={{ padding: '12px 24px', borderRadius: '10px', fontSize: '14px' }}>Crear cuenta</button>
+            <button className={`lf-hamburger ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen((p) => !p)} aria-label="Menú">
+              <span /><span /><span />
+            </button>
           </div>
-        ))}
-      </div>
+        </nav>
+
+        {/* Mobile nav */}
+        <div className={`lf-mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
+          <a href="#calculadora" onClick={(e) => { e.preventDefault(); scrollTo('calculadora'); setMobileMenuOpen(false); }}>Cotizar</a>
+          <a href="#consola" onClick={(e) => { e.preventDefault(); scrollTo('consola'); setMobileMenuOpen(false); }}>Consola Interactiva</a>
+          <a href="#taller" onClick={(e) => { e.preventDefault(); scrollTo('taller'); setMobileMenuOpen(false); }}>Gestión de Flota</a>
+          <a href="#contacto" onClick={(e) => { e.preventDefault(); scrollTo('contacto'); setMobileMenuOpen(false); }}>Contacto</a>
+          <button className="lf-btn-primario" style={{ marginTop: 24, width: 'fit-content' }} onClick={() => { setMobileMenuOpen(false); navigateTo('login'); }}>Iniciar sesión</button>
+        </div>
+
+        {/* ═══ HERO SECTION (Obsidian Glass split layout) ═══ */}
+        <section className="lp-hero" id="hero" style={{ paddingBottom: '40px' }}>
+          <div className="lp-hero-glow-1" />
+          <div className="lp-hero-glow-2" />
+          
+          <div className="lp-hero-grid">
+            <div className="reveal" style={{ display: 'flex', flexDirection: 'column' }}>
+               <div className="lp-hero-badge">
+                 <span className="lf-hero-badge-dot" />
+                 Envíos Express Seguros en Managua
+               </div>
+               
+               <h1 className="lp-hero-title">
+                 Tus envíos más <span>rápidos, seguros</span> y garantizados.
+               </h1>
+               
+               <p className="lp-hero-subtitle">
+                 En Logifast conectamos tu negocio con entregas express en minutos. Cotiza al instante, realiza seguimiento de tu paquete en tiempo real y disfruta de la mayor tranquilidad en cada envío.
+               </p>
+               
+               <div className="lp-hero-actions">
+                 <button className="lp-btn-primary" onClick={() => navigateTo('register')}>
+                   Comenzar envíos gratis
+                   <IconArrowRight />
+                 </button>
+                 <button className="lp-btn-outline" onClick={() => scrollTo('calculadora')}>
+                   <IconPlay /> Cotizar mi envío
+                 </button>
+               </div>
+             </div>
+
+            {/* Simulated Radar widget */}
+            <div className="reveal reveal-delay-2" style={{ display: 'flex', justifyContent: 'center' }}>
+              <div className="lp-bento-card" style={{ padding: '28px', width: '100%', maxWidth: '440px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '28px', boxShadow: 'var(--shadow-xl)', position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '8px', height: '8px', background: 'var(--secundario)', borderRadius: '50%', display: 'inline-block', animation: 'udPulse 1s infinite' }} />
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Monitoreo GPS en Vivo</span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Repartidores Activos: 45</span>
+                </div>
+
+                {/* Radar Grid Animation */}
+                <div style={{ height: '220px', background: '#020b18', borderRadius: '20px', position: 'relative', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
+                  {/* Radar sweep */}
+                  <div style={{ position: 'absolute', width: '150%', height: '150%', background: 'conic-gradient(from 0deg, rgba(7, 100, 226, 0.15) 0deg, transparent 90deg)', animation: 'splashSpin 4s linear infinite', zIndex: 1 }} />
+                  
+                  {/* Radar circles */}
+                  <div style={{ position: 'absolute', width: '70px', height: '70px', border: '1px dashed rgba(7, 100, 226, 0.25)', borderRadius: '50%' }} />
+                  <div style={{ position: 'absolute', width: '140px', height: '140px', border: '1px dashed rgba(7, 100, 226, 0.2)', borderRadius: '50%' }} />
+                  
+                  {/* Active Blips */}
+                  <div style={{ position: 'absolute', top: '40px', left: '100px', width: '8px', height: '8px', background: 'var(--exito)', borderRadius: '50%', boxShadow: '0 0 10px var(--exito)', zIndex: 2 }} />
+                  <div style={{ position: 'absolute', bottom: '60px', right: '120px', width: '8px', height: '8px', background: 'var(--exito)', borderRadius: '50%', boxShadow: '0 0 10px var(--exito)', zIndex: 2 }} />
+                  <div style={{ position: 'absolute', top: '130px', right: '50px', width: '8px', height: '8px', background: 'var(--secundario)', borderRadius: '50%', boxShadow: '0 0 10px var(--secundario)', zIndex: 2 }} />
+
+                  <div style={{ zIndex: 3, color: '#8da4c4', fontFamily: 'JetBrains Mono', fontSize: '10px', position: 'absolute', bottom: '12px' }}>
+                    LOCALIZACIÓN EN TIEMPO REAL
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ INTERACTIVE COTIZADOR WIDGET ═══ */}
+        <section className="lp-section" id="calculadora" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-alt)' }}>
+          <div className="lp-section-header reveal">
+            <span className="lp-section-tag">Calculadora</span>
+            <h2 className="lp-section-title">Cotizador Comercial de Envíos</h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: 'var(--text-secondary)' }}>
+              Ajusta la distancia y el tipo de paquete en tiempo real para ver el costo exacto del servicio.
+            </p>
+          </div>
+
+          <div className="ud-interactive-panel reveal" style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <div className="ud-panel-header">
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ff5f56' }} />
+                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ffbd2e' }} />
+                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27c93f' }} />
+              </div>
+              <span style={{ fontSize: '12px', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}>cotizacion_dinamica.json</span>
+            </div>
+
+            <div className="ud-panel-body">
+              <div className="ud-calc-widget">
+                <div className="ud-calc-controls">
+                  <div>
+                    <label style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '15px' }}>
+                      <span>Distancia de Envío:</span>
+                      <span style={{ color: 'var(--primario)' }}>{calcDistance} km</span>
+                    </label>
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="25" 
+                      value={calcDistance} 
+                      onChange={(e) => setCalcDistance(parseInt(e.target.value))}
+                      className="ud-range-slider" 
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span>Cercano (1 km)</span>
+                      <span>Larga Distancia (25 km)</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontWeight: 'bold', fontSize: '15px', display: 'block', marginBottom: '12px' }}>Tipo de Carga / Peso:</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                      {[
+                        { id: 'light', label: 'Documentos', desc: 'Hasta 1 kg' },
+                        { id: 'medium', label: 'Paquete', desc: 'Hasta 5 kg' },
+                        { id: 'heavy', label: 'Caja Grande', desc: 'Hasta 15 kg' },
+                      ].map((item) => (
+                        <button 
+                          key={item.id}
+                          className={`ud-weight-btn ${calcWeight === item.id ? 'active' : ''}`}
+                          onClick={() => setCalcWeight(item.id as any)}
+                        >
+                          <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{item.label}</div>
+                          <div style={{ fontSize: '10px', opacity: 0.8, marginTop: '2px' }}>{item.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="ud-calc-result">
+                  <div>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Costo Estimado</span>
+                    <div className="ud-calc-price" style={{ margin: '12px 0' }}>
+                      C$ {Math.round((70 + calcDistance * 18) * (calcWeight === 'light' ? 1.0 : calcWeight === 'medium' ? 1.25 : 1.5))}
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', margin: '16px 0', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Tiempo Estimado:</span>
+                      <strong style={{ color: 'var(--text)' }}>{10 + calcDistance * 2} minutos</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Seguimiento GPS:</span>
+                      <strong style={{ color: 'var(--exito)' }}>Incluido</strong>
+                    </div>
+                  </div>
+
+                  <button className="lp-btn-primary" onClick={() => navigateTo('register')} style={{ width: '100%', justifyContent: 'center' }}>
+                    Iniciar Envío
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ INTERACTIVE ROLE CONSOLE SHOWCASE ═══ */}
+        <section className="lp-section" id="consola">
+          <div className="lp-section-header reveal">
+            <span className="lp-section-tag">Simulador</span>
+            <h2 className="lp-section-title">Consola Operativa Interactiva</h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: 'var(--text-secondary)' }}>
+              Selecciona un rol para interactuar directamente con un fragmento de las capacidades operativas reales del sistema.
+            </p>
+          </div>
+
+          {/* Role selector tabs */}
+          <div className="ud-tabs-container reveal">
+            {[
+              { id: 'cliente', label: 'Portal Cliente', icon: <IconPerson /> },
+              { id: 'repartidor', label: 'App Repartidor', icon: <IconMoto /> },
+              { id: 'admin', label: 'Radar Administrador', icon: <IconShield /> },
+              { id: 'ingeniero', label: 'Taller Mecánico', icon: <IconWrench /> },
+            ].map((tab) => (
+              <button 
+                key={tab.id}
+                className={`ud-tab-btn ${activeRoleTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveRoleTab(tab.id as any)}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Interactive display panel */}
+          <div className="ud-interactive-panel reveal" style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <div className="ud-panel-header">
+              <span style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                {activeRoleTab === 'cliente' && 'INTERFAZ: Crear Pedido Nuevo'}
+                {activeRoleTab === 'repartidor' && 'INTERFAZ: Mapa de Ruta de Repartidor'}
+                {activeRoleTab === 'admin' && 'INTERFAZ: Radar de Flota de Despacho'}
+                {activeRoleTab === 'ingeniero' && 'INTERFAZ: Escáner de Diagnóstico de Taller'}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--primario)', fontWeight: 'bold' }}>ESTADO: SIMULACIÓN ACTIVA</span>
+            </div>
+
+            <div className="ud-panel-body" style={{ minHeight: '340px' }}>
+              
+              {/* CLIENTE INTERACTIVE VIEW */}
+              {activeRoleTab === 'cliente' && (
+                <div style={{ maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <h4 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Solicitud Rápida de Envío</h4>
+                  <div className="lf-form-group" style={{ margin: 0 }}>
+                    <label className="lf-form-label">Dirección de Recogida</label>
+                    <input type="text" className="lf-form-input" defaultValue="Metrocentro, Managua" readOnly style={{ opacity: 0.8 }} />
+                  </div>
+                  <div className="lf-form-group" style={{ margin: 0 }}>
+                    <label className="lf-form-label">Dirección de Destino</label>
+                    <input type="text" className="lf-form-input" placeholder="Escribe el destino (ej: Galerías Santo Domingo)" defaultValue="Galerías Santo Domingo, Managua" />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="lf-form-group" style={{ margin: 0 }}>
+                      <label className="lf-form-label">Nombre de Contacto</label>
+                      <input type="text" className="lf-form-input" defaultValue="María José Espinoza" readOnly style={{ opacity: 0.8 }} />
+                    </div>
+                    <div className="lf-form-group" style={{ margin: 0 }}>
+                      <label className="lf-form-label">Teléfono</label>
+                      <input type="text" className="lf-form-input" defaultValue="+505 8888-9999" readOnly style={{ opacity: 0.8 }} />
+                    </div>
+                  </div>
+                  <button className="lp-btn-primary" onClick={() => navigateTo('register')} style={{ marginTop: '8px', alignSelf: 'start' }}>
+                    Crear Orden de Prueba
+                  </button>
+                </div>
+              )}
+
+              {/* REPARTIDOR INTERACTIVE VIEW */}
+              {activeRoleTab === 'repartidor' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <h4 style={{ fontSize: '18px', fontWeight: 'bold' }}>Orden #8452 - En Progreso</h4>
+                    <div style={{ background: 'var(--bg-alt)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>CLIENTE DESTINO:</div>
+                      <div style={{ fontWeight: 'bold', fontSize: '15px', margin: '4px 0' }}>Supermercados La Colonia</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Carr. Masaya km 8.5</div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                      <span>Distancia Restante:</span>
+                      <strong>1.8 km</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span>Tiempo Estimado de Ruta:</span>
+                      <strong style={{ color: 'var(--primario)' }}>6 minutos</strong>
+                    </div>
+                    <button className="ud-weight-btn active" style={{ marginTop: '12px', border: '1px solid var(--peligro)', color: 'var(--peligro)', background: 'transparent' }} onClick={() => alert('Para reportar incidencias reales, accede a tu cuenta de Repartidor')}>
+                      Reportar Retraso / Tráfico
+                    </button>
+                  </div>
+                  <div style={{ background: '#020b18', borderRadius: '16px', border: '1px solid var(--border)', height: '240px', position: 'relative', overflow: 'hidden' }}>
+                    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                      <path d="M 40,200 L 120,120 L 160,150 L 240,60" fill="none" stroke="var(--primario)" strokeWidth="3" />
+                      <circle cx="40" cy="200" r="6" fill="var(--exito)" />
+                      <circle cx="240" cy="60" r="6" fill="var(--peligro)" />
+                    </svg>
+                    <div style={{ position: 'absolute', top: '140px', left: '150px', width: '10px', height: '10px', background: '#ffffff', borderRadius: '50%', boxShadow: '0 0 8px #ffffff' }} />
+                    <span style={{ position: 'absolute', top: '155px', left: '130px', fontSize: '9px', background: 'var(--surface)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border)', fontWeight: 'bold' }}>Tu Ubicación</span>
+                  </div>
+                </div>
+              )}
+
+              {/* ADMIN RADAR INTERACTIVE VIEW */}
+              {activeRoleTab === 'admin' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '24px' }}>
+                  <div>
+                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>Repartidores Activos</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {[
+                        { name: 'Rider Carlos M.', status: 'En Ruta', color: 'var(--primario)' },
+                        { name: 'Rider Jorge H.', status: 'Entregado', color: 'var(--exito)' },
+                        { name: 'Rider Sofía L.', status: 'Taller', color: 'var(--warning)' },
+                        { name: 'Rider Gabriel R.', status: 'Disponible', color: 'var(--exito)' },
+                      ].map((rider, idx) => (
+                        <div key={idx} style={{ background: 'var(--bg-alt)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                          <span>{rider.name}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: rider.color }}>{rider.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ background: '#020b18', borderRadius: '16px', border: '1px solid var(--border)', height: '240px', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(var(--primario) 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
+                    <div style={{ position: 'absolute', top: '60px', left: '80px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '8px', height: '8px', background: 'var(--primario)', borderRadius: '50%', display: 'inline-block', animation: 'udPulse 1.5s infinite' }} />
+                      <span style={{ fontSize: '10px', color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px' }}>Rider Carlos</span>
+                    </div>
+                    <div style={{ position: 'absolute', top: '140px', right: '70px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '8px', height: '8px', background: 'var(--exito)', borderRadius: '50%', display: 'inline-block', animation: 'udPulse 1.2s infinite' }} />
+                      <span style={{ fontSize: '10px', color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px' }}>Rider Gabriel</span>
+                    </div>
+                    <div style={{ position: 'absolute', bottom: '40px', left: '140px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '8px', height: '8px', background: 'var(--warning)', borderRadius: '50%', display: 'inline-block' }} />
+                      <span style={{ fontSize: '10px', color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px' }}>Rider Sofía (Taller)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* INGENIERO MECHANICAL SCANNER INTERACTIVE VIEW */}
+              {activeRoleTab === 'ingeniero' && (
+                <div className="ud-scanner-grid">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <h4 style={{ fontSize: '18px', fontWeight: 'bold' }}>Diagnóstico de Unidad</h4>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                      Monitorea las lecturas del computador a bordo de la flota de motocicletas para mantenimiento predictivo.
+                    </p>
+                    
+                    <div>
+                      <button 
+                        className="lp-btn-primary" 
+                        onClick={startScan}
+                        disabled={scanStatus === 'scanning'}
+                        style={{ background: scanStatus === 'scanning' ? 'var(--border)' : 'var(--primario)' }}
+                      >
+                        {scanStatus === 'idle' && 'Escanear Moto-02'}
+                        {scanStatus === 'scanning' && 'Escaneando...'}
+                        {scanStatus === 'done' && 'Volver a Escanear'}
+                      </button>
+
+                      {scanStatus === 'scanning' && (
+                        <div>
+                          <div className="ud-scan-bar">
+                            <div className="ud-scan-bar-fill" style={{ width: `${scanProgress}%` }} />
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'right' }}>
+                            {scanProgress}% completado
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="ud-scan-metrics">
+                    <div className="ud-metric-box">
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Frenos Hidráulicos</span>
+                      <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '6px', color: scanStatus === 'done' ? 'var(--exito)' : 'var(--text)' }}>
+                        {scanStatus === 'done' ? '95% (Perfecto)' : 'Esperando...'}
+                      </div>
+                    </div>
+                    <div className="ud-metric-box">
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Presión Neumáticos</span>
+                      <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '6px', color: scanStatus === 'done' ? 'var(--exito)' : 'var(--text)' }}>
+                        {scanStatus === 'done' ? '30 PSI (Normal)' : 'Esperando...'}
+                      </div>
+                    </div>
+                    <div className="ud-metric-box">
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Kilometraje acumulado</span>
+                      <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '6px' }}>
+                        {scanStatus === 'done' ? '2,341 km' : 'Esperando...'}
+                      </div>
+                    </div>
+                    <div className="ud-metric-box">
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Estado de Bujía</span>
+                      <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '6px', color: scanStatus === 'done' ? 'var(--exito)' : 'var(--text)' }}>
+                        {scanStatus === 'done' ? 'Excelente' : 'Esperando...'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ VENTAJAS COMERCIALES DE LOGIFAST ═══ */}
+        <section className="lp-section" id="taller" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-alt)' }}>
+          <div className="lp-section-header reveal">
+            <span className="lp-section-tag">Ventajas</span>
+            <h2 className="lp-section-title">¿Por qué elegir Logifast?</h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: 'var(--text-secondary)' }}>
+              Ofrecemos el mejor servicio de entregas express en Managua, diseñado para el éxito de tu negocio y la comodidad de tus envíos personales.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+            <div className="lp-bento-card reveal">
+              <div className="lp-bento-icon"><IconShield /></div>
+              <h3 className="lp-bento-title">Entregas 100% Seguras</h3>
+              <p className="lp-bento-desc">Cada paquete está protegido con los más estrictos estándares de seguridad y declaración legal, garantizando la total transparencia y protección de tus envíos.</p>
+            </div>
+            <div className="lp-bento-card reveal reveal-delay-1">
+              <div className="lp-bento-icon"><IconClock /></div>
+              <h3 className="lp-bento-title">Garantía de Tiempo</h3>
+              <p className="lp-bento-desc">Nuestra flota comercial optimizada y monitoreada vía satélite en tiempo real asegura que tus paquetes lleguen a destino siempre a tiempo y sin retrasos.</p>
+            </div>
+            <div className="lp-bento-card reveal reveal-delay-2">
+              <div className="lp-bento-icon"><IconTrendingUp /></div>
+              <h3 className="lp-bento-title">Precios Claros y Justos</h3>
+              <p className="lp-bento-desc">Cálculo de tarifas transparente sin cargos sorpresa. Cotiza al instante según la distancia exacta y paga el precio exacto sin recargos ocultos.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ PARTNERS CLIENTES ACTIVOS ═══ */}
+        <section className="lf-partners reveal">
+          <div className="lf-partners-inner">
+            <div className="lf-partners-header">
+              <span className="lf-eyebrow">Confianza</span>
+              <h2 className="lf-section-title font-syne" style={{ fontSize: '1.8rem', marginBottom: 8 }}>Empresas aliadas</h2>
+            </div>
+            <div className="lf-marquee">
+              <div className="lf-marquee-track">
+                {[...Array(2)].map((_, loopIdx) => (
+                  <React.Fragment key={loopIdx}>
+                    {[
+                      { src: '/logos/image1.png', name: 'Alquinicsa', sector: 'Automotriz & Construcción' },
+                      { src: '/logos/image2.png', name: 'Delicias del Mar', sector: 'Restaurante & Distribución' },
+                      { src: '/logos/image3.png', name: 'Burger Boss', sector: 'Alimentos & Bebidas' },
+                      { src: '/logos/image4.png', name: 'Salud y Vida', sector: 'Sector Farmacéutico' },
+                      { src: '/logos/image5.png', name: 'Autosym', sector: 'Audio & Accesorios' },
+                      { src: '/logo.png', name: 'Logifast Delivery', sector: 'Operaciones Activas' },
+                    ].map((partner, partnerIdx) => (
+                      <div key={`${loopIdx}-${partnerIdx}`} className="lf-marquee-item">
+                        <img src={partner.src} alt={partner.name} className="lf-marquee-logo" />
+                        <div className="lf-marquee-info">
+                          <span className="lf-marquee-name">{partner.name}</span>
+                          <span className="lf-marquee-sector">{partner.sector}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ CTA SECTION ═══ */}
+        <section className="lf-cta" id="contacto">
+          <div className="lf-cta-inner reveal">
+            <h2 className="lf-cta-title font-syne">¿Listo para optimizar tu logística?</h2>
+            <p className="lf-cta-desc">Crea tu cuenta comercial en minutos y accede a la consola de despacho de Logifast.</p>
+            <button className="lp-btn-primary" onClick={() => navigateTo('register')} style={{ margin: '0 auto' }}>
+              Registrarse Gratis
+              <IconArrowRight />
+            </button>
+          </div>
+        </section>
+
+        {/* ═══ FOOTER ═══ */}
+        <footer className="lf-footer">
+          <div className="lf-footer-inner">
+            <div className="lf-footer-grid">
+              <div>
+                <Logo />
+                <p className="lf-footer-brand-tagline">Tus Envíos Seguros y Rápidos</p>
+                <p className="lf-footer-brand-location">Managua, Nicaragua</p>
+              </div>
+              <div>
+                <h4 className="lf-footer-col-title">Producto</h4>
+                <ul className="lf-footer-links">
+                  <li><a href="#">Funciones</a></li>
+                  <li><a href="#">Precios</a></li>
+                  <li><a href="#">API</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="lf-footer-col-title">Empresa</h4>
+                <ul className="lf-footer-links">
+                  <li><a href="#">Nosotros</a></li>
+                  <li><a href="#">Blog</a></li>
+                  <li><a href="#">Contacto</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="lf-footer-col-title">Legal</h4>
+                <ul className="lf-footer-links">
+                  <li><a href="#">Privacidad</a></li>
+                  <li><a href="#">Términos</a></li>
+                </ul>
+              </div>
+            </div>
+            <div className="lf-footer-bottom">
+              <span>LOGIFAST 2026</span>
+              <span>Operaciones de Precisión</span>
+            </div>
+          </div>
+        </footer>
+
+        {/* Toasts */}
+        <div className="lf-toast-container">
+          {toasts.map((t) => (
+            <div key={t.id} className={`lf-toast ${t.variant} ${t.leaving ? 'leaving' : ''}`}>
+              <span className="lf-toast-icon">
+                {t.variant === 'success' && <IconCheckCircle />}
+                {t.variant === 'error' && <IconXCircle />}
+                {t.variant === 'warning' && <IconAlertTriangle />}
+                {t.variant === 'info' && <IconInfo />}
+              </span>
+              <div className="lf-toast-content">
+                <div className="lf-toast-title">{t.title}</div>
+                {t.desc && <div className="lf-toast-desc">{t.desc}</div>}
+              </div>
+              <button className="lf-toast-close" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
+                <IconX />
+              </button>
+              <div className="lf-toast-progress" />
+            </div>
+          ))}
+        </div>
     </main>
+    </>
   );
 }

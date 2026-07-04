@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, User, Mail, Phone, MapPin, Package,
   ChevronRight, X, TrendingUp, Calendar, DollarSign, BarChart3,
-} from 'lucide-react';
+} from '@/components/icons';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useStore, type Client, type Order } from '@/lib/store';
 

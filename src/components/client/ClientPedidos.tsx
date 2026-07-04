@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, ShoppingBag, ArrowRight, Navigation, MessageCircle,
   RefreshCw, Star, Clock, MapPin, Truck, RotateCcw, Search, Copy,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type Order } from '@/lib/store';
 import { useMarketplaceStore, type OrdenCompra } from '@/lib/marketplace-store';
 

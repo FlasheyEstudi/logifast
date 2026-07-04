@@ -21,7 +21,7 @@ import {
   Flag,
   Star,
   Bell,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useRepartidorStore, type ServicioHistorial } from '@/lib/repartidor-store';
 import { StarRating } from './RepartidorPerfil';
 import RepartidorMiniMap from './RepartidorMiniMap';

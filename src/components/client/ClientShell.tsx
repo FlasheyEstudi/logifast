@@ -21,7 +21,7 @@ import {
   X,
   Search,
   ShoppingBag,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';

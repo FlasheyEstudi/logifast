@@ -16,7 +16,7 @@ import {
   X,
   Vibrate,
   Volume2,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { useRepartidorSnackbar } from './RepartidorShell';
 

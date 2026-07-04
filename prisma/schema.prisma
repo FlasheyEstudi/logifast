@@ -338,6 +338,8 @@ model RepartidorProfile {
   vibracionActiva Boolean  @default(true)
   ubicacionActiva Boolean  @default(true)
   rechazosHora    Int      @default(0)
+  saldo           Float    @default(0)
+  contratoAceptado Boolean @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -429,4 +431,95 @@ model ChatRepartidor {
   enviadoEn   DateTime @default(now())
 
   @@index([ordenId, enviadoEn])
+}
+
+model Moto {
+  id                String   @id @default(cuid())
+  nombre            String   // "Moto-01", "Moto-02", etc.
+  modelo            String   // "Honda Wave 110", "Yamaha YBR 125"
+  placa             String?  @unique
+  anio              Int?
+  color             String?
+  vin               String?  // Numero de serie
+  kmAcumulados      Float    @default(0)
+  estado            String   @default("DISPONIBLE") // DISPONIBLE, EN_SERVICIO, EN_MANTENIMIENTO, FUERA_SERVICIO
+  asignadaA         String?  // repartidorId si esta asignada
+  imagenUrl         String?
+  fechaAdquisicion  DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  mantenimientos    Mantenimiento[]
+  alertas           AlertaMantenimiento[]
+}
+
+model Mantenimiento {
+  id              String   @id @default(cuid())
+  motoId          String
+  tipo            String   // PREVENTIVO, CORRECTIVO, EMERGENCIA
+  categoria       String   // CAMBIO_ACEITE, FRENO, LLANTA, CADENA, ELECTRICO, MOTOR, SUSPENSION, GENERAL
+  descripcion     String
+  observaciones   String?
+  kmAlMomento     Float
+  costoManoObra   Float    @default(0)
+  costoRepuestos  Float    @default(0)
+  costoTotal      Float    @default(0)
+  estado          String   @default("PROGRAMADO") // PROGRAMADO, EN_PROCESO, COMPLETADO, CANCELADO
+  prioridad       String   @default("NORMAL") // BAJA, NORMAL, ALTA, URGENTE
+  programadoPara  DateTime?
+  iniciadoEn      DateTime?
+  completadoEn    DateTime?
+  tecnicoId       String?  // quien lo hizo
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  moto            Moto     @relation(fields: [motoId], references: [id])
+  repuestosUsados RepuestoUsado[]
+}
+
+model Repuesto {
+  id              String   @id @default(cuid())
+  nombre          String   // "Filtro de aceite Honda Wave"
+  categoria       String   // ACEITE, FRENO, LLANTA, CADENA, ELECTRICO, MOTOR, OTRO
+  sku             String?  @unique
+  descripcion     String?
+  precioUnitario  Float
+  stock           Int      @default(0)
+  stockMinimo     Int      @default(5)
+  unidad          String   @default("pza") // pza, litro, metro, juego
+  compatibleCon   String   @default("[]") // JSON string of ["Honda Wave 110", "Yamaha YBR 125"]
+  proveedor       String?
+  ubicacion       String?  // "Estante A-3", "Bodega 1"
+  imagenUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  usadosEn        RepuestoUsado[]
+}
+
+model RepuestoUsado {
+  id              String   @id @default(cuid())
+  mantenimientoId String
+  repuestoId      String
+  cantidad        Int
+  precioUnitario  Float
+  subtotal        Float
+
+  mantenimiento   Mantenimiento @relation(fields: [mantenimientoId], references: [id])
+  repuesto        Repuesto      @relation(fields: [repuestoId], references: [id])
+}
+
+model AlertaMantenimiento {
+  id              String   @id @default(cuid())
+  motoId          String
+  tipo            String   // KM, FECHA, AMBOS
+  descripcion     String
+  kmTrigger       Float?   // alertar cuando la moto llegue a X km
+  fechaTrigger    DateTime? // alertar en esta fecha
+  activa          Boolean  @default(true)
+  resuelta        Boolean  @default(false)
+  resueltaEn      DateTime?
+  createdAt       DateTime @default(now())
+
+  moto            Moto     @relation(fields: [motoId], references: [id])
 }

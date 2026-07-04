@@ -21,7 +21,7 @@ import {
   MessageCircle,
   Banknote,
   CreditCard,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useStore, type Order } from '@/lib/store';
 
 /* ═══════════════════════════════════════════════

@@ -16,10 +16,12 @@ import {
   Store,
   TrendingUp,
   Zap,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
+import { useBottomSheetGesture } from '@/hooks/useBottomSheetGesture';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 /* ═══════════════════════════════════════════════
    REAL LEAFLET MAP (dynamic, ssr:false — Leaflet needs window)
@@ -212,6 +214,7 @@ export default function RepartidorServicio() {
     kmRecorridos,
     eta,
     statsHoy,
+    perfil,
     conectar,
     recibirOrdenAsignada,
     llegarRecogida,
@@ -275,33 +278,71 @@ export default function RepartidorServicio() {
 
   /* ─── Handlers ─── */
   const handleConectar = () => {
+    if (!perfil.contratoAceptado) {
+      showSnackbar({ message: 'Error: Debes firmar el contrato digital en tu Perfil antes de conectarte.' });
+      HAPTIC_PATTERNS.error();
+      return;
+    }
+    if (perfil.saldo <= 0) {
+      showSnackbar({ message: 'Error: Saldo insuficiente. Debes realizar una recarga en tu Perfil.' });
+      HAPTIC_PATTERNS.error();
+      return;
+    }
     conectar();
+    HAPTIC_PATTERNS.medium();
     showSnackbar({ message: 'Te has conectado. Esperando asignaciones.' });
   };
 
   const handleSimularOrden = () => {
     const orden = MOCK_ORDENES[mockOrdenIndex % MOCK_ORDENES.length];
     mockOrdenIndex += 1;
+
+    // Calculate distance from current driver position to order pickup point
+    const R = 6371; // Earth radius in km
+    const dLat = ((orden.origenLat - lat) * Math.PI) / 180;
+    const dLng = ((orden.origenLng - lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat * Math.PI) / 180) *
+        Math.cos((orden.origenLat * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const dist = R * c;
+
+    if (dist > 2.0) {
+      showSnackbar({
+        message: `Pedido ${orden.id} bloqueado. Distancia de recogida: ${dist.toFixed(2)} km (Límite: 2 km).`
+      });
+      HAPTIC_PATTERNS.error();
+      return;
+    }
+
     recibirOrdenAsignada(orden);
+    HAPTIC_PATTERNS.nuevaOrden();
   };
 
   const handleLlegarRecogida = () => {
     llegarRecogida();
+    HAPTIC_PATTERNS.medium();
     showSnackbar({ message: 'Has llegado al punto de recogida.' });
   };
 
   const handleRecoger = () => {
     recogerPaquete();
+    HAPTIC_PATTERNS.medium();
     showSnackbar({ message: 'Paquete recogido. En camino a entrega.' });
   };
 
   const handleLlegarEntrega = () => {
     llegarEntrega();
+    HAPTIC_PATTERNS.medium();
     showSnackbar({ message: 'Has llegado al punto de entrega.' });
   };
 
   const handleConfirmarEntrega = () => {
     confirmarEntrega();
+    HAPTIC_PATTERNS.success();
     showSnackbar({ message: 'Entrega confirmada. Servicio completado.', action: 'Ver historial' });
   };
 
@@ -868,38 +909,38 @@ export default function RepartidorServicio() {
    ═══════════════════════════════════════════════ */
 
 function BottomSheet({ children }: { children: React.ReactNode }) {
+  const SNAP_POINTS = [
+    { id: 'min', height: 16 },
+    { id: 'med', height: 46 },
+    { id: 'max', height: 80 }
+  ];
+
+  const { sheetRef, currentSnap, isDragging, handlers } = useBottomSheetGesture({
+    snapPoints: SNAP_POINTS,
+    initialSnap: 'med'
+  });
+
   return (
-    <motion.div
-      initial={{ y: 300 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-      className="lf-bottom-sheet open bottom-sheet open"
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 16,
-        paddingBottom: 20,
-        borderRadius: '28px 28px 0 0',
-        background: 'var(--md-surface)',
-        boxShadow: '0 -12px 48px rgba(0,0,0,0.15)',
-        maxHeight: '70%',
-        overflowY: 'auto',
-      }}
+    <div
+      ref={sheetRef}
+      className={`repartidor-sheet ${isDragging ? 'dragging' : ''}`}
+      {...handlers}
     >
-      <div
-        className="lf-sheet-handle bottom-sheet-handle"
-        style={{
-          width: 40,
-          height: 4,
-          borderRadius: 2,
-          background: 'var(--md-outline-variant)',
-          margin: '0 auto 12px',
-        }}
-      />
-      {children}
-    </motion.div>
+      <div className="sheet-handle-area">
+        <div className="sheet-handle" />
+        <div className="sheet-snap-indicator">
+          {SNAP_POINTS.map(snap => (
+            <div
+              key={snap.id}
+              className={`sheet-snap-dot ${currentSnap === snap.id ? 'active' : ''}`}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="sheet-scroll-content">
+        {children}
+      </div>
+    </div>
   );
 }
 

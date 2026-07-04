@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Heart, X, CheckCircle } from 'lucide-react';
+import { Star, Heart, X, CheckCircle } from '@/components/icons';
 import { useStore, type Calificacion } from '@/lib/store';
 
 /* ═══════════════════════════════════════════════
