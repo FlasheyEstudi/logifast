@@ -57,13 +57,13 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
             boxShadow: 'var(--md-elevation-2)'
           }}
         >
-          <span>{store.perfil.nombre.split(' ').map(n => n[0]).join('')}</span>
+          <span>{(userName || store.perfil?.nombre || 'Ingeniero').split(' ').map(n => n[0] || '').join('')}</span>
         </div>
         <div className="perfil-cliente-nombre font-syne" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
-          {userName || store.perfil.nombre}
+          {userName || store.perfil?.nombre}
         </div>
         <div className="perfil-cliente-email" style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
-          {store.perfil.email}
+          {store.perfil?.email}
         </div>
         <div style={{ marginTop: 8 }}>
           <span
@@ -77,7 +77,7 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
               fontWeight: 600
             }}
           >
-            {store.perfil.rol}
+            {store.perfil?.rol}
           </span>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
           }}
         >
           <div className="perfil-cliente-stat-value mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
-            {store.stats.totalMotos}
+            {store.stats?.totalMotos || 0}
           </div>
           <div className="perfil-cliente-stat-label" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
             Motos
@@ -120,7 +120,7 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
           }}
         >
           <div className="perfil-cliente-stat-value mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
-            {store.stats.mantenimientosCompletados}
+            {store.stats?.mantenimientosCompletados || 0}
           </div>
           <div className="perfil-cliente-stat-label" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
             Mant.
@@ -137,7 +137,7 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
           }}
         >
           <div className="perfil-cliente-stat-value mono" style={{ fontSize: 20, fontWeight: 700, color: '#FFB300' }}>
-            {store.stats.alertasActivas}
+            {store.stats?.alertasActivas || 0}
           </div>
           <div className="perfil-cliente-stat-label" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
             Alertas
@@ -171,14 +171,14 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
           </div>
 
           <SettingRow
-            icon={
+            icon = {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/>
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
               </svg>
             }
             label="Inventario de repuestos"
-            desc={`${store.repuestos.length} repuestos, ${store.stats.repuestosBajoStock} bajo stock`}
+            desc={`${store.repuestos.length} repuestos, ${store.stats?.repuestosBajoStock || 0} bajo stock`}
             trailing={
               <svg className="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="9 18 15 12 9 6"/>

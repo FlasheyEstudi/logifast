@@ -1,5 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "flyonui/themes.css";
+@import "flyonui/components/button.css";
+@import "flyonui/components/input.css";
+@import "flyonui/components/card.css";
+@import "flyonui/components/badge.css";
+@import "flyonui/components/loading.css";
+@import "../../node_modules/preline/variants.css";
+@source "../../node_modules/preline/dist/*.js";
 
 /* ========================================
    LOGIFAST 2.0 — Complete Rebrand Design System

@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, Component } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Dashboard from './dashboard';
 import ClientDashboard from './client-dashboard';
 import dynamic from 'next/dynamic';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
 import { sileo } from "sileo";
+import { Transition, Dialog } from '@headlessui/react';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false });
 const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false });
@@ -77,17 +78,8 @@ const IconInfo = () => (
 const IconPlay = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
 );
-const IconGlobe = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-);
-const IconTrendingUp = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-);
 const IconCheckSmall = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-);
-const IconClock = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 );
 
 /* ═══════════════════════════════════════════════════════
@@ -113,29 +105,6 @@ const demoCredentials: Record<string, { email: string; password: string; name: s
   admin: { email: 'admin@logifast.com', password: '123456', name: 'Administrador' },
   ingeniero: { email: 'ingeniero@logifast.com', password: '123456', name: 'Ingeniero Demo' },
 };
-
-/* ═══════════════════════════════════════════════════════
-   COUNT-UP HOOK
-   ═══════════════════════════════════════════════════════ */
-
-function useCountUp(end: number, duration = 2000, start = false) {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (!start) return;
-    let startTime: number | null = null;
-    let raf: number;
-    const animate = (ts: number) => {
-      if (!startTime) startTime = ts;
-      const progress = Math.min((ts - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-      setValue(Math.round(eased * end));
-      if (progress < 1) raf = requestAnimationFrame(animate);
-    };
-    raf = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(raf);
-  }, [end, duration, start]);
-  return start ? value : 0;
-}
 
 /* ═══════════════════════════════════════════════════════
    LOGO COMPONENT
@@ -170,42 +139,12 @@ function Logo({ large, onClick }: { large?: boolean; onClick?: () => void }) {
   );
 }
 
-
-/* ═══════════════════════════════════════════════════════
-   STAT COMPONENT WITH COUNT-UP
-   ═══════════════════════════════════════════════════════ */
-
-function StatCounter({ value, suffix, label, started }: { value: number; suffix?: string; label: string; started: boolean }) {
-  const count = useCountUp(value, 2200, started);
-  const formatted = count.toLocaleString();
-  return (
-    <div className="lf-hero-stat">
-      <span className="lf-hero-stat-number font-mono">{formatted}{suffix || ''}</span>
-      <span className="lf-hero-stat-label">{label}</span>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════════════ */
-
 /* ═══════════════════════════════════════════════════════
    DASHBOARD ERROR BOUNDARY
    ═══════════════════════════════════════════════════════ */
 
-interface DashboardErrorBoundaryProps {
-  onGoHome: () => void;
-  children: React.ReactNode;
-}
-
-interface DashboardErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
-
-class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, DashboardErrorBoundaryState> {
-  constructor(props: DashboardErrorBoundaryProps) {
+class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { onGoHome: () => void; children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
   }
@@ -215,7 +154,7 @@ class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, Dash
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('[Page Dashboard Error Boundary]', error, errorInfo);
+    console.error("DashboardErrorBoundary caught an error", error, errorInfo);
   }
 
   handleRetry = () => {
@@ -224,45 +163,34 @@ class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, Dash
 
   render() {
     if (this.state.hasError) {
-      const errorMessage = this.state.error?.message || 'Error desconocido';
+      const errorMessage = this.state.error ? this.state.error.message : 'Error desconocido';
       return (
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          height: '100vh', background: 'var(--bg, #FAF8F5)',
-          fontFamily: "'DM Sans', sans-serif", padding: 24, gap: 20,
+          height: '100vh', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', background: '#fff',
+          padding: 24, textAlign: 'center', fontFamily: "'DM Sans', sans-serif"
         }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: 16, background: 'rgba(220,38,38,0.08)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text, #1B1B2F)', margin: 0 }}>
-            Error al cargar el Dashboard
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1B1B2F', marginBottom: 12 }}>
+            Algo salió mal al cargar el Dashboard
           </h2>
-          <p style={{ fontSize: 14, color: '#6B7280', maxWidth: 420, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
-            Ocurrió un problema inesperado. Puedes reintentar o volver a la página principal.
+          <p style={{ color: '#5A5A72', maxWidth: 450, margin: '0 auto 24px', fontSize: 15, lineHeight: 1.5 }}>
+            Se produjo un error inesperado en la interfaz. Puedes reintentar cargar la vista o volver al inicio del portal.
           </p>
           <div style={{
             padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.04)',
             border: '1px solid rgba(220,38,38,0.12)', maxWidth: 500, width: '100%',
             fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#DC2626',
-            wordBreak: 'break-word' as const, overflow: 'auto', maxHeight: 120,
+            wordBreak: 'break-word', overflow: 'auto', maxHeight: 120, marginBottom: 16
           }}>
             {errorMessage}
           </div>
-          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
             <button
               onClick={this.handleRetry}
               style={{
                 padding: '10px 24px', borderRadius: 10, border: 'none',
                 background: '#FF5722', color: '#fff', cursor: 'pointer',
-                fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-                boxShadow: '0 4px 12px rgba(255,87,34,0.3)', transition: 'all 0.2s',
+                fontSize: 14, fontWeight: 600, transition: 'all 0.2s',
               }}
             >
               Reintentar
@@ -272,7 +200,7 @@ class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, Dash
               style={{
                 padding: '10px 24px', borderRadius: 10, border: '1px solid #e5e7eb',
                 background: '#fff', color: '#1B1B2F',
-                cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                cursor: 'pointer', fontSize: 14, fontWeight: 600,
                 transition: 'all 0.2s',
               }}
             >
@@ -282,13 +210,12 @@ class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, Dash
         </div>
       );
     }
-
     return this.props.children;
   }
 }
 
 /* ═══════════════════════════════════════════════════════
-   MAIN COMPONENT
+   MAIN HOME PORTAL COMPONENT
    ═══════════════════════════════════════════════════════ */
 
 export default function Home() {
@@ -298,10 +225,9 @@ export default function Home() {
   const [loginRole, setLoginRole] = useState<string>('admin');
   const [loginUserName, setLoginUserName] = useState<string>('Administrador');
 
-  /* ─── Landing state ─── */
+  /* ─── Navigation/Interface state ─── */
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [statsVisible, setStatsVisible] = useState(false);
   const revealRef = useRef<HTMLElement>(null);
 
   /* ─── Auth state ─── */
@@ -317,45 +243,34 @@ export default function Home() {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
-  const [regRole, setRegRole] = useState('');
+  const [regRole, setRegRole] = useState('cliente');
   const [regTerms, setRegTerms] = useState(false);
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
   const [regSuccess, setRegSuccess] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
 
+  /* ─── Price Calculator State ─── */
+  const [distance, setDistance] = useState(5);
+  const [weight, setWeight] = useState('ligero');
+
+  const calculatePrice = () => {
+    let base = 35; // base price in Cordobas
+    let perKm = 8;
+    if (weight === 'medio') {
+      base += 20;
+      perKm = 10;
+    } else if (weight === 'pesado') {
+      base += 50;
+      perKm = 15;
+    }
+    return base + (distance * perKm);
+  };
+
   /* ─── Theme ─── */
-  // Theme is owned by the global configStore. We read `tema` here and derive
-  // `isDark` so the landing-page UI can render the right sun/moon icon. The
-  // actual data-theme attribute is applied by configStore.setTema + the
-  // <ThemeProvider> in layout.tsx; the fallback useEffect below only fires
-  // on first mount in case the store hasn't hydrated yet.
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  /* ─── Unique Landing States ─── */
-  const [calcDistance, setCalcDistance] = useState(5);
-  const [calcWeight, setCalcWeight] = useState<'light' | 'medium' | 'heavy'>('light');
-  const [activeRoleTab, setActiveRoleTab] = useState<'cliente' | 'repartidor' | 'admin' | 'ingeniero'>('cliente');
-  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'done'>('idle');
-  const [scanProgress, setScanProgress] = useState(0);
-
-  const startScan = useCallback(() => {
-    if (scanStatus === 'scanning') return;
-    setScanStatus('scanning');
-    setScanProgress(0);
-    let prog = 0;
-    const interval = setInterval(() => {
-      prog += 5;
-      if (prog >= 100) {
-        clearInterval(interval);
-        setScanProgress(100);
-        setScanStatus('done');
-      } else {
-        setScanProgress(prog);
-      }
-    }, 50);
-  }, [scanStatus]);
   useEffect(() => {
     setMounted(true);
     const timer = setTimeout(() => {
@@ -397,26 +312,24 @@ export default function Home() {
     }, 4000);
   }, []);
 
-  /* ─── Apply theme (fallback in case configStore hasn't initialized yet) ─── */
+  /* ─── Apply theme ─── */
   useEffect(() => {
     if (typeof window === 'undefined') return;
     aplicarTema(tema);
   }, [tema]);
 
   const toggleTheme = useCallback(() => {
-    // Route through configStore so the choice persists + the data-theme
-    // attribute is applied via the store's aplicarTema helper.
     useConfigStore.getState().setTema(isDark ? 'light' : 'dark');
   }, [isDark]);
 
-  /* ─── Navbar scroll ─── */
+  /* ─── Navbar scroll effect ─── */
   useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 60);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* ─── Scroll reveal ─── */
+  /* ─── Scroll reveal effect ─── */
   useEffect(() => {
     if (currentView !== 'landing') return;
     const observer = new IntersectionObserver(
@@ -425,18 +338,6 @@ export default function Home() {
     );
     const el = revealRef.current;
     if (el) el.querySelectorAll('.reveal').forEach((r) => observer.observe(r));
-    return () => observer.disconnect();
-  }, [currentView]);
-
-  /* ─── Stats visibility ─── */
-  useEffect(() => {
-    if (currentView !== 'landing') return;
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) setStatsVisible(true); }),
-      { threshold: 0.3 }
-    );
-    const el = document.getElementById('hero-stats');
-    if (el) observer.observe(el);
     return () => observer.disconnect();
   }, [currentView]);
 
@@ -497,17 +398,18 @@ export default function Home() {
     }
 
     setLoginLoading(true);
+    setLoginRole(demoEntry[0]);
+    setLoginUserName(demoEntry[1].name);
+
     setTimeout(() => {
       setLoginLoading(false);
-      setLoginRole(demoEntry[0]);
-      setLoginUserName(demoEntry[1].name);
       addToast(`Bienvenido, ${demoEntry[1].name}`, 'Redirigiendo al dashboard...', 'success');
-      setTimeout(() => setLoginRedirect(true), 1500);
+      setTimeout(() => setLoginRedirect(true), 800);
       setTimeout(() => {
         setCurrentView('dashboard');
         document.body.style.overflow = '';
         setLoginRedirect(false);
-      }, 3000);
+      }, 3300);
     }, 1200);
   }, [loginEmail, loginPassword, addToast]);
 
@@ -521,15 +423,16 @@ export default function Home() {
     setLoginRole(role);
     setLoginUserName(cred.name);
     setLoginLoading(true);
+
     setTimeout(() => {
       setLoginLoading(false);
       addToast(`Bienvenido, ${cred.name}`, 'Redirigiendo al dashboard...', 'success');
-      setTimeout(() => setLoginRedirect(true), 1500);
+      setTimeout(() => setLoginRedirect(true), 800);
       setTimeout(() => {
         setCurrentView('dashboard');
         document.body.style.overflow = '';
         setLoginRedirect(false);
-      }, 3000);
+      }, 3300);
     }, 1200);
   }, [addToast]);
 
@@ -561,21 +464,11 @@ export default function Home() {
     setCurrentView('landing');
     setLoginEmail('');
     setLoginPassword('');
-    setLoginErrors({});
-    setLoginRole('admin');
-    setLoginUserName('Administrador');
-    setRegName('');
-    setRegEmail('');
-    setRegPassword('');
-    setRegConfirm('');
-    setRegErrors({});
-    setRegSuccess(false);
-    setRegRole('');
-    setRegTerms(false);
     document.body.style.overflow = '';
-  }, []);
+    addToast('Sesión cerrada', 'Has cerrado sesión correctamente', 'info');
+  }, [addToast]);
 
-  /* ─── Real-time validation for register ─── */
+  /* ─── Validation helper execution ─── */
   const regValidationErrors = (() => {
     const errors: Record<string, string> = {};
     if (regEmail && regEmail.length > 5 && !isValidEmail(regEmail)) errors.email = 'Ingresa un correo válido';
@@ -583,7 +476,6 @@ export default function Home() {
     return errors;
   })();
   const displayRegErrors = { ...regValidationErrors, ...regErrors };
-
   const pwStrength = getPasswordStrength(regPassword);
 
   /* ═══════════════════════════════════════════════════════
@@ -612,193 +504,543 @@ export default function Home() {
     );
   }
 
-  /* ═══════════════════════════════════════════════════════
-     AUTH VIEWS (Login / Register)
-     ═══════════════════════════════════════════════════════ */
-  if (currentView === 'login' || currentView === 'register') {
-    const isLogin = currentView === 'login';
-    const isExiting = authTransition === 'exit';
-    const isEntering = authTransition === 'enter';
+  return (
+    <>
+      {/* CSS overrides for styling alignment with FlyonUI / Preline UI */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .new-lp-wrapper {
+          background-color: var(--bg);
+          color: var(--text);
+          font-family: 'DM Sans', sans-serif;
+          min-height: 100vh;
+        }
 
-    return (
-      <>
-        <div className="lp-auth-split" style={{ opacity: isExiting ? 0 : 1, transition: 'opacity 0.25s ease' }}>
-          {/* Login redirect overlay */}
-          {loginRedirect && (
-            <div style={{
-              position: 'fixed', inset: 0, zIndex: 3000,
-              background: 'var(--bg)',
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              <div className="lf-spinner" />
-              <p className="lf-redirect-text">Redirigiendo al dashboard...</p>
-            </div>
-          )}
+        /* Mobile Hamburger & Nav Collapse */
+        .lp-hamburger {
+          display: none;
+          cursor: pointer;
+        }
 
-          {/* Sidebar */}
-          <div className="lp-auth-sidebar">
-            <div className="lp-auth-sidebar-glow" />
-            <div>
-              <Logo large />
-              <div style={{ marginTop: 48 }}>
-                <h2 className="lp-auth-sidebar-title">Logística inteligente para tu negocio</h2>
-                <p className="lp-auth-sidebar-text">
-                  Entregas garantizadas en menos de 25 minutos con control operativo, mantenimiento en tiempo real y facturación automatizada.
-                </p>
-              </div>
+        @media (max-width: 900px) {
+          .lp-navbar ul {
+            display: none !important;
+          }
+          .lp-navbar .flex.items-center.gap-4 {
+            display: none !important;
+          }
+          .lp-hamburger {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+
+        /* Mobile Nav Sliding Drawer */
+        .mobile-nav-drawer {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          background: rgba(250, 248, 245, 0.98);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          display: flex;
+          flex-direction: column;
+          padding: 24px 32px;
+          justify-content: space-between;
+        }
+        [data-theme="dark"] .mobile-nav-drawer {
+          background: rgba(10, 10, 15, 0.99);
+        }
+
+        .mobile-drawer-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid var(--border);
+          padding-bottom: 16px;
+        }
+
+        .mobile-drawer-links {
+          display: flex;
+          flex-direction: column;
+          gap: 28px;
+          list-style: none;
+          padding: 0;
+          margin: 40px 0;
+        }
+        .mobile-drawer-links a {
+          font-family: 'Syne', sans-serif;
+          font-size: 24px;
+          font-weight: 800;
+          color: var(--text);
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        .mobile-drawer-links a:hover {
+          color: var(--primario);
+        }
+
+        .mobile-drawer-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+
+        /* Premium Bento Card Previews */
+        .lp-bento-preview {
+          background: rgba(245, 243, 240, 0.45) !important;
+          border: 1px solid rgba(232, 228, 222, 0.7) !important;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+        }
+        [data-theme="dark"] .lp-bento-preview {
+          background: rgba(26, 26, 36, 0.45) !important;
+          border-color: rgba(42, 42, 56, 0.7) !important;
+        }
+
+        .bento-mini-card {
+          background: var(--surface) !important;
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 12px 16px;
+          box-shadow: var(--shadow-sm);
+          font-size: 12px;
+          font-weight: 600;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        /* Input glow on focus */
+        .lp-auth-card input:focus {
+          border-color: var(--primario) !important;
+          box-shadow: 0 0 0 3px var(--primario-soft) !important;
+          outline: none;
+        }
+
+        /* floating animations */
+        .float-card {
+          animation: floating 4s ease-in-out infinite;
+        }
+        @keyframes floating {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+          100% { transform: translateY(0px); }
+        }
+
+        /* Marquee horizontal allies list (kept) */
+        .lf-partners {
+          padding: 60px 0;
+          overflow: hidden;
+          background: var(--bg-alt);
+        }
+        .lf-marquee {
+          position: relative;
+          width: 100%;
+          overflow: hidden;
+          mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+        }
+        .lf-marquee-track {
+          display: flex;
+          gap: 32px;
+          width: max-content;
+          animation: marquee 28s linear infinite;
+        }
+        .lf-marquee-item {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          padding: 16px 24px;
+          border-radius: 16px;
+          box-shadow: var(--shadow-sm);
+        }
+        .lf-marquee-logo {
+          height: 38px;
+          width: auto;
+          object-fit: contain;
+        }
+        
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes spin-gear {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes hop-box {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-10px) scale(0.96); }
+        }
+        @keyframes radar-pulse {
+          0% { transform: scale(0.3); opacity: 0.9; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+        @keyframes drive-moto {
+          0% { transform: translateX(-35px); }
+          100% { transform: translateX(115px); }
+        }
+        @keyframes wave-grow {
+          0%, 100% { transform: scaleY(0.4); }
+          50% { transform: scaleY(1); }
+        }
+      ` }} />
+
+      {/* ═══════════════════════════════════════════════════════
+         AUTH REDIRECT OVERLAY (Headless UI Transition + Flyon UI loading components)
+         ═══════════════════════════════════════════════════════ */}
+      <Transition
+        show={loginRedirect}
+        enter="transition-opacity duration-300"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition-opacity duration-300"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+      >
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 3000,
+          background: isDark ? '#080710' : '#FAF8F5',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          
+          {/* Main Visual Animation Box */}
+          <div className="relative flex items-center justify-center mb-9 w-44 h-44">
+            
+            {/* Dynamic Glow Pulsing Backplane */}
+            <div 
+              className="absolute w-36 h-36 rounded-full"
+              style={{
+                background: loginRole === 'cliente' ? 'radial-gradient(circle, rgba(0, 200, 83, 0.28) 0%, transparent 70%)'
+                          : loginRole === 'repartidor' ? 'radial-gradient(circle, rgba(255, 87, 34, 0.28) 0%, transparent 70%)'
+                          : loginRole === 'admin' ? 'radial-gradient(circle, rgba(7, 100, 226, 0.28) 0%, transparent 70%)'
+                          : 'radial-gradient(circle, rgba(142, 68, 173, 0.28) 0%, transparent 70%)',
+                animation: 'radar-pulse 2.2s infinite ease-out',
+              }} 
+            />
+
+            {/* Flyon UI Loader Spinner Ring */}
+            <span 
+              className={`absolute loading loading-ring w-32 h-32 ${
+                loginRole === 'cliente' ? 'text-success'
+                : loginRole === 'repartidor' ? 'text-warning'
+                : loginRole === 'admin' ? 'text-primary'
+                : 'text-secondary'
+              }`}
+            />
+
+            {/* Central Logo Container */}
+            <div 
+              className="relative z-10 p-4 rounded-full w-20 h-20 flex items-center justify-center"
+              style={{
+                background: isDark ? '#14131F' : '#FFFFFF',
+                boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 30px rgba(0,0,0,0.08)',
+                animation: 'hop-box 2.2s infinite ease-in-out',
+              }}
+            >
+              <img src="/logo.png" alt="Logifast" className="w-12 h-12 object-contain" />
             </div>
-            <div style={{ fontSize: '13px', opacity: 0.6 }}>
-              © 2026 LOGIFAST. Todos los derechos reservados.
+
+            {/* Orbiting Mini Role Badge */}
+            <div className={`absolute bottom-2.5 right-2.5 z-20 p-2 rounded-full shadow-md text-white flex items-center justify-center ${
+              loginRole === 'cliente' ? 'bg-success'
+              : loginRole === 'repartidor' ? 'bg-warning'
+              : loginRole === 'admin' ? 'bg-primary'
+              : 'bg-secondary'
+            }`}>
+              {loginRole === 'cliente' && <IconPerson />}
+              {loginRole === 'repartidor' && <IconMoto />}
+              {loginRole === 'admin' && <IconShield />}
+              {loginRole === 'ingeniero' && <IconWrench />}
             </div>
           </div>
 
-          {/* Form container side */}
+          {/* Heading */}
+          <h3 className="font-syne text-2xl font-extrabold mb-2.5 tracking-tight" style={{ color: isDark ? '#FFFFFF' : '#1B1B2F' }}>
+            {loginRole === 'cliente' && 'Acceso Cliente'}
+            {loginRole === 'repartidor' && 'Conexión Repartidor'}
+            {loginRole === 'admin' && 'Panel Administrador'}
+            {loginRole === 'ingeniero' && 'Consola Técnica'}
+          </h3>
+
+          {/* Loader log indicator */}
+          <p className="font-mono text-xs flex items-center gap-2 m-0" style={{ color: 'var(--text-secondary)' }}>
+            <span 
+              className={`inline-block w-2 h-2 rounded-full ${
+                loginRole === 'cliente' ? 'bg-success'
+                : loginRole === 'repartidor' ? 'bg-warning'
+                : loginRole === 'admin' ? 'bg-primary'
+                : 'bg-secondary'
+              }`}
+              style={{ animation: 'udPulse 1s infinite' }}
+            />
+            Conectando como {loginUserName}...
+          </p>
+
+          {/* Role-specific Micro-Visuals */}
+          <div className="mt-9 h-12 flex items-center justify-center">
+            {loginRole === 'cliente' && (
+              <span className="badge badge-soft badge-success uppercase tracking-widest text-xs font-semibold px-3 py-1">
+                📦 Cargando Envío Express
+              </span>
+            )}
+
+            {loginRole === 'repartidor' && (
+              <div className="flex flex-col items-center gap-2">
+                {/* Preline style progress bar */}
+                <div className="relative w-28 h-1 bg-warning/20 rounded-full overflow-hidden">
+                  <div 
+                    className="absolute h-full w-10 bg-warning rounded-full"
+                    style={{ animation: 'drive-moto 1.5s infinite linear' }}
+                  />
+                </div>
+                <span className="text-[10px] text-gray-500 font-medium">Optimizando coordenadas GPS...</span>
+              </div>
+            )}
+
+            {loginRole === 'admin' && (
+              <div className="flex gap-1 h-6 items-end">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} style={{
+                    width: '3px',
+                    height: `${6 + i * 4}px`,
+                    background: 'var(--primario)',
+                    borderRadius: '2px',
+                    animation: `wave-grow 1s infinite alternate ${i * 0.12}s`,
+                  }} />
+                ))}
+              </div>
+            )}
+
+            {loginRole === 'ingeniero' && (
+              <div className="flex gap-3 items-center text-secondary font-semibold text-sm">
+                <span style={{ animation: 'spin-gear 2.5s infinite linear' }} className="flex items-center"><IconWrench /></span>
+                <span>Calibrando sensores de flota...</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </Transition>
+
+      {/* ═══════════════════════════════════════════════════════
+         AUTH VIEWS (Login / Register Redesigned with Flyon UI Component Classes)
+         ═══════════════════════════════════════════════════════ */}
+      {(currentView === 'login' || currentView === 'register') && (
+        <div className="lp-auth-split" style={{ opacity: authTransition === 'exit' ? 0 : 1, transition: 'opacity 0.25s ease' }}>
+          
+          {/* Left Column (Banner/Sidebar) */}
+          <div className="lp-auth-sidebar">
+            <div className="lp-auth-sidebar-glow" />
+            
+            <div>
+              <Logo large />
+              <div style={{ marginTop: '60px' }}>
+                <h2 className="lp-auth-sidebar-title font-syne">
+                  Logística inteligente en tiempo real
+                </h2>
+                <p className="lp-auth-sidebar-text">
+                  Entregas seguras en menos de 25 minutos, control operativo de flotas, mantenimiento predictivo y facturación inteligente.
+                </p>
+              </div>
+            </div>
+            <div style={{ fontSize: '12px', opacity: 0.5 }}>
+              © {new Date().getFullYear()} LOGIFAST. Todos los derechos reservados.
+            </div>
+          </div>
+
+          {/* Right Column (Form Panel) */}
           <div className="lp-auth-form-side">
-            <div className="lp-auth-card" style={{ transform: isEntering ? 'translateY(15px)' : 'none', opacity: isEntering ? 0.9 : 1, transition: 'all 0.4s ease' }}>
+            <div className="lp-auth-card" style={{ transform: authTransition === 'enter' ? 'translateY(10px)' : 'none', opacity: authTransition === 'enter' ? 0.9 : 1, transition: 'all 0.3s ease' }}>
               
-              {/* Logo for mobile screens only */}
+              {/* Logo for mobile viewports */}
               <div className="lp-auth-logo-header">
                 <Logo large />
-                <span className="lf-tagline" style={{ marginTop: 12, fontSize: '14px', color: 'var(--text-secondary)' }}>Tus Envíos Seguros y Rápidos</span>
+                <span className="text-xs text-gray-500 font-medium">Plataforma Logística Inteligente</span>
               </div>
 
-              {/* ─── LOGIN ─── */}
-              {isLogin && !loginRedirect && (
+              {/* ─── LOGIN PANEL ─── */}
+              {currentView === 'login' && (
                 <div>
-                  <h1 className="lf-auth-title font-syne" style={{ textAlign: 'left', fontSize: '32px' }}>Bienvenido de nuevo</h1>
-                  <p className="lf-auth-subtitle" style={{ textAlign: 'left', marginBottom: 32 }}>Ingresa tus credenciales para acceder</p>
+                  <h1 className="font-syne text-3xl font-extrabold mb-2 tracking-tight text-base-content">
+                    Bienvenido de nuevo
+                  </h1>
+                  <p className="text-sm text-gray-500 mb-8">
+                    Ingresa a tu cuenta para continuar operando.
+                  </p>
 
-                  <form onSubmit={handleLogin} noValidate>
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Correo electrónico</label>
-                      <div className="lf-input-wrapper">
+                  <form onSubmit={handleLogin} noValidate className="flex flex-col gap-5">
+                    
+                    {/* Email Input */}
+                    <div className="form-control w-full">
+                      <label className="label">
+                        <span className="label-text font-semibold">Correo electrónico</span>
+                      </label>
+                      <div className="relative">
                         <input
                           type="email"
-                          className={`lf-form-input ${loginErrors.email ? 'error' : ''}`}
+                          className={`input input-bordered input-primary w-full pl-10 ${loginErrors.email ? 'input-error' : ''}`}
                           placeholder="tu@email.com"
                           value={loginEmail}
                           onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors((p) => ({ ...p, email: undefined })); }}
                         />
-                        <span className="lf-input-icon"><IconEnvelope /></span>
+                        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400"><IconEnvelope /></span>
                       </div>
-                      <div className="lf-form-error">{loginErrors.email || ''}</div>
+                      {loginErrors.email && <span className="label-text-alt text-error mt-1">{loginErrors.email}</span>}
                     </div>
 
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Contraseña</label>
-                      <div className="lf-input-wrapper">
+                    {/* Password Input */}
+                    <div className="form-control w-full">
+                      <div className="flex justify-between items-center">
+                        <label className="label py-1">
+                          <span className="label-text font-semibold">Contraseña</span>
+                        </label>
+                        <button type="button" className="text-xs text-primary font-semibold hover:underline">
+                          ¿La olvidaste?
+                        </button>
+                      </div>
+                      <div className="relative mt-1">
                         <input
                           type={showLoginPassword ? 'text' : 'password'}
-                          className={`lf-form-input ${loginErrors.password ? 'error' : ''}`}
-                          placeholder="Tu contraseña"
+                          className={`input input-bordered input-primary w-full pl-10 pr-12 ${loginErrors.password ? 'input-error' : ''}`}
+                          placeholder="Ingresa tu contraseña"
                           value={loginPassword}
                           onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors((p) => ({ ...p, password: undefined })); }}
-                          style={{ paddingRight: 48 }}
                         />
-                        <span className="lf-input-icon"><IconLock /></span>
-                        <button type="button" className="lf-input-eye" onClick={() => setShowLoginPassword((p) => !p)}>
+                        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400"><IconLock /></span>
+                        <button 
+                          type="button" 
+                          className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                          onClick={() => setShowLoginPassword((p) => !p)}
+                        >
                           {showLoginPassword ? <IconEyeOff /> : <IconEye />}
                         </button>
                       </div>
-                      <div className="lf-form-error">{loginErrors.password || ''}</div>
+                      {loginErrors.password && <span className="label-text-alt text-error mt-1">{loginErrors.password}</span>}
                     </div>
 
-                    <button type="button" className="lf-forgot-link" style={{ marginBottom: 24, fontSize: '13px' }}>¿Olvidaste tu contraseña?</button>
-
-                    <button type="submit" className="lf-auth-submit font-syne" disabled={loginLoading} style={{ background: 'var(--primario)', color: 'white', borderRadius: '12px', padding: '16px' }}>
-                      {loginLoading ? (
-                        <>Ingresando<span className="lf-loading-dots"><span className="lf-loading-dot" /><span className="lf-loading-dot" /><span className="lf-loading-dot" /></span></>
-                      ) : 'Iniciar sesión'}
+                    {/* Submit Button */}
+                    <button type="submit" className="btn btn-primary w-full font-syne mt-2" disabled={loginLoading}>
+                      {loginLoading ? <span className="loading loading-spinner"></span> : 'Iniciar sesión'}
                     </button>
                   </form>
 
-                  <div className="lf-separator" style={{ margin: '24px 0' }}>
-                    <div className="lf-separator-line" />
-                    <span className="lf-separator-text">Acceso rápido demo</span>
-                    <div className="lf-separator-line" />
-                  </div>
+                  {/* Demo Access Section (FlyonUI divider & cards) */}
+                  <div className="divider text-xs text-gray-400 my-8">Acceso rápido a roles demo</div>
 
-                  <div className="lf-demo-grid" style={{ gap: '10px' }}>
+                  <div className="grid grid-cols-2 gap-3">
                     {[
                       { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
                       { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
                       { id: 'admin', label: 'Admin', icon: <IconShield /> },
                       { id: 'ingeniero', label: 'Ingeniero', icon: <IconWrench /> },
                     ].map((role) => (
-                      <button key={role.id} className="lf-demo-btn" onClick={() => handleDemoLogin(role.id)} style={{ padding: '12px', borderRadius: '10px' }}>
-                        <span className="lf-demo-btn-icon">{role.icon}</span>
-                        <span className="lf-demo-btn-text">{role.label}</span>
+                      <button
+                        key={role.id}
+                        onClick={() => handleDemoLogin(role.id)}
+                        className="btn btn-outline btn-sm justify-start gap-3 h-11 border-gray-200 text-gray-700 dark:text-gray-300 dark:border-gray-700"
+                      >
+                        <span className="text-primary">{role.icon}</span>
+                        <span className="font-semibold text-xs">{role.label}</span>
                       </button>
                     ))}
                   </div>
 
-                  <div className="lf-switch-link" style={{ marginTop: 24 }}>
+                  <div className="text-sm text-center mt-8">
                     ¿No tienes cuenta?{' '}
-                    <button className="lf-switch-link-btn" onClick={() => switchAuth('register')}>Crear cuenta</button>
+                    <button onClick={() => switchAuth('register')} className="text-primary font-bold hover:underline bg-none border-none cursor-pointer">
+                      Regístrate aquí
+                    </button>
                   </div>
 
-                  <button className="lf-back-link" onClick={() => navigateTo('landing')} style={{ marginTop: 24 }}>
-                    <IconArrowLeft /> Volver al inicio
+                  <button 
+                    onClick={() => navigateTo('landing')} 
+                    className="btn btn-ghost btn-sm gap-2 mt-6 text-gray-500 hover:text-gray-700"
+                  >
+                    <IconArrowLeft /> Volver al portal
                   </button>
                 </div>
               )}
 
-              {/* ─── REGISTER ─── */}
-              {!isLogin && !regSuccess && (
+              {/* ─── REGISTER PANEL ─── */}
+              {currentView === 'register' && !regSuccess && (
                 <div>
-                  <h1 className="lf-auth-title font-syne" style={{ textAlign: 'left', fontSize: '32px' }}>Crea tu cuenta</h1>
-                  <p className="lf-auth-subtitle" style={{ textAlign: 'left', marginBottom: 32 }}>Completa los datos para comenzar</p>
+                  <h1 className="font-syne text-3xl font-extrabold mb-2 tracking-tight text-base-content">
+                    Crea tu cuenta
+                  </h1>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Forma parte de la red de logística urbana líder.
+                  </p>
 
-                  <form onSubmit={handleRegister} noValidate>
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Nombre completo</label>
-                      <div className="lf-input-wrapper">
+                  <form onSubmit={handleRegister} noValidate className="flex flex-col gap-4">
+                    
+                    {/* Full Name */}
+                    <div className="form-control w-full">
+                      <label className="label py-1">
+                        <span className="label-text font-semibold">Nombre completo</span>
+                      </label>
+                      <div className="relative">
                         <input
                           type="text"
-                          className={`lf-form-input ${displayRegErrors.name ? 'error' : ''}`}
+                          className={`input input-bordered input-primary w-full pl-10 ${displayRegErrors.name ? 'input-error' : ''}`}
                           placeholder="Tu nombre completo"
                           value={regName}
                           onChange={(e) => setRegName(e.target.value)}
                         />
-                        <span className="lf-input-icon"><IconUser /></span>
+                        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400"><IconUser /></span>
                       </div>
-                      <div className="lf-form-error">{displayRegErrors.name || ''}</div>
+                      {displayRegErrors.name && <span className="label-text-alt text-error mt-1">{displayRegErrors.name}</span>}
                     </div>
 
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Correo electrónico</label>
-                      <div className="lf-input-wrapper">
+                    {/* Email */}
+                    <div className="form-control w-full">
+                      <label className="label py-1">
+                        <span className="label-text font-semibold">Correo electrónico</span>
+                      </label>
+                      <div className="relative">
                         <input
                           type="email"
-                          className={`lf-form-input ${displayRegErrors.email ? 'error' : ''}`}
+                          className={`input input-bordered input-primary w-full pl-10 ${displayRegErrors.email ? 'input-error' : ''}`}
                           placeholder="tu@email.com"
                           value={regEmail}
                           onChange={(e) => setRegEmail(e.target.value)}
                         />
-                        <span className="lf-input-icon"><IconEnvelope /></span>
+                        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400"><IconEnvelope /></span>
                       </div>
-                      <div className="lf-form-error">{displayRegErrors.email || ''}</div>
+                      {displayRegErrors.email && <span className="label-text-alt text-error mt-1">{displayRegErrors.email}</span>}
                     </div>
 
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Contraseña</label>
-                      <div className="lf-input-wrapper">
+                    {/* Password */}
+                    <div className="form-control w-full">
+                      <label className="label py-1">
+                        <span className="label-text font-semibold">Contraseña</span>
+                      </label>
+                      <div className="relative">
                         <input
                           type={showRegPassword ? 'text' : 'password'}
-                          className={`lf-form-input ${displayRegErrors.password ? 'error' : ''}`}
+                          className={`input input-bordered input-primary w-full pl-10 pr-12 ${displayRegErrors.password ? 'input-error' : ''}`}
                           placeholder="Mínimo 6 caracteres"
                           value={regPassword}
                           onChange={(e) => setRegPassword(e.target.value)}
-                          style={{ paddingRight: 48 }}
                         />
-                        <span className="lf-input-icon"><IconLock /></span>
-                        <button type="button" className="lf-input-eye" onClick={() => setShowRegPassword((p) => !p)}>
+                        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400"><IconLock /></span>
+                        <button 
+                          type="button" 
+                          className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                          onClick={() => setShowRegPassword((p) => !p)}
+                        >
                           {showRegPassword ? <IconEyeOff /> : <IconEye />}
                         </button>
                       </div>
+                      
                       {regPassword && (
-                        <div className="lf-strength-bar">
+                        <div className="lf-strength-bar mt-2">
                           <div className="lf-strength-segments">
                             {[1, 2, 3, 4].map((i) => (
                               <div
@@ -812,27 +1054,33 @@ export default function Home() {
                           )}
                         </div>
                       )}
-                      <div className="lf-form-error">{displayRegErrors.password || ''}</div>
+                      {displayRegErrors.password && <span className="label-text-alt text-error mt-1">{displayRegErrors.password}</span>}
                     </div>
 
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Confirmar contraseña</label>
-                      <div className="lf-input-wrapper">
+                    {/* Confirm Password */}
+                    <div className="form-control w-full">
+                      <label className="label py-1">
+                        <span className="label-text font-semibold">Confirmar contraseña</span>
+                      </label>
+                      <div className="relative">
                         <input
                           type="password"
-                          className={`lf-form-input ${displayRegErrors.confirm ? 'error' : ''}`}
+                          className={`input input-bordered input-primary w-full pl-10 ${displayRegErrors.confirm ? 'input-error' : ''}`}
                           placeholder="Repite tu contraseña"
                           value={regConfirm}
                           onChange={(e) => setRegConfirm(e.target.value)}
                         />
-                        <span className="lf-input-icon"><IconLock /></span>
+                        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400"><IconLock /></span>
                       </div>
-                      <div className="lf-form-error">{displayRegErrors.confirm || ''}</div>
+                      {displayRegErrors.confirm && <span className="label-text-alt text-error mt-1">{displayRegErrors.confirm}</span>}
                     </div>
 
-                    <div className="lf-form-group">
-                      <label className="lf-form-label">Tipo de cuenta</label>
-                      <div className="lf-role-grid" style={{ gap: '8px' }}>
+                    {/* Account Type (Grid Selector) */}
+                    <div className="form-control w-full">
+                      <label className="label py-1">
+                        <span className="label-text font-semibold">Tipo de cuenta</span>
+                      </label>
+                      <div className="register-role-grid">
                         {[
                           { id: 'cliente', label: 'Cliente', icon: <IconPerson /> },
                           { id: 'repartidor', label: 'Repartidor', icon: <IconMoto /> },
@@ -841,682 +1089,562 @@ export default function Home() {
                         ].map((role) => (
                           <div
                             key={role.id}
-                            className={`lf-role-card ${regRole === role.id ? 'selected' : ''}`}
+                            className={`register-role-card ${regRole === role.id ? 'selected' : ''}`}
                             onClick={() => { setRegRole(role.id); setRegErrors((p) => ({ ...p, role: '' })); }}
-                            style={{ padding: '12px', borderRadius: '10px' }}
                           >
-                            <div className="lf-role-card-check"><IconCheckSmall /></div>
-                            <span className="lf-role-card-icon">{role.icon}</span>
-                            <span className="lf-role-card-label" style={{ fontSize: '12px' }}>{role.label}</span>
+                            <div className="register-role-card-check"><IconCheckSmall /></div>
+                            <span className="register-role-icon">{role.icon}</span>
+                            <span className="register-role-label">{role.label}</span>
                           </div>
                         ))}
                       </div>
-                      <div className="lf-form-error">{displayRegErrors.role || ''}</div>
+                      {displayRegErrors.role && <span className="label-text-alt text-error">{displayRegErrors.role}</span>}
                     </div>
 
-                    <div className="lf-terms" style={{ marginBottom: 20 }}>
-                      <div
-                        className={`lf-terms-checkbox ${regTerms ? 'checked' : ''}`}
-                        onClick={() => { setRegTerms((p) => !p); setRegErrors((p) => ({ ...p, terms: '' })); }}
-                      >
-                        {regTerms && <IconCheckSmall />}
-                      </div>
-                      <span className="lf-terms-text" style={{ fontSize: '11.5px', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
-                        Acepto los{' '}
-                        <a href="#" className="lf-terms-link" onClick={(e) => { e.preventDefault(); alert('LOGIFAST — DECLARACIÓN DE USO LÍCITO:\n\n1. La plataforma solo podrá utilizarse para actividades completamente legales.\n2. Está terminantemente prohibido el transporte de sustancias ilícitas, drogas, explosivos o cualquier objeto prohibido por la ley en Nicaragua.\n3. El usuario asume toda responsabilidad penal y civil por el contenido de sus envíos.'); }}>
-                          Términos de Uso Lícito (Sin sustancias ilícitas)
-                        </a>
-                        {' '}y la{' '}
-                        <a href="#" className="lf-terms-link" onClick={(e) => { e.preventDefault(); alert('POLÍTICA DE PRIVACIDAD:\n\nTus datos de geolocalización y cuenta son encriptados y procesados de acuerdo a la Ley de Protección de Datos Personales en Nicaragua.'); }}>
-                          Privacidad
-                        </a>
-                      </span>
+                    {/* Terms Checkbox */}
+                    <div className="form-control mt-2">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <div
+                          className={`lf-terms-checkbox flex-shrink-0 mt-0.5 ${regTerms ? 'checked' : ''}`}
+                          onClick={() => { setRegTerms((p) => !p); setRegErrors((p) => ({ ...p, terms: '' })); }}
+                        >
+                          {regTerms && <IconCheckSmall />}
+                        </div>
+                        <span className="text-xs leading-normal text-gray-500">
+                          Acepto los{' '}
+                          <a href="#" className="text-primary hover:underline" onClick={(e) => { e.preventDefault(); alert('LOGIFAST — USO LÍCITO:\n\n1. La plataforma solo podrá usarse para actividades lícitas.\n2. Se prohíbe el transporte de sustancias ilícitas o drogas.'); }}>
+                            Términos de Uso Lícito
+                          </a>
+                          {' '}y la{' '}
+                          <a href="#" className="text-primary hover:underline" onClick={(e) => { e.preventDefault(); alert('POLÍTICA DE PRIVACIDAD:\n\nTus datos de cuenta y localización se encriptan y se procesan en base a la normativa.'); }}>
+                            Privacidad
+                          </a>.
+                        </span>
+                      </label>
+                      {displayRegErrors.terms && <span className="label-text-alt text-error mt-2">{displayRegErrors.terms}</span>}
                     </div>
-                    {displayRegErrors.terms && <div className="lf-form-error" style={{ marginTop: -12, marginBottom: 12 }}>{displayRegErrors.terms}</div>}
 
-                    <button type="submit" className="lf-auth-submit font-syne" disabled={regLoading} style={{ background: 'var(--primario)', color: 'white', borderRadius: '12px', padding: '16px' }}>
-                      {regLoading ? (
-                        <>Creando cuenta<span className="lf-loading-dots"><span className="lf-loading-dot" /><span className="lf-loading-dot" /><span className="lf-loading-dot" /></span></>
-                      ) : 'Crear cuenta'}
+                    {/* Submit Registration */}
+                    <button type="submit" className="btn btn-primary w-full font-syne mt-4" disabled={regLoading}>
+                      {regLoading ? <span className="loading loading-spinner"></span> : 'Crear cuenta'}
                     </button>
                   </form>
 
-                  <div className="lf-switch-link" style={{ marginTop: 24 }}>
+                  <div className="text-sm text-center mt-6">
                     ¿Ya tienes cuenta?{' '}
-                    <button className="lf-switch-link-btn" onClick={() => switchAuth('login')}>Iniciar sesión</button>
+                    <button onClick={() => switchAuth('login')} className="text-primary font-bold hover:underline bg-none border-none cursor-pointer">
+                      Inicia sesión
+                    </button>
                   </div>
 
-                  <button className="lf-back-link" onClick={() => navigateTo('landing')} style={{ marginTop: 24 }}>
-                    <IconArrowLeft /> Volver al inicio
+                  <button 
+                    onClick={() => navigateTo('landing')} 
+                    className="btn btn-ghost btn-sm gap-2 mt-6 text-gray-500 hover:text-gray-700"
+                  >
+                    <IconArrowLeft /> Volver al portal
                   </button>
                 </div>
               )}
 
-              {/* ─── REGISTER SUCCESS ─── */}
-              {!isLogin && regSuccess && (
-                <div className="lf-success-screen">
-                  <div className="lf-success-circle" style={{ background: 'rgba(0, 200, 83, 0.1)', color: 'var(--exito)' }}>
+              {/* REGISTER SUCCESS PANEL */}
+              {currentView === 'register' && regSuccess && (
+                <div className="text-center p-4">
+                  <div className="bg-success/10 text-success w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <IconCheckLg />
                   </div>
-                  <h2 className="lf-success-title font-syne">Cuenta creada</h2>
-                  <p className="lf-success-desc">Tu registro fue exitoso. Ya puedes acceder.</p>
-                  <button className="lf-auth-submit font-syne" style={{ maxWidth: 240, background: 'var(--primario)', color: 'white' }} onClick={() => { setRegSuccess(false); switchAuth('login'); }}>
+                  <h2 className="font-syne text-2xl font-extrabold mb-3 text-base-content">Cuenta creada</h2>
+                  <p className="text-gray-500 mb-8">Tu registro ha sido exitoso. Ya puedes acceder al sistema.</p>
+                  <button className="btn btn-primary w-full font-syne" onClick={() => { setRegSuccess(false); switchAuth('login'); }}>
                     Ir a iniciar sesión
                   </button>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Theme toggle */}
-          <button
-            className="lf-theme-toggle"
-            onClick={toggleTheme}
-            aria-label="Cambiar tema"
-            style={{ position: 'absolute', top: 24, right: 24, zIndex: 10 }}
-          >
-            {isDark ? <IconSun /> : <IconMoon />}
-          </button>
-        </div>
-
-        {/* Toasts */}
-        <div className="lf-toast-container">
-          {toasts.map((t) => (
-            <div key={t.id} className={`lf-toast ${t.variant} ${t.leaving ? 'leaving' : ''}`}>
-              <span className="lf-toast-icon">
-                {t.variant === 'success' && <IconCheckCircle />}
-                {t.variant === 'error' && <IconXCircle />}
-                {t.variant === 'warning' && <IconAlertTriangle />}
-                {t.variant === 'info' && <IconInfo />}
-              </span>
-              <div className="lf-toast-content">
-                <div className="lf-toast-title">{t.title}</div>
-                {t.desc && <div className="lf-toast-desc">{t.desc}</div>}
-              </div>
-              <button className="lf-toast-close" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
-                <IconX />
-              </button>
-              <div className="lf-toast-progress" />
-            </div>
-          ))}
-        </div>
-      </>
-    );
-  }
-
-  /* ═══════════════════════════════════════════════════════
-     LANDING PAGE
-     ═══════════════════════════════════════════════════════ */
-  return (
-    <>
-      {/* Premium Loading Splash Screen */}
-      {mounted && (
-        <div className={`lf-splash-screen ${!loading ? 'lf-splash-fadeout' : ''}`}>
-          <div className="lf-splash-logo-container">
-            <div className="lf-splash-spinner" />
-            <img src="/logo.png" alt="Logifast Logo" className="lf-splash-logo" style={{ width: '96px', height: '96px' }} />
-          </div>
-          <div className="lf-splash-text" style={{ fontSize: '28px' }}>
-            <span style={{ color: 'var(--text)' }}>LOGI</span>
-            <span style={{ color: 'var(--primario)' }}>FAST</span>
-          </div>
         </div>
       )}
 
-      <main className="ud-landing-wrapper" ref={revealRef} style={{ opacity: viewTransition === 'exit' ? 0 : 1, transition: 'opacity 0.3s ease' }}>
-        <div className="ud-grid-background" />
-
-        {/* ═══ CONTROL ROOM TICKER BAR ═══ */}
-        <div className="ud-ticker-bar">
-          <div className="ud-ticker-item">
-            <span className="ud-ticker-dot" />
-            <span>OPERACIONES EN VIVO MANAGUA</span>
-          </div>
-          <div style={{ display: 'flex', gap: '24px' }}>
-            <span>PEDIDOS ACTIVADOS: 142</span>
-            <span>MOTOS OPERANDO: 45</span>
-            <span>TALLER MOTO: 98% OK</span>
-            <span>TIEMPO PROMEDIO: 23.4 MIN</span>
-          </div>
-          <div style={{ opacity: 0.6 }}>
-            {new Date().toLocaleDateString('es-NI', { weekday: 'long', hour: '2-digit', minute: '2-digit' }).toUpperCase()}
-          </div>
-        </div>
-
-        {/* ═══ NAVBAR (Glassmorphic & Large Logo) ═══ */}
-        <nav className={`lp-navbar ${navScrolled ? 'scrolled' : ''}`}>
-          <Logo onClick={() => scrollTo('hero')} />
-
-          <ul className="lf-nav-links">
-            <li><a href="#calculadora" onClick={(e) => { e.preventDefault(); scrollTo('calculadora'); }}>Cotizar</a></li>
-            <li><a href="#consola" onClick={(e) => { e.preventDefault(); scrollTo('consola'); }}>Consola Interactiva</a></li>
-            <li><a href="#taller" onClick={(e) => { e.preventDefault(); scrollTo('taller'); }}>Gestión de Flota</a></li>
-            <li><a href="#contacto" onClick={(e) => { e.preventDefault(); scrollTo('contacto'); }}>Contacto</a></li>
-          </ul>
-
-          <div className="lf-nav-actions">
-            <button className="lf-theme-toggle" onClick={toggleTheme} aria-label="Cambiar tema">
-              {isDark ? <IconSun /> : <IconMoon />}
-            </button>
-            <button className="lf-btn-ghost nav-ghost" onClick={() => navigateTo('login')}>Iniciar sesión</button>
-            <button className="lp-btn-primary" onClick={() => navigateTo('register')} style={{ padding: '12px 24px', borderRadius: '10px', fontSize: '14px' }}>Crear cuenta</button>
-            <button className={`lf-hamburger ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen((p) => !p)} aria-label="Menú">
-              <span /><span /><span />
-            </button>
-          </div>
-        </nav>
-
-        {/* Mobile nav */}
-        <div className={`lf-mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
-          <a href="#calculadora" onClick={(e) => { e.preventDefault(); scrollTo('calculadora'); setMobileMenuOpen(false); }}>Cotizar</a>
-          <a href="#consola" onClick={(e) => { e.preventDefault(); scrollTo('consola'); setMobileMenuOpen(false); }}>Consola Interactiva</a>
-          <a href="#taller" onClick={(e) => { e.preventDefault(); scrollTo('taller'); setMobileMenuOpen(false); }}>Gestión de Flota</a>
-          <a href="#contacto" onClick={(e) => { e.preventDefault(); scrollTo('contacto'); setMobileMenuOpen(false); }}>Contacto</a>
-          <button className="lf-btn-primario" style={{ marginTop: 24, width: 'fit-content' }} onClick={() => { setMobileMenuOpen(false); navigateTo('login'); }}>Iniciar sesión</button>
-        </div>
-
-        {/* ═══ HERO SECTION (Obsidian Glass split layout) ═══ */}
-        <section className="lp-hero" id="hero" style={{ paddingBottom: '40px' }}>
+      {/* ═══════════════════════════════════════════════════════
+         REDESIGNED LANDING PAGE (With FlyonUI & Preline UI components)
+         ═══════════════════════════════════════════════════════ */}
+      {currentView === 'landing' && (
+        <div className="ud-landing-wrapper">
+          <div className="ud-grid-background" />
           <div className="lp-hero-glow-1" />
           <div className="lp-hero-glow-2" />
-          
-          <div className="lp-hero-grid">
-            <div className="reveal" style={{ display: 'flex', flexDirection: 'column' }}>
-               <div className="lp-hero-badge">
-                 <span className="lf-hero-badge-dot" />
-                 Envíos Express Seguros en Managua
-               </div>
-               
-               <h1 className="lp-hero-title">
-                 Tus envíos más <span>rápidos, seguros</span> y garantizados.
-               </h1>
-               
-               <p className="lp-hero-subtitle">
-                 En Logifast conectamos tu negocio con entregas express en minutos. Cotiza al instante, realiza seguimiento de tu paquete en tiempo real y disfruta de la mayor tranquilidad en cada envío.
-               </p>
-               
-               <div className="lp-hero-actions">
-                 <button className="lp-btn-primary" onClick={() => navigateTo('register')}>
-                   Comenzar envíos gratis
-                   <IconArrowRight />
-                 </button>
-                 <button className="lp-btn-outline" onClick={() => scrollTo('calculadora')}>
-                   <IconPlay /> Cotizar mi envío
-                 </button>
-               </div>
-             </div>
 
-            {/* Simulated Radar widget */}
-            <div className="reveal reveal-delay-2" style={{ display: 'flex', justifyContent: 'center' }}>
-              <div className="lp-bento-card" style={{ padding: '28px', width: '100%', maxWidth: '440px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '28px', boxShadow: 'var(--shadow-xl)', position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ width: '8px', height: '8px', background: 'var(--secundario)', borderRadius: '50%', display: 'inline-block', animation: 'udPulse 1s infinite' }} />
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Monitoreo GPS en Vivo</span>
-                  </div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Repartidores Activos: 45</span>
-                </div>
+          {/* ─── HEADER / NAVBAR ─── */}
+          <nav className={`lp-navbar ${navScrolled ? 'scrolled' : ''}`}>
+            <Logo onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
 
-                {/* Radar Grid Animation */}
-                <div style={{ height: '220px', background: '#020b18', borderRadius: '20px', position: 'relative', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
-                  {/* Radar sweep */}
-                  <div style={{ position: 'absolute', width: '150%', height: '150%', background: 'conic-gradient(from 0deg, rgba(7, 100, 226, 0.15) 0deg, transparent 90deg)', animation: 'splashSpin 4s linear infinite', zIndex: 1 }} />
-                  
-                  {/* Radar circles */}
-                  <div style={{ position: 'absolute', width: '70px', height: '70px', border: '1px dashed rgba(7, 100, 226, 0.25)', borderRadius: '50%' }} />
-                  <div style={{ position: 'absolute', width: '140px', height: '140px', border: '1px dashed rgba(7, 100, 226, 0.2)', borderRadius: '50%' }} />
-                  
-                  {/* Active Blips */}
-                  <div style={{ position: 'absolute', top: '40px', left: '100px', width: '8px', height: '8px', background: 'var(--exito)', borderRadius: '50%', boxShadow: '0 0 10px var(--exito)', zIndex: 2 }} />
-                  <div style={{ position: 'absolute', bottom: '60px', right: '120px', width: '8px', height: '8px', background: 'var(--exito)', borderRadius: '50%', boxShadow: '0 0 10px var(--exito)', zIndex: 2 }} />
-                  <div style={{ position: 'absolute', top: '130px', right: '50px', width: '8px', height: '8px', background: 'var(--secundario)', borderRadius: '50%', boxShadow: '0 0 10px var(--secundario)', zIndex: 2 }} />
+            <ul className="flex list-none gap-8 font-syne text-sm font-semibold text-gray-500 dark:text-gray-400">
+              <li><a href="#features" className="hover:text-primary transition-colors">Características</a></li>
+              <li><a href="#calculator" className="hover:text-primary transition-colors">Calcular Tarifa</a></li>
+              <li><a href="#how-it-works" className="hover:text-primary transition-colors">Proceso</a></li>
+              <li><a href="#allies" className="hover:text-primary transition-colors">Aliados</a></li>
+            </ul>
 
-                  <div style={{ zIndex: 3, color: '#8da4c4', fontFamily: 'JetBrains Mono', fontSize: '10px', position: 'absolute', bottom: '12px' }}>
-                    LOCALIZACIÓN EN TIEMPO REAL
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ INTERACTIVE COTIZADOR WIDGET ═══ */}
-        <section className="lp-section" id="calculadora" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-alt)' }}>
-          <div className="lp-section-header reveal">
-            <span className="lp-section-tag">Calculadora</span>
-            <h2 className="lp-section-title">Cotizador Comercial de Envíos</h2>
-            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: 'var(--text-secondary)' }}>
-              Ajusta la distancia y el tipo de paquete en tiempo real para ver el costo exacto del servicio.
-            </p>
-          </div>
-
-          <div className="ud-interactive-panel reveal" style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <div className="ud-panel-header">
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ff5f56' }} />
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ffbd2e' }} />
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27c93f' }} />
-              </div>
-              <span style={{ fontSize: '12px', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}>cotizacion_dinamica.json</span>
-            </div>
-
-            <div className="ud-panel-body">
-              <div className="ud-calc-widget">
-                <div className="ud-calc-controls">
-                  <div>
-                    <label style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '15px' }}>
-                      <span>Distancia de Envío:</span>
-                      <span style={{ color: 'var(--primario)' }}>{calcDistance} km</span>
-                    </label>
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="25" 
-                      value={calcDistance} 
-                      onChange={(e) => setCalcDistance(parseInt(e.target.value))}
-                      className="ud-range-slider" 
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      <span>Cercano (1 km)</span>
-                      <span>Larga Distancia (25 km)</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ fontWeight: 'bold', fontSize: '15px', display: 'block', marginBottom: '12px' }}>Tipo de Carga / Peso:</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                      {[
-                        { id: 'light', label: 'Documentos', desc: 'Hasta 1 kg' },
-                        { id: 'medium', label: 'Paquete', desc: 'Hasta 5 kg' },
-                        { id: 'heavy', label: 'Caja Grande', desc: 'Hasta 15 kg' },
-                      ].map((item) => (
-                        <button 
-                          key={item.id}
-                          className={`ud-weight-btn ${calcWeight === item.id ? 'active' : ''}`}
-                          onClick={() => setCalcWeight(item.id as any)}
-                        >
-                          <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{item.label}</div>
-                          <div style={{ fontSize: '10px', opacity: 0.8, marginTop: '2px' }}>{item.desc}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="ud-calc-result">
-                  <div>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Costo Estimado</span>
-                    <div className="ud-calc-price" style={{ margin: '12px 0' }}>
-                      C$ {Math.round((70 + calcDistance * 18) * (calcWeight === 'light' ? 1.0 : calcWeight === 'medium' ? 1.25 : 1.5))}
-                    </div>
-                  </div>
-
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', margin: '16px 0', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Tiempo Estimado:</span>
-                      <strong style={{ color: 'var(--text)' }}>{10 + calcDistance * 2} minutos</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Seguimiento GPS:</span>
-                      <strong style={{ color: 'var(--exito)' }}>Incluido</strong>
-                    </div>
-                  </div>
-
-                  <button className="lp-btn-primary" onClick={() => navigateTo('register')} style={{ width: '100%', justifyContent: 'center' }}>
-                    Iniciar Envío
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ INTERACTIVE ROLE CONSOLE SHOWCASE ═══ */}
-        <section className="lp-section" id="consola">
-          <div className="lp-section-header reveal">
-            <span className="lp-section-tag">Simulador</span>
-            <h2 className="lp-section-title">Consola Operativa Interactiva</h2>
-            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: 'var(--text-secondary)' }}>
-              Selecciona un rol para interactuar directamente con un fragmento de las capacidades operativas reales del sistema.
-            </p>
-          </div>
-
-          {/* Role selector tabs */}
-          <div className="ud-tabs-container reveal">
-            {[
-              { id: 'cliente', label: 'Portal Cliente', icon: <IconPerson /> },
-              { id: 'repartidor', label: 'App Repartidor', icon: <IconMoto /> },
-              { id: 'admin', label: 'Radar Administrador', icon: <IconShield /> },
-              { id: 'ingeniero', label: 'Taller Mecánico', icon: <IconWrench /> },
-            ].map((tab) => (
+            <div className="flex items-center gap-4">
               <button 
-                key={tab.id}
-                className={`ud-tab-btn ${activeRoleTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveRoleTab(tab.id as any)}
+                className="btn btn-circle btn-ghost text-base-content hover:bg-gray-200/50 dark:hover:bg-gray-800/50"
+                onClick={toggleTheme} 
+                aria-label="Cambiar tema"
               >
-                {tab.icon}
-                {tab.label}
+                {isDark ? <IconSun /> : <IconMoon />}
               </button>
-            ))}
-          </div>
-
-          {/* Interactive display panel */}
-          <div className="ud-interactive-panel reveal" style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <div className="ud-panel-header">
-              <span style={{ fontSize: '13px', fontWeight: 'bold' }}>
-                {activeRoleTab === 'cliente' && 'INTERFAZ: Crear Pedido Nuevo'}
-                {activeRoleTab === 'repartidor' && 'INTERFAZ: Mapa de Ruta de Repartidor'}
-                {activeRoleTab === 'admin' && 'INTERFAZ: Radar de Flota de Despacho'}
-                {activeRoleTab === 'ingeniero' && 'INTERFAZ: Escáner de Diagnóstico de Taller'}
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--primario)', fontWeight: 'bold' }}>ESTADO: SIMULACIÓN ACTIVA</span>
+              
+              <button className="btn btn-outline border-gray-300 text-base-content dark:border-gray-700 btn-md h-11" onClick={() => navigateTo('login')}>
+                Ingresar
+              </button>
+              
+              <button className="btn btn-primary btn-md h-11" onClick={() => navigateTo('register')}>
+                Comenzar
+              </button>
             </div>
 
-            <div className="ud-panel-body" style={{ minHeight: '340px' }}>
-              
-              {/* CLIENTE INTERACTIVE VIEW */}
-              {activeRoleTab === 'cliente' && (
-                <div style={{ maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <h4 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Solicitud Rápida de Envío</h4>
-                  <div className="lf-form-group" style={{ margin: 0 }}>
-                    <label className="lf-form-label">Dirección de Recogida</label>
-                    <input type="text" className="lf-form-input" defaultValue="Metrocentro, Managua" readOnly style={{ opacity: 0.8 }} />
-                  </div>
-                  <div className="lf-form-group" style={{ margin: 0 }}>
-                    <label className="lf-form-label">Dirección de Destino</label>
-                    <input type="text" className="lf-form-input" placeholder="Escribe el destino (ej: Galerías Santo Domingo)" defaultValue="Galerías Santo Domingo, Managua" />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="lf-form-group" style={{ margin: 0 }}>
-                      <label className="lf-form-label">Nombre de Contacto</label>
-                      <input type="text" className="lf-form-input" defaultValue="María José Espinoza" readOnly style={{ opacity: 0.8 }} />
-                    </div>
-                    <div className="lf-form-group" style={{ margin: 0 }}>
-                      <label className="lf-form-label">Teléfono</label>
-                      <input type="text" className="lf-form-input" defaultValue="+505 8888-9999" readOnly style={{ opacity: 0.8 }} />
-                    </div>
-                  </div>
-                  <button className="lp-btn-primary" onClick={() => navigateTo('register')} style={{ marginTop: '8px', alignSelf: 'start' }}>
-                    Crear Orden de Prueba
+            {/* Hamburger Button for Mobile */}
+            <button 
+              className="btn btn-circle btn-ghost text-base-content lp-hamburger"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Menu principal"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+          </nav>
+
+          {/* Mobile Sliding Drawer Menu */}
+          <Transition
+            show={mobileMenuOpen}
+            enter="transition-all duration-300 ease-out"
+            enterFrom="opacity-0 translate-x-full"
+            enterTo="opacity-100 translate-x-0"
+            leave="transition-all duration-200 ease-in"
+            leaveFrom="opacity-100 translate-x-0"
+            leaveTo="opacity-0 translate-x-full"
+          >
+            <div className="mobile-nav-drawer">
+              <div>
+                <div className="mobile-drawer-header">
+                  <Logo onClick={() => { setMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+                  <button className="btn btn-circle btn-ghost" onClick={() => setMobileMenuOpen(false)}>
+                    <IconX />
                   </button>
                 </div>
-              )}
+                <ul className="mobile-drawer-links">
+                  <li><a href="#features" onClick={() => setMobileMenuOpen(false)}>Características</a></li>
+                  <li><a href="#calculator" onClick={() => setMobileMenuOpen(false)}>Calcular Tarifa</a></li>
+                  <li><a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>Proceso</a></li>
+                  <li><a href="#allies" onClick={() => setMobileMenuOpen(false)}>Aliados</a></li>
+                </ul>
+              </div>
+              <div className="mobile-drawer-actions">
+                <button className="btn btn-outline w-full h-12" onClick={() => { setMobileMenuOpen(false); navigateTo('login'); }}>
+                  Ingresar
+                </button>
+                <button className="btn btn-primary w-full h-12" onClick={() => { setMobileMenuOpen(false); navigateTo('register'); }}>
+                  Comenzar
+                </button>
+              </div>
+            </div>
+          </Transition>
 
-              {/* REPARTIDOR INTERACTIVE VIEW */}
-              {activeRoleTab === 'repartidor' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <h4 style={{ fontSize: '18px', fontWeight: 'bold' }}>Orden #8452 - En Progreso</h4>
-                    <div style={{ background: 'var(--bg-alt)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>CLIENTE DESTINO:</div>
-                      <div style={{ fontWeight: 'bold', fontSize: '15px', margin: '4px 0' }}>Supermercados La Colonia</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Carr. Masaya km 8.5</div>
+          {/* ─── HERO SECTION ─── */}
+          <section className="lp-hero">
+            <div className="lp-hero-grid">
+              <div className="text-left">
+                <div className="lp-hero-badge">
+                  <span className="w-2 h-2 bg-primary rounded-full" style={{ animation: 'udPulse 1.2s infinite' }} />
+                  Entrega Garantizada en 25 minutos en Managua
+                </div>
+                
+                <h1 className="lp-hero-title">
+                  Logística Urbana de <span>Siguiente Generación</span>
+                </h1>
+                
+                <p className="lp-hero-subtitle">
+                  Conectamos tu negocio con una red inteligente de entrega express. Controla tu facturación, optimiza rutas satelitales y monitorea mantenimientos en tiempo real desde una sola plataforma.
+                </p>
+
+                <div className="lp-hero-actions">
+                  <button className="lp-btn-primary" onClick={() => navigateTo('register')}>
+                    Crear Cuenta Gratis
+                    <IconArrowRight />
+                  </button>
+                  <button className="lp-btn-outline" onClick={() => navigateTo('login')}>
+                    Ver Demo de Roles
+                  </button>
+                </div>
+              </div>
+
+              {/* Radar mockup widget on the right */}
+              <div className="radar-widget rounded-3xl p-6 bg-base-100 border border-gray-200/60 dark:border-gray-800/60 shadow-xl flex flex-col gap-5">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 bg-success rounded-full" style={{ animation: 'udPulse 1s infinite' }} />
+                    <span className="text-xs font-bold text-gray-500">Operaciones GPS Activas</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Motos en ruta: 45</span>
+                </div>
+
+                <div className="radar-screen relative h-72 bg-gray-950 rounded-2xl border border-blue-900/30 overflow-hidden flex items-center justify-center">
+                  <div className="radar-sweep" />
+                  <div className="radar-circle" style={{ width: '70px', height: '70px' }} />
+                  <div className="radar-circle" style={{ width: '140px', height: '140px' }} />
+                  <div className="radar-circle" style={{ width: '210px', height: '210px' }} />
+                  
+                  {/* Blinking Map Dots representing fleet */}
+                  <div className="absolute top-1/4 left-1/3 w-2.5 h-2.5 bg-success rounded-full shadow-[0_0_10px_var(--exito)]" style={{ animation: 'udPulse 1.5s infinite' }} />
+                  <div className="absolute bottom-1/3 right-1/3 w-2.5 h-2.5 bg-success rounded-full shadow-[0_0_10px_var(--exito)]" style={{ animation: 'udPulse 1.8s infinite' }} />
+                  <div className="absolute top-1/2 right-1/4 w-2.5 h-2.5 bg-warning rounded-full shadow-[0_0_10px_#FF5722]" style={{ animation: 'udPulse 1.2s infinite' }} />
+                  <div className="absolute bottom-1/4 left-1/4 w-2 h-2 bg-primary rounded-full" />
+
+                  <span className="absolute bottom-3 text-[9px] text-gray-500 font-mono tracking-wider">
+                    COBERTURA DE ENTREGA MANAGUA
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ─── BENTO FEATURES SECTION ─── */}
+          <section className="lp-section" id="features">
+            <div className="lp-section-header">
+              <span className="lp-section-tag">ROLES Y FUNCIONES</span>
+              <h2 className="lp-section-title">
+                Una plataforma, cuatro pilares operativos
+              </h2>
+            </div>
+
+            <div className="lp-bento-grid">
+              
+              {/* Card 1: Cliente */}
+              <div className="lp-bento-card">
+                <div className="lp-bento-icon">
+                  <IconPerson />
+                </div>
+                <h3 className="lp-bento-title">Portal de Clientes</h3>
+                <p className="lp-bento-desc">
+                  Solicita envíos urbanos al instante, consulta precios automáticos dinámicos según distancia, y gestiona tu historial de compras y facturación de forma automatizada.
+                </p>
+                
+                {/* Mini client status widget */}
+                <div className="lp-bento-preview flex flex-col gap-2 mt-4 rounded-xl p-4">
+                  <div className="bento-mini-card">
+                    <div className="flex justify-between items-center text-[10px] text-gray-400">
+                      <span>ORDEN #1084</span>
+                      <span className="text-success font-bold">● EN CAMINO</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-                      <span>Distancia Restante:</span>
-                      <strong>1.8 km</strong>
+                    <div className="font-syne text-xs mt-1 text-base-content">Bolonia → Altamira</div>
+                    <div className="text-[10px] text-gray-400 mt-1">Llegada estimada: 12 min</div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '16px' }} className="flex gap-2 flex-wrap">
+                  <span className="badge badge-soft badge-success text-[10px] font-bold px-3 py-1">Pagos Seguros</span>
+                  <span className="badge badge-soft badge-success text-[10px] font-bold px-3 py-1">Monitoreo en vivo</span>
+                </div>
+              </div>
+
+              {/* Card 2: Repartidores */}
+              <div className="lp-bento-card">
+                <div className="lp-bento-icon" style={{ background: 'var(--secundario-soft)', color: 'var(--secundario)' }}>
+                  <IconMoto />
+                </div>
+                <h3 className="lp-bento-title">Panel de Repartidores</h3>
+                <p className="lp-bento-desc">
+                  Asignación inteligente de pedidos basada en geolocalización, optimización satelital de rutas y billetera virtual en tiempo real.
+                </p>
+
+                {/* Mini driver route navigation status */}
+                <div className="lp-bento-preview flex flex-col gap-2 mt-4 rounded-xl p-4">
+                  <div className="bento-mini-card">
+                    <div className="flex justify-between items-center text-[10px] text-gray-400">
+                      <span>NUEVA RUTA OPTIMIZADA</span>
+                      <span className="text-primary font-mono font-bold">4.2 km</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                      <span>Tiempo Estimado de Ruta:</span>
-                      <strong style={{ color: 'var(--primario)' }}>6 minutos</strong>
+                    <div className="font-syne text-xs mt-1 text-base-content">Evitar tráfico en Carr. Masaya</div>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-warning rounded-full" style={{ width: '70%' }} />
+                      </div>
+                      <span className="text-[9px] text-gray-400 font-bold">70%</span>
                     </div>
-                    <button className="ud-weight-btn active" style={{ marginTop: '12px', border: '1px solid var(--peligro)', color: 'var(--peligro)', background: 'transparent' }} onClick={() => alert('Para reportar incidencias reales, accede a tu cuenta de Repartidor')}>
-                      Reportar Retraso / Tráfico
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+                  <span className="badge badge-soft badge-warning text-[10px] font-bold px-3 py-1">Ruta Óptima GPS</span>
+                </div>
+              </div>
+
+              {/* Card 3: Admin */}
+              <div className="lp-bento-card">
+                <div className="lp-bento-icon">
+                  <IconShield />
+                </div>
+                <h3 className="lp-bento-title">Consola de Control</h3>
+                <p className="lp-bento-desc">
+                  Auditoría completa de envíos, analíticas financieras, asignación manual de repartidores y monitoreo logístico absoluto de la ciudad.
+                </p>
+
+                {/* Mini financial metrics widget */}
+                <div className="lp-bento-preview flex flex-col gap-2 mt-4 rounded-xl p-4">
+                  <div className="bento-mini-card">
+                    <div className="text-[10px] text-gray-400">INGRESOS DE HOY</div>
+                    <div className="text-sm font-extrabold font-mono text-base-content mt-0.5">C$ 12,450.00</div>
+                    <div className="flex gap-2 mt-1.5">
+                      <div className="text-[9px] bg-success/15 text-success px-1.5 py-0.5 rounded font-bold">+18.2% vs ayer</div>
+                      <div className="text-[9px] text-gray-400 font-semibold">142 envíos</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+                  <span className="badge badge-soft badge-primary text-[10px] font-bold px-3 py-1">Control de Flota</span>
+                </div>
+              </div>
+
+              {/* Card 4: Ingenieros */}
+              <div className="lp-bento-card col-2">
+                <div className="lp-bento-icon" style={{ color: '#8E44AD', background: 'rgba(142,68,173,0.1)' }}>
+                  <IconWrench />
+                </div>
+                <h3 className="lp-bento-title">Mantenimiento de Flota</h3>
+                <p className="lp-bento-desc">
+                  Diseñado para ingenieros y mecánicos. Controla el inventario de repuestos, agenda alertas de mantenimientos preventivos y gestiona las solicitudes de reparaciones de cada motocicleta.
+                </p>
+
+                {/* Mini mechanical status metrics widget */}
+                <div className="lp-bento-preview grid grid-cols-2 gap-3 mt-4 rounded-xl p-4">
+                  <div className="bento-mini-card">
+                    <div className="text-[10px] text-gray-400 uppercase font-bold">MOTO M-004</div>
+                    <div className="text-xs text-base-content mt-1 flex justify-between">
+                      <span>Aceite Motor</span>
+                      <span className="text-success font-bold">100%</span>
+                    </div>
+                    <div className="text-[9px] text-gray-400">Estado: Excelente</div>
+                  </div>
+                  <div className="bento-mini-card">
+                    <div className="text-[10px] text-gray-400 uppercase font-bold">MOTO M-009</div>
+                    <div className="text-xs text-base-content mt-1 flex justify-between">
+                      <span>Frenos Traseros</span>
+                      <span className="text-error font-bold">20%</span>
+                    </div>
+                    <div className="text-[9px] text-error font-bold">⚠️ Reemplazo Crítico</div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '16px' }} className="flex gap-2 flex-wrap">
+                  <span className="badge badge-soft badge-secondary text-[10px] font-bold px-3 py-1" style={{ color: '#8E44AD', background: 'rgba(142,68,173,0.1)' }}>Alertas Preventivas</span>
+                  <span className="badge badge-soft badge-secondary text-[10px] font-bold px-3 py-1" style={{ color: '#8E44AD', background: 'rgba(142,68,173,0.1)' }}>Ficha Mecánica</span>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* ─── INTERACTIVE COST CALCULATOR SECTION ─── */}
+          <section className="lp-section" id="calculator">
+            <div className="lp-section-header">
+              <span className="lp-section-tag">Calculadora</span>
+              <h2 className="lp-section-title">Calcula tu tarifa en tiempo real</h2>
+            </div>
+            
+            <div className="ud-interactive-panel max-w-3xl mx-auto">
+              <div className="ud-panel-header">
+                <span className="font-syne font-bold text-sm text-base-content">Simulador de Envíos</span>
+                <span className="badge badge-soft badge-primary text-[10px] font-bold">Tarifador Logifast</span>
+              </div>
+              <div className="ud-panel-body">
+                <div className="ud-calc-widget">
+                  <div className="ud-calc-controls">
+                    <div>
+                      <div className="flex justify-between text-sm font-semibold mb-2">
+                        <span>Distancia del envío</span>
+                        <span className="text-primary font-mono">{distance} km</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="30" 
+                        value={distance} 
+                        onChange={(e) => setDistance(parseInt(e.target.value))}
+                        className="ud-range-slider"
+                      />
+                      <div className="flex justify-between text-[10px] text-gray-400">
+                        <span>1 km (Cercano)</span>
+                        <span>30 km (Límite municipal)</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-sm font-semibold mb-3 text-base-content">Peso estimado del paquete</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { value: 'ligero', label: 'Ligero (< 5 kg)' },
+                          { value: 'medio', label: 'Medio (5-15 kg)' },
+                          { value: 'pesado', label: 'Pesado (> 15 kg)' },
+                        ].map((pkg) => (
+                          <button
+                            key={pkg.value}
+                            type="button"
+                            className={`ud-weight-btn text-xs ${weight === pkg.value ? 'active' : ''}`}
+                            onClick={() => setWeight(pkg.value)}
+                          >
+                            {pkg.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="ud-calc-result">
+                    <div>
+                      <span className="text-xs uppercase tracking-wider text-gray-500 font-bold block mb-1">Costo Estimado</span>
+                      <span className="ud-calc-price">C$ {calculatePrice()}</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 leading-normal mt-4">
+                      *Precio estimado incluye recargo base de operaciones. Sujeto a cambios según clima y tráfico.
+                    </div>
+                    <button 
+                      onClick={() => navigateTo('register')}
+                      className="btn btn-primary btn-sm w-full font-syne mt-4"
+                    >
+                      Enviar Ahora
                     </button>
                   </div>
-                  <div style={{ background: '#020b18', borderRadius: '16px', border: '1px solid var(--border)', height: '240px', position: 'relative', overflow: 'hidden' }}>
-                    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-                      <path d="M 40,200 L 120,120 L 160,150 L 240,60" fill="none" stroke="var(--primario)" strokeWidth="3" />
-                      <circle cx="40" cy="200" r="6" fill="var(--exito)" />
-                      <circle cx="240" cy="60" r="6" fill="var(--peligro)" />
-                    </svg>
-                    <div style={{ position: 'absolute', top: '140px', left: '150px', width: '10px', height: '10px', background: '#ffffff', borderRadius: '50%', boxShadow: '0 0 8px #ffffff' }} />
-                    <span style={{ position: 'absolute', top: '155px', left: '130px', fontSize: '9px', background: 'var(--surface)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border)', fontWeight: 'bold' }}>Tu Ubicación</span>
-                  </div>
                 </div>
-              )}
+              </div>
+            </div>
+          </section>
 
-              {/* ADMIN RADAR INTERACTIVE VIEW */}
-              {activeRoleTab === 'admin' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr', gap: '24px' }}>
-                  <div>
-                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>Repartidores Activos</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* ─── HOW IT WORKS TIMELINE SECTION ─── */}
+          <section className="lp-section" id="how-it-works">
+            <div className="lp-section-header">
+              <span className="lp-section-tag">Proceso</span>
+              <h2 className="lp-section-title">Cómo funciona Logifast</h2>
+            </div>
+            
+            <div className="lp-timeline">
+              <div className="lp-timeline-step">
+                <span className="lp-timeline-number">01</span>
+                <h4 className="lp-timeline-title">Solicita tu envío</h4>
+                <p className="lp-timeline-desc">Ingresa el punto de recogida y entrega en nuestro portal de cliente interactivo.</p>
+              </div>
+              <div className="lp-timeline-step">
+                <span className="lp-timeline-number">02</span>
+                <h4 className="lp-timeline-title">Asignación automática</h4>
+                <p className="lp-timeline-desc">El algoritmo selecciona al repartidor más cercano usando coordenadas GPS.</p>
+              </div>
+              <div className="lp-timeline-step">
+                <span className="lp-timeline-number">03</span>
+                <h4 className="lp-timeline-title">Rastreo en tiempo real</h4>
+                <p className="lp-timeline-desc">Monitorea la ubicación exacta de tu pedido en el mapa satelital interactivo.</p>
+              </div>
+              <div className="lp-timeline-step">
+                <span className="lp-timeline-number">04</span>
+                <h4 className="lp-timeline-title">Entrega exitosa</h4>
+                <p className="lp-timeline-desc">Recibe el paquete de forma segura y califica la experiencia del servicio.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* ─── ALLIES CAROUSEL ─── */}
+          <section className="lf-partners py-16 border-y border-gray-200/40 dark:border-gray-800/40" id="allies">
+            <div className="lf-partners-inner max-w-7xl mx-auto px-10">
+              <div className="text-center mb-10">
+                <span className="badge badge-soft badge-primary text-xs font-bold tracking-widest px-3 py-1 uppercase mb-2">Aliados comerciales</span>
+                <h2 className="font-syne text-3xl font-extrabold text-base-content mt-2">
+                  Empresas que confían en nosotros
+                </h2>
+              </div>
+
+              <div className="lf-marquee mt-8">
+                <div className="lf-marquee-track">
+                  {[...Array(2)].map((_, loopIdx) => (
+                    <React.Fragment key={loopIdx}>
                       {[
-                        { name: 'Rider Carlos M.', status: 'En Ruta', color: 'var(--primario)' },
-                        { name: 'Rider Jorge H.', status: 'Entregado', color: 'var(--exito)' },
-                        { name: 'Rider Sofía L.', status: 'Taller', color: 'var(--warning)' },
-                        { name: 'Rider Gabriel R.', status: 'Disponible', color: 'var(--exito)' },
-                      ].map((rider, idx) => (
-                        <div key={idx} style={{ background: 'var(--bg-alt)', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                          <span>{rider.name}</span>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: rider.color }}>{rider.status}</span>
+                        { src: '/logos/image1.png', name: 'Alquinicsa', sector: 'Automotriz & Construcción' },
+                        { src: '/logos/image2.png', name: 'Delicias del Mar', sector: 'Restaurante & Distribución' },
+                        { src: '/logos/image3.png', name: 'Burger Boss', sector: 'Alimentos & Bebidas' },
+                        { src: '/logos/image4.png', name: 'Salud y Vida', sector: 'Sector Farmacéutico' },
+                        { src: '/logos/image5.png', name: 'Autosym', sector: 'Audio & Accesorios' },
+                        { src: '/logo.png', name: 'Logifast Delivery', sector: 'Operaciones Activas' },
+                      ].map((partner, partnerIdx) => (
+                        <div key={`${loopIdx}-${partnerIdx}`} className="lf-marquee-item">
+                          <img src={partner.src} alt={partner.name} className="lf-marquee-logo" />
+                          <div className="lf-marquee-info">
+                            <span className="lf-marquee-name">{partner.name}</span>
+                            <span className="lf-marquee-sector">{partner.sector}</span>
+                          </div>
                         </div>
                       ))}
-                    </div>
-                  </div>
-                  <div style={{ background: '#020b18', borderRadius: '16px', border: '1px solid var(--border)', height: '240px', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(var(--primario) 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
-                    <div style={{ position: 'absolute', top: '60px', left: '80px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '8px', height: '8px', background: 'var(--primario)', borderRadius: '50%', display: 'inline-block', animation: 'udPulse 1.5s infinite' }} />
-                      <span style={{ fontSize: '10px', color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px' }}>Rider Carlos</span>
-                    </div>
-                    <div style={{ position: 'absolute', top: '140px', right: '70px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '8px', height: '8px', background: 'var(--exito)', borderRadius: '50%', display: 'inline-block', animation: 'udPulse 1.2s infinite' }} />
-                      <span style={{ fontSize: '10px', color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px' }}>Rider Gabriel</span>
-                    </div>
-                    <div style={{ position: 'absolute', bottom: '40px', left: '140px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '8px', height: '8px', background: 'var(--warning)', borderRadius: '50%', display: 'inline-block' }} />
-                      <span style={{ fontSize: '10px', color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px' }}>Rider Sofía (Taller)</span>
-                    </div>
-                  </div>
+                    </React.Fragment>
+                  ))}
                 </div>
-              )}
-
-              {/* INGENIERO MECHANICAL SCANNER INTERACTIVE VIEW */}
-              {activeRoleTab === 'ingeniero' && (
-                <div className="ud-scanner-grid">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <h4 style={{ fontSize: '18px', fontWeight: 'bold' }}>Diagnóstico de Unidad</h4>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                      Monitorea las lecturas del computador a bordo de la flota de motocicletas para mantenimiento predictivo.
-                    </p>
-                    
-                    <div>
-                      <button 
-                        className="lp-btn-primary" 
-                        onClick={startScan}
-                        disabled={scanStatus === 'scanning'}
-                        style={{ background: scanStatus === 'scanning' ? 'var(--border)' : 'var(--primario)' }}
-                      >
-                        {scanStatus === 'idle' && 'Escanear Moto-02'}
-                        {scanStatus === 'scanning' && 'Escaneando...'}
-                        {scanStatus === 'done' && 'Volver a Escanear'}
-                      </button>
-
-                      {scanStatus === 'scanning' && (
-                        <div>
-                          <div className="ud-scan-bar">
-                            <div className="ud-scan-bar-fill" style={{ width: `${scanProgress}%` }} />
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'right' }}>
-                            {scanProgress}% completado
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="ud-scan-metrics">
-                    <div className="ud-metric-box">
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Frenos Hidráulicos</span>
-                      <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '6px', color: scanStatus === 'done' ? 'var(--exito)' : 'var(--text)' }}>
-                        {scanStatus === 'done' ? '95% (Perfecto)' : 'Esperando...'}
-                      </div>
-                    </div>
-                    <div className="ud-metric-box">
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Presión Neumáticos</span>
-                      <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '6px', color: scanStatus === 'done' ? 'var(--exito)' : 'var(--text)' }}>
-                        {scanStatus === 'done' ? '30 PSI (Normal)' : 'Esperando...'}
-                      </div>
-                    </div>
-                    <div className="ud-metric-box">
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Kilometraje acumulado</span>
-                      <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '6px' }}>
-                        {scanStatus === 'done' ? '2,341 km' : 'Esperando...'}
-                      </div>
-                    </div>
-                    <div className="ud-metric-box">
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Estado de Bujía</span>
-                      <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '6px', color: scanStatus === 'done' ? 'var(--exito)' : 'var(--text)' }}>
-                        {scanStatus === 'done' ? 'Excelente' : 'Esperando...'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ VENTAJAS COMERCIALES DE LOGIFAST ═══ */}
-        <section className="lp-section" id="taller" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-alt)' }}>
-          <div className="lp-section-header reveal">
-            <span className="lp-section-tag">Ventajas</span>
-            <h2 className="lp-section-title">¿Por qué elegir Logifast?</h2>
-            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: 'var(--text-secondary)' }}>
-              Ofrecemos el mejor servicio de entregas express en Managua, diseñado para el éxito de tu negocio y la comodidad de tus envíos personales.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-            <div className="lp-bento-card reveal">
-              <div className="lp-bento-icon"><IconShield /></div>
-              <h3 className="lp-bento-title">Entregas 100% Seguras</h3>
-              <p className="lp-bento-desc">Cada paquete está protegido con los más estrictos estándares de seguridad y declaración legal, garantizando la total transparencia y protección de tus envíos.</p>
-            </div>
-            <div className="lp-bento-card reveal reveal-delay-1">
-              <div className="lp-bento-icon"><IconClock /></div>
-              <h3 className="lp-bento-title">Garantía de Tiempo</h3>
-              <p className="lp-bento-desc">Nuestra flota comercial optimizada y monitoreada vía satélite en tiempo real asegura que tus paquetes lleguen a destino siempre a tiempo y sin retrasos.</p>
-            </div>
-            <div className="lp-bento-card reveal reveal-delay-2">
-              <div className="lp-bento-icon"><IconTrendingUp /></div>
-              <h3 className="lp-bento-title">Precios Claros y Justos</h3>
-              <p className="lp-bento-desc">Cálculo de tarifas transparente sin cargos sorpresa. Cotiza al instante según la distancia exacta y paga el precio exacto sin recargos ocultos.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ PARTNERS CLIENTES ACTIVOS ═══ */}
-        <section className="lf-partners reveal">
-          <div className="lf-partners-inner">
-            <div className="lf-partners-header">
-              <span className="lf-eyebrow">Confianza</span>
-              <h2 className="lf-section-title font-syne" style={{ fontSize: '1.8rem', marginBottom: 8 }}>Empresas aliadas</h2>
-            </div>
-            <div className="lf-marquee">
-              <div className="lf-marquee-track">
-                {[...Array(2)].map((_, loopIdx) => (
-                  <React.Fragment key={loopIdx}>
-                    {[
-                      { src: '/logos/image1.png', name: 'Alquinicsa', sector: 'Automotriz & Construcción' },
-                      { src: '/logos/image2.png', name: 'Delicias del Mar', sector: 'Restaurante & Distribución' },
-                      { src: '/logos/image3.png', name: 'Burger Boss', sector: 'Alimentos & Bebidas' },
-                      { src: '/logos/image4.png', name: 'Salud y Vida', sector: 'Sector Farmacéutico' },
-                      { src: '/logos/image5.png', name: 'Autosym', sector: 'Audio & Accesorios' },
-                      { src: '/logo.png', name: 'Logifast Delivery', sector: 'Operaciones Activas' },
-                    ].map((partner, partnerIdx) => (
-                      <div key={`${loopIdx}-${partnerIdx}`} className="lf-marquee-item">
-                        <img src={partner.src} alt={partner.name} className="lf-marquee-logo" />
-                        <div className="lf-marquee-info">
-                          <span className="lf-marquee-name">{partner.name}</span>
-                          <span className="lf-marquee-sector">{partner.sector}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </React.Fragment>
-                ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ═══ CTA SECTION ═══ */}
-        <section className="lf-cta" id="contacto">
-          <div className="lf-cta-inner reveal">
-            <h2 className="lf-cta-title font-syne">¿Listo para optimizar tu logística?</h2>
-            <p className="lf-cta-desc">Crea tu cuenta comercial en minutos y accede a la consola de despacho de Logifast.</p>
-            <button className="lp-btn-primary" onClick={() => navigateTo('register')} style={{ margin: '0 auto' }}>
-              Registrarse Gratis
-              <IconArrowRight />
-            </button>
-          </div>
-        </section>
-
-        {/* ═══ FOOTER ═══ */}
-        <footer className="lf-footer">
-          <div className="lf-footer-inner">
-            <div className="lf-footer-grid">
-              <div>
-                <Logo />
-                <p className="lf-footer-brand-tagline">Tus Envíos Seguros y Rápidos</p>
-                <p className="lf-footer-brand-location">Managua, Nicaragua</p>
-              </div>
-              <div>
-                <h4 className="lf-footer-col-title">Producto</h4>
-                <ul className="lf-footer-links">
-                  <li><a href="#">Funciones</a></li>
-                  <li><a href="#">Precios</a></li>
-                  <li><a href="#">API</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="lf-footer-col-title">Empresa</h4>
-                <ul className="lf-footer-links">
-                  <li><a href="#">Nosotros</a></li>
-                  <li><a href="#">Blog</a></li>
-                  <li><a href="#">Contacto</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="lf-footer-col-title">Legal</h4>
-                <ul className="lf-footer-links">
-                  <li><a href="#">Privacidad</a></li>
-                  <li><a href="#">Términos</a></li>
-                </ul>
+          {/* ─── CTA CONTACT SECTION ─── */}
+          <section className="py-24 max-w-7xl mx-auto px-10 text-center" id="contact">
+            <div className="bg-gradient-to-br from-primary to-blue-950 rounded-3xl p-16 text-white relative overflow-hidden shadow-xl">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,87,34,0.25),transparent_60%)] pointer-events-none" />
+              
+              <h2 className="font-syne text-4xl font-extrabold mb-4 relative z-10">
+                ¿Listo para transformar tus entregas?
+              </h2>
+              <p className="max-w-xl mx-auto mb-10 text-blue-100/80 text-base leading-relaxed relative z-10">
+                Únete hoy y obtén tus primeros 5 envíos urbanos gratis en Managua. Conecta tu comercio en minutos.
+              </p>
+              
+              <div className="flex gap-4 justify-center flex-wrap relative z-10">
+                <button className="btn btn-warning px-8 h-14 font-syne hover:bg-orange-600 text-white" onClick={() => navigateTo('register')}>
+                  Comenzar Ahora
+                </button>
+                <a href="mailto:soporte@logifast.com" className="btn btn-outline border-white/30 text-white hover:bg-white/10 px-8 h-14 font-syne">
+                  Contactar Soporte
+                </a>
               </div>
             </div>
-            <div className="lf-footer-bottom">
-              <span>LOGIFAST 2026</span>
-              <span>Operaciones de Precisión</span>
-            </div>
-          </div>
-        </footer>
+          </section>
 
-        {/* Toasts */}
-        <div className="lf-toast-container">
-          {toasts.map((t) => (
-            <div key={t.id} className={`lf-toast ${t.variant} ${t.leaving ? 'leaving' : ''}`}>
-              <span className="lf-toast-icon">
-                {t.variant === 'success' && <IconCheckCircle />}
-                {t.variant === 'error' && <IconXCircle />}
-                {t.variant === 'warning' && <IconAlertTriangle />}
-                {t.variant === 'info' && <IconInfo />}
-              </span>
-              <div className="lf-toast-content">
-                <div className="lf-toast-title">{t.title}</div>
-                {t.desc && <div className="lf-toast-desc">{t.desc}</div>}
-              </div>
-              <button className="lf-toast-close" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
-                <IconX />
-              </button>
-              <div className="lf-toast-progress" />
+          {/* ─── FOOTER ─── */}
+          <footer className="bg-base-200 py-12 border-t border-gray-200/50 dark:border-gray-800/50 text-center text-gray-500 text-sm">
+            <div className="flex justify-center mb-6">
+              <Logo />
             </div>
-          ))}
+            <p className="mb-2">Conectando Managua con envíos inteligentes, rápidos y 100% seguros.</p>
+            <p className="text-xs text-gray-400">© {new Date().getFullYear()} LOGIFAST. Todos los derechos reservados.</p>
+          </footer>
         </div>
-    </main>
+      )}
+
+      {/* TOAST NOTIFICATION STACK */}
+      <div className="lf-toast-container">
+        {toasts.map((t) => (
+          <div key={t.id} className={`lf-toast ${t.variant} ${t.leaving ? 'leaving' : ''}`}>
+            <span className="lf-toast-icon">
+              {t.variant === 'success' && <IconCheckCircle />}
+              {t.variant === 'error' && <IconXCircle />}
+              {t.variant === 'warning' && <IconAlertTriangle />}
+              {t.variant === 'info' && <IconInfo />}
+            </span>
+            <div className="lf-toast-content">
+              <div className="lf-toast-title">{t.title}</div>
+              {t.desc && <div className="lf-toast-desc">{t.desc}</div>}
+            </div>
+            <button className="lf-toast-close" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
+              <IconX />
+            </button>
+            <div className="lf-toast-progress" />
+          </div>
+        ))}
+      </div>
     </>
   );
 }

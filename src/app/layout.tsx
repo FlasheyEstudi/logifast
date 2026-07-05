@@ -36,6 +36,11 @@ export const metadata: Metadata = {
     "flota motociclista",
   ],
   authors: [{ name: "LOGIFAST" }],
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/icons/icon-192.png",
+  },
   openGraph: {
     title: "LOGIFAST — Tus Envíos Seguros y Rápidos",
     description:

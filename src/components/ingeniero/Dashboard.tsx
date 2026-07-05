@@ -22,7 +22,7 @@ export default function Dashboard() {
         <div className="dashboard-header">
           <div>
             <div className="dashboard-saludo">
-              {getSaludo()}, {store.perfil.nombre.split(' ')[0]}
+              {getSaludo()}, {(store.perfil?.nombre || '').split(' ')[0] || 'Ingeniero'}
             </div>
             <div className="dashboard-fecha">
               {new Date().toLocaleDateString('es-NI', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -38,19 +38,19 @@ export default function Dashboard() {
         {/* KPIs de la flota */}
         <div className="dashboard-kpis">
           <div className="dashboard-kpi dashboard-kpi-total">
-            <div className="dashboard-kpi-valor">{stats.totalMotos}</div>
+            <div className="dashboard-kpi-valor">{stats?.totalMotos || 0}</div>
             <div className="dashboard-kpi-label">Total motos</div>
           </div>
           <div className="dashboard-kpi dashboard-kpi-disponible">
-            <div className="dashboard-kpi-valor">{stats.disponibles}</div>
+            <div className="dashboard-kpi-valor">{stats?.disponibles || 0}</div>
             <div className="dashboard-kpi-label">Disponibles</div>
           </div>
           <div className="dashboard-kpi dashboard-kpi-servicio">
-            <div className="dashboard-kpi-valor">{stats.enServicio}</div>
+            <div className="dashboard-kpi-valor">{stats?.enServicio || 0}</div>
             <div className="dashboard-kpi-label">En servicio</div>
           </div>
           <div className="dashboard-kpi dashboard-kpi-mantenimiento">
-            <div className="dashboard-kpi-valor">{stats.enMantenimiento}</div>
+            <div className="dashboard-kpi-valor">{stats?.enMantenimiento || 0}</div>
             <div className="dashboard-kpi-label">En taller</div>
           </div>
         </div>
@@ -61,19 +61,19 @@ export default function Dashboard() {
           <div className="flota-bar">
             <div
               className="flota-bar-segment disponible"
-              style={{ width: `${(stats.disponibles / (stats.totalMotos || 1)) * 100}%` }}
+              style={{ width: `${((stats?.disponibles || 0) / (stats?.totalMotos || 1)) * 100}%` }}
             />
             <div
               className="flota-bar-segment servicio"
-              style={{ width: `${(stats.enServicio / (stats.totalMotos || 1)) * 100}%` }}
+              style={{ width: `${((stats?.enServicio || 0) / (stats?.totalMotos || 1)) * 100}%` }}
             />
             <div
               className="flota-bar-segment mantenimiento"
-              style={{ width: `${(stats.enMantenimiento / (stats.totalMotos || 1)) * 100}%` }}
+              style={{ width: `${((stats?.enMantenimiento || 0) / (stats?.totalMotos || 1)) * 100}%` }}
             />
             <div
               className="flota-bar-segment fuera"
-              style={{ width: `${(stats.fueraServicio / (stats.totalMotos || 1)) * 100}%` }}
+              style={{ width: `${((stats?.fueraServicio || 0) / (stats?.totalMotos || 1)) * 100}%` }}
             />
           </div>
           <div className="flota-bar-leyenda">
@@ -95,7 +95,7 @@ export default function Dashboard() {
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
               <div>
-                <div className="dashboard-mes-valor mono">{stats.mantenimientosCompletados}</div>
+                <div className="dashboard-mes-valor mono">{stats?.mantenimientosCompletados || 0}</div>
                 <div className="dashboard-mes-label">Completados</div>
               </div>
             </div>
@@ -105,7 +105,7 @@ export default function Dashboard() {
                 <polyline points="12 6 12 12 16 14"/>
               </svg>
               <div>
-                <div className="dashboard-mes-valor mono">{stats.mantenimientosPendientes}</div>
+                <div className="dashboard-mes-valor mono">{stats?.mantenimientosPendientes || 0}</div>
                 <div className="dashboard-mes-label">Pendientes</div>
               </div>
             </div>
@@ -115,7 +115,7 @@ export default function Dashboard() {
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
               </svg>
               <div>
-                <div className="dashboard-mes-valor mono">C$ {stats.costoMantenimientoMes.toLocaleString()}</div>
+                <div className="dashboard-mes-valor mono">C$ {(stats?.costoMantenimientoMes || 0).toLocaleString()}</div>
                 <div className="dashboard-mes-label">Costo total</div>
               </div>
             </div>
