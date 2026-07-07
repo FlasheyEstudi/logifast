@@ -1,13 +1,11 @@
-const CACHE_NAME = 'logifast-v1';
+const CACHE_NAME = 'logifast-v5';
 const STATIC_ASSETS = [
-  '/',
-  '/repartidor',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
 
-// Instalar y cachear assets estaticos
+// Instalar y omitir espera para activar inmediatamente
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -19,7 +17,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activar y limpiar caches viejos
+// Activar y forzar la limpieza inmediata de todos los cachés antiguos
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
@@ -31,22 +29,34 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Estrategia: Network First para API, Cache First para assets
+// Interceptor de Fetch
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Ignorar peticiones que no sean http/https (como chrome-extension o websocket)
+  // Ignorar peticiones no HTTP
   if (!url.protocol.startsWith('http')) return;
 
-  if (url.pathname.startsWith('/api/')) {
-    // API: Network First (siempre intentar red primero)
+  // Estrategia: Network First estricto para:
+  // 1. Rutas de navegación (para cargar siempre el HTML index.html más reciente del servidor)
+  // 2. Chunks de Next.js (/_next/...) para evitar errores de hashes antiguos y discrepancias de compilación
+  // 3. Peticiones de API (/api/...)
+  const esNavegacion = event.request.mode === 'navigate';
+  const esNextAsset = url.pathname.startsWith('/_next/');
+  const esApi = url.pathname.startsWith('/api/');
+
+  if (esNavegacion || esNextAsset || esApi) {
     event.respondWith(
-      fetch(event.request).catch(() => {
+      fetch(event.request).then(response => {
+        // En navegación o chunks Next, si todo está bien y no es dinámico, podemos cachearlo si queremos,
+        // pero para evitar bloqueos es mejor retornarlo directamente sin cachear la navegación principal
+        return response;
+      }).catch(() => {
+        // Fallback al caché si no hay internet
         return caches.match(event.request);
       })
     );
   } else {
-    // Assets: Cache First
+    // Para otros assets estáticos del directorio /public (imágenes, iconos, manifiestos) usamos Cache First:
     event.respondWith(
       caches.match(event.request).then(cached => {
         return cached || fetch(event.request).then(response => {

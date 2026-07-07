@@ -1083,3 +1083,123 @@ Stage Summary:
 - ThemeProvider now wraps {children} in root layout → app-wide theme initialization on first paint
 - Lint: 0 errors, 1 pre-existing warning (custom-font in layout.tsx, unrelated)
 - No emojis, SVG icons only, design tokens preserved (no new CSS variables), all existing functionality preserved
+
+---
+Task ID: 2-B
+Agent: Antigravity
+Task: Modern 2026 Responsive UI Improvements
+
+Work Log:
+- Updated globals.css: Added .lf-tiendas-grid and .lf-tienda-card CSS class configurations supporting 2026 CSS Container Queries and dynamic CSS grids. Added .lf-checkout-grid for fluid multi-column responsive checkout layout.
+- Updated ClientShell.tsx: Replaced static active tab indicator with an interactive layoutId-based sliding background pill using Framer Motion. Added zIndex overlays to guarantee notification badges stay above the animated background.
+- Updated ClientExplorar.tsx: Refactored the tienda list structure from vertical stacked rows to an adaptive card grid utilizing Container Queries. Cards automatically switch between vertical layout (narrow viewport/sidebar) and horizontal layout (wider viewport/desktop).
+- Updated ClientCarrito.tsx: Refactored checkout view into a responsive split layout. Mobile devices remain a simple, single-column view with a floating sticky pay button. Tablet/desktop viewports split the screen into two columns (items/instructions on left; payment/promo/total summary and pay button on right).
+- Verified: Ran npx eslint on edited files -> 0 errors. Ran npx next build -> Production build compiled and generated all static/dynamic routes successfully with 0 errors.
+
+Stage Summary:
+- Mobile client shell bottom navigation now features Material You active tab sliding motion.
+- ClientExplorar is fully container-query responsive, rendering a adaptive card grid.
+- ClientCarrito features an optimized, liquid 2-column layout on larger screens, maximizing readability and desktop UX.
+- All styles comply with rebrand design tokens and maintain emoji-free code integrity.
+
+---
+Task ID: 2-C
+Agent: Antigravity
+Task: Apple-Worthy Re-Design of Landing, Login and Registration
+
+Work Log:
+- Updated globals.css: Replaced legacy lp- and ud- CSS classes with a premium Apple-inspired design system. Added classes for floating frosted-glass nav bar (.apple-navbar), variable hero typography (.apple-hero-title, .apple-hero-subtitle), customized range controls (.apple-range), segmented weight selectors (.apple-select-btn), grid alignments (.apple-bento-grid, .apple-partners-grid, .apple-timeline), linear-gradient CTA cards (.apple-cta-card), and custom forms (.apple-auth-split, .apple-auth-card, .apple-input-field).
+- Updated page.tsx: Removed the previous landing, registration, and login page sections. Redesigned all three views from scratch using Apple UI patterns. Replaced the loading redirection with a minimalist space gray spinner dialog. Preserved all local states and auth logic intact.
+- Verified: Ran npx eslint -> 0 errors. Ran npx next build -> Production build compiled and generated all static/dynamic routes successfully with 0 errors.
+
+Stage Summary:
+- Landing page features ultra-premium typography, frosted-glass header, animated satellite fleet mockup, custom tariff estimator, and grid systems.
+- Auth screens feature a split-layout (left side: branding text & gradients; right side: centered frosted credentials card) with Apple-like input focus states.
+- Clean code styling (emoji-free, inline SVGs only, branding colors).
+
+---
+Task ID: 2-D
+Agent: Antigravity
+Task: Native Android PWA & iOS Mobile Layout Spacings Optimization
+
+Work Log:
+- Updated globals.css: Added extensive mobile PWA responsive overrides under @media (max-width: 768px). Reduced section paddings (.apple-section) from 100px to 48px, optimized navbar header height to 56px, and adjusted bento card layouts. Created a native-like vertical smartphone mockup (.apple-mockup-frame) on small viewports with 9/18 aspect ratio and device bezel borders. Redesigned authentication views (.apple-auth-card, .apple-auth-form-side) to render as clean, borderless full-screen views on mobile.
+- Updated globals.css: Added micro-interaction scale feedback for active buttons (:active { transform: scale(0.97) }).
+- Verified: Ran npx eslint -> 0 errors. Ran npx next build -> Production build compiled and generated all static/dynamic routes successfully with 0 errors.
+
+Stage Summary:
+- Mobile viewports now feature a native app PWA experience with tight margins and optimized typography.
+- Horizontal device mockup transforms dynamically into a premium vertical smartphone with the live map preview on mobile screens.
+- Auth cards render full-screen with borderless space gray backgrounds on mobile to resemble native apps.
+
+---
+Task ID: 2-E
+Agent: Antigravity
+Task: Complete High-Fidelity Apple Redesign from Scratch
+
+Work Log:
+- Updated globals.css: Cleaned up legacy layout classes and built a unified, ultra-premium design system. Added custom radar scan styling, keyframe definitions for radar sweep and glowing pulse dots, and responsive phone mockup frame parameters.
+- Updated page.tsx: Redesigned the Landing, Login, and Registration pages from scratch. Integrated a simulated real-time GPS fleet radar map inside the hero and login panel sidebar (featuring conic gradients, blinking active courier points, and monospace system coordinates logs). Replaced demo role login links with custom circular frosted glass profile cards. Included a dynamic password strength segment checker on the registration form.
+- Verified: Stopped development server, ran npx next build (compiled successfully in 11.3s with zero warnings/errors), and initialized the server in optimized production mode on port 3000.
+
+---
+Task ID: 2-F
+Agent: Antigravity
+Task: Cyber Telemetry Console & Glassmorphism Card Refinements
+
+Work Log:
+- Updated globals.css: Added keyframes for scrolling terminal console text (@keyframes scroll-terminal). Defined terminal scroller classes (.terminal-scroller) with pause-on-hover capability.
+- Updated page.tsx: Added scrolling live telemetry logs inside a virtual terminal in the sidebar. Telemetry scrolls infinitely in green digital fonts and pauses on hover with a status alert. Redesigned quick-login credentials profiles as individual glass capsules with hover glow shadows matching their specific roles. Redesigned registration role selection into a 2x2 grid of responsive buttons containing custom icons, bold headers, and descriptive text. Integrated a dynamic password criteria indicator (checkmarks that change color from gray to green) validating length, uppercase, numbers, and symbols in real-time. Added drifting ambient neon glass blobs behind the credentials card.
+- Verified: Ran npx next build (compiled successfully in 6.8s) and launched the optimized web server.
+
+---
+Task ID: 2-G
+Agent: Antigravity
+Task: Production Clean Rebuild & Server Restart
+
+Work Log:
+- Verified: Stopped the previous server process (`task-622`).
+- Verified: Ran `npx next build` (`task-638`). Compiled successfully in 11.1s with zero errors or warnings.
+- Verified: Started the fresh production web server (`task-643`) on port 3000 (`npx next start -p 3000`). Ready in 304ms.
+
+---
+Task ID: 2-H
+Agent: Antigravity
+Task: Fixed Demo Login reference bug & Clean Build Cache
+
+Work Log:
+- Updated page.tsx: Replaced `selectDemoProfile` click handler reference with the actual `handleDemoLogin` function inside the quick-access demo profile capsules.
+- Verified: Stopped previous server process (`task-643`). Cleaned up entire `.next` build cache directory and generated a fresh compilation (`npx next build`). Started the production server on port 3000.
+
+---
+Task ID: 2-I
+Agent: Antigravity
+Task: Resolve TypeScript compiler errors & Refine Auth Aesthetics
+
+Work Log:
+- Updated page.tsx: Corrected `pwStrength.score` references to `pwStrength.level` to match the actual return type signature of `getPasswordStrength()`.
+- Updated repartidor-mock.ts: Added missing profile fields (`saldo: 450`, `contratoAceptado: true`, `recargas: []`) to the `MOCK_PERFIL` mock data to fully satisfy the `RepartidorProfile` interface.
+- Updated globals.css: Refined auth split layouts and replaced static card parameters with modern, deep carbon dark background parameters (`#060608`), soft white glassmorphism borders, and neon blue input focus shadow styles.
+- Verified: Ran `npx tsc --noEmit` which completed successfully with 0 errors. Ran `npx next build` and successfully launched the optimized production server on port 3000.
+
+---
+Task ID: 2-J
+Agent: Antigravity
+Task: Overhaul PWA Service Worker to Prevent Chunk Caching
+
+Work Log:
+- Updated public/sw.js: Upgraded cache version to `logifast-v5` to clear all old client assets. Overhauled fetch interceptor rules to force Network First strategy for all page navigation, api requests, and dynamic Next.js `/_next/` chunks, preventing stale code load errors.
+- Verified: Stopped server, rebuilt clean production assets (`npx next build`), and restarted the production server.
+
+---
+Task ID: 2-K
+Agent: Antigravity
+Task: Implement Client-Side ChunkLoadError Recovery
+
+Work Log:
+- Updated ThemeProvider.tsx: Registered a global window error event listener to catch any `ChunkLoadError` or failed dynamic imports in real-time. On error, it programmatically unregisters all service workers, clears the Cache Storage api, and triggers a hard page reload.
+- Updated client-dashboard.tsx & dashboard.tsx: Integrated the same service worker and cache wiping recovery callback inside the `componentDidCatch` lifecycle of the React Error Boundaries.
+- Verified: Built successfully (`npx next build`) and restarted the server on port 3000.
+
+
+

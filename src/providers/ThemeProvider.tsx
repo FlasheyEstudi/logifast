@@ -23,21 +23,54 @@ import {
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const tema = useConfigStore((s) => s.tema);
-
-  // 1. Apply persisted theme on first mount (client-only) and register Service Worker.
+  // 1. Apply persisted theme on first mount, register Service Worker, and bind ChunkLoadError recovery.
   useEffect(() => {
     inicializarTema();
 
-    // Register service worker
+    const handleGlobalError = (event: ErrorEvent) => {
+      const errorMsg = event.message || '';
+      const isChunkError = 
+        errorMsg.includes('Failed to load chunk') || 
+        errorMsg.includes('ChunkLoadError') ||
+        (event.error && (
+          event.error.name === 'ChunkLoadError' || 
+          event.error.message?.includes('Failed to load chunk')
+        ));
+      
+      if (isChunkError) {
+        console.warn('ChunkLoadError detectado. Limpiando cache/SW y recargando...');
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            for (const reg of regs) {
+              reg.unregister();
+            }
+          });
+        }
+        if ('caches' in window) {
+          caches.keys().then(keys => {
+            keys.forEach(key => caches.delete(key));
+          });
+        }
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
+      }
+    };
+
+    window.addEventListener('error', handleGlobalError, true);
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW registrado con éxito:', reg.scope))
-          .catch(err => console.error('Error registrando SW:', err));
+          .then(reg => console.log('SW registrado:', reg.scope))
+          .catch(err => console.error('Error SW:', err));
       });
     }
-  }, []);
 
+    return () => {
+      window.removeEventListener('error', handleGlobalError, true);
+    };
+  }, []);
   // 2. Re-apply whenever the store tema changes (incl. after hydration).
   useEffect(() => {
     if (typeof window === 'undefined') return;

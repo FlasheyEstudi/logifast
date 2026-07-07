@@ -1253,11 +1253,24 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                     width: 64,
                     height: 32,
                     borderRadius: 16,
-                    background: isActive ? 'var(--md-primary-container)' : 'transparent',
-                    transition: 'background 0.2s ease',
                   }}
                 >
-                  {item.icon}
+                  {isActive && (
+                    <motion.span
+                      layoutId="activeTabPill"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: 16,
+                        background: 'var(--md-primary-container)',
+                        zIndex: 0,
+                      }}
+                    />
+                  )}
+                  <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center' }}>
+                    {item.icon}
+                  </span>
                   {/* Notification badge on Inicio tab */}
                   {item.key === 'inicio' && unreadCount > 0 && (
                     <span
@@ -1277,6 +1290,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                         justifyContent: 'center',
                         fontFamily: "'JetBrains Mono', monospace",
                         lineHeight: 1,
+                        zIndex: 2,
                       }}
                     >
                       {unreadCount > 9 ? '9+' : unreadCount}
@@ -1301,6 +1315,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                         justifyContent: 'center',
                         fontFamily: "'JetBrains Mono', monospace",
                         lineHeight: 1,
+                        zIndex: 2,
                       }}
                     >
                       {getCartItemCount() > 9 ? '9+' : getCartItemCount()}

@@ -1,13 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "flyonui/themes.css";
-@import "flyonui/components/button.css";
-@import "flyonui/components/input.css";
-@import "flyonui/components/card.css";
-@import "flyonui/components/badge.css";
-@import "flyonui/components/loading.css";
+@plugin "flyonui";
+@import "../../node_modules/flyonui/variants.css";
 @import "../../node_modules/preline/variants.css";
 @source "../../node_modules/preline/dist/*.js";
+
+@plugin "flyonui" {
+  themes: light --default, dark --prefersdark, soft;
+}
 
 /* ========================================
    LOGIFAST 2.0 — Complete Rebrand Design System
@@ -7872,20 +7872,819 @@ body {
   color: var(--text-secondary);
 }
 
-.lp-bento-preview {
-  margin-top: 24px;
-  background: var(--bg-alt);
-  border-radius: 16px;
+/* =====================================================
+   ULTRA-PREMIUM APPLE-DESIGNED SYSTEM (LANDING & AUTH)
+   ===================================================== */
+
+.apple-landing-wrapper {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Frosted glass navbar */
+.apple-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  padding: 0 clamp(16px, 4vw, 96px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1000;
+  background: rgba(250, 248, 245, 0.76);
+  backdrop-filter: saturate(190%) blur(24px);
+  -webkit-backdrop-filter: saturate(190%) blur(24px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .apple-navbar {
+  background: rgba(9, 9, 11, 0.76);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.apple-navbar.scrolled {
+  height: 52px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.015);
+  background: rgba(250, 248, 245, 0.85);
+}
+
+[data-theme="dark"] .apple-navbar.scrolled {
+  background: rgba(9, 9, 11, 0.85);
+}
+
+.apple-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  list-style: none;
+}
+
+@media (max-width: 900px) {
+  .apple-nav-links {
+    display: none;
+  }
+}
+
+.apple-nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.apple-nav-link:hover {
+  color: var(--text);
+}
+
+.apple-nav-btn-primary {
+  background: var(--text);
+  color: var(--surface);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 980px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-nav-btn-primary:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.apple-nav-btn-primary:active {
+  transform: scale(0.97);
+}
+
+.apple-nav-btn-secondary {
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.apple-nav-btn-secondary:hover {
+  opacity: 0.7;
+}
+
+/* Hero Section */
+.apple-hero-section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 20px 60px;
+  position: relative;
+}
+
+.apple-hero-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primario);
+  background: var(--primario-soft);
+  padding: 6px 16px;
+  border-radius: 980px;
+  margin-bottom: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(7, 100, 226, 0.15);
+  letter-spacing: -0.01em;
+}
+
+.apple-hero-title {
+  font-size: clamp(34px, 5.8vw, 64px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  max-width: 880px;
+  margin-bottom: 18px;
+}
+
+.apple-hero-subtitle {
+  font-size: clamp(15px, 2.2vw, 20px);
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  max-width: 640px;
+  margin-bottom: 36px;
+  letter-spacing: -0.01em;
+}
+
+.apple-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 60px;
+  width: auto;
+}
+
+.apple-btn-filled {
+  background: var(--text);
+  color: var(--surface);
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 13px 26px;
+  border-radius: 980px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.apple-btn-filled:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.apple-btn-filled:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.apple-btn-border {
+  background: transparent;
+  color: var(--text);
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 13px 26px;
+  border-radius: 980px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-btn-border:hover {
+  border-color: var(--text);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .apple-btn-border:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.apple-btn-border:active {
+  transform: scale(0.97);
+}
+
+/* Device Mockup */
+.apple-mockup-frame {
+  max-width: 900px;
+  width: 100%;
+  background: var(--surface);
   border: 1px solid var(--border);
-  padding: 16px;
-  flex: 1;
+  border-radius: 18px;
+  padding: 8px;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 16/10;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-mockup-screen {
+  width: 100%;
+  height: 100%;
+  background: #020710;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Section design */
+.apple-section {
+  padding: 80px clamp(16px, 4vw, 96px);
+  position: relative;
+}
+
+.apple-section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.apple-section-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primario);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.apple-section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Bento Grid styling */
+.apple-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (max-width: 960px) {
+  .apple-bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .apple-bento-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.apple-bento-card {
+  grid-column: span 2;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.apple-bento-card.col-4 {
+  grid-column: span 4;
+}
+
+@media (max-width: 960px) {
+  .apple-bento-card, .apple-bento-card.col-4 {
+    grid-column: span 1;
+  }
+}
+
+.apple-bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(7, 100, 226, 0.2);
+}
+
+.apple-bento-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--primario-soft);
+  color: var(--primario);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 140px;
+}
+
+.apple-bento-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+}
+
+.apple-bento-desc {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* Cost Calculator Widget */
+.apple-calc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.apple-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: 10px;
+  background: var(--border);
+  outline: none;
+}
+
+.apple-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primario);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.1s ease;
+}
+
+.apple-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.apple-btn-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.apple-select-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.apple-select-btn.active {
+  border-color: var(--primario);
+  color: var(--primario);
+  background: var(--primario-soft);
+}
+
+.apple-select-btn:active {
+  transform: scale(0.97);
 }
 
 /* Timeline steps */
+.apple-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .apple-timeline {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+.apple-timeline-step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.apple-timeline-num {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1;
+}
+
+.apple-timeline-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.apple-timeline-desc {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* Partners grid */
+.apple-partners-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .apple-partners-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .apple-partners-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.apple-partner-logo {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.apple-partner-logo:hover {
+  opacity: 1;
+  transform: scale(1.03);
+}
+
+/* CTA Card */
+.apple-cta-card {
+  background: linear-gradient(135deg, var(--text) 0%, #171719 100%);
+  color: var(--surface);
+  border-radius: 24px;
+  padding: 60px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+[data-theme="dark"] .apple-cta-card {
+  background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.apple-cta-title {
+  font-size: clamp(24px, 4vw, 40px);
+  font-weight: 800;
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
+}
+
+.apple-cta-desc {
+  font-size: clamp(14px, 1.8vw, 17px);
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 560px;
+  margin: 0 auto 32px;
+  line-height: 1.5;
+}
+
+.apple-hamburger {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .apple-hamburger {
+    display: flex;
+  }
+}
+
+.apple-drawer-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: var(--surface);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.apple-drawer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 40px;
+  list-style: none;
+}
+
+.apple-drawer-link {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* --- Apple Auth Split View --- */
+.apple-auth-split {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  min-height: 100vh;
+  background: #060608;
+}
+
+@media (max-width: 900px) {
+  .apple-auth-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.apple-auth-sidebar {
+  background: #020203;
+  color: #fff;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 900px) {
+  .apple-auth-sidebar {
+    display: none;
+  }
+}
+
+.apple-auth-sidebar-glow {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(7, 100, 226, 0.15) 0%, transparent 80%);
+  filter: blur(60px);
+}
+
+.apple-auth-form-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  overflow-y: auto;
+  background: #060608;
+  position: relative;
+}
+
+.apple-auth-card {
+  max-width: 420px;
+  width: 100%;
+  background: rgba(13, 13, 17, 0.72);
+  backdrop-filter: blur(32px) saturate(210%);
+  -webkit-backdrop-filter: blur(32px) saturate(210%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 28px;
+  padding: 36px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-input-field {
+  width: 100%;
+  padding: 11px 14px 11px 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.apple-input-field:focus {
+  border-color: var(--primario);
+  box-shadow: 0 0 0 3px rgba(7, 100, 226, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* Mobile PWA & Android/iOS optimizations */
+@media (max-width: 768px) {
+  .apple-navbar {
+    height: 54px !important;
+    padding: 0 16px !important;
+  }
+  .apple-navbar.scrolled {
+    height: 50px !important;
+  }
+  .apple-hero-section {
+    padding: 84px 16px 32px !important;
+  }
+  .apple-hero-title {
+    font-size: 30px !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.15 !important;
+    margin-bottom: 14px !important;
+  }
+  .apple-hero-subtitle {
+    font-size: 14.5px !important;
+    margin-bottom: 24px !important;
+    padding: 0 4px !important;
+  }
+  .apple-hero-actions {
+    margin-bottom: 36px !important;
+    width: 100% !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .apple-btn-filled, .apple-btn-border {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 11px 20px !important;
+    font-size: 14px !important;
+  }
+  
+  .apple-mockup-frame {
+    max-width: 270px !important;
+    aspect-ratio: 9/18 !important;
+    border-radius: 36px !important;
+    border: 8px solid var(--text) !important;
+    padding: 1px !important;
+  }
+  .apple-mockup-screen {
+    border-radius: 26px !important;
+  }
+  
+  .apple-section {
+    padding: 40px 16px !important;
+  }
+  .apple-section-header {
+    margin-bottom: 24px !important;
+  }
+  .apple-section-title {
+    font-size: 22px !important;
+  }
+  .apple-bento-grid {
+    gap: 10px !important;
+  }
+  .apple-bento-card {
+    padding: 16px !important;
+    border-radius: 16px !important;
+    gap: 10px !important;
+  }
+  .apple-bento-title {
+    font-size: 16.5px !important;
+  }
+  .apple-bento-desc {
+    font-size: 13px !important;
+  }
+  
+  .apple-calc-card {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+  .apple-btn-group {
+    gap: 6px !important;
+  }
+  .apple-select-btn {
+    padding: 7px;
+    font-size: 11.5px;
+  }
+  
+  .apple-timeline {
+    gap: 16px !important;
+  }
+  .apple-timeline-step {
+    gap: 4px !important;
+    padding-left: 10px !important;
+    border-left: 2px solid var(--border) !important;
+  }
+  .apple-timeline-num {
+    font-size: 22px !important;
+  }
+  .apple-timeline-title {
+    font-size: 15.5px !important;
+  }
+  .apple-timeline-desc {
+    font-size: 12.5px !important;
+  }
+  
+  .apple-cta-card {
+    padding: 40px 16px !important;
+    border-radius: 20px !important;
+  }
+  .apple-cta-title {
+    font-size: 22px !important;
+  }
+  .apple-cta-desc {
+    font-size: 13.5px !important;
+    margin-bottom: 24px !important;
+  }
+  
+  .apple-auth-form-side {
+    padding: 16px 12px !important;
+  }
+  .apple-auth-card {
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    max-width: 100% !important;
+  }
+}
+
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); opacity: 0.95; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.95; }
+}
+
+.radar-sweep {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, rgba(7, 100, 226, 0.15) 0deg, rgba(7, 100, 226, 0) 120deg);
+  border-radius: 50%;
+  animation: radar-sweep 6s linear infinite;
+  transform-origin: center center;
+}
+
+.radar-circle {
+  position: absolute;
+  border: 1px solid rgba(7, 100, 226, 0.08);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+@keyframes scroll-terminal {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+.terminal-scroller {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: scroll-terminal 24s linear infinite;
+}
+
+.terminal-scroller:hover {
+  animation-play-state: paused;
+}
+
 .lp-timeline {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -8294,4 +9093,100 @@ body {
   gap: 6px;
 }
 
+/* =====================================================
+   2026 CONTAINER QUERIES & DYNAMIC MARKETPLACE GRID
+   ===================================================== */
+.lf-tiendas-grid {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 16px;
+  padding: 8px 16px 120px;
+}
 
+.lf-tienda-card {
+  display: flex;
+  flex-direction: row;
+  border-radius: var(--lf-card-radius, 22px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--lf-shadow-card);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.lf-tienda-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.lf-tienda-cover {
+  width: 110px;
+  min-width: 110px;
+  min-height: 120px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justifyContent: center;
+}
+
+.lf-tienda-info {
+  flex: 1;
+  padding: 14px 16px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Enforce vertical layout in narrow container spaces */
+@container (max-width: 350px) {
+  .lf-tienda-card {
+    flex-direction: column;
+  }
+  .lf-tienda-cover {
+    width: 100% !important;
+    height: 120px !important;
+    min-height: 120px !important;
+    border-radius: var(--lf-card-radius, 22px) var(--lf-card-radius, 22px) 0 0 !important;
+  }
+}
+
+/* =====================================================
+   2026 RESPONSIVE CHECKOUT LAYOUT (LIQUID GRID)
+   ===================================================== */
+.lf-checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  width: 100%;
+}
+
+.lf-desktop-pay-btn {
+  display: none;
+}
+
+.lf-mobile-footer {
+  display: block;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  margin-top: auto;
+}
+
+@media (min-width: 768px) {
+  .lf-checkout-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: start;
+  }
+
+  .lf-desktop-pay-btn {
+    display: block;
+  }
+
+  .lf-mobile-footer {
+    display: none;
+  }
+}

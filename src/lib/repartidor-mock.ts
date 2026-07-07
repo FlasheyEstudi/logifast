@@ -38,6 +38,9 @@ export const MOCK_PERFIL: RepartidorProfile = {
   sonidoActivo: true,
   vibracionActiva: true,
   ubicacionActiva: true,
+  saldo: 450,
+  contratoAceptado: true,
+  recargas: [],
 };
 
 /* ─── Moto asignada ─── */

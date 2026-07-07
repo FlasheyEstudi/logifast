@@ -792,8 +792,8 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
         )}
       </div>
 
-      {/* ─── 5. LISTA DE TIENDAS — Horizontal cards ─── */}
-      <div style={{ padding: '8px 0 120px' }}>
+      {/* ─── 5. LISTA DE TIENDAS — Grid con Container Queries (2026) ─── */}
+      <div className="lf-tiendas-grid">
         <AnimatePresence mode="popLayout">
           {filteredTiendas.map((tienda, idx) => {
             const isFav = isFavoritoTienda(tienda.id);
@@ -815,33 +815,17 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
                 onMouseLeave={() => setPressedCard(null)}
                 onTouchStart={() => setPressedCard(tienda.id)}
                 onTouchEnd={() => setPressedCard(null)}
+                className="lf-tienda-card"
                 style={{
-                  display: 'flex',
-                  margin: '0 16px 12px',
-                  borderRadius: 'var(--lf-card-radius, 22px)',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  boxShadow: 'var(--lf-shadow-card)',
-                  cursor: 'pointer',
-                  overflow: 'hidden',
                   transform: isPressed ? 'scale(0.98)' : 'scale(1)',
-                  transition: 'transform 0.1s ease',
                 }}
               >
-                {/* ── Portada (izquierda, 100x100) ── */}
+                {/* ── Portada (izquierda/arriba, autoadaptable) ── */}
                 <div
+                  className="lf-tienda-cover lf-tienda-cover-rounded"
                   style={{
-                    width: 100,
-                    minWidth: 100,
-                    height: 'auto',
-                    minHeight: 120,
-                    borderRadius: 'var(--lf-card-radius, 22px) 0 0 var(--lf-card-radius, 22px)',
                     background: tienda.logoColor,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
+                    borderRadius: 'var(--lf-card-radius, 22px) 0 0 var(--lf-card-radius, 22px)',
                   }}
                 >
                   {/* Iniciales watermark */}
@@ -893,8 +877,8 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
                   )}
                 </div>
 
-                {/* ── Info (derecha, flex 1) ── */}
-                <div style={{ flex: 1, padding: '14px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {/* ── Info (derecha/abajo, autoadaptable) ── */}
+                <div className="lf-tienda-info">
                   {/* Fila 1: nombre + verificado */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <span

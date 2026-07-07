@@ -41,12 +41,27 @@ class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, Dash
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  }  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[Dashboard Error Boundary]', error, errorInfo);
+    if (error.name === 'ChunkLoadError' || error.message?.includes('Failed to load chunk')) {
+      console.warn('ChunkLoadError catch en DashboardErrorBoundary. Limpiando SW...');
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (const reg of regs) {
+            reg.unregister();
+          }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(keys => {
+          keys.forEach(key => caches.delete(key));
+        });
+      }
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+    }
   }
-
   handleRetry = () => {
     this.setState({ hasError: false, error: null });
   };
