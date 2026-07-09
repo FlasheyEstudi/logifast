@@ -62,7 +62,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW registrado:', reg.scope))
+          .then(reg => {
+            console.log('SW registrado:', reg.scope);
+            reg.update();
+          })
           .catch(err => console.error('Error SW:', err));
       });
     }

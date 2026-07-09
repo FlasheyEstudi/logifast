@@ -59,6 +59,40 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              // Unregister any active service workers immediately to bypass stuck cache
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for (let registration of registrations) {
+                    registration.unregister();
+                  }
+                });
+              }
+              // Clear cache storage
+              if ('caches' in window) {
+                caches.keys().then(function(names) {
+                  for (let name of names) {
+                    caches.delete(name);
+                  }
+                });
+              }
+              
+              // Load theme
+              const raw = localStorage.getItem('logifast-config');
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                const tema = parsed?.state?.tema || 'system';
+                let resolved = tema;
+                if (tema === 'system') {
+                  resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', resolved);
+              }
+            } catch (e) {}
+          })();
+        ` }} />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
         <meta name="theme-color" content="#0764E2" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

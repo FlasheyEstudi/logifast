@@ -7,13 +7,13 @@ import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
 import { sileo } from "sileo";
-import { Transition, Dialog } from '@headlessui/react';
+import { Transition } from '@headlessui/react';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false });
 const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false });
 
 /* ═══════════════════════════════════════════════════════
-   SVG ICONS
+   SVG HIGH-TECH ICONS
    ═══════════════════════════════════════════════════════ */
 
 const IconEnvelope = () => (
@@ -41,7 +41,7 @@ const IconCheck = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 );
 const IconCheckLg = () => (
-  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--exito)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 );
 const IconSun = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -65,22 +65,16 @@ const IconX = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 );
 const IconCheckCircle = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--exito)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
 );
 const IconXCircle = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--peligro)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
 );
 const IconAlertTriangle = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
 );
 const IconInfo = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--info)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-);
-const IconPlay = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-);
-const IconCheckSmall = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
 );
 
 /* ═══════════════════════════════════════════════════════
@@ -168,19 +162,19 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
       return (
         <div style={{
           height: '100vh', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', background: '#fff',
+          alignItems: 'center', justifyContent: 'center', background: '#030305',
           padding: 24, textAlign: 'center', fontFamily: "'DM Sans', sans-serif"
         }}>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1B1B2F', marginBottom: 12 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginBottom: 12 }}>
             Algo salió mal al cargar el Dashboard
           </h2>
-          <p style={{ color: '#5A5A72', maxWidth: 450, margin: '0 auto 24px', fontSize: 15, lineHeight: 1.5 }}>
+          <p style={{ color: '#8E8EA0', maxWidth: 450, margin: '0 auto 24px', fontSize: 15, lineHeight: 1.5 }}>
             Se produjo un error inesperado en la interfaz. Puedes reintentar cargar la vista o volver al inicio del portal.
           </p>
           <div style={{
-            padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.04)',
-            border: '1px solid rgba(220,38,38,0.12)', maxWidth: 500, width: '100%',
-            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#DC2626',
+            padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.08)',
+            border: '1px solid rgba(220,38,38,0.2)', maxWidth: 500, width: '100%',
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#FF1744',
             wordBreak: 'break-word', overflow: 'auto', maxHeight: 120, marginBottom: 16
           }}>
             {errorMessage}
@@ -190,7 +184,7 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
               onClick={this.handleRetry}
               style={{
                 padding: '10px 24px', borderRadius: 10, border: 'none',
-                background: '#FF5722', color: '#fff', cursor: 'pointer',
+                background: '#0066FF', color: '#fff', cursor: 'pointer',
                 fontSize: 14, fontWeight: 600, transition: 'all 0.2s',
               }}
             >
@@ -199,8 +193,8 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
             <button
               onClick={this.props.onGoHome}
               style={{
-                padding: '10px 24px', borderRadius: 10, border: '1px solid #e5e7eb',
-                background: '#fff', color: '#1B1B2F',
+                padding: '10px 24px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)',
+                background: 'transparent', color: '#FFFFFF',
                 cursor: 'pointer', fontSize: 14, fontWeight: 600,
                 transition: 'all 0.2s',
               }}
@@ -225,6 +219,8 @@ export default function Home() {
   const [viewTransition, setViewTransition] = useState<'enter' | 'exit' | null>(null);
   const [loginRole, setLoginRole] = useState<string>('admin');
   const [loginUserName, setLoginUserName] = useState<string>('Administrador');
+  const [hoveredRole, setHoveredRole] = useState<string | null>(null);
+  const [regStep, setRegStep] = useState(1);
 
   /* ─── Navigation/Interface state ─── */
   const [navScrolled, setNavScrolled] = useState(false);
@@ -232,7 +228,6 @@ export default function Home() {
   const revealRef = useRef<HTMLElement>(null);
 
   /* ─── Auth state ─── */
-  const [authTransition, setAuthTransition] = useState<'enter' | 'exit' | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
@@ -268,6 +263,66 @@ export default function Home() {
     return base + (distance * perKm);
   };
 
+  const getRoleFeatures = (role: string) => {
+    switch (role) {
+      case 'cliente': return {
+        title: "Portal de Clientes",
+        desc: "Accede al cotizador interactivo para estimar costos de envío inmediatos. Solicita motorizados express con asignación en tiempo real y descarga facturas fiscales automatizadas en formato PDF desde tu panel.",
+        kpiLabel: "Simulación de Cotización",
+        kpiVal: "C$ 75.00",
+        kpiSub: "Tarifa base + 5km de recorrido"
+      };
+      case 'repartidor': return {
+        title: "Panel de Riders",
+        desc: "Visualiza tu mapa GPS activo en tiempo real. Gestiona la aceptación de órdenes basadas en tu proximidad física, visualiza la ruta óptima sugerida por satélite y lleva el control total de tus ganancias acumuladas.",
+        kpiLabel: "Latencia GPS Activa",
+        kpiVal: "12ms",
+        kpiSub: "Conectado a nodo principal Managua"
+      };
+      case 'ingeniero': return {
+        title: "Consola de Mantenimiento",
+        desc: "Monitorea la flota en tiempo real. Asocia hojas de servicio mecánico a cada unidad, controla de forma automática el stock mínimo de repuestos críticos del taller y recibe alertas preventivas predictivas según el kilometraje.",
+        kpiLabel: "Alertas de Taller",
+        kpiVal: "3 Críticas",
+        kpiSub: "Unidades requieren cambio de repuesto"
+      };
+      case 'admin': return {
+        title: "Consola de Administración",
+        desc: "Supervisa la totalidad de la red de despachos en tiempo real. Audita transacciones financieras y comisiones globales de la plataforma, y administra perfiles operativos junto a la resolución rápida de incidencias.",
+        kpiLabel: "Entregas Exitosas Hoy",
+        kpiVal: "98.7%",
+        kpiSub: "412 despachos completados a tiempo"
+      };
+      default: return null;
+    }
+  };
+
+  const getRolePuntosFuertes = (role: string) => {
+    switch (role) {
+      case 'cliente': return [
+        "Tarifas sumamente competitivas calculadas al instante por volumen y distancia.",
+        "Garantía de entrega express en toda la zona metropolitana de Managua.",
+        "Soporte de incidencias y chat prioritario directo con el rider asignado."
+      ];
+      case 'repartidor': return [
+        "Retiros rápidos de tus ganancias directamente a tu billetera digital.",
+        "Mayor volumen de órdenes operativas gracias al ruteo continuo por GPS.",
+        "Soporte técnico y auxilio en ruta activo las 24 horas del día."
+      ];
+      case 'ingeniero': return [
+        "Previene averías críticas de taller con alertas automáticas de kilometraje.",
+        "Monitoreo simplificado de repuestos con alertas automáticas de stock mínimo.",
+        "Registro de hojas mecánicas totalmente digitalizado y enlazado a la moto."
+      ];
+      case 'admin': return [
+        "Visualización satelital unificada de toda la flota en un mapa dinámico.",
+        "Control granular de comisiones operativas, facturación y estados de caja.",
+        "Acceso a analíticas avanzadas de rendimiento e incidencias en vivo."
+      ];
+      default: return [];
+    }
+  };
+
   /* ─── Theme ─── */
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -278,6 +333,42 @@ export default function Home() {
       setLoading(false);
     }, 1800);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Listen to hash changes to handle browser back/forward gestures without leaving the app
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#/login') {
+        setCurrentView('login');
+        setRegStep(1);
+        document.body.style.overflow = 'hidden';
+      } else if (hash === '#/register') {
+        setCurrentView('register');
+        setRegStep(1);
+        document.body.style.overflow = 'hidden';
+      } else if (hash === '#/dashboard') {
+        const savedRole = localStorage.getItem('lf-session-role');
+        const savedName = localStorage.getItem('lf-session-name');
+        if (savedRole) {
+          setLoginRole(savedRole);
+          if (savedName) setLoginUserName(savedName);
+          setCurrentView('dashboard');
+          document.body.style.overflow = '';
+        } else {
+          window.location.hash = '#/';
+        }
+      } else {
+        setCurrentView('landing');
+        document.body.style.overflow = '';
+      }
+    };
+
+    // Initial check on mount
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   const tema = useConfigStore((s) => s.tema);
@@ -343,37 +434,32 @@ export default function Home() {
   }, [currentView]);
 
   /* ─── Navigation helpers ─── */
-  const scrollTo = useCallback((id: string) => {
-    setMobileMenuOpen(false);
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
   const navigateTo = useCallback((view: 'landing' | 'login' | 'register') => {
     setViewTransition('exit');
     setTimeout(() => {
-      setCurrentView(view);
+      if (view === 'login') {
+        window.location.hash = '#/login';
+      } else if (view === 'register') {
+        window.location.hash = '#/register';
+      } else {
+        window.location.hash = '#/';
+      }
       setViewTransition('enter');
-      document.body.style.overflow = view === 'landing' ? '' : 'hidden';
       setTimeout(() => setViewTransition(null), 300);
     }, 300);
   }, []);
   const switchAuth = useCallback((mode: 'login' | 'register') => {
-    setCurrentView(mode);
+    if (mode === 'login') {
+      window.location.hash = '#/login';
+    } else {
+      window.location.hash = '#/register';
+    }
     setLoginErrors({});
     setRegErrors({});
   }, []);
 
   /* ─── Validation ─── */
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const getPasswordStrength = (pw: string): { level: number; label: string; cls: string } => {
-    if (!pw) return { level: 0, label: '', cls: '' };
-    if (pw.length <= 3) return { level: 1, label: 'Débil', cls: 'weak' };
-    if (pw.length <= 5) return { level: 2, label: 'Regular', cls: 'regular' };
-    if (pw.length <= 7) return { level: 3, label: 'Buena', cls: 'buena' };
-    return { level: 4, label: 'Fuerte', cls: 'fuerte' };
-  };
 
   /* ─── Login ─── */
   const handleLogin = useCallback((e: React.FormEvent) => {
@@ -401,7 +487,12 @@ export default function Home() {
       addToast(`Bienvenido, ${demoEntry[1].name}`, 'Redirigiendo al dashboard...', 'success');
       setTimeout(() => setLoginRedirect(true), 800);
       setTimeout(() => {
-        setCurrentView('dashboard');
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lf-session-view', 'dashboard');
+          localStorage.setItem('lf-session-role', demoEntry[0]);
+          localStorage.setItem('lf-session-name', demoEntry[1].name);
+          window.location.hash = '#/dashboard';
+        }
         document.body.style.overflow = '';
         setLoginRedirect(false);
       }, 3300);
@@ -424,15 +515,20 @@ export default function Home() {
       addToast(`Bienvenido, ${cred.name}`, 'Redirigiendo al dashboard...', 'success');
       setTimeout(() => setLoginRedirect(true), 800);
       setTimeout(() => {
-        setCurrentView('dashboard');
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lf-session-view', 'dashboard');
+          localStorage.setItem('lf-session-role', role);
+          localStorage.setItem('lf-session-name', cred.name);
+          window.location.hash = '#/dashboard';
+        }
         document.body.style.overflow = '';
         setLoginRedirect(false);
       }, 3300);
     }, 1200);
   }, [addToast]);
 
-  /* ─── Register ─── */
-  const handleRegister = useCallback((e: React.FormEvent) => {
+  /* ─── Register Step 1 Validate ─── */
+  const handleRegStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
     if (!regName.trim()) errors.name = 'El nombre es obligatorio';
@@ -442,6 +538,15 @@ export default function Home() {
     else if (regPassword.length < 6) errors.password = 'Mínimo 6 caracteres';
     if (!regConfirm) errors.confirm = 'Confirma tu contraseña';
     else if (regPassword !== regConfirm) errors.confirm = 'Las contraseñas no coinciden';
+    setRegErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    setRegStep(2);
+  };
+
+  /* ─── Register Final Submit ─── */
+  const handleRegister = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: Record<string, string> = {};
     if (!regRole) errors.role = 'Selecciona un tipo de cuenta';
     if (!regTerms) errors.terms = 'Debes aceptar los términos';
     setRegErrors(errors);
@@ -452,13 +557,18 @@ export default function Home() {
       setRegLoading(false);
       setRegSuccess(true);
     }, 1500);
-  }, [regName, regEmail, regPassword, regConfirm, regRole, regTerms]);
+  }, [regRole, regTerms]);
 
   /* ─── Logout ─── */
   const handleLogout = useCallback(() => {
-    setCurrentView('landing');
     setLoginEmail('');
     setLoginPassword('');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('lf-session-view');
+      localStorage.removeItem('lf-session-role');
+      localStorage.removeItem('lf-session-name');
+      window.location.hash = '#/';
+    }
     document.body.style.overflow = '';
     addToast('Sesión cerrada', 'Has cerrado sesión correctamente', 'info');
   }, [addToast]);
@@ -471,10 +581,9 @@ export default function Home() {
     return errors;
   })();
   const displayRegErrors = { ...regValidationErrors, ...regErrors };
-  const pwStrength = getPasswordStrength(regPassword);
 
   /* ═══════════════════════════════════════════════════════
-     DASHBOARD VIEW
+     DASHBOARD VIEW DIRECT
      ═══════════════════════════════════════════════════════ */
   if (currentView === 'dashboard') {
     if (loginRole === 'cliente') {
@@ -489,7 +598,7 @@ export default function Home() {
     }
     if (loginRole === 'ingeniero') {
       return (
-        <IngenieroApp onLogout={handleLogout} userName={loginUserName} />
+        <IngenieroApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
       );
     }
     return (
@@ -501,466 +610,286 @@ export default function Home() {
 
   return (
     <>
-      {/* CSS overrides for styling alignment with FlyonUI / Preline UI */}
       <style dangerouslySetInnerHTML={{ __html: `
-        .new-lp-wrapper {
-          background-color: var(--bg);
+        /* Radical Custom Styling for Floating Center Pill Navbar */
+        .floating-pill-nav {
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 90%;
+          max-width: 900px;
+          height: 64px;
+          background: rgba(10, 11, 16, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 9999px;
+          z-index: 1000;
+          backdrop-filter: blur(24px) saturate(180%);
+          -webkit-backdrop-filter: blur(24px) saturate(180%);
+          padding: 0 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .floating-pill-nav.scrolled {
+          top: 10px;
+          height: 56px;
+          background: rgba(6, 7, 10, 0.85);
+          border-color: rgba(0, 102, 255, 0.2);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 102, 255, 0.1);
+        }
+
+        /* Responsive menu overrides for pill navbar */
+        .pill-nav-links {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+          list-style: none;
+        }
+        @media (max-width: 768px) {
+          .pill-nav-links {
+            display: none;
+          }
+        }
+
+        /* High Tech Glow Background for Forms */
+        .obsidian-input {
+          background: transparent !important;
+          border: none !important;
+          border-bottom: 2px solid rgba(255,255,255,0.1) !important;
+          border-radius: 0px !important;
+          padding: 12px 12px 12px 36px !important;
+          color: #FFFFFF !important;
+          font-size: 16px !important; /* Prevents iOS auto-zoom */
+          transition: all 0.3s ease !important;
+        }
+        .obsidian-input:focus {
+          border-bottom-color: #0066FF !important;
+          box-shadow: none !important;
+          outline: none !important;
+        }
+        .obsidian-input::placeholder {
+          color: #555866 !important;
+        }
+
+        /* Minimalist auth labels */
+        .obsidian-label {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #8E8EA0;
+        }
+
+        /* Dynamic keypads demo */
+        .keypad-demo-btn {
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.01);
+          border-radius: 16px;
+          padding: 12px;
+          text-align: left;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .keypad-demo-btn:hover {
+          background: rgba(255, 255, 255, 0.03);
+          transform: translateY(-2px);
+        }
+
+        /* Theme variables fallback for landing page wrapper */
+        .obsidian-landing {
+          background: var(--bg);
           color: var(--text);
           font-family: 'DM Sans', sans-serif;
           min-height: 100vh;
-        }
-
-        /* Mobile Hamburger & Nav Collapse */
-        .lp-hamburger {
-          display: none;
-          cursor: pointer;
-        }
-
-        @media (max-width: 900px) {
-          .lp-navbar ul {
-            display: none !important;
-          }
-          .lp-navbar .flex.items-center.gap-4 {
-            display: none !important;
-          }
-          .lp-hamburger {
-            display: flex !important;
-            align-items: center;
-            justify-content: center;
-          }
-        }
-
-        /* Mobile Nav Sliding Drawer */
-        .mobile-nav-drawer {
-          position: fixed;
-          inset: 0;
-          z-index: 9999;
-          background: rgba(250, 248, 245, 0.98);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          display: flex;
-          flex-direction: column;
-          padding: 24px 32px;
-          justify-content: space-between;
-        }
-        [data-theme="dark"] .mobile-nav-drawer {
-          background: rgba(10, 10, 15, 0.99);
-        }
-
-        .mobile-drawer-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid var(--border);
-          padding-bottom: 16px;
-        }
-
-        .mobile-drawer-links {
-          display: flex;
-          flex-direction: column;
-          gap: 28px;
-          list-style: none;
-          padding: 0;
-          margin: 40px 0;
-        }
-        .mobile-drawer-links a {
-          font-family: 'Syne', sans-serif;
-          font-size: 24px;
-          font-weight: 800;
-          color: var(--text);
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-        .mobile-drawer-links a:hover {
-          color: var(--primario);
-        }
-
-        .mobile-drawer-actions {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          margin-bottom: 24px;
-        }
-
-        /* Premium Bento Card Previews */
-        .lp-bento-preview {
-          background: rgba(245, 243, 240, 0.45) !important;
-          border: 1px solid rgba(232, 228, 222, 0.7) !important;
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          transition: all 0.3s ease;
-        }
-        [data-theme="dark"] .lp-bento-preview {
-          background: rgba(26, 26, 36, 0.45) !important;
-          border-color: rgba(42, 42, 56, 0.7) !important;
-        }
-
-        .bento-mini-card {
-          background: var(--surface) !important;
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 12px 16px;
-          box-shadow: var(--shadow-sm);
-          font-size: 12px;
-          font-weight: 600;
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        /* Input glow on focus */
-        .lp-auth-card input:focus {
-          border-color: var(--primario) !important;
-          box-shadow: 0 0 0 3px var(--primario-soft) !important;
-          outline: none;
-        }
-
-        /* floating animations */
-        .float-card {
-          animation: floating 4s ease-in-out infinite;
-        }
-        @keyframes floating {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-          100% { transform: translateY(0px); }
-        }
-
-        /* Marquee horizontal allies list (kept) */
-        .lf-partners {
-          padding: 60px 0;
-          overflow: hidden;
-          background: var(--bg-alt);
-        }
-        .lf-marquee {
-          position: relative;
-          width: 100%;
-          overflow: hidden;
-          mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
-          -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
-        }
-        .lf-marquee-track {
-          display: flex;
-          gap: 32px;
-          width: max-content;
-          animation: marquee 28s linear infinite;
-        }
-        .lf-marquee-item {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          padding: 16px 24px;
-          border-radius: 16px;
-          box-shadow: var(--shadow-sm);
-        }
-        .lf-marquee-logo {
-          height: 38px;
-          width: auto;
-          object-fit: contain;
-        }
-        
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        @keyframes spin-gear {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes hop-box {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-10px) scale(0.96); }
-        }
-        @keyframes radar-pulse {
-          0% { transform: scale(0.3); opacity: 0.9; }
-          100% { transform: scale(1.6); opacity: 0; }
-        }
-        @keyframes drive-moto {
-          0% { transform: translateX(-35px); }
-          100% { transform: translateX(115px); }
-        }
-        @keyframes wave-grow {
-          0%, 100% { transform: scaleY(0.4); }
-          50% { transform: scaleY(1); }
+          overflow-x: hidden;
         }
       ` }} />
 
       {/* ═══════════════════════════════════════════════════════
-         AUTH REDIRECT OVERLAY (Headless UI Transition + Flyon UI loading components)
-         ═══════════════════════════════════════════════════════ */}
-      <Transition
-        show={loginRedirect}
-        enter="transition-opacity duration-300"
-        enterFrom="opacity-0"
-        enterTo="opacity-100"
-        leave="transition-opacity duration-300"
-        leaveFrom="opacity-100"
-        leaveTo="opacity-0"
-      >
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 3000,
-          background: isDark ? '#080710' : '#FAF8F5',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          
-          {/* Main Visual Animation Box */}
-          <div className="relative flex items-center justify-center mb-9 w-44 h-44">
-            
-            {/* Dynamic Glow Pulsing Backplane */}
-            <div 
-              className="absolute w-36 h-36 rounded-full"
-              style={{
-                background: loginRole === 'cliente' ? 'radial-gradient(circle, rgba(0, 200, 83, 0.28) 0%, transparent 70%)'
-                          : loginRole === 'repartidor' ? 'radial-gradient(circle, rgba(255, 87, 34, 0.28) 0%, transparent 70%)'
-                          : loginRole === 'admin' ? 'radial-gradient(circle, rgba(7, 100, 226, 0.28) 0%, transparent 70%)'
-                          : 'radial-gradient(circle, rgba(142, 68, 173, 0.28) 0%, transparent 70%)',
-                animation: 'radar-pulse 2.2s infinite ease-out',
-              }} 
-            />
-
-            {/* Flyon UI Loader Spinner Ring */}
-            <span 
-              className={`absolute loading loading-ring w-32 h-32 ${
-                loginRole === 'cliente' ? 'text-success'
-                : loginRole === 'repartidor' ? 'text-warning'
-                : loginRole === 'admin' ? 'text-primary'
-                : 'text-secondary'
-              }`}
-            />
-
-            {/* Central Logo Container */}
-            <div 
-              className="relative z-10 p-4 rounded-full w-20 h-20 flex items-center justify-center"
-              style={{
-                background: isDark ? '#14131F' : '#FFFFFF',
-                boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 30px rgba(0,0,0,0.08)',
-                animation: 'hop-box 2.2s infinite ease-in-out',
-              }}
-            >
-              <img src="/logo.png" alt="Logifast" className="w-12 h-12 object-contain" />
-            </div>
-
-            {/* Orbiting Mini Role Badge */}
-            <div className={`absolute bottom-2.5 right-2.5 z-20 p-2 rounded-full shadow-md text-white flex items-center justify-center ${
-              loginRole === 'cliente' ? 'bg-success'
-              : loginRole === 'repartidor' ? 'bg-warning'
-              : loginRole === 'admin' ? 'bg-primary'
-              : 'bg-secondary'
-            }`}>
-              {loginRole === 'cliente' && <IconPerson />}
-              {loginRole === 'repartidor' && <IconMoto />}
-              {loginRole === 'admin' && <IconShield />}
-              {loginRole === 'ingeniero' && <IconWrench />}
-            </div>
-          </div>
-
-          {/* Heading */}
-          <h3 className="font-syne text-2xl font-extrabold mb-2.5 tracking-tight" style={{ color: isDark ? '#FFFFFF' : '#1B1B2F' }}>
-            {loginRole === 'cliente' && 'Acceso Cliente'}
-            {loginRole === 'repartidor' && 'Conexión Repartidor'}
-            {loginRole === 'admin' && 'Panel Administrador'}
-            {loginRole === 'ingeniero' && 'Consola Técnica'}
-          </h3>
-
-          {/* Loader log indicator */}
-          <p className="font-mono text-xs flex items-center gap-2 m-0" style={{ color: 'var(--text-secondary)' }}>
-            <span 
-              className={`inline-block w-2 h-2 rounded-full ${
-                loginRole === 'cliente' ? 'bg-success'
-                : loginRole === 'repartidor' ? 'bg-warning'
-                : loginRole === 'admin' ? 'bg-primary'
-                : 'bg-secondary'
-              }`}
-              style={{ animation: 'udPulse 1s infinite' }}
-            />
-            Conectando como {loginUserName}...
-          </p>
-
-          <div className="mt-8 flex items-center justify-center">
-            <span className="loading loading-spinner text-primary"></span>
-          </div>
-        </div>
-      </Transition>
-
-      {/* ═══════════════════════════════════════════════════════
-         AUTH VIEWS (Apple-Inspired Premium Design)
+         AUTH VIEWS (Radical Minimalist Full-Bleed OVERHAUL)
          ═══════════════════════════════════════════════════════ */}
       {(currentView === 'login' || currentView === 'register') && (
-        <div className="apple-auth-split relative overflow-hidden" style={{ opacity: 1, transition: 'opacity 0.25s ease' }}>
+        <div className="relative min-h-screen bg-[var(--bg)] text-[var(--text)] flex items-center justify-center p-4 sm:p-6 md:p-12 overflow-hidden w-full font-sans">
           
-          {/* Left Column (Banner/Sidebar - Cyber Telemetry Command Center) */}
-          <div className="apple-auth-sidebar flex flex-col justify-between p-10 bg-[#FAF9F6] border-r border-[#1D1D1F]/10 relative">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,102,255,0.04),transparent_50%)]" />
+          {/* Neon digital grid wireframe background */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#0E0F19_1px,transparent_1px),linear-gradient(to_bottom,#0E0F19_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-[0.25] pointer-events-none" />
+          
+          {/* Animated color spot lights */}
+          <div className="absolute top-1/3 left-1/4 w-[600px] h-[600px] rounded-full bg-[#0066FF]/8 blur-[140px] pointer-events-none" />
+          <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] rounded-full bg-[#00C853]/4 blur-[130px] pointer-events-none" />
+
+          {/* Centered Main Dashboard Board */}
+          <div className="z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             
-            {/* Top Bar */}
-            <div className="z-10 flex justify-between items-center">
-              <Logo large darkText />
-              <span className="text-[9px] font-mono bg-[#0066FF]/5 border border-[#0066FF]/15 px-2.5 py-1 rounded-md text-[#0066FF] font-bold tracking-widest flex items-center gap-1.5 shadow-[0_1px_3px_rgba(0,102,255,0.05)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0066FF] animate-ping" />
-                SYS_STATUS: ACTIVE
-              </span>
-            </div>
-            
-            {/* Middle Section (Command Console Graphics) */}
-            <div className="z-10 my-auto flex flex-col gap-6">
-              <div>
-                <h2 className="font-syne text-[30px] font-black tracking-tight text-[#1A1A24] mb-2 leading-[1.12]">
-                  La velocidad de tu negocio, sincronizada.
-                </h2>
-                <p className="text-xs text-[#525262] leading-relaxed max-w-sm">
-                  Supervisa la red en tiempo real, asocia fichas mecánicas para mantenimiento de flota y audita transacciones de cobro.
+            {/* Left Column (Huge Typography & HUD) - 5 cols */}
+            <div className="lg:col-span-5 flex flex-col gap-6 text-center lg:text-left items-center lg:items-start">
+              <div className="cursor-pointer inline-flex justify-center lg:justify-start w-full lg:w-auto" onClick={() => navigateTo('landing')}>
+                <Logo large />
+              </div>
+              
+              <div className="hidden lg:block">
+                <h1 className="font-syne text-4xl sm:text-5xl font-black text-white leading-none tracking-tighter uppercase mb-4">
+                  {currentView === 'login' ? "Conexión de Flota" : "Registro de Operaciones"}
+                </h1>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
+                  {currentView === 'login' 
+                    ? "Inicia sesión en la consola integrada. Gestiona envíos, monitorea rutas satelitales y coordina repuestos." 
+                    : "Regístrate de forma segura y enlaza tu perfil de usuario al nodo logístico central."
+                  }
                 </p>
               </div>
 
-              {/* Scrolling Telemetry Terminal Console */}
-              <div className="relative w-full h-44 bg-[#0C0D12] rounded-xl border border-black/10 p-4 overflow-hidden group">
-                <div className="absolute top-2 right-3 text-[8px] font-mono text-gray-500 bg-white/5 px-2 py-0.5 rounded pointer-events-none group-hover:hidden">
-                  LIVE TELEMETRY FEED
-                </div>
-                <div className="absolute top-2 right-3 text-[8px] font-mono text-warning bg-warning/10 px-2 py-0.5 rounded pointer-events-none hidden group-hover:inline-block">
-                  FEED IN PAUSE
+              {/* Dynamic Workspace HUD Display */}
+              <div className="hidden lg:flex flex-col gap-4 border border-white/10 rounded-2xl p-6 bg-white/[0.01] backdrop-blur-md relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,102,255,0.06),transparent_70%)] pointer-events-none" />
+                <div className="flex justify-between items-center text-[9px] font-mono text-gray-500 uppercase tracking-widest">
+                  <span>TELEMETRY_LOG</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0066FF] animate-pulse" />
+                    ACTIVO
+                  </span>
                 </div>
 
-                <div className="w-full h-full overflow-hidden relative mt-1 select-none">
-                  <div className="terminal-scroller text-[9px] font-mono text-emerald-500/80 tracking-wide leading-normal">
-                    <p className="text-blue-400 font-bold">[SYS] BOOT: LOGIFAST Fleet Core v2026.7.1 initialized...</p>
-                    <p>[SYS] NETWORK: Connected to GPS gateway server (Managua Node)...</p>
-                    <p>[SYS] SECURE: SSL/TLS handshake completed. AES-256 encrypted session.</p>
-                    <p className="text-yellow-400">[API] AUDIT: Dispatcher sync initiated (0ms latency)...</p>
-                    <p className="text-gray-400">[RIDER] ACTIVE: Rider_34 (Juigalpa Route) is now online.</p>
-                    <p>[RIDER] EN_ROUTE: Rider_09 (Managua Centro) dispatched for Order #9812.</p>
-                    <p className="text-purple-400">[SYS] telemetry stream: 12.1154 N, 86.2731 W - Speed 42km/h</p>
-                    <p className="text-blue-400 font-bold">[SYS] BOOT: LOGIFAST Fleet Core v2026.7.1 initialized...</p>
-                    <p>[SYS] NETWORK: Connected to GPS gateway server (Managua Node)...</p>
-                    <p>[SYS] SECURE: SSL/TLS handshake completed. AES-256 encrypted session.</p>
-                    <p className="text-yellow-400">[API] AUDIT: Dispatcher sync initiated (0ms latency)...</p>
-                    <p className="text-gray-400">[RIDER] ACTIVE: Rider_34 (Juigalpa Route) is now online.</p>
-                    <p>[RIDER] EN_ROUTE: Rider_09 (Managua Centro) dispatched for Order #9812.</p>
-                    <p className="text-purple-400">[SYS] telemetry stream: 12.1154 N, 86.2731 W - Speed 42km/h</p>
-                  </div>
-                </div>
-              </div>
+                <AnimatePresence mode="wait">
+                  {currentView === 'login' && (
+                    <motion.div
+                      key={`hud-features-${hoveredRole || loginRole}`}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col gap-3"
+                    >
+                      {(() => {
+                        const activeRoleToShow = hoveredRole || loginRole;
+                        const roleFeatures = getRoleFeatures(activeRoleToShow);
+                        if (!roleFeatures) return null;
+                        return (
+                          <>
+                            <span className="text-xs font-bold text-white uppercase tracking-wider">{roleFeatures.title}</span>
+                            <p className="text-[11px] text-gray-400 leading-relaxed">{roleFeatures.desc}</p>
+                            <div className="flex items-baseline gap-2 mt-1">
+                              <span className="text-xl font-mono font-black text-[#0066FF]">{roleFeatures.kpiVal}</span>
+                              <span className="text-[8.5px] text-gray-500 font-mono">{roleFeatures.kpiLabel}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </motion.div>
+                  )}
 
-              {/* Mini Radar Graphic */}
-              <div className="relative w-full h-36 bg-[#0C0D12] rounded-xl border border-black/10 overflow-hidden flex items-center justify-center">
-                <div className="radar-sweep absolute" style={{ background: 'conic-gradient(from 0deg, rgba(0, 102, 255, 0.15) 0deg, rgba(0, 102, 255, 0) 120deg)' }} />
-                <div className="radar-circle w-10 h-10 border border-[#0066FF]/10" />
-                <div className="radar-circle w-20 h-20 border border-[#0066FF]/10" />
-                <div className="radar-circle w-28 h-28 border border-[#0066FF]/10" />
-                <div className="absolute top-8 left-1/3 w-1.5 h-1.5 bg-[#0066FF] rounded-full shadow-[0_0_6px_#0066FF]" style={{ animation: 'pulse-dot 1.4s infinite' }} />
-                <div className="absolute bottom-10 right-1/4 w-1.5 h-1.5 bg-[#0066FF] rounded-full shadow-[0_0_6px_#0066FF]" style={{ animation: 'pulse-dot 2.2s infinite' }} />
-                <span className="absolute bottom-2 left-3 text-[7.5px] font-mono text-gray-500">
-                  METROPOLITAN GRID // ANTENNA 01
-                </span>
+                  {currentView === 'register' && (
+                    <motion.div
+                      key={`hud-strengths-${regRole}`}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col gap-3"
+                    >
+                      {(() => {
+                        const puntos = getRolePuntosFuertes(regRole);
+                        return (
+                          <>
+                            <span className="text-xs font-bold text-white uppercase tracking-wider">Beneficios del Rol</span>
+                            <ul className="flex flex-col gap-1.5">
+                              {puntos.slice(0, 2).map((punto, i) => (
+                                <li key={i} className="text-[11px] text-gray-400 flex items-start gap-2">
+                                  <span className="text-[#00C853] font-bold">✓</span>
+                                  <span>{punto}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        );
+                      })()}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
-            
-            {/* Bottom Bar */}
-            <div className="text-xs text-gray-600 z-10 font-mono flex justify-between items-center">
-              <span>© {new Date().getFullYear()} LOGIFAST CO.</span>
-              <span className="text-[10px] text-gray-500">SECURE SHELL v2.4</span>
-            </div>
-          </div>
 
-          {/* Right Column (Form Panel with glowing ambient blobs background) */}
-          <div className="apple-auth-form-side relative flex items-center justify-center bg-[#030304]">
-            
-            {/* Ambient blur blobs */}
-            <div className="absolute top-1/4 left-1/3 w-72 h-72 rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-1/4 right-1/3 w-80 h-80 rounded-full bg-indigo-500/5 blur-[140px] pointer-events-none" />
-            
-            <div className="apple-auth-card z-10" style={{ 
-              background: 'rgba(10, 10, 15, 0.72)',
-              backdropFilter: 'blur(32px) saturate(210%)',
-              border: '1px solid rgba(0, 102, 255, 0.16)',
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.45), 0 0 30px rgba(0, 102, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-              transform: authTransition === 'enter' ? 'translateY(6px)' : 'none', 
-              opacity: authTransition === 'enter' ? 0.92 : 1, 
-              transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)' 
-            }}>
+            {/* Right Column (Borderless Glass Form Panel) - 7 cols */}
+            <div className="lg:col-span-7 bg-[var(--surface)]/90 border border-[var(--border)] rounded-3xl p-6 sm:p-10 shadow-[var(--shadow-lg)] backdrop-blur-2xl">
               
-              {/* Logo for mobile viewports */}
-              <div className="flex flex-col items-center mb-6 md:hidden">
-                <Logo large />
-                <span className="text-[9px] font-mono text-[#0066FF] mt-1 tracking-wider uppercase animate-pulse">Operational Grid Connected</span>
-              </div>
-
-              {/* Hybrid Form Switching Tabs */}
-              <div className="flex p-1 bg-white/[0.03] border border-white/5 rounded-2xl mb-6">
-                <button
-                  type="button"
-                  className={`flex-1 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all duration-200 ${currentView === 'login' ? 'bg-[#0066FF] text-white shadow-[0_4px_12px_rgba(0,102,255,0.35)]' : 'text-gray-400 hover:text-white'}`}
-                  onClick={() => switchAuth('login')}
-                >
-                  Iniciar sesión
-                </button>
-                <button
-                  type="button"
-                  className={`flex-1 py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all duration-200 ${currentView === 'register' ? 'bg-[#0066FF] text-white shadow-[0_4px_12px_rgba(0,102,255,0.35)]' : 'text-gray-400 hover:text-white'}`}
-                  onClick={() => switchAuth('register')}
-                >
-                  Crear cuenta
-                </button>
+              {/* Tab switching */}
+              <div className="flex justify-between items-center border-b border-white/5 pb-5 mb-8">
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => switchAuth('login')} 
+                    className={`font-syne text-sm font-black uppercase tracking-wider pb-2 border-b-2 transition-all ${
+                      currentView === 'login' ? 'border-[#0066FF] text-[var(--text)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text)]'
+                    }`}
+                  >
+                    Iniciar Sesión
+                  </button>
+                  <button 
+                    onClick={() => switchAuth('register')} 
+                    className={`font-syne text-sm font-black uppercase tracking-wider pb-2 border-b-2 transition-all ${
+                      currentView === 'register' ? 'border-[#0066FF] text-[var(--text)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text)]'
+                    }`}
+                  >
+                    Crear Cuenta
+                  </button>
+                </div>
+                
+                {regStep === 2 && currentView === 'register' && (
+                  <span className="text-[10px] font-mono text-gray-500">PASO 2 DE 2</span>
+                )}
               </div>
 
               <AnimatePresence mode="wait">
-                {/* ─── LOGIN PANEL ─── */}
+                {/* LOGIN PANEL */}
                 {currentView === 'login' && (
                   <motion.div
-                    key="login"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    key="login-panel"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
                   >
-                    <h1 className="font-syne text-xl font-extrabold mb-1 tracking-tight text-white">
-                      Acceso de Operaciones
-                    </h1>
-                    <p className="text-xs text-gray-400 mb-5">
-                      Ingresa a la consola integrada de flotas de LOGIFAST.
-                    </p>
-
-                    <form onSubmit={handleLogin} noValidate className="flex flex-col gap-3.5">
-                      
-                      {/* Email Input */}
-                      <div className="flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-gray-400">Usuario / Correo</label>
+                    <form onSubmit={handleLogin} noValidate className="flex flex-col gap-5">
+                      {/* Email input */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="obsidian-label">Usuario / Correo</label>
                         <div className="relative">
                           <input 
                             type="email" 
-                            className={`apple-input-field pl-9 bg-white/[0.04] border-white/10 hover:border-white/20 focus:border-[#0066FF] focus:bg-white/[0.06] focus:ring-1 focus:ring-[#0066FF]/30 text-white rounded-xl ${loginErrors.email ? 'border-error/50' : ''}`}
+                            className="obsidian-input w-full"
                             placeholder="nombre@empresa.com"
                             value={loginEmail}
                             onChange={(e) => setLoginEmail(e.target.value)}
                           />
-                          <span className="absolute left-3 top-3.5 text-gray-500"><IconEnvelope /></span>
+                          <span className="absolute left-1 top-3.5 text-gray-500"><IconEnvelope /></span>
                         </div>
                         {loginErrors.email && <span className="text-[10px] text-error font-medium">{loginErrors.email}</span>}
                       </div>
 
-                      {/* Password Input */}
-                      <div className="flex flex-col gap-1">
+                      {/* Password input */}
+                      <div className="flex flex-col gap-1.5">
                         <div className="flex justify-between items-center">
-                          <label className="text-xs font-semibold text-gray-400">Contraseña</label>
-                          <button type="button" className="text-[11px] text-[#0066FF] font-semibold hover:underline">
-                            ¿Olvidaste tu contraseña?
+                          <label className="obsidian-label">Contraseña</label>
+                          <button type="button" className="text-[11px] text-[#0066FF] font-bold hover:underline">
+                            ¿Olvidaste la clave?
                           </button>
                         </div>
                         <div className="relative">
                           <input 
                             type={showLoginPassword ? 'text' : 'password'}
-                            className={`apple-input-field pl-9 pr-9 bg-white/[0.04] border-white/10 hover:border-white/20 focus:border-[#0066FF] focus:bg-white/[0.06] focus:ring-1 focus:ring-[#0066FF]/30 text-white rounded-xl ${loginErrors.password ? 'border-error/50' : ''}`}
+                            className="obsidian-input w-full"
                             placeholder="••••••••"
                             value={loginPassword}
                             onChange={(e) => setLoginPassword(e.target.value)}
                           />
-                          <span className="absolute left-3 top-3.5 text-gray-500"><IconLock /></span>
+                          <span className="absolute left-1 top-3.5 text-gray-500"><IconLock /></span>
                           <button 
                             type="button" 
-                            className="absolute right-3 top-3.5 text-gray-500 hover:text-white transition-colors"
+                            className="absolute right-2 top-3.5 text-gray-500 hover:text-white"
                             onClick={() => setShowLoginPassword(!showLoginPassword)}
                           >
                             {showLoginPassword ? <IconEyeOff /> : <IconEye />}
@@ -969,286 +898,245 @@ export default function Home() {
                         {loginErrors.password && <span className="text-[10px] text-error font-medium">{loginErrors.password}</span>}
                       </div>
 
-                      {/* Submit Button */}
-                      <button type="submit" className="apple-btn-filled justify-center w-full mt-2 bg-gradient-to-r from-[#0052FF] to-[#0070F3] hover:from-[#0042E5] hover:to-[#0060E2] text-white font-bold py-3 px-4 rounded-xl shadow-[0_4px_14px_rgba(0,102,255,0.25)] hover:shadow-[0_6px_20px_rgba(0,102,255,0.4)] transition-all duration-200 border-none" disabled={loginLoading}>
-                        {loginLoading ? <span className="loading loading-spinner text-white"></span> : 'Acceder a la Consola'}
+                      <button type="submit" className="apple-btn-filled justify-center w-full mt-3 py-3.5 text-sm font-bold bg-[#0066FF]" disabled={loginLoading}>
+                        {loginLoading ? <span className="loading loading-spinner text-white"></span> : 'Acceder al Sistema'}
                       </button>
                     </form>
 
-                    {/* Divider */}
-                    <div className="relative flex py-4 items-center">
-                      <div className="flex-grow border-t border-white/10"></div>
-                      <span className="flex-shrink mx-3 text-[9px] text-gray-500 font-mono tracking-widest uppercase">ACCESO RÁPIDO DEMO</span>
-                      <div className="flex-grow border-t border-white/10"></div>
+                    {/* Quick Demo Access Grid */}
+                    <div className="relative flex py-6 items-center">
+                      <div className="flex-grow border-t border-white/5"></div>
+                      <span className="flex-shrink mx-3 text-[8px] text-gray-500 font-mono tracking-widest uppercase">ACCESO DEMOSTRATIVO RÁPIDO</span>
+                      <div className="flex-grow border-t border-white/5"></div>
                     </div>
 
-                    {/* Redesigned Demo Profile Cards */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       {[
-                        { role: 'cliente', label: 'Cliente', desc: 'Solicitar entregas', icon: <IconPerson />, glowColor: 'hover:shadow-[0_0_12px_rgba(0,102,255,0.2)] hover:border-[#0066FF]/30' },
-                        { role: 'repartidor', label: 'Rider', desc: 'Rutas y GPS', icon: <IconMoto />, glowColor: 'hover:shadow-[0_0_12px_rgba(0,102,255,0.2)] hover:border-[#0066FF]/30' },
-                        { role: 'admin', label: 'Administrador', desc: 'Control operacional', icon: <IconShield />, glowColor: 'hover:shadow-[0_0_12px_rgba(0,102,255,0.2)] hover:border-[#0066FF]/30' },
-                        { role: 'ingeniero', label: 'Mecánico', desc: 'Flota y repuestos', icon: <IconWrench />, glowColor: 'hover:shadow-[0_0_12px_rgba(0,102,255,0.2)] hover:border-[#0066FF]/30' }
-                      ].map((profile) => (
-                        <button
-                          key={profile.role}
-                          type="button"
-                          className={`flex items-center gap-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02] text-left transition-all ${profile.glowColor} hover:bg-white/[0.05]`}
-                          onClick={() => handleDemoLogin(profile.role)}
-                        >
-                          <span className="p-2 rounded-lg bg-white/5 text-white/70">
-                            {profile.icon}
-                          </span>
-                          <div className="flex flex-col">
-                            <span className="text-[11px] font-bold text-white leading-tight">{profile.label}</span>
-                            <span className="text-[8.5px] text-gray-500 font-medium leading-none mt-0.5">{profile.desc}</span>
-                          </div>
-                        </button>
-                      ))}
+                        { role: 'cliente', label: 'Cliente B2B', borderStyle: 'hover:border-[#00C853]/30', colorClass: 'text-[#00C853]' },
+                        { role: 'repartidor', label: 'Rider GPS', borderStyle: 'hover:border-orange-500/30', colorClass: 'text-orange-500' },
+                        { role: 'admin', label: 'Admin Hub', borderStyle: 'hover:border-[#0066FF]/30', colorClass: 'text-[#0066FF]' },
+                        { role: 'ingeniero', label: 'Mecánico', borderStyle: 'hover:border-purple-500/30', colorClass: 'text-purple-500' }
+                      ].map((item) => {
+                        const isActive = loginRole === item.role;
+                        return (
+                          <button
+                            key={item.role}
+                            type="button"
+                            className={`keypad-demo-btn border ${
+                              isActive 
+                                ? 'bg-[var(--primario-soft)] border-[#0066FF] text-[var(--text)]' 
+                                : 'border-[var(--border)] bg-transparent text-[var(--text-secondary)] hover:text-[var(--text)]'
+                            } ${item.borderStyle}`}
+                            onClick={() => handleDemoLogin(item.role)}
+                            onMouseEnter={() => setHoveredRole(item.role)}
+                            onMouseLeave={() => setHoveredRole(null)}
+                          >
+                            <span className="text-[11px] font-bold leading-tight">{item.label}</span>
+                            <span className={`text-[8.5px] font-mono tracking-wider ${isActive ? 'text-success font-bold' : item.colorClass}`}>
+                              {isActive ? '● CONECTADO' : 'INICIAR DEMO'}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
-
-                    {/* Back to Home Link */}
-                    <button onClick={() => setCurrentView('landing')} className="flex items-center gap-1.5 mx-auto mt-6 text-xs text-gray-500 hover:text-white font-semibold transition-colors">
-                      <IconArrowLeft /> Volver al portal
-                    </button>
                   </motion.div>
                 )}
 
-                {/* ─── REGISTER PANEL ─── */}
-                {currentView === 'register' && !regSuccess && (
+                {/* REGISTER STEP 1 */}
+                {currentView === 'register' && regStep === 1 && (
                   <motion.div
-                    key="register"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    key="register-step-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
                   >
-                    <h1 className="font-syne text-xl font-extrabold mb-1 tracking-tight text-white">
-                      Crear Cuenta
-                    </h1>
-                    <p className="text-xs text-gray-400 mb-5">
-                      Únete a la red y administra tus entregas express.
-                    </p>
-
-                    <form onSubmit={handleRegister} noValidate className="flex flex-col gap-3">
-                      
-                      {/* Name Input */}
-                      <div className="flex flex-col gap-0.5">
-                        <label className="text-xs font-semibold text-gray-400">Nombre completo</label>
+                    <form onSubmit={handleRegStep1} noValidate className="flex flex-col gap-5">
+                      {/* Name */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="obsidian-label">Nombre completo</label>
                         <div className="relative">
                           <input 
                             type="text" 
-                            className={`apple-input-field pl-9 bg-white/[0.04] border-white/10 hover:border-white/20 focus:border-[#0066FF] focus:bg-white/[0.06] focus:ring-1 focus:ring-[#0066FF]/30 text-white rounded-xl ${displayRegErrors.name ? 'border-error/50' : ''}`}
-                            placeholder="Tu nombre"
+                            className="obsidian-input w-full"
+                            placeholder="Tu nombre y apellido"
                             value={regName}
                             onChange={(e) => setRegName(e.target.value)}
                           />
-                          <span className="absolute left-3 top-3.5 text-gray-500"><IconUser /></span>
+                          <span className="absolute left-1 top-3.5 text-gray-500"><IconUser /></span>
                         </div>
                         {displayRegErrors.name && <span className="text-[10px] text-error font-medium">{displayRegErrors.name}</span>}
                       </div>
 
-                      {/* Email Input */}
-                      <div className="flex flex-col gap-0.5">
-                        <label className="text-xs font-semibold text-gray-400">Correo corporativo</label>
+                      {/* Email */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="obsidian-label">Correo electrónico</label>
                         <div className="relative">
                           <input 
                             type="email" 
-                            className={`apple-input-field pl-9 bg-white/[0.04] border-white/10 hover:border-white/20 focus:border-[#0066FF] focus:bg-white/[0.06] focus:ring-1 focus:ring-[#0066FF]/30 text-white rounded-xl ${displayRegErrors.email ? 'border-error/50' : ''}`}
+                            className="obsidian-input w-full"
                             placeholder="nombre@empresa.com"
                             value={regEmail}
                             onChange={(e) => setRegEmail(e.target.value)}
                           />
-                          <span className="absolute left-3 top-3.5 text-gray-500"><IconEnvelope /></span>
+                          <span className="absolute left-1 top-3.5 text-gray-500"><IconEnvelope /></span>
                         </div>
                         {displayRegErrors.email && <span className="text-[10px] text-error font-medium">{displayRegErrors.email}</span>}
                       </div>
 
-                      {/* Password Input */}
-                      <div className="flex flex-col gap-0.5">
-                        <label className="text-xs font-semibold text-gray-400">Contraseña</label>
+                      {/* Password */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="obsidian-label">Contraseña</label>
                         <div className="relative">
                           <input 
                             type={showRegPassword ? 'text' : 'password'}
-                            className={`apple-input-field pl-9 pr-9 bg-white/[0.04] border-white/10 hover:border-white/20 focus:border-[#0066FF] focus:bg-white/[0.06] focus:ring-1 focus:ring-[#0066FF]/30 text-white rounded-xl ${displayRegErrors.password ? 'border-error/50' : ''}`}
+                            className="obsidian-input w-full"
                             placeholder="Mínimo 6 caracteres"
                             value={regPassword}
                             onChange={(e) => setRegPassword(e.target.value)}
                           />
-                          <span className="absolute left-3 top-3.5 text-gray-500"><IconLock /></span>
+                          <span className="absolute left-1 top-3.5 text-gray-500"><IconLock /></span>
                           <button 
                             type="button" 
-                            className="absolute right-3 top-3.5 text-gray-500 hover:text-white transition-colors"
+                            className="absolute right-2 top-3.5 text-gray-500 hover:text-white"
                             onClick={() => setShowRegPassword(!showRegPassword)}
                           >
                             {showRegPassword ? <IconEyeOff /> : <IconEye />}
                           </button>
                         </div>
-
-                        {/* Interactive Password strength bar and checklist */}
-                        {regPassword && (
-                          <div className="mt-2 bg-black/20 p-2 rounded-lg border border-white/5">
-                            <div className="lf-strength-bar">
-                              <div className="lf-strength-segments">
-                                {[1, 2, 3, 4].map((i) => (
-                                  <div 
-                                    key={i} 
-                                    className={`lf-strength-segment ${
-                                      i <= pwStrength.level 
-                                        ? pwStrength.level === 1 ? 'bg-error'
-                                          : pwStrength.level === 2 ? 'bg-warning'
-                                          : pwStrength.level === 3 ? 'bg-info'
-                                          : 'bg-success'
-                                        : ''
-                                    }`} 
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-[8.5px] font-mono mt-1 block" style={{ 
-                                color: pwStrength.level === 1 ? 'var(--peligro)'
-                                     : pwStrength.level === 2 ? 'var(--warning)'
-                                     : pwStrength.level === 3 ? 'var(--info)'
-                                     : 'var(--exito)'
-                              }}>
-                                INTEGRIDAD: {pwStrength.label}
-                              </span>
-                            </div>
-                            
-                            {/* Live Checklist */}
-                            <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1.5 pt-1.5 border-t border-white/5">
-                              <div className="flex items-center gap-1.5 text-[8.5px]">
-                                <span className={`w-1 h-1 rounded-full ${regPassword.length >= 6 ? 'bg-success' : 'bg-gray-600'}`} />
-                                <span className={regPassword.length >= 6 ? 'text-success/90 font-medium' : 'text-gray-500'}>Mínimo 6 caracteres</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-[8.5px]">
-                                <span className={`w-1 h-1 rounded-full ${/\d/.test(regPassword) ? 'bg-success' : 'bg-gray-600'}`} />
-                                <span className={/\d/.test(regPassword) ? 'text-success/90 font-medium' : 'text-gray-500'}>Tiene número</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-[8.5px]">
-                                <span className={`w-1 h-1 rounded-full ${/[A-Z]/.test(regPassword) ? 'bg-success' : 'bg-gray-600'}`} />
-                                <span className={/[A-Z]/.test(regPassword) ? 'text-success/90 font-medium' : 'text-gray-500'}>Tiene mayúscula</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-[8.5px]">
-                                <span className={`w-1 h-1 rounded-full ${/[!@#$%^&*(),.?":{}|<>]/.test(regPassword) ? 'bg-success' : 'bg-gray-600'}`} />
-                                <span className={/[!@#$%^&*(),.?":{}|<>]/.test(regPassword) ? 'text-success/90 font-medium' : 'text-gray-500'}>Tiene símbolo</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                         {displayRegErrors.password && <span className="text-[10px] text-error font-medium">{displayRegErrors.password}</span>}
                       </div>
 
-                      {/* Confirm Password Input */}
-                      <div className="flex flex-col gap-0.5">
-                        <label className="text-xs font-semibold text-gray-400">Confirmar contraseña</label>
+                      {/* Confirm Password */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="obsidian-label">Confirmar Contraseña</label>
                         <div className="relative">
                           <input 
                             type="password" 
-                            className={`apple-input-field pl-9 bg-white/[0.04] border-white/10 hover:border-white/20 focus:border-[#0066FF] focus:bg-white/[0.06] focus:ring-1 focus:ring-[#0066FF]/30 text-white rounded-xl ${displayRegErrors.confirm ? 'border-error/50' : ''}`}
-                            placeholder="Repite tu contraseña"
+                            className="obsidian-input w-full"
+                            placeholder="Repita la contraseña"
                             value={regConfirm}
                             onChange={(e) => setRegConfirm(e.target.value)}
                           />
-                          <span className="absolute left-3 top-3.5 text-gray-500"><IconLock /></span>
+                          <span className="absolute left-1 top-3.5 text-gray-500"><IconLock /></span>
                         </div>
                         {displayRegErrors.confirm && <span className="text-[10px] text-error font-medium">{displayRegErrors.confirm}</span>}
                       </div>
 
-                      {/* Redesigned 2x2 Role Selector Grid */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-gray-400">Tipo de Cuenta</label>
-                        <div className="grid grid-cols-2 gap-2">
+                      <button type="submit" className="apple-btn-filled justify-center w-full mt-4 py-3.5 text-sm font-bold bg-[#0066FF]">
+                        Continuar al Paso 2
+                        <IconArrowRight />
+                      </button>
+                    </form>
+                  </motion.div>
+                )}
+
+                {/* REGISTER STEP 2 */}
+                {currentView === 'register' && regStep === 2 && !regSuccess && (
+                  <motion.div
+                    key="register-step-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <form onSubmit={handleRegister} noValidate className="flex flex-col gap-6">
+                      {/* Role selector */}
+                      <div className="flex flex-col gap-3">
+                        <label className="obsidian-label">Selecciona tu Rol Operativo</label>
+                        <div className="grid grid-cols-2 gap-3">
                           {[
-                            { value: 'cliente', label: 'Cliente', desc: 'Realiza envíos', icon: <IconPerson /> },
-                            { value: 'repartidor', label: 'Rider', desc: 'Entrega paquetes', icon: <IconMoto /> },
-                            { value: 'admin', label: 'Admin', desc: 'Control operacional', icon: <IconShield /> },
-                            { value: 'ingeniero', label: 'Mecánico', desc: 'Flota y repuestos', icon: <IconWrench /> }
-                          ].map((roleOption) => (
-                            <button
-                              key={roleOption.value}
-                              type="button"
-                              className={`apple-select-btn flex items-start gap-2 p-2 text-left transition-all bg-white/[0.02] border-white/5 hover:bg-white/[0.04] ${regRole === roleOption.value ? 'active ring-1 ring-primary border-primary/50' : ''}`}
-                              onClick={() => setRegRole(roleOption.value)}
-                            >
-                              <span className={`p-1.5 rounded-lg ${regRole === roleOption.value ? 'bg-[#0066FF]/10 text-[#0066FF]' : 'bg-white/5 text-gray-500'}`}>
-                                {roleOption.icon}
-                              </span>
-                              <div className="flex flex-col">
-                                <span className="text-[11px] font-bold text-white leading-tight">{roleOption.label}</span>
-                                <span className="text-[8px] text-gray-500 font-medium leading-none mt-0.5">{roleOption.desc}</span>
-                              </div>
-                            </button>
-                          ))}
+                            { value: 'cliente', label: 'Cliente B2B', icon: <IconPerson /> },
+                            { value: 'repartidor', label: 'Rider GPS', icon: <IconMoto /> },
+                            { value: 'admin', label: 'Administrador', icon: <IconShield /> },
+                            { value: 'ingeniero', label: 'Mecánico', icon: <IconWrench /> }
+                          ].map((roleOption) => {
+                            const isActive = regRole === roleOption.value;
+                            return (
+                              <button
+                                key={roleOption.value}
+                                type="button"
+                                className={`flex items-center gap-3 p-4 text-left border rounded-2xl transition-all ${
+                                  isActive 
+                                    ? 'bg-[var(--primario-soft)] border-[#0066FF] text-[var(--text)] shadow-md' 
+                                    : 'bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-alt)]/20 hover:text-[var(--text)]'
+                                }`}
+                                onClick={() => setRegRole(roleOption.value)}
+                              >
+                                <span className={`p-1.5 rounded-lg ${isActive ? 'bg-[#0066FF]/20 text-[#0066FF]' : 'bg-white/5 text-gray-500'}`}>
+                                  {roleOption.icon}
+                                </span>
+                                <span className="text-[11px] font-bold leading-none">{roleOption.label}</span>
+                              </button>
+                            );
+                          })}
                         </div>
-                        {displayRegErrors.role && <span className="text-[10px] text-error font-medium">{displayRegErrors.role}</span>}
                       </div>
 
-                      {/* Terms Checkbox */}
-                      <div className="flex items-start gap-2 mt-1.5">
+                      {/* Terms */}
+                      <div className="flex items-start gap-3 bg-transparent border border-[var(--border)] p-4 rounded-2xl">
                         <input 
                           type="checkbox" 
                           id="regTerms"
-                          className="checkbox checkbox-xs checkbox-primary mt-0.5 border-white/20 bg-black/40"
+                          className="checkbox checkbox-xs checkbox-primary mt-0.5 border-[var(--border)] bg-transparent"
                           checked={regTerms}
                           onChange={(e) => setRegTerms(e.target.checked)}
                         />
                         <label htmlFor="regTerms" className="text-[10.5px] text-gray-500 leading-normal">
-                          Acepto los <span className="text-[#0066FF] hover:underline cursor-pointer font-bold">Términos de servicio</span> y la <span className="text-[#0066FF] hover:underline cursor-pointer font-bold">Política de privacidad</span>.
+                          Acepto las normativas y los términos de uso de la red operativa de LOGIFAST Managua.
                         </label>
                       </div>
                       {displayRegErrors.terms && <span className="text-[10px] text-error font-medium block">{displayRegErrors.terms}</span>}
 
-                      {/* Submit Button */}
-                      <button type="submit" className="apple-btn-filled justify-center w-full mt-2 bg-gradient-to-r from-[#0052FF] to-[#0070F3] hover:from-[#0042E5] hover:to-[#0060E2] text-white font-bold py-3 px-4 rounded-xl shadow-[0_4px_14px_rgba(0,102,255,0.25)] hover:shadow-[0_6px_20px_rgba(0,102,255,0.4)] transition-all duration-200 border-none" disabled={regLoading}>
-                        {regLoading ? <span className="loading loading-spinner text-white"></span> : 'Crear Cuenta Operativa'}
-                      </button>
+                      {/* Control buttons */}
+                      <div className="flex gap-3">
+                        <button type="button" className="apple-btn-border flex-1 justify-center py-3.5" onClick={() => setRegStep(1)}>
+                          Atrás
+                        </button>
+                        <button type="submit" className="apple-btn-filled flex-1 justify-center py-3.5 bg-[#0066FF]" disabled={regLoading}>
+                          {regLoading ? <span className="loading loading-spinner text-white"></span> : 'Completar Registro'}
+                        </button>
+                      </div>
                     </form>
-
-                    {/* Back to Home Link */}
-                    <button onClick={() => setCurrentView('landing')} className="flex items-center gap-1.5 mx-auto mt-6 text-xs text-gray-500 hover:text-white font-semibold transition-colors">
-                      <IconArrowLeft /> Volver al portal
-                    </button>
-                  </motion.div>
-                )}
-
-                {/* REGISTER SUCCESS PANEL */}
-                {currentView === 'register' && regSuccess && (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.22 }}
-                    className="text-center py-6"
-                  >
-                    <div className="bg-success/15 text-success w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5 shadow-[0_0_15px_rgba(0,200,83,0.2)]">
-                      <IconCheckLg />
-                    </div>
-                    <h2 className="font-syne text-xl font-extrabold mb-1.5 text-white">Registro Completado</h2>
-                    <p className="text-xs text-gray-400 mb-6 max-w-xs mx-auto">Tu cuenta en la red operativa de flotas de LOGIFAST ha sido creada con éxito.</p>
-                    <button className="apple-btn-filled justify-center w-full bg-gradient-to-r from-[#0052FF] to-[#0070F3] text-white border-none shadow-[0_4px_12px_rgba(0,102,255,0.3)]" onClick={() => { setRegSuccess(false); switchAuth('login'); }}>
-                      Ingresar a la Consola
-                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
+
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* REGISTER SUCCESS PANEL */}
+      {currentView === 'register' && regSuccess && (
+        <div className="relative flex flex-col justify-center items-center min-h-screen bg-[#030305] p-4 sm:p-6" style={{ minHeight: '100vh' }}>
+          <div className="absolute top-1/4 left-1/4 w-80 h-80 rounded-full bg-[#00C853]/5 blur-[120px] pointer-events-none" />
+          <div className="z-10 w-full max-w-md bg-[#0B0C11]/95 border border-emerald-500/20 rounded-3xl p-8 text-center shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
+            <div className="bg-success/15 text-success w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5 shadow-[0_0_15px_rgba(0,200,83,0.2)]">
+              <IconCheckLg />
+            </div>
+            <h2 className="font-syne text-xl font-extrabold mb-1.5 text-white">Registro Completado</h2>
+            <p className="text-xs text-gray-400 mb-6 max-w-xs mx-auto">Tu cuenta en la red operativa de flotas de LOGIFAST ha sido creada con éxito.</p>
+            <button className="apple-btn-filled justify-center w-full" onClick={() => { setRegSuccess(false); switchAuth('login'); }}>
+              Ingresar a la Consola
+            </button>
           </div>
         </div>
       )}
 
       {/* ═══════════════════════════════════════════════════════
-         REDESIGNED LANDING PAGE (Apple Worthy Design)
+         REDESIGNED LANDING PAGE (Luxury Obsidian Design)
          ═══════════════════════════════════════════════════════ */}
       {currentView === 'landing' && (
-        <div className="apple-landing-wrapper">
+        <div className="obsidian-landing">
           <div className="ud-grid-background" />
 
-          {/* ─── HEADER / NAVBAR ─── */}
-          <nav className={`apple-navbar ${navScrolled ? 'scrolled' : ''}`}>
+          {/* ─── FLOATING CENTER PILL NAVBAR ─── */}
+          <nav className={`floating-pill-nav ${navScrolled ? 'scrolled' : ''}`}>
             <Logo onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
 
-            <ul className="apple-nav-links">
+            <ul className="pill-nav-links">
               <li><a href="#features" className="apple-nav-link">Características</a></li>
               <li><a href="#calculator" className="apple-nav-link">Tarifador</a></li>
               <li><a href="#how-it-works" className="apple-nav-link">Proceso</a></li>
@@ -1256,25 +1144,24 @@ export default function Home() {
             </ul>
 
             <div className="flex items-center gap-3">
-              {/* Light/Dark Toggle */}
               <button 
                 onClick={toggleTheme} 
-                className="btn btn-circle btn-ghost btn-sm text-base-content"
+                className="btn btn-circle btn-ghost btn-sm text-white"
                 aria-label="Alternar tema"
               >
                 {isDark ? <IconSun /> : <IconMoon />}
               </button>
 
-              <button className="apple-nav-btn-secondary" onClick={() => navigateTo('login')}>
+              <button className="apple-nav-btn-secondary text-white hidden sm:inline-flex" onClick={() => navigateTo('login')}>
                 Ingresar
               </button>
-              <button className="apple-nav-btn-primary" onClick={() => navigateTo('register')}>
+              <button className="apple-nav-btn-primary hidden sm:inline-flex" style={{ background: '#0066FF', color: '#FFFFFF' }} onClick={() => navigateTo('register')}>
                 Comenzar
               </button>
 
-              {/* Mobile Drawer Hamburger */}
+              {/* Mobile Hamburger */}
               <button 
-                className="btn btn-circle btn-ghost btn-sm text-base-content apple-hamburger"
+                className="btn btn-circle btn-ghost btn-sm text-white lp-hamburger"
                 onClick={() => setMobileMenuOpen(true)}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1284,7 +1171,7 @@ export default function Home() {
             </div>
           </nav>
 
-          {/* Mobile Menu Drawer */}
+          {/* Mobile menu drawer */}
           <Transition
             show={mobileMenuOpen}
             enter="transition-all duration-300 ease-out"
@@ -1294,11 +1181,11 @@ export default function Home() {
             leaveFrom="opacity-100 translate-x-0"
             leaveTo="opacity-0 translate-x-1/2"
           >
-            <div className="apple-drawer-menu">
+            <div className="apple-drawer-menu" style={{ background: 'var(--bg)' }}>
               <div>
                 <div className="flex justify-between items-center">
                   <Logo onClick={() => { setMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
-                  <button className="btn btn-circle btn-ghost" onClick={() => setMobileMenuOpen(false)}>
+                  <button className="btn btn-circle btn-ghost text-[var(--text)]" onClick={() => setMobileMenuOpen(false)}>
                     <IconX />
                   </button>
                 </div>
@@ -1310,10 +1197,10 @@ export default function Home() {
                 </ul>
               </div>
               <div className="flex flex-col gap-2.5">
-                <button className="apple-btn-border w-full py-3.5" onClick={() => { setMobileMenuOpen(false); navigateTo('login'); }}>
+                <button className="apple-btn-border w-full py-3.5 text-[var(--text)]" onClick={() => { setMobileMenuOpen(false); navigateTo('login'); }}>
                   Ingresar
                 </button>
-                <button className="apple-btn-filled w-full py-3.5 justify-center" onClick={() => { setMobileMenuOpen(false); navigateTo('register'); }}>
+                <button className="apple-btn-filled w-full py-3.5 justify-center bg-[#0066FF]" onClick={() => { setMobileMenuOpen(false); navigateTo('register'); }}>
                   Comenzar
                 </button>
               </div>
@@ -1322,36 +1209,36 @@ export default function Home() {
 
           {/* ─── HERO SECTION ─── */}
           <section className="apple-hero-section">
-            <div className="apple-hero-badge">
-              <span className="w-2.5 h-2.5 bg-primary rounded-full" style={{ animation: 'pulse-dot 1.2s infinite' }} />
-              Logística Express Urbana en Managua
+            <div className="apple-hero-badge" style={{ background: 'rgba(0,102,255,0.1)', color: '#0066FF', borderColor: 'rgba(0,102,255,0.2)' }}>
+              <span className="w-2.5 h-2.5 bg-[#0066FF] rounded-full animate-pulse" />
+              Red Inteligente de Distribución Express
             </div>
             
-            <h1 className="apple-hero-title font-syne">
-              Velocidad Operativa. <br />
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-400 bg-clip-text text-transparent">Sincronizada al segundo.</span>
+            <h1 className="apple-hero-title font-syne text-[var(--text)]">
+              Sincronía Logística. <br />
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-400 bg-clip-text text-transparent">Sincronizada al segundo.</span>
             </h1>
             
-            <p className="apple-hero-subtitle">
-              Sincroniza tu negocio con una red inteligente de entrega express. Controla tu facturación, optimiza rutas satelitales y gestiona el mantenimiento preventivo de tu flota en tiempo real.
+            <p className="apple-hero-subtitle text-gray-400">
+              Conecta tu negocio a una consola inteligente de despachos en Managua. Optimiza hojas de ruta, automatiza tu facturación y controla el estado de tu taller preventivo en vivo.
             </p>
 
             <div className="apple-hero-actions">
-              <button className="apple-btn-filled" onClick={() => navigateTo('register')}>
+              <button className="apple-btn-filled bg-[#0066FF]" onClick={() => navigateTo('register')}>
                 Comenzar gratis
                 <IconArrowRight />
               </button>
-              <button className="apple-btn-border" onClick={() => navigateTo('login')}>
-                Probar Demo de Roles
+              <button className="apple-btn-border text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]" onClick={() => navigateTo('login')}>
+                Demo de Consola
               </button>
             </div>
 
             {/* Premium Mockup Widget */}
-            <div className="apple-mockup-frame">
-              <div className="apple-mockup-screen flex flex-col justify-between p-5">
-                <div className="flex justify-between items-center text-white/90">
+            <div className="apple-mockup-frame border-[var(--border)] shadow-2xl">
+              <div className="apple-mockup-screen flex flex-col justify-between p-5 bg-[var(--bg-alt)]">
+                <div className="flex justify-between items-center text-[var(--text)]/90">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-success rounded-full" style={{ animation: 'pulse-dot 1s infinite' }} />
+                    <span className="w-2 h-2 bg-success rounded-full animate-ping" />
                     <span className="text-[10px] font-bold tracking-wider uppercase">Operaciones de Flota Activas</span>
                   </div>
                   <span className="text-[9px] text-gray-400 font-mono">Consola GPS Satelital</span>
@@ -1378,70 +1265,70 @@ export default function Home() {
           </section>
 
           {/* ─── BENTO FEATURES SECTION ─── */}
-          <section className="apple-section border-t border-gray-100 dark:border-gray-900" id="features">
+          <section className="apple-section border-t border-[var(--border)]" id="features">
             <div className="apple-section-header">
-              <span className="apple-section-tag">Roles & Herramientas</span>
-              <h2 className="apple-section-title font-syne">
-                Una plataforma integrada para cuatro perfiles operativos
+              <span className="apple-section-tag" style={{ color: '#0066FF' }}>Roles & Herramientas</span>
+              <h2 className="apple-section-title font-syne text-[var(--text)]">
+                Una sola plataforma para cuatro perfiles operativos
               </h2>
             </div>
 
             <div className="apple-bento-grid">
               
               {/* Client Card */}
-              <div className="apple-bento-card">
-                <div className="apple-bento-icon">
+              <div className="apple-bento-card bg-[var(--surface)] border border-[var(--border)] hover:border-[#00C853]/30">
+                <div className="apple-bento-icon" style={{ background: 'rgba(0,200,83,0.1)', color: '#00C853' }}>
                   <IconPerson />
                 </div>
-                <h3 className="apple-bento-title">Portal de Clientes</h3>
-                <p className="apple-bento-desc">
+                <h3 className="apple-bento-title text-[var(--text)]">Portal de Clientes</h3>
+                <p className="apple-bento-desc text-gray-400">
                   Solicita envíos express, cotiza tarifas dinámicas según distancia y volumen, y mantén un registro de facturas automatizado.
                 </p>
                 <div className="mt-auto pt-2">
-                  <span className="text-[9px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">Monitoreo en vivo</span>
+                  <span className="text-[9px] font-bold text-[#00C853] bg-[#00C853]/10 px-2 py-0.5 rounded-full">Monitoreo en vivo</span>
                 </div>
               </div>
 
               {/* Rider Card */}
-              <div className="apple-bento-card">
-                <div className="apple-bento-icon">
+              <div className="apple-bento-card bg-[var(--surface)] border border-[var(--border)] hover:border-[#0066FF]/30">
+                <div className="apple-bento-icon" style={{ background: 'rgba(0,102,255,0.1)', color: '#0066FF' }}>
                   <IconMoto />
                 </div>
-                <h3 className="apple-bento-title">Panel de Repartidores</h3>
-                <p className="apple-bento-desc">
+                <h3 className="apple-bento-title text-[var(--text)]">Panel de Repartidores</h3>
+                <p className="apple-bento-desc text-gray-400">
                   Asignación automática basada en proximidad GPS, indicaciones paso a paso y control de ganancias en tu billetera digital.
                 </p>
                 <div className="mt-auto pt-2">
-                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Rutas satelitales</span>
+                  <span className="text-[9px] font-bold text-[#0066FF] bg-[#0066FF]/10 px-2 py-0.5 rounded-full">Rutas satelitales</span>
                 </div>
               </div>
 
               {/* Console Control Card */}
-              <div className="apple-bento-card">
-                <div className="apple-bento-icon">
+              <div className="apple-bento-card bg-[var(--surface)] border-[var(--border)] hover:border-gray-500/30">
+                <div className="apple-bento-icon" style={{ background: 'rgba(255,255,255,0.05)', color: '#E2E8F0' }}>
                   <IconShield />
                 </div>
-                <h3 className="apple-bento-title">Consola de Control</h3>
-                <p className="apple-bento-desc">
+                <h3 className="apple-bento-title text-[var(--text)]">Consola de Control</h3>
+                <p className="apple-bento-desc text-gray-400">
                   Auditoría completa de entregas, analíticas de rendimiento financiero y herramientas para la resolución de contingencias.
                 </p>
                 <div className="mt-auto pt-2">
-                  <span className="text-[9px] font-bold text-gray-400 bg-gray-400/10 px-2 py-0.5 rounded-full">Auditoría total</span>
+                  <span className="text-[9px] font-bold text-gray-400 bg-white/5 px-2 py-0.5 rounded-full">Auditoría total</span>
                 </div>
               </div>
 
-              {/* Engineers Card */}
-              <div className="apple-bento-card col-4">
-                <div className="apple-bento-icon">
+              {/* /Engineers Card */}
+              <div className="apple-bento-card col-4 bg-[var(--surface)] border-[var(--border)] hover:border-purple-500/30">
+                <div className="apple-bento-icon" style={{ background: 'rgba(168,85,247,0.1)', color: '#A855F7' }}>
                   <IconWrench />
                 </div>
-                <h3 className="apple-bento-title">Mantenimiento de Flota</h3>
-                <p className="apple-bento-desc">
+                <h3 className="apple-bento-title text-[var(--text)]">Mantenimiento de Flota</h3>
+                <p className="apple-bento-desc text-gray-400">
                   Módulo especializado para ingenieros y mecánicos. Controla el inventario de repuestos críticos, agenda mantenimientos preventivos y asocia hojas de trabajo a las motocicletas del equipo.
                 </p>
                 <div className="mt-auto pt-2 flex gap-2">
-                  <span className="text-[9px] font-bold text-warning bg-warning/10 px-2.5 py-0.5 rounded-full">Alertas predictivas</span>
-                  <span className="text-[9px] font-bold text-warning bg-warning/10 px-2.5 py-0.5 rounded-full">Ficha mecánica</span>
+                  <span className="text-[9px] font-bold text-[#A855F7] bg-[#A855F7]/10 px-2.5 py-0.5 rounded-full">Alertas predictivas</span>
+                  <span className="text-[9px] font-bold text-[#A855F7] bg-[#A855F7]/10 px-2.5 py-0.5 rounded-full">Ficha mecánica</span>
                 </div>
               </div>
 
@@ -1449,18 +1336,18 @@ export default function Home() {
           </section>
 
           {/* ─── INTERACTIVE COST CALCULATOR SECTION ─── */}
-          <section className="apple-section border-t border-gray-100 dark:border-gray-900" id="calculator">
+          <section className="apple-section border-t border-[var(--border)]" id="calculator">
             <div className="apple-section-header">
-              <span className="apple-section-tag">Calculadora</span>
-              <h2 className="apple-section-title font-syne">Tarifas transparentes al instante</h2>
+              <span className="apple-section-tag" style={{ color: '#0066FF' }}>Calculadora</span>
+              <h2 className="apple-section-title font-syne text-[var(--text)]">Tarifas transparentes al instante</h2>
             </div>
             
-            <div className="apple-calc-card">
+            <div className="apple-calc-card bg-[var(--surface)] border border-[var(--border)]">
               <div className="flex flex-col gap-5">
                 <div>
                   <div className="flex justify-between text-xs font-semibold mb-2">
-                    <span>Distancia del envío</span>
-                    <span className="text-primary font-mono font-bold">{distance} km</span>
+                    <span className="text-gray-300">Distancia del envío</span>
+                    <span className="text-[#0066FF] font-mono font-bold">{distance} km</span>
                   </div>
                   <input 
                     type="range" 
@@ -1470,14 +1357,14 @@ export default function Home() {
                     onChange={(e) => setDistance(parseInt(e.target.value))}
                     className="apple-range"
                   />
-                  <div className="flex justify-between text-[9px] text-gray-400 mt-1.5">
+                  <div className="flex justify-between text-[9px] text-gray-500 mt-1.5">
                     <span>1 km</span>
                     <span>30 km (Límite Managua)</span>
                   </div>
                 </div>
 
                 <div>
-                  <span className="block text-xs font-semibold mb-2.5">Peso estimado del paquete</span>
+                  <span className="block text-xs font-semibold mb-2.5 text-gray-300">Peso estimado del paquete</span>
                   <div className="apple-btn-group">
                     {[
                       { value: 'ligero', label: 'Ligero (< 5 kg)' },
@@ -1487,7 +1374,7 @@ export default function Home() {
                       <button
                         key={pkg.value}
                         type="button"
-                        className={`apple-select-btn ${weight === pkg.value ? 'active' : ''}`}
+                        className={`apple-select-btn border-white/5 ${weight === pkg.value ? 'active bg-[#0066FF]/10 text-[#0066FF] border-[#0066FF]' : 'text-gray-400 bg-white/[0.01]'}`}
                         onClick={() => setWeight(pkg.value)}
                       >
                         {pkg.label}
@@ -1496,15 +1383,15 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="border-t border-gray-100 dark:border-gray-800 pt-5 flex flex-col items-center">
-                  <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Costo Estimado</span>
-                  <span className="text-3xl font-extrabold font-mono text-primary">C$ {calculatePrice()}</span>
-                  <p className="text-[9.5px] text-gray-400 mt-1.5 text-center max-w-xs">
+                <div className="border-t border-white/5 pt-5 flex flex-col items-center">
+                  <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1">Costo Estimado</span>
+                  <span className="text-3xl font-extrabold font-mono text-[#0066FF]">C$ {calculatePrice()}</span>
+                  <p className="text-[9.5px] text-gray-500 mt-1.5 text-center max-w-xs">
                     *El precio final puede variar ligeramente según condiciones climáticas excepcionales o congestión vial en tiempo real.
                   </p>
                   <button 
                     onClick={() => navigateTo('register')}
-                    className="apple-btn-filled mt-4 w-full max-w-xs justify-center"
+                    className="apple-btn-filled mt-4 w-full max-w-xs justify-center bg-[#0066FF]"
                   >
                     Solicitar envío ahora
                   </button>
@@ -1514,41 +1401,41 @@ export default function Home() {
           </section>
 
           {/* ─── PROCESS STEPS SECTION ─── */}
-          <section className="apple-section border-t border-gray-100 dark:border-gray-900" id="how-it-works">
+          <section className="apple-section border-t border-[var(--border)]" id="how-it-works">
             <div className="apple-section-header">
-              <span className="apple-section-tag">Proceso</span>
-              <h2 className="apple-section-title font-syne">Cómo opera el sistema</h2>
+              <span className="apple-section-tag" style={{ color: '#0066FF' }}>Proceso</span>
+              <h2 className="apple-section-title font-syne text-[var(--text)]">Cómo opera el sistema</h2>
             </div>
             
             <div className="apple-timeline">
               <div className="apple-timeline-step">
-                <span className="apple-timeline-num">01</span>
-                <h4 className="apple-timeline-title">Solicitud</h4>
-                <p className="apple-timeline-desc">Establece el origen y destino en el mapa inteligente.</p>
+                <span className="apple-timeline-num" style={{ color: '#0066FF' }}>01</span>
+                <h4 className="apple-timeline-title text-[var(--text)]">Solicitud</h4>
+                <p className="apple-timeline-desc text-gray-400">Establece el origen y destino en el mapa inteligente.</p>
               </div>
               <div className="apple-timeline-step">
-                <span className="apple-timeline-num">02</span>
-                <h4 className="apple-timeline-title">Asignación</h4>
-                <p className="apple-timeline-desc">El algoritmo selecciona al motorizado óptimo cercano.</p>
+                <span className="apple-timeline-num" style={{ color: '#0066FF' }}>02</span>
+                <h4 className="apple-timeline-title text-[var(--text)]">Asignación</h4>
+                <p className="apple-timeline-desc text-gray-400">El algoritmo selecciona al motorizado óptimo cercano.</p>
               </div>
               <div className="apple-timeline-step">
-                <span className="apple-timeline-num">03</span>
-                <h4 className="apple-timeline-title">Rastreo</h4>
-                <p className="apple-timeline-desc">Sigue el avance en vivo con notificaciones activas.</p>
+                <span className="apple-timeline-num" style={{ color: '#0066FF' }}>03</span>
+                <h4 className="apple-timeline-title text-[var(--text)]">Rastreo</h4>
+                <p className="apple-timeline-desc text-gray-400">Sigue el avance en vivo con notificaciones activas.</p>
               </div>
               <div className="apple-timeline-step">
-                <span className="apple-timeline-num">04</span>
-                <h4 className="apple-timeline-title">Entrega</h4>
-                <p className="apple-timeline-desc">Tu paquete llega a salvo y calificas el servicio prestado.</p>
+                <span className="apple-timeline-num" style={{ color: '#0066FF' }}>04</span>
+                <h4 className="apple-timeline-title text-[var(--text)]">Entrega</h4>
+                <p className="apple-timeline-desc text-gray-400">Tu paquete llega a salvo y calificas el servicio prestado.</p>
               </div>
             </div>
           </section>
 
           {/* ─── ALLIES LOGO GRID ─── */}
-          <section className="apple-section border-t border-gray-100 dark:border-gray-900" id="allies">
+          <section className="apple-section border-t border-[var(--border)]" id="allies">
             <div className="text-center mb-10">
-              <span className="apple-section-tag">Alianzas comerciales</span>
-              <h2 className="apple-section-title font-syne">Confían en nuestra red</h2>
+              <span className="apple-section-tag" style={{ color: '#0066FF' }}>Alianzas comerciales</span>
+              <h2 className="apple-section-title font-syne text-[var(--text)]">Confían en nuestra red</h2>
             </div>
 
             <div className="apple-partners-grid">
@@ -1560,25 +1447,25 @@ export default function Home() {
                 { src: '/logos/image5.png', name: 'Autosym' },
                 { src: '/logo.png', name: 'Logifast' },
               ].map((p, idx) => (
-                <div key={idx} className="apple-partner-logo" title={p.name}>
-                  <img src={p.src} alt={p.name} className="h-9 object-contain grayscale" />
+                <div key={idx} className="apple-partner-logo border-[var(--border)] bg-[var(--surface)]" title={p.name}>
+                  <img src={p.src} alt={p.name} className="h-9 object-contain grayscale opacity-60 hover:opacity-100 transition-opacity" />
                 </div>
               ))}
             </div>
           </section>
 
           {/* ─── CTA CONTACT SECTION ─── */}
-          <section className="apple-section border-t border-gray-100 dark:border-gray-900">
-            <div className="apple-cta-card">
-              <h2 className="apple-cta-title font-syne">Transforma tus entregas hoy</h2>
-              <p className="apple-cta-desc">
+          <section className="apple-section border-t border-[var(--border)]">
+            <div className="apple-cta-card bg-gradient-to-r from-blue-950/20 to-slate-900/20 border border-[#0066FF]/20 shadow-2xl">
+              <h2 className="apple-cta-title font-syne text-white">Transforma tus entregas hoy</h2>
+              <p className="apple-cta-desc text-gray-400">
                 Crea tu cuenta de negocio en minutos y obtén tus primeros envíos urbanos de cortesía en Managua.
               </p>
               <div className="flex gap-4 justify-center flex-wrap">
-                <button className="apple-btn-filled bg-white text-black hover:bg-gray-100" onClick={() => navigateTo('register')}>
+                <button className="apple-btn-filled bg-[#0066FF] text-white hover:bg-[#0052CC]" onClick={() => navigateTo('register')}>
                   Comenzar ahora
                 </button>
-                <a href="mailto:soporte@logifast.com" className="apple-btn-border border-white/30 text-white hover:border-white hover:bg-white/10 px-8 py-3.5 text-sm font-semibold rounded-full no-underline inline-flex items-center">
+                <a href="mailto:soporte@logifast.com" className="apple-btn-border border-white/10 text-white hover:bg-white/5 px-8 py-3.5 text-sm font-semibold rounded-full no-underline inline-flex items-center">
                   Contactar soporte
                 </a>
               </div>
@@ -1586,7 +1473,7 @@ export default function Home() {
           </section>
 
           {/* ─── FOOTER ─── */}
-          <footer className="border-t border-gray-100 dark:border-gray-900 py-12 text-center text-gray-500 text-xs">
+          <footer className="border-t border-white/5 py-12 text-center text-gray-500 text-xs">
             <div className="flex justify-center mb-6">
               <Logo />
             </div>

@@ -23,9 +23,9 @@
   --text-secondary: #5A5A72;
   --text-muted: #8E8EA0;
   --border: #E8E4DE;
-  --primario: #0764E2;
-  --primario-hover: #054fb4;
-  --primario-soft: rgba(7, 100, 226, 0.05);
+  --primario: #0066FF;
+  --primario-hover: #0052CC;
+  --primario-soft: rgba(0, 102, 255, 0.05);
   --secundario: #D4AF37;
   --secundario-soft: rgba(212, 175, 55, 0.05);
   --exito: #00C853;
@@ -38,7 +38,7 @@
   --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
   --shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
   --shadow-xl: 0 16px 50px rgba(0,0,0,0.12);
-  --shadow-primario: 0 8px 30px rgba(7, 100, 226, 0.25);
+  --shadow-primario: 0 8px 30px rgba(0, 102, 255, 0.25);
 
   /* Navbar */
   --nav-bg: transparent;
@@ -173,9 +173,9 @@
   --text-secondary: #A8A8BE;
   --text-muted: #6B6B80;
   --border: #2A2A38;
-  --primario: #4F93FF;
-  --primario-hover: #75A9FF;
-  --primario-soft: rgba(79, 147, 255, 0.08);
+  --primario: #0066FF;
+  --primario-hover: #3385FF;
+  --primario-soft: rgba(0, 102, 255, 0.12);
   --secundario: #F59E0B;
   --secundario-soft: rgba(245, 158, 11, 0.05);
   --exito: #69F0AE;
@@ -188,7 +188,7 @@
   --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
   --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
   --shadow-xl: 0 16px 50px rgba(0,0,0,0.5);
-  --shadow-primario: 0 8px 30px rgba(79, 147, 255, 0.2);
+  --shadow-primario: 0 8px 30px rgba(0, 102, 255, 0.2);
 
   /* Navbar */
   --nav-bg: transparent;
