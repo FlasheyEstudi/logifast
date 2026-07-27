@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const { id } = await params;
     const body = await req.json();
     const { costoTotal } = body;
@@ -26,8 +29,7 @@ export async function PATCH(
     });
 
     return NextResponse.json(mantenimiento);
-  } catch (error) {
-    console.error('[INGENIERO_MANTENIMIENTO_COMPLETAR]', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'INGENIERO_MANTENIMIENTO_COMPLETAR');
   }
 }

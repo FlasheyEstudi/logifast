@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MOCK_PRODUCTOS_CHECKLIST } from '@/lib/repartidor-mock';
-import { MOCK_ORDENES_COMPRA } from '@/lib/marketplace-store';
+import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +15,14 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const ordenCompra = MOCK_ORDENES_COMPRA.find((o) => o.id === id);
+    const ordenCompra = await db.ordenCompra.findUnique({
+      where: { id },
+      include: {
+        items: { include: { producto: true } },
+        tienda: true,
+      },
+    });
+
     if (!ordenCompra) {
       return NextResponse.json(
         { error: `Orden de compra no encontrada: ${id}` },
@@ -24,34 +30,22 @@ export async function GET(
       );
     }
 
-    // Si ya tenemos checklist pre-armado, usarlo
-    const checklist = MOCK_PRODUCTOS_CHECKLIST[id];
-    if (checklist) {
-      return NextResponse.json({
-        ordenId: id,
-        tiendaId: ordenCompra.tiendaId,
-        tiendaNombre: ordenCompra.tiendaNombre,
-        total: checklist.length,
-        verificados: checklist.filter((p) => p.verificado).length,
-        productos: checklist,
-      });
-    }
-
-    // Generar checklist desde los items de la orden de compra
-    const productosGenerados = ordenCompra.items.map((item, idx) => ({
+    const productos = ordenCompra.items.map((item, idx) => ({
       id: `p-${id}-${idx + 1}`,
       nombre: item.nombreProducto,
       cantidad: item.cantidad,
       verificado: false,
+      precioUnitario: item.precioUnitario,
+      notas: item.notas ?? null,
     }));
 
     return NextResponse.json({
       ordenId: id,
       tiendaId: ordenCompra.tiendaId,
-      tiendaNombre: ordenCompra.tiendaNombre,
-      total: productosGenerados.length,
+      tiendaNombre: ordenCompra.tienda?.nombre ?? '',
+      total: productos.length,
       verificados: 0,
-      productos: productosGenerados,
+      productos,
     });
   } catch (error) {
     console.error('[REPARTIDOR_ORDENES_COMPRA_PRODUCTOS_GET]', error);

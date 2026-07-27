@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
@@ -17,6 +17,17 @@ import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { useConfigStore } from '@/store/configStore';
 import { TemaToggle } from '@/components/ui/TemaToggle';
 import { SonidoToggle } from '@/components/ui/SonidoToggle';
+import { notify } from '@/lib/notify';
+
+// Icono cámara (no estaba en el set)
+function Camera({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </svg>
+  );
+}
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -291,6 +302,47 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
   const email = 'cliente@logifast.com';
 
+  /* ─── Foto de perfil subible ─── */
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
+
+  // Cargar foto existente al montar
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.user?.fotoUrl) setFotoUrl(data.user.fotoUrl);
+      })
+      .catch(() => null);
+  }, []);
+
+  const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/cliente/foto-perfil', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setFotoUrl(data.fotoUrl);
+        notify.success('Foto de perfil actualizada');
+      } else {
+        notify.error(data.error || 'Error al subir foto');
+      }
+    } catch {
+      notify.error('Error de conexión');
+    } finally {
+      setUploadingFoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   /* ─── Save address ─── */
   const handleAddAddress = () => {
     if (!newAddr.trim()) return;
@@ -449,27 +501,83 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 600, margin: '0 auto', padding: '0 4px' }}>
 
       {/* ═══════════════════════════════════════════
-          HEADER: Avatar + Name + Email
+          HEADER: Avatar (con foto subible) + Name + Email
           ═══════════════════════════════════════════ */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 8 }}>
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            background: 'var(--primario-soft)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--primario)',
-            fontFamily: "'Syne', sans-serif",
-            fontWeight: 700,
-            fontSize: 28,
-            flexShrink: 0,
-            border: '3px solid var(--primario)',
-          }}
-        >
-          {initials}
+        <div style={{ position: 'relative' }}>
+          <div
+            style={{
+              width: 88,
+              height: 88,
+              borderRadius: '50%',
+              background: 'var(--primario-soft)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--primario)',
+              fontFamily: "'Syne', sans-serif",
+              fontWeight: 700,
+              fontSize: 28,
+              flexShrink: 0,
+              border: '3px solid var(--primario)',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            {fotoUrl ? (
+              <img src={fotoUrl} alt={userName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              initials
+            )}
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              position: 'absolute',
+              bottom: -2,
+              right: -2,
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              border: '3px solid var(--bg)',
+              background: 'var(--primario)',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(255,87,34,0.4)',
+              transition: 'transform 0.2s',
+            }}
+            title="Cambiar foto de perfil"
+          >
+            <Camera size={14} />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: 'none' }}
+            onChange={handleFotoChange}
+          />
+          {uploadingFoto && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+                background: 'rgba(0,0,0,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              Subiendo...
+            </div>
+          )}
         </div>
         <div style={{ textAlign: 'center' }}>
           <AnimatePresence mode="wait">

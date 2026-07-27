@@ -8,17 +8,39 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─── Datasource ───
+// Para desarrollo usamos SQLite. Para migrar a PostgreSQL:
+//   1. Edita este archivo y cambia `provider = "sqlite"` → `provider = "postgresql"`
+//   2. Edita .env: DATABASE_URL="postgresql://user:pass@localhost:5432/logifast"
+//   3. npx prisma migrate reset --force
+//   4. node scripts/seed.js
+// Nota: el schema es 100% compatible con ambos motores (sin tipos específicos).
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  password      String
+  role          String   @default("cliente") // cliente, repartidor, admin, ingeniero
+  telefono      String?
+  initials      String?
+  color         String?
+  fotoUrl       String?
+  bio           String?
+  emailVerified Boolean  @default(false)
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  repartidorProfile RepartidorProfile?
+  ordenes           OrdenServicio[]      @relation("OrdenCliente")
+  ordenesCompra     OrdenCompra[]        @relation("OrdenCompraCliente")
+  passwordResets    PasswordReset[]
 }
 
 model Post {
@@ -29,6 +51,52 @@ model Post {
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Envíos / Servicios de Repartidor ───
+
+model OrdenServicio {
+  id              String   @id @default(cuid())
+  clienteId       String
+  repartidorId    String?
+  tipo            String   @default("envio") // envio, compra
+  estado          String   @default("pendiente") // pendiente, asignado, aceptado, recogido, entregado, incidencia, cancelado
+  origen          String
+  destino         String
+  origenLat       Float    @default(0)
+  origenLng       Float    @default(0)
+  destinoLat      Float    @default(0)
+  destinoLng      Float    @default(0)
+  paquete         String?
+  tamano          String?
+  fragil          Boolean  @default(false)
+  tiendaId        String?
+  tiendaNombre    String?
+  metodoPago      String   @default("efectivo")
+  monto           Float    @default(0)
+  ganancia        Float    @default(0)
+  kmEstimados     Float    @default(0)
+  tiempoEstimado  Int      @default(0)
+  kmRecorridos    Float    @default(0)
+  tiempoTotal     Int      @default(0)
+  incidenciaTipo  String?
+  incidenciaDesc  String?
+  clienteNombre   String
+  clienteTelefono String?
+  aceptadoEn      DateTime?
+  recogidoEn      DateTime?
+  entregadoEn     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  cliente       User                @relation("OrdenCliente", fields: [clienteId], references: [id])
+  repartidor    RepartidorProfile?  @relation("OrdenRepartidor", fields: [repartidorId], references: [id])
+  calificaciones CalificacionRepartidor[]
+  chats          ChatRepartidor[]
+
+  @@index([repartidorId, createdAt])
+  @@index([estado])
+  @@index([clienteId])
 }
 
 // ─── Marketing Models ───
@@ -197,6 +265,8 @@ model Tienda {
   logoColor     String   @default("#FF5722")
   logoIniciales String
   portadaColor  String   @default("#1B1B2F")
+  imagenUrl     String?  // logo o foto de la tienda
+  bannerUrl     String?  // imagen de portada
   direccion     String
   lat           Float
   lng           Float
@@ -231,6 +301,7 @@ model Producto {
   precio         Float
   precioOriginal Float?
   imagenColor    String   @default("#E8E4DE")
+  imagenUrl      String?  // foto real del producto
   disponible     Boolean  @default(true)
   esNuevo        Boolean  @default(false)
   esPopular      Boolean  @default(false)
@@ -241,6 +312,7 @@ model Producto {
   tienda         Tienda  @relation(fields: [tiendaId], references: [id])
   favoritos      FavoritoProducto[]
   itemsOrden     ItemOrdenCompra[]
+  carritoItems   CarritoItem[]
 }
 
 model OrdenCompra {
@@ -248,7 +320,7 @@ model OrdenCompra {
   clienteId       String
   tiendaId        String
   repartidorId    String?
-  estado          String   @default("recibido")
+  estado          String   @default("recibido") // recibido, preparando, listo, en_camino, entregado, cancelado
   direccionEntrega String
   lat             Float    @default(0)
   lng             Float    @default(0)
@@ -263,6 +335,7 @@ model OrdenCompra {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  cliente         User     @relation("OrdenCompraCliente", fields: [clienteId], references: [id])
   tienda          Tienda            @relation(fields: [tiendaId], references: [id])
   items           ItemOrdenCompra[]
   resenas         ResenaTienda[]
@@ -342,6 +415,9 @@ model RepartidorProfile {
   contratoAceptado Boolean @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  user           User              @relation(fields: [userId], references: [id])
+  ordenes        OrdenServicio[]   @relation("OrdenRepartidor")
 }
 
 model PosicionRepartidor {
@@ -381,12 +457,14 @@ model CalificacionRepartidor {
   id           String   @id @default(cuid())
   repartidorId String
   clienteId    String
-  servicioId   String
+  servicioId   String?
   ordenId      String
   estrellas    Int
   etiquetas    String   @default("[]") // JSON array string
   comentario   String?
   createdAt    DateTime @default(now())
+
+  orden        OrdenServicio? @relation(fields: [ordenId], references: [id])
 
   @@index([repartidorId, createdAt])
 }
@@ -429,6 +507,8 @@ model ChatRepartidor {
   contenido   String
   leido       Boolean  @default(false)
   enviadoEn   DateTime @default(now())
+
+  orden        OrdenServicio? @relation(fields: [ordenId], references: [id])
 
   @@index([ordenId, enviadoEn])
 }
@@ -522,4 +602,279 @@ model AlertaMantenimiento {
   createdAt       DateTime @default(now())
 
   moto            Moto     @relation(fields: [motoId], references: [id])
+}
+
+// ═══════════════════════════════════════════════════════
+// NUEVOS MODELOS — Rediseño social + media + completitud
+// ═══════════════════════════════════════════════════════
+
+// ─── Media Asset (subida de imágenes) ───
+model MediaAsset {
+  id          String   @id @default(cuid())
+  filename    String   // nombre final en disco
+  originalName String
+  mimeType    String
+  size        Int
+  width       Int?
+  height      Int?
+  url         String   // ruta pública /uploads/xxx.jpg
+  uploaderId  String?
+  categoria   String   @default("general") // perfil, producto, tienda, mantenimiento, banner, repuesto
+  entidadId   String?  // ID de la entidad relacionada (productoId, tiendaId, etc.)
+  createdAt   DateTime @default(now())
+
+  @@index([categoria, entidadId])
+  @@index([uploaderId])
+}
+
+// ─── Social: Follow de tiendas ───
+model TiendaFollow {
+  id        String   @id @default(cuid())
+  clienteId String
+  tiendaId  String
+  createdAt DateTime @default(now())
+
+  @@unique([clienteId, tiendaId])
+  @@index([tiendaId])
+}
+
+// ─── Social: Likes de productos ───
+model ProductoLike {
+  id          String   @id @default(cuid())
+  clienteId   String
+  productoId  String
+  createdAt   DateTime @default(now())
+
+  @@unique([clienteId, productoId])
+  @@index([productoId])
+}
+
+// ─── Social: Comentarios en productos ───
+model Comentario {
+  id          String   @id @default(cuid())
+  entidad     String   // producto, tienda, orden
+  entidadId   String
+  autorId     String
+  autorNombre String
+  autorInitials String
+  autorColor  String   @default("#FF5722")
+  contenido   String
+  padreId     String?  // para respuestas
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entidad, entidadId, createdAt])
+}
+
+// ─── Direcciones guardadas del cliente ───
+model DireccionCliente {
+  id          String   @id @default(cuid())
+  clienteId   String
+  etiqueta    String   @default("Casa") // Casa, Trabajo, Otro
+  direccion   String
+  lat         Float    @default(0)
+  lng         Float    @default(0)
+  referencia  String?  // "Portón negro, casa esquinera"
+  predeterminada Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clienteId])
+}
+
+// ─── Métodos de pago ───
+model MetodoPago {
+  id          String   @id @default(cuid())
+  clienteId   String
+  tipo        String   // tarjeta, efectivo, transferencia
+  titular     String?
+  ultimos4    String?  // "4242"
+  marca       String?  // Visa, Mastercard
+  vencimiento String?  // "12/26"
+  predeterminado Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clienteId])
+}
+
+// ─── Recargas de saldo del repartidor ───
+model RecargaSaldo {
+  id           String   @id @default(cuid())
+  repartidorId String
+  monto        Float
+  metodo       String   // codigo, transferencia, efectivo
+  codigo       String?
+  estado       String   @default("completada") // pendiente, completada, fallida
+  referencia   String?
+  createdAt    DateTime @default(now())
+
+  @@index([repartidorId, createdAt])
+}
+
+// ─── Stories (banners convertidos a stories temporales) ───
+model Story {
+  id          String   @id @default(cuid())
+  tipo        String   // promo, novedad, tienda
+  titulo      String
+  descripcion String?
+  imagenUrl   String?
+  colorFondo  String   @default("#FF5722")
+  link        String?
+  tiendaId    String?
+  segmento    String   @default("todos")
+  activo      Boolean  @default(true)
+  vistas      Int      @default(0)
+  createdAt   DateTime @default(now())
+  expiraEn    DateTime // 24h por defecto
+
+  @@index([activo, expiraEn])
+}
+
+// ─── Vistas de Story (por cliente) ───
+model StoryVista {
+  id          String   @id @default(cuid())
+  storyId     String
+  clienteId   String
+  createdAt   DateTime @default(now())
+
+  @@unique([storyId, clienteId])
+}
+
+// ─── Búsqueda de direcciones (caché de geocoding) ───
+model DireccionBusqueda {
+  id          String   @id @default(cuid())
+  query       String
+  resultados  String   // JSON
+  createdAt   DateTime @default(now())
+
+  @@index([query])
+}
+
+// ─── Actividad del usuario (feed activity) ───
+model ActividadUsuario {
+  id          String   @id @default(cuid())
+  userId      String
+  tipo        String   // orden_creada, orden_entregada, producto_like, comentario, follow
+  descripcion String
+  entidadTipo String?
+  entidadId   String?
+  metadata    String?  // JSON
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([tipo])
+}
+
+// ─── Valoraciones (reseñas) de productos ───
+model ValoracionProducto {
+  id          String   @id @default(cuid())
+  productoId  String
+  clienteId   String
+  ordenId     String?
+  estrellas   Int
+  comentario  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([productoId, clienteId])
+  @@index([productoId])
+}
+
+// ─── Solicitudes de envío directo (sin tienda) ───
+model SolicitudEnvio {
+  id              String   @id @default(cuid())
+  clienteId       String
+  estado          String   @default("pendiente") // pendiente, aceptada, en_camino, entregado, cancelado
+  origen          String
+  destino         String
+  origenLat       Float    @default(0)
+  origenLng       Float    @default(0)
+  destinoLat      Float    @default(0)
+  destinoLng      Float    @default(0)
+  paquete         String?
+  tamano          String?  // pequeño, mediano, grande
+  fragil          Boolean  @default(false)
+  metodoPago      String   @default("efectivo")
+  monto           Float    @default(0)
+  notas           String?
+  repartidorId    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clienteId])
+  @@index([estado])
+}
+
+// ─── Zonas de cobertura (catálogo) ───
+model ZonaCobertura {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String?
+  lat         Float    @default(0)
+  lng         Float    @default(0)
+  radio       Float    @default(5) // km
+  activa      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// ─── Notificaciones push (cola de envío) ───
+model NotificacionPush {
+  id           String   @id @default(cuid())
+  userId       String
+  titulo       String
+  contenido    String
+  tipo         String   // orden, promo, sistema, chat
+  entidadId    String?
+  leida        Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([userId, leida, createdAt])
+}
+
+// ─── Carrito persistente (por si el cliente cierra sesión) ───
+model CarritoItem {
+  id           String   @id @default(cuid())
+  clienteId    String
+  productoId   String
+  tiendaId     String
+  cantidad     Int      @default(1)
+  notas        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  producto     Producto @relation(fields: [productoId], references: [id])
+
+  @@unique([clienteId, productoId])
+  @@index([clienteId])
+}
+
+// ─── Password Reset (recuperación de contraseña) ───
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ─── Login Audit (intentos de login para seguridad) ───
+model LoginAudit {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String?
+  userAgent String?
+  success   Boolean
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
 }

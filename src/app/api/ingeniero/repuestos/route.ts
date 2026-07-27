@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const repuestos = await prisma.repuesto.findMany({
       orderBy: { nombre: 'asc' }
     });
@@ -24,14 +27,14 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(formatted);
-  } catch (error) {
-    console.error('[INGENIERO_REPUESTOS_GET]', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'INGENIERO_REPUESTOS_GET');
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const data = await req.json();
 
     const repuesto = await prisma.repuesto.create({
@@ -61,14 +64,14 @@ export async function POST(req: NextRequest) {
       compatibleCon,
       bajoStock: repuesto.stock <= repuesto.stockMinimo
     }, { status: 201 });
-  } catch (error) {
-    console.error('[INGENIERO_REPUESTOS_POST]', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'INGENIERO_REPUESTOS_POST');
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const body = await req.json();
     const { id, stock } = body;
 
@@ -89,9 +92,8 @@ export async function PATCH(req: NextRequest) {
       compatibleCon,
       bajoStock: repuesto.stock <= repuesto.stockMinimo
     });
-  } catch (error) {
-    console.error('[INGENIERO_REPUESTOS_PATCH]', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'INGENIERO_REPUESTOS_PATCH');
   }
 }
 

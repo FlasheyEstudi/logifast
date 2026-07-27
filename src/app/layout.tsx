@@ -116,7 +116,14 @@ export default function RootLayout({
         className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <Toaster position="top-right" />
+          <Toaster
+            position="top-center"
+            theme="light"
+            options={{
+              duration: 4000,
+              roundness: 18,
+            }}
+          />
           {children}
         </ThemeProvider>
       </body>

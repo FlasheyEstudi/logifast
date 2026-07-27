@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado');
     const motoId = searchParams.get('motoId');
@@ -25,14 +28,14 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(mantenimientos);
-  } catch (error) {
-    console.error('[INGENIERO_MANTENIMIENTOS_GET]', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'INGENIERO_MANTENIMIENTOS_GET');
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const data = await req.json();
 
     const mantenimiento = await prisma.mantenimiento.create({
@@ -58,8 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(mantenimiento, { status: 201 });
-  } catch (error) {
-    console.error('[INGENIERO_MANTENIMIENTOS_POST]', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'INGENIERO_MANTENIMIENTOS_POST');
   }
 }

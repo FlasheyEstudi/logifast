@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar,
@@ -1500,6 +1500,17 @@ function SubAnalitica() {
 
 export default function ModuleMarketing() {
   const [activeTab, setActiveTab] = useState<SubTab>('campanas');
+
+  // ─── Cargar KPIs reales desde el backend ───
+  const [stats, setStats] = useState<any>(null);
+  useEffect(() => {
+    fetch('/api/marketing/stats')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.data) setStats(data.data);
+      })
+      .catch(() => null);
+  }, [activeTab]);
 
   return (
     <div style={{ padding: '20px 24px', maxWidth: 1200, margin: '0 auto' }}>

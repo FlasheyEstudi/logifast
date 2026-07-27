@@ -8,7 +8,7 @@ import {
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle, Download,
   Copy, FileDown, ImageIcon, BarChart3, Clock, MapPin, Percent,
-  Truck, ChevronDown, X,
+  Truck, ChevronDown, X, FileText,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 
@@ -196,19 +196,129 @@ export default function ModuleReportes() {
 
   /* ─── Export: CSV ─── */
   const handleExportCSV = useCallback(() => {
-    const headers = 'Día,Monto (C$)\n';
-    const rows = dailyRevenue.map((d) => `${d.dia},${d.monto}`).join('\n');
-    const csv = headers + rows;
+    let csv = 'LOGIFAST - REPORTE DE INGRESOS Y OPERACIONES\n';
+    csv += `Fecha de Generación,${new Date().toLocaleDateString('es-NI')}\n\n`;
+    csv += 'INGRESOS DIARIOS\n';
+    csv += 'Día,Monto (C$)\n';
+    dailyRevenue.forEach((d) => {
+      csv += `${d.dia},${d.monto}\n`;
+    });
+    csv += '\nRESUMEN POR ZONA\n';
+    csv += 'Zona,Órdenes,Ingresos (C$),KM Promedio,Costo Promedio (C$)\n';
+    PIVOT_DATA.forEach((r) => {
+      csv += `${r.zona},${r.ordenes},${r.ingresos},${r.kmPromedio},${r.costoPromedio}\n`;
+    });
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'reporte_ingresos_diarios.csv';
+    link.download = `LOGIFAST_Reporte_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     setExportOpen(false);
     showToast('CSV descargado correctamente', 'success');
   }, [dailyRevenue, showToast]);
+
+  /* ─── Export: XLSX (Excel Spreadsheet) ─── */
+  const handleExportXLSX = useCallback(() => {
+    let xml = `<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n<Worksheet ss:Name="Reporte Logifast">\n<Table>\n`;
+    xml += `<Row><Cell><Data ss:Type="String">LOGIFAST - REPORTE DE INGRESOS Y OPERACIONES</Data></Cell></Row>\n`;
+    xml += `<Row><Cell><Data ss:Type="String">Fecha de Generación: ${new Date().toLocaleDateString('es-NI')}</Data></Cell></Row>\n<Row></Row>\n`;
+    xml += `<Row><Cell><Data ss:Type="String">INGRESOS DIARIOS</Data></Cell></Row>\n`;
+    xml += `<Row><Cell><Data ss:Type="String">Día</Data></Cell><Cell><Data ss:Type="String">Ingreso (C$)</Data></Cell></Row>\n`;
+    dailyRevenue.forEach((d) => {
+      xml += `<Row><Cell><Data ss:Type="String">${d.dia}</Data></Cell><Cell><Data ss:Type="Number">${d.monto}</Data></Cell></Row>\n`;
+    });
+    xml += `<Row></Row><Row><Cell><Data ss:Type="String">RESUMEN POR ZONA</Data></Cell></Row>\n`;
+    xml += `<Row><Cell><Data ss:Type="String">Zona</Data></Cell><Cell><Data ss:Type="String">Órdenes</Data></Cell><Cell><Data ss:Type="String">Ingresos (C$)</Data></Cell><Cell><Data ss:Type="String">KM Promedio</Data></Cell><Cell><Data ss:Type="String">Costo Promedio (C$)</Data></Cell></Row>\n`;
+    PIVOT_DATA.forEach((r) => {
+      xml += `<Row><Cell><Data ss:Type="String">${r.zona}</Data></Cell><Cell><Data ss:Type="Number">${r.ordenes}</Data></Cell><Cell><Data ss:Type="Number">${r.ingresos}</Data></Cell><Cell><Data ss:Type="Number">${r.kmPromedio}</Data></Cell><Cell><Data ss:Type="Number">${r.costoPromedio}</Data></Cell></Row>\n`;
+    });
+    xml += `</Table>\n</Worksheet>\n</Workbook>`;
+
+    const blob = new Blob([xml], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `LOGIFAST_Reporte_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setExportOpen(false);
+    showToast('Reporte Excel (.xlsx) generado y descargado', 'success');
+  }, [dailyRevenue, showToast]);
+
+  /* ─── Export: PDF ─── */
+  const handleExportPDF = useCallback(() => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      showToast('Permite ventanas emergentes para descargar el PDF', 'error');
+      return;
+    }
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>LOGIFAST - Reporte Oficial</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 32px; color: #1B1B2F; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0066FF; padding-bottom: 12px; margin-bottom: 20px; }
+          .title { font-size: 24px; font-weight: 800; color: #0066FF; letter-spacing: -0.5px; }
+          .subtitle { font-size: 12px; color: #666; margin-top: 2px; }
+          .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+          .kpi-card { border: 1px solid #E8E4DE; border-radius: 8px; padding: 12px; background: #FAF8F5; }
+          .kpi-title { font-size: 10px; text-transform: uppercase; color: #888; font-weight: 700; }
+          .kpi-val { font-size: 20px; font-weight: 800; color: #1B1B2F; margin-top: 4px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px; }
+          th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #EEE; font-size: 12px; }
+          th { background: #F5F0EB; font-weight: 700; text-transform: uppercase; font-size: 10px; color: #555; }
+          .footer { font-size: 10px; color: #888; text-align: center; margin-top: 30px; border-top: 1px solid #EEE; padding-top: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="title">LOGIFAST</div>
+            <div class="subtitle">Reporte Oficial de Operaciones e Ingresos</div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #666;">
+            <strong>Fecha:</strong> ${new Date().toLocaleDateString('es-NI')}<br/>
+            <strong>Estado:</strong> Auditado
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-title">Ingreso Total Semana</div><div class="kpi-val">C$ ${dailyRevenue.reduce((s, d) => s + d.monto, 0).toLocaleString()}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Órdenes Totales</div><div class="kpi-val">${totalOrders}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Tiempo Prom. Entrega</div><div class="kpi-val">28 min</div></div>
+        </div>
+
+        <h4 style="margin-bottom: 8px; font-size: 14px;">Ingresos Diarios de la Semana</h4>
+        <table>
+          <thead><tr><th>Día</th><th style="text-align:right">Monto (C$)</th></tr></thead>
+          <tbody>
+            ${dailyRevenue.map((d) => `<tr><td>${d.dia}</td><td style="text-align:right">C$ ${d.monto.toLocaleString()}</td></tr>`).join('')}
+          </tbody>
+        </table>
+
+        <h4 style="margin-bottom: 8px; font-size: 14px;">Resumen por Zona de Cobertura</h4>
+        <table>
+          <thead><tr><th>Zona</th><th style="text-align:right">Órdenes</th><th style="text-align:right">Ingresos Total</th><th style="text-align:right">KM Promedio</th><th style="text-align:right">Costo Promedio</th></tr></thead>
+          <tbody>
+            ${PIVOT_DATA.map((r) => `<tr><td>${r.zona}</td><td style="text-align:right">${r.ordenes}</td><td style="text-align:right">C$ ${r.ingresos.toLocaleString()}</td><td style="text-align:right">${r.kmPromedio} km</td><td style="text-align:right">C$ ${r.costoPromedio}</td></tr>`).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">Documento generado automáticamente por la consola de administración LOGIFAST.</div>
+        <script>window.onload = function() { window.print(); };</script>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    setExportOpen(false);
+    showToast('Reporte PDF generado correctamente', 'success');
+  }, [dailyRevenue, totalOrders, showToast]);
 
   /* ─── Export: Clipboard ─── */
   const handleCopyData = useCallback(async () => {
@@ -221,12 +331,6 @@ export default function ModuleReportes() {
     }
     setExportOpen(false);
   }, [dailyRevenue, showToast]);
-
-  /* ─── Export: Image (placeholder) ─── */
-  const handleExportImage = useCallback(() => {
-    showToast('Exportar imagen — próximamente', 'info');
-    setExportOpen(false);
-  }, [showToast]);
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', padding: '16px 20px' }} className="lf-scrollbar">
@@ -252,16 +356,19 @@ export default function ModuleReportes() {
               position: 'absolute', top: '100%', right: 0, marginTop: 4,
               background: 'var(--lf-surface)', border: '1px solid var(--lf-border)',
               borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-              zIndex: 50, minWidth: 200, overflow: 'hidden',
+              zIndex: 50, minWidth: 220, overflow: 'hidden',
             }}>
-              <button onClick={handleCopyData} style={dropdownItemStyle}>
-                <Copy size={14} /> Copiar datos
+              <button onClick={handleExportPDF} style={dropdownItemStyle}>
+                <FileText size={14} /> Descargar PDF (.pdf)
+              </button>
+              <button onClick={handleExportXLSX} style={dropdownItemStyle}>
+                <FileDown size={14} /> Descargar Excel (.xlsx)
               </button>
               <button onClick={handleExportCSV} style={dropdownItemStyle}>
-                <FileDown size={14} /> Descargar CSV
+                <FileDown size={14} /> Descargar CSV (.csv)
               </button>
-              <button onClick={handleExportImage} style={dropdownItemStyle}>
-                <ImageIcon size={14} /> Descargar imagen
+              <button onClick={handleCopyData} style={dropdownItemStyle}>
+                <Copy size={14} /> Copiar datos
               </button>
             </div>
           )}

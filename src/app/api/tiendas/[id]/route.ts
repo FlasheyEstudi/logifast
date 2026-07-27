@@ -1,25 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MOCK_TIENDAS, MOCK_RESENAS } from '@/lib/marketplace-store';
+import { db } from '@/lib/db';
+import { requireSession } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/tiendas/[id]
+ * Devuelve una tienda con sus reseñas.
+ */
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const tienda = MOCK_TIENDAS.find((t) => t.id === id);
+    const t = await db.tienda.findUnique({
+      where: { id },
+      include: { resenas: true },
+    });
 
-    if (!tienda) {
+    if (!t) {
       return NextResponse.json(
         { error: 'Tienda no encontrada' },
         { status: 404 }
       );
     }
 
-    const resenas = MOCK_RESENAS.filter((r) => r.tiendaId === id);
+    let horario: Record<string, { abre: string; cierra: string }> = {};
+    try { horario = JSON.parse(t.horario); } catch {}
+    let zonaCobertura: string[] = [];
+    try { zonaCobertura = JSON.parse(t.zonaCobertura); } catch {}
+
+    const badges: string[] = [];
+    if (t.popular) badges.push('Popular');
+    if (t.verificado) badges.push('Verificado');
+
+    const resenas = t.resenas.map((r) => ({
+      id: r.id,
+      tiendaId: r.tiendaId,
+      clienteNombre: `Cliente ${r.clienteId.slice(-4)}`,
+      estrellas: r.estrellas,
+      comentario: r.comentario ?? '',
+      fecha: r.createdAt.toISOString().slice(0, 10),
+    }));
 
     return NextResponse.json({
-      ...tienda,
+      id: t.id,
+      nombre: t.nombre,
+      descripcion: t.descripcion ?? '',
+      categoria: t.categoria,
+      logoColor: t.logoColor,
+      logoIniciales: t.logoIniciales,
+      portadaColor: t.portadaColor,
+      direccion: t.direccion,
+      lat: t.lat,
+      lng: t.lng,
+      telefono: t.telefono ?? '',
+      email: t.email ?? '',
+      calificacion: t.calificacion,
+      totalPedidos: t.totalPedidos,
+      tiempoEstimado: t.tiempoEstimado,
+      costoEnvio: t.costoEnvio,
+      pedidoMinimo: t.pedidoMinimo,
+      horario,
+      zonaCobertura,
+      verificado: t.verificado,
+      popular: t.popular,
+      estado: t.estado,
+      badges,
       resenas,
     });
   } catch (error) {
@@ -28,5 +77,55 @@ export async function GET(
       { error: 'Error al obtener la tienda' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * PATCH /api/tiendas/[id]
+ * Actualiza una tienda.
+ */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await requireSession();
+    const { id } = await params;
+    const body = await req.json();
+
+    const data: Record<string, unknown> = {};
+    const allowed = ['nombre', 'descripcion', 'categoria', 'logoColor', 'logoIniciales', 'portadaColor', 'direccion', 'telefono', 'email', 'tiempoEstimado', 'verificado', 'popular', 'estado'];
+
+    for (const key of allowed) {
+      if (key in body) data[key] = body[key];
+    }
+    if ('lat' in body) data.lat = Number(body.lat);
+    if ('lng' in body) data.lng = Number(body.lng);
+    if ('costoEnvio' in body) data.costoEnvio = Number(body.costoEnvio);
+    if ('pedidoMinimo' in body) data.pedidoMinimo = Number(body.pedidoMinimo);
+    if ('horario' in body) data.horario = JSON.stringify(body.horario);
+    if ('zonaCobertura' in body) data.zonaCobertura = JSON.stringify(body.zonaCobertura);
+
+    const tienda = await db.tienda.update({ where: { id }, data });
+    return NextResponse.json({ tienda });
+  } catch (error) {
+    return handleError(error, 'TIENDA_PATCH');
+  }
+}
+
+/**
+ * DELETE /api/tiendas/[id]
+ */
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await requireSession();
+    const { id } = await params;
+    await db.tienda.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return handleError(error, 'TIENDA_DELETE');
   }
 }

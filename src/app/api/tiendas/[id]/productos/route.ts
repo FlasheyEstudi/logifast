@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MOCK_PRODUCTOS, MOCK_TIENDAS } from '@/lib/marketplace-store';
+import { db } from '@/lib/db';
+import { requireSession } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/tiendas/[id]/productos
+ * Lista los productos de una tienda, con filtros.
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const tienda = MOCK_TIENDAS.find((t) => t.id === id);
+    const tienda = await db.tienda.findUnique({ where: { id } });
 
     if (!tienda) {
       return NextResponse.json(
@@ -23,34 +31,39 @@ export async function GET(
     const populares = searchParams.get('populares');
     const nuevos = searchParams.get('nuevos');
 
-    let productos = MOCK_PRODUCTOS.filter((p) => p.tiendaId === id);
-
-    if (categoria) {
-      productos = productos.filter((p) => p.categoriaNombre === categoria);
-    }
-
+    const where: Record<string, unknown> = { tiendaId: id };
+    if (categoria) where.categoriaNombre = categoria;
+    if (soloDisponibles === 'true') where.disponible = true;
+    if (populares === 'true') where.esPopular = true;
+    if (nuevos === 'true') where.esNuevo = true;
     if (search) {
-      const q = search.toLowerCase();
-      productos = productos.filter(
-        (p) =>
-          p.nombre.toLowerCase().includes(q) ||
-          p.descripcion.toLowerCase().includes(q)
-      );
+      where.OR = [
+        { nombre: { contains: search } },
+        { descripcion: { contains: search } },
+      ];
     }
 
-    if (soloDisponibles === 'true') {
-      productos = productos.filter((p) => p.disponible);
-    }
+    const productosRaw = await db.producto.findMany({
+      where,
+      orderBy: [{ posicion: 'asc' }, { createdAt: 'asc' }],
+    });
 
-    if (populares === 'true') {
-      productos = productos.filter((p) => p.esPopular);
-    }
+    const productos = productosRaw.map((p) => ({
+      id: p.id,
+      tiendaId: p.tiendaId,
+      categoriaNombre: p.categoriaNombre ?? '',
+      nombre: p.nombre,
+      descripcion: p.descripcion ?? '',
+      precio: p.precio,
+      precioOriginal: p.precioOriginal ?? undefined,
+      imagenColor: p.imagenColor,
+      disponible: p.disponible,
+      esNuevo: p.esNuevo,
+      esPopular: p.esPopular,
+      stock: p.stock,
+    }));
 
-    if (nuevos === 'true') {
-      productos = productos.filter((p) => p.esNuevo);
-    }
-
-    // Group productos by categoriaNombre
+    // Agrupar por categoriaNombre
     const categorias: Record<string, typeof productos> = {};
     for (const producto of productos) {
       if (!categorias[producto.categoriaNombre]) {
@@ -71,5 +84,61 @@ export async function GET(
       { error: 'Error al obtener los productos de la tienda' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * POST /api/tiendas/[id]/productos
+ * Crea un producto en la tienda.
+ */
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await requireSession();
+    const { id } = await params;
+    const body = await req.json();
+    const {
+      nombre,
+      descripcion,
+      categoriaNombre = 'General',
+      precio,
+      precioOriginal,
+      imagenColor = '#E8E4DE',
+      disponible = true,
+      esNuevo = false,
+      esPopular = false,
+      stock = null,
+      posicion = 0,
+    } = body;
+
+    if (!nombre || precio === undefined) {
+      return NextResponse.json(
+        { error: 'nombre y precio son obligatorios' },
+        { status: 400 }
+      );
+    }
+
+    const producto = await db.producto.create({
+      data: {
+        tiendaId: id,
+        nombre,
+        descripcion: descripcion ?? null,
+        categoriaNombre,
+        precio: Number(precio),
+        precioOriginal: precioOriginal ? Number(precioOriginal) : null,
+        imagenColor,
+        disponible,
+        esNuevo,
+        esPopular,
+        stock: stock !== null ? Number(stock) : null,
+        posicion: Number(posicion) || 0,
+      },
+    });
+
+    return NextResponse.json({ producto });
+  } catch (error) {
+    return handleError(error, 'PRODUCTO_POST');
   }
 }

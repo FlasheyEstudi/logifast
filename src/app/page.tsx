@@ -8,9 +8,21 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
 import { sileo } from "sileo";
 import { Transition } from '@headlessui/react';
+import { RoleLoader, MiniSpinner } from '@/components/ui/loaders';
+import {
+  DeliveryMotoIllustration,
+  MapIllustration,
+  SecurePackageIllustration,
+  ReceivePackageIllustration,
+  PhoneTrackingIllustration,
+  StarsIllustration,
+  SpeedClockIllustration,
+  SocialNetworkIllustration,
+} from '@/components/illustrations';
+import AuthRedesign from '@/components/auth/AuthRedesign';
 
-const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false });
-const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false });
+const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false, loading: () => <RoleLoader role="repartidor" /> });
+const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false, loading: () => <RoleLoader role="ingeniero" /> });
 
 /* ═══════════════════════════════════════════════════════
    SVG HIGH-TECH ICONS
@@ -121,8 +133,8 @@ function Logo({ large, onClick, darkText }: { large?: boolean; onClick?: () => v
         src="/logo.png" 
         alt="Logifast Logo" 
         style={{ 
-          width: large ? '44px' : '32px', 
-          height: large ? '44px' : '32px',
+          width: large ? '56px' : '40px', 
+          height: large ? '56px' : '40px',
           objectFit: 'contain'
         }} 
       />
@@ -380,28 +392,18 @@ export default function Home() {
         window.matchMedia('(prefers-color-scheme: dark)').matches)
     );
 
-  /* ─── Toasts ─── */
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const toastIdRef = useRef(0);
-
+  /* ─── Toasts (solo sileo) ─── */
   const addToast = useCallback((title: string, desc: string, variant: ToastVariant = 'success') => {
     const msg = desc ? `${title}: ${desc}` : title;
     if (variant === 'success') {
-      sileo.success({ title: msg });
+      sileo.success({ title, description: desc || undefined });
     } else if (variant === 'error') {
-      sileo.error({ title: msg });
+      sileo.error({ title, description: desc || undefined });
     } else if (variant === 'warning') {
-      sileo.warning({ title: msg });
+      sileo.warning({ title, description: desc || undefined });
     } else {
-      sileo.info({ title: msg });
+      sileo.info({ title, description: desc || undefined });
     }
-
-    const id = ++toastIdRef.current;
-    setToasts((prev) => [...prev, { id, title, desc, variant }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
-      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 300);
-    }, 4000);
   }, []);
 
   /* ─── Apply theme ─── */
@@ -462,7 +464,7 @@ export default function Home() {
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   /* ─── Login ─── */
-  const handleLogin = useCallback((e: React.FormEvent) => {
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
     if (!loginEmail) errors.email = 'El correo es obligatorio';
@@ -471,36 +473,49 @@ export default function Home() {
     setLoginErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    // Check demo credentials
-    const demoEntry = Object.entries(demoCredentials).find(([, v]) => v.email === loginEmail && v.password === loginPassword);
-    if (!demoEntry) {
-      addToast('Error', 'Correo o contraseña incorrectos', 'error');
-      return;
-    }
-
     setLoginLoading(true);
-    setLoginRole(demoEntry[0]);
-    setLoginUserName(demoEntry[1].name);
 
-    setTimeout(() => {
-      setLoginLoading(false);
-      addToast(`Bienvenido, ${demoEntry[1].name}`, 'Redirigiendo al dashboard...', 'success');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        addToast('Error', data.error || 'Correo o contraseña incorrectos', 'error');
+        setLoginLoading(false);
+        return;
+      }
+
+      const role = data.user.role;
+      const name = data.user.name;
+      setLoginRole(role);
+      setLoginUserName(name);
+
+      addToast(`Bienvenido, ${name}`, 'Redirigiendo al dashboard...', 'success');
       setTimeout(() => setLoginRedirect(true), 800);
       setTimeout(() => {
         if (typeof window !== 'undefined') {
           localStorage.setItem('lf-session-view', 'dashboard');
-          localStorage.setItem('lf-session-role', demoEntry[0]);
-          localStorage.setItem('lf-session-name', demoEntry[1].name);
+          localStorage.setItem('lf-session-role', role);
+          localStorage.setItem('lf-session-name', name);
           window.location.hash = '#/dashboard';
         }
         document.body.style.overflow = '';
         setLoginRedirect(false);
+        setLoginLoading(false);
       }, 3300);
-    }, 1200);
+    } catch (err) {
+      console.error('[LOGIN]', err);
+      addToast('Error', 'No se pudo conectar con el servidor', 'error');
+      setLoginLoading(false);
+    }
   }, [loginEmail, loginPassword, addToast]);
 
   /* ─── Demo quick login ─── */
-  const handleDemoLogin = useCallback((role: string) => {
+  const handleDemoLogin = useCallback(async (role: string) => {
     const cred = demoCredentials[role];
     if (!cred) return;
     setLoginEmail(cred.email);
@@ -510,21 +525,40 @@ export default function Home() {
     setLoginUserName(cred.name);
     setLoginLoading(true);
 
-    setTimeout(() => {
-      setLoginLoading(false);
-      addToast(`Bienvenido, ${cred.name}`, 'Redirigiendo al dashboard...', 'success');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cred.email, password: cred.password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        addToast('Error', data.error || 'No se pudo iniciar sesión demo', 'error');
+        setLoginLoading(false);
+        return;
+      }
+
+      const name = data.user.name;
+      setLoginUserName(name);
+      addToast(`Bienvenido, ${name}`, 'Redirigiendo al dashboard...', 'success');
       setTimeout(() => setLoginRedirect(true), 800);
       setTimeout(() => {
         if (typeof window !== 'undefined') {
           localStorage.setItem('lf-session-view', 'dashboard');
           localStorage.setItem('lf-session-role', role);
-          localStorage.setItem('lf-session-name', cred.name);
+          localStorage.setItem('lf-session-name', name);
           window.location.hash = '#/dashboard';
         }
         document.body.style.overflow = '';
         setLoginRedirect(false);
+        setLoginLoading(false);
       }, 3300);
-    }, 1200);
+    } catch (err) {
+      console.error('[DEMO_LOGIN]', err);
+      addToast('Error', 'No se pudo conectar con el servidor', 'error');
+      setLoginLoading(false);
+    }
   }, [addToast]);
 
   /* ─── Register Step 1 Validate ─── */
@@ -544,7 +578,7 @@ export default function Home() {
   };
 
   /* ─── Register Final Submit ─── */
-  const handleRegister = useCallback((e: React.FormEvent) => {
+  const handleRegister = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
     if (!regRole) errors.role = 'Selecciona un tipo de cuenta';
@@ -553,16 +587,41 @@ export default function Home() {
     if (Object.keys(errors).length > 0) return;
 
     setRegLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: regName,
+          email: regEmail,
+          password: regPassword,
+          role: regRole === 'cliente' || regRole === 'repartidor' ? regRole : 'cliente',
+        }),
+      });
+      const data = await res.json();
       setRegLoading(false);
+
+      if (!res.ok || !data.ok) {
+        addToast('Error', data.error || 'No se pudo registrar la cuenta', 'error');
+        return;
+      }
       setRegSuccess(true);
-    }, 1500);
-  }, [regRole, regTerms]);
+    } catch (err) {
+      console.error('[REGISTER]', err);
+      setRegLoading(false);
+      addToast('Error', 'No se pudo conectar con el servidor', 'error');
+    }
+  }, [regName, regEmail, regPassword, regRole, regTerms, addToast]);
 
   /* ─── Logout ─── */
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
     setLoginEmail('');
     setLoginPassword('');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('[LOGOUT]', err);
+    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('lf-session-view');
       localStorage.removeItem('lf-session-role');
@@ -585,6 +644,27 @@ export default function Home() {
   /* ═══════════════════════════════════════════════════════
      DASHBOARD VIEW DIRECT
      ═══════════════════════════════════════════════════════ */
+
+  // Si está en landing/login/register → usar el nuevo AuthRedesign
+  if (currentView === 'landing' || currentView === 'login' || currentView === 'register') {
+    return (
+      <AuthRedesign
+        currentView={currentView}
+        onLoginSuccess={(role, name) => {
+          setLoginRole(role);
+          setLoginUserName(name);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lf-session-view', 'dashboard');
+            localStorage.setItem('lf-session-role', role);
+            localStorage.setItem('lf-session-name', name);
+            window.location.hash = '#/dashboard';
+          }
+          setCurrentView('dashboard');
+        }}
+      />
+    );
+  }
+
   if (currentView === 'dashboard') {
     if (loginRole === 'cliente') {
       return (
@@ -857,49 +937,67 @@ export default function Home() {
                       {/* Email input */}
                       <div className="flex flex-col gap-1.5">
                         <label className="obsidian-label">Usuario / Correo</label>
-                        <div className="relative">
-                          <input 
-                            type="email" 
-                            className="obsidian-input w-full"
+                        <div className="relative group">
+                          <input
+                            type="email"
+                            className="obsidian-input w-full transition-all focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.15)]"
                             placeholder="nombre@empresa.com"
                             value={loginEmail}
                             onChange={(e) => setLoginEmail(e.target.value)}
+                            autoComplete="email"
                           />
-                          <span className="absolute left-1 top-3.5 text-gray-500"><IconEnvelope /></span>
+                          <span className="absolute left-3 top-3.5 text-gray-500 group-focus-within:text-[#FF5722] transition-colors"><IconEnvelope /></span>
                         </div>
-                        {loginErrors.email && <span className="text-[10px] text-error font-medium">{loginErrors.email}</span>}
+                        {loginErrors.email && <span className="text-[10px] text-error font-medium flex items-center gap-1">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                          {loginErrors.email}
+                        </span>}
                       </div>
 
                       {/* Password input */}
                       <div className="flex flex-col gap-1.5">
                         <div className="flex justify-between items-center">
                           <label className="obsidian-label">Contraseña</label>
-                          <button type="button" className="text-[11px] text-[#0066FF] font-bold hover:underline">
+                          <button type="button" className="text-[11px] text-[#FF5722] font-bold hover:underline transition-colors">
                             ¿Olvidaste la clave?
                           </button>
                         </div>
-                        <div className="relative">
-                          <input 
+                        <div className="relative group">
+                          <input
                             type={showLoginPassword ? 'text' : 'password'}
-                            className="obsidian-input w-full"
+                            className="obsidian-input w-full transition-all focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.15)]"
                             placeholder="••••••••"
                             value={loginPassword}
                             onChange={(e) => setLoginPassword(e.target.value)}
+                            autoComplete="current-password"
                           />
-                          <span className="absolute left-1 top-3.5 text-gray-500"><IconLock /></span>
-                          <button 
-                            type="button" 
-                            className="absolute right-2 top-3.5 text-gray-500 hover:text-white"
+                          <span className="absolute left-3 top-3.5 text-gray-500 group-focus-within:text-[#FF5722] transition-colors"><IconLock /></span>
+                          <button
+                            type="button"
+                            className="absolute right-3 top-3.5 text-gray-500 hover:text-[#FF5722] transition-colors p-1 rounded-md hover:bg-white/5"
                             onClick={() => setShowLoginPassword(!showLoginPassword)}
+                            aria-label={showLoginPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                           >
                             {showLoginPassword ? <IconEyeOff /> : <IconEye />}
                           </button>
                         </div>
-                        {loginErrors.password && <span className="text-[10px] text-error font-medium">{loginErrors.password}</span>}
+                        {loginErrors.password && <span className="text-[10px] text-error font-medium flex items-center gap-1">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                          {loginErrors.password}
+                        </span>}
                       </div>
 
-                      <button type="submit" className="apple-btn-filled justify-center w-full mt-3 py-3.5 text-sm font-bold bg-[#0066FF]" disabled={loginLoading}>
-                        {loginLoading ? <span className="loading loading-spinner text-white"></span> : 'Acceder al Sistema'}
+                      {/* Recordarme + estado */}
+                      <div className="flex items-center justify-between gap-3 text-xs">
+                        <label className="flex items-center gap-2 cursor-pointer text-gray-400 hover:text-white transition-colors">
+                          <input type="checkbox" defaultChecked className="w-3.5 h-3.5 rounded border-gray-600 bg-transparent accent-[#FF5722]" />
+                          <span>Mantener sesión activa</span>
+                        </label>
+                        <span className="text-gray-500 text-[10px]">🔒 Conexión segura</span>
+                      </div>
+
+                      <button type="submit" className="apple-btn-filled justify-center w-full mt-3 py-3.5 text-sm font-bold bg-gradient-to-r from-[#FF5722] to-[#FF8A65] shadow-lg shadow-[#FF5722]/30 hover:shadow-[#FF5722]/50 hover:-translate-y-0.5 transition-all" disabled={loginLoading}>
+                        {loginLoading ? <MiniSpinner size={18} color="white" /> : 'Acceder al Sistema'}
                       </button>
                     </form>
 
@@ -1041,36 +1139,74 @@ export default function Home() {
                     transition={{ duration: 0.15 }}
                   >
                     <form onSubmit={handleRegister} noValidate className="flex flex-col gap-6">
-                      {/* Role selector */}
+                      {/* Role selector con cards visuales */}
                       <div className="flex flex-col gap-3">
-                        <label className="obsidian-label">Selecciona tu Rol Operativo</label>
+                        <label className="obsidian-label">¿Cómo quieres usar LOGIFAST?</label>
                         <div className="grid grid-cols-2 gap-3">
                           {[
-                            { value: 'cliente', label: 'Cliente B2B', icon: <IconPerson /> },
-                            { value: 'repartidor', label: 'Rider GPS', icon: <IconMoto /> },
-                            { value: 'admin', label: 'Administrador', icon: <IconShield /> },
-                            { value: 'ingeniero', label: 'Mecánico', icon: <IconWrench /> }
+                            {
+                              value: 'cliente',
+                              label: 'Cliente',
+                              desc: 'Pedir envíos y comprar',
+                              icon: (
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                  <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                              ),
+                              color: '#FF5722',
+                            },
+                            {
+                              value: 'repartidor',
+                              label: 'Repartidor',
+                              desc: 'Ganar entregando',
+                              icon: (
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="5.5" cy="17.5" r="3.5"/>
+                                  <circle cx="18.5" cy="17.5" r="3.5"/>
+                                  <path d="M15 6h2l3 3M5.5 14L9 6h4l-2 8"/>
+                                </svg>
+                              ),
+                              color: '#4CAF50',
+                            },
                           ].map((roleOption) => {
                             const isActive = regRole === roleOption.value;
                             return (
                               <button
                                 key={roleOption.value}
                                 type="button"
-                                className={`flex items-center gap-3 p-4 text-left border rounded-2xl transition-all ${
-                                  isActive 
-                                    ? 'bg-[var(--primario-soft)] border-[#0066FF] text-[var(--text)] shadow-md' 
-                                    : 'bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-alt)]/20 hover:text-[var(--text)]'
+                                className={`group relative flex flex-col items-start gap-2 p-4 text-left border-2 rounded-2xl transition-all overflow-hidden ${
+                                  isActive
+                                    ? 'border-transparent text-white shadow-lg'
+                                    : 'bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/5'
                                 }`}
+                                style={isActive ? { background: `linear-gradient(135deg, ${roleOption.color}, ${roleOption.color}cc)`, boxShadow: `0 8px 24px ${roleOption.color}40` } : {}}
                                 onClick={() => setRegRole(roleOption.value)}
                               >
-                                <span className={`p-1.5 rounded-lg ${isActive ? 'bg-[#0066FF]/20 text-[#0066FF]' : 'bg-white/5 text-gray-500'}`}>
+                                <span
+                                  className={`p-2 rounded-xl transition-all ${isActive ? 'bg-white/20 text-white' : 'bg-white/5 text-gray-400 group-hover:scale-110'}`}
+                                  style={!isActive ? { color: roleOption.color } : {}}
+                                >
                                   {roleOption.icon}
                                 </span>
-                                <span className="text-[11px] font-bold leading-none">{roleOption.label}</span>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold leading-tight">{roleOption.label}</span>
+                                  <span className={`text-[10px] leading-tight mt-0.5 ${isActive ? 'text-white/80' : 'text-gray-500'}`}>{roleOption.desc}</span>
+                                </div>
+                                {isActive && (
+                                  <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                  </span>
+                                )}
                               </button>
                             );
                           })}
                         </div>
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          ¿Administrador o Mecánico? Estos roles requieren invitación del equipo LOGIFAST.
+                        </p>
                       </div>
 
                       {/* Terms */}
@@ -1093,8 +1229,8 @@ export default function Home() {
                         <button type="button" className="apple-btn-border flex-1 justify-center py-3.5" onClick={() => setRegStep(1)}>
                           Atrás
                         </button>
-                        <button type="submit" className="apple-btn-filled flex-1 justify-center py-3.5 bg-[#0066FF]" disabled={regLoading}>
-                          {regLoading ? <span className="loading loading-spinner text-white"></span> : 'Completar Registro'}
+                        <button type="submit" className="apple-btn-filled flex-1 justify-center py-3.5 bg-gradient-to-r from-[#FF5722] to-[#FF8A65] shadow-lg shadow-[#FF5722]/30 hover:shadow-[#FF5722]/50 hover:-translate-y-0.5 transition-all" disabled={regLoading}>
+                          {regLoading ? <MiniSpinner size={18} color="white" /> : 'Crear mi cuenta'}
                         </button>
                       </div>
                     </form>
@@ -1208,32 +1344,115 @@ export default function Home() {
           </Transition>
 
           {/* ─── HERO SECTION ─── */}
-          <section className="apple-hero-section">
-            <div className="apple-hero-badge" style={{ background: 'rgba(0,102,255,0.1)', color: '#0066FF', borderColor: 'rgba(0,102,255,0.2)' }}>
-              <span className="w-2.5 h-2.5 bg-[#0066FF] rounded-full animate-pulse" />
-              Red Inteligente de Distribución Express
+          <section className="apple-hero-section relative">
+            {/* Background blobs animados */}
+            <div className="lf-landing-hero-bg">
+              <div className="lf-landing-blob b1" />
+              <div className="lf-landing-blob b2" />
+              <div className="lf-landing-blob b3" />
             </div>
-            
-            <h1 className="apple-hero-title font-syne text-[var(--text)]">
-              Sincronía Logística. <br />
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-400 bg-clip-text text-transparent">Sincronizada al segundo.</span>
-            </h1>
-            
-            <p className="apple-hero-subtitle text-gray-400">
-              Conecta tu negocio a una consola inteligente de despachos en Managua. Optimiza hojas de ruta, automatiza tu facturación y controla el estado de tu taller preventivo en vivo.
-            </p>
 
-            <div className="apple-hero-actions">
-              <button className="apple-btn-filled bg-[#0066FF]" onClick={() => navigateTo('register')}>
-                Comenzar gratis
-                <IconArrowRight />
-              </button>
-              <button className="apple-btn-border text-[var(--text)] border-[var(--border)] hover:border-[var(--text)]" onClick={() => navigateTo('login')}>
-                Demo de Consola
-              </button>
+            <div className="relative z-10">
+              <div className="apple-hero-badge" style={{ background: 'rgba(255,87,34,0.1)', color: '#FF5722', borderColor: 'rgba(255,87,34,0.2)' }}>
+                <span className="w-2.5 h-2.5 bg-[#FF5722] rounded-full animate-pulse" />
+                Red Inteligente de Distribución Express
+              </div>
+
+              <h1 className="apple-hero-title font-syne text-[var(--text)]">
+                Envía, recibe y rastrea. <br />
+                <span className="bg-gradient-to-r from-[#FF5722] via-[#FF8A65] to-[#FFB74D] bg-clip-text text-transparent">En minutos, no en horas.</span>
+              </h1>
+
+              <p className="apple-hero-subtitle text-gray-400">
+                Conecta tu negocio a una consola inteligente de despachos en Managua. Optimiza hojas de ruta, automatiza tu facturación y controla el estado de tu taller preventivo en vivo.
+              </p>
+
+              <div className="apple-hero-actions">
+                <button
+                  className="lf-landing-btn-primary inline-flex items-center gap-2"
+                  onClick={() => navigateTo('register')}
+                >
+                  Comenzar gratis
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
+                <button
+                  className="lf-landing-btn-secondary"
+                  onClick={() => navigateTo('login')}
+                >
+                  Ver demo
+                </button>
+              </div>
+
+              {/* Ilustración de moto repartidor */}
+              <div className="flex justify-center my-12">
+                <DeliveryMotoIllustration size={280} />
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 my-12 max-w-3xl mx-auto">
+                <div className="text-center">
+                  <div className="lf-landing-stat-num">2.5k+</div>
+                  <div className="text-xs text-gray-500 mt-1">Envíos completados</div>
+                </div>
+                <div className="text-center">
+                  <div className="lf-landing-stat-num">15min</div>
+                  <div className="text-xs text-gray-500 mt-1">Tiempo promedio</div>
+                </div>
+                <div className="text-center">
+                  <div className="lf-landing-stat-num">4.9★</div>
+                  <div className="text-xs text-gray-500 mt-1">Calificación</div>
+                </div>
+              </div>
             </div>
+          </section>
+
+          {/* ─── SECTION: CÓMO FUNCIONA ─── */}
+          <section className="apple-section border-t border-[var(--border)]">
+            <div className="apple-section-header">
+              <span className="apple-section-tag" style={{ color: '#FF5722' }}>Cómo funciona</span>
+              <h2 className="apple-section-title font-syne text-[var(--text)]">
+                Tres pasos. Cero complicaciones.
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              <div className="lf-landing-feature-card text-center">
+                <div className="flex justify-center mb-4">
+                  <ReceivePackageIllustration size={140} />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">1. Solicita</h3>
+                <p className="text-sm text-gray-400">Pide un envío o compra productos del marketplace en segundos.</p>
+              </div>
+              <div className="lf-landing-feature-card text-center">
+                <div className="flex justify-center mb-4">
+                  <MapIllustration size={140} />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">2. Rastrea</h3>
+                <p className="text-sm text-gray-400">Sigue al repartidor en tiempo real, chatea y recibe notificaciones.</p>
+              </div>
+              <div className="lf-landing-feature-card text-center">
+                <div className="flex justify-center mb-4">
+                  <SecurePackageIllustration size={140} />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">3. Recibe</h3>
+                <p className="text-sm text-gray-400">Tu paquete llega seguro. Califica al repartidor y repite.</p>
+              </div>
+            </div>
+          </section>
 
             {/* Premium Mockup Widget */}
+          <section className="apple-section border-t border-[var(--border)]">
+            <div className="apple-section-header">
+              <span className="apple-section-tag" style={{ color: '#FF5722' }}>Consola en vivo</span>
+              <h2 className="apple-section-title font-syne text-[var(--text)]">
+                Rastreo GPS satelital en tiempo real
+              </h2>
+              <p className="text-sm text-gray-400 max-w-xl">
+                Visualiza tu flota activa, monitorea-position y recibe alertas instantáneas desde una sola pantalla.
+              </p>
+            </div>
             <div className="apple-mockup-frame border-[var(--border)] shadow-2xl">
               <div className="apple-mockup-screen flex flex-col justify-between p-5 bg-[var(--bg-alt)]">
                 <div className="flex justify-between items-center text-[var(--text)]/90">
@@ -1483,27 +1702,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* TOAST NOTIFICATION STACK */}
-      <div className="lf-toast-container">
-        {toasts.map((t) => (
-          <div key={t.id} className={`lf-toast ${t.variant} ${t.leaving ? 'leaving' : ''}`}>
-            <span className="lf-toast-icon">
-              {t.variant === 'success' && <IconCheckCircle />}
-              {t.variant === 'error' && <IconXCircle />}
-              {t.variant === 'warning' && <IconAlertTriangle />}
-              {t.variant === 'info' && <IconInfo />}
-            </span>
-            <div className="lf-toast-content">
-              <div className="lf-toast-title">{t.title}</div>
-              {t.desc && <div className="lf-toast-desc">{t.desc}</div>}
-            </div>
-            <button className="lf-toast-close" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
-              <IconX />
-            </button>
-            <div className="lf-toast-progress" />
-          </div>
-        ))}
-      </div>
+      {/* Los toasts ahora se renderizan exclusivamente con sileo (layout.tsx) */}
     </>
   );
 }

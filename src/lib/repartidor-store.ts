@@ -500,6 +500,21 @@ interface RepartidorStoreState {
   actualizarConfig: (campo: 'sonidoActivo' | 'vibracionActiva' | 'ubicacionActiva' | 'zonaPreferida', valor: boolean | string) => void;
   obtenerStats: (periodo: 'hoy' | 'semana' | 'mes') => StatsRepartidor;
   verificarProductos: (productoId: string) => void;
+
+  /* Async API sync */
+  syncFromBackend: () => Promise<void>;
+  conectarAsync: () => Promise<boolean>;
+  desconectarAsync: () => Promise<boolean>;
+  aceptarOrdenAsync: () => Promise<boolean>;
+  rechazarOrdenAsync: () => Promise<boolean>;
+  recogerPaqueteAsync: () => Promise<boolean>;
+  confirmarEntregaAsync: () => Promise<boolean>;
+  reportarIncidenciaAsync: (tipo: TipoIncidencia, desc: string) => Promise<boolean>;
+  enviarMensajeAsync: (contenido: string) => Promise<boolean>;
+  actualizarPosicionAsync: (lat: number, lng: number) => Promise<void>;
+  marcarNotificacionesLeidasAsync: () => Promise<void>;
+  actualizarConfigAsync: (campo: 'sonidoActivo' | 'vibracionActiva' | 'ubicacionActiva' | 'zonaPreferida', valor: boolean | string) => Promise<boolean>;
+  fetchChat: (ordenId: string) => Promise<void>;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -972,6 +987,389 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
         ),
       },
     });
+  },
+
+  /* ═══════════════════════════════════════════════════════
+     ASYNC BACKEND SYNC
+     Todas estas acciones llaman a la API real y luego
+     actualizan el estado local del store.
+     ═══════════════════════════════════════════════════════ */
+
+  syncFromBackend: async () => {
+    try {
+      const [perfilRes, motoRes, conexionRes, ordenesRes, statsRes, notifsRes, calsRes] = await Promise.all([
+        fetch('/api/repartidor/perfil'),
+        fetch('/api/repartidor/moto'),
+        fetch('/api/repartidor/conexion'),
+        fetch('/api/repartidor/ordenes?estado=activa'),
+        fetch('/api/repartidor/stats?periodo=hoy'),
+        fetch('/api/repartidor/notificaciones'),
+        fetch('/api/repartidor/calificaciones'),
+      ]);
+
+      if (perfilRes.ok) {
+        const perfil = await perfilRes.json();
+        if (perfil && perfil.id) {
+          set({ perfil });
+        }
+      }
+      if (motoRes.ok) {
+        const moto = await motoRes.json();
+        if (moto && moto.id) set({ moto });
+      }
+      if (conexionRes.ok) {
+        const c = await conexionRes.json();
+        if (c) {
+          set({
+            conectado: c.conectado ?? false,
+            enServicio: c.enServicio ?? false,
+            pausado: c.pausado ?? false,
+            pausaHasta: c.pausaHasta ? new Date(c.pausaHasta).getTime() : null,
+            estado: c.estado ?? 'DESCONECTADO',
+            rechazosHora: c.rechazosHora ?? 0,
+          });
+        }
+      }
+      if (ordenesRes.ok) {
+        const data = await ordenesRes.json();
+        if (data?.orden) {
+          set({ ordenActiva: data.orden });
+        } else {
+          set({ ordenActiva: null });
+        }
+      }
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        if (data?.stats) {
+          set({ statsHoy: data.stats });
+        }
+      }
+      if (notifsRes.ok) {
+        const data = await notifsRes.json();
+        if (data?.notificaciones) {
+          set({
+            notificaciones: data.notificaciones,
+            notificacionesNoLeidas: data.noLeidas ?? 0,
+          });
+        }
+      }
+      if (calsRes.ok) {
+        const data = await calsRes.json();
+        if (data?.calificaciones) {
+          set({ calificaciones: data.calificaciones });
+        }
+      }
+
+      // Cargar historial del día
+      try {
+        const histRes = await fetch('/api/repartidor/ordenes?estado=historial');
+        if (histRes.ok) {
+          const hist = await histRes.json();
+          if (hist?.servicios) {
+            set({ serviciosHoy: hist.servicios });
+          }
+        }
+      } catch {}
+    } catch (err) {
+      console.error('[syncFromBackend]', err);
+    }
+  },
+
+  conectarAsync: async () => {
+    try {
+      const res = await fetch('/api/repartidor/conexion', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'conectar' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.warn('[conectarAsync]', data.error);
+        return false;
+      }
+      set({
+        conectado: true,
+        estado: 'EN_LINEA',
+        moto: { ...get().moto, estado: 'DISPONIBLE' },
+      });
+      dispararFeedback('toggle_on', 40);
+      return true;
+    } catch (err) {
+      console.error('[conectarAsync]', err);
+      return false;
+    }
+  },
+
+  desconectarAsync: async () => {
+    try {
+      const res = await fetch('/api/repartidor/conexion', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'desconectar' }),
+      });
+      const data = await res.json();
+      if (!res.ok) return false;
+      set({
+        conectado: false,
+        estado: 'DESCONECTADO',
+        enServicio: false,
+        ordenActiva: null,
+        ordenAsignadaPendiente: null,
+      });
+      return true;
+    } catch (err) {
+      console.error('[desconectarAsync]', err);
+      return false;
+    }
+  },
+
+  aceptarOrdenAsync: async () => {
+    const orden = get().ordenActiva || get().ordenAsignadaPendiente;
+    if (!orden) return false;
+    try {
+      const res = await fetch(`/api/repartidor/ordenes/${orden.id}/aceptar`, {
+        method: 'PATCH',
+      });
+      const data = await res.json();
+      if (!res.ok) return false;
+
+      set({
+        ordenActiva: orden,
+        ordenAsignadaPendiente: null,
+        estado: 'EN_CAMINO_RECOGER',
+        enServicio: true,
+        tiempoTranscurrido: 0,
+        kmRecorridos: 0,
+        eta: calcularETA(orden.kmEstimados),
+        moto: { ...get().moto, estado: 'EN_SERVICIO' },
+      });
+      dispararFeedback('orden_aceptada', 80);
+      return true;
+    } catch (err) {
+      console.error('[aceptarOrdenAsync]', err);
+      return false;
+    }
+  },
+
+  rechazarOrdenAsync: async () => {
+    const orden = get().ordenAsignadaPendiente || get().ordenActiva;
+    if (!orden) return false;
+    try {
+      const res = await fetch(`/api/repartidor/ordenes/${orden.id}/rechazar`, {
+        method: 'PATCH',
+      });
+      const data = await res.json();
+      if (!res.ok) return false;
+
+      const nuevosRechazos = data.rechazosHora ?? get().rechazosHora + 1;
+      const pausado = data.pausado ?? false;
+      set({
+        ordenAsignadaPendiente: null,
+        ordenActiva: null,
+        estado: 'EN_LINEA',
+        rechazosHora: nuevosRechazos,
+        pausado,
+        pausaHasta: pausado ? Date.now() + 15 * 60 * 1000 : null,
+      });
+      dispararFeedback('toggle_off', 40);
+      return true;
+    } catch (err) {
+      console.error('[rechazarOrdenAsync]', err);
+      return false;
+    }
+  },
+
+  recogerPaqueteAsync: async () => {
+    const orden = get().ordenActiva;
+    if (!orden) return false;
+    try {
+      const res = await fetch(`/api/repartidor/ordenes/${orden.id}/recoger`, {
+        method: 'PATCH',
+      });
+      if (!res.ok) return false;
+      set({
+        estado: 'RECOGIDO',
+        kmRecorridos: 0,
+      });
+      return true;
+    } catch (err) {
+      console.error('[recogerPaqueteAsync]', err);
+      return false;
+    }
+  },
+
+  confirmarEntregaAsync: async () => {
+    const orden = get().ordenActiva;
+    if (!orden) return false;
+    try {
+      const res = await fetch(`/api/repartidor/ordenes/${orden.id}/entregar`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kmRecorridos: Math.round(get().kmRecorridos * 10) / 10,
+          tiempoTotal: Math.round(get().tiempoTranscurrido / 60),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return false;
+
+      const nuevoServicio: ServicioHistorial = {
+        id: `svc-${Date.now()}`,
+        ordenId: orden.id,
+        tipo: orden.tipo,
+        cliente: orden.cliente,
+        tiendaNombre: orden.tiendaNombre,
+        origen: orden.origen,
+        destino: orden.destino,
+        hora: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' }),
+        kmRecorridos: Math.round(get().kmRecorridos * 10) / 10,
+        ganancia: orden.ganancia,
+        tiempoTotal: Math.round(get().tiempoTranscurrido / 60),
+        estado: 'entregado',
+      };
+      set({
+        estado: 'EN_LINEA',
+        enServicio: false,
+        ordenActiva: null,
+        serviciosHoy: [nuevoServicio, ...get().serviciosHoy],
+        statsHoy: {
+          entregas: get().statsHoy.entregas + 1,
+          km: Math.round((get().statsHoy.km + get().kmRecorridos) * 10) / 10,
+          ganancias: get().statsHoy.ganancias + orden.ganancia,
+          tiempoActivo: get().statsHoy.tiempoActivo + Math.round(get().tiempoTranscurrido / 60),
+        },
+        perfil: {
+          ...get().perfil,
+          saldo: Math.max(0, get().perfil.saldo - (data.comision ?? 0)),
+        },
+        moto: { ...get().moto, estado: 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + get().kmRecorridos },
+        kmRecorridos: 0,
+        tiempoTranscurrido: 0,
+        eta: 0,
+      });
+      dispararFeedback('orden_entregada', [60, 40, 60, 40, 150]);
+      return true;
+    } catch (err) {
+      console.error('[confirmarEntregaAsync]', err);
+      return false;
+    }
+  },
+
+  reportarIncidenciaAsync: async (tipo, desc) => {
+    const orden = get().ordenActiva;
+    if (!orden) return false;
+    try {
+      const res = await fetch(`/api/repartidor/ordenes/${orden.id}/incidencia`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, desc }),
+      });
+      if (!res.ok) return false;
+
+      set({
+        estado: 'EN_LINEA',
+        enServicio: false,
+        ordenActiva: null,
+        incidenciaAbierta: false,
+        moto: { ...get().moto, estado: 'DISPONIBLE' },
+        kmRecorridos: 0,
+        tiempoTranscurrido: 0,
+        eta: 0,
+      });
+      dispararFeedback('error', [300, 100, 300]);
+      // Recargar notificaciones
+      get().syncFromBackend();
+      return true;
+    } catch (err) {
+      console.error('[reportarIncidenciaAsync]', err);
+      return false;
+    }
+  },
+
+  enviarMensajeAsync: async (contenido) => {
+    const ordenId = get().chatOrdenId || get().ordenActiva?.id;
+    if (!ordenId) return false;
+    try {
+      const res = await fetch('/api/repartidor/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ordenId, contenido }),
+      });
+      if (!res.ok) return false;
+      // Agregar mensaje localmente
+      const nuevo: ChatMensaje = {
+        id: `local-${Date.now()}`,
+        ordenId,
+        emisor: 'repartidor',
+        contenido,
+        enviadoEn: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      };
+      set({ mensajes: [...get().mensajes, nuevo] });
+      dispararFeedback('toggle_on', null);
+      return true;
+    } catch (err) {
+      console.error('[enviarMensajeAsync]', err);
+      return false;
+    }
+  },
+
+  actualizarPosicionAsync: async (lat, lng) => {
+    try {
+      await fetch('/api/repartidor/posicion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng }),
+      });
+    } catch (err) {
+      // Silencioso: la posición es best-effort
+    }
+  },
+
+  marcarNotificacionesLeidasAsync: async () => {
+    try {
+      await fetch('/api/repartidor/notificaciones', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      set({
+        notificaciones: get().notificaciones.map((n) => ({ ...n, leido: true })),
+        notificacionesNoLeidas: 0,
+      });
+    } catch (err) {
+      console.error('[marcarNotificacionesLeidasAsync]', err);
+    }
+  },
+
+  actualizarConfigAsync: async (campo, valor) => {
+    try {
+      const res = await fetch('/api/repartidor/perfil', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [campo]: valor }),
+      });
+      if (!res.ok) return false;
+      set({
+        perfil: { ...get().perfil, [campo]: valor },
+      });
+      return true;
+    } catch (err) {
+      console.error('[actualizarConfigAsync]', err);
+      return false;
+    }
+  },
+
+  fetchChat: async (ordenId) => {
+    try {
+      const res = await fetch(`/api/repartidor/chat/${ordenId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.mensajes) {
+        set({ mensajes: data.mensajes });
+      }
+    } catch (err) {
+      console.error('[fetchChat]', err);
+    }
   },
 }));
 

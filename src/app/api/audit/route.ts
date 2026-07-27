@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { requireSession } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await requireSession();
     const { searchParams } = new URL(request.url);
     const usuario = searchParams.get('usuario');
     const accion = searchParams.get('accion');
@@ -42,8 +45,7 @@ export async function GET(request: NextRequest) {
         hasMore: offset + limit < total,
       },
     });
-  } catch (error) {
-    console.error('[AUDIT_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener logs de auditoría' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'AUDIT_GET');
   }
 }

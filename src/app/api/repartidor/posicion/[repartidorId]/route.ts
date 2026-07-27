@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { runtimeState, REPARTIDOR_ID } from '@/lib/repartidor-mock';
+import { getRepartidorProfile } from '@/lib/repartidor/helpers';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/repartidor/posicion/[repartidorId]
- * Devuelve la última posición conocida del repartidor (para admin/cliente).
+ * Devuelve la última posición conocida del repartidor.
  */
 export async function GET(
   _req: NextRequest,
@@ -15,43 +15,32 @@ export async function GET(
   try {
     const { repartidorId } = await params;
 
-    // Intentar la base de datos primero (mejor dato en producción)
-    try {
-      const ultima = await db.posicionRepartidor.findFirst({
-        where: { repartidorId },
-        orderBy: { timestamp: 'desc' },
-      });
-      if (ultima) {
-        return NextResponse.json({
-          repartidorId,
-          lat: ultima.lat,
-          lng: ultima.lng,
-          timestamp: ultima.timestamp.toISOString(),
-        });
-      }
-    } catch (dbError) {
-      console.warn('[REPARTIDOR_POSICION_GET] DB skip:', dbError);
+    const profile = await db.repartidorProfile.findUnique({
+      where: { id: repartidorId },
+    });
+    if (!profile) {
+      return NextResponse.json({ error: 'Repartidor no encontrado' }, { status: 404 });
     }
 
-    // Fallback al runtime state en memoria (mock)
-    if (repartidorId === REPARTIDOR_ID) {
-      const pos = runtimeState.ultimaPosicion;
-      return NextResponse.json({
-        repartidorId,
-        lat: pos.lat,
-        lng: pos.lng,
-        timestamp: new Date(pos.timestamp).toISOString(),
-      });
-    }
+    const ultima = await db.posicionRepartidor.findFirst({
+      where: { repartidorId },
+      orderBy: { timestamp: 'desc' },
+    });
 
-    return NextResponse.json(
-      { error: `Repartidor no encontrado: ${repartidorId}` },
-      { status: 404 }
-    );
+    return NextResponse.json({
+      repartidorId,
+      lat: profile.lat ?? ultima?.lat ?? 0,
+      lng: profile.lng ?? ultima?.lng ?? 0,
+      velocidad: ultima?.velocidad ?? 0,
+      heading: ultima?.heading ?? 0,
+      timestamp: ultima?.timestamp ?? null,
+      conectado: profile.conectado,
+      enServicio: profile.enServicio,
+    });
   } catch (error) {
     console.error('[REPARTIDOR_POSICION_GET]', error);
     return NextResponse.json(
-      { error: 'Error al obtener la posición' },
+      { error: 'Error al obtener posición del repartidor' },
       { status: 500 }
     );
   }

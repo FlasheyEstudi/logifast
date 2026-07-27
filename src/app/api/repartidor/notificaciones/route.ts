@@ -1,25 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { runtimeState } from '@/lib/repartidor-mock';
+import { db } from '@/lib/db';
+import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import type { NotificacionRepartidor } from '@/lib/repartidor-store';
 
 export const dynamic = 'force-dynamic';
 
+function tiempoRelativo(fecha: Date): string {
+  const diff = Date.now() - fecha.getTime();
+  if (diff < 60_000) return 'ahora';
+  if (diff < 3600_000) return `hace ${Math.floor(diff / 60_000)} min`;
+  if (diff < 86400_000) return `hace ${Math.floor(diff / 3600_000)} h`;
+  const dias = Math.floor(diff / 86400_000);
+  if (dias === 1) return 'ayer';
+  return `hace ${dias} días`;
+}
+
 /**
  * GET /api/repartidor/notificaciones
- * Devuelve la lista de notificaciones del repartidor + contador de no leídas.
+ * Devuelve las notificaciones del repartidor + contador de no leídas.
  */
 export async function GET() {
   try {
-    const notificaciones = runtimeState.notificaciones;
-    const noLeidas = notificaciones.filter((n) => !n.leido).length;
+    const { profile } = await getRepartidorProfile();
+    if (!profile) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const notifs = await db.notificacionRepartidor.findMany({
+      where: { repartidorId: profile.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    const result: NotificacionRepartidor[] = notifs.map((n) => ({
+      id: n.id,
+      tipo: n.tipo as NotificacionRepartidor['tipo'],
+      titulo: n.titulo,
+      contenido: n.contenido,
+      leido: n.leido,
+      ordenId: n.ordenId ?? undefined,
+      tiempo: tiempoRelativo(n.createdAt),
+    }));
+
+    const noLeidas = notifs.filter((n) => !n.leido).length;
+
     return NextResponse.json({
-      total: notificaciones.length,
+      notificaciones: result,
       noLeidas,
-      notificaciones,
     });
   } catch (error) {
     console.error('[REPARTIDOR_NOTIFICACIONES_GET]', error);
     return NextResponse.json(
-      { error: 'Error al obtener las notificaciones' },
+      { error: 'Error al obtener notificaciones' },
       { status: 500 }
     );
   }
@@ -27,35 +59,33 @@ export async function GET() {
 
 /**
  * PATCH /api/repartidor/notificaciones
- * Marca todas (o una específica vía body.id) como leídas.
- * Body opcional: { id?: string }
+ * Marca todas como leídas (o una en específico con { id }).
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const { id } = (body ?? {}) as { id?: string };
-
-    if (id) {
-      runtimeState.notificaciones = runtimeState.notificaciones.map((n) =>
-        n.id === id ? { ...n, leido: true } : n
-      );
-    } else {
-      runtimeState.notificaciones = runtimeState.notificaciones.map((n) => ({
-        ...n,
-        leido: true,
-      }));
+    const { profile } = await getRepartidorProfile();
+    if (!profile) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const noLeidas = runtimeState.notificaciones.filter((n) => !n.leido).length;
-    return NextResponse.json({
-      ok: true,
-      marcado: id ? 'uno' : 'todos',
-      noLeidas,
-    });
+    const body = await req.json().catch(() => ({}));
+    if (body?.id) {
+      await db.notificacionRepartidor.updateMany({
+        where: { id: String(body.id), repartidorId: profile.id },
+        data: { leido: true },
+      });
+    } else {
+      await db.notificacionRepartidor.updateMany({
+        where: { repartidorId: profile.id, leido: false },
+        data: { leido: true },
+      });
+    }
+
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[REPARTIDOR_NOTIFICACIONES_PATCH]', error);
     return NextResponse.json(
-      { error: 'Error al marcar las notificaciones' },
+      { error: 'Error al marcar notificaciones' },
       { status: 500 }
     );
   }

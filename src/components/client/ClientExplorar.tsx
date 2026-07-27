@@ -8,6 +8,7 @@ import {
 } from '@/components/icons';
 import { useMarketplaceStore, type Tienda, type TiendaCategoria, CATEGORIAS } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
+import { StoryViewer } from '@/components/ui/StoryViewer';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -289,6 +290,9 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
           <ChevronRight size={12} style={{ color: 'var(--text-muted)' }} />
         </button>
       </div>
+
+      {/* ─── Stories (inspiración IG) ─── */}
+      <StoryViewer />
 
       {/* ─── Filter panel (toggle) ─── */}
       <AnimatePresence>

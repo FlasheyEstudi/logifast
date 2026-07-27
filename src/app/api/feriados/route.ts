@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,14 +24,14 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error('[FERIADOS_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener feriados' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'FERIADOS_GET');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireRole('admin');
     const body = await request.json();
     const { fecha, nombre, recargo } = body;
 
@@ -49,14 +51,14 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: feriado }, { status: 201 });
-  } catch (error) {
-    console.error('[FERIADOS_POST]', error);
-    return NextResponse.json({ error: 'Error al crear feriado' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'FERIADOS_POST');
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await requireRole('admin');
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -78,8 +80,7 @@ export async function DELETE(request: NextRequest) {
     await db.feriado.delete({ where: { id } });
 
     return NextResponse.json({ data: { id }, message: 'Feriado eliminado' });
-  } catch (error) {
-    console.error('[FERIADOS_DELETE]', error);
-    return NextResponse.json({ error: 'Error al eliminar feriado' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'FERIADOS_DELETE');
   }
 }

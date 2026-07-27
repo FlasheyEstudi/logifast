@@ -9,7 +9,6 @@ import { TemaToggle } from '@/components/ui/TemaToggle';
 import { useIngenieroStore } from '@/store/ingenieroStore';
 import { useConfigStore } from '@/store/configStore';
 import { realtime } from '@/services/realtime';
-import { useRouter } from 'next/navigation';
 
 interface PerfilIngenieroProps {
   onLogout: () => void;
@@ -19,7 +18,6 @@ interface PerfilIngenieroProps {
 export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroProps) {
   const store = useIngenieroStore();
   const config = useConfigStore();
-  const router = useRouter();
 
   const handleCerrarSesion = () => {
     realtime.disconnect();
@@ -28,7 +26,6 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
     if (typeof onLogout === 'function') {
       onLogout();
     }
-    router.push('/login');
   };
 
   const handleInventario = () => {

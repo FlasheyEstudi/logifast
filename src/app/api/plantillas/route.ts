@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,14 +17,14 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error('[PLANTILLAS_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener plantillas' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'PLANTILLAS_GET');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireRole('admin');
     const body = await request.json();
     const { nombre, categoria, contenido, variables, esDefault } = body;
 
@@ -44,8 +46,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: plantilla }, { status: 201 });
-  } catch (error) {
-    console.error('[PLANTILLAS_POST]', error);
-    return NextResponse.json({ error: 'Error al crear plantilla' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'PLANTILLAS_POST');
   }
 }

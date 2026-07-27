@@ -1,7 +1,19 @@
-import { NextResponse } from 'next/server';
-import { MOCK_CALIFICACIONES } from '@/lib/repartidor-mock';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import type { CalificacionRepartidor } from '@/lib/repartidor-store';
 
 export const dynamic = 'force-dynamic';
+
+function tiempoRelativo(fecha: Date): string {
+  const diff = Date.now() - fecha.getTime();
+  if (diff < 60_000) return 'ahora';
+  if (diff < 3600_000) return `hace ${Math.floor(diff / 60_000)} min`;
+  if (diff < 86400_000) return `hace ${Math.floor(diff / 3600_000)} h`;
+  const dias = Math.floor(diff / 86400_000);
+  if (dias === 1) return 'ayer';
+  return `hace ${dias} días`;
+}
 
 /**
  * GET /api/repartidor/calificaciones
@@ -9,35 +21,57 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const calificaciones = MOCK_CALIFICACIONES;
-
-    const distribucion: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    let sumaEstrellas = 0;
-    for (const c of calificaciones) {
-      distribucion[c.estrellas] = (distribucion[c.estrellas] ?? 0) + 1;
-      sumaEstrellas += c.estrellas;
+    const { profile } = await getRepartidorProfile();
+    if (!profile) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const promedio = calificaciones.length
-      ? Math.round((sumaEstrellas / calificaciones.length) * 100) / 100
-      : 0;
+    const cals = await db.calificacionRepartidor.findMany({
+      where: { repartidorId: profile.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    const ordenIds = [...new Set(cals.map((c) => c.ordenId))];
+    const ordenes = await db.ordenServicio.findMany({
+      where: { id: { in: ordenIds } },
+      select: { id: true, clienteNombre: true },
+    });
+    const ordenMap = new Map(ordenes.map((o) => [o.id, o.clienteNombre]));
+
+    const result: CalificacionRepartidor[] = cals.map((c) => ({
+      id: c.id,
+      ordenId: c.ordenId,
+      cliente: ordenMap.get(c.ordenId) ?? 'Cliente',
+      estrellas: c.estrellas,
+      etiquetas: (() => {
+        try { return JSON.parse(c.etiquetas) as string[]; } catch { return []; }
+      })(),
+      comentario: c.comentario,
+      fecha: tiempoRelativo(c.createdAt),
+    }));
+
+    // Distribución por estrellas
+    const distribucion = [5, 4, 3, 2, 1].map((e) => ({
+      estrellas: e,
+      total: cals.filter((c) => c.estrellas === e).length,
+    }));
+
+    const promedio =
+      cals.length > 0
+        ? cals.reduce((sum, c) => sum + c.estrellas, 0) / cals.length
+        : 0;
 
     return NextResponse.json({
-      total: calificaciones.length,
-      promedio,
-      distribucion: {
-        '5': distribucion[5],
-        '4': distribucion[4],
-        '3': distribucion[3],
-        '2': distribucion[2],
-        '1': distribucion[1],
-      },
-      calificaciones,
+      calificaciones: result,
+      total: cals.length,
+      promedio: Math.round(promedio * 10) / 10,
+      distribucion,
     });
   } catch (error) {
     console.error('[REPARTIDOR_CALIFICACIONES_GET]', error);
     return NextResponse.json(
-      { error: 'Error al obtener las calificaciones' },
+      { error: 'Error al obtener calificaciones' },
       { status: 500 }
     );
   }

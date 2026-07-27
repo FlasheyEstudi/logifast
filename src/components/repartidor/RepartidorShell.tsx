@@ -117,9 +117,22 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     estado,
   } = useRepartidorStore();
 
+  const syncFromBackend = useRepartidorStore((s) => s.syncFromBackend);
+  const actualizarPosicionAsync = useRepartidorStore((s) => s.actualizarPosicionAsync);
+
   const [snackbar, setSnackbar] = useState<SnackbarData | null>(null);
   const snackbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [clock, setClock] = useState('9:41');
+
+  /* ─── Sync inicial con backend ─── */
+  useEffect(() => {
+    syncFromBackend();
+    // Polling cada 15s para refrescar notificaciones y estado
+    const interval = setInterval(() => {
+      syncFromBackend();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [syncFromBackend]);
 
   // Initialize browser geolocation
   const geo = useGeolocation({ watch: true });
@@ -146,8 +159,10 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   useEffect(() => {
     if (conectado && geo.lat !== null && geo.lng !== null) {
       actualizarPosicion(geo.lat, geo.lng);
+      // Enviar al backend (best-effort, no bloquea UI)
+      actualizarPosicionAsync(geo.lat, geo.lng);
     }
-  }, [conectado, geo.lat, geo.lng, actualizarPosicion]);
+  }, [conectado, geo.lat, geo.lng, actualizarPosicion, actualizarPosicionAsync]);
 
   // Emit driver coordinates to the server on any store coordinate changes (real or simulated)
   const storeLat = useRepartidorStore((s) => s.lat);

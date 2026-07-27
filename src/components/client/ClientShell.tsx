@@ -21,6 +21,7 @@ import {
   X,
   Search,
   ShoppingBag,
+  Store,
 } from '@/components/icons';
 import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
@@ -44,6 +45,7 @@ const ClientPedidos = dynamic(() => import('./ClientPedidos'), { ssr: false });
 const ClientBusqueda = dynamic(() => import('./ClientBusqueda'), { ssr: false });
 const ClientAyuda = dynamic(() => import('./ClientAyuda'), { ssr: false });
 const ClientPuntos = dynamic(() => import('./ClientPuntos'), { ssr: false });
+const ClientMiTienda = dynamic(() => import('./ClientMiTienda'), { ssr: false });
 
 /* ═══════════════════════════════════════════════
    SNACKBAR CONTEXT
@@ -141,6 +143,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'explorar', label: 'Explorar', icon: <Search size={22} /> },
   { key: 'solicitar', label: 'Enviar', icon: <PackagePlus size={22} /> },
   { key: 'pedidos', label: 'Pedidos', icon: <Package size={22} /> },
+  { key: 'tienda', label: 'Mi Tienda', icon: <Store size={22} /> },
   { key: 'perfil', label: 'Perfil', icon: <User size={22} /> },
 ];
 
@@ -203,7 +206,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     setRatingOrderId,
   } = useStore();
 
-  const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount } = useMarketplaceStore();
+  const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount, fetchTiendas, fetchOrdenesCompra, fetchFavoritos } = useMarketplaceStore();
+
+  /* ─── Cargar datos del backend al montar ─── */
+  useEffect(() => {
+    fetchTiendas();
+    fetchOrdenesCompra();
+    fetchFavoritos();
+  }, [fetchTiendas, fetchOrdenesCompra, fetchFavoritos]);
 
   /* ─── SPLASH STATE ─── */
   const [showSplash, setShowSplash] = useState(true);
@@ -328,6 +338,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         return <ClientPedidos {...moduleProps} />;
       case 'perfil':
         return <ClientPerfil {...perfilProps} />;
+      case 'tienda':
+        return <ClientMiTienda />;
       case 'ayuda':
         return <ClientAyuda isDark={isDark} onClose={() => setClientActiveModule('perfil')} />;
       case 'puntos':

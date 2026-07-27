@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  MOCK_SERVICIOS_DETALLE,
-  MOCK_ORDEN_ACTIVA,
-  runtimeState,
-} from '@/lib/repartidor-mock';
+import { db } from '@/lib/db';
+import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import type { ServicioHistorial } from '@/lib/repartidor-store';
 
 export const dynamic = 'force-dynamic';
 
+function horaString(date: Date): string {
+  return date.toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+function fechaString(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 /**
  * GET /api/repartidor/ordenes/[id]
- * Devuelve el detalle completo de una orden/servicio por ID.
+ * Devuelve el detalle de un servicio/orden del repartidor.
  */
 export async function GET(
   _req: NextRequest,
@@ -17,51 +22,56 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-
-    // Si es la orden activa, devolverla con su estado actual
-    const ordenActiva = runtimeState.ordenActiva ?? MOCK_ORDEN_ACTIVA;
-    if (ordenActiva.id === id) {
-      return NextResponse.json({
-        id: ordenActiva.id,
-        tipo: ordenActiva.tipo,
-        cliente: ordenActiva.cliente,
-        clienteTelefono: ordenActiva.clienteTelefono,
-        tiendaNombre: ordenActiva.tiendaNombre,
-        origen: ordenActiva.origen,
-        destino: ordenActiva.destino,
-        origenLat: ordenActiva.origenLat,
-        origenLng: ordenActiva.origenLng,
-        destinoLat: ordenActiva.destinoLat,
-        destinoLng: ordenActiva.destinoLng,
-        paquete: ordenActiva.paquete,
-        tamano: ordenActiva.tamano,
-        fragil: ordenActiva.fragil,
-        metodoPago: ordenActiva.metodoPago,
-        monto: ordenActiva.monto,
-        ganancia: ordenActiva.ganancia,
-        kmEstimados: ordenActiva.kmEstimados,
-        tiempoEstimado: ordenActiva.tiempoEstimado,
-        productos: ordenActiva.productos ?? [],
-        estadoServicio: runtimeState.ordenActivaEstado,
-        kmRecorridos: runtimeState.kmRecorridos,
-        fecha: new Date().toISOString().split('T')[0],
-      });
+    const { profile } = await getRepartidorProfile();
+    if (!profile) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Buscar en detalle enriquecido
-    const detalle = MOCK_SERVICIOS_DETALLE[id];
-    if (detalle) {
-      return NextResponse.json(detalle);
+    const orden = await db.ordenServicio.findUnique({ where: { id } });
+    if (!orden) {
+      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+    }
+    if (orden.repartidorId !== profile.id) {
+      return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
     }
 
-    return NextResponse.json(
-      { error: `Orden no encontrada: ${id}` },
-      { status: 404 }
-    );
+    const calificacion = await db.calificacionRepartidor.findFirst({
+      where: { ordenId: id },
+    });
+
+    const detalle: ServicioHistorial & {
+      fecha: string;
+      metodoPago: 'efectivo' | 'transferencia';
+      monto: number;
+      clienteTelefono: string;
+      calificacionComentario?: string | null;
+    } = {
+      id: orden.id,
+      ordenId: orden.id,
+      tipo: orden.tipo as 'envio' | 'compra',
+      cliente: orden.clienteNombre,
+      tiendaNombre: orden.tiendaNombre ?? undefined,
+      origen: orden.origen,
+      destino: orden.destino,
+      hora: horaString(orden.createdAt),
+      kmRecorridos: orden.kmRecorridos,
+      ganancia: orden.ganancia,
+      tiempoTotal: orden.tiempoTotal,
+      estado: orden.estado === 'incidencia' ? 'incidencia' : 'entregado',
+      incidenciaTipo: orden.incidenciaTipo ?? undefined,
+      calificacion: calificacion?.estrellas,
+      fecha: fechaString(orden.createdAt),
+      metodoPago: orden.metodoPago as 'efectivo' | 'transferencia',
+      monto: orden.monto,
+      clienteTelefono: orden.clienteTelefono ?? '',
+      calificacionComentario: calificacion?.comentario ?? null,
+    };
+
+    return NextResponse.json(detalle);
   } catch (error) {
     console.error('[REPARTIDOR_ORDEN_DETALLE_GET]', error);
     return NextResponse.json(
-      { error: 'Error al obtener el detalle de la orden' },
+      { error: 'Error al obtener detalle de la orden' },
       { status: 500 }
     );
   }

@@ -1,61 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { runtimeState, REPARTIDOR_ID } from '@/lib/repartidor-mock';
+import { getRepartidorProfile } from '@/lib/repartidor/helpers';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/repartidor/posicion
- * Body: { lat: number, lng: number }
- * Guarda la posición GPS del repartidor (DB + runtime state).
+ * Body: { lat, lng, velocidad?, heading? }
+ * Guarda la posición actual del repartidor (para tracking).
  */
 export async function POST(req: NextRequest) {
   try {
+    const { profile } = await getRepartidorProfile();
+    if (!profile) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { lat, lng } = body as { lat?: number; lng?: number };
-
-    if (typeof lat !== 'number' || typeof lng !== 'number') {
-      return NextResponse.json(
-        { error: 'Se requieren lat y lng numéricos' },
-        { status: 400 }
-      );
+    const lat = Number(body.lat);
+    const lng = Number(body.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return NextResponse.json({ error: 'lat y lng son obligatorios' }, { status: 400 });
     }
 
-    const timestamp = Date.now();
-    runtimeState.ultimaPosicion = { lat, lng, timestamp };
+    const velocidad = Number(body.velocidad) || 0;
+    const heading = Number(body.heading) || 0;
 
-    // Persistir en la base de datos (best-effort)
-    try {
-      await db.posicionRepartidor.create({
-        data: {
-          repartidorId: REPARTIDOR_ID,
-          lat,
-          lng,
-          velocidad: 0,
-          heading: 0,
-          timestamp: new Date(timestamp),
-        },
-      });
-
-      await db.repartidorProfile.update({
-        where: { id: REPARTIDOR_ID },
-        data: { lat, lng },
-      });
-    } catch (dbError) {
-      // La base de datos puede no tener el registro creado — no bloquea el flujo mock
-      console.warn('[REPARTIDOR_POSICION_POST] DB skip:', dbError);
-    }
-
-    return NextResponse.json({
-      ok: true,
-      lat,
-      lng,
-      timestamp,
+    await db.posicionRepartidor.create({
+      data: {
+        repartidorId: profile.id,
+        lat,
+        lng,
+        velocidad,
+        heading,
+      },
     });
+
+    await db.repartidorProfile.update({
+      where: { id: profile.id },
+      data: { lat, lng },
+    });
+
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[REPARTIDOR_POSICION_POST]', error);
     return NextResponse.json(
-      { error: 'Error al guardar la posición' },
+      { error: 'Error al guardar posición' },
       { status: 500 }
     );
   }

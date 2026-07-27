@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MOCK_PRODUCTOS, MOCK_TIENDAS } from '@/lib/marketplace-store';
+import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/productos
+ * Lista productos con filtros + info de tienda.
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -14,70 +20,57 @@ export async function GET(req: NextRequest) {
     const disponibles = searchParams.get('disponibles');
     const enOferta = searchParams.get('enOferta');
 
-    let productos = [...MOCK_PRODUCTOS];
-
-    if (tiendaId) {
-      productos = productos.filter((p) => p.tiendaId === tiendaId);
-    }
-
+    const where: Record<string, unknown> = {};
+    if (tiendaId) where.tiendaId = tiendaId;
+    if (categoria) where.categoriaNombre = categoria;
+    if (populares === 'true') where.esPopular = true;
+    if (nuevos === 'true') where.esNuevo = true;
+    if (disponibles === 'true') where.disponible = true;
     if (search) {
-      const q = search.toLowerCase();
-      productos = productos.filter(
-        (p) =>
-          p.nombre.toLowerCase().includes(q) ||
-          p.descripcion.toLowerCase().includes(q)
-      );
+      where.OR = [
+        { nombre: { contains: search } },
+        { descripcion: { contains: search } },
+      ];
     }
-
-    if (categoria) {
-      productos = productos.filter((p) => p.categoriaNombre === categoria);
+    if (minPrecio || maxPrecio) {
+      const range: Record<string, number> = {};
+      if (minPrecio) range.gte = parseFloat(minPrecio);
+      if (maxPrecio) range.lte = parseFloat(maxPrecio);
+      where.precio = range;
     }
-
-    if (minPrecio) {
-      const min = parseFloat(minPrecio);
-      if (!isNaN(min)) {
-        productos = productos.filter((p) => p.precio >= min);
-      }
-    }
-
-    if (maxPrecio) {
-      const max = parseFloat(maxPrecio);
-      if (!isNaN(max)) {
-        productos = productos.filter((p) => p.precio <= max);
-      }
-    }
-
-    if (populares === 'true') {
-      productos = productos.filter((p) => p.esPopular);
-    }
-
-    if (nuevos === 'true') {
-      productos = productos.filter((p) => p.esNuevo);
-    }
-
-    if (disponibles === 'true') {
-      productos = productos.filter((p) => p.disponible);
-    }
-
     if (enOferta === 'true') {
-      productos = productos.filter((p) => p.precioOriginal !== undefined);
+      where.precioOriginal = { not: null };
     }
 
-    // Enrich with tienda info
-    const productosEnriquecidos = productos.map((p) => {
-      const tienda = MOCK_TIENDAS.find((t) => t.id === p.tiendaId);
-      return {
-        ...p,
-        tiendaNombre: tienda?.nombre ?? 'Tienda',
-        tiendaLogo: tienda?.logoIniciales ?? 'T',
-        tiendaColor: tienda?.logoColor ?? '#FF5722',
-        tiendaCategoria: tienda?.categoria ?? 'tienda',
-      };
+    const productosRaw = await db.producto.findMany({
+      where,
+      include: { tienda: true },
+      orderBy: [{ posicion: 'asc' }, { createdAt: 'desc' }],
+      take: 200,
     });
 
+    const productos = productosRaw.map((p) => ({
+      id: p.id,
+      tiendaId: p.tiendaId,
+      categoriaNombre: p.categoriaNombre ?? '',
+      nombre: p.nombre,
+      descripcion: p.descripcion ?? '',
+      precio: p.precio,
+      precioOriginal: p.precioOriginal ?? undefined,
+      imagenColor: p.imagenColor,
+      disponible: p.disponible,
+      esNuevo: p.esNuevo,
+      esPopular: p.esPopular,
+      stock: p.stock,
+      tiendaNombre: p.tienda?.nombre ?? 'Tienda',
+      tiendaLogo: p.tienda?.logoIniciales ?? 'T',
+      tiendaColor: p.tienda?.logoColor ?? '#FF5722',
+      tiendaCategoria: p.tienda?.categoria ?? 'tienda',
+    }));
+
     return NextResponse.json({
-      total: productosEnriquecidos.length,
-      productos: productosEnriquecidos,
+      total: productos.length,
+      productos,
     });
   } catch (error) {
     console.error('Error fetching productos:', error);

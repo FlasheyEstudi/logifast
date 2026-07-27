@@ -9,17 +9,16 @@ interface PagoExitosoProps {
 }
 
 export default function PagoExitoso({ orderId, onClose, setClientActiveModule }: PagoExitosoProps) {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), 100);
-    return () => clearTimeout(timer);
+    setVisible(true);
   }, []);
 
   const orderNum = orderId || `LF-${Math.floor(Math.random() * 9000) + 1000}`;
 
   return (
-    <div className={`pago-exitoso min-h-screen flex items-center justify-center p-5 bg-[#FAF8F5] dark:bg-[#0A0A0F] transition-opacity duration-500 ease ${visible ? 'opacity-100' : 'opacity-0'}`}>
+    <div className="pago-exitoso min-h-screen flex items-center justify-center p-5 bg-[#FAF8F5] dark:bg-[#0A0A0F] opacity-100">
       <div className="pago-exitoso-content flex flex-col items-center text-center max-w-[360px] w-full">
         {/* Checkmark animado */}
         <div className="pago-exitoso-icon w-[88px] h-[88px] rounded-full bg-[#00C853] flex items-center justify-center mb-6 animate-[scaleIn_0.5s_cubic-bezier(0.16,1,0.3,1)]">

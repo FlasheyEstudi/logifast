@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import {
@@ -292,29 +292,57 @@ const RATING_DIST = [
    ═══════════════════════════════════════════════ */
 
 export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfilProps) {
-  const { perfil, moto, calificaciones, actualizarConfig, zonasDisponibles, recargarSaldo, aceptarContrato } = useRepartidorStore();
+  const { perfil, moto, calificaciones, actualizarConfig, zonasDisponibles, recargarSaldo, aceptarContrato, syncFromBackend } = useRepartidorStore();
   const [zonaOpen, setZonaOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rechargeCode, setRechargeCode] = useState('');
   const [rechargeMsg, setRechargeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [recargasHistorial, setRecargasHistorial] = useState<Array<{ id: string; monto: number; metodo: string; codigo?: string | null; createdAt: string }>>([]);
 
-  const handleRedeem = () => {
+  // Cargar historial de recargas real
+  useEffect(() => {
+    fetch('/api/recargas')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.recargas) setRecargasHistorial(data.recargas);
+      })
+      .catch(() => null);
+  }, [perfil.saldo]);
+
+  const handleRedeem = async () => {
     if (!rechargeCode.trim()) return;
     const cleanCode = rechargeCode.trim().toUpperCase();
-    let amount = 0;
-    if (cleanCode === 'LF-RECARGA-500' || cleanCode === 'LFAST-500') {
-      amount = 500;
-    } else if (cleanCode === 'LF-RECARGA-1000' || cleanCode === 'LFAST-1000') {
-      amount = 1000;
-    } else {
-      setRechargeMsg({ type: 'error', text: 'Código inválido o ya utilizado.' });
-      return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/recargas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          monto: 0, // se ignora si es código
+          metodo: 'codigo',
+          codigo: cleanCode,
+        }),
+      });
+      const data = await res.json();
+      setLoading(false);
+      if (res.ok && data.ok) {
+        setRechargeMsg({ type: 'success', text: `¡Éxito! Se han recargado C$ ${data.nuevoSaldo - perfil.saldo} a tu cuenta.` });
+        setRechargeCode('');
+        // Recargar perfil + historial
+        await syncFromBackend();
+        const histRes = await fetch('/api/recargas');
+        const histData = await histRes.json();
+        if (histData?.recargas) setRecargasHistorial(histData.recargas);
+        setTimeout(() => setRechargeMsg(null), 4000);
+      } else {
+        setRechargeMsg({ type: 'error', text: data.error || 'Código inválido o ya utilizado.' });
+        setTimeout(() => setRechargeMsg(null), 4000);
+      }
+    } catch {
+      setLoading(false);
+      setRechargeMsg({ type: 'error', text: 'Error de conexión' });
+      setTimeout(() => setRechargeMsg(null), 4000);
     }
-    
-    recargarSaldo(amount, cleanCode);
-    setRechargeMsg({ type: 'success', text: `¡Éxito! Se han recargado C$ ${amount} a tu cuenta.` });
-    setRechargeCode('');
-    setTimeout(() => setRechargeMsg(null), 4000);
   };
 
   /* ─── Configuración global (configStore) ─── */
@@ -857,35 +885,41 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             Historial de Recargas
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {perfil.recargas && perfil.recargas.length > 0 ? (
-              perfil.recargas.map((r) => (
+            {recargasHistorial.length > 0 ? (
+              recargasHistorial.map((r) => (
                 <div
                   key={r.id}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: '8px 12px',
-                    borderRadius: '10px',
+                    padding: '10px 12px',
+                    borderRadius: '12px',
                     background: 'var(--md-surface-variant)',
+                    border: '1px solid rgba(0,200,83,0.1)',
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                       Recarga confirmada
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Código: {r.codigo} • {r.fecha}
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      {r.codigo ? `Código: ${r.codigo} · ` : ''}
+                      {new Date(r.createdAt).toLocaleDateString('es-NI', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#00C853', fontFamily: "'JetBrains Mono', monospace" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#00C853', fontFamily: "'JetBrains Mono', monospace" }}>
                     +C$ {r.monto}
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '12px' }}>
-                No hay recargas registradas
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: 16 }}>
+                No hay recargas registradas aún.
+                <br />
+                <span style={{ fontSize: 11, opacity: 0.7 }}>
+                  Usa códigos como <code style={{ background: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: 4 }}>LOGI20</code> o <code style={{ background: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: 4 }}>BIENVENIDA</code>
+                </span>
               </div>
             )}
           </div>

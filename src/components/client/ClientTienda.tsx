@@ -127,6 +127,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
     updateCartItemQty,
     removeFromCart,
     getCartItemCount,
+    fetchProductosTienda,
   } = useMarketplaceStore();
 
   /* ─── Local state ─── */
@@ -139,6 +140,11 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
 
   /* ─── Derived data ─── */
   const tienda = useMemo(() => tiendas.find((t) => t.id === tiendaId), [tiendas, tiendaId]);
+
+  /* ─── Cargar productos del backend ─── */
+  useEffect(() => {
+    if (tiendaId) fetchProductosTienda(tiendaId);
+  }, [tiendaId, fetchProductosTienda]);
 
   const tiendaProductos = useMemo(
     () => productos.filter((p) => p.tiendaId === tiendaId && p.disponible),
@@ -246,7 +252,16 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
      RENDER
      ═══════════════════════════════════════════════ */
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', position: 'relative' }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 200,
+        background: 'var(--bg)',
+        overflowY: 'auto',
+        animation: 'lf-slide-in-right 0.3s cubic-bezier(0.22, 1.2, 0.36, 1)',
+      }}
+    >
 
       {/* ════════════════════════════════════════════
           1. PORTADA (200px)

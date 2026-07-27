@@ -180,7 +180,7 @@ export interface ZonePolygon {
   coords: [number, number][];
 }
 
-export type ToastVariant = 'success' | 'error' | 'info';
+export type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
 export interface ToastItem {
   id: string;
@@ -404,7 +404,7 @@ export interface SolicitudEnvio {
   terminosAceptados: boolean;
 }
 
-export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil' | 'ayuda' | 'puntos';
+export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil' | 'ayuda' | 'puntos' | 'tienda';
 
 export interface DireccionSugerencia {
   id: string;
@@ -1768,14 +1768,24 @@ export const useStore = create<AppState>((set, get) => ({
 
   toggleSimulation: () => set((state) => ({ simulationRunning: !state.simulationRunning })),
 
-  /* Toast Actions */
+  /* Toast Actions — delega a sileo (notify) */
   addToast: (message, variant = 'info') => {
+    // Import dinámico para no romper SSR
+    if (typeof window !== 'undefined') {
+      import('@/lib/notify').then(({ notify }) => {
+        if (variant === 'success') notify.success(message);
+        else if (variant === 'error') notify.error(message);
+        else if (variant === 'warning') notify.warning(message);
+        else notify.info(message);
+      }).catch(() => null);
+    }
+    // Mantener en estado para compatibilidad (no se renderiza, solo para no romper código que lo lee)
     const id = `T-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const toast: ToastItem = { id, message, variant, timestamp: Date.now() };
     set((state) => ({ toasts: [...state.toasts, toast] }));
     setTimeout(() => {
       set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
-    }, 4000);
+    }, 100);
   },
   removeToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 

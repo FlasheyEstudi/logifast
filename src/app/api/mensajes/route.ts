@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await requireRole('admin');
     const { searchParams } = new URL(request.url);
     const usuarioId = searchParams.get('usuarioId');
 
@@ -56,14 +59,14 @@ export async function GET(request: NextRequest) {
     const data = Array.from(conversacionesMap.values());
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error('[MENSAJES_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener mensajes' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'MENSAJES_GET');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireRole('admin');
     const body = await request.json();
     const { emisorId, receptorId, contenido } = body;
 
@@ -83,8 +86,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: mensaje }, { status: 201 });
-  } catch (error) {
-    console.error('[MENSAJES_POST]', error);
-    return NextResponse.json({ error: 'Error al enviar mensaje' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'MENSAJES_POST');
   }
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export async function GET() {
   try {
@@ -8,14 +10,14 @@ export async function GET() {
     });
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error('[HORARIOS_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener horarios' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'HORARIOS_GET');
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
+    const user = await requireRole('admin');
     const body = await request.json();
     const { id, dia, horaInicio, horaFin, activo, recargoNocturno } = body;
 
@@ -47,8 +49,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     return NextResponse.json({ data: updated });
-  } catch (error) {
-    console.error('[HORARIOS_PATCH]', error);
-    return NextResponse.json({ error: 'Error al actualizar horario' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'HORARIOS_PATCH');
   }
 }

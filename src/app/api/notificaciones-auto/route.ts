@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,14 +19,14 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error('[NOTIFICACIONES_AUTO_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener notificaciones automáticas' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'NOTIFICACIONES_AUTO_GET');
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
+    const user = await requireRole('admin');
     const body = await request.json();
     const { id, activa, etiqueta, canal, plantilla, destinatario } = body;
 
@@ -56,8 +58,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     return NextResponse.json({ data: updated });
-  } catch (error) {
-    console.error('[NOTIFICACIONES_AUTO_PATCH]', error);
-    return NextResponse.json({ error: 'Error al actualizar notificación automática' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'NOTIFICACIONES_AUTO_PATCH');
   }
 }

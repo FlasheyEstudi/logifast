@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { sileo } from 'sileo';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
 import { useConfigStore } from '@/store/configStore';
@@ -30,7 +31,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
     setCartDescuento,
     setCartInstrucciones,
     setCartMetodoPago,
-    confirmarCompra,
+    confirmarCompraAsync,
     getCartSubtotal,
     getCartTotal,
     getCartItemCount,
@@ -72,7 +73,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
     }
   };
 
-  const handlePagar = () => {
+  const handlePagar = async () => {
     try {
       reproducirSiActivo('orden_aceptada', {
         sonidoActivo: config.sonidoActivo,
@@ -80,10 +81,13 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
         notificacionesSonido: config.notificacionesSonido
       });
       vibrarSiActivo(50, config.vibracionActiva);
-      confirmarCompra();
+      const result = await confirmarCompraAsync();
+      if (!result.ok) {
+        sileo.error({ title: "Error en el pago", description: result.error || 'No se pudo procesar la compra' });
+      }
     } catch (err) {
       console.error("Error inside handlePagar:", err);
-      alert("Error al procesar el pago: " + (err as Error).message);
+      sileo.error({ title: "Error en el pago", description: (err as Error).message });
     }
   };
 

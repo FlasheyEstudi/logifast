@@ -1,33 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MOCK_TIENDAS, type FavoritoTienda } from '@/lib/marketplace-store';
+import { db } from '@/lib/db';
+import { getSessionUser } from '@/lib/auth/session';
 
-// In-memory store for favorites (mock persistence per session)
-let favoritosTiendas: FavoritoTienda[] = [
-  { tiendaId: 't1' },
-  { tiendaId: 't2' },
-];
+export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+/**
+ * GET /api/favoritos/tiendas
+ * Devuelve las tiendas favoritas del cliente autenticado.
+ */
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const clienteId = searchParams.get('clienteId');
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
 
-    // Return enriched favorites with tienda details
-    const favoritosEnriquecidos = favoritosTiendas
-      .map((fav) => {
-        const tienda = MOCK_TIENDAS.find((t) => t.id === fav.tiendaId);
-        if (!tienda) return null;
-        return {
-          ...fav,
-          tienda,
-        };
-      })
-      .filter(Boolean);
+    const favoritos = await db.favoritoTienda.findMany({
+      where: { clienteId: user.id },
+      include: { tienda: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const result = favoritos.map((f) => {
+      const t = f.tienda;
+      let horario: Record<string, { abre: string; cierra: string }> = {};
+      try { horario = JSON.parse(t.horario); } catch {}
+      let zonaCobertura: string[] = [];
+      try { zonaCobertura = JSON.parse(t.zonaCobertura); } catch {}
+      return {
+        tiendaId: t.id,
+        tienda: {
+          id: t.id,
+          nombre: t.nombre,
+          descripcion: t.descripcion ?? '',
+          categoria: t.categoria,
+          logoColor: t.logoColor,
+          logoIniciales: t.logoIniciales,
+          portadaColor: t.portadaColor,
+          direccion: t.direccion,
+          lat: t.lat,
+          lng: t.lng,
+          telefono: t.telefono ?? '',
+          email: t.email ?? '',
+          calificacion: t.calificacion,
+          totalPedidos: t.totalPedidos,
+          tiempoEstimado: t.tiempoEstimado,
+          costoEnvio: t.costoEnvio,
+          pedidoMinimo: t.pedidoMinimo,
+          horario,
+          zonaCobertura,
+          verificado: t.verificado,
+          popular: t.popular,
+          estado: t.estado,
+          badges: t.popular ? ['Popular'] : [],
+        },
+      };
+    });
 
     return NextResponse.json({
-      total: favoritosEnriquecidos.length,
-      favoritos: favoritosEnriquecidos,
-      clienteId: clienteId ?? 'cliente-1',
+      total: result.length,
+      favoritos: result,
+      clienteId: user.id,
     });
   } catch (error) {
     console.error('Error fetching favoritos de tiendas:', error);
@@ -38,8 +71,17 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * POST /api/favoritos/tiendas
+ * Body: { tiendaId, action?: 'add' | 'remove' }
+ */
 export async function POST(req: NextRequest) {
   try {
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { tiendaId, action } = body;
 
@@ -50,8 +92,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate tienda exists
-    const tienda = MOCK_TIENDAS.find((t) => t.id === tiendaId);
+    const tienda = await db.tienda.findUnique({ where: { id: tiendaId } });
     if (!tienda) {
       return NextResponse.json(
         { error: 'Tienda no encontrada' },
@@ -59,20 +100,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isFavorite = favoritosTiendas.some((f) => f.tiendaId === tiendaId);
+    const existing = await db.favoritoTienda.findFirst({
+      where: { clienteId: user.id, tiendaId },
+    });
 
-    if (action === 'remove' || (action !== 'add' && isFavorite)) {
-      // Remove from favorites
-      favoritosTiendas = favoritosTiendas.filter((f) => f.tiendaId !== tiendaId);
+    if (action === 'remove' || (action !== 'add' && existing)) {
+      if (existing) {
+        await db.favoritoTienda.delete({ where: { id: existing.id } });
+      }
       return NextResponse.json({
         message: 'Tienda removida de favoritos',
         tiendaId,
         esFavorito: false,
       });
     } else {
-      // Add to favorites
-      if (!isFavorite) {
-        favoritosTiendas.push({ tiendaId });
+      if (!existing) {
+        await db.favoritoTienda.create({
+          data: { clienteId: user.id, tiendaId },
+        });
       }
       return NextResponse.json({
         message: 'Tienda agregada a favoritos',

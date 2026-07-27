@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
+import { handleError } from '@/lib/auth/helpers';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const alertas = await prisma.alertaMantenimiento.findMany({
       where: { activa: true },
       include: { moto: { select: { nombre: true } } },
@@ -17,14 +20,14 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json(formatted);
-  } catch (error) {
-    console.error('[INGENIERO_ALERTAS_GET]', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'INGENIERO_ALERTAS_GET');
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const body = await req.json();
     const { id } = body;
 
@@ -34,8 +37,7 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('[INGENIERO_ALERTAS_PATCH]', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+} catch (error) {
+    return handleError(error, 'INGENIERO_ALERTAS_PATCH');
   }
 }
