@@ -16,9 +16,8 @@ generator client {
 //   4. node scripts/seed.js
 // Nota: el schema es 100% compatible con ambos motores (sin tipos específicos).
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
