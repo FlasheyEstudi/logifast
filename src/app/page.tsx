@@ -360,6 +360,7 @@ export default function Home() {
           localStorage.setItem('lf-session-role', user.role);
           localStorage.setItem('lf-session-name', user.name || user.email);
           if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#/login') {
+            setCurrentView('dashboard');
             window.location.hash = '#/dashboard';
           }
         }
@@ -385,7 +386,24 @@ export default function Home() {
           setCurrentView('dashboard');
           document.body.style.overflow = '';
         } else {
-          window.location.hash = '#/';
+          // Intentar verificar cookie del servidor si localStorage no tiene savedRole
+          fetch('/api/auth/me')
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (data && data.user) {
+                setLoginRole(data.user.role);
+                setLoginUserName(data.user.name || data.user.email);
+                localStorage.setItem('lf-session-role', data.user.role);
+                localStorage.setItem('lf-session-name', data.user.name || data.user.email);
+                setCurrentView('dashboard');
+                document.body.style.overflow = '';
+              } else {
+                window.location.hash = '#/';
+              }
+            })
+            .catch(() => {
+              window.location.hash = '#/';
+            });
         }
       } else {
         setCurrentView('landing');
@@ -511,19 +529,16 @@ export default function Home() {
       setLoginRole(role);
       setLoginUserName(name);
 
-      addToast(`Bienvenido, ${name}`, 'Redirigiendo al dashboard...', 'success');
-      setTimeout(() => setLoginRedirect(true), 800);
-      setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lf-session-view', 'dashboard');
-          localStorage.setItem('lf-session-role', role);
-          localStorage.setItem('lf-session-name', name);
-          window.location.hash = '#/dashboard';
-        }
-        document.body.style.overflow = '';
-        setLoginRedirect(false);
-        setLoginLoading(false);
-      }, 3300);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lf-session-view', 'dashboard');
+        localStorage.setItem('lf-session-role', role);
+        localStorage.setItem('lf-session-name', name);
+      }
+      document.body.style.overflow = '';
+      setLoginLoading(false);
+      addToast(`Bienvenido, ${name}`, 'Ingresando al sistema...', 'success');
+      setCurrentView('dashboard');
+      window.location.hash = '#/dashboard';
     } catch (err) {
       console.error('[LOGIN]', err);
       addToast('Error', 'No se pudo conectar con el servidor', 'error');
@@ -557,20 +572,20 @@ export default function Home() {
       }
 
       const name = data.user.name;
+      const userRole = data.user.role || role;
+      setLoginRole(userRole);
       setLoginUserName(name);
-      addToast(`Bienvenido, ${name}`, 'Redirigiendo al dashboard...', 'success');
-      setTimeout(() => setLoginRedirect(true), 800);
-      setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lf-session-view', 'dashboard');
-          localStorage.setItem('lf-session-role', role);
-          localStorage.setItem('lf-session-name', name);
-          window.location.hash = '#/dashboard';
-        }
-        document.body.style.overflow = '';
-        setLoginRedirect(false);
-        setLoginLoading(false);
-      }, 3300);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lf-session-view', 'dashboard');
+        localStorage.setItem('lf-session-role', userRole);
+        localStorage.setItem('lf-session-name', name);
+      }
+      document.body.style.overflow = '';
+      setLoginLoading(false);
+      addToast(`Bienvenido, ${name}`, 'Ingresando al sistema...', 'success');
+      setCurrentView('dashboard');
+      window.location.hash = '#/dashboard';
     } catch (err) {
       console.error('[DEMO_LOGIN]', err);
       addToast('Error', 'No se pudo conectar con el servidor', 'error');
@@ -622,7 +637,18 @@ export default function Home() {
         addToast('Error', data.error || 'No se pudo registrar la cuenta', 'error');
         return;
       }
-      setRegSuccess(true);
+      const user = data.user;
+      setLoginRole(user.role);
+      setLoginUserName(user.name);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lf-session-view', 'dashboard');
+        localStorage.setItem('lf-session-role', user.role);
+        localStorage.setItem('lf-session-name', user.name);
+      }
+      document.body.style.overflow = '';
+      addToast(`¡Bienvenido, ${user.name}!`, 'Cuenta creada con éxito', 'success');
+      setCurrentView('dashboard');
+      window.location.hash = '#/dashboard';
     } catch (err) {
       console.error('[REGISTER]', err);
       setRegLoading(false);

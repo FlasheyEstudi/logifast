@@ -31,9 +31,9 @@ function computeColor(seed: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 3 registros por IP cada hora
+    // Rate limit: 30 registros por IP cada hora
     const ip = getClientIP(req);
-    const rl = rateLimit(`register:${ip}`, 3, 60 * 60 * 1000);
+    const rl = rateLimit(`register:${ip}`, 30, 60 * 60 * 1000);
     if (!rl.success) return tooManyRequests(rl.resetAt);
 
     const body = (await req.json()) as RegisterBody;

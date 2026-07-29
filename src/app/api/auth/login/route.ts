@@ -14,9 +14,9 @@ interface LoginBody {
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 10 intentos por IP cada 15 minutos
+    // Rate limit: 50 intentos por IP cada 15 minutos
     const ip = getClientIP(req);
-    const rl = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+    const rl = rateLimit(`login:${ip}`, 50, 15 * 60 * 1000);
     if (!rl.success) return tooManyRequests(rl.resetAt);
 
     const body = (await req.json()) as LoginBody;
