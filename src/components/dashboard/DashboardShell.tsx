@@ -97,8 +97,9 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     return () => clearTimeout(timer);
   }, [activeModule]);
 
-  // Sincronizar datos reales de la base de datos (Órdenes) al montar
+  // Sincronizar datos reales de la base de datos (Órdenes y Usuarios) al montar
   useEffect(() => {
+    // 1. Órdenes
     fetch('/api/ordenes')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -127,6 +128,31 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
             ],
           }));
           useStore.setState({ orders: apiOrders });
+        }
+      })
+      .catch(() => null);
+
+    // 2. Usuarios y Clientes
+    fetch('/api/admin/users')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.users) && data.users.length > 0) {
+          const apiClients = data.users
+            .filter((u: any) => u.role === 'cliente')
+            .map((u: any) => ({
+              id: u.id,
+              nombre: u.name || u.email.split('@')[0],
+              email: u.email,
+              telefono: u.telefono || '+505 8888-0000',
+              direccion: 'Managua, Nicaragua',
+              totalEnvios: 1,
+              montoTotal: 150,
+              ultimoEnvio: new Date(u.createdAt || Date.now()).toISOString().split('T')[0],
+              color: u.color || '#FF5722',
+            }));
+          if (apiClients.length > 0) {
+            useStore.setState({ clients: apiClients });
+          }
         }
       })
       .catch(() => null);
