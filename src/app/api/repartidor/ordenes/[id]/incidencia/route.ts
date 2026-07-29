@@ -64,6 +64,57 @@ export async function PATCH(
       },
     });
 
+    // Si la incidencia es falla mecánica o accidente, generar reporte automático al módulo de Ingeniero / Mantenimiento
+    if (tipoRaw === 'mecanica' || tipoRaw === 'accidente') {
+      try {
+        let moto = null;
+        if (profile.motoId) {
+          moto = await db.moto.findUnique({ where: { id: profile.motoId } });
+        }
+        if (!moto) {
+          moto = await db.moto.findFirst({ where: { asignadaA: profile.id } }) || await db.moto.findFirst();
+        }
+
+        if (moto) {
+          // Cambiar estado de la moto a EN_MANTENIMIENTO
+          await db.moto.update({
+            where: { id: moto.id },
+            data: { estado: 'EN_MANTENIMIENTO' },
+          });
+
+          // Crear Alerta de Mantenimiento para Ingeniero
+          await db.alertaMantenimiento.create({
+            data: {
+              motoId: moto.id,
+              tipo: 'EMERGENCIA',
+              descripcion: `Alerta: ${tipoLabel} reportada por repartidor ${profile.nombre}. Orden: ${id}. Detalle: ${desc || 'Sin detalle'}`,
+              activa: true,
+              resuelta: false,
+            },
+          });
+
+          // Crear Registro de Mantenimiento Correctivo/Emergencia
+          await db.mantenimiento.create({
+            data: {
+              motoId: moto.id,
+              tipo: tipoRaw === 'accidente' ? 'EMERGENCIA' : 'CORRECTIVO',
+              categoria: 'GENERAL',
+              descripcion: `[INCIDENCIA EN RUTA] ${tipoLabel} - Repartidor ${profile.nombre} (Orden ${id})`,
+              observaciones: desc || 'Reportado automáticamente desde la app de repartidor por incidencia en ruta',
+              kmAlMomento: moto.kmAcumulados,
+              costoManoObra: 0,
+              costoRepuestos: 0,
+              costoTotal: 0,
+              estado: 'PROGRAMADO',
+              prioridad: 'URGENTE',
+            },
+          });
+        }
+      } catch (errMantenimiento) {
+        console.error('[INCIDENCIA_MANTENIMIENTO_AUTO_CREATE]', errMantenimiento);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       estado: 'incidencia',
