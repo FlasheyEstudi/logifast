@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Users, Key, FileText, ToggleLeft, Activity,
@@ -130,6 +130,24 @@ export default function ModuleSuperAdmin() {
 
   /* ─── Usuarios state ─── */
   const [localUsers, setLocalUsers] = useState<SystemUser[]>(users);
+
+  useEffect(() => {
+    fetch('/api/admin/users')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.users)) {
+          const apiUsers: SystemUser[] = data.users.map((u: any) => ({
+            id: u.id,
+            nombre: u.name || u.email.split('@')[0],
+            email: u.email,
+            rol: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'Cliente',
+            activo: true,
+          }));
+          setLocalUsers(apiUsers);
+        }
+      })
+      .catch(() => null);
+  }, []);
   const [userSearch, setUserSearch] = useState('');
   const [userRolFilter, setUserRolFilter] = useState('all');
   const [userEstadoFilter, setUserEstadoFilter] = useState('all');
