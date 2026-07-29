@@ -257,6 +257,15 @@ export default function ModuleSuperAdmin() {
       addToast('Nombre y email son requeridos', 'error');
       return;
     }
+    const apiRoleMap: Record<string, string> = {
+      Repartidor: 'repartidor',
+      Cliente: 'cliente',
+      Administrador: 'admin',
+      Ingeniero: 'ingeniero',
+      'Super Admin': 'admin',
+    };
+    const targetRole = apiRoleMap[modalRol] || 'cliente';
+
     if (editUserId) {
       setLocalUsers((prev) =>
         prev.map((u) =>
@@ -266,17 +275,16 @@ export default function ModuleSuperAdmin() {
         ),
       );
       addToast('Usuario actualizado exitosamente');
-      addAuditEntry({
-        userId: 'admin',
-        usuario: 'Super Admin',
-        accion: 'editar',
-        recurso: 'usuario',
-        recursoId: editUserId,
-        detalles: `Usuario ${modalNombre} editado`,
-        ip: '192.168.1.100',
-        dispositivo: 'Chrome/Mac',
-        createdAt: new Date().toISOString(),
-      });
+      fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editUserId,
+          name: modalNombre,
+          email: modalEmail,
+          role: targetRole,
+        }),
+      }).catch((err) => console.error('[saveUser PATCH error]', err));
     } else {
       const newUser: SystemUser = {
         id: `U-${Date.now()}`,
@@ -287,17 +295,16 @@ export default function ModuleSuperAdmin() {
       };
       setLocalUsers((prev) => [...prev, newUser]);
       addToast('Usuario creado exitosamente');
-      addAuditEntry({
-        userId: 'admin',
-        usuario: 'Super Admin',
-        accion: 'crear',
-        recurso: 'usuario',
-        recursoId: newUser.id,
-        detalles: `Usuario ${modalNombre} creado con rol ${modalRol}`,
-        ip: '192.168.1.100',
-        dispositivo: 'Chrome/Mac',
-        createdAt: new Date().toISOString(),
-      });
+      fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: modalNombre,
+          email: modalEmail,
+          role: targetRole,
+          password: 'Logifast2026!',
+        }),
+      }).catch((err) => console.error('[saveUser POST error]', err));
     }
     setUserModalOpen(false);
   };

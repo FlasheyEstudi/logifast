@@ -166,17 +166,30 @@ function BuzonPanel() {
     if (!activeConvId || !messageText.trim()) return;
     const conv = conversaciones.find((c) => c.id === activeConvId);
     if (!conv) return;
+    const trimmed = messageText.trim();
     const msg: MensajeDirecto = {
       id: `MSG-${Date.now()}`,
       emisorId: 'admin',
       emisorNombre: 'Admin',
       receptorId: conv.participanteId,
       receptorNombre: conv.participanteNombre,
-      contenido: messageText.trim(),
+      contenido: trimmed,
       leido: false,
-      enviadoEn: new Date('2026-06-10T16:00:00').toISOString(),
+      enviadoEn: new Date().toISOString(),
     };
     addMensaje(activeConvId, msg);
+
+    fetch('/api/admin/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userIds: [conv.participanteId],
+        titulo: 'Mensaje de Soporte LogiFast',
+        contenido: trimmed,
+        tipo: 'chat',
+      }),
+    }).catch((err) => console.error('[ModuleComunicaciones API push error]', err));
+
     setMessageText('');
   }, [activeConvId, messageText, conversaciones, addMensaje]);
 

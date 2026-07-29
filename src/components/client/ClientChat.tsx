@@ -274,6 +274,13 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     if (!trimmed || !chatOrderId || !isActive || chatDeactivated) return;
 
     realtime.chatMensaje(chatOrderId, 'cliente', trimmed);
+
+    fetch('/api/repartidor/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ordenId: chatOrderId, contenido: trimmed }),
+    }).catch((err) => console.error('[ClientChat API send error]', err));
+
     setInput('');
 
     // Reset textarea height

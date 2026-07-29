@@ -307,12 +307,47 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [uploadingFoto, setUploadingFoto] = useState(false);
 
-  // Cargar foto existente al montar
+  // Cargar foto, direcciones y métodos de pago existentes al montar
   useEffect(() => {
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => {
         if (data?.user?.fotoUrl) setFotoUrl(data.user.fotoUrl);
+      })
+      .catch(() => null);
+
+    fetch('/api/direcciones')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.direcciones && Array.isArray(data.direcciones) && data.direcciones.length > 0) {
+          data.direcciones.forEach((d: any) => {
+            addDireccionGuardada({
+              id: d.id,
+              etiqueta: d.etiqueta,
+              direccion: d.direccion,
+              lat: d.lat,
+              lng: d.lng,
+            });
+          });
+        }
+      })
+      .catch(() => null);
+
+    fetch('/api/metodos-pago')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.metodos && Array.isArray(data.metodos) && data.metodos.length > 0) {
+          data.metodos.forEach((m: any) => {
+            addMetodoPago({
+              id: m.id,
+              tipo: m.tipo,
+              nombre: m.titular || m.tipo,
+              ultimosCuatro: m.ultimos4 || '4242',
+              vencimiento: m.vencimiento || '12/28',
+              predeterminado: m.predeterminado,
+            });
+          });
+        }
       })
       .catch(() => null);
   }, []);
@@ -347,13 +382,24 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const handleAddAddress = () => {
     if (!newAddr.trim()) return;
     const match = direccionesSugerencias.find((d) => d.direccion === newAddr);
-    addDireccionGuardada({
-      id: `DG-${Date.now()}`,
+    const newDirData = {
       etiqueta: newAddrLabel,
       direccion: newAddr,
       lat: match?.lat ?? 12.12,
       lng: match?.lng ?? -86.25,
+    };
+
+    addDireccionGuardada({
+      id: `DG-${Date.now()}`,
+      ...newDirData,
     });
+
+    fetch('/api/direcciones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newDirData),
+    }).catch((err) => console.error('[handleAddAddress API error]', err));
+
     setNewAddr('');
     setNewAddrLabel('Casa');
     setAddingAddr(false);

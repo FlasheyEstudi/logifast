@@ -707,28 +707,50 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   }, [solicitudEnvio, setSolicitudEnvio]);
 
   /* ─── Apply promo code ─── */
-  const handleApplyPromo = useCallback(() => {
+  const handleApplyPromo = useCallback(async () => {
     if (!promoInput.trim()) return;
-    const result = validateCodigoPromo(promoInput.trim());
-    if (result.valid) {
-      setPromoDiscount(result.descuento);
-      setPromoTipo(result.tipo);
-      setPromoStatus('valid');
-      setSolicitudEnvio({ codigoPromo: promoInput.trim().toUpperCase(), descuento: result.descuento });
-      setPromoMessage(
-        result.tipo === 'porcentaje'
-          ? `¡${result.descuento}% de descuento aplicado!`
-          : `¡C$ ${result.descuento} de descuento aplicado!`
-      );
-      showToast('¡Código promocional aplicado!', 'success');
-    } else {
-      setPromoDiscount(0);
-      setPromoTipo('');
-      setPromoStatus('invalid');
-      setPromoMessage('Código no válido o expirado');
-      showToast('Código no válido', 'error');
+    try {
+      const res = await fetch('/api/codigos/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigo: promoInput.trim(),
+          montoSubtotal: costBreakdown.subtotal,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setPromoDiscount(data.descuentoCalculado);
+        setPromoTipo(data.tipoDescuento);
+        setPromoStatus('valid');
+        setSolicitudEnvio({ codigoPromo: data.codigo, descuento: data.descuentoCalculado });
+        setPromoMessage(data.mensaje);
+        showToast('¡Código promocional aplicado!', 'success');
+      } else {
+        setPromoDiscount(0);
+        setPromoTipo('');
+        setPromoStatus('invalid');
+        setPromoMessage(data.error || 'Código no válido o expirado');
+        showToast(data.error || 'Código no válido', 'error');
+      }
+    } catch {
+      const result = validateCodigoPromo(promoInput.trim());
+      if (result.valid) {
+        setPromoDiscount(result.descuento);
+        setPromoTipo(result.tipo);
+        setPromoStatus('valid');
+        setSolicitudEnvio({ codigoPromo: promoInput.trim().toUpperCase(), descuento: result.descuento });
+        setPromoMessage(`¡${result.descuento}% de descuento aplicado!`);
+        showToast('¡Código promocional aplicado!', 'success');
+      } else {
+        setPromoDiscount(0);
+        setPromoTipo('');
+        setPromoStatus('invalid');
+        setPromoMessage('Código no válido o expirado');
+        showToast('Código no válido', 'error');
+      }
     }
-  }, [promoInput, validateCodigoPromo, setSolicitudEnvio, showToast]);
+  }, [promoInput, costBreakdown.subtotal, validateCodigoPromo, setSolicitudEnvio, showToast]);
 
   /* ─── Copy bank details ─── */
   const handleCopyBank = useCallback(() => {
@@ -782,11 +804,54 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         ],
       };
 
-      addOrder(newOrder);
-      confirmarEnvio(newId);
-      setConfirmedOrderId(newId);
-      setConfirming(false);
-      setConfirmed(true);
+      // Persistir en la base de datos vía API
+      fetch('/api/ordenes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'envio',
+          origen: solicitudEnvio.origen,
+          destino: solicitudEnvio.destino,
+          origenLat: solicitudEnvio.origenLat,
+          origenLng: solicitudEnvio.origenLng,
+          destinoLat: solicitudEnvio.destinoLat,
+          destinoLng: solicitudEnvio.destinoLng,
+          paquete: solicitudEnvio.descripcion + scheduleNote,
+          tamano: solicitudEnvio.tamano || 'Mediano',
+          fragil: solicitudEnvio.fragil || false,
+          metodoPago: solicitudEnvio.metodoPago,
+          monto: costBreakdown.total,
+          ganancia: Math.round(costBreakdown.total * 0.7),
+          kmEstimados: costBreakdown.distanceKm || 3.5,
+          tiempoEstimado: Math.round((costBreakdown.distanceKm || 3.5) * 4) || 15,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.orden) {
+            const persistedOrder: Order = {
+              ...newOrder,
+              id: data.orden.id || newId,
+            };
+            addOrder(persistedOrder);
+            confirmarEnvio(data.orden.id || newId);
+            setConfirmedOrderId(data.orden.id || newId);
+          } else {
+            addOrder(newOrder);
+            confirmarEnvio(newId);
+            setConfirmedOrderId(newId);
+          }
+        })
+        .catch((err) => {
+          console.error('[handleConfirm POST /api/ordenes]', err);
+          addOrder(newOrder);
+          confirmarEnvio(newId);
+          setConfirmedOrderId(newId);
+        })
+        .finally(() => {
+          setConfirming(false);
+          setConfirmed(true);
+        });
     }, 2000);
   }, [orders, userName, solicitudEnvio, costBreakdown.total, addOrder, confirmarEnvio, scheduleMode, scheduleDate, scheduleTime]);
 

@@ -55,3 +55,91 @@ export async function GET(req: NextRequest) {
     return handleError(error, 'ADMIN_USERS_GET');
   }
 }
+
+/**
+ * POST /api/admin/users
+ * Crea un usuario desde el panel de administración.
+ */
+export async function POST(req: NextRequest) {
+  try {
+    await requireRole('admin');
+    const body = await req.json();
+    const { name, email, role, telefono, password } = body;
+
+    if (!name || !email || !role) {
+      return NextResponse.json({ error: 'name, email y role son obligatorios' }, { status: 400 });
+    }
+
+    const existing = await db.user.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json({ error: 'El correo electrónico ya está registrado' }, { status: 400 });
+    }
+
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password || 'Logifast2026!', 10);
+
+    const user = await db.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: role as 'cliente' | 'repartidor' | 'admin' | 'ingeniero',
+        telefono: telefono || null,
+        initials: name.slice(0, 2).toUpperCase(),
+        color: '#FF5722',
+      },
+    });
+
+    // Si el nuevo usuario es repartidor, crear su perfil automáticamente
+    if (role === 'repartidor') {
+      await db.repartidorProfile.create({
+        data: {
+          userId: user.id,
+          nombre: user.name,
+          telefono: user.telefono,
+          conectado: false,
+          enServicio: false,
+          contratoAceptado: true,
+        },
+      }).catch(() => null);
+    }
+
+    return NextResponse.json({ ok: true, user });
+  } catch (error) {
+    return handleError(error, 'ADMIN_USERS_POST');
+  }
+}
+
+/**
+ * PATCH /api/admin/users
+ * Actualiza un usuario (rol, teléfono, nombre, etc.).
+ */
+export async function PATCH(req: NextRequest) {
+  try {
+    await requireRole('admin');
+    const body = await req.json();
+    const { id, role, name, email, telefono } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'id de usuario requerido' }, { status: 400 });
+    }
+
+    const dataToUpdate: Record<string, unknown> = {};
+    if (role) dataToUpdate.role = role;
+    if (name) {
+      dataToUpdate.name = name;
+      dataToUpdate.initials = name.slice(0, 2).toUpperCase();
+    }
+    if (email) dataToUpdate.email = email;
+    if (telefono !== undefined) dataToUpdate.telefono = telefono;
+
+    const user = await db.user.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+
+    return NextResponse.json({ ok: true, user });
+  } catch (error) {
+    return handleError(error, 'ADMIN_USERS_PATCH');
+  }
+}

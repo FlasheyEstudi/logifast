@@ -62,20 +62,14 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
-              // Unregister any active service workers immediately to bypass stuck cache
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                  for (let registration of registrations) {
-                    registration.unregister();
-                  }
-                });
-              }
-              // Clear cache storage
-              if ('caches' in window) {
-                caches.keys().then(function(names) {
-                  for (let name of names) {
-                    caches.delete(name);
-                  }
+              // Register PWA Service Worker
+              if ('serviceWorker' in navigator && window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('LOGIFAST PWA Service Worker registrado:', reg.scope);
+                  }).catch(function(err) {
+                    console.warn('Error registrando PWA Service Worker:', err);
+                  });
                 });
               }
               

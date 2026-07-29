@@ -5,14 +5,39 @@ import { getSessionUser } from '@/lib/auth/session';
 export const dynamic = 'force-dynamic';
 
 /**
+ * GET /api/repartidor/chat?ordenId=
+ * Obtiene el historial de chat de una orden.
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const user = await getSessionUser();
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    const { searchParams } = new URL(req.url);
+    const ordenId = searchParams.get('ordenId');
+    if (!ordenId) return NextResponse.json({ error: 'ordenId requerido' }, { status: 400 });
+
+    const mensajes = await db.chatRepartidor.findMany({
+      where: { ordenId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return NextResponse.json({ mensajes });
+  } catch (error) {
+    console.error('[CHAT_GET]', error);
+    return NextResponse.json({ error: 'Error al obtener mensajes' }, { status: 500 });
+  }
+}
+
+/**
  * POST /api/repartidor/chat
  * Body: { ordenId, contenido }
- * Envía un mensaje del repartidor al cliente.
+ * Envía un mensaje en el chat (repartidor o cliente).
  */
 export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user || user.role !== 'repartidor') {
+    if (!user) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -28,19 +53,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
 
-    const profile = await db.repartidorProfile.findUnique({
-      where: { userId: user.id },
-    });
-    if (!profile || orden.repartidorId !== profile.id) {
-      return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
-    }
+    const emisor = user.role === 'repartidor' ? 'repartidor' : 'cliente';
+    const repartidorId = orden.repartidorId || user.id;
 
     const mensaje = await db.chatRepartidor.create({
       data: {
         ordenId,
-        repartidorId: profile.id,
-        clienteId: orden.clienteId,
-        emisor: 'repartidor',
+        repartidorId,
+        clienteId: orden.clienteId || user.id,
+        emisor,
         contenido,
       },
     });

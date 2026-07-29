@@ -76,3 +76,57 @@ export async function GET() {
     );
   }
 }
+
+/**
+ * POST /api/repartidor/calificaciones
+ * Body: { ordenId, estrellas, etiquetas, comentario, favorito? }
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { ordenId, estrellas, etiquetas = [], comentario } = body;
+
+    if (!ordenId || !estrellas || estrellas < 1 || estrellas > 5) {
+      return NextResponse.json({ error: 'ordenId y estrellas (1-5) son requeridos' }, { status: 400 });
+    }
+
+    const orden = await db.ordenServicio.findUnique({
+      where: { id: ordenId },
+      include: { repartidor: true },
+    });
+
+    if (!orden || !orden.repartidorId) {
+      return NextResponse.json({ error: 'Orden o repartidor no encontrado' }, { status: 404 });
+    }
+
+    const nuevaCalificacion = await db.calificacionRepartidor.create({
+      data: {
+        repartidorId: orden.repartidorId,
+        ordenId: orden.id,
+        estrellas: Number(estrellas),
+        etiquetas: JSON.stringify(etiquetas),
+        comentario: comentario ? String(comentario) : null,
+      },
+    });
+
+    // Recalcular promedio de estrellas del repartidor
+    const todasLasCals = await db.calificacionRepartidor.findMany({
+      where: { repartidorId: orden.repartidorId },
+      select: { estrellas: true },
+    });
+
+    const totalCals = todasLasCals.length;
+    const sumaEstrellas = todasLasCals.reduce((acc, c) => acc + c.estrellas, 0);
+    const nuevoPromedio = totalCals > 0 ? Math.round((sumaEstrellas / totalCals) * 10) / 10 : 5.0;
+
+    await db.repartidorProfile.update({
+      where: { id: orden.repartidorId },
+      data: { calificacion: nuevoPromedio },
+    });
+
+    return NextResponse.json({ ok: true, calificacion: nuevaCalificacion, nuevoPromedio });
+  } catch (error) {
+    console.error('[REPARTIDOR_CALIFICACIONES_POST]', error);
+    return NextResponse.json({ error: 'Error al enviar calificación' }, { status: 500 });
+  }
+}

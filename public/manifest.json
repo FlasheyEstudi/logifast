@@ -1,23 +1,42 @@
 {
-  "name": "LOGIFAST Repartidor",
+  "name": "LOGIFAST — Envíos y Delivery",
   "short_name": "LOGIFAST",
-  "description": "App de delivery para repartidores LOGIFAST",
-  "start_url": "/repartidor",
+  "description": "Plataforma integral de gestión logística y envíos express",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FFFFFF",
+  "background_color": "#0A0A0F",
   "theme_color": "#FF5722",
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "navigation"]
+  "shortcuts": [
+    {
+      "name": "Solicitar Envío",
+      "short_name": "Envío",
+      "description": "Solicita un envío express de paquete",
+      "url": "/?module=solicitar",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Explorar Tiendas",
+      "short_name": "Tiendas",
+      "description": "Explora el catálogo de tiendas del marketplace",
+      "url": "/?module=explorar",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["business", "logistics", "shopping", "navigation"]
 }

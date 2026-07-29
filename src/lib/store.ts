@@ -1527,44 +1527,105 @@ export const useStore = create<AppState>((set, get) => ({
   setFlotaFilter: (filter) => set({ flotaFilter: filter }),
   setExpandedMoto: (id) => set({ expandedMoto: id }),
 
-  reassignRider: (orderId, riderName, riderInitials) =>
+  reassignRider: (orderId, riderName, riderInitials) => {
+    // 1. Actualizar estado en memoria
     set((state) => ({
       orders: state.orders.map((o) =>
-        o.id === orderId ? { ...o, repartidor: riderName, repartidorInitials: riderInitials } : o
+        o.id === orderId ? { ...o, repartidor: riderName, repartidorInitials: riderInitials, estado: 'encamino' as OrderStatus } : o
       ),
-    })),
+    }));
+
+    // 2. Persistir en la base de datos vía API
+    fetch(`/api/ordenes/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repartidorId: riderName, estado: 'asignado' }),
+    }).catch((err) => console.error('[reassignRider API error]', err));
+  },
 
   addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
 
-  cancelOrder: (orderId) =>
+  cancelOrder: (orderId) => {
+    // 1. Actualizar estado en memoria
     set((state) => ({
       orders: state.orders.map((o) =>
         o.id === orderId ? { ...o, estado: 'incidencia' as OrderStatus } : o
       ),
-    })),
+    }));
 
-  addMoto: (moto) => set((state) => ({ motos: [...state.motos, moto] })),
+    // 2. Persistir en la base de datos vía API
+    fetch(`/api/ordenes/${orderId}`, {
+      method: 'DELETE',
+    }).catch((err) => console.error('[cancelOrder API error]', err));
+  },
 
-  updateMoto: (moto) =>
+  addMoto: (moto) => {
+    set((state) => ({ motos: [...state.motos, moto] }));
+    fetch('/api/ingeniero/motos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(moto),
+    }).catch((err) => console.error('[addMoto API error]', err));
+  },
+
+  updateMoto: (moto) => {
     set((state) => ({
       motos: state.motos.map((m) => (m.id === moto.id ? moto : m)),
-    })),
+    }));
+    fetch('/api/ingeniero/motos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(moto),
+    }).catch((err) => console.error('[updateMoto API error]', err));
+  },
 
-  addRider: (rider) => set((state) => ({ riders: [...state.riders, rider] })),
+  addRider: (rider) => {
+    set((state) => ({ riders: [...state.riders, rider] }));
+    fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: rider.nombre,
+        email: rider.email,
+        telefono: rider.telefono,
+        role: 'repartidor',
+      }),
+    }).catch((err) => console.error('[addRider API error]', err));
+  },
 
-  updateRider: (rider) =>
+  updateRider: (rider) => {
     set((state) => ({
       riders: state.riders.map((r) => (r.id === rider.id ? rider : r)),
-    })),
+    }));
+    fetch('/api/repartidor/perfil', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: rider.id,
+        nombre: rider.nombre,
+        telefono: rider.telefono,
+        motoId: rider.motoId,
+      }),
+    }).catch((err) => console.error('[updateRider API error]', err));
+  },
 
-  toggleRiderConnection: (riderId) =>
+  toggleRiderConnection: (riderId) => {
+    let newConectado = false;
     set((state) => ({
-      riders: state.riders.map((r) =>
-        r.id === riderId
-          ? { ...r, conectado: !r.conectado, status: !r.conectado ? 'available' as RiderStatus : 'offline' as RiderStatus }
-          : r
-      ),
-    })),
+      riders: state.riders.map((r) => {
+        if (r.id === riderId) {
+          newConectado = !r.conectado;
+          return { ...r, conectado: newConectado, status: newConectado ? ('available' as RiderStatus) : ('offline' as RiderStatus) };
+        }
+        return r;
+      }),
+    }));
+    fetch('/api/repartidor/conexion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conectado: newConectado }),
+    }).catch((err) => console.error('[toggleRiderConnection API error]', err));
+  },
 
   updateMotoPositions: () =>
     set((state) => ({
@@ -1588,11 +1649,18 @@ export const useStore = create<AppState>((set, get) => ({
     incidents: [incident, ...state.incidents],
   })),
 
-  resolveIncident: (id, resolucion) => set((state) => ({
-    incidents: state.incidents.map((inc) =>
-      inc.id === id ? { ...inc, estado: 'resuelta' as const, resolucion, tiempoResolucion: '15min' } : inc
-    ),
-  })),
+  resolveIncident: (id, resolucion) => {
+    set((state) => ({
+      incidents: state.incidents.map((inc) =>
+        inc.id === id ? { ...inc, estado: 'resuelta' as const, resolucion, tiempoResolucion: '15min' } : inc
+      ),
+    }));
+    fetch(`/api/ordenes/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado: 'encamino', incidenciaDesc: resolucion }),
+    }).catch((err) => console.error('[resolveIncident API error]', err));
+  },
 
   addActivityEvent: (event) => {
     _eventCounter++;
@@ -1764,6 +1832,11 @@ export const useStore = create<AppState>((set, get) => ({
       timestamp: new Date().toISOString(),
       leido: false,
     });
+    fetch(`/api/ordenes/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repartidorId: rider.id, estado: 'asignado' }),
+    }).catch((err) => console.error('[dispatchOrder API error]', err));
   },
 
   toggleSimulation: () => set((state) => ({ simulationRunning: !state.simulationRunning })),
@@ -1790,17 +1863,76 @@ export const useStore = create<AppState>((set, get) => ({
   removeToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 
   /* Marketing Actions */
-  addCampana: (campana) => set((state) => ({ campanas: [campana, ...state.campanas] })),
+  addCampana: (campana) => {
+    set((state) => ({ campanas: [campana, ...state.campanas] }));
+    fetch('/api/campanas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: campana.titulo,
+        tipo: campana.tipo,
+        segmento: campana.segmento,
+        contenido: JSON.stringify(campana.contenido),
+        estado: campana.estado,
+        creadoPor: 'admin',
+      }),
+    }).catch((err) => console.error('[addCampana API error]', err));
+  },
   updateCampana: (id, updates) => set((state) => ({
     campanas: state.campanas.map((c) => c.id === id ? { ...c, ...updates } : c),
   })),
   deleteCampana: (id) => set((state) => ({ campanas: state.campanas.filter((c) => c.id !== id) })),
-  addCodigo: (codigo) => set((state) => ({ codigos: [codigo, ...state.codigos] })),
+
+  addCodigo: (codigo) => {
+    set((state) => ({ codigos: [codigo, ...state.codigos] }));
+    fetch('/api/codigos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        codigo: codigo.codigo,
+        tipoDescuento: codigo.tipoDescuento,
+        valor: codigo.valor,
+        aplicableA: codigo.aplicableA,
+        montoMinimo: codigo.montoMinimo,
+        maxUsos: codigo.maxUsos,
+        segmento: codigo.segmento,
+        vigenciaInicio: codigo.vigenciaInicio || new Date().toISOString(),
+        vigenciaFin: codigo.vigenciaFin || new Date(Date.now() + 30 * 86400000).toISOString(),
+        estado: codigo.estado,
+        creadoPor: 'admin',
+      }),
+    }).catch((err) => console.error('[addCodigo API error]', err));
+  },
   updateCodigo: (id, updates) => set((state) => ({
     codigos: state.codigos.map((c) => c.id === id ? { ...c, ...updates } : c),
   })),
   deleteCodigo: (id) => set((state) => ({ codigos: state.codigos.filter((c) => c.id !== id) })),
-  addBanner: (banner) => set((state) => ({ banners: [...state.banners, banner] })),
+
+  addBanner: (banner) => {
+    set((state) => ({ banners: [...state.banners, banner] }));
+    fetch('/api/banners', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: banner.titulo,
+        subtitulo: banner.subtitulo,
+        tipo: banner.tipo,
+        colorFondo: banner.colorFondo,
+        gradiente: typeof banner.gradiente === 'object' ? JSON.stringify(banner.gradiente) : banner.gradiente,
+        colorTexto: banner.colorTexto,
+        imagenUrl: banner.imagenUrl,
+        botonTexto: banner.botonTexto,
+        botonAccion: banner.botonAccion,
+        botonLink: banner.botonLink,
+        icono: banner.icono,
+        segmento: banner.segmento,
+        mostrarEn: banner.mostrarEn,
+        posicion: banner.posicion,
+        estado: banner.estado,
+        creadoPor: 'admin',
+      }),
+    }).catch((err) => console.error('[addBanner API error]', err));
+  },
   updateBanner: (id, updates) => set((state) => ({
     banners: state.banners.map((b) => b.id === id ? { ...b, ...updates } : b),
   })),

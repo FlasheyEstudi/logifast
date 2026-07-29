@@ -192,8 +192,14 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
 
   /* ─── Client orders ─── */
   const clientOrders = useMemo(
-    () => orders.filter((o) => o.cliente === CLIENT_NAME || o.cliente === 'Maria Lopez' || o.cliente === 'María López'),
-    [orders]
+    () => orders.filter((o) =>
+      !userName ||
+      o.cliente?.toLowerCase() === userName.toLowerCase() ||
+      o.cliente === CLIENT_NAME ||
+      o.cliente === 'Maria Lopez' ||
+      o.cliente === 'María López'
+    ),
+    [orders, userName]
   );
 
   const activeOrder = useMemo(

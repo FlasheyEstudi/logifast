@@ -93,23 +93,25 @@ export async function GET(req: NextRequest) {
     }
 
     // estado === 'activa'
-    const orden = await db.ordenServicio.findFirst({
+    const ordenesDB = await db.ordenServicio.findMany({
       where: {
         repartidorId: profile.id,
         estado: { in: ['asignado', 'aceptado', 'recogido'] },
       },
       orderBy: { createdAt: 'desc' },
+      take: 3,
     });
 
-    if (!orden) {
-      return NextResponse.json({ orden: null });
+    if (!ordenesDB || ordenesDB.length === 0) {
+      return NextResponse.json({ orden: null, ordenes: [] });
     }
 
-    const ordenActiva = mapOrdenToActiva(orden);
+    const ordenesActivas = ordenesDB.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
     return NextResponse.json({
-      orden: ordenActiva,
-      estadoServicio: orden.estado,
-      kmRecorridos: orden.kmRecorridos,
+      orden: ordenesActivas[0] || null,
+      ordenes: ordenesActivas,
+      estadoServicio: ordenesDB[0].estado,
+      kmRecorridos: ordenesDB[0].kmRecorridos,
       conectado: profile.conectado,
     });
   } catch (error) {

@@ -97,65 +97,121 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     return () => clearTimeout(timer);
   }, [activeModule]);
 
-  // Sincronizar datos reales de la base de datos (Órdenes y Usuarios) al montar
+  // Sincronizar datos reales de la base de datos (Órdenes, Compras y Usuarios)
   useEffect(() => {
-    // 1. Órdenes
-    fetch('/api/ordenes')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && Array.isArray(data.ordenes) && data.ordenes.length > 0) {
-          const apiOrders = data.ordenes.map((o: any) => ({
-            id: o.id,
-            cliente: o.clienteNombre || o.cliente?.name || 'Cliente',
-            clienteTelefono: o.clienteTelefono || o.cliente?.telefono || '',
-            origen: o.origen,
-            destino: o.destino,
-            origenLat: o.origenLat || 0,
-            origenLng: o.origenLng || 0,
-            destinoLat: o.destinoLat || 0,
-            destinoLng: o.destinoLng || 0,
-            repartidor: o.repartidorId || null,
-            repartidorInitials: 'RP',
-            descripcion: o.paquete || 'Pedido',
-            monto: o.monto || 0,
-            estado: o.estado as any,
-            metodoPago: o.metodoPago as any,
-            estadoPago: 'pagado',
-            fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
-            hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            timeline: [
-              { step: 'Creada', hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), completado: true },
-            ],
-          }));
-          useStore.setState({ orders: apiOrders });
-        }
-      })
-      .catch(() => null);
+    const fetchAllData = async () => {
+      // 1. Órdenes y Compras
+      try {
+        const [resServicios, resCompras] = await Promise.all([
+          fetch('/api/ordenes'),
+          fetch('/api/ordenes-compra'),
+        ]);
 
-    // 2. Usuarios y Clientes
-    fetch('/api/admin/users')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && Array.isArray(data.users) && data.users.length > 0) {
-          const apiClients = data.users
-            .filter((u: any) => u.role === 'cliente')
-            .map((u: any) => ({
-              id: u.id,
-              nombre: u.name || u.email.split('@')[0],
-              email: u.email,
-              telefono: u.telefono || '+505 8888-0000',
-              direccion: 'Managua, Nicaragua',
-              totalEnvios: 1,
-              montoTotal: 150,
-              ultimoEnvio: new Date(u.createdAt || Date.now()).toISOString().split('T')[0],
-              color: u.color || '#FF5722',
+        const mergedOrders: any[] = [];
+
+        if (resServicios.ok) {
+          const data = await resServicios.json();
+          if (data && Array.isArray(data.ordenes)) {
+            const mappedServicios = data.ordenes.map((o: any) => ({
+              id: o.id,
+              cliente: o.clienteNombre || o.cliente?.name || 'Cliente',
+              clienteTelefono: o.clienteTelefono || o.cliente?.telefono || '',
+              origen: o.origen,
+              destino: o.destino,
+              origenLat: o.origenLat || 0,
+              origenLng: o.origenLng || 0,
+              destinoLat: o.destinoLat || 0,
+              destinoLng: o.destinoLng || 0,
+              repartidor: o.repartidorId || null,
+              repartidorInitials: 'RP',
+              descripcion: o.paquete || 'Envío de paquete',
+              monto: o.monto || 0,
+              estado: o.estado as any,
+              metodoPago: o.metodoPago as any,
+              estadoPago: 'pagado',
+              fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
+              hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              timeline: [
+                { step: 'Creada', hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), completado: true },
+              ],
             }));
-          if (apiClients.length > 0) {
-            useStore.setState({ clients: apiClients });
+            mergedOrders.push(...mappedServicios);
           }
         }
-      })
-      .catch(() => null);
+
+        if (resCompras.ok) {
+          const data = await resCompras.json();
+          if (data && Array.isArray(data.ordenes)) {
+            const mappedCompras = data.ordenes.map((o: any) => ({
+              id: o.id,
+              cliente: o.cliente?.name || 'Cliente Marketplace',
+              clienteTelefono: o.cliente?.telefono || '',
+              origen: o.tienda?.nombre || 'Tienda Marketplace',
+              destino: o.direccionEntrega || 'Managua',
+              origenLat: o.tienda?.lat || 12.1364,
+              origenLng: o.tienda?.lng || -86.2581,
+              destinoLat: o.lat || 12.14,
+              destinoLng: o.lng || -86.25,
+              repartidor: o.repartidorId || null,
+              repartidorInitials: 'RP',
+              descripcion: `Compra Tienda (${o.items?.length || 1} productos)`,
+              monto: o.total || 0,
+              estado: o.estado === 'recibido' ? 'pendiente' : o.estado === 'en_camino' ? 'encamino' : o.estado === 'entregado' ? 'entregado' : 'pendiente',
+              metodoPago: o.metodoPago as any,
+              estadoPago: 'pagado',
+              fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
+              hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              timeline: [
+                { step: 'Creada', hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), completado: true },
+              ],
+            }));
+            mergedOrders.push(...mappedCompras);
+          }
+        }
+
+        if (mergedOrders.length > 0) {
+          useStore.setState((state) => {
+            const dbIds = new Set(mergedOrders.map((o) => o.id));
+            const localOnly = state.orders.filter((o) => !dbIds.has(o.id));
+            return { orders: [...mergedOrders, ...localOnly] };
+          });
+        }
+      } catch (err) {
+        console.error('[DashboardShell syncOrders]', err);
+      }
+
+      // 2. Usuarios y Clientes
+      try {
+        const res = await fetch('/api/admin/users');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.users) && data.users.length > 0) {
+            const apiClients = data.users
+              .filter((u: any) => u.role === 'cliente')
+              .map((u: any) => ({
+                id: u.id,
+                nombre: u.name || u.email.split('@')[0],
+                email: u.email,
+                telefono: u.telefono || '+505 8888-0000',
+                direccion: 'Managua, Nicaragua',
+                totalEnvios: 1,
+                montoTotal: 150,
+                ultimoEnvio: new Date(u.createdAt || Date.now()).toISOString().split('T')[0],
+                color: u.color || '#FF5722',
+              }));
+            if (apiClients.length > 0) {
+              useStore.setState({ clients: apiClients });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[DashboardShell syncUsers]', err);
+      }
+    };
+
+    fetchAllData();
+    const interval = setInterval(fetchAllData, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   // Close avatar dropdown on outside click

@@ -429,6 +429,7 @@ interface RepartidorStoreState {
 
   // Orden activa
   ordenActiva: OrdenActiva | null;
+  ordenesActivas: OrdenActiva[]; // hasta 3 pedidos simultáneos
   ordenAsignadaPendiente: OrdenActiva | null; // orden esperando aceptación (timer 30s)
   tiempoAceptacion: number; // segundos restantes para aceptar
 
@@ -487,6 +488,9 @@ interface RepartidorStoreState {
   recogerPaquete: () => void;
   llegarEntrega: () => void;
   confirmarEntrega: () => void;
+  seleccionarOrdenActiva: (ordenId: string) => void;
+  optimizarRutaAutomatica: () => void;
+  reordenarRutaOptimizada: (ordenes: OrdenActiva[]) => void;
   reportarIncidencia: (tipo: TipoIncidencia, desc: string) => void;
   actualizarPosicion: (lat: number, lng: number) => void;
   simularMovimiento: () => void;
@@ -553,6 +557,7 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
   rechazosResetEn: Date.now() + 3600000, // 1 hora
 
   ordenActiva: null,
+  ordenesActivas: [],
   ordenAsignadaPendiente: null,
   tiempoAceptacion: 30,
 
@@ -619,6 +624,7 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       estado: 'DESCONECTADO',
       enServicio: false,
       ordenActiva: null,
+      ordenesActivas: [],
       ordenAsignadaPendiente: null,
     });
   },
@@ -654,6 +660,7 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
 
   recibirOrdenAsignada: (orden) => {
     if (get().pausado) return;
+    if ((get().ordenesActivas || []).length >= 3) return; // Máximo 3 pedidos simultáneos
     set({
       ordenAsignadaPendiente: orden,
       estado: 'ORDEN_ASIGNADA',
@@ -666,7 +673,13 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
   aceptarOrden: () => {
     const orden = get().ordenAsignadaPendiente;
     if (!orden) return;
+    const actuales = get().ordenesActivas || [];
+    if (actuales.length >= 3) return;
+
+    const nuevasActivas = [...actuales.filter((o) => o.id !== orden.id), orden];
+
     set({
+      ordenesActivas: nuevasActivas,
       ordenActiva: orden,
       ordenAsignadaPendiente: null,
       estado: 'EN_CAMINO_RECOGER',
@@ -676,8 +689,50 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       eta: calcularETA(orden.kmEstimados),
       moto: { ...get().moto, estado: 'EN_SERVICIO' },
     });
-    // Ascending C-E-G major arpeggio + short vibration
     dispararFeedback('orden_aceptada', 80);
+
+    fetch(`/api/repartidor/ordenes/${orden.id}/aceptar`, {
+      method: 'PATCH',
+    }).catch((err) => console.error('[aceptarOrden API error]', err));
+  },
+
+  seleccionarOrdenActiva: (ordenId) => {
+    const ordenes = get().ordenesActivas || [];
+    const encontrada = ordenes.find((o) => o.id === ordenId);
+    if (encontrada) {
+      set({ ordenActiva: encontrada });
+      dispararFeedback('orden_aceptada', 40);
+    }
+  },
+
+  optimizarRutaAutomatica: () => {
+    const { ordenesActivas, lat, lng } = get();
+    if (!ordenesActivas || ordenesActivas.length <= 1) return;
+
+    const calcDist = (oLat: number, oLng: number) => {
+      const dLat = (oLat - lat) * (Math.PI / 180);
+      const dLng = (oLng - lng) * (Math.PI / 180);
+      return Math.sqrt(dLat * dLat + dLng * dLng);
+    };
+
+    const optimizadas = [...ordenesActivas].sort((a, b) => {
+      const distA = calcDist(a.origenLat, a.origenLng);
+      const distB = calcDist(b.origenLat, b.origenLng);
+      return distA - distB;
+    });
+
+    set({
+      ordenesActivas: optimizadas,
+      ordenActiva: optimizadas[0],
+    });
+    dispararFeedback('orden_aceptada', 80);
+  },
+
+  reordenarRutaOptimizada: (ordenesOptimizadas) => {
+    set({
+      ordenesActivas: ordenesOptimizadas,
+      ordenActiva: ordenesOptimizadas[0] || null,
+    });
   },
 
   rechazarOrden: () => {
@@ -727,13 +782,17 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
   },
 
   recogerPaquete: () => {
+    const orden = get().ordenActiva;
     set({
       estado: 'RECOGIDO',
       kmRecorridos: 0,
-      ordenActiva: get().ordenActiva
-        ? { ...get().ordenActiva! }
-        : null,
+      ordenActiva: orden ? { ...orden } : null,
     });
+    if (orden) {
+      fetch(`/api/repartidor/ordenes/${orden.id}/recoger`, {
+        method: 'PATCH',
+      }).catch((err) => console.error('[recogerPaquete API error]', err));
+    }
   },
 
   llegarEntrega: () => {
@@ -760,10 +819,14 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       tiempoTotal: Math.round(get().tiempoTranscurrido / 60),
       estado: 'entregado',
     };
+    const restantes = (get().ordenesActivas || []).filter((o) => o.id !== orden.id);
+    const siguiente = restantes.length > 0 ? restantes[0] : null;
+
     set({
-      estado: 'EN_LINEA',
-      enServicio: false,
-      ordenActiva: null,
+      estado: restantes.length > 0 ? 'EN_CAMINO_RECOGER' : 'EN_LINEA',
+      enServicio: restantes.length > 0,
+      ordenesActivas: restantes,
+      ordenActiva: siguiente,
       serviciosHoy: [nuevoServicio, ...get().serviciosHoy],
       statsHoy: {
         entregas: get().statsHoy.entregas + 1,
@@ -775,13 +838,16 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
         ...get().perfil,
         saldo: nuevoSaldo
       },
-      moto: { ...get().moto, estado: 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + get().kmRecorridos },
+      moto: { ...get().moto, estado: restantes.length > 0 ? 'EN_SERVICIO' : 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + get().kmRecorridos },
       kmRecorridos: 0,
       tiempoTranscurrido: 0,
       eta: 0,
     });
-    // Completion fanfare (4 ascending notes) + short pulse pattern
     dispararFeedback('orden_entregada', [60, 40, 60, 40, 150]);
+
+    fetch(`/api/repartidor/ordenes/${orden.id}/entregar`, {
+      method: 'PATCH',
+    }).catch((err) => console.error('[confirmarEntrega API error]', err));
   },
 
   reportarIncidencia: (tipo, desc) => {
@@ -814,6 +880,7 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       estado: 'EN_LINEA',
       enServicio: false,
       ordenActiva: null,
+      ordenesActivas: [],
       incidenciaAbierta: false,
       serviciosHoy: nuevoServicio ? [nuevoServicio, ...get().serviciosHoy] : get().serviciosHoy,
       moto: { ...get().moto, estado: 'DISPONIBLE' },
@@ -825,16 +892,22 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
           id: `ntf-${Date.now()}`,
           tipo: 'incidencia',
           titulo: 'Incidencia reportada',
-          contenido: `${tipoLabel} — ${orden?.id || ''}`,
+          contenido: `Reporte enviado: ${tipoLabel}. Soporte revisará tu caso.`,
           leido: false,
-          ordenId: orden?.id,
           tiempo: 'ahora',
         },
         ...get().notificaciones,
       ],
     });
-    // Harsh error sound + long double-pulse vibration
-    dispararFeedback('error', [300, 100, 300]);
+    dispararFeedback('error', [200, 100, 200]);
+
+    if (orden) {
+      fetch(`/api/repartidor/ordenes/${orden.id}/incidencia`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, descripcion: desc }),
+      }).catch((err) => console.error('[reportarIncidencia API error]', err));
+    }
   },
 
   actualizarPosicion: (lat, lng) => {
@@ -870,6 +943,12 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       kmRecorridos: Math.round(nuevosKm * 100) / 100,
       eta: nuevaEta,
     });
+
+    fetch('/api/repartidor/posicion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat, lng, heading }),
+    }).catch((err) => console.error('[actualizarPosicion API error]', err));
   },
 
   simularMovimiento: () => {
@@ -1032,10 +1111,20 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       }
       if (ordenesRes.ok) {
         const data = await ordenesRes.json();
-        if (data?.orden) {
-          set({ ordenActiva: data.orden });
+        if (data?.ordenes && Array.isArray(data.ordenes) && data.ordenes.length > 0) {
+          set({
+            ordenesActivas: data.ordenes,
+            ordenActiva: data.ordenes[0],
+            enServicio: true,
+          });
+        } else if (data?.orden) {
+          set({
+            ordenesActivas: [data.orden],
+            ordenActiva: data.orden,
+            enServicio: true,
+          });
         } else {
-          set({ ordenActiva: null });
+          set({ ordenesActivas: [], ordenActiva: null });
         }
       }
       if (statsRes.ok) {

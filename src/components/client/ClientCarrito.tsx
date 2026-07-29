@@ -54,8 +54,32 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
   const descuento = cartDescuento || 0;
   const total = subtotal + delivery - descuento;
 
-  const handleAplicarCodigo = () => {
-    if (codigoPromo.trim()) {
+  const handleAplicarCodigo = async () => {
+    if (!codigoPromo.trim()) return;
+    try {
+      const res = await fetch('/api/codigos/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigo: codigoPromo.trim(),
+          montoSubtotal: subtotal,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setCartCodigoPromo(data.codigo);
+        setCartDescuento(data.descuentoCalculado);
+        reproducirSiActivo('exito', {
+          sonidoActivo: config.sonidoActivo,
+          volumenSonido: config.volumenSonido,
+          notificacionesSonido: config.notificacionesSonido,
+        });
+        sileo.success({ title: '¡Código Aplicado!', description: data.mensaje });
+        setMostrarCodigo(false);
+      } else {
+        sileo.error({ title: 'Código Inválido', description: data.error || 'No se pudo aplicar el código' });
+      }
+    } catch {
       const result = validateCodigoPromo(codigoPromo.trim());
       if (result.valid) {
         const discountAmount = result.tipo === 'porcentaje'
@@ -63,12 +87,9 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
           : result.descuento;
         setCartCodigoPromo(codigoPromo.trim().toUpperCase());
         setCartDescuento(discountAmount);
-        reproducirSiActivo('exito', {
-          sonidoActivo: config.sonidoActivo,
-          volumenSonido: config.volumenSonido,
-          notificacionesSonido: config.notificacionesSonido
-        });
         setMostrarCodigo(false);
+      } else {
+        sileo.error({ title: 'Código Inválido', description: 'El código promocional no es válido' });
       }
     }
   };

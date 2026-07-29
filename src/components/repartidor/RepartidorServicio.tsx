@@ -209,6 +209,9 @@ export default function RepartidorServicio() {
     estado,
     conectado,
     ordenActiva,
+    ordenesActivas = [],
+    seleccionarOrdenActiva,
+    optimizarRutaAutomatica,
     lat,
     lng,
     kmRecorridos,
@@ -452,6 +455,85 @@ export default function RepartidorServicio() {
           {estado === 'EN_PUNTO_RECOGIDA' && 'En punto de recogida'}
           {estado === 'RECOGIDO' && 'En camino a entrega'}
           {estado === 'EN_PUNTO_ENTREGA' && 'En punto de entrega'}
+        </div>
+      )}
+
+      {/* Multipedidos & Optimización de Ruta */}
+      {conectado && (ordenesActivas || []).length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 56,
+            left: 16,
+            right: 16,
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            padding: '8px 12px',
+            borderRadius: 16,
+            background: 'var(--lf-glass-bg)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid var(--lf-glass-border)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primario)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+              Pedidos ({ordenesActivas.length}/3):
+            </span>
+            {ordenesActivas.map((ord, idx) => {
+              const isSelected = ordenActiva?.id === ord.id;
+              return (
+                <button
+                  key={ord.id}
+                  onClick={() => seleccionarOrdenActiva(ord.id)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: isSelected ? 'var(--primario)' : 'rgba(255,255,255,0.15)',
+                    color: isSelected ? '#FFF' : 'var(--text)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  #{idx + 1} {ord.id}
+                </button>
+              );
+            })}
+          </div>
+
+          {ordenesActivas.length > 1 && (
+            <button
+              onClick={() => {
+                optimizarRutaAutomatica();
+                showSnackbar({ message: '⚡ Ruta optimizada: ordenada por menor distancia.' });
+              }}
+              style={{
+                padding: '5px 10px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'linear-gradient(135deg, #FF5722 0%, #FF9800 100%)',
+                color: '#FFF',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                boxShadow: '0 2px 6px rgba(255,87,34,0.3)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Zap size={12} />
+              Optimizar
+            </button>
+          )}
         </div>
       )}
 

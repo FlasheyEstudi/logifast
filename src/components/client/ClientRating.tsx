@@ -181,6 +181,18 @@ function RatingForm({ isDark, repartidorNombre, ratingOrderId, order, onClose }:
       `Calificación ${estrellas} estrellas`,
       estrellas === 5 ? 5 : 0
     );
+
+    // Persistir calificación en la base de datos
+    fetch('/api/repartidor/calificaciones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ordenId: ratingOrderId,
+        estrellas,
+        etiquetas: selectedTags,
+        comentario,
+      }),
+    }).catch((err) => console.error('[submitCalificacion API error]', err));
   }
 
   return (
