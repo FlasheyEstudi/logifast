@@ -343,28 +343,31 @@ export const useIngenieroStore = create<IngenieroState>()(
       cargarDatos: async () => {
         try {
           const [motosRes, mantenimientosRes, repuestosRes, alertasRes, statsRes] = await Promise.all([
-            fetch('/api/ingeniero/motos'),
-            fetch('/api/ingeniero/mantenimientos'),
-            fetch('/api/ingeniero/repuestos'),
-            fetch('/api/ingeniero/alertas'),
-            fetch('/api/ingeniero/stats')
+            fetch('/api/ingeniero/motos').catch(() => null),
+            fetch('/api/ingeniero/mantenimientos').catch(() => null),
+            fetch('/api/ingeniero/repuestos').catch(() => null),
+            fetch('/api/ingeniero/alertas').catch(() => null),
+            fetch('/api/ingeniero/stats').catch(() => null),
           ]);
 
-          const [motos, mantenimientos, repuestos, alertas, stats] = await Promise.all([
-            motosRes.json(),
-            mantenimientosRes.json(),
-            repuestosRes.json(),
-            alertasRes.json(),
-            statsRes.json()
-          ]);
+          const motosData = motosRes && motosRes.ok ? await motosRes.json().catch(() => []) : [];
+          const mantenimientosData = mantenimientosRes && mantenimientosRes.ok ? await mantenimientosRes.json().catch(() => []) : [];
+          const repuestosData = repuestosRes && repuestosRes.ok ? await repuestosRes.json().catch(() => []) : [];
+          const alertasData = alertasRes && alertasRes.ok ? await alertasRes.json().catch(() => []) : [];
+          const statsData = statsRes && statsRes.ok ? await statsRes.json().catch(() => null) : null;
 
-          set({
-            motos,
-            mantenimientos,
-            repuestos,
-            alertas,
-            stats
-          });
+          const safeMotos = Array.isArray(motosData) ? motosData : (Array.isArray(motosData?.motos) ? motosData.motos : []);
+          const safeMantenimientos = Array.isArray(mantenimientosData) ? mantenimientosData : (Array.isArray(mantenimientosData?.mantenimientos) ? mantenimientosData.mantenimientos : []);
+          const safeRepuestos = Array.isArray(repuestosData) ? repuestosData : (Array.isArray(repuestosData?.repuestos) ? repuestosData.repuestos : []);
+          const safeAlertas = Array.isArray(alertasData) ? alertasData : (Array.isArray(alertasData?.alertas) ? alertasData.alertas : []);
+
+          set((state) => ({
+            motos: safeMotos,
+            mantenimientos: safeMantenimientos,
+            repuestos: safeRepuestos,
+            alertas: safeAlertas,
+            stats: statsData && typeof statsData === 'object' ? { ...state.stats, ...statsData } : state.stats,
+          }));
         } catch (error) {
           console.error('Error al cargar datos de ingeniero:', error);
         }

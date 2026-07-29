@@ -164,8 +164,15 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
     console.error("DashboardErrorBoundary caught an error", error, errorInfo);
   }
 
-  handleRetry = () => {
+  handleResetHome = () => {
+    try {
+      localStorage.removeItem('lf-session-view');
+      localStorage.removeItem('lf-session-role');
+      localStorage.removeItem('lf-session-name');
+      window.location.hash = '';
+    } catch (e) {}
     this.setState({ hasError: false, error: null });
+    this.props.onGoHome();
   };
 
   render() {
@@ -178,10 +185,10 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
           padding: 24, textAlign: 'center', fontFamily: "'DM Sans', sans-serif"
         }}>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginBottom: 12 }}>
-            Algo salió mal al cargar el Dashboard
+            Algo salió mal al cargar el Módulo
           </h2>
           <p style={{ color: '#8E8EA0', maxWidth: 450, margin: '0 auto 24px', fontSize: 15, lineHeight: 1.5 }}>
-            Se produjo un error inesperado en la interfaz. Puedes reintentar cargar la vista o volver al inicio del portal.
+            Se produjo un fallo inesperado en la interfaz. Puedes reintentar cargar la vista o reiniciar la sesión para ingresar a otro rol.
           </p>
           <div style={{
             padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.08)',
@@ -203,7 +210,7 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
               Reintentar
             </button>
             <button
-              onClick={this.props.onGoHome}
+              onClick={this.handleResetHome}
               style={{
                 padding: '10px 24px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)',
                 background: 'transparent', color: '#FFFFFF',
@@ -211,7 +218,7 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
                 transition: 'all 0.2s',
               }}
             >
-              Volver al inicio
+              Cambiar Rol / Inicio
             </button>
           </div>
         </div>
@@ -709,24 +716,20 @@ export default function Home() {
   }
 
   if (currentView === 'dashboard') {
-    if (loginRole === 'cliente') {
-      return (
-        <ClientDashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
-      );
-    }
-    if (loginRole === 'repartidor') {
-      return (
-        <RepartidorApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
-      );
-    }
-    if (loginRole === 'ingeniero') {
-      return (
-        <IngenieroApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
-      );
-    }
     return (
       <DashboardErrorBoundary onGoHome={() => setCurrentView('landing')}>
-        <Dashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
+        {loginRole === 'cliente' && (
+          <ClientDashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
+        )}
+        {loginRole === 'repartidor' && (
+          <RepartidorApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
+        )}
+        {loginRole === 'ingeniero' && (
+          <IngenieroApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
+        )}
+        {loginRole !== 'cliente' && loginRole !== 'repartidor' && loginRole !== 'ingeniero' && (
+          <Dashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
+        )}
       </DashboardErrorBoundary>
     );
   }
