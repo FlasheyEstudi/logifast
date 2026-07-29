@@ -1,13 +1,13 @@
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-const PORT = 3003; // HARDCODED per project rules
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3003;
 
 const httpServer = createServer((req, res) => {
-  // Health check
-  if (req.url === '/health') {
+  // Health check & Root landing
+  if (req.url === '/' || req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, service: 'logifast-realtime', port: PORT, connections: io.engine.clientsCount }));
+    res.end(JSON.stringify({ ok: true, service: 'logifast-realtime', port: PORT, connections: io ? io.engine.clientsCount : 0 }));
     return;
   }
   res.writeHead(404);
