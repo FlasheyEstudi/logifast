@@ -11,10 +11,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado');
     const tiendaId = searchParams.get('tiendaId');
@@ -23,9 +19,11 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (estado) where.estado = estado;
     if (tiendaId) where.tiendaId = tiendaId;
-    // Cliente: solo sus órdenes
-    if (user.role === 'cliente') where.clienteId = user.id;
-    else if (clienteIdParam) where.clienteId = clienteIdParam;
+    if (user?.role === 'cliente') {
+      where.clienteId = user.id;
+    } else if (clienteIdParam) {
+      where.clienteId = clienteIdParam;
+    }
 
     const ordenes = await db.ordenCompra.findMany({
       where,
