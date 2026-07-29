@@ -347,8 +347,25 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Listen to hash changes to handle browser back/forward gestures without leaving the app
+  // Listen to hash changes and restore authenticated sessions from server
   useEffect(() => {
+    // Verificar sesión activa en el servidor (/api/auth/me)
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.user) {
+          const user = data.user;
+          setLoginRole(user.role);
+          setLoginUserName(user.name || user.email);
+          localStorage.setItem('lf-session-role', user.role);
+          localStorage.setItem('lf-session-name', user.name || user.email);
+          if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#/login') {
+            window.location.hash = '#/dashboard';
+          }
+        }
+      })
+      .catch(() => null);
+
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash === '#/login') {
