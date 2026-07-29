@@ -97,6 +97,41 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     return () => clearTimeout(timer);
   }, [activeModule]);
 
+  // Sincronizar datos reales de la base de datos (Órdenes) al montar
+  useEffect(() => {
+    fetch('/api/ordenes')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.ordenes) && data.ordenes.length > 0) {
+          const apiOrders = data.ordenes.map((o: any) => ({
+            id: o.id,
+            cliente: o.clienteNombre || o.cliente?.name || 'Cliente',
+            clienteTelefono: o.clienteTelefono || o.cliente?.telefono || '',
+            origen: o.origen,
+            destino: o.destino,
+            origenLat: o.origenLat || 0,
+            origenLng: o.origenLng || 0,
+            destinoLat: o.destinoLat || 0,
+            destinoLng: o.destinoLng || 0,
+            repartidor: o.repartidorId || null,
+            repartidorInitials: 'RP',
+            descripcion: o.paquete || 'Pedido',
+            monto: o.monto || 0,
+            estado: o.estado as any,
+            metodoPago: o.metodoPago as any,
+            estadoPago: 'pagado',
+            fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
+            hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timeline: [
+              { step: 'Creada', hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), completado: true },
+            ],
+          }));
+          useStore.setState({ orders: apiOrders });
+        }
+      })
+      .catch(() => null);
+  }, []);
+
   // Close avatar dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
