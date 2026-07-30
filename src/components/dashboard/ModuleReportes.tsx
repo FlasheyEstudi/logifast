@@ -156,10 +156,10 @@ export default function ModuleReportes() {
   }, [orders]);
 
   const COSTO_POR_KM = useMemo(() => {
-    return motos.map((m) => ({
-      moto: m.nombre,
-      costoTotal: m.kmAcumulados * 1.5,
-      km: Math.round(m.kmAcumulados),
+    return motos.map((m: any) => ({
+      moto: m.nombre || 'Moto',
+      costoTotal: (m.kmAcumulados || 0) * 1.5,
+      km: Math.round(m.kmAcumulados || 0),
       costoKm: 1.5,
       anomaly: m.estado === 'EN_MANTENIMIENTO' || m.estado === 'FUERA_SERVICIO',
     }));

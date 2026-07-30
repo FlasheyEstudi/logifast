@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import {
   DollarSign, TrendingUp, TrendingDown, BarChart3, Wallet,
-  ArrowUpRight, ArrowDownRight, Check,
+  ArrowUpRight, ArrowDownRight, Check, Percent,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { Client } from '@/lib/store';
@@ -174,7 +174,7 @@ export default function ModuleFinanzas() {
 
   const DAILY_FINANCIALS = useMemo(() => {
     const today = new Date();
-    const days = [];
+    const days: Array<{ dia: string; ingresos: number; gastos: number }> = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
@@ -550,7 +550,7 @@ export default function ModuleFinanzas() {
                 </div>
               )}
 
-              {kpi.breakdown && (
+              {(kpi as any).breakdown && (
                 <div
                   style={{
                     fontSize: 11,
@@ -559,7 +559,7 @@ export default function ModuleFinanzas() {
                     marginTop: 4,
                   }}
                 >
-                  {kpi.breakdown}
+                  {(kpi as any).breakdown}
                 </div>
               )}
             </div>
