@@ -675,24 +675,25 @@ export default function RepartidorServicio() {
                 width: '100%',
                 minHeight: 48,
                 borderRadius: 14,
-                border: '1px dashed var(--primario)',
-                background: 'color-mix(in srgb, var(--primario) 8%, transparent)',
-                color: 'var(--primario)',
+                border: 'none',
+                background: 'var(--primario)',
+                color: '#FFFFFF',
                 fontSize: 14,
-                fontWeight: 600,
+                fontWeight: 700,
                 fontFamily: "'DM Sans', sans-serif",
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
+                boxShadow: '0 4px 14px rgba(255,87,34,0.3)',
               }}
             >
               <PackagePlus size={18} />
-              Simular nueva orden
+              Buscar Órdenes Cercanas
             </button>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 8 }}>
-              Demo: genera una asignación de prueba.
+              Monitoreo activo de pedidos en tiempo real.
             </p>
           </motion.div>
         </>

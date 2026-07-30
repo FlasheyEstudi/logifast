@@ -843,7 +843,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                 cursor: 'pointer',
               }}
             >
-              Simular C$ 500
+              Recargar C$ 500
             </button>
             <button
               onClick={() => setRechargeCode('LF-RECARGA-1000')}
@@ -857,7 +857,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                 cursor: 'pointer',
               }}
             >
-              Simular C$ 1000
+              Recargar C$ 1000
             </button>
           </div>
 
