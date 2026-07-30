@@ -176,16 +176,16 @@ export const useIngenieroStore = create<IngenieroState>()(
       },
 
       stats: {
-        totalMotos: 12,
-        disponibles: 7,
-        enServicio: 3,
-        enMantenimiento: 1,
-        fueraServicio: 1,
-        mantenimientosCompletados: 47,
-        mantenimientosPendientes: 3,
-        costoMantenimientoMes: 18500,
-        alertasActivas: 5,
-        repuestosBajoStock: 4
+        totalMotos: 0,
+        disponibles: 0,
+        enServicio: 0,
+        enMantenimiento: 0,
+        fueraServicio: 0,
+        mantenimientosCompletados: 0,
+        mantenimientosPendientes: 0,
+        costoMantenimientoMes: 0,
+        alertasActivas: 0,
+        repuestosBajoStock: 0
       },
 
       motos: [],
@@ -201,7 +201,7 @@ export const useIngenieroStore = create<IngenieroState>()(
       busquedaRepuestos: '',
 
       alertas: [],
-      alertasNoLeidas: 3,
+      alertasNoLeidas: 0,
 
       tabActiva: 'dashboard',
       showCrearMantenimiento: false,
