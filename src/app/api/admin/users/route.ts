@@ -96,12 +96,13 @@ export async function POST(req: NextRequest) {
         data: {
           userId: user.id,
           nombre: user.name,
+          email: user.email,
           telefono: user.telefono,
           conectado: false,
           enServicio: false,
           contratoAceptado: true,
         },
-      }).catch(() => null);
+      }).catch((err) => console.error('[CREATE_REPARTIDOR_PROFILE_ERROR]', err));
     }
 
     return NextResponse.json({ ok: true, user });
@@ -137,6 +138,23 @@ export async function PATCH(req: NextRequest) {
       where: { id },
       data: dataToUpdate,
     });
+
+    if (role === 'repartidor') {
+      const existingProfile = await db.repartidorProfile.findUnique({ where: { userId: id } });
+      if (!existingProfile) {
+        await db.repartidorProfile.create({
+          data: {
+            userId: user.id,
+            nombre: user.name,
+            email: user.email,
+            telefono: user.telefono,
+            conectado: false,
+            enServicio: false,
+            contratoAceptado: true,
+          },
+        }).catch((err) => console.error('[PATCH_CREATE_REPARTIDOR_PROFILE_ERROR]', err));
+      }
+    }
 
     return NextResponse.json({ ok: true, user });
   } catch (error) {

@@ -29,9 +29,16 @@ export async function PATCH(
 
     // Si se reasigna a un repartidor
     if (repartidorId !== undefined) {
-      // Buscar el perfil del repartidor si se pasó userId o id
+      // Buscar el perfil del repartidor si se pasó userId, profile id o nombre
       const profile = await db.repartidorProfile.findFirst({
-        where: { OR: [{ id: repartidorId }, { userId: repartidorId }] },
+        where: {
+          OR: [
+            { id: repartidorId },
+            { userId: repartidorId },
+            { user: { name: { contains: repartidorId, mode: 'insensitive' } } },
+          ],
+        },
+        include: { user: true },
       });
       dataToUpdate.repartidorId = profile ? profile.id : repartidorId;
       if (estado === undefined) {

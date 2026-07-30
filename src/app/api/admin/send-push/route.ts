@@ -25,14 +25,15 @@ export async function POST(req: NextRequest) {
     let targets: string[] = [];
     if (userIds && Array.isArray(userIds)) {
       targets = userIds;
+    } else if (role === 'todos' || !role) {
+      const users = await db.user.findMany({ select: { id: true } });
+      targets = users.map((u) => u.id);
     } else if (role) {
       const users = await db.user.findMany({
         where: { role },
         select: { id: true },
       });
       targets = users.map((u) => u.id);
-    } else {
-      return fail('Especifica userIds o role');
     }
 
     if (targets.length === 0) {

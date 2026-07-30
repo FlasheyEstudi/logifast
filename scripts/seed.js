@@ -35,45 +35,21 @@ async function main() {
 
   // Limpiar tablas (orden importa por las FK)
   console.log('🧹 Cleaning existing data...');
-  await db.chatRepartidor.deleteMany();
-  await db.calificacionRepartidor.deleteMany();
-  await db.notificacionRepartidor.deleteMany();
-  await db.posicionRepartidor.deleteMany();
-  await db.ordenServicio.deleteMany();
-  await db.itemOrdenCompra.deleteMany();
-  await db.ordenCompra.deleteMany();
-  await db.resenaTienda.deleteMany();
-  await db.favoritoProducto.deleteMany();
-  await db.favoritoTienda.deleteMany();
-  await db.producto.deleteMany();
-  await db.tienda.deleteMany();
-  await db.repuestoUsado.deleteMany();
-  await db.mantenimiento.deleteMany();
-  await db.repuesto.deleteMany();
-  await db.alertaMantenimiento.deleteMany();
-  await db.moto.deleteMany();
-  await db.repartidorProfile.deleteMany();
-  await db.user.deleteMany();
-  await db.campana.deleteMany();
-  await db.codigoPromocional.deleteMany();
-  await db.usoCodigo.deleteMany();
-  await db.banner.deleteMany();
-  await db.feedItem.deleteMany();
-  await db.plantillaMensaje.deleteMany();
-  await db.mensajeDirecto.deleteMany();
-  await db.notificacionAutomatica.deleteMany();
-  await db.configuracionHorario.deleteMany();
-  await db.feriado.deleteMany();
-  await db.auditLog.deleteMany();
-  await db.featureFlag.deleteMany();
-  await db.mediaAsset.deleteMany();
-  await db.tiendaFollow.deleteMany();
-  await db.productoLike.deleteMany();
-  await db.comentario.deleteMany();
-  await db.direccionCliente.deleteMany();
-  await db.metodoPago.deleteMany();
-  await db.recargaSaldo.deleteMany();
-  await db.story.deleteMany();
+  try {
+    await db.$executeRawUnsafe(`
+      TRUNCATE TABLE 
+        "ChatRepartidor", "CalificacionRepartidor", "NotificacionRepartidor", "PosicionRepartidor",
+        "OrdenServicio", "ItemOrdenCompra", "OrdenCompra", "ResenaTienda", "FavoritoProducto",
+        "FavoritoTienda", "Producto", "Tienda", "RepuestoUsado", "Mantenimiento", "Repuesto",
+        "AlertaMantenimiento", "Moto", "RepartidorProfile", "User", "Campana", "CodigoPromocional",
+        "UsoCodigo", "Banner", "FeedItem", "PlantillaMensaje", "MensajeDirecto", "NotificacionAutomatica",
+        "ConfiguracionHorario", "Feriado", "AuditLog", "FeatureFlag", "MediaAsset", "TiendaFollow",
+        "ProductoLike", "Comentario", "DireccionCliente", "MetodoPago", "RecargaSaldo", "Story"
+      CASCADE;
+    `);
+  } catch (err) {
+    console.log('Truncate fallback to individual deletes:', err.message);
+  }
   await db.storyVista.deleteMany();
   await db.direccionBusqueda.deleteMany();
   await db.actividadUsuario.deleteMany();

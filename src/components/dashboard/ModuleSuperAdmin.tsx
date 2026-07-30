@@ -260,6 +260,7 @@ export default function ModuleSuperAdmin() {
     const apiRoleMap: Record<string, string> = {
       Repartidor: 'repartidor',
       Cliente: 'cliente',
+      Admin: 'admin',
       Administrador: 'admin',
       Ingeniero: 'ingeniero',
       'Super Admin': 'admin',

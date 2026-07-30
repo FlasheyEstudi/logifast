@@ -79,7 +79,7 @@ export default function ModuleDespacho() {
     const [y, mo, d] = fecha.split('-').map(Number);
     const [h, mi] = hora.split(':').map(Number);
     const orderDate = new Date(y, mo - 1, d, h, mi);
-    const now = new Date('2026-06-10T15:30:00');
+    const now = new Date();
     return Math.max(0, Math.floor((now.getTime() - orderDate.getTime()) / 60000));
   }, []);
 
