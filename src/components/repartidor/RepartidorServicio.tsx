@@ -711,7 +711,7 @@ export default function RepartidorServicio() {
             color={ESTADO_COLOR[estado]}
             icon={<Navigation size={16} />}
           />
-          <OrdenMiniCard orden={ordenActiva} showRecogida />
+          <OrdenMiniCard orden={ordenActiva} showRecogida onOpenChat={() => toggleChat(ordenActiva.id)} />
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <StatPill icon={<Clock size={14} />} label="ETA" value={`${eta} min`} />
             <StatPill
@@ -734,7 +734,7 @@ export default function RepartidorServicio() {
             color={ESTADO_COLOR[estado]}
             icon={<MapPin size={16} />}
           />
-          <OrdenMiniCard orden={ordenActiva} showRecogida />
+          <OrdenMiniCard orden={ordenActiva} showRecogida onOpenChat={() => toggleChat(ordenActiva.id)} />
           <div
             style={{
               padding: 12,
@@ -860,7 +860,7 @@ export default function RepartidorServicio() {
             color={ESTADO_COLOR[estado]}
             icon={<MapPin size={16} />}
           />
-          <OrdenMiniCard orden={ordenActiva} showEntrega />
+          <OrdenMiniCard orden={ordenActiva} showEntrega onOpenChat={() => toggleChat(ordenActiva.id)} />
           <div
             style={{
               padding: 12,
@@ -1014,17 +1014,24 @@ function OrdenMiniCard({
   orden,
   showRecogida,
   showEntrega,
+  onOpenChat,
 }: {
   orden: OrdenActiva;
   showRecogida?: boolean;
   showEntrega?: boolean;
+  onOpenChat?: () => void;
 }) {
+  const targetLat = showEntrega ? orden.destinoLat : orden.origenLat;
+  const targetLng = showEntrega ? orden.destinoLng : orden.origenLng;
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${targetLat || 12.1365},${targetLng || -86.2514}`;
+
   return (
     <div
       style={{
-        padding: 12,
-        borderRadius: 14,
+        padding: 14,
+        borderRadius: 18,
         background: 'var(--md-surface-variant)',
+        border: '1px solid var(--md-outline-variant)',
         marginBottom: 12,
       }}
     >
@@ -1033,42 +1040,126 @@ function OrdenMiniCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 8,
+          marginBottom: 10,
         }}
       >
-        <span
-          className="font-mono"
-          style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}
-        >
-          {orden.id}
-        </span>
+        <div>
+          <span
+            className="font-mono"
+            style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
+          >
+            {orden.id}
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
+            {orden.cliente}
+          </span>
+        </div>
         <span
           style={{
-            padding: '3px 10px',
+            padding: '4px 10px',
             borderRadius: 100,
             background: orden.tipo === 'compra' ? 'var(--md-primary-container)' : 'var(--md-secondary-container)',
             color: orden.tipo === 'compra' ? 'var(--md-on-primary-container)' : 'var(--md-on-secondary-container)',
             fontSize: 11,
-            fontWeight: 600,
+            fontWeight: 700,
             textTransform: 'capitalize',
           }}
         >
           {orden.tipo}
         </span>
       </div>
+
       {(showRecogida || (!showRecogida && !showEntrega)) && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--exito, #00C853)', marginTop: 6, flexShrink: 0 }} />
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-            {orden.origen}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--exito, #00C853)', marginTop: 4, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Recoger en</div>
+            <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, lineHeight: 1.3 }}>
+              {orden.origen}
+            </div>
           </div>
         </div>
       )}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primario)', marginTop: 6, flexShrink: 0 }} />
-        <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, lineHeight: 1.4 }}>
-          {orden.destino}
+
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primario)', marginTop: 4, flexShrink: 0 }} />
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Entregar a</div>
+          <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3 }}>
+            {orden.destino}
+          </div>
         </div>
+      </div>
+
+      {/* ─── 1-Tap Quick Action Buttons for Motorcycle Drivers ─── */}
+      <div style={{ display: 'flex', gap: 8, paddingTop: 10, borderTop: '1px solid var(--md-outline-variant)' }}>
+        {orden.clienteTelefono && (
+          <a
+            href={`tel:${orden.clienteTelefono}`}
+            style={{
+              flex: 1,
+              padding: '8px 10px',
+              borderRadius: 12,
+              background: 'rgba(22, 163, 74, 0.12)',
+              color: '#16A34A',
+              fontWeight: 700,
+              fontSize: 12,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            📞 Llamar
+          </a>
+        )}
+
+        {onOpenChat && (
+          <button
+            onClick={onOpenChat}
+            style={{
+              flex: 1,
+              padding: '8px 10px',
+              borderRadius: 12,
+              border: 'none',
+              background: 'rgba(41, 121, 255, 0.12)',
+              color: '#2979FF',
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            💬 Chat
+          </button>
+        )}
+
+        <a
+          href={googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            flex: 1.2,
+            padding: '8px 10px',
+            borderRadius: 12,
+            background: 'var(--primario)',
+            color: '#FFFFFF',
+            fontWeight: 700,
+            fontSize: 12,
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            boxShadow: '0 2px 8px rgba(255,87,34,0.3)',
+          }}
+        >
+          🗺️ GPS Navegar
+        </a>
       </div>
     </div>
   );
