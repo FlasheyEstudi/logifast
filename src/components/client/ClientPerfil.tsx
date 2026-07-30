@@ -308,12 +308,28 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [uploadingFoto, setUploadingFoto] = useState(false);
 
-  // Cargar foto, direcciones y métodos de pago existentes al montar
+  /* ─── Client Partner Store State ─── */
+  const [myStore, setMyStore] = useState<any | null>(null);
+  const [showStoreModal, setShowStoreModal] = useState(false);
+  const [storeNameInput, setStoreNameInput] = useState('');
+  const [storeDescInput, setStoreDescInput] = useState('');
+  const [storeCatInput, setStoreCatInput] = useState('tienda');
+  const [storeAddrInput, setStoreAddrInput] = useState('Managua, Nicaragua');
+  const [creatingStore, setCreatingStore] = useState(false);
+
+  // Cargar foto, direcciones, métodos de pago y tienda afiliada del cliente al montar
   useEffect(() => {
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => {
         if (data?.user?.fotoUrl) setFotoUrl(data.user.fotoUrl);
+      })
+      .catch(() => null);
+
+    fetch('/api/cliente/tienda')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.tienda) setMyStore(data.tienda);
       })
       .catch(() => null);
 
@@ -335,6 +351,39 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       .catch(() => null);
 
   }, []);
+
+  const handleCreateStore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!storeNameInput.trim()) {
+      notify.error('El nombre de la tienda es requerido');
+      return;
+    }
+    setCreatingStore(true);
+    try {
+      const res = await fetch('/api/cliente/tienda', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: storeNameInput,
+          descripcion: storeDescInput,
+          categoria: storeCatInput,
+          direccion: storeAddrInput,
+        }),
+      });
+      const data = await res.json();
+      setCreatingStore(false);
+      if (res.ok && data.ok) {
+        setMyStore(data.tienda);
+        setShowStoreModal(false);
+        notify.success('¡Tienda afiliada exitosamente!');
+      } else {
+        notify.error(data.error || 'Error al afiliar la tienda');
+      }
+    } catch {
+      setCreatingStore(false);
+      notify.error('Error de conexión');
+    }
+  };
 
   const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -742,6 +791,141 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════
+          0. MI NEGOCIO / AFILIAR TIENDA
+          ═══════════════════════════════════════════ */}
+      <div style={{ ...sectionCard, background: 'linear-gradient(135deg, rgba(0,102,255,0.06) 0%, rgba(255,102,0,0.06) 100%)', border: '1px solid rgba(0,102,255,0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: myStore ? 12 : 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'var(--primario)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <Building size={22} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                {myStore ? myStore.nombre : 'Afiliar mi Negocio en LOGIFAST'}
+              </h3>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                {myStore ? `${myStore.categoria.toUpperCase()} • ${myStore.direccion}` : 'Vende tus productos y recibe pedidos en tiempo real'}
+              </p>
+            </div>
+          </div>
+
+          {myStore ? (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(22,163,74,0.12)', color: '#16A34A' }}>
+              ACTIVA
+            </span>
+          ) : (
+            <button
+              onClick={() => setShowStoreModal(true)}
+              style={btnPrimary}
+            >
+              <Plus size={14} /> Afiliar Tienda
+            </button>
+          )}
+        </div>
+
+        {myStore && (
+          <div style={{ display: 'flex', gap: 16, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 13, color: 'var(--text-secondary)' }}>
+            <div><strong>Pedidos:</strong> {myStore.totalPedidos || 0}</div>
+            <div><strong>Calificación:</strong> ⭐ {myStore.calificacion || 5.0}</div>
+            <div><strong>Estado:</strong> {myStore.estado || 'activo'}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Store Onboarding Modal */}
+      <AnimatePresence>
+        {showStoreModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              style={{
+                width: '100%', maxWidth: 440, background: 'var(--surface)',
+                border: '1px solid var(--border)', borderRadius: 24, padding: 24,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Afiliar Nuevo Negocio / Tienda</h3>
+                <button onClick={() => setShowStoreModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              </div>
+
+              <form onSubmit={handleCreateStore} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Nombre de la Tienda / Negocio *</label>
+                  <input
+                    type="text"
+                    required
+                    value={storeNameInput}
+                    onChange={(e) => setStoreNameInput(e.target.value)}
+                    placeholder="Ej. Taquería El Paisa"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Categoría *</label>
+                  <select
+                    value={storeCatInput}
+                    onChange={(e) => setStoreCatInput(e.target.value)}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="comida">Comida rápida / Restaurante</option>
+                    <option value="tienda">Tienda / Abarrotes</option>
+                    <option value="farmacia">Farmacia / Salud</option>
+                    <option value="regalos">Regalos / Flores</option>
+                    <option value="supermercado">Supermercado</option>
+                    <option value="tecnologia">Tecnología</option>
+                    <option value="deportes">Deportes</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Descripción Corta</label>
+                  <input
+                    type="text"
+                    value={storeDescInput}
+                    onChange={(e) => setStoreDescInput(e.target.value)}
+                    placeholder="Ej. Los mejores tacos al pastor de Managua"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Dirección del Local *</label>
+                  <input
+                    type="text"
+                    required
+                    value={storeAddrInput}
+                    onChange={(e) => setStoreAddrInput(e.target.value)}
+                    placeholder="Ej. Col. Los Robles, de la Plaza 2c al sur"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 10 }}>
+                  <button type="button" style={btnGhost} onClick={() => setShowStoreModal(false)}>Cancelar</button>
+                  <button type="submit" disabled={creatingStore} style={btnPrimary}>
+                    {creatingStore ? 'Guardando...' : 'Afiliar mi Tienda'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ═══════════════════════════════════════════
           1. PUNTOS LOGIFAST

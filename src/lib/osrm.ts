@@ -41,6 +41,24 @@ export async function obtenerRuta(
   origen: PuntoRuta,
   destino: PuntoRuta
 ): Promise<ResultadoRuta> {
+  if (
+    !origen ||
+    !destino ||
+    (origen.lat === 0 && origen.lng === 0) ||
+    (destino.lat === 0 && destino.lng === 0) ||
+    (origen.lat === destino.lat && origen.lng === destino.lng)
+  ) {
+    return {
+      coordenadas: [
+        [origen?.lat || 12.1264, origen?.lng || -86.2652],
+        [destino?.lat || 12.1402, destino?.lng || -86.2954],
+      ],
+      distanciaKm: 0,
+      duracionMin: 0,
+      exito: false,
+    };
+  }
+
   // OSRM expects lng,lat order
   const url = `https://router.project-osrm.org/route/v1/driving/${origen.lng},${origen.lat};${destino.lng},${destino.lat}?overview=full&geometries=geojson`;
 

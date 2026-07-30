@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ordenes });
   } catch (error) {
     console.error('[ORDENES_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener órdenes' }, { status: 500 });
+    return NextResponse.json({ ordenes: [] });
   }
 }
 

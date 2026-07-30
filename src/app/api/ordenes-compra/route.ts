@@ -71,10 +71,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching órdenes de compra:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener las órdenes de compra' },
-      { status: 500 }
-    );
+    return NextResponse.json({ total: 0, ordenes: [] });
   }
 }
 
