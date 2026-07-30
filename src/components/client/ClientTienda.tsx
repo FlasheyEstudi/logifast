@@ -12,7 +12,6 @@ import {
   type Tienda,
   type Producto,
   CATEGORIAS,
-  MOCK_RESENAS,
 } from '@/lib/marketplace-store';
 
 /* ═══════════════════════════════════════════════

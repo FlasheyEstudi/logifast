@@ -837,7 +837,8 @@ export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTrack
   /* ── Client metrics ── */
   const totalEnvios = clientOrders.length;
   const totalGastado = clientOrders.reduce((sum, o) => sum + o.monto, 0);
-  const enviosEsteMes = clientOrders.filter((o) => o.fecha.startsWith('2026-06')).length;
+  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+  const enviosEsteMes = clientOrders.filter((o) => o.fecha.startsWith(currentMonthPrefix)).length;
 
   /* ── Filter pills ── */
   const filterPills = [

@@ -77,7 +77,7 @@ function formatDateShort(ts: string): string {
 
 function timeElapsed(ts: string): string {
   const then = new Date(ts).getTime();
-  const now = new Date('2026-06-10T16:00:00').getTime();
+  const now = Date.now();
   const diffMin = Math.max(0, Math.floor((now - then) / 60000));
   if (diffMin < 60) return `Hace ${diffMin} min`;
   const h = Math.floor(diffMin / 60);
@@ -206,9 +206,21 @@ function BuzonPanel() {
         receptorNombre: conv.participanteNombre,
         contenido: text,
         leido: false,
-        enviadoEn: new Date('2026-06-10T16:00:00').toISOString(),
+        enviadoEn: new Date().toISOString(),
       };
       addMensaje(activeConvId, msg);
+
+      fetch('/api/admin/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userIds: [conv.participanteId],
+          titulo: 'Mensaje de Soporte LogiFast',
+          contenido: text,
+          tipo: 'chat',
+        }),
+      }).catch((err) => console.error('[ModuleComunicaciones API push error]', err));
+
       addToast('Respuesta rápida enviada', 'success');
     },
     [activeConvId, conversaciones, addMensaje, addToast],

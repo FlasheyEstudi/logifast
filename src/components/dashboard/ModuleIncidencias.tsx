@@ -29,7 +29,7 @@ const GRAVEDAD_CONFIG: Record<Incident['gravedad'], { label: string; bg: string;
 
 function timeElapsed(timestamp: string): string {
   const then = new Date(timestamp).getTime();
-  const now = new Date('2026-06-10T16:00:00').getTime();
+  const now = Date.now();
   const diffMin = Math.max(0, Math.floor((now - then) / 60000));
   if (diffMin < 60) return `Hace ${diffMin} min`;
   const h = Math.floor(diffMin / 60);
@@ -139,15 +139,17 @@ export default function ModuleIncidencias() {
     if (filterTipo !== 'all') list = list.filter((i) => i.tipo === filterTipo);
     if (filterGravedad !== 'all') list = list.filter((i) => i.gravedad === filterGravedad);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const monthStr = todayStr.substring(0, 7);
     if (filterPeriod === 'hoy') {
-      list = list.filter((i) => i.timestamp.startsWith('2026-06-10'));
+      list = list.filter((i) => i.timestamp.startsWith(todayStr));
     } else if (filterPeriod === 'semana') {
       list = list.filter((i) => {
         const d = new Date(i.timestamp);
-        return d >= new Date('2026-06-04') && d <= new Date('2026-06-10T23:59:59');
+        return d >= new Date(Date.now() - 7 * 86400000);
       });
     } else if (filterPeriod === 'mes') {
-      list = list.filter((i) => i.timestamp.startsWith('2026-06'));
+      list = list.filter((i) => i.timestamp.startsWith(monthStr));
     }
 
     list.sort((a, b) => {
@@ -176,7 +178,7 @@ export default function ModuleIncidencias() {
   }, [incidents, filterTipo, filterGravedad, filterPeriod, sortCol, sortDir]);
 
   /* ─── Handlers ─── */
-  const handleResolve = (id: string) => {
+  const handleResolve = async (id: string) => {
     if (!resolutionText.trim()) return;
     const inc = incidents.find((i) => i.id === id);
     resolveIncident(id, resolutionText.trim());
@@ -187,12 +189,25 @@ export default function ModuleIncidencias() {
       timestamp: new Date().toISOString(),
       leido: false,
     });
+
+    if (inc?.orderId) {
+      try {
+        await fetch(`/api/ordenes/${inc.orderId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estado: 'resuelto', incidenciaDesc: resolutionText.trim() }),
+        });
+      } catch (e) {
+        console.warn('[ModuleIncidencias resolve API error]:', e);
+      }
+    }
+
     setResolutionText('');
     setResolvingId(null);
     showToast(`✓ Incidencia ${id} resuelta`);
   };
 
-  const handleReassign = (inc: Incident) => {
+  const handleReassign = async (inc: Incident) => {
     const availableRiders = riders.filter((r) => r.conectado && r.status === 'available');
     if (availableRiders.length === 0) {
       showToast('No hay repartidores disponibles', 'info');
@@ -207,6 +222,17 @@ export default function ModuleIncidencias() {
       timestamp: new Date().toISOString(),
       leido: false,
     });
+
+    try {
+      await fetch(`/api/ordenes/${inc.orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repartidorId: newRider.id, estado: 'asignado' }),
+      });
+    } catch (e) {
+      console.warn('[ModuleIncidencias reassign API error]:', e);
+    }
+
     showToast(`✓ ${inc.orderId} reasignada a ${newRider.nombre}`);
   };
 

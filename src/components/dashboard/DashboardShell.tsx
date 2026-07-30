@@ -180,26 +180,61 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
         if (res.ok) {
           const data = await res.json();
           if (data && Array.isArray(data.users) && data.users.length > 0) {
+            const currentOrders = useStore.getState().orders;
             const apiClients = data.users
               .filter((u: any) => u.role === 'cliente')
-              .map((u: any) => ({
-                id: u.id,
-                nombre: u.name || u.email.split('@')[0],
-                email: u.email,
-                telefono: u.telefono || '+505 8888-0000',
-                direccion: 'Managua, Nicaragua',
-                totalEnvios: 1,
-                montoTotal: 150,
-                ultimoEnvio: new Date(u.createdAt || Date.now()).toISOString().split('T')[0],
-                color: u.color || '#FF5722',
-              }));
-            if (apiClients.length > 0) {
-              useStore.setState({ clients: apiClients });
-            }
+              .map((u: any) => {
+                const clientOrders = currentOrders.filter((o) => o.cliente === u.name || o.clienteTelefono === u.telefono);
+                const totalEnvios = clientOrders.length;
+                const montoTotal = clientOrders.reduce((acc, o) => acc + (o.monto || 0), 0);
+                return {
+                  id: u.id,
+                  nombre: u.name || u.email.split('@')[0],
+                  email: u.email,
+                  telefono: u.telefono || '',
+                  direccion: 'Managua, Nicaragua',
+                  totalEnvios,
+                  montoTotal,
+                  ultimoEnvio: clientOrders[0]?.fecha || new Date(u.createdAt || Date.now()).toISOString().split('T')[0],
+                  color: u.color || '#FF5722',
+                };
+              });
+            useStore.setState({ clients: apiClients });
           }
         }
       } catch (err) {
         console.error('[DashboardShell syncUsers]', err);
+      }
+
+      // 3. Repartidores desde API
+      try {
+        const resRep = await fetch('/api/admin/repartidores');
+        if (resRep.ok) {
+          const dataRep = await resRep.json();
+          if (dataRep?.profiles && Array.isArray(dataRep.profiles)) {
+            const mappedRiders = dataRep.profiles.map((p: any) => ({
+              id: p.id,
+              nombre: p.nombre || p.user?.name || 'Repartidor',
+              email: p.email || p.user?.email || '',
+              telefono: p.telefono || p.user?.telefono || '',
+              initials: p.user?.initials || p.nombre?.substring(0, 2).toUpperCase() || 'RP',
+              color: p.user?.color || '#FF5722',
+              status: p.enServicio ? 'in-service' : p.conectado ? 'available' : 'available',
+              motoId: p.motoId || 'Sin asignación',
+              entregasHoy: p.totalEntregas || 0,
+              kmHoy: Math.round(p.totalKm || 0),
+              entregasTotal: p.totalEntregas || 0,
+              kmTotal: Math.round(p.totalKm || 0),
+              calificacion: p.calificacion || 5.0,
+              conectado: p.conectado || false,
+            }));
+            if (mappedRiders.length > 0) {
+              useStore.setState({ riders: mappedRiders });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[DashboardShell syncRepartidores]', err);
       }
     };
 

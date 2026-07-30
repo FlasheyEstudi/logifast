@@ -82,9 +82,9 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, Record<PermissionKey, boolean>> =
     'Puede ver reportes': true,
     'Puede gestionar flota': true,
     'Puede enviar campañas': true,
-    'Puede gestionar usuarios': false,
-    'Puede editar configuración': false,
-    'Puede acceder al panel super admin': false,
+    'Puede gestionar usuarios': true,
+    'Puede editar configuración': true,
+    'Puede acceder al panel super admin': true,
   },
   Ingeniero: {
     'Puede crear órdenes': true,

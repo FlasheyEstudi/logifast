@@ -113,30 +113,12 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-/* ─── Mock Chart Data ─── */
+/* ─── Production Chart Data ─── */
 
-const ACQUISITION_DATA = [
-  { semana: 'S1', nuevos: 5 }, { semana: 'S2', nuevos: 8 }, { semana: 'S3', nuevos: 6 },
-  { semana: 'S4', nuevos: 12 }, { semana: 'S5', nuevos: 9 }, { semana: 'S6', nuevos: 14 },
-  { semana: 'S7', nuevos: 11 }, { semana: 'S8', nuevos: 16 }, { semana: 'S9', nuevos: 13 },
-  { semana: 'S10', nuevos: 18 }, { semana: 'S11', nuevos: 15 }, { semana: 'S12', nuevos: 21 },
-];
-
-const RETENTION_DATA = [
-  { mes: 'Ene', retencion: 62 }, { mes: 'Feb', retencion: 65 }, { mes: 'Mar', retencion: 64 },
-  { mes: 'Abr', retencion: 68 }, { mes: 'May', retencion: 70 }, { mes: 'Jun', retencion: 68 },
-];
-
-const FREQUENCY_DATA = [
-  { bracket: '1 envío', clientes: 35 }, { bracket: '2-3 envíos', clientes: 28 },
-  { bracket: '4-5 envíos', clientes: 18 }, { bracket: '6-10 envíos', clientes: 12 },
-  { bracket: '10+ envíos', clientes: 7 },
-];
-
-const REVENUE_SEGMENT_DATA = [
-  { name: 'Nuevos', value: 12500 }, { name: 'Frecuentes', value: 34000 },
-  { name: 'VIP', value: 21000 }, { name: 'Inactivos', value: 4500 },
-];
+const ACQUISITION_DATA: { semana: string; nuevos: number }[] = [];
+const RETENTION_DATA: { mes: string; retencion: number }[] = [];
+const FREQUENCY_DATA: { bracket: string; clientes: number }[] = [];
+const REVENUE_SEGMENT_DATA: { name: string; value: number }[] = [];
 
 const PIE_COLORS = ['#2979FF', '#FF5722', '#00C853', '#FFB300'];
 
@@ -188,7 +170,7 @@ function SubCampanas() {
     setModalOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!titulo.trim() || !contCuerpo.trim()) {
       addToast('Completa título y cuerpo', 'error');
       return;
@@ -198,14 +180,32 @@ function SubCampanas() {
       updateCampana(editing.id, { titulo, tipo, segmento, contenido, programadaPara: programadaPara || undefined });
       addToast('Campaña actualizada', 'success');
     } else {
-      addCampana({
+      const newCampana = {
         id: genId(), titulo, tipo, segmento, contenido,
-        estado: programadaPara ? 'programada' : 'borrador',
+        estado: (programadaPara ? 'programada' : 'borrador') as Campana['estado'],
         programadaPara: programadaPara || undefined,
         destinatarios: 0, abiertos: 0, clicks: 0,
         creadoPor: 'admin', createdAt: new Date().toISOString(),
-      });
+      };
+      addCampana(newCampana);
       addToast('Campaña creada', 'success');
+      try {
+        await fetch('/api/campanas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titulo,
+            tipo,
+            segmento,
+            contenido: contCuerpo,
+            estado: programadaPara ? 'programada' : 'borrador',
+            programadaPara: programadaPara || null,
+            creadoPor: 'admin',
+          }),
+        });
+      } catch (e) {
+        console.warn('[ModuleMarketing campanas API error]:', e);
+      }
     }
     setModalOpen(false);
   };
@@ -1308,7 +1308,7 @@ function SubAnalitica() {
       d.setDate(d.getDate() - i);
       days.push({
         dia: `${d.getDate()}/${d.getMonth() + 1}`,
-        usos: Math.floor(Math.random() * 8) + 1,
+        usos: 0,
       });
     }
     return days;

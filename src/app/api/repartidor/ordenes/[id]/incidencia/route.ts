@@ -67,7 +67,7 @@ export async function PATCH(
     // Si la incidencia es falla mecánica o accidente, generar reporte automático al módulo de Ingeniero / Mantenimiento
     if (tipoRaw === 'mecanica' || tipoRaw === 'accidente') {
       try {
-        let moto = null;
+        let moto: any = null;
         if (profile.motoId) {
           moto = await db.moto.findUnique({ where: { id: profile.motoId } });
         }

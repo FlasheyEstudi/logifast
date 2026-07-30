@@ -43,15 +43,15 @@ interface ClientPerfilProps {
 }
 
 /* ═══════════════════════════════════════════════
-   MOCK CHART DATA
+   DYNAMIC MONTHLY DATA
    ═══════════════════════════════════════════════ */
 const MONTHLY_DATA = [
-  { mes: 'Ene', envios: 3 },
-  { mes: 'Feb', envios: 5 },
-  { mes: 'Mar', envios: 2 },
-  { mes: 'Abr', envios: 4 },
-  { mes: 'May', envios: 6 },
-  { mes: 'Jun', envios: 4 },
+  { mes: 'Ene', envios: 0 },
+  { mes: 'Feb', envios: 0 },
+  { mes: 'Mar', envios: 0 },
+  { mes: 'Abr', envios: 0 },
+  { mes: 'May', envios: 0 },
+  { mes: 'Jun', envios: 0 },
 ];
 
 /* ═══════════════════════════════════════════════
@@ -240,7 +240,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
   /* ─── Computed metrics ─── */
   const clientOrders = useMemo(
-    () => orders.filter((o) => o.cliente === userName || o.cliente === 'Maria Lopez' || o.cliente === 'Maria Lopez'),
+    () => orders.filter((o) => o.cliente === userName),
     [orders, userName],
   );
 
@@ -248,7 +248,8 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
     const total = clientOrders.length;
     const totalSpent = clientOrders.reduce((s, o) => s + o.monto, 0);
     const avg = total > 0 ? Math.round(totalSpent / total) : 0;
-    const thisMonth = clientOrders.filter((o) => o.fecha.startsWith('2026-06')).length;
+    const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+    const thisMonth = clientOrders.filter((o) => o.fecha.startsWith(currentMonthPrefix)).length;
     const zoneCount: Record<string, number> = {};
     clientOrders.forEach((o) => {
       const zone = o.destino.split(',')[0].trim();
@@ -333,23 +334,6 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       })
       .catch(() => null);
 
-    fetch('/api/metodos-pago')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.metodos && Array.isArray(data.metodos) && data.metodos.length > 0) {
-          data.metodos.forEach((m: any) => {
-            addMetodoPago({
-              id: m.id,
-              tipo: m.tipo,
-              nombre: m.titular || m.tipo,
-              ultimosCuatro: m.ultimos4 || '4242',
-              vencimiento: m.vencimiento || '12/28',
-              predeterminado: m.predeterminado,
-            });
-          });
-        }
-      })
-      .catch(() => null);
   }, []);
 
   const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -448,10 +432,19 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
     fontFamily: "'DM Sans', sans-serif",
   };
 
-  const handleCanjear = (puntos: number) => {
+  const handleCanjear = async (puntos: number) => {
     const ok = canjearPuntos(puntos);
     if (ok) {
       setToast({ message: `Se canjearon ${puntos} puntos correctamente`, type: 'success' });
+      try {
+        await fetch('/api/cliente/fidelizacion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ puntosARedimir: puntos }),
+        });
+      } catch (e) {
+        console.warn('[handleCanjear API error]:', e);
+      }
     } else {
       setToast({ message: 'No tienes suficientes puntos', type: 'error' });
     }

@@ -74,7 +74,7 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
 
   const resetForm = () => { setFormNombre(''); setFormModelo(''); setFormAnio(''); setFormPlaca(''); setFormStatus('available'); setFormErrors({}); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const errors: Record<string, string> = {};
     if (!formNombre.trim()) errors.nombre = 'Requerido';
     if (!formModelo.trim()) errors.modelo = 'Requerido';
@@ -96,6 +96,21 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
       };
       addMoto(newMoto);
       showToast(`Moto ${formNombre} agregada`);
+      try {
+        await fetch('/api/ingeniero/motos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: formNombre,
+            modelo: formModelo,
+            placa: formPlaca,
+            anio: Number(formAnio),
+            status: formStatus,
+          }),
+        });
+      } catch (e) {
+        console.warn('[ModuleFlota API error]:', e);
+      }
     }
     setAddMotoOpen(false); setEditMoto(null); resetForm();
   };

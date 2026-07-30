@@ -50,7 +50,7 @@ const FILTER_OPTIONS: { key: FilterType; label: string }[] = [
 /* ─── Relative time formatter ─── */
 
 function formatRelativeTime(ts: string): string {
-  const now = new Date('2026-06-10T15:30:00');
+  const now = new Date();
   const d = new Date(ts);
   const diffMs = now.getTime() - d.getTime();
   const diffMin = Math.floor(diffMs / 60000);
@@ -70,7 +70,7 @@ function formatRelativeTime(ts: string): string {
 
 function getDayGroup(ts: string): string {
   const d = new Date(ts);
-  const ref = new Date('2026-06-10T15:30:00');
+  const ref = new Date();
   const dStr = d.toDateString();
   const refStr = ref.toDateString();
 
@@ -92,7 +92,7 @@ function getDayGroup(ts: string): string {
 /* ─── Timestamp display ─── */
 
 function formatTimestamp(ts: string): string {
-  const now = new Date('2026-06-10T15:30:00');
+  const now = new Date();
   const d = new Date(ts);
   const diffMs = now.getTime() - d.getTime();
   const diffMin = Math.floor(diffMs / 60000);

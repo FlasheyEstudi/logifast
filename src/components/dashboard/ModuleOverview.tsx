@@ -409,8 +409,9 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
   const [showSatellite, setShowSatellite] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const todayStr = new Date().toISOString().split('T')[0];
   const activeOrders = orders.filter((o) => o.estado === 'encamino' || o.estado === 'recogido');
-  const todayRevenue = orders.filter((o) => o.fecha === '2026-06-10').reduce((s, o) => s + o.monto, 0);
+  const todayRevenue = orders.filter((o) => o.fecha === todayStr).reduce((s, o) => s + o.monto, 0);
   const availableMotos = motos.filter((m) => m.status === 'available').length;
   const inServiceMotos = motos.filter((m) => m.status === 'in-service').length;
   const maintenanceMotos = motos.filter((m) => m.status === 'maintenance').length;

@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
 
     const nuevaCalificacion = await db.calificacionRepartidor.create({
       data: {
+        clienteId: orden.clienteId || 'c0',
         repartidorId: orden.repartidorId,
         ordenId: orden.id,
         estrellas: Number(estrellas),

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     if (pwErr) return fail(pwErr);
 
     // Intentar buscar usuario en la base de datos
-    let user = null;
+    let user: any = null;
     try {
       user = await db.user.findUnique({ where: { email } });
     } catch (err) {

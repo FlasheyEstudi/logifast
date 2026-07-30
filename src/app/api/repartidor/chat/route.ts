@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     const mensajes = await db.chatRepartidor.findMany({
       where: { ordenId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { enviadoEn: 'asc' },
     });
 
     return NextResponse.json({ mensajes });

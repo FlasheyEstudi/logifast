@@ -28,14 +28,6 @@ const QUICK_REPLIES = [
   'Gracias!',
 ];
 
-const MOCK_REPARTIDOR_REPLIES = [
-  'Entendido, ya voy en camino!',
-  'Llego en unos minutos',
-  'Perfecto, nos vemos ahí',
-  '¡Ya casi llego!',
-  'Gracias por la información',
-];
-
 const DEACTIVATION_WARNING_MS = 30 * 60 * 1000; // 30 minutes
 const DEACTIVATION_TOTAL_MS = 60 * 60 * 1000; // 1 hour after delivery
 
@@ -51,10 +43,6 @@ function getInitials(name: string): string {
 
 function formatTime(timestamp: string): string {
   return timestamp;
-}
-
-function pickRandomReply(): string {
-  return MOCK_REPARTIDOR_REPLIES[Math.floor(Math.random() * MOCK_REPARTIDOR_REPLIES.length)];
 }
 
 /** Trigger haptic feedback if available */

@@ -181,9 +181,9 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
   const setSolicitudEnvio = useStore((s) => s.setSolicitudEnvio);
   const fidelizacion = useStore((s) => s.fidelizacion);
 
-  /* ─── Marketplace store ─── */
   const ordenesCompra = useMarketplaceStore((s) => s.ordenesCompra);
   const productos = useMarketplaceStore((s) => s.productos);
+  const tiendas = useMarketplaceStore((s) => s.tiendas);
 
   /* ─── Loyalty calculations ─── */
   const nivelThresholds = { bronce: 100, plata: 300, oro: 600, platino: 9999 };

@@ -139,133 +139,28 @@ export const MOCK_SERVICIOS_DETALLE: Record<
 
 /* ─── Stats ─── */
 export const MOCK_STATS: Record<'hoy' | 'semana' | 'mes', StatsRepartidor> = {
-  hoy: { entregas: 4, km: 15.2, ganancias: 285, tiempoActivo: 245 },
-  semana: { entregas: 38, km: 142.5, ganancias: 2780, tiempoActivo: 1820 },
-  mes: { entregas: 156, km: 589.3, ganancias: 11250, tiempoActivo: 7340 },
+  hoy: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
+  semana: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
+  mes: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
 };
 
 export const MOCK_STATS_TRENDS: Record<
   'hoy' | 'semana' | 'mes',
   { entregas: number; km: number; ganancias: number; tiempoActivo: number }
 > = {
-  hoy: { entregas: 12, km: 8, ganancias: 15, tiempoActivo: 5 },
-  semana: { entregas: 6, km: 4, ganancias: 9, tiempoActivo: -2 },
-  mes: { entregas: 18, km: 14, ganancias: 22, tiempoActivo: 10 },
+  hoy: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
+  semana: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
+  mes: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
 };
 
 /* ─── Calificaciones ─── */
-export const MOCK_CALIFICACIONES: CalificacionRepartidor[] = [
-  {
-    id: 'cal-1',
-    ordenId: 'LF-2840',
-    cliente: 'Pedro Ruiz',
-    estrellas: 5,
-    etiquetas: ['Rápido', 'Amable'],
-    comentario: 'Muy rápido y amable',
-    fecha: 'hace 1 hora',
-  },
-  {
-    id: 'cal-2',
-    ordenId: 'LF-2835',
-    cliente: 'Ana Rivera',
-    estrellas: 4,
-    etiquetas: ['Buena ubicación'],
-    comentario: null,
-    fecha: 'hace 3 horas',
-  },
-  {
-    id: 'cal-3',
-    ordenId: 'LF-2830',
-    cliente: 'María López',
-    estrellas: 5,
-    etiquetas: ['Cuidadoso'],
-    comentario: 'Cuidadoso con el paquete',
-    fecha: 'ayer',
-  },
-  {
-    id: 'cal-4',
-    ordenId: 'LF-2820',
-    cliente: 'Laura Mendoza',
-    estrellas: 3,
-    etiquetas: ['Tardó mucho'],
-    comentario: 'Se tardó 10 min más',
-    fecha: 'ayer',
-  },
-  {
-    id: 'cal-5',
-    ordenId: 'LF-2815',
-    cliente: 'Carlos Altamirano',
-    estrellas: 5,
-    etiquetas: ['Excelente servicio'],
-    comentario: null,
-    fecha: 'hace 2 días',
-  },
-];
+export const MOCK_CALIFICACIONES: CalificacionRepartidor[] = [];
 
 /* ─── Notificaciones ─── */
-export const MOCK_NOTIFICACIONES: NotificacionRepartidor[] = [
-  {
-    id: 'ntf-1',
-    tipo: 'orden_asignada',
-    titulo: 'Nueva orden asignada',
-    contenido: 'LF-2847 — Envío de paquete',
-    leido: false,
-    ordenId: 'LF-2847',
-    tiempo: 'hace 20 min',
-  },
-  {
-    id: 'ntf-2',
-    tipo: 'mensaje',
-    titulo: 'Mensaje de María López',
-    contenido: 'Ok, estoy en la puerta',
-    leido: false,
-    ordenId: 'LF-2847',
-    tiempo: 'hace 15 min',
-  },
-  {
-    id: 'ntf-3',
-    tipo: 'entrega_calificada',
-    titulo: 'Tu entrega LF-2845 fue calificada',
-    contenido: '5 estrellas — Farmacia San Pablo',
-    leido: true,
-    ordenId: 'LF-2845',
-    tiempo: 'hace 1 hora',
-  },
-  {
-    id: 'ntf-4',
-    tipo: 'incidencia',
-    titulo: 'Incidencia registrada',
-    contenido: 'LF-2838 — Falla mecánica',
-    leido: true,
-    ordenId: 'LF-2838',
-    tiempo: 'ayer',
-  },
-];
+export const MOCK_NOTIFICACIONES: NotificacionRepartidor[] = [];
 
 /* ─── Chat ─── */
-export const MOCK_CHAT: ChatMensaje[] = [
-  {
-    id: 'msg-1',
-    ordenId: 'LF-2847',
-    emisor: 'cliente',
-    contenido: 'Hola, ¿ya vas en camino?',
-    enviadoEn: '14:25',
-  },
-  {
-    id: 'msg-2',
-    ordenId: 'LF-2847',
-    emisor: 'repartidor',
-    contenido: 'Sí, ya recogí el paquete. Llego en unos 10 min.',
-    enviadoEn: '14:26',
-  },
-  {
-    id: 'msg-3',
-    ordenId: 'LF-2847',
-    emisor: 'cliente',
-    contenido: 'Ok, estoy en la puerta',
-    enviadoEn: '14:30',
-  },
-];
+export const MOCK_CHAT: ChatMensaje[] = [];
 
 /* ═══════════════════════════════════════════════════════
    IN-MEMORY RUNTIME STATE

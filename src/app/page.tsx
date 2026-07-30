@@ -164,6 +164,10 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
     console.error("DashboardErrorBoundary caught an error", error, errorInfo);
   }
 
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
   handleResetHome = () => {
     try {
       localStorage.removeItem('lf-session-view');

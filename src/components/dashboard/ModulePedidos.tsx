@@ -82,11 +82,14 @@ export default function ModulePedidos() {
       if (filterStatus !== 'todos' && o.estado !== filterStatus) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        return o.id.toLowerCase().includes(q) || o.cliente.toLowerCase().includes(q) ||
+        const matches = o.id.toLowerCase().includes(q) || o.cliente.toLowerCase().includes(q) ||
           o.destino.toLowerCase().includes(q) || (o.repartidor && o.repartidor.toLowerCase().includes(q));
+        if (!matches) return false;
       }
-      if (dateFilter === 'hoy' && o.fecha !== '2026-06-10') return false;
-      if (dateFilter === 'semana' && o.fecha < '2026-06-07') return false;
+      const todayStr = new Date().toISOString().split('T')[0];
+      const sevenDaysAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+      if (dateFilter === 'hoy' && o.fecha !== todayStr) return false;
+      if (dateFilter === 'semana' && o.fecha < sevenDaysAgoStr) return false;
       return true;
     });
   }, [orders, filterStatus, searchQuery, dateFilter]);
@@ -96,7 +99,7 @@ export default function ModulePedidos() {
   const paginatedOrders = filteredOrders.slice((safePage - 1) * ORDERS_PER_PAGE, safePage * ORDERS_PER_PAGE);
 
   // Create order handler
-  const handleCreateOrder = () => {
+  const handleCreateOrder = async () => {
     const errors: Record<string, string> = {};
     if (!formCliente.trim()) errors.cliente = 'Requerido';
     if (!formOrigen.trim()) errors.origen = 'Requerido';
@@ -107,6 +110,7 @@ export default function ModulePedidos() {
 
     const newId = `LF-${2848 + orders.length}`;
     const rider = riders.find((r) => r.id === formRider);
+    const todayStr = new Date().toISOString().split('T')[0];
     const newOrder: Order = {
       id: newId, cliente: formCliente, clienteTelefono: '+505 8888-0000',
       origen: formOrigen, destino: formDestino,
@@ -115,7 +119,7 @@ export default function ModulePedidos() {
       repartidor: rider?.nombre || null, repartidorInitials: rider?.initials || '',
       descripcion: formDesc, monto: Number(formMonto), estado: 'pendiente',
       metodoPago: formPago, estadoPago: 'pendiente',
-      fecha: '2026-06-10', hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
+      fecha: todayStr, hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
       timeline: [
         { step: 'Orden creada', hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true },
         { step: 'En camino', hora: '—', completado: false },
@@ -123,7 +127,29 @@ export default function ModulePedidos() {
         { step: 'Entregada', hora: '—', completado: false },
       ],
     };
+
+    // Update store instantly for zero latency
     addOrder(newOrder);
+
+    // Persist to Supabase / Prisma DB via API
+    try {
+      await fetch('/api/ordenes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          origen: formOrigen,
+          destino: formDestino,
+          paquete: formDesc,
+          monto: Number(formMonto),
+          metodoPago: formPago,
+          clienteNombre: formCliente,
+          repartidorId: formRider || undefined,
+        }),
+      });
+    } catch (e) {
+      console.warn('[ModulePedidos createOrder API error]:', e);
+    }
+
     setCreateOrderOpen(false);
     addToast(`Orden ${newId} creada exitosamente`);
     setFormOrigen(''); setFormDestino(''); setFormDesc(''); setFormRider('');
@@ -144,12 +170,27 @@ export default function ModulePedidos() {
   };
 
   // Reassign handler
-  const handleReassign = () => {
+  const handleReassign = async () => {
     if (!reassignOrder || !selectedRider) return;
     const rider = riders.find((r) => r.id === selectedRider);
     if (rider) {
       reassignRider(reassignOrder.id, rider.nombre, rider.initials);
       addToast(`Orden ${reassignOrder.id} reasignada a ${rider.nombre}`);
+
+      // Persist to Supabase / Prisma DB via API
+      try {
+        await fetch(`/api/ordenes/${reassignOrder.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repartidorId: rider.id,
+            repartidorNombre: rider.nombre,
+            estado: 'asignado',
+          }),
+        });
+      } catch (e) {
+        console.warn('[ModulePedidos reassign API error]:', e);
+      }
     }
     setReassignOrder(null);
     setSelectedRider('');

@@ -233,6 +233,10 @@ export default function RepartidorServicio() {
   };
 
   const handleSimularOrden = () => {
+    if (!MOCK_ORDENES || MOCK_ORDENES.length === 0) {
+      showSnackbar({ message: 'No hay órdenes de prueba disponibles.' });
+      return;
+    }
     const orden = MOCK_ORDENES[mockOrdenIndex % MOCK_ORDENES.length];
     mockOrdenIndex += 1;
 

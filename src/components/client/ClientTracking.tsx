@@ -39,28 +39,21 @@ interface ClientTrackingProps {
 }
 
 /* ═══════════════════════════════════════════════
-   MOCK REPARTIDORES INFO MAP
+   REPARTIDORES INFO MAP
    ═══════════════════════════════════════════════ */
 
-const REPARTIDOR_MAP: Record<string, RepartidorInfo> = {
-  'CM': { id: 'r1', nombre: 'Carlos Mendoza', initials: 'CM', color: '#4CAF50', calificacion: 4.8, totalEntregas: 287, moto: 'Honda Wave 125', telefono: '+505 8888-1111', lat: 12.1120, lng: -86.2400 },
-  'AT': { id: 'r2', nombre: 'Ana Torres', initials: 'AT', color: '#E91E63', calificacion: 4.9, totalEntregas: 312, moto: 'Yamaha NMAX', telefono: '+505 8888-2222', lat: 12.1080, lng: -86.2480 },
-  'LR': { id: 'r3', nombre: 'Luis Ramos', initials: 'LR', color: '#2196F3', calificacion: 4.6, totalEntregas: 195, moto: 'Suzuki AX4', telefono: '+505 8888-3333', lat: 12.1200, lng: -86.2600 },
-  'JP': { id: 'r4', nombre: 'Jorge Perez', initials: 'JP', color: '#FF9800', calificacion: 4.7, totalEntregas: 256, moto: 'Honda PCX', telefono: '+505 8888-4444', lat: 12.0950, lng: -86.2300 },
-  'RD': { id: 'r5', nombre: 'Rosa Diaz', initials: 'RD', color: '#9C27B0', calificacion: 4.5, totalEntregas: 143, moto: 'TVS Ntorq', telefono: '+505 8888-5555', lat: 12.1100, lng: -86.2350 },
-  'MS': { id: 'r6', nombre: 'Miguel Sevilla', initials: 'MS', color: '#00BCD4', calificacion: 4.4, totalEntregas: 98, moto: 'Honda Click', telefono: '+505 8888-6666', lat: 12.1300, lng: -86.2700 },
-};
+const REPARTIDOR_MAP: Record<string, RepartidorInfo> = {};
 
 function getRepartidorInfo(initials: string): RepartidorInfo {
   return REPARTIDOR_MAP[initials] ?? {
     id: 'r0',
-    nombre: 'Repartidor',
+    nombre: 'Repartidor LogiFast',
     initials: initials || 'RP',
     color: '#FF5722',
-    calificacion: 4.5,
-    totalEntregas: 100,
-    moto: 'Moto estandar',
-    telefono: '+505 0000-0000',
+    calificacion: 5.0,
+    totalEntregas: 0,
+    moto: 'Moto LogiFast',
+    telefono: '+505 8888-0000',
     lat: 12.1140,
     lng: -86.2400,
   };
