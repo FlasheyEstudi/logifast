@@ -30,7 +30,7 @@ import {
   Flame,
 } from '@/components/icons';
 import { useStore, type Order, type Banner, type FeedItem } from '@/lib/store';
-import { useMarketplaceStore, CATEGORIAS, MOCK_TIENDAS, MOCK_PRODUCTOS } from '@/lib/marketplace-store';
+import { useMarketplaceStore, CATEGORIAS } from '@/lib/marketplace-store';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -927,7 +927,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
               scrollbarWidth: 'none',
             }}
           >
-            {MOCK_TIENDAS.filter(t => t.popular).map(tienda => (
+            {tiendas.filter(t => t.popular).map(tienda => (
               <motion.div
                 key={tienda.id}
                 whileTap={{ scale: 0.98 }}
@@ -1029,7 +1029,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {popularProducts.map(product => {
-                const tienda = MOCK_TIENDAS.find(t => t.id === product.tiendaId);
+                const tienda = tiendas.find(t => t.id === product.tiendaId);
                 return (
                   <motion.div
                     key={product.id}
@@ -1062,7 +1062,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
                         whileTap={{ scale: 0.9 }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          const tiendaData = MOCK_TIENDAS.find(t => t.id === product.tiendaId);
+                          const tiendaData = tiendas.find(t => t.id === product.tiendaId);
                           if (tiendaData) {
                             useMarketplaceStore.getState().addToCart(product, tiendaData);
                           }

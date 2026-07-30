@@ -588,16 +588,16 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
     tiempoActivo: 7340,
   },
 
-  serviciosHoy: MOCK_SERVICIOS_HOY,
+  serviciosHoy: [],
 
   perfil: MOCK_PERFIL,
   moto: MOCK_MOTO,
-  calificaciones: MOCK_CALIFICACIONES,
+  calificaciones: [],
 
-  notificaciones: MOCK_NOTIFICACIONES,
-  notificacionesNoLeidas: 2,
+  notificaciones: [],
+  notificacionesNoLeidas: 0,
 
-  mensajes: MOCK_CHAT,
+  mensajes: [],
   chatAbierto: false,
   chatOrdenId: null,
 

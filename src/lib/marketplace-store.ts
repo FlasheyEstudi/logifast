@@ -356,12 +356,12 @@ let _cartIdCounter = 100;
 
 export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   /* Data */
-  tiendas: MOCK_TIENDAS,
-  productos: MOCK_PRODUCTOS,
-  ordenesCompra: MOCK_ORDENES_COMPRA,
-  resenas: MOCK_RESENAS,
-  favoritosTiendas: [{ tiendaId: 't1' }, { tiendaId: 't2' }],
-  favoritosProductos: [{ productoId: 'p1' }, { productoId: 'p8' }],
+  tiendas: [],
+  productos: [],
+  ordenesCompra: [],
+  resenas: [],
+  favoritosTiendas: [],
+  favoritosProductos: [],
 
   /* Cart */
   cartItems: [],
