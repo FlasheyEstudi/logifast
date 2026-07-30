@@ -18,7 +18,7 @@ import {
   Zap,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
-import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
+import { obtenerRuta, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
 import { useBottomSheetGesture } from '@/hooks/useBottomSheetGesture';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
@@ -209,10 +209,14 @@ export default function RepartidorServicio() {
 
   /* Origen/destino positions for the map (only when we have an order) */
   const origenPos: [number, number] | undefined = ordenActiva
-    ? [ordenActiva.origenLat, ordenActiva.origenLng]
+    ? (ordenActiva.origenLat !== 0 && ordenActiva.origenLng !== 0
+        ? [ordenActiva.origenLat, ordenActiva.origenLng]
+        : geocodeAddress(ordenActiva.origen, [12.1264, -86.2652]))
     : undefined;
   const destinoPos: [number, number] | undefined = ordenActiva
-    ? [ordenActiva.destinoLat, ordenActiva.destinoLng]
+    ? (ordenActiva.destinoLat !== 0 && ordenActiva.destinoLng !== 0
+        ? [ordenActiva.destinoLat, ordenActiva.destinoLng]
+        : geocodeAddress(ordenActiva.destino, [12.1402, -86.2954]))
     : undefined;
 
   /* ─── Handlers ─── */
