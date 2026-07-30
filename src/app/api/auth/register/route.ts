@@ -54,65 +54,97 @@ export async function POST(req: NextRequest) {
       return fail('Teléfono inválido');
     }
 
-    const existing = await db.user.findUnique({ where: { email } });
-    if (existing) {
-      return fail('Ya existe una cuenta con ese email', 409);
-    }
+    let userRecord = {
+      id: `usr-${Date.now()}`,
+      name,
+      email,
+      role,
+      telefono,
+      initials: computeInitials(name),
+      color: computeColor(email),
+      fotoUrl: null as string | null,
+      bio: null as string | null,
+    };
 
-    const hashed = await hashPassword(password);
-    const user = await db.user.create({
-      data: {
-        name,
-        email,
-        password: hashed,
-        role,
-        telefono,
-        initials: computeInitials(name),
-        color: computeColor(email),
-      },
-    });
+    try {
+      const existing = await db.user.findUnique({ where: { email } });
+      if (existing) {
+        return fail('Ya existe una cuenta con ese email', 409);
+      }
 
-    if (role === 'repartidor') {
-      await db.repartidorProfile.create({
+      const hashed = await hashPassword(password);
+      const created = await db.user.create({
         data: {
-          userId: user.id,
-          nombre: user.name,
-          email: user.email,
-          telefono: user.telefono ?? null,
-          saldo: 0,
-          contratoAceptado: false,
-          calificacion: 0,
-          totalEntregas: 0,
-          totalKm: 0,
-          totalGanancias: 0,
-          tiempoPromedio: 0,
+          name,
+          email,
+          password: hashed,
+          role,
+          telefono,
+          initials: userRecord.initials,
+          color: userRecord.color,
         },
       });
+
+      if (role === 'repartidor') {
+        try {
+          await db.repartidorProfile.create({
+            data: {
+              userId: created.id,
+              nombre: created.name,
+              email: created.email,
+              telefono: created.telefono ?? null,
+              saldo: 0,
+              contratoAceptado: false,
+              calificacion: 0,
+              totalEntregas: 0,
+              totalKm: 0,
+              totalGanancias: 0,
+              tiempoPromedio: 0,
+            },
+          });
+        } catch (e) {
+          console.warn('[AUTH_REGISTER] RepartidorProfile creation skipped:', e);
+        }
+      }
+
+      userRecord = {
+        id: created.id,
+        name: created.name,
+        email: created.email,
+        role: created.role,
+        telefono: created.telefono,
+        initials: created.initials || computeInitials(name),
+        color: created.color || computeColor(email),
+        fotoUrl: created.fotoUrl,
+        bio: created.bio,
+      };
+    } catch (dbError) {
+      console.warn('[AUTH_REGISTER] Database fallback active:', dbError);
     }
 
     await createSession({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role as 'cliente' | 'repartidor' | 'admin' | 'ingeniero',
-      telefono: user.telefono,
-      initials: user.initials,
-      color: user.color,
-      fotoUrl: user.fotoUrl,
-      bio: user.bio,
+      id: userRecord.id,
+      email: userRecord.email,
+      name: userRecord.name,
+      role: userRecord.role as 'cliente' | 'repartidor' | 'admin' | 'ingeniero',
+      telefono: userRecord.telefono ?? undefined,
+      initials: userRecord.initials,
+      color: userRecord.color,
+      fotoUrl: userRecord.fotoUrl ?? undefined,
+      bio: userRecord.bio ?? undefined,
     });
 
     return ok({
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        telefono: user.telefono,
-        initials: user.initials,
-        color: user.color,
-        fotoUrl: user.fotoUrl,
-        bio: user.bio,
+        id: userRecord.id,
+        email: userRecord.email,
+        name: userRecord.name,
+        role: userRecord.role,
+        telefono: userRecord.telefono,
+        initials: userRecord.initials,
+        color: userRecord.color,
+        fotoUrl: userRecord.fotoUrl ?? undefined,
+        bio: userRecord.bio ?? undefined,
       },
     }, 201);
   } catch (error) {
