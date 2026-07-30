@@ -27,36 +27,36 @@ const ESTADO_SERVICIO_COLOR: Record<string, string> = {
   cancelado: '#9E9E9E',
 };
 
-function getBarData(periodo: Periodo) {
+function getBarData(periodo: Periodo, servicios: ServicioHistorial[] = []) {
   if (periodo === 'hoy') {
-    return [
-      { x: '8h', v: 1 },
-      { x: '9h', v: 1 },
-      { x: '10h', v: 0 },
-      { x: '11h', v: 1 },
-      { x: '12h', v: 0 },
-      { x: '13h', v: 1 },
-      { x: '14h', v: 0 },
-      { x: '15h', v: 0 },
-    ];
+    const hours = ['8h', '9h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h'];
+    const map: Record<string, number> = {};
+    hours.forEach((h) => (map[h] = 0));
+    servicios.forEach((s) => {
+      const hr = parseInt(s.hora?.split(':')[0] || '12', 10);
+      const key = `${hr}h`;
+      if (map[key] !== undefined) map[key] += 1;
+    });
+    return hours.map((x) => ({ x, v: map[x] }));
   }
   if (periodo === 'semana') {
-    return [
-      { x: 'L', v: 5 },
-      { x: 'M', v: 7 },
-      { x: 'X', v: 6 },
-      { x: 'J', v: 8 },
-      { x: 'V', v: 9 },
-      { x: 'S', v: 2 },
-      { x: 'D', v: 1 },
-    ];
+    const days = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    const map: Record<string, number> = {};
+    days.forEach((d) => (map[d] = 0));
+    servicios.forEach((s, idx) => {
+      const day = days[idx % 7];
+      map[day] += 1;
+    });
+    return days.map((x) => ({ x, v: map[x] }));
   }
-  return [
-    { x: 'S1', v: 32 },
-    { x: 'S2', v: 41 },
-    { x: 'S3', v: 38 },
-    { x: 'S4', v: 45 },
-  ];
+  const weeks = ['S1', 'S2', 'S3', 'S4'];
+  const map: Record<string, number> = {};
+  weeks.forEach((w) => (map[w] = 0));
+  servicios.forEach((s, idx) => {
+    const w = weeks[idx % 4];
+    map[w] += 1;
+  });
+  return weeks.map((x) => ({ x, v: map[x] }));
 }
 
 /* CountUp animation */
@@ -393,7 +393,7 @@ export default function RepartidorHistorial() {
 
   const stats = obtenerStats(periodo);
 
-  const barData = useMemo(() => getBarData(periodo), [periodo]);
+  const barData = useMemo(() => getBarData(periodo, serviciosHoy), [periodo, serviciosHoy]);
 
   const serviciosFiltrados = useMemo(() => {
     return serviciosHoy.filter((s) => {
