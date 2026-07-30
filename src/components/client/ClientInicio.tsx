@@ -48,7 +48,6 @@ interface ClientInicioProps {
    HELPERS
    ═══════════════════════════════════════════════ */
 
-const CLIENT_NAME = 'María López';
 
 function statusColor(estado: string) {
   switch (estado) {
@@ -193,11 +192,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
   /* ─── Client orders ─── */
   const clientOrders = useMemo(
     () => orders.filter((o) =>
-      !userName ||
-      o.cliente?.toLowerCase() === userName.toLowerCase() ||
-      o.cliente === CLIENT_NAME ||
-      o.cliente === 'Maria Lopez' ||
-      o.cliente === 'María López'
+      !userName || o.cliente?.toLowerCase().trim() === userName.toLowerCase().trim()
     ),
     [orders, userName]
   );

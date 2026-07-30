@@ -282,9 +282,20 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     (text: string) => {
       if (!chatOrderId || !isActive || chatDeactivated) return;
       hapticTap();
+      sendChatMessage(chatOrderId, text, 'cliente');
       realtime.chatMensaje(chatOrderId, 'cliente', text);
+
+      fetch('/api/repartidor/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ordenId: chatOrderId,
+          emisor: 'cliente',
+          contenido: text,
+        }),
+      }).catch((err) => console.error('[ClientChat API quick reply error]', err));
     },
-    [chatOrderId, isActive, chatDeactivated]
+    [chatOrderId, isActive, chatDeactivated, sendChatMessage]
   );
 
   /* ── Keyboard handler ─────────────────── */
