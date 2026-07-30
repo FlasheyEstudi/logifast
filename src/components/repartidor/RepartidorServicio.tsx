@@ -66,71 +66,7 @@ const ESTADO_COLOR: Record<string, string> = {
 /* ═══════════════════════════════════════════════
    MOCK ORDEN (for "Simular nueva orden" button)
    ═══════════════════════════════════════════════ */
-
-const MOCK_ORDENES: OrdenActiva[] = [
-  {
-    id: 'LF-2848',
-    tipo: 'envio',
-    cliente: 'María López',
-    clienteTelefono: '+505 8888-1234',
-    origen: 'Col. Los Robles, Managua',
-    destino: 'Barrio Monseñor Lezcano',
-    origenLat: 12.1289,
-    origenLng: -86.2451,
-    destinoLat: 12.1421,
-    destinoLng: -86.2287,
-    paquete: 'Documentos importantes',
-    tamano: 'Pequeño',
-    fragil: false,
-    metodoPago: 'efectivo',
-    monto: 120,
-    ganancia: 45,
-    kmEstimados: 3.2,
-    tiempoEstimado: 12,
-  },
-  {
-    id: 'LF-2849',
-    tipo: 'compra',
-    cliente: 'Laura Fernández',
-    clienteTelefono: '+505 8888-5678',
-    tiendaNombre: 'Pizza Express',
-    origen: 'Pizza Express, Rotonda Rubén Darío',
-    destino: 'Villa Fontana',
-    origenLat: 12.1189,
-    origenLng: -86.2551,
-    destinoLat: 12.1321,
-    destinoLng: -86.2087,
-    paquete: 'Pedido de comida',
-    tamano: 'Mediano',
-    fragil: false,
-    metodoPago: 'transferencia',
-    monto: 480,
-    ganancia: 55,
-    kmEstimados: 4.8,
-    tiempoEstimado: 18,
-  },
-  {
-    id: 'LF-2850',
-    tipo: 'envio',
-    cliente: 'Roberto Sáenz',
-    clienteTelefono: '+505 8888-9012',
-    origen: 'Bello Horizonte',
-    destino: 'Monseñor Lezcano',
-    origenLat: 12.1389,
-    origenLng: -86.2351,
-    destinoLat: 12.1421,
-    destinoLng: -86.2287,
-    paquete: 'Caja de libros',
-    tamano: 'Grande',
-    fragil: true,
-    metodoPago: 'efectivo',
-    monto: 200,
-    ganancia: 80,
-    kmEstimados: 5.4,
-    tiempoEstimado: 22,
-  },
-];
-
+const MOCK_ORDENES: OrdenActiva[] = [];
 let mockOrdenIndex = 0;
 
 /* ═══════════════════════════════════════════════

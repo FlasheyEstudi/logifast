@@ -58,115 +58,13 @@ export const MOCK_MOTO: MotoAsignada = {
 };
 
 /* ─── Orden activa ─── */
-export const MOCK_ORDEN_ACTIVA: OrdenActiva = {
-  id: 'LF-2847',
-  tipo: 'envio',
-  cliente: 'María López',
-  clienteTelefono: '+505 8888-1234',
-  origen: 'Col. Los Robles, Managua',
-  destino: 'Barrio Monseñor Lezcano',
-  origenLat: 12.1289,
-  origenLng: -86.2451,
-  destinoLat: 12.1421,
-  destinoLng: -86.2287,
-  paquete: 'Documentos importantes',
-  tamano: 'Pequeño',
-  fragil: false,
-  metodoPago: 'efectivo',
-  monto: 120,
-  ganancia: 45,
-  kmEstimados: 3.2,
-  tiempoEstimado: 12,
-};
+export const MOCK_ORDEN_ACTIVA: OrdenActiva | null = null;
 
 /* ─── Productos checklist (para órdenes de compra / pickup) ─── */
-export const MOCK_PRODUCTOS_CHECKLIST: Record<string, ProductoChecklist[]> = {
-  'LF-C002': [
-    { id: 'p-c002-1', nombre: 'Acetaminofén x12', cantidad: 1, verificado: false },
-    { id: 'p-c002-2', nombre: 'Vitamina C x30', cantidad: 1, verificado: false },
-  ],
-  'LF-C003': [
-    { id: 'p-c003-1', nombre: 'Leche 1L', cantidad: 2, verificado: false },
-    { id: 'p-c003-2', nombre: 'Arroz 1kg', cantidad: 1, verificado: false },
-    { id: 'p-c003-3', nombre: 'Aceite 1L', cantidad: 1, verificado: false },
-  ],
-};
+export const MOCK_PRODUCTOS_CHECKLIST: Record<string, ProductoChecklist[]> = {};
 
 /* ─── Historial de servicios (hoy) ─── */
-export const MOCK_SERVICIOS_HOY: ServicioHistorial[] = [
-  {
-    id: 'svc-2840',
-    ordenId: 'LF-2840',
-    tipo: 'envio',
-    cliente: 'Pedro Ruiz',
-    origen: 'Col. Los Robles',
-    destino: 'Centro',
-    hora: '08:15',
-    kmRecorridos: 3.1,
-    ganancia: 85,
-    tiempoTotal: 18,
-    estado: 'entregado',
-    calificacion: 5,
-  },
-  {
-    id: 'svc-2841',
-    ordenId: 'LF-2841',
-    tipo: 'compra',
-    cliente: 'Laura Fernández',
-    tiendaNombre: 'Pizza Express',
-    origen: 'Pizza Express',
-    destino: 'Villa Fontana',
-    hora: '09:30',
-    kmRecorridos: 4.2,
-    ganancia: 45,
-    tiempoTotal: 25,
-    estado: 'entregado',
-    calificacion: 5,
-  },
-  {
-    id: 'svc-2842',
-    ordenId: 'LF-2842',
-    tipo: 'envio',
-    cliente: 'Roberto Sáenz',
-    origen: 'Bello Horizonte',
-    destino: 'Monseñor Lezcano',
-    hora: '11:00',
-    kmRecorridos: 5.8,
-    ganancia: 120,
-    tiempoTotal: 32,
-    estado: 'entregado',
-    calificacion: 4,
-  },
-  {
-    id: 'svc-2845',
-    ordenId: 'LF-2845',
-    tipo: 'compra',
-    cliente: 'Sofía Vega',
-    tiendaNombre: 'Farmacia San Pablo',
-    origen: 'Farmacia San Pablo',
-    destino: 'Los Robles',
-    hora: '13:15',
-    kmRecorridos: 2.1,
-    ganancia: 35,
-    tiempoTotal: 15,
-    estado: 'entregado',
-    calificacion: 5,
-  },
-  {
-    id: 'svc-2838',
-    ordenId: 'LF-2838',
-    tipo: 'envio',
-    cliente: 'Lucía Ramos',
-    origen: 'Reparto San Juan',
-    destino: 'Carretera Sur',
-    hora: '18:40',
-    kmRecorridos: 6.4,
-    ganancia: 0,
-    tiempoTotal: 28,
-    estado: 'incidencia',
-    incidenciaTipo: 'Falla mecánica',
-  },
-];
+export const MOCK_SERVICIOS_HOY: ServicioHistorial[] = [];
 
 /* ─── Detalle enriquecido de un servicio por ID ─── */
 export const MOCK_SERVICIOS_DETALLE: Record<
