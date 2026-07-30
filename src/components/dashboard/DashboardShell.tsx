@@ -169,13 +169,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           }
         }
 
-        if (mergedOrders.length > 0) {
-          useStore.setState((state) => {
-            const dbIds = new Set(mergedOrders.map((o) => o.id));
-            const localOnly = state.orders.filter((o) => !dbIds.has(o.id));
-            return { orders: [...mergedOrders, ...localOnly] };
-          });
-        }
+        useStore.setState({ orders: mergedOrders });
       } catch (err) {
         console.error('[DashboardShell syncOrders]', err);
       }

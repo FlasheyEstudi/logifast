@@ -1393,7 +1393,7 @@ let _orderCounter = 2860;
 
 export const useStore = create<AppState>((set, get) => ({
   /* Data */
-  orders: MANAGUA_ORDERS,
+  orders: [],
   motos: MOCK_MOTOS,
   riders: MOCK_RIDERS,
   alerts: MOCK_ALERTS,
@@ -1408,16 +1408,16 @@ export const useStore = create<AppState>((set, get) => ({
   orderStatusDistribution: ORDER_STATUS_DISTRIBUTION,
 
   /* New Data */
-  incidents: MOCK_INCIDENTS,
+  incidents: [],
   clients: MOCK_CLIENTS,
   activityEvents: MOCK_ACTIVITY_EVENTS,
   paymentConciliations: MOCK_PAYMENT_CONCILIATIONS,
   zonePolygons: MOCK_ZONE_POLYGONS,
 
   /* Marketing Data */
-  campanas: MOCK_CAMPANAS,
-  codigos: MOCK_CODIGOS,
-  banners: MOCK_BANNERS,
+  campanas: [],
+  codigos: [],
+  banners: [],
   feedItems: MOCK_FEED_ITEMS,
   marketingKPI: MOCK_MARKETING_KPI,
 
