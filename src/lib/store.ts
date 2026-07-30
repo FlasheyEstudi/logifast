@@ -1394,50 +1394,50 @@ let _orderCounter = 2860;
 export const useStore = create<AppState>((set, get) => ({
   /* Data */
   orders: [],
-  motos: MOCK_MOTOS,
-  riders: MOCK_RIDERS,
-  alerts: MOCK_ALERTS,
+  motos: [],
+  riders: [],
+  alerts: [],
   zones: MOCK_ZONES,
   maintenanceRules: MOCK_MAINTENANCE_RULES,
   companyData: COMPANY_DATA,
-  users: MOCK_USERS,
-  dailyRevenue: DAILY_REVENUE,
-  monthlyRevenue: MONTHLY_REVENUE,
-  zoneOrders: ZONE_ORDERS,
-  riderPerformance: RIDER_PERFORMANCE,
-  orderStatusDistribution: ORDER_STATUS_DISTRIBUTION,
+  users: [],
+  dailyRevenue: [],
+  monthlyRevenue: [],
+  zoneOrders: [],
+  riderPerformance: [],
+  orderStatusDistribution: [],
 
   /* New Data */
   incidents: [],
-  clients: MOCK_CLIENTS,
-  activityEvents: MOCK_ACTIVITY_EVENTS,
-  paymentConciliations: MOCK_PAYMENT_CONCILIATIONS,
+  clients: [],
+  activityEvents: [],
+  paymentConciliations: [],
   zonePolygons: MOCK_ZONE_POLYGONS,
 
   /* Marketing Data */
   campanas: [],
   codigos: [],
   banners: [],
-  feedItems: MOCK_FEED_ITEMS,
-  marketingKPI: MOCK_MARKETING_KPI,
+  feedItems: [],
+  marketingKPI: { impresiones: 0, clics: 0, ctr: 0, conversiones: 0, costoPorClic: 0, roi: 0 },
 
   /* Communications Data */
-  conversaciones: MOCK_CONVERSACIONES,
-  plantillas: MOCK_PLANTILLAS,
-  notificacionesAuto: MOCK_NOTIFICACIONES_AUTO,
+  conversaciones: [],
+  plantillas: [],
+  notificacionesAuto: [],
 
   /* Config Data */
-  horarios: MOCK_HORARIOS,
-  feriados: MOCK_FERIADOS,
+  horarios: [],
+  feriados: [],
   integraciones: MOCK_INTEGRACIONES,
 
   /* SuperAdmin Data */
-  auditLog: MOCK_AUDIT_LOG,
-  featureFlags: MOCK_FEATURE_FLAGS,
+  auditLog: [],
+  featureFlags: [],
 
   /* Client Data */
-  clientNotificaciones: MOCK_CLIENT_NOTIFICACIONES,
-  direccionesGuardadas: MOCK_DIRECCIONES_GUARDADAS,
+  clientNotificaciones: [],
+  direccionesGuardadas: [],
   direccionesSugerencias: MOCK_DIRECCIONES_SUGERENCIAS,
   clientActiveModule: 'inicio' as ClientModuleKey,
   clientModuleFade: false,
