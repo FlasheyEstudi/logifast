@@ -98,12 +98,6 @@ export async function PATCH(req: NextRequest) {
           { status: 400 }
         );
       }
-      if (profile.saldo <= 0) {
-        return NextResponse.json(
-          { error: 'Saldo insuficiente. Recarga tu cuenta.' },
-          { status: 400 }
-        );
-      }
       // Resetear rechazos si pasó 1h
       conectado = true;
       paused = false;

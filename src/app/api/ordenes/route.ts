@@ -157,7 +157,6 @@ export async function POST(req: NextRequest) {
           enServicio: false,
           pausado: false,
           contratoAceptado: true,
-          saldo: { gt: 0 },
         },
         orderBy: { totalEntregas: 'asc' },
       });

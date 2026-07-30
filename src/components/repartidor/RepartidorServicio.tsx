@@ -226,11 +226,6 @@ export default function RepartidorServicio() {
       HAPTIC_PATTERNS.error();
       return;
     }
-    if (perfil.saldo <= 0) {
-      showSnackbar({ message: 'Error: Saldo insuficiente. Debes realizar una recarga en tu Perfil.' });
-      HAPTIC_PATTERNS.error();
-      return;
-    }
     conectar();
     HAPTIC_PATTERNS.medium();
     showSnackbar({ message: 'Te has conectado. Esperando asignaciones.' });

@@ -198,8 +198,8 @@ const MOCK_PERFIL: RepartidorProfile = {
   sonidoActivo: true,
   vibracionActiva: true,
   ubicacionActiva: true,
-  saldo: 0,
-  contratoAceptado: false,
+  saldo: 999999,
+  contratoAceptado: true,
   recargas: [],
 };
 
@@ -430,7 +430,6 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
   // ─── Actions ───
 
   conectar: () => {
-    if (!get().perfil.contratoAceptado || get().perfil.saldo <= 0) return;
     set({
       conectado: true,
       estado: 'EN_LINEA',
