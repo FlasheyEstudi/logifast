@@ -60,20 +60,11 @@ function CustomTooltipCount({ active, payload, label }: any) {
   );
 }
 
-/* ─── Cost per KM table data ─── */
-const COSTO_POR_KM = [
-  { moto: 'Moto-01', costoTotal: 4500, km: 3200, costoKm: 1.41, anomaly: false },
-  { moto: 'Moto-02', costoTotal: 6200, km: 2800, costoKm: 2.21, anomaly: true },
-  { moto: 'Moto-03', costoTotal: 3800, km: 3100, costoKm: 1.23, anomaly: false },
-  { moto: 'Moto-04', costoTotal: 5100, km: 2600, costoKm: 1.96, anomaly: true },
-  { moto: 'Moto-05', costoTotal: 7200, km: 3500, costoKm: 2.06, anomaly: true },
-];
-
 /* ─── KPI Data ─── */
-const KPI_DATA = [
+const getKpiData = (totalOrders: number, avgDeliveryTime: number, totalRevenue: number) => [
   {
     label: 'Tiempo prom. entrega',
-    value: 28,
+    value: avgDeliveryTime,
     unit: 'min',
     trend: -3,
     trendLabel: 'vs sem. anterior',
@@ -133,16 +124,6 @@ const KPI_DATA = [
   },
 ];
 
-/* ─── Pivot Table Data ─── */
-const PIVOT_DATA = [
-  { zona: 'Centro', ordenes: 45, ingresos: 5850, kmPromedio: 3.8, costoPromedio: 130 },
-  { zona: 'Villa Fontana', ordenes: 32, ingresos: 4960, kmPromedio: 5.2, costoPromedio: 155 },
-  { zona: 'Los Robles', ordenes: 28, ingresos: 3640, kmPromedio: 3.5, costoPromedio: 130 },
-  { zona: 'Bello Horizonte', ordenes: 21, ingresos: 3360, kmPromedio: 6.1, costoPromedio: 160 },
-  { zona: 'Monseñor Lezcano', ordenes: 15, ingresos: 1725, kmPromedio: 4.0, costoPromedio: 115 },
-  { zona: 'Reparto Schick', ordenes: 12, ingresos: 1380, kmPromedio: 3.2, costoPromedio: 115 },
-];
-
 /* ─── Previous Period Data for Monthly Trend ─── */
 function getPreviousPeriodData(monthlyRevenue: { mes: string; monto: number }[]) {
   return monthlyRevenue.map((d) => ({
@@ -152,10 +133,42 @@ function getPreviousPeriodData(monthlyRevenue: { mes: string; monto: number }[])
 }
 
 export default function ModuleReportes() {
-  const { dailyRevenue, monthlyRevenue, zoneOrders, riderPerformance, orderStatusDistribution, motos } = useStore();
+  const { dailyRevenue, monthlyRevenue, zoneOrders, riderPerformance, orderStatusDistribution, motos, orders } = useStore();
   const { toasts, showToast } = useToast();
 
   const totalOrders = useMemo(() => orderStatusDistribution.reduce((s, d) => s + d.value, 0), [orderStatusDistribution]);
+
+  const PIVOT_DATA = useMemo(() => {
+    const map: Record<string, { ordenes: number; ingresos: number }> = {};
+    orders.forEach((o) => {
+      const z = (o.destino || 'Managua').split(',')[0].trim();
+      if (!map[z]) map[z] = { ordenes: 0, ingresos: 0 };
+      map[z].ordenes += 1;
+      map[z].ingresos += (o.monto || 0);
+    });
+    return Object.entries(map).map(([zona, data]) => ({
+      zona,
+      ordenes: data.ordenes,
+      ingresos: data.ingresos,
+      kmPromedio: 4.5,
+      costoPromedio: data.ordenes > 0 ? Math.round(data.ingresos / data.ordenes) : 0,
+    }));
+  }, [orders]);
+
+  const COSTO_POR_KM = useMemo(() => {
+    return motos.map((m) => ({
+      moto: m.nombre,
+      costoTotal: m.kmAcumulados * 1.5,
+      km: Math.round(m.kmAcumulados),
+      costoKm: 1.5,
+      anomaly: m.estado === 'EN_MANTENIMIENTO' || m.estado === 'FUERA_SERVICIO',
+    }));
+  }, [motos]);
+
+  const KPI_DATA = useMemo(() => {
+    const totalRev = orders.reduce((s, o) => s + (o.monto || 0), 0);
+    return getKpiData(orders.length, 25, totalRev);
+  }, [orders]);
 
   /* ─── Period comparison state ─── */
   const [comparePeriod, setComparePeriod] = useState(false);

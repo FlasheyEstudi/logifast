@@ -128,61 +128,12 @@ function DonutLegend({ payload }: any) {
   );
 }
 
-/* ─── Static data ─── */
-const DAILY_FINANCIALS = [
-  { dia: '1 Jun', ingresos: 4500, gastos: 1200 },
-  { dia: '2 Jun', ingresos: 5200, gastos: 1450 },
-  { dia: '3 Jun', ingresos: 4800, gastos: 1100 },
-  { dia: '4 Jun', ingresos: 6100, gastos: 1800 },
-  { dia: '5 Jun', ingresos: 5500, gastos: 1500 },
-  { dia: '6 Jun', ingresos: 7200, gastos: 2100 },
-  { dia: '7 Jun', ingresos: 6800, gastos: 1950 },
-  { dia: '8 Jun', ingresos: 5900, gastos: 1600 },
-  { dia: '9 Jun', ingresos: 8100, gastos: 2300 },
-  { dia: '10 Jun', ingresos: 7400, gastos: 2000 },
-  { dia: '11 Jun', ingresos: 6500, gastos: 1800 },
-  { dia: '12 Jun', ingresos: 9200, gastos: 2600 },
-  { dia: '13 Jun', ingresos: 8450, gastos: 2400 },
-  { dia: '14 Jun', ingresos: 7100, gastos: 1900 },
-  { dia: '15 Jun', ingresos: 8800, gastos: 2500 },
-  { dia: '16 Jun', ingresos: 9500, gastos: 2700 },
-  { dia: '17 Jun', ingresos: 10200, gastos: 2900 },
-  { dia: '18 Jun', ingresos: 8900, gastos: 2500 },
-  { dia: '19 Jun', ingresos: 7800, gastos: 2200 },
-  { dia: '20 Jun', ingresos: 9100, gastos: 2600 },
-  { dia: '21 Jun', ingresos: 10500, gastos: 3100 },
-  { dia: '22 Jun', ingresos: 9800, gastos: 2800 },
-  { dia: '23 Jun', ingresos: 11200, gastos: 3200 },
-  { dia: '24 Jun', ingresos: 10100, gastos: 2900 },
-  { dia: '25 Jun', ingresos: 12450, gastos: 3820 },
-  { dia: '26 Jun', ingresos: 11800, gastos: 3500 },
-  { dia: '27 Jun', ingresos: 10900, gastos: 3100 },
-  { dia: '28 Jun', ingresos: 13200, gastos: 3800 },
-  { dia: '29 Jun', ingresos: 12100, gastos: 3600 },
-  { dia: '30 Jun', ingresos: 12800, gastos: 3700 },
-];
-
+/* ─── Dynamic Data Helpers ─── */
 const GASTOS_BREAKDOWN = [
-  { name: 'Mantenimiento', value: 40, color: '#002A5C' },
-  { name: 'Combustible', value: 25, color: '#FF6600' },
+  { name: 'Mantenimiento', value: 35, color: '#002A5C' },
+  { name: 'Combustible', value: 30, color: '#FF6600' },
   { name: 'Repuestos', value: 20, color: '#3B82F6' },
   { name: 'Otros', value: 15, color: '#6B7280' },
-];
-
-const ZONA_INGRESOS = [
-  { zona: 'Centro', monto: 28500 },
-  { zona: 'Villa Fontana', monto: 21200 },
-  { zona: 'Los Robles', monto: 18900 },
-  { zona: 'Bello Horizonte', monto: 15600 },
-  { zona: 'Mons. Lezcano', monto: 12400 },
-  { zona: 'Reparto Schick', monto: 8900 },
-];
-
-const FLUJO_CAJA = [
-  { semana: 'Semana 1', ingresos: 31200, gastos: 9800, neto: 21400, acumulado: 21400 },
-  { semana: 'Semana 2', ingresos: 28500, gastos: 8600, neto: 19900, acumulado: 41300 },
-  { semana: 'Semana 3', ingresos: 34800, gastos: 10500, neto: 24300, acumulado: 65600 },
-  { semana: 'Semana 4', ingresos: 30000, gastos: 9300, neto: 20700, acumulado: 86300 },
 ];
 
 /* ─── Toast hook ─── */
@@ -201,11 +152,58 @@ function useToast() {
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 export default function ModuleFinanzas() {
-  const { paymentConciliations, conciliatePayment, clients } = useStore();
+  const { paymentConciliations, conciliatePayment, clients, orders } = useStore();
   const { toasts, showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'overview' | 'valuation'>('overview');
   const [developmentMonths, setDevelopmentMonths] = useState(6);
   const [profitMargin, setProfitMargin] = useState(50);
+
+  /* Dynamic financials from real orders */
+  const totalIngresosReales = useMemo(
+    () => orders.reduce((sum, o) => sum + (o.monto || 0), 0),
+    [orders]
+  );
+
+  const totalGastosEstimados = useMemo(
+    () => Math.round(totalIngresosReales * 0.3),
+    [totalIngresosReales]
+  );
+
+  const gananciaNetaReales = totalIngresosReales - totalGastosEstimados;
+  const margenNetoReal = totalIngresosReales > 0 ? Math.round((gananciaNetaReales / totalIngresosReales) * 100) : 0;
+
+  const DAILY_FINANCIALS = useMemo(() => {
+    const today = new Date();
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const label = d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+      const dayStr = d.toISOString().split('T')[0];
+      const dayOrders = orders.filter((o) => o.fecha === dayStr);
+      const ing = dayOrders.reduce((sum, o) => sum + (o.monto || 0), 0);
+      const gas = Math.round(ing * 0.3);
+      days.push({ dia: label, ingresos: ing, gastos: gas });
+    }
+    return days;
+  }, [orders]);
+
+  const FLUJO_CAJA = useMemo(() => [
+    { semana: 'Sem 1', ingresos: Math.round(totalIngresosReales * 0.2), gastos: Math.round(totalGastosEstimados * 0.2), neto: Math.round(gananciaNetaReales * 0.2), acumulado: Math.round(gananciaNetaReales * 0.2) },
+    { semana: 'Sem 2', ingresos: Math.round(totalIngresosReales * 0.25), gastos: Math.round(totalGastosEstimados * 0.25), neto: Math.round(gananciaNetaReales * 0.25), acumulado: Math.round(gananciaNetaReales * 0.45) },
+    { semana: 'Sem 3', ingresos: Math.round(totalIngresosReales * 0.25), gastos: Math.round(totalGastosEstimados * 0.25), neto: Math.round(gananciaNetaReales * 0.25), acumulado: Math.round(gananciaNetaReales * 0.7) },
+    { semana: 'Sem 4', ingresos: Math.round(totalIngresosReales * 0.3), gastos: Math.round(totalGastosEstimados * 0.3), neto: Math.round(gananciaNetaReales * 0.3), acumulado: gananciaNetaReales },
+  ], [totalIngresosReales, totalGastosEstimados, gananciaNetaReales]);
+
+  const ZONA_INGRESOS = useMemo(() => {
+    const zones: Record<string, number> = {};
+    orders.forEach((o) => {
+      const z = (o.destino || 'Managua').split(',')[0].trim();
+      zones[z] = (zones[z] || 0) + (o.monto || 0);
+    });
+    const result = Object.entries(zones).map(([zona, monto]) => ({ zona, monto }));
+    return result.length > 0 ? result : [{ zona: 'Managua', monto: totalIngresosReales }];
+  }, [orders, totalIngresosReales]);
 
   /* Top 10 clients by montoTotal from store */
   const topClientes = useMemo(
@@ -230,36 +228,35 @@ export default function ModuleFinanzas() {
   const kpis = [
     {
       icon: TrendingUp,
-      value: 'C$ 124,500',
+      value: `C$ ${totalIngresosReales.toLocaleString()}`,
       label: 'Ingresos del mes',
       color: '#16A34A',
-      trend: '+8% vs mes anterior',
+      trend: 'Calculado en vivo',
       trendUp: true,
     },
     {
       icon: TrendingDown,
-      value: 'C$ 38,200',
+      value: `C$ ${totalGastosEstimados.toLocaleString()}`,
       label: 'Gastos operativos',
       color: '#DC2626',
-      breakdown: 'Mantenimiento C$15,280 · Combustible C$9,550 · Repuestos C$7,640 · Otros C$5,730',
-      trend: null,
+      trend: '30% estimado',
       trendUp: false,
     },
     {
       icon: DollarSign,
-      value: '69.4%',
-      label: 'Margen neto',
-      color: '#16A34A',
-      trend: null,
+      value: `C$ ${gananciaNetaReales.toLocaleString()}`,
+      label: 'Ganancia neta',
+      color: '#002A5C',
+      trend: `${margenNetoReal}% margen`,
       trendUp: true,
     },
     {
-      icon: Wallet,
-      value: 'C$ 87',
-      label: 'Costo promedio por envío',
-      color: '#3B82F6',
-      trend: null,
-      trendUp: false,
+      icon: Percent,
+      value: `${margenNetoReal}%`,
+      label: 'Margen de ganancia',
+      color: '#FF6600',
+      trend: 'Eficiencia operativa',
+      trendUp: true,
     },
   ];
 

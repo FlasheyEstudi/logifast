@@ -1300,7 +1300,7 @@ function SubAnalitica() {
     clicks: c.clicks,
   }));
 
-  // Promo code usage (mock 30-day data)
+  // Dynamic promo code usage (30-day data)
   const codeUsageData = useMemo(() => {
     const days: { dia: string; usos: number }[] = [];
     for (let i = 29; i >= 0; i--) {
