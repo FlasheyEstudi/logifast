@@ -76,66 +76,7 @@ export const MOCK_SERVICIOS_DETALLE: Record<
     clienteTelefono: string;
     calificacionComentario?: string | null;
   }
-> = {
-  'LF-2840': {
-    ...MOCK_SERVICIOS_HOY[0],
-    fecha: '2026-06-10',
-    metodoPago: 'efectivo',
-    monto: 120,
-    clienteTelefono: '+505 8765-1010',
-    calificacionComentario: 'Muy rápido y amable',
-  },
-  'LF-2841': {
-    ...MOCK_SERVICIOS_HOY[1],
-    fecha: '2026-06-10',
-    metodoPago: 'transferencia',
-    monto: 225,
-    clienteTelefono: '+505 8765-2020',
-    calificacionComentario: null,
-  },
-  'LF-2842': {
-    ...MOCK_SERVICIOS_HOY[2],
-    fecha: '2026-06-10',
-    metodoPago: 'efectivo',
-    monto: 180,
-    clienteTelefono: '+505 8765-3030',
-    calificacionComentario: 'Todo bien',
-  },
-  'LF-2845': {
-    ...MOCK_SERVICIOS_HOY[3],
-    fecha: '2026-06-10',
-    metodoPago: 'transferencia',
-    monto: 135,
-    clienteTelefono: '+505 8765-4040',
-    calificacionComentario: 'Excelente servicio',
-  },
-  'LF-2838': {
-    ...MOCK_SERVICIOS_HOY[4],
-    fecha: '2026-06-10',
-    metodoPago: 'efectivo',
-    monto: 110,
-    clienteTelefono: '+505 8765-5050',
-  },
-  'LF-2847': {
-    id: 'svc-2847',
-    ordenId: 'LF-2847',
-    tipo: 'envio',
-    cliente: 'María López',
-    origen: 'Col. Los Robles, Managua',
-    destino: 'Barrio Monseñor Lezcano',
-    hora: '14:25',
-    kmRecorridos: 3.2,
-    ganancia: 45,
-    tiempoTotal: 12,
-    estado: 'entregado',
-    calificacion: 5,
-    fecha: '2026-06-10',
-    metodoPago: 'efectivo',
-    monto: 120,
-    clienteTelefono: '+505 8888-1234',
-    calificacionComentario: 'Cuidadoso con el paquete',
-  },
-};
+> = {};
 
 /* ─── Stats ─── */
 export const MOCK_STATS: Record<'hoy' | 'semana' | 'mes', StatsRepartidor> = {

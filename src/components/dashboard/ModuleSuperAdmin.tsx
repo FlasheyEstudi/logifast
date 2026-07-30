@@ -115,7 +115,7 @@ const SYSTEM_HEALTH = {
   storageTotal: 10,
   apiResponseMs: 45,
   apiTrend: -12,
-  lastBackup: '2026-03-04 02:00 AM',
+  lastBackup: new Date().toLocaleDateString('es-NI', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' 02:00 AM',
   version: 'LOGIFAST v2.0.0',
   connectedUsers: 12,
 };
