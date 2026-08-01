@@ -1,17 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { sileo } from 'sileo';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
 import { useConfigStore } from '@/store/configStore';
 import { reproducirSiActivo, vibrarSiActivo } from '@/services/audio';
 import PagoExitoso from './PagoExitoso';
+import { LogoSpinner } from '@/components/ui/loaders';
+import { X, Trash2, Plus, Minus, Tag, CreditCard, DollarSign, ArrowRight, ShoppingBag } from '@/components/icons';
 
 interface ClientCarritoProps {
   isDark: boolean;
   onClose: () => void;
-  onBackToTienda: () => void;
+  onBackToTienda?: () => void;
 }
 
 export default function ClientCarrito({ isDark, onClose, onBackToTienda }: ClientCarritoProps) {
@@ -33,8 +36,6 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
     setCartMetodoPago,
     confirmarCompraAsync,
     getCartSubtotal,
-    getCartTotal,
-    getCartItemCount,
     getCartTiendas,
     getCartItemsByTienda,
   } = useMarketplaceStore();
@@ -44,6 +45,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
 
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
   const [codigoPromo, setCodigoPromo] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const subtotal = getCartSubtotal();
   const tiendaIds = getCartTiendas();
@@ -52,7 +54,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
     return sum + (t?.costoEnvio ?? 20);
   }, 0);
   const descuento = cartDescuento || 0;
-  const total = subtotal + delivery - descuento;
+  const total = Math.max(0, subtotal + delivery - descuento);
 
   const handleAplicarCodigo = async () => {
     if (!codigoPromo.trim()) return;
@@ -88,6 +90,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
         setCartCodigoPromo(codigoPromo.trim().toUpperCase());
         setCartDescuento(discountAmount);
         setMostrarCodigo(false);
+        sileo.success({ title: '¡Código Aplicado!', description: `Descuento de C$ ${discountAmount}` });
       } else {
         sileo.error({ title: 'Código Inválido', description: 'El código promocional no es válido' });
       }
@@ -95,6 +98,8 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
   };
 
   const handlePagar = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
     try {
       reproducirSiActivo('orden_aceptada', {
         sonidoActivo: config.sonidoActivo,
@@ -102,60 +107,28 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
         notificacionesSonido: config.notificacionesSonido
       });
       vibrarSiActivo(50, config.vibracionActiva);
+
       const result = await confirmarCompraAsync();
       if (!result.ok) {
         sileo.error({ title: "Error en el pago", description: result.error || 'No se pudo procesar la compra' });
+        setIsProcessing(false);
       }
     } catch (err) {
-      console.error("Error inside handlePagar:", err);
+      console.error("Error al procesar el pago:", err);
       sileo.error({ title: "Error en el pago", description: (err as Error).message });
+      setIsProcessing(false);
     }
   };
 
   const handleCloseSuccess = () => {
     useMarketplaceStore.setState({ compraConfirmada: false, compraConfirmadaId: '' });
+    setIsProcessing(false);
     onClose();
   };
 
   if (compraConfirmada) {
     return (
-      <div className="fixed inset-0 z-[1000] bg-white dark:bg-black overflow-y-auto">
-        <PagoExitoso orderId={compraConfirmadaId} onClose={handleCloseSuccess} setClientActiveModule={setClientActiveModule} />
-      </div>
-    );
-  }
-
-  if (cartItems.length === 0) {
-    return (
-      <div className="pantalla cliente-pantalla fixed inset-0 z-50 flex flex-col bg-[#FAF8F5] dark:bg-[#0A0A0F] text-[#1B1B2F] dark:text-[#F0EDE8] font-sans">
-        <div className="pantalla-header flex items-center gap-3 px-5 py-4 border-b border-[#E8E4DE] dark:border-[#2A2A38] bg-[#FAF8F5] dark:bg-[#0A0A0F] z-20">
-          <button className="header-back w-9 h-9 rounded-xl border-none bg-transparent hover:bg-[#F5F0EB] dark:hover:bg-[#1A1A24] text-[#1B1B2F] dark:text-[#F0EDE8] flex items-center justify-center cursor-pointer shrink-0 transition-colors" onClick={onClose}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <h1 className="pantalla-title font-bold text-xl text-[#1B1B2F] dark:text-[#F0EDE8] flex-1">Carrito</h1>
-        </div>
-        <div className="lf-empty flex flex-col items-center justify-center p-8 text-center min-h-[60vh] gap-4">
-          <div className="lf-empty-icon mb-4 text-[#8E8EA0] dark:text-[#6B6B80] w-16 h-16 flex items-center justify-center">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="9" cy="21" r="1"/>
-              <circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-          </div>
-          <div className="lf-empty-title text-xl font-bold text-[#1B1B2F] dark:text-[#F0EDE8]">Tu carrito está vacío</div>
-          <div className="lf-empty-desc text-sm text-[#8E8EA0] dark:text-[#6B6B80] max-w-[280px]">
-            Explora tiendas y agrega los productos que te gusten
-          </div>
-          <button
-            className="w-full max-w-[240px] min-h-[48px] mt-4 py-3 px-6 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-2xl font-bold text-sm transition-all text-center flex items-center justify-center cursor-pointer active:scale-95"
-            onClick={onClose}
-          >
-            Explorar tiendas
-          </button>
-        </div>
-      </div>
+      <PagoExitoso orderId={compraConfirmadaId} onClose={handleCloseSuccess} setClientActiveModule={setClientActiveModule} />
     );
   }
 
@@ -173,271 +146,244 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
   });
 
   return (
-    <div className="pantalla cliente-pantalla fixed inset-0 z-50 flex flex-col bg-[#FAF8F5] dark:bg-[#0A0A0F] text-[#1B1B2F] dark:text-[#F0EDE8] font-sans">
-      {/* Header */}
-      <div className="pantalla-header flex items-center gap-3 px-5 py-4 border-b border-[#E8E4DE] dark:border-[#2A2A38] bg-[#FAF8F5] dark:bg-[#0A0A0F] z-20">
-        <button className="header-back w-9 h-9 rounded-xl border-none bg-transparent hover:bg-[#F5F0EB] dark:hover:bg-[#1A1A24] text-[#1B1B2F] dark:text-[#F0EDE8] flex items-center justify-center cursor-pointer shrink-0 transition-colors" onClick={onClose}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <h1 className="pantalla-title font-bold text-xl text-[#1B1B2F] dark:text-[#F0EDE8] flex-1">Carrito</h1>
-        <span className="carrito-count text-xs font-semibold px-3 py-1 bg-[#F5F0EB] dark:bg-[#1A1A24] text-[#8E8EA0] dark:text-[#A8A8BE] rounded-full">{cartItems.length} items</span>
-      </div>
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 30 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+      className="fixed inset-0 z-[1000] bg-[#0B0E14] text-white flex justify-center overflow-hidden antialiased select-none font-sans"
+    >
+      <div className="w-full max-w-md bg-[#131822] flex flex-col h-full relative border-x border-slate-800 shadow-2xl">
+        
+        {/* MODAL HEADER */}
+        <header className="px-4 py-3.5 flex items-center justify-between border-b border-slate-800 bg-[#131822]/90 backdrop-blur-md sticky top-0 z-30">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 hover:bg-slate-700 active:scale-95 transition-all"
+              aria-label="Cerrar"
+            >
+              <X size={20} />
+            </button>
+            <div>
+              <h2 className="font-extrabold text-base text-white tracking-tight">Tu Carrito de Compras</h2>
+              <p className="text-[10px] text-slate-400 font-medium">{cartItems.length} producto{cartItems.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
 
-      {/* Contenido scrolleable con Grid Responsivo Líquido */}
-      <div className="carrito-scroll flex-1 overflow-y-auto px-5 py-4">
-        <div className="lf-checkout-grid">
-          {/* Columna Izquierda: Items e Instrucciones */}
-          <div className="flex flex-col gap-6">
-            {/* Items agrupados por tienda */}
-            {grupos.map((grupo) => (
-              <div key={grupo.tiendaId} className="carrito-grupo flex flex-col gap-4 border-b border-[#E8E4DE] dark:border-[#2A2A38] pb-6 last:border-b-0">
-                {/* Header de la tienda */}
-                <div className="carrito-tienda-header flex items-center gap-3">
-                  <div
-                    className="carrito-tienda-logo w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white shrink-0"
-                    style={{ background: grupo.tiendaLogoColor }}
-                  >
-                    {grupo.tiendaLogoIniciales}
-                  </div>
-                  <div className="carrito-tienda-info flex flex-col">
-                    <div className="carrito-tienda-nombre font-bold text-sm text-[#1B1B2F] dark:text-[#F0EDE8]">{grupo.tiendaNombre}</div>
-                    <div className="carrito-tienda-tiempo flex items-center gap-1 text-xs text-[#8E8EA0] dark:text-[#A8A8BE] mt-0.5">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                      </svg>
-                      25-35 min
+          {cartItems.length > 0 && (
+            <button
+              onClick={clearCart}
+              className="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 rounded-lg hover:bg-rose-500/10 transition-colors flex items-center space-x-1"
+            >
+              <Trash2 size={14} />
+              <span>Vaciar</span>
+            </button>
+          )}
+        </header>
+
+        {/* CART CONTENT SCROLLABLE AREA */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
+          {cartItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
+              <div className="w-20 h-20 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 shadow-inner">
+                <ShoppingBag size={40} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-white">Tu carrito está vacío</h3>
+                <p className="text-xs text-slate-400 max-w-[240px] leading-relaxed mx-auto">
+                  Agrega productos deliciosos o artículos de tus tiendas favoritas para comenzar.
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="mt-4 px-6 py-3 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-2xl font-bold text-xs shadow-lg shadow-[#FF5722]/30 active:scale-95 transition-all"
+              >
+                Explorar Tiendas
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* STORE GROUPS */}
+              {grupos.map((grupo) => (
+                <div key={grupo.tiendaId} className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-3 shadow-lg">
+                  {/* Store Header */}
+                  <div className="flex items-center space-x-3 pb-2 border-b border-slate-800/80">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs text-white shadow-md"
+                      style={{ backgroundColor: grupo.tiendaLogoColor }}
+                    >
+                      {grupo.tiendaLogoIniciales}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-white">{grupo.tiendaNombre}</h4>
+                      <span className="text-[10px] text-emerald-400 font-medium">Entrega estimada: 25 - 35 min</span>
                     </div>
                   </div>
-                </div>
 
-                {/* Items de esta tienda */}
-                <div className="carrito-items flex flex-col gap-3">
-                  {grupo.items.map((item) => (
-                    <div key={item.id} className="carrito-item flex items-center gap-3 p-3 bg-[#F5F0EB] dark:bg-[#1A1A24] rounded-2xl">
-                      {/* Imagen / placeholder del producto */}
-                      <div
-                        className="carrito-item-img w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg text-black/20 dark:text-white/20 shrink-0"
-                        style={{ background: item.imagenColor || '#F2EDE8' }}
-                      >
-                        {item.nombreProducto.charAt(0)}
-                      </div>
+                  {/* Items List */}
+                  <div className="space-y-3 pt-1">
+                    {grupo.items.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between bg-[#131822] p-3 rounded-2xl border border-slate-800">
+                        <div className="flex-1 pr-3">
+                          <h5 className="font-bold text-xs text-white line-clamp-1">{item.nombreProducto}</h5>
+                          {item.notas && <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">{item.notas}</p>}
+                          <span className="text-xs font-mono font-extrabold text-[#FF5722] mt-1 block">
+                            C$ {item.precioUnitario * item.cantidad}
+                          </span>
+                        </div>
 
-                      <div className="carrito-item-info flex-1 min-w-0">
-                        <div className="carrito-item-nombre text-sm font-semibold text-[#1B1B2F] dark:text-[#F0EDE8] truncate">{item.nombreProducto}</div>
-                        {item.notas && (
-                          <div className="carrito-item-opciones text-xs text-[#8E8EA0] dark:text-[#A8A8BE] truncate mt-0.5">
-                            {item.notas}
-                          </div>
-                        )}
-                        <div className="carrito-item-precio text-sm font-bold text-[#1B1B2F] dark:text-[#F0EDE8] mt-1 font-mono">
-                          C$ {item.precioUnitario}
+                        {/* Quantity Controls */}
+                        <div className="flex items-center space-x-2 bg-slate-800 p-1 rounded-xl">
+                          <button
+                            onClick={() => updateCartItemQty(item.id, item.cantidad - 1)}
+                            className="w-7 h-7 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-white active:scale-90 transition-all"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="text-xs font-mono font-bold text-white min-w-5 text-center">{item.cantidad}</span>
+                          <button
+                            onClick={() => updateCartItemQty(item.id, item.cantidad + 1)}
+                            className="w-7 h-7 rounded-lg bg-slate-600 hover:bg-slate-600 flex items-center justify-center text-white active:scale-90 transition-all"
+                          >
+                            <Plus size={14} />
+                          </button>
                         </div>
                       </div>
-
-                      {/* Controles de cantidad */}
-                      <div className="carrito-item-cantidad flex items-center gap-2 shrink-0">
-                        <button
-                          className="cantidad-btn w-8 h-8 rounded-lg border border-[#E8E4DE] dark:border-[#2A2A38] bg-white dark:bg-[#1A1A24] text-[#1B1B2F] dark:text-[#F0EDE8] flex items-center justify-center cursor-pointer transition-all hover:border-[#FF5722] hover:text-[#FF5722] active:scale-95"
-                          onClick={() => updateCartItemQty(item.id, item.cantidad - 1)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="5" y1="12" x2="19" y2="12"/>
-                          </svg>
-                        </button>
-                        <span className="cantidad-num text-sm font-semibold min-w-5 text-center text-[#1B1B2F] dark:text-[#F0EDE8] font-mono">{item.cantidad}</span>
-                        <button
-                          className="cantidad-btn w-8 h-8 rounded-lg border border-[#E8E4DE] dark:border-[#2A2A38] bg-white dark:bg-[#1A1A24] text-[#1B1B2F] dark:text-[#F0EDE8] flex items-center justify-center cursor-pointer transition-all hover:border-[#FF5722] hover:text-[#FF5722] active:scale-95"
-                          onClick={() => updateCartItemQty(item.id, item.cantidad + 1)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="12" y1="5" x2="12" y2="19"/>
-                            <line x1="5" y1="12" x2="19" y2="12"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {/* Instrucciones especiales */}
-            <div className="carrito-seccion flex flex-col gap-3 pb-6 border-b border-[#E8E4DE] dark:border-[#2A2A38]">
-              <div className="carrito-seccion-title flex items-center gap-2.5 text-sm font-bold text-[#1B1B2F] dark:text-[#F0EDE8]">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Instrucciones especiales
+              {/* SPECIAL INSTRUCTIONS */}
+              <div className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-2">
+                <label className="text-xs font-bold text-slate-300 block">Instrucciones para el repartidor</label>
+                <textarea
+                  value={cartInstrucciones}
+                  onChange={(e) => setCartInstrucciones(e.target.value)}
+                  placeholder="Ej: Tocar el timbre azul, dejar en garita..."
+                  className="w-full bg-[#131822] border border-slate-800 rounded-2xl p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-[#FF5722] transition-colors resize-none"
+                  rows={2}
+                />
               </div>
-              <textarea
-                className="lf-textarea w-full p-3 border border-[#E8E4DE] dark:border-[#2A2A38] bg-white dark:bg-[#1A1A24] text-[#1B1B2F] dark:text-[#F0EDE8] rounded-xl outline-none focus:border-[#FF5722] transition-colors resize-none"
-                value={cartInstrucciones}
-                onChange={e => setCartInstrucciones(e.target.value)}
-                placeholder="Ej: No tocar el timbre, dejar en recepción..."
-                rows={2}
-              />
-            </div>
-          </div>
 
-          {/* Columna Derecha: Pago, Promo y Resumen */}
-          <div className="flex flex-col gap-6 bg-[#F5F0EB]/30 dark:bg-[#1A1A24]/30 p-5 rounded-3xl border border-[#E8E4DE] dark:border-[#2A2A38] h-fit">
-            {/* Código promocional */}
-            <div className="carrito-seccion flex flex-col gap-3 border-b border-[#E8E4DE] dark:border-[#2A2A38] pb-6 last:border-b-0">
-              <button
-                className="carrito-codigo-btn flex items-center gap-2.5 w-full p-3.5 bg-[#F5F0EB] dark:bg-[#1A1A24] border border-transparent hover:border-[#E8E4DE] dark:hover:border-[#2A2A38] rounded-xl text-sm font-medium text-[#1B1B2F] dark:text-[#F0EDE8] cursor-pointer transition-all"
-                onClick={() => setMostrarCodigo(!mostrarCodigo)}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="20 12 20 22 4 22 4 12"/>
-                  <rect x="2" y="7" width="20" height="5"/>
-                  <line x1="12" y1="22" x2="12" y2="7"/>
-                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-                </svg>
-                <span>
-                  {cartCodigoPromo
-                    ? `Código: ${cartCodigoPromo}`
-                    : 'Tengo un código promocional'}
-                </span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="ml-auto transition-transform duration-200"
-                  style={{ transform: mostrarCodigo ? 'rotate(180deg)' : 'none' }}
+              {/* PROMO CODE SECTION */}
+              <div className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-3">
+                <button
+                  onClick={() => setMostrarCodigo(!mostrarCodigo)}
+                  className="w-full flex items-center justify-between text-xs font-bold text-slate-300 hover:text-white"
                 >
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
+                  <div className="flex items-center space-x-2">
+                    <Tag size={16} className="text-[#FF5722]" />
+                    <span>{cartCodigoPromo ? `Cupón: ${cartCodigoPromo}` : '¿Tienes un código promocional?'}</span>
+                  </div>
+                  <span className="text-xs text-[#FF5722]">{mostrarCodigo ? 'Ocultar' : 'Agregar'}</span>
+                </button>
 
-              {mostrarCodigo && (
-                <div className="carrito-codigo-input-area flex gap-2.5 mt-2 animate-[slideDown_0.2s_ease]">
-                  <input
-                    className="lf-input flex-1 p-3 border border-[#E8E4DE] dark:border-[#2A2A38] bg-white dark:bg-[#1A1A24] text-[#1B1B2F] dark:text-[#F0EDE8] rounded-xl outline-none"
-                    value={codigoPromo}
-                    onChange={e => setCodigoPromo(e.target.value)}
-                    placeholder="Ingresa tu código"
-                    style={{ textTransform: 'uppercase' }}
-                  />
+                {mostrarCodigo && (
+                  <div className="flex space-x-2 pt-1">
+                    <input
+                      type="text"
+                      value={codigoPromo}
+                      onChange={(e) => setCodigoPromo(e.target.value.toUpperCase())}
+                      placeholder="CÓDIGO"
+                      className="flex-1 bg-[#131822] border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white uppercase outline-none focus:border-[#FF5722]"
+                    />
+                    <button
+                      onClick={handleAplicarCodigo}
+                      disabled={!codigoPromo.trim()}
+                      className="px-4 py-2.5 bg-[#FF5722] hover:bg-[#E64A19] text-white font-bold text-xs rounded-xl disabled:opacity-50 transition-all"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* PAYMENT METHOD SELECTION */}
+              <div className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-3">
+                <h4 className="text-xs font-bold text-slate-300 flex items-center space-x-2">
+                  <CreditCard size={16} className="text-amber-400" />
+                  <span>Método de Pago</span>
+                </h4>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
-                    className="px-5 py-3 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-xl font-bold text-sm transition-all disabled:opacity-50 cursor-pointer"
-                    onClick={handleAplicarCodigo}
-                    disabled={!codigoPromo.trim()}
+                    onClick={() => setCartMetodoPago('efectivo')}
+                    className={`p-3 rounded-2xl border flex flex-col items-center justify-center space-y-1.5 transition-all ${
+                      cartMetodoPago === 'efectivo'
+                        ? 'border-[#FF5722] bg-[#FF5722]/15 text-white ring-2 ring-[#FF5722]/30'
+                        : 'border-slate-800 bg-[#131822] text-slate-400 hover:border-slate-700'
+                    }`}
                   >
-                    Aplicar
+                    <DollarSign size={20} className={cartMetodoPago === 'efectivo' ? 'text-[#FF5722]' : 'text-slate-400'} />
+                    <span className="text-xs font-bold">Efectivo</span>
+                    <span className="text-[9px] opacity-70">Contra entrega</span>
+                  </button>
+
+                  <button
+                    onClick={() => setCartMetodoPago('transferencia')}
+                    className={`p-3 rounded-2xl border flex flex-col items-center justify-center space-y-1.5 transition-all ${
+                      cartMetodoPago === 'transferencia'
+                        ? 'border-[#FF5722] bg-[#FF5722]/15 text-white ring-2 ring-[#FF5722]/30'
+                        : 'border-slate-800 bg-[#131822] text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <CreditCard size={20} className={cartMetodoPago === 'transferencia' ? 'text-[#FF5722]' : 'text-slate-400'} />
+                    <span className="text-xs font-bold">Transferencia</span>
+                    <span className="text-[9px] opacity-70">Bancaria / Móvil</span>
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Método de pago */}
-            <div className="carrito-seccion flex flex-col gap-3 border-b border-[#E8E4DE] dark:border-[#2A2A38] pb-6 last:border-b-0">
-              <div className="carrito-seccion-title flex items-center gap-2.5 text-sm font-bold text-[#1B1B2F] dark:text-[#F0EDE8]">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                  <line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-                Método de pago
-              </div>
-              <div className="carrito-pago-opciones flex flex-col gap-2.5">
-                <button
-                  className={`carrito-pago-btn flex items-center gap-3.5 p-4 bg-white dark:bg-[#1A1A24] border border-[#E8E4DE] dark:border-[#2A2A38] hover:border-[#FF5722] rounded-2xl cursor-pointer transition-all w-full text-left ${cartMetodoPago === 'efectivo' ? 'border-[#FF5722] bg-[#FF5722]/5 dark:bg-[#FF6E40]/10' : ''}`}
-                  onClick={() => setCartMetodoPago('efectivo')}
-                >
-                  <div className={`carrito-pago-icon w-11 h-11 rounded-xl bg-[#F5F0EB] dark:bg-[#22222E] flex items-center justify-center text-[#5A5A72] dark:text-[#A8A8BE] shrink-0 ${cartMetodoPago === 'efectivo' ? 'bg-[#FF5722]/10 dark:bg-[#FF6E40]/20 text-[#FF5722] dark:text-[#FF6E40]' : ''}`}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="1" x2="12" y2="23"/>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                  </div>
-                  <div className="carrito-pago-info flex-1">
-                    <div className="carrito-pago-label font-semibold text-sm text-[#1B1B2F] dark:text-[#F0EDE8]">Efectivo</div>
-                    <div className="carrito-pago-desc text-xs text-[#8E8EA0] dark:text-[#A8A8BE] mt-0.5">Pagar al recibir</div>
-                  </div>
-                  <div className={`carrito-pago-radio w-[22px] h-[22px] rounded-full border-2 border-[#E8E4DE] dark:border-[#2A2A38] shrink-0 flex items-center justify-center transition-colors ${cartMetodoPago === 'efectivo' ? 'border-[#FF5722] after:content-[\'\'] after:w-2.5 after:h-2.5 after:rounded-full after:bg-[#FF5722]' : ''}`} />
-                </button>
-
-                <button
-                  className={`carrito-pago-btn flex items-center gap-3.5 p-4 bg-white dark:bg-[#1A1A24] border border-[#E8E4DE] dark:border-[#2A2A38] hover:border-[#FF5722] rounded-2xl cursor-pointer transition-all w-full text-left ${cartMetodoPago === 'transferencia' ? 'border-[#FF5722] bg-[#FF5722]/5 dark:bg-[#FF6E40]/10' : ''}`}
-                  onClick={() => setCartMetodoPago('transferencia')}
-                >
-                  <div className={`carrito-pago-icon w-11 h-11 rounded-xl bg-[#F5F0EB] dark:bg-[#22222E] flex items-center justify-center text-[#5A5A72] dark:text-[#A8A8BE] shrink-0 ${cartMetodoPago === 'transferencia' ? 'bg-[#FF5722]/10 dark:bg-[#FF6E40]/20 text-[#FF5722] dark:text-[#FF6E40]' : ''}`}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="2" y="5" width="20" height="14" rx="2"/>
-                      <line x1="2" y1="10" x2="22" y2="10"/>
-                    </svg>
-                  </div>
-                  <div className="carrito-pago-info flex-1">
-                    <div className="carrito-pago-label font-semibold text-sm text-[#1B1B2F] dark:text-[#F0EDE8]">Transferencia</div>
-                    <div className="carrito-pago-desc text-xs text-[#8E8EA0] dark:text-[#A8A8BE] mt-0.5">Transferencia bancaria</div>
-                  </div>
-                  <div className={`carrito-pago-radio w-[22px] h-[22px] rounded-full border-2 border-[#E8E4DE] dark:border-[#2A2A38] shrink-0 flex items-center justify-center transition-colors ${cartMetodoPago === 'transferencia' ? 'border-[#FF5722] after:content-[\'\'] after:w-2.5 after:h-2.5 after:rounded-full after:bg-[#FF5722]' : ''}`} />
-                </button>
-              </div>
-            </div>
-
-            {/* Resumen */}
-            <div className="carrito-resumen flex flex-col gap-2 py-4">
-              <div className="carrito-resumen-row flex justify-between items-center text-sm text-[#5A5A72] dark:text-[#A8A8BE]">
-                <span>Subtotal</span>
-                <span className="mono font-semibold">C$ {subtotal.toLocaleString()}</span>
-              </div>
-              <div className="carrito-resumen-row flex justify-between items-center text-sm text-[#5A5A72] dark:text-[#A8A8BE]">
-                <span>Delivery</span>
-                <span className="mono font-semibold">C$ {delivery.toLocaleString()}</span>
-              </div>
-              {descuento > 0 && (
-                <div className="carrito-resumen-row flex justify-between items-center text-sm text-[#00C853] dark:text-[#00C853] font-medium">
-                  <span>Descuento</span>
-                  <span className="mono">-C$ {descuento.toLocaleString()}</span>
+              {/* ORDER SUMMARY TOTALS */}
+              <div className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-400">
+                  <span>Subtotal</span>
+                  <span className="font-mono font-semibold text-white">C$ {subtotal.toLocaleString()}</span>
                 </div>
-              )}
-              <div className="carrito-resumen-row flex justify-between items-center text-lg font-bold text-[#1B1B2F] dark:text-[#F0EDE8] pt-3 border-t border-[#E8E4DE] dark:border-[#2A2A38] mt-2">
-                <span>Total</span>
-                <span className="mono text-xl text-[#FF5722]">C$ {total.toLocaleString()}</span>
+                <div className="flex justify-between text-slate-400">
+                  <span>Costo de envío</span>
+                  <span className="font-mono font-semibold text-white">C$ {delivery.toLocaleString()}</span>
+                </div>
+                {descuento > 0 && (
+                  <div className="flex justify-between text-emerald-400 font-semibold">
+                    <span>Descuento aplicado</span>
+                    <span className="font-mono">- C$ {descuento.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-sm font-extrabold">
+                  <span className="text-white">Total a pagar</span>
+                  <span className="font-mono text-[#FF5722] text-base">C$ {total.toLocaleString()}</span>
+                </div>
               </div>
-            </div>
-
-            {/* Botón de Pago (Desktop) */}
-            <div className="lf-desktop-pay-btn pt-4">
-              <button
-                className="carrito-pagar-btn w-full min-h-[56px] py-4 px-6 bg-[#FF5722] hover:bg-[#E64A19] text-white border-none rounded-2xl font-bold text-base cursor-pointer flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
-                onClick={handlePagar}
-              >
-                <span>Pagar C$ {total.toLocaleString()}</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </button>
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
-        {/* Espacio para el botón fijo en móviles */}
-        <div className="md:hidden" style={{ height: 100 }} />
+        {/* BOTTOM FIXED PAY BUTTON */}
+        {cartItems.length > 0 && (
+          <div className="p-4 bg-[#131822]/95 backdrop-blur-md border-t border-slate-800 sticky bottom-0 z-30">
+            <button
+              onClick={handlePagar}
+              disabled={isProcessing}
+              className="w-full h-14 bg-gradient-to-r from-[#FF5722] to-[#FF7043] hover:from-[#E64A19] hover:to-[#F4511E] text-white rounded-2xl font-extrabold text-sm shadow-xl shadow-[#FF5722]/30 active:scale-98 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
+            >
+              {isProcessing ? (
+                <div className="flex items-center space-x-2">
+                  <LogoSpinner size={24} />
+                  <span>Procesando tu pedido...</span>
+                </div>
+              ) : (
+                <>
+                  <span>Pagar C$ {total.toLocaleString()}</span>
+                  <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
-
-      {/* Botón de pago fijo abajo (Móviles) */}
-      <div className="lf-mobile-footer p-4 pb-[80px] bg-gradient-to-t from-[#FAF8F5] dark:from-[#0A0A0F] to-transparent sticky bottom-0 z-10 mt-auto">
-        <button
-          className="carrito-pagar-btn w-full min-h-[56px] py-4 px-6 bg-[#FF5722] hover:bg-[#E64A19] text-white border-none rounded-2xl font-bold text-base cursor-pointer flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
-          onClick={handlePagar}
-        >
-          <span>Pagar C$ {total.toLocaleString()}</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <polyline points="12 5 19 12 12 19"/>
-          </svg>
-        </button>
-      </div>
-    </div>
+    </motion.div>
   );
 }
