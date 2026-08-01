@@ -558,6 +558,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
 
   const [sheetSnap, setSheetSnap] = useState<SheetSnap>('medium');
   const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [isExpandedMap, setIsExpandedMap] = useState(false);
   const [copied, setCopied] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const etaIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -669,29 +670,6 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       useStore.setState({ trackingSteps: steps, trackingETA: 0 });
     }
   }, [order?.estado]);
-
-  // Simulation intervals (runs only if no live driver GPS position is active)
-  useEffect(() => {
-    if (allCompleted || driverPos !== null) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (etaIntervalRef.current) clearInterval(etaIntervalRef.current);
-      return;
-    }
-
-    intervalRef.current = setInterval(() => {
-      advanceTrackingStep();
-      haptic('medium');
-    }, 15000);
-
-    etaIntervalRef.current = setInterval(() => {
-      updateTrackingETA();
-    }, 30000);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (etaIntervalRef.current) clearInterval(etaIntervalRef.current);
-    };
-  }, [allCompleted, advanceTrackingStep, updateTrackingETA, driverPos]);
 
   // Copy tracking link
   const handleShare = useCallback(() => {
@@ -947,13 +925,15 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       }}
       className="md:!flex-row"
     >
-      {/* ═══════ MAP AREA — 55% mobile ═══════ */}
+      {/* ═══════ MAP AREA — Fullscreen Subpage View ═══════ */}
       <div
         style={{
           position: 'relative',
           width: '100%',
-          height: '55vh',
+          height: isExpandedMap ? '100vh' : '65vh',
           flexShrink: 0,
+          transition: 'height 0.3s ease',
+          zIndex: isExpandedMap ? 100 : 1,
         }}
         className="md:!h-full md:!w-[60%]"
       >
@@ -967,31 +947,117 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           seguirRepartidor={true}
         />
 
-        {/* ─── Back Button: circle 40x40 glassmorphism, ArrowDown icon ─── */}
+        {/* ─── Top Left: Back Button ─── */}
         <button
           onClick={() => { haptic('light'); onBack(); }}
           style={{
             position: 'absolute',
-            top: 12,
-            left: 12,
-            width: 40,
+            top: 16,
+            left: 16,
             height: 40,
-            borderRadius: '50%',
+            padding: '0 14px',
+            borderRadius: 999,
             background: 'var(--lf-glass-bg)',
-            backdropFilter: 'blur(var(--lf-glass-blur))',
-            WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
             border: '1px solid var(--lf-glass-border)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: 8,
             cursor: 'pointer',
-            boxShadow: 'var(--lf-shadow-float)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+            zIndex: 30,
+            fontSize: 13,
+            fontWeight: 700,
+            color: isDark ? '#fff' : '#1B1B2F',
+          }}
+          aria-label="Volver atrás"
+        >
+          <ArrowDown size={16} /> Volver
+        </button>
+
+        {/* ─── Top Right: Quick Actions Floating Panel ─── */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
             zIndex: 30,
           }}
-          aria-label="Minimizar seguimiento"
         >
-          <ArrowDown size={18} style={{ color: isDark ? '#fff' : '#1B1B2F' }} />
-        </button>
+          {/* Botón EXPANDIR MAPA */}
+          <button
+            onClick={() => { haptic('light'); setIsExpandedMap(!isExpandedMap); }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 12,
+              background: 'var(--lf-glass-bg)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid var(--lf-glass-border)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              color: isDark ? '#fff' : '#111827',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+            }}
+          >
+            <Navigation size={14} color="var(--primario)" />
+            {isExpandedMap ? 'Minimizar Mapa' : 'Expandir Mapa'}
+          </button>
+
+          {/* Botón MENSAJE DIRECTO */}
+          {order && (
+            <button
+              onClick={() => { haptic('medium'); onOpenChat(order.id); }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                background: '#0066FF',
+                color: '#fff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(0,102,255,0.4)',
+              }}
+              title="Enviar Mensaje"
+            >
+              <MessageCircle size={18} />
+            </button>
+          )}
+
+          {/* Botón LLAMAR AL REPARTIDOR */}
+          <button
+            onClick={() => {
+              haptic('medium');
+              window.open(`tel:${repartidor?.telefono || '+50588880000'}`);
+            }}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: '#16A34A',
+              color: '#fff',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(22,163,74,0.4)',
+            }}
+            title="Llamar al Repartidor"
+          >
+            <Phone size={18} />
+          </button>
+        </div>
       </div>
 
       {/* ═══════ BOTTOM SHEET — 45% of screen ═══════ */}
