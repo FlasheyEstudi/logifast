@@ -41,7 +41,7 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   try {
     const sessionUser = await getSessionUser();
-    if (sessionUser && sessionUser.role !== 'admin' && sessionUser.role !== 'ingeniero') {
+    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'ingeniero')) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 

@@ -137,24 +137,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     }
   }
 
-  // Fallback demo para desarrollo/pruebas locales si no hay cookie HTTP activa
-  if (process.env.NODE_ENV !== 'production') {
-    const adminUser = await db.user.findFirst({ where: { role: 'admin' } });
-    if (adminUser) {
-      return {
-        id: adminUser.id,
-        email: adminUser.email,
-        name: adminUser.name,
-        role: adminUser.role as SessionUser['role'],
-        telefono: adminUser.telefono,
-        initials: adminUser.initials,
-        color: adminUser.color,
-        fotoUrl: adminUser.fotoUrl,
-        bio: adminUser.bio,
-      };
-    }
-  }
-
   return null;
 }
 

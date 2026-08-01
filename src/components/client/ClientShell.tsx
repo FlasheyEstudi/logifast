@@ -22,35 +22,71 @@ import {
   Search,
   ShoppingBag,
   Store,
+  ChevronLeft,
+  Sparkles,
 } from '@/components/icons';
 import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
+import { LogoSpinner } from '@/components/ui/loaders';
 
 /* ═══════════════════════════════════════════════
-   DYNAMIC MODULE IMPORTS
+   SKELETON COMPONENT (PLACEHOLDER)
    ═══════════════════════════════════════════════ */
+function MobileModuleSkeleton() {
+  return (
+    <div className="w-full space-y-4 p-4 animate-pulse">
+      {/* Banner Skeleton */}
+      <div className="w-full h-44 bg-slate-200 dark:bg-slate-800/60 rounded-3xl" />
+      
+      {/* Categories Grid Skeleton */}
+      <div className="grid grid-cols-4 gap-3 pt-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center space-y-2">
+            <div className="w-14 h-14 bg-slate-200 dark:bg-slate-800/60 rounded-2xl" />
+            <div className="w-10 h-3 bg-slate-200 dark:bg-slate-800/60 rounded-full" />
+          </div>
+        ))}
+      </div>
 
-const ClientInicio = dynamic(() => import('./ClientInicio'), { ssr: false });
-const ClientSolicitar = dynamic(() => import('./ClientSolicitar'), { ssr: false });
-const ClientEnvios = dynamic(() => import('./ClientEnvios'), { ssr: false });
-const ClientPerfil = dynamic(() => import('./ClientPerfil'), { ssr: false });
-const ClientTracking = dynamic(() => import('./ClientTracking'), { ssr: false });
-const ClientChat = dynamic(() => import('./ClientChat'), { ssr: false });
-const ClientRating = dynamic(() => import('./ClientRating'), { ssr: false });
-const ClientExplorar = dynamic(() => import('./ClientExplorar'), { ssr: false });
-const ClientTienda = dynamic(() => import('./ClientTienda'), { ssr: false });
-const ClientCarrito = dynamic(() => import('./ClientCarrito'), { ssr: false });
-const ClientPedidos = dynamic(() => import('./ClientPedidos'), { ssr: false });
-const ClientBusqueda = dynamic(() => import('./ClientBusqueda'), { ssr: false });
-const ClientAyuda = dynamic(() => import('./ClientAyuda'), { ssr: false });
-const ClientPuntos = dynamic(() => import('./ClientPuntos'), { ssr: false });
-const ClientMiTienda = dynamic(() => import('./ClientMiTienda'), { ssr: false });
+      {/* Cards List Skeleton */}
+      <div className="space-y-3 pt-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="p-4 bg-slate-200 dark:bg-slate-800/40 rounded-2xl flex items-center space-x-3">
+            <div className="w-12 h-12 bg-slate-300 dark:bg-slate-700/60 rounded-xl flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="w-3/4 h-4 bg-slate-300 dark:bg-slate-700/60 rounded-full" />
+              <div className="w-1/2 h-3 bg-slate-300 dark:bg-slate-700/60 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   DYNAMIC MODULE IMPORTS WITH ELEGANT SKELETON
+   ═══════════════════════════════════════════════ */
+const ClientInicio = dynamic(() => import('./ClientInicio'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientSolicitar = dynamic(() => import('./ClientSolicitar'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientEnvios = dynamic(() => import('./ClientEnvios'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientPerfil = dynamic(() => import('./ClientPerfil'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientTracking = dynamic(() => import('./ClientTracking'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientChat = dynamic(() => import('./ClientChat'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientRating = dynamic(() => import('./ClientRating'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientExplorar = dynamic(() => import('./ClientExplorar'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientTienda = dynamic(() => import('./ClientTienda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientCarrito = dynamic(() => import('./ClientCarrito'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientPedidos = dynamic(() => import('./ClientPedidos'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientBusqueda = dynamic(() => import('./ClientBusqueda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientAyuda = dynamic(() => import('./ClientAyuda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientPuntos = dynamic(() => import('./ClientPuntos'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+const ClientMiTienda = dynamic(() => import('./ClientMiTienda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
 
 /* ═══════════════════════════════════════════════
    SNACKBAR CONTEXT
    ═══════════════════════════════════════════════ */
-
 interface SnackbarData {
   message: string;
   action?: string;
@@ -58,15 +94,13 @@ interface SnackbarData {
 }
 
 const SnackbarContext = createContext<(data: SnackbarData | null) => void>(() => {});
-
 export function useSnackbar() {
   return useContext(SnackbarContext);
 }
 
 /* ═══════════════════════════════════════════════
-   PROPS
+   PROPS INTERFACE
    ═══════════════════════════════════════════════ */
-
 interface ClientShellProps {
   isDark: boolean;
   toggleTheme: () => void;
@@ -75,11 +109,10 @@ interface ClientShellProps {
 }
 
 /* ═══════════════════════════════════════════════
-   HELPERS
+   HELPERS & ICON UTILS
    ═══════════════════════════════════════════════ */
-
 function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
+  const parts = (name || 'Usuario').trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return parts[0].substring(0, 2).toUpperCase();
 }
@@ -88,50 +121,63 @@ function relativeTime(timestamp: string): string {
   const now = Date.now();
   const then = new Date(timestamp).getTime();
   const diff = now - then;
-
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return 'Ahora mismo';
-  if (minutes < 60) return `Hace ${minutes} min`;
-
+  if (minutes < 60) return `Hace ${minutes}m`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
-
+  if (hours < 24) return `Hace ${hours}h`;
   const days = Math.floor(hours / 24);
-  if (days < 30) return `Hace ${days} día${days > 1 ? 's' : ''}`;
-
-  const months = Math.floor(days / 30);
-  return `Hace ${months} mes${months > 1 ? 'es' : ''}`;
+  return `Hace ${days}d`;
 }
 
-/* Notification icon + color by tipo */
+function SignalIcon() {
+  return (
+    <svg width="14" height="10" viewBox="0 0 16 12" fill="currentColor">
+      <rect x="0" y="9" width="3" height="3" rx="0.5" />
+      <rect x="4.5" y="6" width="3" height="6" rx="0.5" />
+      <rect x="9" y="3" width="3" height="9" rx="0.5" />
+      <rect x="13.5" y="0" width="3" height="12" rx="0.5" opacity="0.4" />
+    </svg>
+  );
+}
+
+function WifiIcon() {
+  return (
+    <svg width="14" height="10" viewBox="0 0 16 12" fill="currentColor">
+      <circle cx="8" cy="9" r="1.5" />
+      <path d="M4.93 6.47a4.36 4.36 0 016.14 0" stroke="currentColor" strokeWidth="1.4" fill="none" />
+      <path d="M2.1 3.64a7.8 7.8 0 0111.8 0" stroke="currentColor" strokeWidth="1.4" fill="none" />
+    </svg>
+  );
+}
+
+function BatteryIcon() {
+  return (
+    <svg width="22" height="12" viewBox="0 0 22 12" fill="currentColor">
+      <rect x="0" y="0.5" width="19" height="11" rx="2" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" />
+      <rect x="1.5" y="2" width="14" height="8" rx="1" />
+      <rect x="19.5" y="3.5" width="2" height="5" rx="0.8" opacity="0.4" />
+    </svg>
+  );
+}
+
 function getNotifIcon(tipo: ClientNotificacion['tipo']): { icon: React.ReactNode; color: string } {
-  const iconSize = 18;
   switch (tipo) {
-    case 'orden_confirmada':
-      return { icon: <CheckCircle size={iconSize} />, color: 'var(--exito)' };
-    case 'repartidor_asignado':
-      return { icon: <User size={iconSize} />, color: 'var(--info)' };
-    case 'repartidor_camino':
-      return { icon: <Bike size={iconSize} />, color: '#FF9800' };
-    case 'paquete_recogido':
-      return { icon: <Package size={iconSize} />, color: 'var(--info)' };
-    case 'entrega_exitosa':
-      return { icon: <CheckCircle size={22} />, color: 'var(--exito)' };
-    case 'incidencia':
-      return { icon: <AlertTriangle size={iconSize} />, color: 'var(--peligro)' };
-    case 'codigo_nuevo':
-      return { icon: <Tag size={iconSize} />, color: '#FF9800' };
-    case 'te_extranamos':
-      return { icon: <Heart size={iconSize} />, color: '#E91E63' };
-    default:
-      return { icon: <Bell size={iconSize} />, color: 'var(--primario)' };
+    case 'orden_confirmada': return { icon: <CheckCircle size={18} />, color: '#00C853' };
+    case 'repartidor_asignado': return { icon: <User size={18} />, color: '#2979FF' };
+    case 'repartidor_camino': return { icon: <Bike size={18} />, color: '#FF9800' };
+    case 'paquete_recogido': return { icon: <Package size={18} />, color: '#2979FF' };
+    case 'entrega_exitosa': return { icon: <CheckCircle size={20} />, color: '#00C853' };
+    case 'incidencia': return { icon: <AlertTriangle size={18} />, color: '#FF1744' };
+    case 'codigo_nuevo': return { icon: <Tag size={18} />, color: '#FF9800' };
+    case 'te_extranamos': return { icon: <Heart size={18} />, color: '#E91E63' };
+    default: return { icon: <Bell size={18} />, color: '#FF5722' };
   }
 }
 
 /* ═══════════════════════════════════════════════
    NAV CONFIG
    ═══════════════════════════════════════════════ */
-
 interface NavItem {
   key: ClientModuleKey;
   label: string;
@@ -148,31 +194,6 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 /* ═══════════════════════════════════════════════
-   SVG ICONS (status bar)
-   ═══════════════════════════════════════════════ */
-
-function SignalIcon() {
-  return (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
-      <rect x="0" y="9" width="3" height="3" rx="0.5" />
-      <rect x="4.5" y="6" width="3" height="6" rx="0.5" />
-      <rect x="9" y="3" width="3" height="9" rx="0.5" />
-      <rect x="13.5" y="0" width="3" height="12" rx="0.5" opacity="0.3" />
-    </svg>
-  );
-}
-
-function WifiIcon() {
-  return (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
-      <path d="M8 10.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" transform="translate(0,-2)" />
-      <path d="M4.93 8.47a4.36 4.36 0 016.14 0" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" transform="translate(0,-1)" />
-      <path d="M2.1 5.64a7.8 7.8 0 0111.8 0" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function BatteryIcon() {
   return (
     <svg width="22" height="12" viewBox="0 0 22 12" fill="currentColor">
       <rect x="0" y="0.5" width="19" height="11" rx="2" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" />
