@@ -27,6 +27,7 @@ import {
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
+import { geocodeAddress, buscarUbicacionDinamica } from '@/lib/osrm';
 
 /* ═══════════════════════════════════════════════
    TYPES
@@ -265,10 +266,42 @@ function AddressInput({
   placeholder: string;
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [apiResults, setApiResults] = useState<DireccionSugerencia[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const filtered = useMemo(() => {
-    if (value.length < 2) return [];
+  useEffect(() => {
+    if (!value || value.trim().length < 2) {
+      setApiResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const results = await buscarUbicacionDinamica(value);
+        if (results && results.length > 0) {
+          const mapped: DireccionSugerencia[] = results.map((item, idx) => {
+            const parts = item.display_name.split(',');
+            const mainName = parts[0] ? parts[0].trim() : item.display_name;
+            const subName = parts.slice(1, 3).join(', ').trim() || 'Nicaragua';
+            return {
+              id: `api-${idx}-${Date.now()}`,
+              direccion: mainName,
+              barrio: subName,
+              lat: item.lat,
+              lng: item.lng,
+            };
+          });
+          setApiResults(mapped);
+          setShowDropdown(true);
+        }
+      } catch (e) {}
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [value]);
+
+  const filteredStore = useMemo(() => {
+    if (value.length < 2) return suggestions;
     const q = value.toLowerCase();
     return suggestions.filter(
       (s) =>
@@ -277,9 +310,19 @@ function AddressInput({
     );
   }, [value, suggestions]);
 
+  const combinedResults = useMemo(() => {
+    const list = [...filteredStore, ...apiResults];
+    const seen = new Set();
+    return list.filter((item) => {
+      const key = item.direccion.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [filteredStore, apiResults]);
+
   // Close dropdown when clicking outside
   const handleBlur = useCallback((e: React.FocusEvent) => {
-    // Use setTimeout to allow click events on dropdown items to fire first
     setTimeout(() => {
       if (containerRef.current && !containerRef.current.contains(document.activeElement)) {
         setShowDropdown(false);
@@ -309,9 +352,13 @@ function AddressInput({
         <input
           type="text"
           value={value}
-          onChange={(e) => { onChange(e.target.value); setShowDropdown(true); }}
+          onChange={(e) => {
+            const val = e.target.value;
+            onChange(val);
+            setShowDropdown(true);
+          }}
           onFocus={() => {
-            if (filtered.length > 0) setShowDropdown(true);
+            setShowDropdown(true);
           }}
           onBlur={handleBlur}
           placeholder={placeholder}
@@ -346,7 +393,7 @@ function AddressInput({
         )}
       </div>
       <AnimatePresence>
-        {showDropdown && (
+        {showDropdown && combinedResults.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
@@ -362,12 +409,12 @@ function AddressInput({
               border: '1.5px solid var(--border)',
               borderRadius: 12,
               marginTop: 4,
-              maxHeight: 200,
+              maxHeight: 220,
               overflowY: 'auto',
               boxShadow: 'var(--shadow-lg)',
             }}
           >
-            {filtered.map((s) => (
+            {combinedResults.map((s) => (
               <button
                 key={s.id}
                 onClick={() => {
@@ -396,9 +443,9 @@ function AddressInput({
                   (e.currentTarget as HTMLElement).style.background = 'transparent';
                 }}
               >
-                <MapPin size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                <MapPin size={16} style={{ color: 'var(--primario)', flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>{s.direccion}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{s.direccion}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.barrio}</div>
                 </div>
               </button>
@@ -877,7 +924,10 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
               <AddressInput
                 label="Dirección de recogida"
                 value={solicitudEnvio.origen}
-                onChange={(v) => setSolicitudEnvio({ origen: v })}
+                onChange={(v) => {
+                  const [lat, lng] = geocodeAddress(v);
+                  setSolicitudEnvio({ origen: v, origenLat: lat, origenLng: lng });
+                }}
                 onSelect={(s) =>
                   setSolicitudEnvio({ origen: s.direccion, origenLat: s.lat, origenLng: s.lng })
                 }
@@ -916,7 +966,10 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
               <AddressInput
                 label="Dirección de entrega"
                 value={solicitudEnvio.destino}
-                onChange={(v) => setSolicitudEnvio({ destino: v })}
+                onChange={(v) => {
+                  const [lat, lng] = geocodeAddress(v);
+                  setSolicitudEnvio({ destino: v, destinoLat: lat, destinoLng: lng });
+                }}
                 onSelect={(s) =>
                   setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng })
                 }
