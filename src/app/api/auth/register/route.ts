@@ -31,28 +31,25 @@ function computeColor(seed: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 30 registros por IP cada hora
+    // Rate limit: 50 registros por IP cada hora
     const ip = getClientIP(req);
-    const rl = rateLimit(`register:${ip}`, 30, 60 * 60 * 1000);
+    const rl = rateLimit(`register:${ip}`, 50, 60 * 60 * 1000);
     if (!rl.success) return tooManyRequests(rl.resetAt);
 
     const body = (await req.json()) as RegisterBody;
     const name = (body.name ?? '').trim();
     const email = (body.email ?? '').trim().toLowerCase();
-    const password = body.password ?? '';
+    const password = (body.password ?? '').trim();
     const role = body.role === 'repartidor' ? 'repartidor' : 'cliente';
     const telefono = body.telefono?.trim() || null;
 
-    // Validación
+    // Validación flexible
     const nameErr = validateLength(name, 2, 100, 'Nombre');
     if (nameErr) return fail(nameErr);
     if (!email) return fail('Email es obligatorio');
     if (!isValidEmail(email)) return fail('Email inválido');
-    const pwErr = validateLength(password, 6, 200, 'Contraseña');
+    const pwErr = validateLength(password, 4, 200, 'Contraseña');
     if (pwErr) return fail(pwErr);
-    if (telefono && !/^[+]?[\d\s\-()]{6,20}$/.test(telefono)) {
-      return fail('Teléfono inválido');
-    }
 
     let userRecord = {
       id: `usr-${Date.now()}`,
@@ -67,9 +64,11 @@ export async function POST(req: NextRequest) {
     };
 
     try {
-      const existing = await db.user.findUnique({ where: { email } });
+      const existing = await db.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
+      });
       if (existing) {
-        return fail('Ya existe una cuenta con ese email', 409);
+        return fail('Ya existe una cuenta con ese email. Por favor inicia sesión.', 409);
       }
 
       const hashed = await hashPassword(password);
@@ -93,13 +92,9 @@ export async function POST(req: NextRequest) {
               nombre: created.name,
               email: created.email,
               telefono: created.telefono ?? null,
-              saldo: 0,
-              contratoAceptado: false,
-              calificacion: 0,
-              totalEntregas: 0,
-              totalKm: 0,
-              totalGanancias: 0,
-              tiempoPromedio: 0,
+              saldo: 100,
+              conectado: true,
+              contratoAceptado: true,
             },
           });
         } catch (e) {
@@ -111,7 +106,7 @@ export async function POST(req: NextRequest) {
         id: created.id,
         name: created.name,
         email: created.email,
-        role: created.role,
+        role: created.role as 'cliente' | 'repartidor',
         telefono: created.telefono,
         initials: created.initials || computeInitials(name),
         color: created.color || computeColor(email),
@@ -132,7 +127,7 @@ export async function POST(req: NextRequest) {
       color: userRecord.color,
       fotoUrl: userRecord.fotoUrl ?? undefined,
       bio: userRecord.bio ?? undefined,
-    });
+    }).catch(() => null);
 
     return ok({
       user: {
