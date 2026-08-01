@@ -149,40 +149,26 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Auto-asignar al primer repartidor conectado disponible
-    if (user.role === 'cliente') {
-      const repartidor = await db.repartidorProfile.findFirst({
-        where: {
-          conectado: true,
-          enServicio: false,
-          pausado: false,
-          contratoAceptado: true,
+    // Notificar a repartidores conectados
+    const repartidoresConectados = await db.repartidorProfile.findMany({
+      where: { conectado: true },
+      take: 10,
+    }).catch(() => []);
+
+    for (const rep of repartidoresConectados) {
+      await db.notificacionRepartidor.create({
+        data: {
+          repartidorId: rep.id,
+          tipo: 'nueva_orden_disponible',
+          titulo: 'Nueva orden disponible',
+          contenido: `${orden.id} — ${tipo === 'envio' ? 'Envío' : 'Compra'} de ${user.name}`,
+          leido: false,
+          ordenId: orden.id,
         },
-        orderBy: { totalEntregas: 'asc' },
-      });
-
-      if (repartidor) {
-        await db.ordenServicio.update({
-          where: { id: orden.id },
-          data: { repartidorId: repartidor.id, estado: 'asignado' },
-        });
-
-        await db.notificacionRepartidor.create({
-          data: {
-            repartidorId: repartidor.id,
-            tipo: 'orden_asignada',
-            titulo: 'Nueva orden asignada',
-            contenido: `${orden.id} — ${tipo === 'envio' ? 'Envío' : 'Compra'} de ${user.name}`,
-            leido: false,
-            ordenId: orden.id,
-          },
-        });
-
-        return NextResponse.json({ orden: { ...orden, estado: 'asignado', repartidorId: repartidor.id } });
-      }
+      }).catch(() => null);
     }
 
-    return NextResponse.json({ orden });
+    return NextResponse.json({ orden, status: 'pendiente' }, { status: 201 });
   } catch (error) {
     console.error('[ORDENES_POST]', error);
     return NextResponse.json({ error: 'Error al crear la orden' }, { status: 500 });

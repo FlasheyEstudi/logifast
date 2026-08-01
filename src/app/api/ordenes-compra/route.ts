@@ -225,37 +225,23 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Auto-asignar repartidor conectado
-    const repartidor = await db.repartidorProfile.findFirst({
-      where: {
-        conectado: true,
-        enServicio: false,
-        pausado: false,
-        contratoAceptado: true,
-        saldo: { gt: 0 },
-      },
-      orderBy: { totalEntregas: 'asc' },
-    });
+    // Auto-asignar r    // Notificar a repartidores en servicio
+    const repartidoresConectados = await db.repartidorProfile.findMany({
+      where: { conectado: true },
+      take: 10,
+    }).catch(() => []);
 
-    if (repartidor) {
-      await db.ordenServicio.update({
-        where: { id: ordenServicio.id },
-        data: { repartidorId: repartidor.id, estado: 'asignado' },
-      });
-      await db.ordenCompra.update({
-        where: { id: orden.id },
-        data: { repartidorId: repartidor.id, estado: 'en_camino' },
-      });
+    for (const rep of repartidoresConectados) {
       await db.notificacionRepartidor.create({
         data: {
-          repartidorId: repartidor.id,
-          tipo: 'orden_asignada',
-          titulo: 'Nueva orden de compra asignada',
-          contenido: `${ordenServicio.id} — ${tienda.nombre}`,
+          repartidorId: rep.id,
+          tipo: 'nueva_orden_disponible',
+          titulo: 'Nueva compra disponible',
+          contenido: `Orden #${orden.id.slice(-6)} — ${tienda.nombre}`,
           leido: false,
           ordenId: ordenServicio.id,
         },
-      });
+      }).catch(() => null);
     }
 
     return NextResponse.json(

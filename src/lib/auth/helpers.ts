@@ -93,34 +93,37 @@ export function validateLength(
 export function handleError(error: unknown, context?: string) {
   if (context) console.error(`[${context}]`, error);
 
-  const err = error as Error & { status?: number };
-  if (err?.status === 401 || err?.message === 'UNAUTHORIZED') {
+  const err = error as Error & { status?: number; code?: string };
+  const msg = err?.message ?? String(error);
+
+  if (err?.status === 401 || msg.includes('UNAUTHORIZED') || msg.includes('No autorizado')) {
     return NextResponse.json(
       { ok: false, error: 'No autorizado' },
       { status: 401 }
     );
   }
-  if (err?.status === 403 || err?.message === 'FORBIDDEN') {
+
+  if (err?.status === 403 || msg.includes('FORBIDDEN') || msg.includes('No tienes permiso')) {
     return NextResponse.json(
       { ok: false, error: 'No tienes permiso para esta acción' },
       { status: 403 }
     );
   }
 
-  // Prisma errors conocidos
-  const msg = err?.message ?? '';
   if (msg.includes('Unique constraint')) {
     return NextResponse.json(
       { ok: false, error: 'Ya existe un registro con esos datos únicos' },
       { status: 409 }
     );
   }
+
   if (msg.includes('Foreign key constraint')) {
     return NextResponse.json(
-      { ok: false, error: 'Referencia inválida (la entidad relacionada no existe)' },
+      { ok: false, error: 'Referencia inválida (entidad no encontrada)' },
       { status: 400 }
     );
   }
+
   if (msg.includes('Record to update not found') || msg.includes('Record to delete not found')) {
     return NextResponse.json(
       { ok: false, error: 'Registro no encontrado' },
