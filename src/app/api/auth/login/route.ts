@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
           reason: !user ? 'user_not_found' : 'wrong_password',
         },
       }).catch(() => null);
-      return fail('Credenciales inválidas. Usa una cuenta demo (ej: admin@logifast.com / 123456)', 401);
+      return fail('Credenciales inválidas. Por favor verifica tu correo y contraseña.', 401);
     }
 
     // Audit log de login exitoso (silent catch)

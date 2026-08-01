@@ -175,3 +175,31 @@ export function geocodeAddress(
 
   return [fallback[0] + latOffset, fallback[1] + lngOffset];
 }
+
+/**
+ * Dynamic OpenStreetMap / Nominatim Geocoding API for Nicaragua.
+ * Searches real departments, cities, and neighborhoods dynamically from map service.
+ */
+export async function buscarUbicacionDinamica(query: string): Promise<Array<{ display_name: string; lat: number; lng: number }>> {
+  if (!query || query.trim().length < 2) return [];
+  const encodedQuery = encodeURIComponent(`${query.trim()}, Nicaragua`);
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&addressdetails=1&limit=6&countrycodes=ni`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Accept-Language': 'es-NI,es;q=0.9',
+        'User-Agent': 'LogifastApp/1.0',
+      },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.map((item: any) => ({
+      display_name: item.display_name,
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+    }));
+  } catch {
+    return [];
+  }
+}
