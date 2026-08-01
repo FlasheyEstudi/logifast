@@ -18,6 +18,7 @@ import { useConfigStore } from '@/store/configStore';
 import { TemaToggle } from '@/components/ui/TemaToggle';
 import { SonidoToggle } from '@/components/ui/SonidoToggle';
 import { notify } from '@/lib/notify';
+import ClientMiTienda from './ClientMiTienda';
 
 // Icono cámara (no estaba en el set)
 function Camera({ size = 16 }: { size?: number }) {
@@ -207,6 +208,8 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const [newAddrLabel, setNewAddrLabel] = useState<'Casa' | 'Trabajo' | 'Otro'>('Casa');
   const [newAddrSuggestions, setNewAddrSuggestions] = useState<string[]>([]);
   const [showNewAddrSugg, setShowNewAddrSugg] = useState(false);
+  const [showMiTiendaEnv, setShowMiTiendaEnv] = useState(false);
+  const [storeTagInput, setStoreTagInput] = useState('');
 
   /* ─── Favorites tabs ─── */
   const [favTab, setFavTab] = useState<'tiendas' | 'productos'>('tiendas');
@@ -793,7 +796,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       </div>
 
       {/* ═══════════════════════════════════════════
-          0. MI NEGOCIO / AFILIAR TIENDA
+          0. MI NEGOCIO / ACTIVAR MODO TIENDA
           ═══════════════════════════════════════════ */}
       <div style={{ ...sectionCard, background: 'linear-gradient(135deg, rgba(0,102,255,0.06) 0%, rgba(255,102,0,0.06) 100%)', border: '1px solid rgba(0,102,255,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: myStore ? 12 : 8 }}>
@@ -803,36 +806,61 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
             </div>
             <div>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                {myStore ? myStore.nombre : 'Afiliar mi Negocio en LOGIFAST'}
+                {myStore ? myStore.nombre : 'Activar Modo Tienda'}
               </h3>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                {myStore ? `${myStore.categoria.toUpperCase()} • ${myStore.direccion}` : 'Vende tus productos y recibe pedidos en tiempo real'}
+                {myStore ? `${myStore.categoria.toUpperCase()} • ${myStore.direccion}` : 'Crea tu perfil exclusivo de comercio para vender y gestionar tus productos'}
               </p>
             </div>
           </div>
 
           {myStore ? (
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: 'rgba(22,163,74,0.12)', color: '#16A34A' }}>
-              ACTIVA
-            </span>
-          ) : (
             <button
-              onClick={() => setShowStoreModal(true)}
+              onClick={() => setShowMiTiendaEnv(!showMiTiendaEnv)}
               style={btnPrimary}
             >
-              <Plus size={14} /> Afiliar Tienda
+              {showMiTiendaEnv ? 'Ocultar Mi Tienda' : 'Gestionar Mi Tienda'}
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (myStore) {
+                  setShowMiTiendaEnv(true);
+                } else {
+                  setShowStoreModal(true);
+                }
+              }}
+              style={btnPrimary}
+            >
+              <Plus size={14} /> Activar Modo Tienda
             </button>
           )}
         </div>
 
         {myStore && (
           <div style={{ display: 'flex', gap: 16, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 13, color: 'var(--text-secondary)' }}>
+            <div><strong>Estado:</strong> <span style={{ color: '#16A34A', fontWeight: 700 }}>✅ TIENDA ACTIVA</span></div>
             <div><strong>Pedidos:</strong> {myStore.totalPedidos || 0}</div>
             <div><strong>Calificación:</strong> ⭐ {myStore.calificacion || 5.0}</div>
-            <div><strong>Estado:</strong> {myStore.estado || 'activo'}</div>
           </div>
         )}
       </div>
+
+      {/* Panel Entorno de Mi Tienda Activado */}
+      <AnimatePresence>
+        {myStore && showMiTiendaEnv && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: 'hidden', marginTop: 16, borderRadius: 20, border: '1px solid var(--border)', background: 'var(--surface)' }}
+          >
+            <div style={{ padding: 16 }}>
+              <ClientMiTienda />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Store Onboarding Modal */}
       <AnimatePresence>

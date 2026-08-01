@@ -189,19 +189,8 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'explorar', label: 'Explorar', icon: <Search size={22} /> },
   { key: 'solicitar', label: 'Enviar', icon: <PackagePlus size={22} /> },
   { key: 'pedidos', label: 'Pedidos', icon: <Package size={22} /> },
-  { key: 'tienda', label: 'Mi Tienda', icon: <Store size={22} /> },
   { key: 'perfil', label: 'Perfil', icon: <User size={22} /> },
 ];
-
-/* ═══════════════════════════════════════════════
-  return (
-    <svg width="22" height="12" viewBox="0 0 22 12" fill="currentColor">
-      <rect x="0" y="0.5" width="19" height="11" rx="2" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" />
-      <rect x="1.5" y="2" width="14" height="8" rx="1" />
-      <rect x="19.5" y="3.5" width="2" height="5" rx="0.8" opacity="0.4" />
-    </svg>
-  );
-}
 
 /* ═══════════════════════════════════════════════
    MAIN COMPONENT
@@ -228,6 +217,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   } = useStore();
 
   const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount, fetchTiendas, fetchOrdenesCompra, fetchFavoritos } = useMarketplaceStore();
+
+  /* ─── Sync Dynamic URL Hash ─── */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.location.hash = `#/cliente/${clientActiveModule}`;
+    }
+  }, [clientActiveModule]);
 
   /* ─── Cargar datos del backend al montar ─── */
   useEffect(() => {
