@@ -380,17 +380,24 @@ export default function Home() {
 
     const handleHashChange = () => {
       const hash = window.location.hash;
-      if (hash === '#/login') {
+      const savedRole = typeof window !== 'undefined' ? localStorage.getItem('lf-session-role') : null;
+      const savedName = typeof window !== 'undefined' ? localStorage.getItem('lf-session-name') : null;
+
+      if (hash === '#/login' && !savedRole) {
         setCurrentView('login');
         setRegStep(1);
         document.body.style.overflow = 'hidden';
-      } else if (hash === '#/register') {
+      } else if (hash === '#/register' && !savedRole) {
         setCurrentView('register');
         setRegStep(1);
         document.body.style.overflow = 'hidden';
-      } else if (hash === '#/dashboard') {
-        const savedRole = localStorage.getItem('lf-session-role');
-        const savedName = localStorage.getItem('lf-session-name');
+      } else if (
+        hash.startsWith('#/dashboard') ||
+        hash.startsWith('#/cliente') ||
+        hash.startsWith('#/repartidor') ||
+        hash.startsWith('#/ingeniero') ||
+        Boolean(savedRole)
+      ) {
         if (savedRole) {
           setLoginRole(savedRole);
           if (savedName) setLoginUserName(savedName);
@@ -409,11 +416,13 @@ export default function Home() {
                 setCurrentView('dashboard');
                 document.body.style.overflow = '';
               } else {
-                window.location.hash = '#/';
+                setCurrentView('landing');
+                document.body.style.overflow = '';
               }
             })
             .catch(() => {
-              window.location.hash = '#/';
+              setCurrentView('landing');
+              document.body.style.overflow = '';
             });
         }
       } else {
