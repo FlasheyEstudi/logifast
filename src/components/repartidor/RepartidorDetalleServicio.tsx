@@ -23,19 +23,9 @@ import {
   Bell,
 } from '@/components/icons';
 import { useRepartidorStore, type ServicioHistorial } from '@/lib/repartidor-store';
+import { StarRating } from './RepartidorPerfil';
 import RepartidorMiniMap from './RepartidorMiniMap';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
-
-function StarRating({ rating, value }: { rating?: number; value?: number; size?: number }) {
-  const r = rating ?? value ?? 5;
-  return (
-    <div className="flex items-center gap-1 text-amber-400 text-xs">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star key={i} size={14} className={i < Math.floor(r) ? 'fill-amber-400' : 'opacity-30'} />
-      ))}
-    </div>
-  );
-}
 
 /* ═══════════════════════════════════════════════
    TIMELINE STEPS

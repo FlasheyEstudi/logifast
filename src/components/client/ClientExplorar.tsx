@@ -1,228 +1,1081 @@
 'use client';
-
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search,
-  Star,
-  Clock,
-  ChevronRight,
-  ShoppingCart,
-  Plus,
-  Minus,
-  X,
-  Filter,
-  Check,
-  Tag,
-  Sparkles,
+  Search, SlidersHorizontal, Heart, Star, Clock, MapPin, Truck,
+  ChevronRight, X, ShoppingBag, Check, Utensils, Store, Pill,
+  Gift, ShoppingCart, Smartphone, Dumbbell, Map, CheckCircle,
 } from '@/components/icons';
-import { useMarketplaceStore, CATEGORIAS, type Tienda, type Producto } from '@/lib/marketplace-store';
-import type { ClientModuleKey } from '@/lib/store';
+import { useMarketplaceStore, type Tienda, type TiendaCategoria, CATEGORIAS } from '@/lib/marketplace-store';
+import { useStore } from '@/lib/store';
+import { StoryViewer } from '@/components/ui/StoryViewer';
 
-export interface ClientExplorarProps {
-  isDark?: boolean;
-  userName?: string;
-  onNavigate: (mod: ClientModuleKey) => void;
-  onOpenTracking?: (id: string) => void;
-  onOpenChat?: (id: string) => void;
+/* ═══════════════════════════════════════════════
+   PROPS
+   ═══════════════════════════════════════════════ */
+
+interface ClientExplorarProps {
+  isDark: boolean;
+  userName: string;
+  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+  onOpenTracking: (orderId: string) => void;
+  onOpenChat: (orderId: string) => void;
 }
 
-export default function ClientExplorar({ isDark, userName, onNavigate }: ClientExplorarProps) {
-  const tiendas = useMarketplaceStore((s) => s.tiendas);
-  const productos = useMarketplaceStore((s) => s.productos);
-  const addToCart = useMarketplaceStore((s) => s.addToCart);
+/* ═══════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════ */
 
-  const [query, setQuery] = useState('');
-  const [selectedCat, setSelectedCat] = useState<string>('todos');
-  const [selectedTienda, setSelectedTienda] = useState<Tienda | null>(null);
+const DIA_MAP: Record<number, string> = {
+  0: 'dom',
+  1: 'lun',
+  2: 'mar',
+  3: 'mie',
+  4: 'jue',
+  5: 'vie',
+  6: 'sab',
+};
 
-  // Filtered stores
+function isOpenNow(horario: Record<string, { abre: string; cierra: string }>): boolean {
+  const now = new Date();
+  const diaKey = DIA_MAP[now.getDay()];
+  const h = horario[diaKey];
+  if (!h || !h.abre || !h.cierra) return false;
+  const currentMin = now.getHours() * 60 + now.getMinutes();
+  const [abH, abM] = h.abre.split(':').map(Number);
+  const [ciH, ciM] = h.cierra.split(':').map(Number);
+  const abreMin = abH * 60 + abM;
+  const cierraMin = ciH * 60 + ciM;
+  return currentMin >= abreMin && currentMin <= cierraMin;
+}
+
+function categoriaLabel(key: TiendaCategoria): string {
+  const found = CATEGORIAS.find((c) => c.key === key);
+  return found ? found.label : key;
+}
+
+const ICON_MAP: Record<string, React.FC<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
+  utensils: Utensils,
+  store: Store,
+  pill: Pill,
+  gift: Gift,
+  'shopping-cart': ShoppingCart,
+  smartphone: Smartphone,
+  dumbbell: Dumbbell,
+};
+
+function CategoryIcon({ name, size = 20, style }: { name: string; size?: number; style?: React.CSSProperties }) {
+  const Icon = ICON_MAP[name];
+  if (!Icon) return null;
+  return <Icon size={size} style={style} />;
+}
+
+const FILTROS_SECUNDARIOS = [
+  { key: 'cerca', label: 'Cerca de mi', icon: MapPin },
+  { key: 'calificados', label: 'Mejor calificados', icon: Star },
+  { key: 'envio_gratis', label: 'Envio gratis', icon: Truck },
+  { key: 'abierto', label: 'Abierto ahora', icon: Clock },
+  { key: 'promo', label: 'Con promo', icon: ShoppingBag },
+] as const;
+
+/* ═══════════════════════════════════════════════
+   HAPTIC
+   ═══════════════════════════════════════════════ */
+
+function haptic(ms = 10) {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(ms);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   ANIMATION VARIANTS
+   ═══════════════════════════════════════════════ */
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.04, duration: 0.35, ease: 'easeOut' as const },
+  }),
+};
+
+const dropdownVariant = {
+  hidden: { opacity: 0, y: -6, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: 'easeOut' as const } },
+  exit: { opacity: 0, y: -6, scale: 0.97, transition: { duration: 0.15 } },
+};
+
+/* ═══════════════════════════════════════════════
+   COMPONENT
+   ═══════════════════════════════════════════════ */
+
+export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientExplorarProps) {
+  const {
+    tiendas,
+    productos,
+    explorarCategoria,
+    explorarFiltros,
+    explorarSearch,
+    favoritosTiendas,
+    setExplorarCategoria,
+    toggleExplorarFiltro,
+    setExplorarSearch,
+    setTiendaSeleccionada,
+    toggleFavoritoTienda,
+    isFavoritoTienda,
+  } = useMarketplaceStore();
+
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [localSearch, setLocalSearch] = useState(explorarSearch);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [pressedCard, setPressedCard] = useState<string | null>(null);
+
+  /* ─── Filtered tiendas ─── */
   const filteredTiendas = useMemo(() => {
-    return tiendas.filter((t) => {
-      const matchCat = selectedCat === 'todos' || t.categoria === selectedCat;
-      const matchQuery =
-        !query ||
-        t.nombre.toLowerCase().includes(query.toLowerCase()) ||
-        t.descripcion.toLowerCase().includes(query.toLowerCase());
-      return matchCat && matchQuery;
-    });
-  }, [tiendas, selectedCat, query]);
+    let result = tiendas.filter((t) => t.estado === 'activo');
 
-  // Store products
-  const tiendaProductos = useMemo(() => {
-    if (!selectedTienda) return [];
-    return productos.filter((p) => p.tiendaId === selectedTienda.id);
-  }, [productos, selectedTienda]);
+    if (explorarCategoria !== 'todos') {
+      result = result.filter((t) => t.categoria === explorarCategoria);
+    }
+
+    if (localSearch.trim()) {
+      const q = localSearch.trim().toLowerCase();
+      result = result.filter(
+        (t) =>
+          t.nombre.toLowerCase().includes(q) ||
+          t.descripcion.toLowerCase().includes(q)
+      );
+    }
+
+    if (explorarFiltros.includes('calificados')) {
+      result = [...result].sort((a, b) => b.calificacion - a.calificacion);
+    }
+    if (explorarFiltros.includes('envio_gratis')) {
+      result = result.filter((t) => t.costoEnvio <= 20);
+    }
+    if (explorarFiltros.includes('abierto')) {
+      result = result.filter((t) => isOpenNow(t.horario));
+    }
+    if (explorarFiltros.includes('promo')) {
+      result = result.filter((t) => t.badges.some((b) => b === 'Promo'));
+    }
+    if (explorarFiltros.includes('favoritos')) {
+      result = result.filter((t) => isFavoritoTienda(t.id));
+    }
+
+    return result;
+  }, [tiendas, explorarCategoria, localSearch, explorarFiltros, isFavoritoTienda]);
+
+  /* ─── Search results: grouped ─── */
+  const searchResults = useMemo(() => {
+    if (!localSearch.trim()) return { tiendas: [] as Tienda[], productos: [] as typeof productos };
+    const q = localSearch.trim().toLowerCase();
+    const matchedTiendas = tiendas.filter(
+      (t) =>
+        t.estado === 'activo' &&
+        (t.nombre.toLowerCase().includes(q) || t.descripcion.toLowerCase().includes(q))
+    );
+    const matchedProductos = productos.filter(
+      (p) =>
+        p.disponible &&
+        (p.nombre.toLowerCase().includes(q) || p.descripcion.toLowerCase().includes(q))
+    );
+    return { tiendas: matchedTiendas.slice(0, 5), productos: matchedProductos.slice(0, 5) };
+  }, [localSearch, tiendas, productos]);
+
+  const showDropdown = searchFocused && localSearch.trim().length > 0;
+
+  /* ─── Handlers ─── */
+  function handleSearchChange(val: string) {
+    setLocalSearch(val);
+    setExplorarSearch(val);
+  }
+
+  function handleClearSearch() {
+    setLocalSearch('');
+    setExplorarSearch('');
+  }
+
+  function handleTiendaClick(tiendaId: string) {
+    setTiendaSeleccionada(tiendaId);
+    onNavigate('explorar');
+  }
+
+  const handleCategoryTap = useCallback((key: TiendaCategoria | 'todos') => {
+    haptic(10);
+    setExplorarCategoria(key);
+  }, [setExplorarCategoria]);
+
+  const handleFilterTap = useCallback((key: string) => {
+    haptic(10);
+    toggleExplorarFiltro(key as typeof explorarFiltros[number]);
+  }, [toggleExplorarFiltro]);
+
+  /* ═══════════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════════ */
 
   return (
-    <div className="space-y-6 py-2 max-w-5xl mx-auto">
-
-      {/* 🍏 APPLE SEARCH & TITLE */}
-      <div className="space-y-4">
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
+      {/* ─── 1. HEADER (glassmorphism, 56px, sticky) ─── */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 30,
+          height: 56,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          background: 'var(--lf-glass-bg)',
+          backdropFilter: 'blur(var(--lf-glass-blur))',
+          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+          borderBottom: '1px solid var(--lf-glass-border)',
+        }}
+      >
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-            Explorar Tiendas
+          <h1
+            style={{
+              fontFamily: "'Syne', sans-serif",
+              fontWeight: 700,
+              fontSize: 22,
+              color: 'var(--text)',
+              margin: 0,
+              lineHeight: 1.2,
+            }}
+          >
+            Explorar
           </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            Descubre comercios locales, restaurantes y servicios express cerca de ti.
-          </p>
         </div>
-
-        {/* Search Bar */}
-        <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar hamburguesas, farmacias, tiendas..."
-            className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-          />
-        </div>
-
-        {/* iOS Segmented Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <button
-            onClick={() => setSelectedCat('todos')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex-shrink-0 ${
-              selectedCat === 'todos'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                : 'bg-white/80 dark:bg-zinc-900/80 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-800'
-            }`}
-          >
-            Todos
-          </button>
-          {CATEGORIAS.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => setSelectedCat(cat.key)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex-shrink-0 ${
-                selectedCat === cat.key
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'bg-white/80 dark:bg-zinc-900/80 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-800'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={() => { haptic(10); setShowFilterPanel(!showFilterPanel); }}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            border: '1px solid var(--border)',
+            background: showFilterPanel ? 'var(--primario-soft)' : 'var(--surface)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <SlidersHorizontal size={18} style={{ color: showFilterPanel ? 'var(--primario)' : 'var(--text-muted)' }} />
+        </button>
       </div>
 
-      {/* 🍏 TIENDAS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTiendas.map((tienda) => (
-          <motion.div
-            key={tienda.id}
-            whileHover={{ y: -4 }}
-            onClick={() => setSelectedTienda(tienda)}
-            className="rounded-[28px] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 group"
-          >
-            <div className="h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-extrabold text-xl relative">
-              {tienda.nombre}
-              <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1">
-                <Star size={12} className="text-amber-400 fill-amber-400" /> {tienda.calificacion || 4.9}
-              </span>
-            </div>
-
-            <div className="p-5 space-y-3">
-              <div>
-                <h3 className="font-extrabold text-lg text-zinc-900 dark:text-white group-hover:text-blue-600 transition-colors">
-                  {tienda.nombre}
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-1">
-                  {tienda.descripcion}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between text-xs font-semibold text-zinc-500 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                <span className="flex items-center gap-1">
-                  <Clock size={14} /> {tienda.tiempoEstimado || '20-30'} min
-                </span>
-                <span className="text-blue-600 dark:text-blue-400 font-bold">
-                  Envío C$ {tienda.costoEnvio || 35}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+      {/* ─── Location text below header ─── */}
+      <div style={{ padding: '8px 16px 0' }}>
+        <button
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            color: 'var(--text-muted)',
+            fontSize: 12,
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          <MapPin size={12} style={{ color: 'var(--primario)' }} />
+          <span>Col. Los Robles</span>
+          <ChevronRight size={12} style={{ color: 'var(--text-muted)' }} />
+        </button>
       </div>
 
-      {/* 🍏 STORE DETAIL SHEET (BOTTOM DRAWER) */}
+      {/* ─── Stories (inspiración IG) ─── */}
+      <StoryViewer />
+
+      {/* ─── Filter panel (toggle) ─── */}
       <AnimatePresence>
-        {selectedTienda && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md">
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-              className="w-full max-w-2xl max-h-[85vh] bg-white dark:bg-zinc-900 rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+        {showFilterPanel && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ overflow: 'hidden', padding: '0 16px' }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 8,
+                padding: '12px 0',
+              }}
             >
-              {/* Header */}
-              <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950/50">
-                <div>
-                  <h2 className="text-xl font-extrabold text-zinc-900 dark:text-white">
-                    {selectedTienda.nombre}
-                  </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">{selectedTienda.descripcion}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedTienda(null)}
-                  className="p-2 rounded-full bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-300 transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Product List */}
-              <div className="p-6 overflow-y-auto space-y-4 flex-1">
-                <h3 className="font-extrabold text-sm uppercase tracking-wider text-zinc-400">Menú & Productos</h3>
-                {tiendaProductos.length === 0 ? (
-                  <p className="text-xs text-zinc-400 text-center py-8">No hay productos cargados en esta tienda.</p>
-                ) : (
-                  tiendaProductos.map((p) => (
-                    <div
-                      key={p.id}
-                      className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1">
-                        <h4 className="font-bold text-sm text-zinc-900 dark:text-white">{p.nombre}</h4>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">{p.descripcion}</p>
-                        <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400 block pt-1">
-                          C$ {p.precio.toFixed(2)}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          addToCart(p, selectedTienda);
-                        }}
-                        className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-1 shadow-md shadow-blue-500/20 flex-shrink-0"
-                      >
-                        <Plus size={14} /> Agregar
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Footer Checkout Link */}
-              <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50 flex items-center justify-between">
-                <span className="text-xs font-semibold text-zinc-500">¿Listo para ordenar?</span>
+              {FILTROS_SECUNDARIOS.map((f) => {
+                const isActive = explorarFiltros.includes(f.key);
+                const IconComp = f.icon;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => handleFilterTap(f.key)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '6px 12px',
+                      borderRadius: 16,
+                      border: `1px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      fontFamily: "'DM Sans', sans-serif",
+                      background: isActive ? 'var(--primario)' : 'var(--surface)',
+                      color: isActive ? '#fff' : 'var(--text-muted)',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <IconComp size={13} />
+                    {f.label}
+                  </button>
+                );
+              })}
+              {explorarFiltros.length > 0 && (
                 <button
                   onClick={() => {
-                    setSelectedTienda(null);
-                    onNavigate('carrito');
+                    haptic(10);
+                    explorarFiltros.forEach((f) => toggleExplorarFiltro(f));
                   }}
-                  className="px-6 py-3 rounded-2xl bg-blue-600 text-white font-extrabold text-xs hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/25 flex items-center gap-2"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '6px 12px',
+                    borderRadius: 16,
+                    border: '1px solid var(--peligro)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fontFamily: "'DM Sans', sans-serif",
+                    background: 'transparent',
+                    color: 'var(--peligro)',
+                    transition: 'all 0.2s',
+                  }}
                 >
-                  <ShoppingCart size={16} /> Ver Carrito y Pagar
+                  <X size={13} />
+                  Limpiar
                 </button>
-              </div>
-            </motion.div>
-          </div>
+              )}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
+      {/* ─── 2. BUSCADOR (48px, glassmorphism pill) ─── */}
+      <div style={{ position: 'relative', padding: '8px 16px 0', zIndex: 20 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: 'var(--lf-glass-bg)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: `1.5px solid ${searchFocused ? 'var(--primario)' : 'var(--lf-glass-border)'}`,
+            borderRadius: 28,
+            height: 48,
+            padding: '0 16px 0 44px',
+            position: 'relative',
+            transition: 'border-color 0.2s',
+          }}
+        >
+          <Search
+            size={18}
+            style={{
+              position: 'absolute',
+              left: 16,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: searchFocused ? 'var(--primario)' : 'var(--text-muted)',
+              transition: 'color 0.2s',
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Buscar tiendas o productos..."
+            value={localSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+            style={{
+              flex: 1,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: 15,
+              fontFamily: "'DM Sans', sans-serif",
+              color: 'var(--text)',
+            }}
+          />
+          {localSearch && (
+            <button
+              onClick={handleClearSearch}
+              style={{
+                background: 'var(--bg-alt)',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                padding: 4,
+                borderRadius: 12,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Search Dropdown */}
+        <AnimatePresence>
+          {showDropdown && (
+            <motion.div
+              variants={dropdownVariant}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 16,
+                right: 16,
+                zIndex: 50,
+                marginTop: 6,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 18,
+                boxShadow: 'var(--lf-shadow-float)',
+                overflow: 'hidden',
+                maxHeight: 360,
+              }}
+              className="lf-scrollbar"
+            >
+              {/* Tiendas section */}
+              {searchResults.tiendas.length > 0 && (
+                <div style={{ padding: '12px 14px 6px 14px' }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      textTransform: 'uppercase',
+                      color: 'var(--text-muted)',
+                      letterSpacing: 0.5,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Tiendas
+                  </div>
+                  {searchResults.tiendas.map((t) => (
+                    <button
+                      key={t.id}
+                      onMouseDown={() => handleTiendaClick(t.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        width: '100%',
+                        padding: '8px 6px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        borderRadius: 10,
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 10,
+                          background: t.logoColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "'Syne', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 13,
+                            color: '#fff',
+                          }}
+                        >
+                          {t.logoIniciales}
+                        </span>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: 'var(--text)',
+                            fontFamily: "'DM Sans', sans-serif",
+                          }}
+                        >
+                          {t.nombre}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: 'var(--text-muted)',
+                            fontFamily: "'DM Sans', sans-serif",
+                          }}
+                        >
+                          {categoriaLabel(t.categoria)}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Productos section */}
+              {searchResults.productos.length > 0 && (
+                <div style={{ padding: '6px 14px 12px 14px' }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      textTransform: 'uppercase',
+                      color: 'var(--text-muted)',
+                      letterSpacing: 0.5,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Productos
+                  </div>
+                  {searchResults.productos.map((p) => {
+                    const tienda = tiendas.find((t) => t.id === p.tiendaId);
+                    return (
+                      <button
+                        key={p.id}
+                        onMouseDown={() => {
+                          if (tienda) handleTiendaClick(tienda.id);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          width: '100%',
+                          padding: '8px 6px',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          borderRadius: 10,
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            background: p.imagenColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <ShoppingBag size={14} style={{ color: '#fff' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontSize: 14,
+                              fontWeight: 600,
+                              color: 'var(--text)',
+                              fontFamily: "'DM Sans', sans-serif",
+                            }}
+                          >
+                            {p.nombre}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: 'var(--text-muted)',
+                              fontFamily: "'DM Sans', sans-serif",
+                            }}
+                          >
+                            {tienda?.nombre} · C${p.precio}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {searchResults.tiendas.length === 0 && searchResults.productos.length === 0 && (
+                <div
+                  style={{
+                    padding: 24,
+                    textAlign: 'center',
+                    fontSize: 14,
+                    color: 'var(--text-muted)',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
+                  No se encontraron resultados
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ─── 3. CATEGORIAS HORIZONTALES (sticky) ─── */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 56,
+          zIndex: 10,
+          background: 'var(--lf-glass-bg)',
+          backdropFilter: 'blur(var(--lf-glass-blur))',
+          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
+          borderBottom: '1px solid var(--lf-glass-border)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            overflowX: 'auto',
+            padding: '10px 16px',
+            scrollbarWidth: 'none',
+          }}
+        >
+          {/* "Todas" pill */}
+          <button
+            onClick={() => handleCategoryTap('todos')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '8px 16px',
+              borderRadius: 'var(--lf-pill-radius, 100px)',
+              border: `1.5px solid ${explorarCategoria === 'todos' ? 'var(--primario)' : 'var(--border)'}`,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              fontSize: 13,
+              fontWeight: explorarCategoria === 'todos' ? 600 : 400,
+              fontFamily: "'DM Sans', sans-serif",
+              background: explorarCategoria === 'todos' ? 'var(--primario-soft)' : 'transparent',
+              color: explorarCategoria === 'todos' ? 'var(--primario)' : 'var(--text-muted)',
+              transition: 'all 0.2s',
+            }}
+          >
+            Todas
+          </button>
+
+          {CATEGORIAS.map((cat) => {
+            const isActive = explorarCategoria === cat.key;
+            return (
+              <button
+                key={cat.key}
+                onClick={() => handleCategoryTap(cat.key)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '8px 16px',
+                  borderRadius: 'var(--lf-pill-radius, 100px)',
+                  border: `1.5px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  fontSize: 13,
+                  fontWeight: isActive ? 600 : 400,
+                  fontFamily: "'DM Sans', sans-serif",
+                  background: isActive ? 'var(--primario-soft)' : 'transparent',
+                  color: isActive ? 'var(--primario)' : 'var(--text-muted)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <CategoryIcon name={cat.icon} size={16} />
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── 4. FILTROS SECUNDARIOS (inline pills) ─── */}
+      {!showFilterPanel && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            overflowX: 'auto',
+            padding: '10px 16px 0',
+            scrollbarWidth: 'none',
+          }}
+        >
+          {FILTROS_SECUNDARIOS.map((f) => {
+            const isActive = explorarFiltros.includes(f.key);
+            const IconComp = f.icon;
+            return (
+              <button
+                key={f.key}
+                onClick={() => handleFilterTap(f.key)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '5px 12px',
+                  borderRadius: 16,
+                  border: `1px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: "'DM Sans', sans-serif",
+                  background: isActive ? 'var(--primario)' : 'var(--surface)',
+                  color: isActive ? '#fff' : 'var(--text-muted)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <IconComp size={12} />
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ─── Results count ─── */}
+      <div
+        style={{
+          padding: '12px 16px 0',
+          fontSize: 13,
+          color: 'var(--text-muted)',
+          fontFamily: "'DM Sans', sans-serif",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: 'var(--text)' }}>
+            {filteredTiendas.length}
+          </span>{' '}
+          {filteredTiendas.length === 1 ? 'tienda' : 'tiendas'}
+        </span>
+        {explorarFiltros.length > 0 && !showFilterPanel && (
+          <button
+            onClick={() => {
+              haptic(10);
+              explorarFiltros.forEach((f) => toggleExplorarFiltro(f));
+            }}
+            style={{
+              fontSize: 12,
+              color: 'var(--primario)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 600,
+            }}
+          >
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+
+      {/* ─── 5. LISTA DE TIENDAS — Grid con Container Queries (2026) ─── */}
+      <div className="lf-tiendas-grid">
+        <AnimatePresence mode="popLayout">
+          {filteredTiendas.map((tienda, idx) => {
+            const isFav = isFavoritoTienda(tienda.id);
+            const isPressed = pressedCard === tienda.id;
+            const hasPromo = tienda.badges.includes('Promo');
+
+            return (
+              <motion.div
+                key={tienda.id}
+                custom={idx}
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
+                layout
+                onClick={() => handleTiendaClick(tienda.id)}
+                onMouseDown={() => setPressedCard(tienda.id)}
+                onMouseUp={() => setPressedCard(null)}
+                onMouseLeave={() => setPressedCard(null)}
+                onTouchStart={() => setPressedCard(tienda.id)}
+                onTouchEnd={() => setPressedCard(null)}
+                className="lf-tienda-card"
+                style={{
+                  transform: isPressed ? 'scale(0.98)' : 'scale(1)',
+                }}
+              >
+                {/* ── Portada (izquierda/arriba, autoadaptable) ── */}
+                <div
+                  className="lf-tienda-cover lf-tienda-cover-rounded"
+                  style={{
+                    background: tienda.logoColor,
+                    borderRadius: 'var(--lf-card-radius, 22px) 0 0 var(--lf-card-radius, 22px)',
+                  }}
+                >
+                  {/* Iniciales watermark */}
+                  <span
+                    style={{
+                      fontFamily: "'Syne', sans-serif",
+                      fontWeight: 700,
+                      fontSize: 28,
+                      color: 'rgba(255,255,255,0.2)',
+                      position: 'absolute',
+                      bottom: 8,
+                      right: 8,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {tienda.logoIniciales}
+                  </span>
+
+                  {/* Badge pill in top-left */}
+                  {tienda.badges.length > 0 && (
+                    <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      {tienda.badges.map((b) => (
+                        <span
+                          key={b}
+                          style={{
+                            display: 'inline-block',
+                            fontSize: 9,
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            padding: '2px 6px',
+                            borderRadius: 6,
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            background: b === 'Promo'
+                              ? 'rgba(0,200,83,0.85)'
+                              : b === 'Nuevo'
+                                ? 'rgba(41,121,255,0.85)'
+                                : b === 'Popular'
+                                  ? 'rgba(255,87,34,0.85)'
+                                  : 'rgba(0,0,0,0.5)',
+                            color: '#fff',
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {b === 'Promo' ? 'PROMO' : b === 'Nuevo' ? 'NUEVO' : b === 'Popular' ? 'TOP' : b}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Info (derecha/abajo, autoadaptable) ── */}
+                <div className="lf-tienda-info">
+                  {/* Fila 1: nombre + verificado */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 700,
+                        color: 'var(--text)',
+                        fontFamily: "'Syne', sans-serif",
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {tienda.nombre}
+                    </span>
+                    {tienda.verificado && (
+                      <CheckCircle size={14} style={{ color: 'var(--info)', flexShrink: 0 }} />
+                    )}
+                  </div>
+
+                  {/* Fila 2: categoria + Star + rating + pedidos */}
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--text-muted)',
+                      fontFamily: "'DM Sans', sans-serif",
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <span>{categoriaLabel(tienda.categoria)}</span>
+                    <span style={{ color: 'var(--border)' }}>&middot;</span>
+                    <Star size={12} fill="var(--warning)" stroke="none" />
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>
+                      {tienda.calificacion}
+                    </span>
+                    <span style={{ color: 'var(--border)' }}>&middot;</span>
+                    <span>{tienda.totalPedidos} pedidos</span>
+                  </div>
+
+                  {/* Fila 3: Clock + tiempo + envio + pedido min */}
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      fontFamily: "'DM Sans', sans-serif",
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <Clock size={12} />
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 500 }}>{tienda.tiempoEstimado}</span>
+                    <span style={{ color: 'var(--border)' }}>&middot;</span>
+                    <Truck size={12} />
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 500 }}>C${tienda.costoEnvio}</span>
+                    <span style={{ color: 'var(--border)' }}>&middot;</span>
+                    <span>Min. C${tienda.pedidoMinimo}</span>
+                  </div>
+
+                  {/* Fila 4: promo pill (si aplica) */}
+                  {hasPromo && (
+                    <div style={{ marginTop: 2 }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          padding: '2px 8px',
+                          borderRadius: 6,
+                          background: 'rgba(0,200,83,0.12)',
+                          color: 'var(--exito)',
+                        }}
+                      >
+                        <ShoppingBag size={10} />
+                        20% OFF
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Fila 5: Heart favorito */}
+                  <div style={{ marginTop: 'auto', paddingTop: 2 }}>
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        haptic(10);
+                        toggleFavoritoTienda(tienda.id);
+                      }}
+                      animate={isFav ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                      transition={isFav ? { duration: 0.35, ease: 'easeOut' } : {}}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: isFav ? 'var(--peligro)' : 'var(--text-muted)',
+                        padding: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Heart size={18} fill={isFav ? 'var(--peligro)' : 'none'} />
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+
+        {/* ─── EMPTY STATE ─── */}
+        {filteredTiendas.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ textAlign: 'center', padding: '48px 20px' }}
+          >
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 20,
+                background: 'var(--bg-alt)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto',
+              }}
+            >
+              <Search size={28} style={{ color: 'var(--text-muted)' }} />
+            </div>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: 'var(--text)',
+                fontFamily: "'Syne', sans-serif",
+                marginBottom: 6,
+              }}
+            >
+              No hay tiendas disponibles
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                color: 'var(--text-muted)',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Intenta cambiar los filtros o buscar algo diferente
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* ─── 6. MAPA toggle (FAB) ─── */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 'calc(var(--lf-bottom-nav-height, 72px) + 16px + env(safe-area-inset-bottom, 0px))',
+          right: 16,
+          zIndex: 20,
+        }}
+      >
+        <button
+          onClick={() => haptic(10)}
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 16,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--lf-shadow-float)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'transform 0.15s',
+          }}
+          onMouseDown={(e) => { (e.currentTarget.style.transform = 'scale(0.92)'); }}
+          onMouseUp={(e) => { (e.currentTarget.style.transform = 'scale(1)'); }}
+          onMouseLeave={(e) => { (e.currentTarget.style.transform = 'scale(1)'); }}
+          onTouchStart={(e) => { (e.currentTarget.style.transform = 'scale(0.92)'); }}
+          onTouchEnd={(e) => { (e.currentTarget.style.transform = 'scale(1)'); }}
+        >
+          <Map size={22} style={{ color: 'var(--text)' }} />
+        </button>
+      </div>
     </div>
   );
 }
