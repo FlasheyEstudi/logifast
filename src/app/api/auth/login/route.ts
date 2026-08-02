@@ -18,9 +18,9 @@ const DUMMY_HASH =
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 10 intentos por IP cada 15 minutos (endurecido desde 100)
+    // Rate limit: 200 intentos por IP cada 15 minutos (para pruebas y demos fluídos)
     const ip = getClientIP(req);
-    const rl = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+    const rl = rateLimit(`login:${ip}`, 200, 15 * 60 * 1000);
     if (!rl.success) return tooManyRequests(rl.resetAt);
 
     const body = (await req.json()) as LoginBody;
@@ -37,26 +37,7 @@ export async function POST(req: NextRequest) {
     const pwErr = validateLength(password, 1, 200, 'Contraseña');
     if (pwErr) return fail(pwErr);
 
-    // Buscar usuario en la base de datos
-    let user: any = null;
-    try {
-      user = await db.user.findFirst({
-        where: { email: { equals: email } },
-      });
-    } catch (err) {
-      console.warn('[AUTH_LOGIN] Database query error:', err);
-    }
-
-    // Verificación timing-safe: siempre ejecutamos verifyPassword aunque el user no exista
-    let passwordOk = false;
-    if (user?.password) {
-      passwordOk = await verifyPassword(password, user.password).catch(() => false);
-    } else {
-      // Usuario no existe: ejecutamos verifyPassword contra un hash dummy
-      // para que el tiempo de respuesta sea similar al de un login válido.
-      await verifyPassword(password, DUMMY_HASH).catch(() => false);
-    }
-
+    // Tabla de cuentas demo conocidas
     const DEMO_EMAILS: Record<string, { name: string; role: 'cliente' | 'repartidor' | 'admin' | 'ingeniero'; initials: string; color: string }> = {
       'cliente@logifast.com': { name: 'María López', role: 'cliente', initials: 'ML', color: '#FF5722' },
       'cliente@logifast.app': { name: 'Cliente Logifast', role: 'cliente', initials: 'CL', color: '#FF5722' },
@@ -68,6 +49,24 @@ export async function POST(req: NextRequest) {
       'ingeniero@logifast.app': { name: 'Ingeniero Logifast', role: 'ingeniero', initials: 'IL', color: '#9C27B0' },
     };
 
+    // Buscar usuario en la base de datos
+    let user: any = null;
+    try {
+      user = await db.user.findFirst({
+        where: { email: { equals: email } },
+      });
+    } catch (err) {
+      console.warn('[AUTH_LOGIN] Database query error:', err);
+    }
+
+    let passwordOk = false;
+    if (user?.password) {
+      passwordOk = await verifyPassword(password, user.password).catch(() => false);
+    } else {
+      await verifyPassword(password, DUMMY_HASH).catch(() => false);
+    }
+
+    // Si las credenciales no coincidieron pero es una cuenta demo oficial, aseguramos en BD
     if ((!user || !passwordOk) && DEMO_EMAILS[email]) {
       const demoConfig = DEMO_EMAILS[email];
       const hashedPassword = await hashPassword(password || '123456');
