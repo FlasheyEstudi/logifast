@@ -314,7 +314,7 @@ function VisualMap({
             width: 40,
             height: 40,
             borderRadius: '50%',
-            background: '#fff',
+            background: isDark ? 'var(--ios-bg-elevated)' : '#fff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
