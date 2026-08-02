@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useUpload } from '@/hooks/useUpload';
 import { notify } from '@/lib/notify';
 
@@ -33,12 +33,7 @@ const roundedClass = {
 };
 
 /**
- * Componente reutilizable para subir imágenes.
- * - Drag & drop
- * - Vista previa
- * - Barra de progreso
- * - Validación de tipo y tamaño
- * - Optimización automática (webp)
+ * Componente reutilizable para subir imágenes sin memory leaks.
  */
 export function ImageUploader({
   categoria,
@@ -55,8 +50,20 @@ export function ImageUploader({
   rounded = 'lg',
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [localPreview, setLocalPreview] = useState<string | null>(previewUrl ?? null);
+
+  // Clean up Object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    };
+  }, []);
+
   const { upload, loading, progress } = useUpload({
     categoria,
     entidadId,
@@ -74,8 +81,13 @@ export function ImageUploader({
   const handleFile = useCallback(
     (file: File | null | undefined) => {
       if (!file) return;
-      // Preview local inmediato
+      // Cleanup previous object URL to avoid memory leaks
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
       const url = URL.createObjectURL(file);
+      objectUrlRef.current = url;
       setLocalPreview(url);
       upload(file);
     },
@@ -101,6 +113,10 @@ export function ImageUploader({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
     setLocalPreview(null);
     if (inputRef.current) inputRef.current.value = '';
   };

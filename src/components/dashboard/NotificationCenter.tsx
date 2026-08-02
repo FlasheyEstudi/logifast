@@ -137,17 +137,23 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
 
   const unreadCount = activityEvents.filter((e) => !e.leido).length;
 
-  /* ── Close on outside click ── */
+  /* ── Close on outside click / touch ── */
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         close();
       }
     };
     if (open) {
-      setTimeout(() => document.addEventListener('mousedown', handler), 0);
+      setTimeout(() => {
+        document.addEventListener('mousedown', handler);
+        document.addEventListener('touchstart', handler);
+      }, 0);
     }
-    return () => document.removeEventListener('mousedown', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
   }, [open, close]);
 
   /* ── Filtered & grouped events ── */
@@ -241,10 +247,13 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             style={{
-              position: 'absolute',
-              top: isOpen === undefined ? 44 : 0,
-              right: 0,
-              width: 380,
+              position: 'fixed',
+              top: 'max(56px, env(safe-area-inset-top))',
+              right: 'max(8px, env(safe-area-inset-right))',
+              left: 'max(8px, env(safe-area-inset-left))',
+              width: 'auto',
+              maxWidth: 380,
+              maxHeight: 'min(70vh, 600px)',
               background: 'var(--lf-surface)',
               border: '1px solid var(--lf-border)',
               borderRadius: 12,
@@ -298,7 +307,8 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
                     display: 'flex',
                     alignItems: 'center',
                     gap: 5,
-                    padding: '5px 10px',
+                    padding: '8px 12px',
+                    minHeight: 36,
                     borderRadius: 8,
                     border: '1px solid var(--lf-border)',
                     background: 'transparent',
@@ -340,7 +350,8 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
                     key={opt.key}
                     onClick={() => setFilter(opt.key)}
                     style={{
-                      padding: '4px 10px',
+                      padding: '8px 14px',
+                      minHeight: 36,
                       borderRadius: 999,
                       border: '1px solid',
                       borderColor: isActive
@@ -350,11 +361,13 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
                         ? 'var(--lf-accent)'
                         : 'transparent',
                       color: isActive ? '#fff' : 'var(--lf-muted)',
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 600,
                       cursor: 'pointer',
                       transition: 'all 0.15s',
                       lineHeight: '16px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
                     }}
                   >
                     {opt.label}

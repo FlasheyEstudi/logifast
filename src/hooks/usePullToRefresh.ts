@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void>;
@@ -14,37 +14,58 @@ export function usePullToRefresh(options: UsePullToRefreshOptions) {
   const startYRef = useRef(0);
   const isPullingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const scroll = scrollRef.current;
-    if (!scroll || scroll.scrollTop > 0 || isRefreshing) return;
+  const getScrollTop = useCallback(() => {
+    if (scrollRef.current) return scrollRef.current.scrollTop;
+    if (typeof window !== 'undefined') return window.scrollY || document.documentElement.scrollTop || 0;
+    return 0;
+  }, []);
 
-    startYRef.current = e.touches[0].clientY;
+  const handleTouchStart = useCallback((e: React.TouchEvent | TouchEvent) => {
+    if (getScrollTop() > 0 || isRefreshing) return;
+
+    const touch = 'touches' in e ? e.touches[0] : null;
+    if (!touch) return;
+
+    startYRef.current = touch.clientY;
     isPullingRef.current = true;
-  }, [isRefreshing]);
+  }, [getScrollTop, isRefreshing]);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isPullingRef.current || isRefreshing) return;
+  const handleTouchMove = useCallback((e: React.TouchEvent | TouchEvent) => {
+    if (!isPullingRef.current || isRefreshing || getScrollTop() > 0) return;
 
-    const deltaY = e.touches[0].clientY - startYRef.current;
+    const touch = 'touches' in e ? e.touches[0] : null;
+    if (!touch) return;
+
+    const deltaY = touch.clientY - startYRef.current;
 
     if (deltaY > 0) {
-      // Pulling down
-      const distance = Math.min(deltaY * 0.5, maxPull); // 0.5 = resistance
-      setPullDistance(distance);
-      setCanRefresh(distance >= threshold);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(() => {
+        const distance = Math.min(deltaY * 0.5, maxPull); // 0.5 = resistencia
+        setPullDistance(distance);
+        setCanRefresh(distance >= threshold);
+      });
     }
-  }, [isRefreshing, threshold, maxPull]);
+  }, [getScrollTop, isRefreshing, threshold, maxPull]);
 
   const handleTouchEnd = useCallback(async () => {
     if (!isPullingRef.current) return;
     isPullingRef.current = false;
 
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
     if (canRefresh && !isRefreshing) {
       setIsRefreshing(true);
       setPullDistance(60); // mantener la animacion
 
-      // Vibración de trigger
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try {
           navigator.vibrate(15);
@@ -65,6 +86,15 @@ export function usePullToRefresh(options: UsePullToRefreshOptions) {
       setCanRefresh(false);
     }
   }, [canRefresh, isRefreshing, onRefresh]);
+
+  // Clean up RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   return {
     scrollRef,
