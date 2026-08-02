@@ -4,26 +4,48 @@ import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
 
 export async function PATCH(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireRole('ingeniero', 'admin');
+    await requireRole('ingeniero', 'admin');
     const { id } = await params;
+
+    const existing = await prisma.mantenimiento.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Mantenimiento no encontrado' }, { status: 404 });
+    }
+
+    if (existing.estado === 'COMPLETADO' || existing.estado === 'CANCELADO') {
+      return NextResponse.json(
+        { error: `No se puede cancelar un mantenimiento que ya está ${existing.estado}` },
+        { status: 400 }
+      );
+    }
 
     const mantenimiento = await prisma.mantenimiento.update({
       where: { id },
-      data: { estado: 'CANCELADO' }
+      data: { estado: 'CANCELADO' },
     });
 
-    // Liberar moto
-    await prisma.moto.update({
-      where: { id: mantenimiento.motoId },
-      data: { estado: 'DISPONIBLE' }
+    // P0-23: Liberar moto solo si no hay otros mantenimientos activos
+    const otrosActivos = await prisma.mantenimiento.count({
+      where: {
+        motoId: mantenimiento.motoId,
+        estado: { in: ['PROGRAMADO', 'PENDIENTE', 'EN_PROCESO', 'pendiente', 'en_progreso'] },
+        id: { not: id },
+      },
     });
+
+    if (otrosActivos === 0) {
+      await prisma.moto.update({
+        where: { id: mantenimiento.motoId },
+        data: { estado: 'DISPONIBLE' },
+      });
+    }
 
     return NextResponse.json(mantenimiento);
-} catch (error) {
+  } catch (error) {
     return handleError(error, 'INGENIERO_MANTENIMIENTO_CANCELAR');
   }
 }
