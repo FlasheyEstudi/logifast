@@ -77,28 +77,12 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/ordenes-compra
- * Crea una nueva orden de compra.
+ * Crea una nueva orden de compra con validación de auth, stock transaccional y re-validación server-side de promociones.
  */
 export async function POST(req: NextRequest) {
   try {
-    let user = await getSessionUser();
-    if (!user) {
-      const dbUser = await db.user.findFirst({ where: { role: 'cliente' } });
-      if (dbUser) {
-        user = {
-          id: dbUser.id,
-          email: dbUser.email,
-          name: dbUser.name,
-          role: dbUser.role as 'cliente' | 'repartidor' | 'admin' | 'ingeniero',
-          telefono: dbUser.telefono,
-          initials: dbUser.initials,
-          color: dbUser.color,
-          fotoUrl: dbUser.fotoUrl,
-          bio: dbUser.bio,
-        };
-      }
-    }
-    if (!user) {
+    const user = await getSessionUser();
+    if (!user || user.role !== 'cliente') {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
@@ -111,7 +95,6 @@ export async function POST(req: NextRequest) {
       lng = 0,
       metodoPago,
       codigoPromo,
-      descuento = 0,
       instrucciones,
     } = body;
 
@@ -130,102 +113,140 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validar productos y calcular subtotal
-    let subtotal = 0;
-    const itemsData: Array<{
-      productoId: string;
-      nombreProducto: string;
-      cantidad: number;
-      precioUnitario: number;
-      variante?: string | null;
-      notas?: string | null;
-    }> = [];
+    const result = await db.$transaction(async (tx) => {
+      let subtotal = 0;
+      const itemsData: Array<{
+        productoId: string;
+        nombreProducto: string;
+        cantidad: number;
+        precioUnitario: number;
+        variante?: string | null;
+        notas?: string | null;
+      }> = [];
 
-    for (const item of items) {
-      const producto = await db.producto.findUnique({ where: { id: item.productoId } });
-      if (!producto) {
-        return NextResponse.json(
-          { error: `Producto no encontrado: ${item.productoId}` },
-          { status: 404 }
-        );
+      for (const item of items) {
+        const producto = await tx.producto.findUnique({ where: { id: item.productoId } });
+        if (!producto) {
+          throw new Error(`PRODUCT_NOT_FOUND:${item.productoId}`);
+        }
+        if (!producto.disponible) {
+          throw new Error(`PRODUCT_NOT_AVAILABLE:${producto.nombre}`);
+        }
+
+        const cantidad = Number(item.cantidad ?? 1);
+        if (producto.stock !== null && producto.stock < cantidad) {
+          throw new Error(`INSUFFICIENT_STOCK:${producto.nombre}`);
+        }
+
+        if (producto.stock !== null) {
+          await tx.producto.update({
+            where: { id: producto.id },
+            data: { stock: { decrement: cantidad } },
+          });
+        }
+
+        itemsData.push({
+          productoId: producto.id,
+          nombreProducto: producto.nombre,
+          cantidad,
+          precioUnitario: producto.precio,
+          variante: item.variante ?? null,
+          notas: item.notas ?? null,
+        });
+        subtotal += producto.precio * cantidad;
       }
-      if (!producto.disponible) {
-        return NextResponse.json(
-          { error: `Producto no disponible: ${producto.nombre}` },
-          { status: 400 }
-        );
+
+      // Re-validar código promocional server-side
+      let descuentoCalculado = 0;
+      let codigoPromoObj: any = null;
+      if (codigoPromo) {
+        codigoPromoObj = await tx.codigoPromocional.findUnique({ where: { codigo: String(codigoPromo) } });
+        if (codigoPromoObj && codigoPromoObj.estado === 'activo') {
+          const now = new Date();
+          if (now >= codigoPromoObj.vigenciaInicio && now <= codigoPromoObj.vigenciaFin) {
+            if (codigoPromoObj.maxUsos === 0 || codigoPromoObj.usosActuales < codigoPromoObj.maxUsos) {
+              if (codigoPromoObj.tipoDescuento === 'porcentaje') {
+                descuentoCalculado = Math.round((subtotal * codigoPromoObj.valor) / 100);
+              } else {
+                descuentoCalculado = codigoPromoObj.valor;
+              }
+
+              await tx.codigoPromocional.update({
+                where: { id: codigoPromoObj.id },
+                data: { usosActuales: { increment: 1 } },
+              });
+
+              await tx.usoCodigo.create({
+                data: {
+                  codigoId: codigoPromoObj.id,
+                  userId: user.id,
+                  descuento: descuentoCalculado,
+                },
+              }).catch(() => null);
+            }
+          }
+        }
       }
-      const cantidad = Number(item.cantidad ?? 1);
-      itemsData.push({
-        productoId: producto.id,
-        nombreProducto: producto.nombre,
-        cantidad,
-        precioUnitario: producto.precio,
-        variante: item.variante ?? null,
-        notas: item.notas ?? null,
-      });
-      subtotal += producto.precio * cantidad;
-    }
 
-    const costoEnvio = tienda.costoEnvio;
-    const total = Math.max(0, subtotal + costoEnvio - Number(descuento));
+      const costoEnvio = tienda.costoEnvio;
+      const total = Math.max(0, subtotal + costoEnvio - descuentoCalculado);
 
-    const orden = await db.ordenCompra.create({
-      data: {
-        clienteId: user.id,
-        tiendaId,
-        estado: 'recibido',
-        direccionEntrega,
-        lat: Number(lat) || 0,
-        lng: Number(lng) || 0,
-        instrucciones: instrucciones ?? null,
-        metodoPago,
-        subtotal,
-        costoEnvio,
-        descuento: Number(descuento) || 0,
-        codigoUsado: codigoPromo || null,
-        total,
-        items: {
-          create: itemsData,
+      const orden = await tx.ordenCompra.create({
+        data: {
+          clienteId: user.id,
+          tiendaId,
+          estado: 'recibido',
+          direccionEntrega,
+          lat: Number(lat) || 0,
+          lng: Number(lng) || 0,
+          instrucciones: instrucciones ?? null,
+          metodoPago,
+          subtotal,
+          costoEnvio,
+          descuento: descuentoCalculado,
+          codigoUsado: codigoPromoObj ? codigoPromoObj.codigo : null,
+          total,
+          items: {
+            create: itemsData,
+          },
         },
-      },
-      include: {
-        items: true,
-        tienda: true,
-      },
+        include: {
+          items: true,
+          tienda: true,
+        },
+      });
+
+      await tx.tienda.update({
+        where: { id: tiendaId },
+        data: { totalPedidos: { increment: 1 } },
+      });
+
+      const ordenServicio = await tx.ordenServicio.create({
+        data: {
+          clienteId: user.id,
+          tipo: 'compra',
+          estado: 'pendiente',
+          origen: tienda.direccion,
+          destino: direccionEntrega,
+          origenLat: tienda.lat,
+          origenLng: tienda.lng,
+          destinoLat: Number(lat) || 0,
+          destinoLng: Number(lng) || 0,
+          tiendaId: tienda.id,
+          tiendaNombre: tienda.nombre,
+          metodoPago,
+          monto: total,
+          ganancia: Math.round(costoEnvio * 0.7),
+          kmEstimados: 0,
+          tiempoEstimado: 0,
+          clienteNombre: user.name,
+          clienteTelefono: user.telefono ?? null,
+        },
+      });
+
+      return { orden, ordenServicio };
     });
 
-    // Incrementar totalPedidos de la tienda
-    await db.tienda.update({
-      where: { id: tiendaId },
-      data: { totalPedidos: { increment: 1 } },
-    });
-
-    // Crear también una OrdenServicio para el repartidor (tipo compra)
-    const ordenServicio = await db.ordenServicio.create({
-      data: {
-        clienteId: user.id,
-        tipo: 'compra',
-        estado: 'pendiente',
-        origen: tienda.direccion,
-        destino: direccionEntrega,
-        origenLat: tienda.lat,
-        origenLng: tienda.lng,
-        destinoLat: Number(lat) || 0,
-        destinoLng: Number(lng) || 0,
-        tiendaId: tienda.id,
-        tiendaNombre: tienda.nombre,
-        metodoPago,
-        monto: total,
-        ganancia: Math.round(costoEnvio * 0.7),
-        kmEstimados: 0,
-        tiempoEstimado: 0,
-        clienteNombre: user.name,
-        clienteTelefono: user.telefono ?? null,
-      },
-    });
-
-    // Auto-asignar r    // Notificar a repartidores en servicio
     const repartidoresConectados = await db.repartidorProfile.findMany({
       where: { conectado: true },
       take: 10,
@@ -237,9 +258,9 @@ export async function POST(req: NextRequest) {
           repartidorId: rep.id,
           tipo: 'nueva_orden_disponible',
           titulo: 'Nueva compra disponible',
-          contenido: `Orden #${orden.id.slice(-6)} — ${tienda.nombre}`,
+          contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre}`,
           leido: false,
-          ordenId: ordenServicio.id,
+          ordenId: result.ordenServicio.id,
         },
       }).catch(() => null);
     }
@@ -248,22 +269,34 @@ export async function POST(req: NextRequest) {
       {
         message: 'Orden creada exitosamente',
         orden: {
-          id: orden.id,
-          tiendaId: orden.tiendaId,
-          tiendaNombre: orden.tienda?.nombre ?? '',
-          estado: orden.estado,
-          total: orden.total,
-          items: orden.items.map((it) => ({
+          id: result.orden.id,
+          tiendaId: result.orden.tiendaId,
+          tiendaNombre: result.orden.tienda?.nombre ?? '',
+          estado: result.orden.estado,
+          total: result.orden.total,
+          items: result.orden.items.map((it) => ({
             nombreProducto: it.nombreProducto,
             cantidad: it.cantidad,
             precioUnitario: it.precioUnitario,
           })),
-          ordenServicioId: ordenServicio.id,
+          ordenServicioId: result.ordenServicio.id,
         },
       },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.startsWith('INSUFFICIENT_STOCK:')) {
+      const name = error.message.split('INSUFFICIENT_STOCK:')[1];
+      return NextResponse.json({ error: `Stock insuficiente para: ${name}` }, { status: 400 });
+    }
+    if (error.message?.startsWith('PRODUCT_NOT_AVAILABLE:')) {
+      const name = error.message.split('PRODUCT_NOT_AVAILABLE:')[1];
+      return NextResponse.json({ error: `Producto no disponible: ${name}` }, { status: 400 });
+    }
+    if (error.message?.startsWith('PRODUCT_NOT_FOUND:')) {
+      const id = error.message.split('PRODUCT_NOT_FOUND:')[1];
+      return NextResponse.json({ error: `Producto no encontrado: ${id}` }, { status: 404 });
+    }
     console.error('Error creando orden de compra:', error);
     return NextResponse.json(
       { error: 'Error al crear la orden de compra' },

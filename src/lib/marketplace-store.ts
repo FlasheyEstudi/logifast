@@ -301,51 +301,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   setCartScheduleTime: (time) => set({ cartScheduleTime: time }),
 
   confirmarCompra: () => {
-    try {
-      const state = get();
-      const subtotal = state.getCartSubtotal() ?? 0;
-      const tiendas = state.getCartTiendas() ?? [];
-      const firstTienda = state.tiendas.find((t) => t.id === tiendas[0]);
-      const costoEnvio = firstTienda?.costoEnvio ?? 20;
-      const total = subtotal + costoEnvio - (state.cartDescuento ?? 0);
-      const orderId = `LF-C${Date.now().toString().slice(-4)}`;
-      const newOrder: OrdenCompra = {
-        id: orderId,
-        clienteId: 'cliente-1',
-        tiendaId: tiendas[0] || 'tienda-1',
-        tiendaNombre: firstTienda?.nombre ?? 'Tienda',
-        tiendaLogo: firstTienda?.logoIniciales ?? 'T',
-        tiendaColor: firstTienda?.logoColor ?? '#FF5722',
-        estado: 'recibido',
-        direccionEntrega: state.cartDireccionEntrega || 'Col. Los Robles, Managua',
-        metodoPago: state.cartMetodoPago || 'efectivo',
-        items: (state.cartItems || []).map((i) => ({
-          nombreProducto: i?.nombreProducto ?? 'Producto',
-          cantidad: i?.cantidad ?? 1,
-          precioUnitario: i?.precioUnitario ?? 0,
-        })),
-        subtotal,
-        costoEnvio,
-        descuento: state.cartDescuento ?? 0,
-        total,
-        codigoUsado: state.cartCodigoPromo || undefined,
-        repartidorNombre: 'Carlos Mendoza',
-        repartidorInitials: 'CM',
-        fecha: new Date().toISOString().split('T')[0],
-        hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
-      };
-      set((s) => ({
-        ordenesCompra: [newOrder, ...(s.ordenesCompra || [])],
-        cartItems: [],
-        cartCodigoPromo: '',
-        cartDescuento: 0,
-        compraConfirmada: true,
-        compraConfirmadaId: orderId,
-      }));
-    } catch (err) {
-      console.error("Error inside confirmarCompra:", err);
-      sileo.error({ title: "Error en la compra", description: (err as Error).message });
-    }
+    get().confirmarCompraAsync();
   },
 
   getCartSubtotal: () => {
@@ -458,13 +414,10 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
       const state = get();
       const tiendas = state.getCartTiendas();
       if (tiendas.length === 0) {
+        sileo.error({ title: "Carrito vacío", description: "No hay ítems en el carrito" });
         return { ok: false, error: 'No hay items en el carrito' };
       }
       const tiendaId = tiendas[0];
-      const subtotal = state.getCartSubtotal();
-      const firstTienda = state.tiendas.find((t) => t.id === tiendaId);
-      const costoEnvio = firstTienda?.costoEnvio ?? 20;
-      const total = subtotal + costoEnvio - (state.cartDescuento ?? 0);
 
       const body = {
         tiendaId,
@@ -476,7 +429,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
         direccionEntrega: state.cartDireccionEntrega || 'Col. Los Robles, Managua',
         metodoPago: state.cartMetodoPago || 'efectivo',
         codigoPromo: state.cartCodigoPromo || undefined,
-        descuento: state.cartDescuento ?? 0,
         instrucciones: state.cartInstrucciones || undefined,
       };
 
@@ -487,19 +439,11 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
       });
       const data = await res.json();
       if (!res.ok) {
-        console.warn('[confirmarCompraAsync] API error, falling back to local order state:', data);
-        const fallbackId = `LF-${Math.floor(Math.random() * 90000) + 10000}`;
-        set({
-          cartItems: [],
-          cartCodigoPromo: '',
-          cartDescuento: 0,
-          compraConfirmada: true,
-          compraConfirmadaId: fallbackId,
-        });
-        return { ok: true, ordenId: fallbackId };
+        const errorMsg = data.error || 'Error al procesar la compra';
+        sileo.error({ title: "Error en la compra", description: errorMsg });
+        return { ok: false, error: errorMsg };
       }
 
-      // Recargar órdenes desde el backend
       await get().fetchOrdenesCompra();
 
       set({
@@ -511,17 +455,11 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
       });
 
       return { ok: true, ordenId: data.orden?.id };
-    } catch (err) {
+    } catch (err: any) {
       console.error('[confirmarCompraAsync]', err);
-      const fallbackId = `LF-${Math.floor(Math.random() * 90000) + 10000}`;
-      set({
-        cartItems: [],
-        cartCodigoPromo: '',
-        cartDescuento: 0,
-        compraConfirmada: true,
-        compraConfirmadaId: fallbackId,
-      });
-      return { ok: true, ordenId: fallbackId };
+      const errorMsg = err.message || 'Error de conexión';
+      sileo.error({ title: "Error en la compra", description: errorMsg });
+      return { ok: false, error: errorMsg };
     }
   },
 }));
