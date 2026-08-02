@@ -1,4 +1,4 @@
-# LOGIFAST — Versión producción (auditoría completa)
+# LOGIFAST 2.0 — Sistema de Logística y Entregas Express
 
 ## 🚀 Setup rápido
 
