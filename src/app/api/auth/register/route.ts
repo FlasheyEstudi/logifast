@@ -64,12 +64,7 @@ export async function POST(req: NextRequest) {
     };
 
     const existing = await db.user.findFirst({
-      where: {
-        OR: [
-          { email: { equals: email } },
-          { email: { equals: email, mode: 'insensitive' } },
-        ],
-      },
+      where: { email },
     });
     if (existing) {
       return fail('Ya existe una cuenta con ese email. Por favor inicia sesión.', 409);
