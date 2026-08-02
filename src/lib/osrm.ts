@@ -133,6 +133,59 @@ export async function obtenerRuta(
 }
 
 /**
+ * Fetch a multi-stop driving route for multiple waypoints (repartidor -> parada 1 -> parada 2 -> parada 3)
+ */
+export async function obtenerRutaMultiples(
+  puntos: PuntoRuta[]
+): Promise<ResultadoRuta> {
+  if (!puntos || puntos.length < 2) {
+    return { coordenadas: [], distanciaKm: 0, duracionMin: 0, exito: false };
+  }
+
+  const validPuntos = puntos.filter((p) => p && p.lat !== 0 && p.lng !== 0);
+  if (validPuntos.length < 2) {
+    return { coordenadas: [], distanciaKm: 0, duracionMin: 0, exito: false };
+  }
+
+  const coordsStr = validPuntos.map((p) => `${p.lng},${p.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OSRM_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      return { coordenadas: [], distanciaKm: 0, duracionMin: 0, exito: false };
+    }
+
+    const data = (await res.json()) as OSRMResponse;
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+      return { coordenadas: [], distanciaKm: 0, duracionMin: 0, exito: false };
+    }
+
+    const primaryRoute = data.routes[0];
+    const rawCoords = primaryRoute.geometry?.coordinates ?? [];
+    const coordenadas: [number, number][] = rawCoords.map(([lng, lat]) => [lat, lng]);
+
+    return {
+      coordenadas,
+      distanciaKm: Math.round((primaryRoute.distance / 1000) * 10) / 10,
+      duracionMin: Math.round(primaryRoute.duration / 60),
+      exito: true,
+    };
+  } catch {
+    clearTimeout(timeoutId);
+    return { coordenadas: [], distanciaKm: 0, duracionMin: 0, exito: false };
+  }
+}
+
+/**
  * Fallback straight-line route (no road following).
  * Used when OSRM is unreachable or returns an error.
  */

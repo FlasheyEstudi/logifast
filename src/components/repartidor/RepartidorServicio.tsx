@@ -18,7 +18,7 @@ import {
   Zap,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
-import { obtenerRuta, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
+import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
 import { useBottomSheetGesture } from '@/hooks/useBottomSheetGesture';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
@@ -176,12 +176,39 @@ export default function RepartidorServicio() {
       setRutaCoordenadas([]);
       return;
     }
-    if (estado !== 'EN_CAMINO_RECOGER' && estado !== 'RECOGIDO') {
-      // Keep the previously-fetched route visible at the pickup/dropoff points
-      return;
-    }
 
     let cancelled = false;
+
+    // Si lleva múltiples órdenes activas combinadas
+    if (ordenesActivas && ordenesActivas.length > 1) {
+      const waypoints = [{ lat, lng }];
+      ordenesActivas.forEach((ord) => {
+        if (ord.origenLat !== 0 && ord.origenLng !== 0) {
+          waypoints.push({ lat: ord.origenLat, lng: ord.origenLng });
+        }
+        if (ord.destinoLat !== 0 && ord.destinoLng !== 0) {
+          waypoints.push({ lat: ord.destinoLat, lng: ord.destinoLng });
+        }
+      });
+
+      obtenerRutaMultiples(waypoints)
+        .then((res) => {
+          if (cancelled) return;
+          if (res.exito && res.coordenadas.length > 1) {
+            setRutaCoordenadas(res.coordenadas);
+          } else {
+            setRutaCoordenadas(rutaLineaRecta({ lat, lng }, { lat: ordenActiva.destinoLat, lng: ordenActiva.destinoLng }));
+          }
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setRutaCoordenadas(rutaLineaRecta({ lat, lng }, { lat: ordenActiva.destinoLat, lng: ordenActiva.destinoLng }));
+        });
+
+      return () => { cancelled = true; };
+    }
+
+    // Si lleva 1 sola orden
     const destino =
       estado === 'EN_CAMINO_RECOGER'
         ? { lat: ordenActiva.origenLat, lng: ordenActiva.origenLng }
@@ -193,7 +220,6 @@ export default function RepartidorServicio() {
         if (res.exito && res.coordenadas.length > 1) {
           setRutaCoordenadas(res.coordenadas);
         } else {
-          // Fallback to straight line so the map always shows something
           setRutaCoordenadas(rutaLineaRecta({ lat, lng }, destino));
         }
       })
@@ -205,7 +231,7 @@ export default function RepartidorServicio() {
     return () => {
       cancelled = true;
     };
-  }, [ordenActiva, estado, lat, lng]);
+  }, [ordenActiva, ordenesActivas, estado, lat, lng]);
 
   /* Origen/destino positions for the map (only when we have an order) */
   const origenPos: [number, number] | undefined = ordenActiva

@@ -37,13 +37,23 @@ export default function ModuleDespacho() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [confirmRiderId, setConfirmRiderId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'timeline'>('cards');
+  const [orderFilter, setOrderFilter] = useState<'todos' | 'envio' | 'compra'>('todos');
   const { toasts, showToast } = useToast();
 
   /* ─── Derived data ─── */
-  const pendingOrders = useMemo(
+  const pendingOrdersAll = useMemo(
     () => orders.filter((o) => o.estado === 'pendiente' && !o.repartidor),
     [orders]
   );
+
+  const pendingOrders = useMemo(() => {
+    if (orderFilter === 'envio') return pendingOrdersAll.filter((o) => o.tipo === 'envio');
+    if (orderFilter === 'compra') return pendingOrdersAll.filter((o) => o.tipo === 'compra');
+    return pendingOrdersAll;
+  }, [pendingOrdersAll, orderFilter]);
+
+  const envioCount = useMemo(() => pendingOrdersAll.filter((o) => o.tipo === 'envio').length, [pendingOrdersAll]);
+  const compraCount = useMemo(() => pendingOrdersAll.filter((o) => o.tipo === 'compra').length, [pendingOrdersAll]);
 
   const onlineRiders = useMemo(
     () => riders.filter((r) => r.conectado),
@@ -230,22 +240,73 @@ export default function ModuleDespacho() {
             }}
             className="lf-scrollbar"
           >
-            <h3
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'var(--lf-text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                marginBottom: 8,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <Package size={12} style={{ color: '#FF6600' }} />
-              Órdenes por asignar ({pendingOrders.length})
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <h3
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'var(--lf-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Package size={12} style={{ color: '#FF6600' }} />
+                Por asignar ({pendingOrders.length})
+              </h3>
+
+              {/* Filtros de Tipo */}
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button
+                  onClick={() => setOrderFilter('todos')}
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    border: '1px solid var(--lf-border)',
+                    background: orderFilter === 'todos' ? '#FF6600' : 'transparent',
+                    color: orderFilter === 'todos' ? '#fff' : 'var(--lf-text-muted)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Todos ({pendingOrdersAll.length})
+                </button>
+                <button
+                  onClick={() => setOrderFilter('envio')}
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    border: '1px solid var(--lf-border)',
+                    background: orderFilter === 'envio' ? '#0066FF' : 'transparent',
+                    color: orderFilter === 'envio' ? '#fff' : 'var(--lf-text-muted)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  📦 Envíos ({envioCount})
+                </button>
+                <button
+                  onClick={() => setOrderFilter('compra')}
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    border: '1px solid var(--lf-border)',
+                    background: orderFilter === 'compra' ? '#16A34A' : 'transparent',
+                    color: orderFilter === 'compra' ? '#fff' : 'var(--lf-text-muted)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  🛒 Pedidos ({compraCount})
+                </button>
+              </div>
+            </div>
 
             {pendingOrders.length === 0 && (
               <div
@@ -263,7 +324,7 @@ export default function ModuleDespacho() {
                 <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>
                   Todo al día
                 </div>
-                No hay órdenes pendientes por asignar
+                No hay órdenes pendientes en este filtro
               </div>
             )}
 
@@ -272,6 +333,7 @@ export default function ModuleDespacho() {
               const waitMin = getWaitMinutes(order.fecha, order.hora);
               const waitColor = getWaitColor(waitMin);
               const dist = distanceMap[order.id] || '—';
+              const isEnvio = order.tipo === 'envio';
 
               return (
                 <motion.div
@@ -284,10 +346,10 @@ export default function ModuleDespacho() {
                     marginBottom: 8,
                     cursor: 'pointer',
                     background: 'var(--lf-surface)',
-                    border: `1px solid ${isSelected ? '#FF6600' : 'var(--lf-border)'}`,
-                    borderLeft: '4px solid #FF6600',
+                    border: `1px solid ${isSelected ? (isEnvio ? '#0066FF' : '#16A34A') : 'var(--lf-border)'}`,
+                    borderLeft: `4px solid ${isEnvio ? '#0066FF' : '#16A34A'}`,
                     boxShadow: isSelected
-                      ? '0 0 0 2px rgba(255,102,0,0.15), 0 4px 12px rgba(255,102,0,0.1)'
+                      ? '0 0 0 2px rgba(0,102,255,0.15), 0 4px 12px rgba(0,0,0,0.1)'
                       : 'none',
                     transition: 'all 0.2s',
                   }}
@@ -295,7 +357,7 @@ export default function ModuleDespacho() {
                     boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                   }}
                 >
-                  {/* Row 1: ID + wait time */}
+                  {/* Row 1: Badge + ID + wait time */}
                   <div
                     style={{
                       display: 'flex',
@@ -304,16 +366,30 @@ export default function ModuleDespacho() {
                       marginBottom: 6,
                     }}
                   >
-                    <span
-                      className="font-mono"
-                      style={{
-                        fontSize: 13,
-                        color: 'var(--lf-text-muted)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {order.id}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                          background: isEnvio ? 'rgba(0,102,255,0.12)' : 'rgba(22,163,74,0.12)',
+                          color: isEnvio ? '#0066FF' : '#16A34A',
+                        }}
+                      >
+                        {isEnvio ? '📦 ENVÍO' : '🛒 PEDIDO'}
+                      </span>
+                      <span
+                        className="font-mono"
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--lf-text-muted)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {order.id}
+                      </span>
+                    </div>
                     <span
                       style={{
                         display: 'flex',
