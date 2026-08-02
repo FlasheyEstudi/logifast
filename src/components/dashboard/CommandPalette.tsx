@@ -340,6 +340,7 @@ export default function CommandPalette() {
                 role="combobox"
                 aria-autocomplete="list"
                 aria-expanded={true}
+                aria-controls="cmd-palette-results"
                 placeholder="Buscar órdenes, motos, repartidores, acciones..."
                 style={{
                   flex: 1,
@@ -369,6 +370,7 @@ export default function CommandPalette() {
 
             {/* ── Results ── */}
             <div
+              id="cmd-palette-results"
               style={{ maxHeight: 400, overflowY: 'auto' }}
               className="lf-scrollbar"
             >
