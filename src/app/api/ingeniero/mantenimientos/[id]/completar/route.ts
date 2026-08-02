@@ -55,6 +55,7 @@ export async function PATCH(
               repuestoId,
               cantidad,
               precioUnitario: precio,
+              subtotal: precio * cantidad,
             },
           });
         }

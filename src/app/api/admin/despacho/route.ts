@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     });
 
     const availableDrivers = await db.repartidorProfile.findMany({
-      where: { conectado: true, enServicio: false, pausado: false, aceptaOrdenes: true },
+      where: { conectado: true, enServicio: false, pausado: false },
     });
 
     const usedDriverIds = new Set<string>();

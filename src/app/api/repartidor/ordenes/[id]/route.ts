@@ -22,10 +22,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { profile } = await getRepartidorProfile();
-    if (!profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { profile } = repData;
 
     const orden = await db.ordenServicio.findUnique({ where: { id } });
     if (!orden) {

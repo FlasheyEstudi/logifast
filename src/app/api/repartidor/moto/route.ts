@@ -13,10 +13,11 @@ type MotoDb = Awaited<ReturnType<typeof db.moto.findFirst>>;
  */
 export async function GET() {
   try {
-    const { profile } = await getRepartidorProfile();
-    if (!profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { profile } = repData;
 
     let moto: MotoDb = null;
     if (profile.motoId) {

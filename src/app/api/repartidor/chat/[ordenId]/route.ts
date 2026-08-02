@@ -14,10 +14,11 @@ export async function GET(
 ) {
   try {
     const { ordenId } = await params;
-    const { profile } = await getRepartidorProfile();
-    if (!profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { profile } = repData;
 
     const mensajes = await db.chatRepartidor.findMany({
       where: { ordenId },

@@ -104,7 +104,7 @@ export async function POST(
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
     }
 
-    if (tienda.duenoId !== user.id && user.role !== 'admin') {
+    if (tienda.propietarioId !== user.id && user.role !== 'admin') {
       return NextResponse.json(
         { error: 'No autorizado para agregar productos a esta tienda' },
         { status: 403 }

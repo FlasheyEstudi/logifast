@@ -18,7 +18,7 @@ export async function GET(_req: NextRequest) {
     }
 
     const tienda = await db.tienda.findFirst({
-      where: { OR: [{ duenoId: user.id }, { propietarioId: user.id }] },
+      where: { propietarioId: user.id },
     });
     if (!tienda) {
       return ok({ ok: true, pedidos: [] });
@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
     }
 
-    const isOwner = orden.tienda.duenoId === user.id || orden.tienda.propietarioId === user.id;
+    const isOwner = orden.tienda.propietarioId === user.id;
     const isAdmin = user.role === 'admin';
 
     if (!isOwner && !isAdmin) {

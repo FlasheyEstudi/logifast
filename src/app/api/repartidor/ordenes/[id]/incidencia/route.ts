@@ -21,10 +21,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { profile } = await getRepartidorProfile();
-    if (!profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { profile } = repData;
 
     const body = await req.json();
     const tipoRaw = String(body.tipo ?? 'otro');

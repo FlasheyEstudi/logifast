@@ -102,6 +102,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
+    await db.comentario.deleteMany({ where: { padreId: id } });
     await db.comentario.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {

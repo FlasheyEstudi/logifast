@@ -13,10 +13,11 @@ type ConfigCampo = 'sonidoActivo' | 'vibracionActiva' | 'ubicacionActiva' | 'zon
  */
 export async function GET() {
   try {
-    const { user, profile } = await getRepartidorProfile();
-    if (!user || !profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.user || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { user, profile } = repData;
 
     const result: RepartidorProfile = {
       id: profile.id,
@@ -73,10 +74,11 @@ export async function GET() {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const { user, profile } = await getRepartidorProfile();
-    if (!user || !profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.user || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { user, profile } = repData;
 
     const body = await req.json();
     const updates = body as Partial<Record<ConfigCampo | 'contratoAceptado' | 'zonaPreferida', boolean | string>>;

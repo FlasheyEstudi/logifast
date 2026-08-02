@@ -99,7 +99,7 @@ export async function GET(
     if (ordenCompra) {
       const isClient = ordenCompra.clienteId === user.id;
       const isAssignedDriver = profile && ordenCompra.repartidorId === profile.id;
-      const isStoreOwner = ordenCompra.tienda.duenoId === user.id;
+      const isStoreOwner = ordenCompra.tienda.propietarioId === user.id;
 
       if (!isClient && !isAssignedDriver && !isStoreOwner && !isAdmin) {
         return NextResponse.json({ error: 'No tienes permiso para rastrear este pedido' }, { status: 403 });

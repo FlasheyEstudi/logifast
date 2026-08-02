@@ -5,7 +5,12 @@
 import { db } from '@/lib/db';
 import { getSessionUser, type SessionUser } from '@/lib/auth/session';
 
-export async function getRepartidorProfile() {
+export interface RepartidorData {
+  user: SessionUser;
+  profile: any;
+}
+
+export async function getRepartidorProfile(): Promise<RepartidorData | null> {
   const user = await getSessionUser();
   if (!user || user.role !== 'repartidor') return null;
 

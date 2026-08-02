@@ -21,10 +21,11 @@ function tiempoRelativo(fecha: Date): string {
  */
 export async function GET() {
   try {
-    const { profile } = await getRepartidorProfile();
-    if (!profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { profile } = repData;
 
     const cals = await db.calificacionRepartidor.findMany({
       where: { repartidorId: profile.id },

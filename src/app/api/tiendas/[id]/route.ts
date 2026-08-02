@@ -98,7 +98,7 @@ export async function PATCH(
     }
 
     const isAdmin = user.role === 'admin';
-    const isOwner = existing.duenoId === user.id;
+    const isOwner = existing.propietarioId === user.id;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: 'No autorizado para editar esta tienda' }, { status: 403 });
@@ -150,7 +150,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
     }
 
-    if (existing.duenoId !== user.id && user.role !== 'admin') {
+    if (existing.propietarioId !== user.id && user.role !== 'admin') {
       return NextResponse.json({ error: 'No autorizado para eliminar esta tienda' }, { status: 403 });
     }
 

@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
               await tx.usoCodigo.create({
                 data: {
                   codigoId: codigoPromoObj.id,
-                  userId: user.id,
+                  clienteId: user.id,
                   descuento: descuentoCalculado,
                 },
               }).catch(() => null);

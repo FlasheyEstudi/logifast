@@ -131,10 +131,11 @@ async function computeTrends(
  */
 export async function GET(req: NextRequest) {
   try {
-    const { profile } = await getRepartidorProfile();
-    if (!profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { profile } = repData;
 
     const { searchParams } = new URL(req.url);
     const periodo = (searchParams.get('periodo') ?? 'hoy') as Periodo;
