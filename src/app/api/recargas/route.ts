@@ -101,25 +101,21 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Recarga normal (transferencia/efectivo)
+    // Recarga normal (transferencia/efectivo) — requiere aprobación admin
     const recarga = await db.recargaSaldo.create({
       data: {
         repartidorId: profile.id,
         monto,
         metodo,
         codigo,
-        estado: 'completada',
+        estado: 'pendiente',
       },
-    });
-
-    await db.repartidorProfile.update({
-      where: { id: profile.id },
-      data: { saldo: { increment: monto } },
     });
 
     return NextResponse.json({
       ok: true,
-      nuevoSaldo: profile.saldo + monto,
+      mensaje: 'Recarga solicitada correctamente. Pendiente de aprobación por un administrador.',
+      nuevoSaldo: profile.saldo,
       recarga,
     });
   } catch (error) {
