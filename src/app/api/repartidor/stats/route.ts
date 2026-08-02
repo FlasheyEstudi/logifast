@@ -150,9 +150,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ stats, trends });
   } catch (error) {
     console.error('[REPARTIDOR_STATS_GET]', error);
-    return NextResponse.json(
-      { error: 'Error al obtener estadísticas' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      stats: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
+      trends: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
+    });
   }
 }

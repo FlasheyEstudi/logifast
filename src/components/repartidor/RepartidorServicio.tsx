@@ -695,6 +695,38 @@ export default function RepartidorServicio() {
                 {statsHoy.entregas}
               </div>
             </div>
+
+            {ordenesActivas && ordenesActivas.length > 0 && (
+              <button
+                onClick={() => {
+                  optimizarRutaAutomatica();
+                  useRepartidorStore.setState({ estado: 'EN_CAMINO_RECOGER', enServicio: true });
+                  showSnackbar({ message: `🚀 ¡Viaje iniciado con ${ordenesActivas.length} orden(es)!` });
+                }}
+                style={{
+                  width: '100%',
+                  minHeight: 52,
+                  borderRadius: 14,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
+                  color: '#FFFFFF',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  marginBottom: 10,
+                  boxShadow: '0 4px 14px rgba(22,163,74,0.35)',
+                }}
+              >
+                <Navigation size={20} />
+                EMPEZAR VIAJE / CARRERA ({ordenesActivas.length} ACEPTADO{ordenesActivas.length > 1 ? 'S' : ''})
+              </button>
+            )}
+
             <button
               onClick={handleSimularOrden}
               style={{

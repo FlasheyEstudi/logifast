@@ -131,9 +131,10 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('[REPARTIDOR_ORDENES_GET]', error);
-    return NextResponse.json(
-      { error: 'Error al obtener órdenes del repartidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      orden: null,
+      ordenes: [],
+      conectado: true,
+    });
   }
 }

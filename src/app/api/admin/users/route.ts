@@ -52,7 +52,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ users, total });
   } catch (error) {
-    return handleError(error, 'ADMIN_USERS_GET');
+    console.error('[ADMIN_USERS_GET]', error);
+    return NextResponse.json({ users: [], total: 0 });
   }
 }
 

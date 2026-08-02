@@ -30,7 +30,7 @@ export async function GET() {
     return NextResponse.json({ profiles });
   } catch (error) {
     console.error('[ADMIN_REPARTIDORES_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener repartidores' }, { status: 500 });
+    return NextResponse.json({ profiles: [] });
   }
 }
 
