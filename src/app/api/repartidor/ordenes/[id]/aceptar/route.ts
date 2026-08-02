@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getSessionUser } from '@/lib/auth/session';
 import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import { emitOrdenActualizada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * PATCH /api/repartidor/ordenes/[id]/aceptar
- * Repartidor acepta la orden asignada.
+ * Repartidor acepta la orden asignada (atómico contra race conditions).
  */
 export async function PATCH(
   _req: NextRequest,
@@ -14,33 +16,33 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { profile } = await getRepartidorProfile();
-    if (!profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { profile } = repData;
 
-    const orden = await db.ordenServicio.findUnique({ where: { id } });
-    if (!orden) {
-      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
-    }
+    // Actualización atómica para prevenir race condition entre 2 repartidores
+    const updateRes = await db.ordenServicio.updateMany({
+      where: {
+        id,
+        OR: [
+          { repartidorId: null, estado: 'pendiente' },
+          { repartidorId: profile.id, estado: { in: ['pendiente', 'asignado'] } },
+        ],
+      },
+      data: {
+        repartidorId: profile.id,
+        estado: 'aceptado',
+        aceptadoEn: new Date(),
+      },
+    });
 
-    // Si la orden no tiene repartidor, asignarla
-    const repartidorId = orden.repartidorId ?? profile.id;
-    if (!orden.repartidorId) {
-      await db.ordenServicio.update({
-        where: { id },
-        data: { repartidorId: profile.id, estado: 'aceptado', aceptadoEn: new Date() },
-      });
-    } else if (orden.repartidorId !== profile.id) {
+    if (updateRes.count === 0) {
       return NextResponse.json(
-        { error: 'La orden ya está asignada a otro repartidor' },
-        { status: 403 }
+        { error: 'La orden ya fue aceptada o asignada a otro repartidor' },
+        { status: 409 }
       );
-    } else {
-      await db.ordenServicio.update({
-        where: { id },
-        data: { estado: 'aceptado', aceptadoEn: new Date() },
-      });
     }
 
     await db.repartidorProfile.update({
@@ -56,11 +58,13 @@ export async function PATCH(
       }).catch(() => null);
     }
 
+    emitOrdenActualizada({ id, estado: 'aceptado', repartidorId: profile.id });
+
     return NextResponse.json({
       ok: true,
       estado: 'aceptado',
       ordenId: id,
-      repartidorId,
+      repartidorId: profile.id,
     });
   } catch (error) {
     console.error('[REPARTIDOR_ORDEN_ACEPTAR]', error);

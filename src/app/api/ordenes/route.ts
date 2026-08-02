@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { geocodeAddress } from '@/lib/osrm';
+import { emitOrdenCreada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,33 +53,9 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    let user = await getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
-      let dbUser = await db.user.findFirst({ where: { role: 'cliente' } });
-      if (!dbUser) {
-        dbUser = await db.user.create({
-          data: {
-            email: 'cliente@logifast.com',
-            name: 'María López',
-            password: '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
-            role: 'cliente',
-            telefono: '+505 8888-1234',
-            initials: 'ML',
-            color: '#FF5722',
-          },
-        });
-      }
-      user = {
-        id: dbUser.id,
-        email: dbUser.email,
-        name: dbUser.name,
-        role: dbUser.role as any,
-        telefono: dbUser.telefono,
-        initials: dbUser.initials,
-        color: dbUser.color,
-        fotoUrl: dbUser.fotoUrl,
-        bio: dbUser.bio,
-      };
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -108,7 +85,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
 
     const rawOrigLat = Number(origenLat) || 0;
     const rawOrigLng = Number(origenLng) || 0;
@@ -148,6 +124,8 @@ export async function POST(req: NextRequest) {
         clienteTelefono: user.telefono ?? null,
       },
     });
+
+    emitOrdenCreada(orden);
 
     // Notificar a repartidores conectados
     const repartidoresConectados = await db.repartidorProfile.findMany({

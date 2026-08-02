@@ -920,7 +920,7 @@ export const useStore = create<AppState>((set, get) => ({
   /* New UI State */
   commandPaletteOpen: false,
   notificationsOpen: false,
-  simulationRunning: true,
+  simulationRunning: process.env.NODE_ENV !== 'production',
   lastSimulationUpdate: Date.now(),
 
   /* Actions */

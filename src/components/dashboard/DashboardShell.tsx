@@ -114,6 +114,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           if (data && Array.isArray(data.ordenes)) {
             const mappedServicios = data.ordenes.map((o: any) => ({
               id: o.id,
+              tipo: 'envio',
               cliente: o.clienteNombre || o.cliente?.name || 'Cliente',
               clienteTelefono: o.clienteTelefono || o.cliente?.telefono || '',
               origen: o.origen,
@@ -144,6 +145,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           if (data && Array.isArray(data.ordenes)) {
             const mappedCompras = data.ordenes.map((o: any) => ({
               id: o.id,
+              tipo: 'compra',
               cliente: o.cliente?.name || 'Cliente Marketplace',
               clienteTelefono: o.cliente?.telefono || '',
               origen: o.tienda?.nombre || 'Tienda Marketplace',
@@ -169,7 +171,11 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           }
         }
 
-        useStore.setState({ orders: mergedOrders });
+        const currentStr = JSON.stringify(useStore.getState().orders);
+        const newStr = JSON.stringify(mergedOrders);
+        if (currentStr !== newStr) {
+          useStore.setState({ orders: mergedOrders });
+        }
       } catch (err) {
         console.error('[DashboardShell syncOrders]', err);
       }
@@ -199,7 +205,11 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
                   color: u.color || '#FF5722',
                 };
               });
-            useStore.setState({ clients: apiClients });
+            const currentClientsStr = JSON.stringify(useStore.getState().clients);
+            const newClientsStr = JSON.stringify(apiClients);
+            if (currentClientsStr !== newClientsStr) {
+              useStore.setState({ clients: apiClients });
+            }
           }
         }
       } catch (err) {
@@ -229,7 +239,11 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               conectado: p.conectado || false,
             }));
             if (mappedRiders.length > 0) {
-              useStore.setState({ riders: mappedRiders });
+              const currentRidersStr = JSON.stringify(useStore.getState().riders);
+              const newRidersStr = JSON.stringify(mappedRiders);
+              if (currentRidersStr !== newRidersStr) {
+                useStore.setState({ riders: mappedRiders });
+              }
             }
           }
         }
@@ -239,7 +253,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     };
 
     fetchAllData();
-    const interval = setInterval(fetchAllData, 4000);
+    const interval = setInterval(fetchAllData, 30000);
     return () => clearInterval(interval);
   }, []);
 

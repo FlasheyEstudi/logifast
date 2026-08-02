@@ -39,10 +39,11 @@ function mapOrdenToActiva(o: Awaited<ReturnType<typeof db.ordenServicio.findFirs
  */
 export async function GET(req: NextRequest) {
   try {
-    const { profile } = await getRepartidorProfile();
-    if (!profile) {
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+    const { profile } = repData;
 
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado') ?? 'activa';
@@ -61,7 +62,6 @@ export async function GET(req: NextRequest) {
         take: 50,
       });
 
-      // Cargar calificaciones
       const ordenIds = servicios.map((s) => s.id);
       const cals = await db.calificacionRepartidor.findMany({
         where: { ordenId: { in: ordenIds } },
@@ -93,40 +93,32 @@ export async function GET(req: NextRequest) {
     }
 
     // estado === 'activa'
-    const ordenesDB = await db.ordenServicio.findMany({
+    const ordenesPropiasDB = await db.ordenServicio.findMany({
       where: {
         repartidorId: profile.id,
         estado: { in: ['asignado', 'aceptado', 'recogido'] },
       },
       orderBy: { createdAt: 'desc' },
-      take: 3,
+      take: 10,
     });
 
-    if (!ordenesDB || ordenesDB.length === 0) {
-      const pendientes = await db.ordenServicio.findMany({
-        where: { estado: 'pendiente', repartidorId: null },
-        orderBy: { createdAt: 'desc' },
-        take: 3,
-      });
-      if (pendientes.length > 0) {
-        const activas = pendientes.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
-        return NextResponse.json({
-          orden: activas[0],
-          ordenes: activas,
-          estadoServicio: 'pendiente',
-          kmRecorridos: 0,
-          conectado: profile.conectado,
-        });
-      }
-      return NextResponse.json({ orden: null, ordenes: [], conectado: profile.conectado });
-    }
+    const ordenesDisponiblesDB = await db.ordenServicio.findMany({
+      where: { estado: 'pendiente', repartidorId: null },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
 
-    const ordenesActivas = ordenesDB.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
+    const ordenesActivas = ordenesPropiasDB.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
+    const ordenesDisponibles = ordenesDisponiblesDB.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
+    const ordenActual = ordenesActivas.length > 0 ? ordenesActivas[0] : null;
+
     return NextResponse.json({
-      orden: ordenesActivas[0] || null,
+      orden: ordenActual,
       ordenes: ordenesActivas,
-      estadoServicio: ordenesDB[0].estado,
-      kmRecorridos: ordenesDB[0].kmRecorridos,
+      ordenesActivas,
+      ordenesDisponibles,
+      estadoServicio: ordenesPropiasDB[0]?.estado ?? 'libre',
+      kmRecorridos: ordenesPropiasDB[0]?.kmRecorridos ?? 0,
       conectado: profile.conectado,
     });
   } catch (error) {
@@ -134,6 +126,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       orden: null,
       ordenes: [],
+      ordenesActivas: [],
+      ordenesDisponibles: [],
       conectado: true,
     });
   }

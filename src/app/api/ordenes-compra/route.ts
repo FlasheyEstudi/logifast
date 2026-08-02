@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { emitOrdenCreada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -246,6 +247,8 @@ export async function POST(req: NextRequest) {
 
       return { orden, ordenServicio };
     });
+
+    emitOrdenCreada(result.ordenServicio);
 
     const repartidoresConectados = await db.repartidorProfile.findMany({
       where: { conectado: true },
