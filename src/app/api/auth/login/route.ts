@@ -24,8 +24,22 @@ export async function POST(req: NextRequest) {
     if (!rl.success) return tooManyRequests(rl.resetAt);
 
     const body = (await req.json()) as LoginBody;
-    const email = (body.email ?? '').trim().toLowerCase();
+    const rawEmail = (body.email ?? '').trim().toLowerCase();
     const password = (body.password ?? '').trim();
+
+    // Normalización de email (mapear .app a .com y alias de roles)
+    let email = rawEmail;
+    if (email.endsWith('@logifast.app')) {
+      email = email.replace('@logifast.app', '@logifast.com');
+    } else if (email === 'admin') {
+      email = 'admin@logifast.com';
+    } else if (email === 'repartidor') {
+      email = 'repartidor@logifast.com';
+    } else if (email === 'cliente') {
+      email = 'cliente@logifast.com';
+    } else if (email === 'ingeniero') {
+      email = 'ingeniero@logifast.com';
+    }
 
     // Validación
     if (!email || !password) {
@@ -37,19 +51,15 @@ export async function POST(req: NextRequest) {
     const pwErr = validateLength(password, 1, 200, 'Contraseña');
     if (pwErr) return fail(pwErr);
 
-    // Tabla de cuentas demo conocidas
+    // Cuentas demo principales
     const DEMO_EMAILS: Record<string, { name: string; role: 'cliente' | 'repartidor' | 'admin' | 'ingeniero'; initials: string; color: string }> = {
       'cliente@logifast.com': { name: 'María López', role: 'cliente', initials: 'ML', color: '#FF5722' },
-      'cliente@logifast.app': { name: 'Cliente Logifast', role: 'cliente', initials: 'CL', color: '#FF5722' },
       'repartidor@logifast.com': { name: 'Carlos Martínez', role: 'repartidor', initials: 'CM', color: '#4CAF50' },
-      'repartidor@logifast.app': { name: 'Carlos Repartidor', role: 'repartidor', initials: 'CR', color: '#4CAF50' },
       'admin@logifast.com': { name: 'Administrador', role: 'admin', initials: 'AD', color: '#2196F3' },
-      'admin@logifast.app': { name: 'Administrador', role: 'admin', initials: 'AD', color: '#2196F3' },
       'ingeniero@logifast.com': { name: 'Ing. Fernando Ruiz', role: 'ingeniero', initials: 'FR', color: '#9C27B0' },
-      'ingeniero@logifast.app': { name: 'Ingeniero Logifast', role: 'ingeniero', initials: 'IL', color: '#9C27B0' },
     };
 
-    // Buscar usuario en la base de datos
+    // Buscar usuario en PostgreSQL de Supabase
     let user: any = null;
     try {
       user = await db.user.findFirst({
@@ -66,25 +76,23 @@ export async function POST(req: NextRequest) {
       await verifyPassword(password, DUMMY_HASH).catch(() => false);
     }
 
-    // Si las credenciales no coincidieron pero es una cuenta demo oficial, aseguramos en BD
-    if ((!user || !passwordOk) && DEMO_EMAILS[email]) {
+    // Si es una cuenta demo oficial y la contraseña coincide o es 123456, asegurar en BD y permitir acceso
+    if (DEMO_EMAILS[email] && (passwordOk || password === '123456' || password === 'password123' || password === 'admin123')) {
       const demoConfig = DEMO_EMAILS[email];
-      const hashedPassword = await hashPassword(password || '123456');
-      user = await db.user.upsert({
-        where: { email },
-        update: { password: hashedPassword, role: demoConfig.role },
-        create: {
-          email,
-          name: demoConfig.name,
-          password: hashedPassword,
-          role: demoConfig.role,
-          initials: demoConfig.initials,
-          color: demoConfig.color,
-        },
-      }).catch(() => null);
-      if (user) {
-        passwordOk = true;
+      if (!user) {
+        const hashedPassword = await hashPassword('123456');
+        user = await db.user.create({
+          data: {
+            email,
+            name: demoConfig.name,
+            password: hashedPassword,
+            role: demoConfig.role,
+            initials: demoConfig.initials,
+            color: demoConfig.color,
+          },
+        }).catch(() => null);
       }
+      passwordOk = true;
     }
 
     if (!user || !passwordOk) {
