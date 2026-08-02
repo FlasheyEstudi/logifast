@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ImageUploader } from '@/components/ui/ImageUploader';
+import { notify } from '@/lib/notify';
+import { LogoSpinner, MiniSpinner } from '@/components/ui/loaders';
 import {
   Utensils, Store, Pill, Gift, ShoppingCart, Smartphone, Dumbbell,
-  BarChart2, Package, Settings, Star, X,
+  BarChart3, Package, Settings, Star, X,
 } from '@/components/icons';
 
 interface Producto {
@@ -205,7 +208,7 @@ export default function ClientMiTienda() {
       {/* Tabs */}
       <div className="lf-mt-tabs">
         {[
-          { value: 'overview', label: 'Resumen', icon: <BarChart2 size={15} /> },
+          { value: 'overview', label: 'Resumen', icon: <BarChart3 size={15} /> },
           { value: 'productos', label: 'Productos', icon: <Package size={15} /> },
           { value: 'pedidos', label: 'Pedidos', icon: <ShoppingCart size={15} /> },
           { value: 'config', label: 'Configuración', icon: <Settings size={15} /> },
