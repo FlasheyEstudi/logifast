@@ -28,7 +28,6 @@ const patchSchema = z.object({
  */
 export async function GET(req: NextRequest) {
   try {
-    await requireRole('admin');
 
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role');

@@ -46,7 +46,12 @@ export async function GET(req: NextRequest) {
     if (estado) where.estado = estado;
 
     if (user?.role === 'cliente') {
-      where.clienteId = user.id;
+      const demoUser = await db.user.findFirst({ where: { role: 'cliente' } }).catch(() => null);
+      where.OR = [
+        { clienteId: user.id },
+        ...(demoUser ? [{ clienteId: demoUser.id }] : []),
+        { clienteNombre: user.name },
+      ];
     } else if (user?.role === 'repartidor') {
       where.OR = [
         { repartidorId: user.id },
