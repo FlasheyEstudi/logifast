@@ -25,63 +25,79 @@ export default function RepartidorHistorial({ isDark }: RepartidorHistorialProps
   const perfil = useRepartidorStore((s) => s.perfil);
 
   return (
-    <div className="space-y-6 py-2 max-w-4xl mx-auto">
+    <div className="space-y-4 py-1">
 
-      {/* 🍏 EARNINGS HERO WIDGETS (APPLE FITNESS STYLE) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-6 rounded-[28px] bg-zinc-900/90 border border-zinc-800 space-y-2 shadow-xl">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">Ganancias Hoy</span>
-          <h2 className="text-3xl font-extrabold text-white">C$ {(statsHoy?.ganancias || perfil?.totalGanancias || 1250).toFixed(2)}</h2>
-          <p className="text-xs text-zinc-500 font-medium">+15% respecto a ayer</p>
+      {/* 🍏 APPLE HEALTH / ACTIVITY STYLE WIDGETS GRID */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Ganancias Hoy Widget */}
+        <div className="p-4 rounded-[14px] bg-[#1C1C24] border border-white/[0.08] space-y-1 shadow-sm">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#10B981]">Ganancias Hoy</span>
+          <h2 className="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-white">
+            C$ {(statsHoy?.ganancias || perfil?.totalGanancias || 1250).toFixed(0)}
+          </h2>
+          <p className="text-[11px] text-[#10B981] font-semibold">+15% vs ayer ↗</p>
         </div>
 
-        <div className="p-6 rounded-[28px] bg-zinc-900/90 border border-zinc-800 space-y-2 shadow-xl">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400">Entregas Exitosas</span>
-          <h2 className="text-3xl font-extrabold text-white">{statsHoy?.entregas || perfil?.totalEntregas || 8}</h2>
-          <p className="text-xs text-zinc-500 font-medium">100% de cumplimiento</p>
+        {/* Entregas Exitosas Widget */}
+        <div className="p-4 rounded-[14px] bg-[#1C1C24] border border-white/[0.08] space-y-1 shadow-sm">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#3B82F6]">Entregas Exitosas</span>
+          <h2 className="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-white">
+            {statsHoy?.entregas || perfil?.totalEntregas || 8}
+          </h2>
+          <p className="text-[11px] text-[#8E8E93] font-medium">100% de cumplimiento</p>
         </div>
+      </div>
 
-        <div className="p-6 rounded-[28px] bg-zinc-900/90 border border-zinc-800 space-y-2 shadow-xl">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Calificación Rider</span>
+      {/* Full-width Calificación Rider Widget */}
+      <div className="p-4 rounded-[14px] bg-[#1C1C24] border border-white/[0.08] flex items-center justify-between shadow-sm">
+        <div className="space-y-1">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#F59E0B]">Desempeño & Rating</span>
           <div className="flex items-center gap-2">
-            <h2 className="text-3xl font-extrabold text-white">{(perfil?.calificacion || 4.98).toFixed(2)}</h2>
-            <Star size={20} className="text-amber-400 fill-amber-400" />
+            <h2 className="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-white">
+              {(perfil?.calificacion || 4.98).toFixed(2)}
+            </h2>
+            <Star size={20} className="text-[#F59E0B] fill-[#F59E0B]" />
           </div>
-          <p className="text-xs text-zinc-500 font-medium">Basado en reseñas activas</p>
+          <p className="text-[11px] text-[#8E8E93]">Excelente servicio de repartidor</p>
+        </div>
+        <div className="w-12 h-12 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] flex items-center justify-center font-bold text-lg">
+          🏅
         </div>
       </div>
 
       {/* 🍏 TRIP HISTORY LIST */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-extrabold tracking-tight text-zinc-300">Historial de Viajes Recientes</h3>
+      <div className="space-y-3 pt-2">
+        <h3 className="font-['Plus_Jakarta_Sans'] text-sm font-extrabold tracking-tight text-[#F5F5F7]">
+          Historial de Viajes Recientes
+        </h3>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {serviciosHoy.length === 0 ? (
-            <div className="p-12 text-center rounded-[28px] bg-zinc-900/60 border border-zinc-800 text-zinc-500 text-xs">
+            <div className="p-8 text-center rounded-[14px] bg-[#1C1C24] border border-white/[0.08] text-[#8E8E93] text-xs">
               No tienes viajes registrados hoy.
             </div>
           ) : (
             serviciosHoy.map((trip) => (
               <div
                 key={trip.id}
-                className="p-5 rounded-[24px] bg-zinc-900/80 border border-zinc-800 flex items-center justify-between gap-4 shadow-sm hover:border-zinc-700 transition-colors"
+                className="p-3.5 rounded-[14px] bg-[#1C1C24] border border-white/[0.08] flex items-center justify-between gap-3 shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
-                    <CheckCircle size={20} />
+                  <div className="w-9 h-9 rounded-[10px] bg-[#10B981]/15 text-[#10B981] flex items-center justify-center font-bold">
+                    <CheckCircle size={18} />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-sm text-white">Entrega #{trip.id.substring(0, 8)}</h4>
-                    <p className="text-xs text-zinc-400">{trip.origen} ➔ {trip.destino}</p>
-                    <span className="text-[10px] text-zinc-500 block mt-0.5">{trip.hora}</span>
+                    <h4 className="font-bold text-xs text-white">Entrega #{trip.id.substring(0, 8)}</h4>
+                    <p className="text-[11px] text-[#8E8E93]">{trip.destino}</p>
+                    <span className="text-[10px] text-[#48484A] block">{trip.hora}</span>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-sm font-extrabold text-emerald-400 block">
-                    + C$ {trip.ganancia.toFixed(2)}
+                  <span className="font-mono font-extrabold text-sm text-[#10B981] block">
+                    + C$ {trip.ganancia.toFixed(0)}
                   </span>
-                  <span className="text-[10px] text-zinc-500 font-medium">Completada</span>
+                  <span className="text-[10px] text-[#8E8E93]">Completado</span>
                 </div>
               </div>
             ))

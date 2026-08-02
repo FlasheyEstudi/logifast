@@ -27,58 +27,73 @@ export default function RepartidorPerfil({ isDark, userName, onLogout }: Reparti
   const moto = useRepartidorStore((s) => s.moto);
 
   return (
-    <div className="space-y-6 py-2 max-w-3xl mx-auto">
+    <div className="space-y-4 py-1">
 
-      {/* DRIVER HERO PROFILE */}
-      <div className="p-6 sm:p-8 rounded-[32px] bg-zinc-900/90 border border-zinc-800 shadow-2xl flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold text-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-            {userName.substring(0, 2).toUpperCase()}
-          </div>
-          <div>
-            <h2 className="text-xl font-extrabold text-white">{userName}</h2>
-            <p className="text-xs text-zinc-400 font-medium">Repartidor Oficial Logifast</p>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
-                Licencia Activa
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/20 flex items-center gap-1">
-                <Star size={10} className="fill-amber-400" /> {(perfil?.calificacion || 4.98).toFixed(2)}★
-              </span>
+      {/* DRIVER HERO PROFILE CARD (WITH 3PX TOP GREEN GRADIENT BAR) */}
+      <div className="relative overflow-hidden p-5 rounded-[20px] bg-[#1C1C24] border border-white/[0.08] shadow-xl space-y-4">
+        <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-[#10B981] to-[#06B6D4]" />
+
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#10B981] to-[#06B6D4] text-white font-extrabold text-lg flex items-center justify-center ring-2 ring-[#10B981]/50 shadow-md">
+              {userName.substring(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h2 className="font-['Plus_Jakarta_Sans'] text-base font-extrabold text-white">{userName}</h2>
+              <p className="text-xs text-[#8E8E93]">Repartidor Oficial Logifast</p>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="px-2 py-0.5 rounded-full bg-[#10B981]/15 text-[#10B981] text-[10px] font-bold border border-[#10B981]/20">
+                  Licencia Activa
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] text-[10px] font-bold border border-[#F59E0B]/20 flex items-center gap-0.5">
+                  <Star size={9} className="fill-[#F59E0B]" /> {(perfil?.calificacion || 4.98).toFixed(2)}★
+                </span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="text-right">
-          <span className="text-[10px] text-zinc-500 font-semibold uppercase block">Billetera Rider</span>
-          <span className="text-lg font-extrabold text-emerald-400">
+      {/* RIDER WALLET CARD */}
+      <div className="p-4 rounded-[14px] bg-[#1C1C24] border border-white/[0.08] flex items-center justify-between shadow-sm">
+        <div className="space-y-0.5">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8E8E93]">Billetera Rider</span>
+          <span className="font-mono text-xl font-extrabold text-[#10B981] block">
             C$ {(perfil?.saldo || 850).toFixed(2)}
           </span>
         </div>
+        <button
+          onClick={() => alert('Solicitud de retiro enviada a revisión.')}
+          className="px-4 py-2 rounded-[10px] bg-[#10B981] text-white font-['Plus_Jakarta_Sans'] font-bold text-xs shadow-md hover:bg-[#059669] transition-colors"
+        >
+          Retirar Saldo
+        </button>
       </div>
 
-      {/* VEHICLE DETAILS */}
-      <div className="p-6 rounded-[28px] bg-zinc-900/80 border border-zinc-800 space-y-4">
-        <h3 className="text-xs font-extrabold uppercase tracking-wider text-zinc-400">Información del Vehículo</h3>
-        <div className="grid grid-cols-2 gap-4 text-xs">
-          <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800">
-            <span className="text-zinc-500 block mb-1">Modelo Moto</span>
-            <span className="font-bold text-white">{moto?.modelo || 'Yamaha YBR 125'}</span>
+      {/* VEHICLE DETAILS (2-CARD GRID) */}
+      <div className="space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#8E8E93]">Información del Vehículo</h3>
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="p-3 rounded-[14px] bg-[#1C1C24] border border-white/[0.08]">
+            <span className="text-[#8E8E93] text-[10px] block mb-0.5">Modelo Moto</span>
+            <span className="font-bold text-white text-xs">{moto?.modelo || 'Yamaha YBR 125'}</span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-zinc-950/60 border border-zinc-800">
-            <span className="text-zinc-500 block mb-1">Número de Placa</span>
-            <span className="font-bold text-white">{moto?.placa || 'M 148-920'}</span>
+          <div className="p-3 rounded-[14px] bg-[#1C1C24] border border-white/[0.08]">
+            <span className="text-[#8E8E93] text-[10px] block mb-0.5">Número de Placa</span>
+            <span className="font-bold text-white text-xs">{moto?.placa || 'M 148-920'}</span>
           </div>
         </div>
       </div>
 
       {/* LOGOUT */}
-      <button
-        onClick={onLogout}
-        className="w-full py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-extrabold text-xs hover:bg-rose-500/20 transition-colors flex items-center justify-center gap-2"
-      >
-        <LogOut size={16} /> Cerrar Sesión de Repartidor
-      </button>
+      <div className="pt-2">
+        <button
+          onClick={onLogout}
+          className="w-full min-h-[48px] py-3 rounded-[12px] bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] font-bold text-xs hover:bg-[#EF4444]/20 transition-colors flex items-center justify-center gap-2"
+        >
+          <LogOut size={16} /> Cerrar Sesión de Repartidor
+        </button>
+      </div>
 
     </div>
   );

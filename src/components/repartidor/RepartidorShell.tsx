@@ -46,13 +46,12 @@ interface RepartidorShellProps {
   userName: string;
 }
 
-type RepartidorTabKey = 'servicio' | 'historial' | 'ganancias' | 'perfil';
+type RepartidorTabKey = 'servicio' | 'historial' | 'perfil';
 
 const NAV_ITEMS: { key: RepartidorTabKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'servicio', label: 'En Servicio', icon: <Bike size={22} strokeWidth={2} /> },
-  { key: 'historial', label: 'Historial', icon: <FileText size={22} strokeWidth={2} /> },
-  { key: 'ganancias', label: 'Ganancias', icon: <TrendingUp size={22} strokeWidth={2} /> },
-  { key: 'perfil', label: 'Perfil', icon: <User size={22} strokeWidth={2} /> },
+  { key: 'servicio', label: 'Servicio', icon: <Bike size={20} strokeWidth={2} /> },
+  { key: 'historial', label: 'Historial', icon: <FileText size={20} strokeWidth={2} /> },
+  { key: 'perfil', label: 'Perfil', icon: <User size={20} strokeWidth={2} /> },
 ];
 
 export default function RepartidorShell({ isDark, toggleTheme, onLogout, userName }: RepartidorShellProps) {
@@ -79,118 +78,105 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
 
   return (
     <SnackbarContext.Provider value={showSnackbar}>
-      <div className="min-h-screen bg-[#0D0D0E] text-zinc-100 font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Display','Inter',sans-serif] selection:bg-blue-500 selection:text-white pb-28 pt-20">
+      {/* Centered Mobile Layout Container (max 480px) */}
+      <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-['DM_Sans',sans-serif] selection:bg-[#10B981] selection:text-white flex justify-center">
+        <div className="w-full max-w-[480px] min-h-screen bg-[#090D16] border-x border-white/5 relative flex flex-col pb-28 pt-16 shadow-2xl">
 
-        {/* 🍏 APPLE DRIVER FLOATING CONTROL HEADER */}
-        <header className="fixed top-0 inset-x-0 z-40 px-4 sm:px-8 py-3 backdrop-blur-2xl bg-zinc-950/80 border-b border-white/10 shadow-lg">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
+          {/* 🍏 DRIVER GLASS CONTROL HEADER */}
+          <header className="sticky top-0 z-40 px-4 py-2.5 backdrop-blur-[40px] bg-black/60 border-b border-white/[0.08] flex items-center justify-between transition-all">
             
-            {/* Status Connection Toggle Button */}
+            {/* Status Connection Toggle Pill */}
             <button
               onClick={toggleConexion}
-              className={`flex items-center gap-3 px-4 py-2 rounded-full border transition-all duration-300 shadow-lg ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border transition-all duration-300 ${
                 conectado
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                  : 'bg-zinc-800/60 border-zinc-700 text-zinc-400 hover:bg-zinc-800'
+                  ? 'bg-[#10B981]/15 border-[#10B981]/30 text-[#10B981] shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                  : 'bg-[#1C1C24] border-white/[0.08] text-[#8E8E93]'
               }`}
             >
-              <span className="relative flex h-3 w-3">
+              <span className="relative flex h-2.5 w-2.5">
                 {conectado && (
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
                 )}
                 <span
-                  className={`relative inline-flex rounded-full h-3 w-3 ${
-                    conectado ? 'bg-emerald-500' : 'bg-zinc-500'
+                  className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                    conectado ? 'bg-[#10B981]' : 'bg-[#8E8E93]'
                   }`}
                 />
               </span>
-              <span className="font-extrabold text-xs tracking-wider uppercase">
-                {conectado ? 'DISPONIBLE EN RUTA' : 'DESCONECTADO'}
+              <span className="font-['Plus_Jakarta_Sans'] font-extrabold text-[11px] tracking-wider uppercase">
+                {conectado ? 'Disponible en ruta' : 'Desconectado'}
               </span>
             </button>
 
-            {/* Quick Stats Pill */}
-            <div className="hidden sm:flex items-center gap-4 bg-zinc-900/80 border border-zinc-800 rounded-full px-4 py-1.5 text-xs font-bold text-zinc-300">
-              <span className="flex items-center gap-1.5 text-emerald-400">
-                💰 C$ {(statsHoy?.ganancias || perfil?.totalGanancias || 1250).toFixed(2)} hoy
-              </span>
-              <span className="text-zinc-600">|</span>
-              <span className="flex items-center gap-1.5 text-blue-400">
-                📦 {statsHoy?.entregas || perfil?.totalEntregas || 8} Entregas
+            {/* Quick Earnings Pill */}
+            <div className="flex items-center gap-2 bg-[#1C1C24] border border-white/[0.08] rounded-full px-3 py-1 text-xs font-bold text-[#F5F5F7]">
+              <span className="text-[#10B981]">
+                C$ {(statsHoy?.ganancias || perfil?.totalGanancias || 1250).toFixed(0)} hoy
               </span>
             </div>
 
-            {/* Right Action Tools */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleTheme}
-                className="p-2.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 hover:bg-zinc-800 transition-colors"
-                title="Cambiar Tema"
-              >
-                {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
-              </button>
-
-              <button
-                onClick={onLogout}
-                className="p-2.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-colors"
-                title="Cerrar Sesión"
-              >
-                <Power size={18} />
-              </button>
-            </div>
-
-          </div>
-        </header>
-
-        {/* 🍏 MAIN DRIVER CONSOLE */}
-        <main className="max-w-6xl mx-auto px-4 sm:px-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+            {/* Logout Button */}
+            <button
+              onClick={onLogout}
+              className="p-2 rounded-full bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] hover:bg-[#EF4444]/20 transition-colors"
+              title="Cerrar Sesión"
             >
-              {activeTab === 'servicio' && <RepartidorServicio isDark={isDark} />}
-              {activeTab === 'historial' && <RepartidorHistorial isDark={isDark} />}
-              {activeTab === 'ganancias' && <RepartidorHistorial isDark={isDark} />}
-              {activeTab === 'perfil' && <RepartidorPerfil isDark={isDark} userName={userName} onLogout={onLogout} />}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+              <Power size={16} />
+            </button>
 
-        {/* 🍏 APPLE FLOATING DRIVER DOCK */}
-        <nav className="fixed bottom-4 inset-x-0 z-40 px-4 flex justify-center pointer-events-none">
-          <div className="pointer-events-auto backdrop-blur-3xl bg-zinc-900/90 border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] rounded-full px-3 py-2 flex items-center gap-1 sm:gap-2">
-            {NAV_ITEMS.map((item) => {
-              const isActive = activeTab === item.key;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => setActiveTab(item.key)}
-                  className={`relative px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-bold transition-all duration-300 ${
-                    isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeDriverDockTab"
-                      className="absolute inset-0 bg-blue-600 rounded-full shadow-lg shadow-blue-500/30"
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                  <span className="relative z-10">{item.icon}</span>
-                  {isActive && <span className="relative z-10">{item.label}</span>}
-                </button>
-              );
-            })}
-          </div>
-        </nav>
+          </header>
 
-        {/* Overlays / Incoming Order Toast */}
-        <RepartidorNotificacionOrden />
+          {/* 🍏 MAIN DRIVER CONSOLE */}
+          <main className="px-4 py-3 flex-1 overflow-y-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeTab === 'servicio' && <RepartidorServicio isDark={isDark} />}
+                {activeTab === 'historial' && <RepartidorHistorial isDark={isDark} />}
+                {activeTab === 'perfil' && <RepartidorPerfil isDark={isDark} userName={userName} onLogout={onLogout} />}
+              </motion.div>
+            </AnimatePresence>
+          </main>
 
+          {/* 🍏 DRIVER GLASS DOCK (3 TABS: Servicio, Historial, Perfil) */}
+          <nav className="fixed bottom-3 inset-x-0 z-40 px-4 flex justify-center pointer-events-none">
+            <div className="pointer-events-auto max-w-[400px] w-full backdrop-blur-[50px] bg-[#121217]/90 border border-white/[0.08] shadow-[0_16px_40px_rgba(0,0,0,0.8)] rounded-full px-3 py-1.5 flex items-center justify-around">
+              {NAV_ITEMS.map((item) => {
+                const isActive = activeTab === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => setActiveTab(item.key)}
+                    className={`relative flex flex-col items-center justify-center px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300 ${
+                      isActive ? 'text-[#10B981]' : 'text-[#8E8E93] hover:text-[#F5F5F7]'
+                    }`}
+                  >
+                    {/* Active glowing green dot indicator above tab */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeDriverTabDot"
+                        className="absolute -top-1 w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                      />
+                    )}
+                    <span className="relative z-10 mb-0.5">{item.icon}</span>
+                    <span className="relative z-10 text-[10px] tracking-tight">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+
+          {/* Incoming Order Toast Notification Overlay */}
+          <RepartidorNotificacionOrden />
+
+        </div>
       </div>
     </SnackbarContext.Provider>
   );

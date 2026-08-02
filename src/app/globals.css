@@ -1,37 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
-@plugin "flyonui";
-@import "../../node_modules/flyonui/variants.css";
-@import "../../node_modules/preline/variants.css";
-@source "../../node_modules/preline/dist/*.js";
-
-@plugin "flyonui" {
-  themes: light --default, dark --prefersdark, soft;
-}
 
 /* ========================================
-   LOGIFAST 2.0 — Complete Rebrand Design System
+   LOGIFAST 2.0 — PROMPT DE DISEÑO SYSTEM TOKENS
    ======================================== */
 
 :root {
-  /* ─── MODO CLARO ─── */
-  --bg: #FAF8F5;
-  --bg-alt: #F2EDE8;
-  --surface: #FFFFFF;
-  --surface-elevated: #FFFFFF;
-  --text: #1B1B2F;
-  --text-secondary: #5A5A72;
-  --text-muted: #8E8EA0;
-  --border: #E8E4DE;
-  --primario: #0066FF;
-  --primario-hover: #0052CC;
-  --primario-soft: rgba(0, 102, 255, 0.05);
-  --secundario: #D4AF37;
-  --secundario-soft: rgba(212, 175, 55, 0.05);
-  --exito: #00C853;
-  --warning: #FFB300;
-  --peligro: #FF1744;
-  --info: #0764E2;
+  /* ─── CLIENTE ACCENT & COLORS ─── */
+  --accent-client: #FF6B2C;
+  --accent-client-soft: rgba(255, 107, 44, 0.15);
+  --accent-client-glow: 0 4px 20px rgba(255, 107, 44, 0.35);
+
+  /* ─── REPARTIDOR ACCENT & COLORS ─── */
+  --accent-driver: #10B981;
+  --accent-driver-soft: rgba(16, 185, 129, 0.15);
+  --accent-driver-glow: 0 4px 20px rgba(16, 185, 129, 0.35);
+
+  /* ─── SEMANTIC BADGE COLORS ─── */
+  --semantic-pending: #3B82F6;
+  --semantic-pending-soft: rgba(59, 130, 246, 0.15);
+  --semantic-active: #F59E0B;
+  --semantic-active-soft: rgba(245, 158, 11, 0.15);
+  --semantic-completed: #10B981;
+  --semantic-completed-soft: rgba(16, 185, 129, 0.15);
+  --semantic-cancelled: #EF4444;
+  --semantic-cancelled-soft: rgba(239, 68, 68, 0.15);
+
+  /* ─── FONTS ─── */
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ─── DARK MODE (DEFAULT) ─── */
+  --bg-dark: #000000;
+  --bg-dark-alt: #0A0A0E;
+  --surface-dark-1: #121217;
+  --surface-dark-2: #1C1C24;
+  --surface-dark-3: #2A2A36;
+  --text-dark-primary: #F5F5F7;
+  --text-dark-secondary: #8E8E93;
+  --text-dark-tertiary: #48484A;
+  --glass-border-dark: rgba(255, 255, 255, 0.08);
+
+  /* ─── LIGHT MODE ─── */
+  --bg-light: #F2F2F7;
+  --bg-light-alt: #FAF9F6;
+  --surface-light-1: #FFFFFF;
+  --surface-light-2: #F8FAFC;
+  --surface-light-3: #E2E8F0;
+  --text-light-primary: #1C1C1E;
+  --text-light-secondary: #64748B;
+  --text-light-tertiary: #94A3B8;
+  --glass-border-light: rgba(0, 0, 0, 0.06);
+
+  /* ─── RADIUS SCALE ─── */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+}
+
+body {
+  font-family: var(--font-body);
+  scroll-behavior: smooth;
+  background-color: var(--bg-dark);
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-display);
+}
+
+/* Shimmer Animation for Skeleton Loaders */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: shimmer 1.5s infinite;
+}
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
