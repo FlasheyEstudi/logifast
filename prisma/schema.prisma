@@ -8,8 +8,9 @@ generator client {
 datasource db {
   // PostgreSQL para producción (configura DATABASE_URL en .env).
   // Para desarrollo local sin Docker: ver README_CORREGIDO.md
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── Usuario Principal ───
