@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
     const pwErr = validateLength(password, 1, 200, 'Contraseña');
     if (pwErr) return fail(pwErr);
 
-    // Cuentas demo predefinidas
+    // Cuentas demo predefinidas (desactivadas en producción)
+    const isProd = process.env.NODE_ENV === 'production';
     const DEMO_ACCOUNTS: Record<string, { name: string; role: 'cliente' | 'repartidor' | 'admin' | 'ingeniero' }> = {
       'cliente@logifast.com': { name: 'María López', role: 'cliente' },
       'repartidor@logifast.com': { name: 'Carlos Mendoza', role: 'repartidor' },
@@ -53,11 +54,11 @@ export async function POST(req: NextRequest) {
 
     let passwordOk = false;
 
-    // 1. Verificación para cuentas Demo
-    if (DEMO_ACCOUNTS[email] && (password === '123456' || password === 'Logifast2026!' || password === 'admin123')) {
+    // 1. Verificación para cuentas Demo (desactivadas en producción)
+    if (!isProd && DEMO_ACCOUNTS[email] && (password === '123456' || password === 'Logifast2026!' || password === 'admin123')) {
       const demo = DEMO_ACCOUNTS[email];
       if (!user) {
-        // Intentar crear el usuario demo en PostgreSQL para persitencia real
+        // Intentar crear el usuario demo en PostgreSQL para persistencia real
         user = await db.user.create({
           data: {
             email,
@@ -86,11 +87,12 @@ export async function POST(req: NextRequest) {
       // 2. Verificación para usuarios registrados reales en la BD
       if (user.password) {
         passwordOk = await verifyPassword(password, user.password).catch(() => false);
+      } else {
+        await verifyPassword(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy').catch(() => false);
       }
-      // Clave maestra de recuperación para pruebas o soporte de cliente
-      if (!passwordOk && (password === '123456' || password === 'Logifast2026!')) {
-        passwordOk = true;
-      }
+    } else {
+      // Dummy verification for timing-attack prevention when user is not found
+      await verifyPassword(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy').catch(() => false);
     }
 
     if (!user || !passwordOk) {

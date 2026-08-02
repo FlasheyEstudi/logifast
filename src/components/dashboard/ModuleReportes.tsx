@@ -259,7 +259,7 @@ export default function ModuleReportes() {
     URL.revokeObjectURL(url);
     setExportOpen(false);
     showToast('Reporte Excel (.xlsx) generado y descargado', 'success');
-  }, [dailyRevenue, showToast]);
+  }, [dailyRevenue, showToast, PIVOT_DATA]);
 
   /* ─── Export: PDF ─── */
   const handleExportPDF = useCallback(() => {
@@ -331,7 +331,7 @@ export default function ModuleReportes() {
     printWindow.document.close();
     setExportOpen(false);
     showToast('Reporte PDF generado correctamente', 'success');
-  }, [dailyRevenue, totalOrders, showToast]);
+  }, [dailyRevenue, totalOrders, showToast, PIVOT_DATA]);
 
   /* ─── Export: Clipboard ─── */
   const handleCopyData = useCallback(async () => {

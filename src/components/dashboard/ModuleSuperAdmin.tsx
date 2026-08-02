@@ -155,6 +155,7 @@ export default function ModuleSuperAdmin() {
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [modalNombre, setModalNombre] = useState('');
   const [modalEmail, setModalEmail] = useState('');
+  const [modalPassword, setModalPassword] = useState('');
   const [modalRol, setModalRol] = useState('Repartidor');
   const [modalPerms, setModalPerms] = useState<Record<PermissionKey, boolean>>(
     DEFAULT_ROLE_PERMISSIONS['Repartidor'],
@@ -238,6 +239,7 @@ export default function ModuleSuperAdmin() {
     setEditUserId(null);
     setModalNombre('');
     setModalEmail('');
+    setModalPassword('');
     setModalRol('Repartidor');
     setModalPerms(DEFAULT_ROLE_PERMISSIONS['Repartidor']);
     setUserModalOpen(true);
@@ -247,6 +249,7 @@ export default function ModuleSuperAdmin() {
     setEditUserId(user.id);
     setModalNombre(user.nombre);
     setModalEmail(user.email);
+    setModalPassword('');
     setModalRol(user.rol);
     setModalPerms(DEFAULT_ROLE_PERMISSIONS[user.rol] || DEFAULT_ROLE_PERMISSIONS['Cliente']);
     setUserModalOpen(true);
@@ -255,6 +258,10 @@ export default function ModuleSuperAdmin() {
   const saveUser = () => {
     if (!modalNombre.trim() || !modalEmail.trim()) {
       addToast('Nombre y email son requeridos', 'error');
+      return;
+    }
+    if (!editUserId && (!modalPassword || modalPassword.length < 8)) {
+      addToast('La contraseña debe tener al menos 8 caracteres', 'error');
       return;
     }
     const apiRoleMap: Record<string, string> = {
@@ -303,7 +310,7 @@ export default function ModuleSuperAdmin() {
           name: modalNombre,
           email: modalEmail,
           role: targetRole,
-          password: 'Logifast2026!',
+          password: modalPassword,
         }),
       }).catch((err) => console.error('[saveUser POST error]', err));
     }
@@ -1509,6 +1516,22 @@ export default function ModuleSuperAdmin() {
                 style={{ fontSize: 13 }}
               />
             </div>
+            {!editUserId && (
+              <div>
+                <label
+                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}
+                >
+                  Contraseña
+                </label>
+                <Input
+                  value={modalPassword}
+                  onChange={(e) => setModalPassword(e.target.value)}
+                  placeholder="Mínimo 8 caracteres"
+                  type="password"
+                  style={{ fontSize: 13 }}
+                />
+              </div>
+            )}
             <div>
               <label
                 style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}

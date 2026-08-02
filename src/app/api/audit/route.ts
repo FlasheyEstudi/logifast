@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
-import { requireSession } from '@/lib/auth/session';
+import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireSession();
+    const user = await requireRole('admin');
     const { searchParams } = new URL(request.url);
     const usuario = searchParams.get('usuario');
     const accion = searchParams.get('accion');

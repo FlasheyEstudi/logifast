@@ -15,9 +15,10 @@ const COOKIE_NAME = 'lf-session';
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
 function getSecret(): string {
-  const secret =
-    process.env.JWT_SECRET ||
-    'logifast-dev-secret-cambiar-en-produccion-9f3a7c2e8b1d4f6a';
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET debe estar definido y tener al menos 32 caracteres');
+  }
   return secret;
 }
 
