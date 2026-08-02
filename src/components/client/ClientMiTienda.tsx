@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ImageUploader } from '@/components/ui/ImageUploader';
-import { notify } from '@/lib/notify';
-import { LogoSpinner, MiniSpinner } from '@/components/ui/loaders';
+import {
+  Utensils, Store, Pill, Gift, ShoppingCart, Smartphone, Dumbbell,
+  BarChart2, Package, Settings, Star, X,
+} from '@/components/icons';
 
 interface Producto {
   id: string;
@@ -66,13 +67,13 @@ interface TiendaData {
 }
 
 const CATEGORIAS = [
-  { value: 'comida', label: 'Comida rápida', icon: '🍔' },
-  { value: 'tienda', label: 'Tienda', icon: '🏪' },
-  { value: 'farmacia', label: 'Farmacia', icon: '💊' },
-  { value: 'regalos', label: 'Regalos / Flores', icon: '🎁' },
-  { value: 'supermercado', label: 'Supermercado', icon: '🛒' },
-  { value: 'tecnologia', label: 'Tecnología', icon: '📱' },
-  { value: 'deportes', label: 'Deportes', icon: '⚽' },
+  { value: 'comida', label: 'Comida rápida', icon: <Utensils size={14} /> },
+  { value: 'tienda', label: 'Tienda', icon: <Store size={14} /> },
+  { value: 'farmacia', label: 'Farmacia', icon: <Pill size={14} /> },
+  { value: 'regalos', label: 'Regalos / Flores', icon: <Gift size={14} /> },
+  { value: 'supermercado', label: 'Supermercado', icon: <ShoppingCart size={14} /> },
+  { value: 'tecnologia', label: 'Tecnología', icon: <Smartphone size={14} /> },
+  { value: 'deportes', label: 'Deportes', icon: <Dumbbell size={14} /> },
 ];
 
 export default function ClientMiTienda() {
@@ -204,17 +205,17 @@ export default function ClientMiTienda() {
       {/* Tabs */}
       <div className="lf-mt-tabs">
         {[
-          { value: 'overview', label: 'Resumen', icon: '📊' },
-          { value: 'productos', label: 'Productos', icon: '📦' },
-          { value: 'pedidos', label: 'Pedidos', icon: '🛒' },
-          { value: 'config', label: 'Configuración', icon: '⚙️' },
+          { value: 'overview', label: 'Resumen', icon: <BarChart2 size={15} /> },
+          { value: 'productos', label: 'Productos', icon: <Package size={15} /> },
+          { value: 'pedidos', label: 'Pedidos', icon: <ShoppingCart size={15} /> },
+          { value: 'config', label: 'Configuración', icon: <Settings size={15} /> },
         ].map((tab) => (
           <button
             key={tab.value}
             className={`lf-mt-tab ${vista === tab.value ? 'active' : ''}`}
             onClick={() => setVista(tab.value as typeof vista)}
           >
-            <span>{tab.icon}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{tab.icon}</span>
             <span>{tab.label}</span>
           </button>
         ))}

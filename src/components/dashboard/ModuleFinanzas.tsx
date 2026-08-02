@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import {
   DollarSign, TrendingUp, TrendingDown, BarChart3, Wallet,
-  ArrowUpRight, ArrowDownRight, Check, Percent,
+  ArrowUpRight, ArrowDownRight, Check, Percent, Globe,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { Client } from '@/lib/store';
@@ -345,7 +345,9 @@ export default function ModuleFinanzas() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
             {/* Monthly Operating Costs Sheet */}
             <div style={cardStyle}>
-              <h3 style={sectionTitleStyle}>💰 Estructura de Costos del Proyecto (Mensual)</h3>
+              <h3 style={{ ...sectionTitleStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <DollarSign size={18} style={{ color: '#FF6600' }} /> Estructura de Costos del Proyecto (Mensual)
+              </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
                   <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Programador Principal (Tecnológico)</span>
@@ -380,7 +382,9 @@ export default function ModuleFinanzas() {
 
             {/* Valuation Slider Card */}
             <div style={cardStyle}>
-              <h3 style={sectionTitleStyle}>📈 Simulador de Valor Comercial de la Plataforma</h3>
+              <h3 style={{ ...sectionTitleStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TrendingUp size={18} style={{ color: '#FF6600' }} /> Simulador de Valor Comercial de la Plataforma
+              </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -440,7 +444,9 @@ export default function ModuleFinanzas() {
 
           {/* Business Layers Overview Card */}
           <div style={cardStyle}>
-            <h3 style={sectionTitleStyle}>🌐 Desglose Estratégico de las 4 Capas de Valor del Sistema</h3>
+            <h3 style={{ ...sectionTitleStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Globe size={18} style={{ color: '#FF6600' }} /> Desglose Estratégico de las 4 Capas de Valor del Sistema
+            </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 12 }}>
               <div style={{ padding: 12, borderRadius: 10, background: 'var(--lf-surface-variant, rgba(0,0,0,0.02))', border: '1px solid var(--lf-border)' }}>
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: '#FF6600', marginBottom: 6 }}>1. Capa Operativa</h4>

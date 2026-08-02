@@ -16,6 +16,7 @@ import {
   Store,
   TrendingUp,
   Zap,
+  Phone,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
@@ -477,7 +478,7 @@ export default function RepartidorServicio() {
             <button
               onClick={() => {
                 optimizarRutaAutomatica();
-                showSnackbar({ message: '⚡ Ruta optimizada: ordenada por menor distancia.' });
+                showSnackbar({ message: 'Ruta optimizada: ordenada por menor distancia.' });
               }}
               style={{
                 padding: '5px 10px',
@@ -701,7 +702,7 @@ export default function RepartidorServicio() {
                 onClick={() => {
                   optimizarRutaAutomatica();
                   useRepartidorStore.setState({ estado: 'EN_CAMINO_RECOGER', enServicio: true });
-                  showSnackbar({ message: `🚀 ¡Viaje iniciado con ${ordenesActivas.length} orden(es)!` });
+                  showSnackbar({ message: `¡Viaje iniciado con ${ordenesActivas.length} orden(es)!` });
                 }}
                 style={{
                   width: '100%',
@@ -1165,7 +1166,7 @@ function OrdenMiniCard({
               gap: 6,
             }}
           >
-            📞 Llamar
+            <Phone size={14} /> Llamar
           </a>
         )}
 
@@ -1188,7 +1189,7 @@ function OrdenMiniCard({
               gap: 6,
             }}
           >
-            💬 Chat
+            <MessageSquare size={14} /> Chat
           </button>
         )}
 
@@ -1212,7 +1213,7 @@ function OrdenMiniCard({
             boxShadow: '0 2px 8px rgba(255,87,34,0.3)',
           }}
         >
-          🗺️ GPS Navegar
+          <Navigation size={14} /> GPS Navegar
         </a>
       </div>
     </div>
