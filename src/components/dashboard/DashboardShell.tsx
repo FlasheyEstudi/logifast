@@ -289,7 +289,21 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     fetchAllData();
     // Polling no destructivo: 5s para que nuevas órdenes aparezcan rápido (P0-18)
     const interval = setInterval(fetchAllData, 5000);
-    return () => clearInterval(interval);
+
+    // Escuchar eventos en tiempo real (< 5s) para actualización instantánea
+    let cleanupCreated: (() => void) | undefined;
+    let cleanupUpdated: (() => void) | undefined;
+    import('@/services/realtime').then(({ realtime, onRealtimeEvent }) => {
+      realtime.adminConectar();
+      cleanupCreated = onRealtimeEvent('orden:creada', () => fetchAllData());
+      cleanupUpdated = onRealtimeEvent('orden:actualizada', () => fetchAllData());
+    }).catch(() => null);
+
+    return () => {
+      clearInterval(interval);
+      if (cleanupCreated) cleanupCreated();
+      if (cleanupUpdated) cleanupUpdated();
+    };
   }, []);
 
   // Close avatar dropdown on outside click

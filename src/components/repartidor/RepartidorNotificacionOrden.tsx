@@ -242,9 +242,13 @@ export default function RepartidorNotificacionOrden() {
   const orden = ordenAsignadaPendiente;
   const TipoIcon = orden.tipo === 'compra' ? ShoppingBag : Package;
 
-  const handleAceptar = () => {
-    aceptarOrden();
-    showSnackbar({ message: `Orden ${orden.id} aceptada. Dirígete al punto de recogida.` });
+  const handleAceptar = async () => {
+    try {
+      await aceptarOrden();
+      showSnackbar({ message: `Orden ${orden.id} aceptada. Dirígete al punto de recogida.` });
+    } catch (err: any) {
+      showSnackbar({ message: err?.message || 'No se pudo aceptar la orden.' });
+    }
   };
 
   const handleRechazar = () => {

@@ -93,41 +93,39 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // estado === 'activa'
-    const ordenesDB = await db.ordenServicio.findMany({
-      where: {
-        repartidorId: profile.id,
-        estado: { in: ['asignado', 'aceptado', 'recogido'] },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 3,
-    });
-
-    if (!ordenesDB || ordenesDB.length === 0) {
-      const pendientes = await db.ordenServicio.findMany({
-        where: { estado: 'pendiente', repartidorId: null },
+    // estado === 'activa' -> Obtener Órdenes Activas del Repartidor (Máx 3) + Órdenes Disponibles
+    const [ordenesDB, disponiblesDB] = await Promise.all([
+      db.ordenServicio.findMany({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['asignado', 'aceptado', 'recogido'] },
+        },
         orderBy: { createdAt: 'desc' },
         take: 3,
-      });
-      if (pendientes.length > 0) {
-        const activas = pendientes.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
-        return NextResponse.json({
-          orden: activas[0],
-          ordenes: activas,
-          estadoServicio: 'pendiente',
-          kmRecorridos: 0,
-          conectado: profile.conectado,
-        });
-      }
-      return NextResponse.json({ orden: null, ordenes: [], conectado: profile.conectado });
-    }
+      }),
+      db.ordenServicio.findMany({
+        where: {
+          estado: 'pendiente',
+          OR: [
+            { repartidorId: null },
+            { repartidorId: profile.id },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+    ]);
 
     const ordenesActivas = ordenesDB.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
+    const ordenesDisponibles = disponiblesDB.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
+
     return NextResponse.json({
       orden: ordenesActivas[0] || null,
       ordenes: ordenesActivas,
-      estadoServicio: ordenesDB[0].estado,
-      kmRecorridos: ordenesDB[0].kmRecorridos,
+      ordenesActivas,
+      ordenesDisponibles,
+      estadoServicio: ordenesDB[0]?.estado ?? 'DESCONECTADO',
+      kmRecorridos: ordenesDB[0]?.kmRecorridos ?? 0,
       conectado: profile.conectado,
     });
   } catch (error) {

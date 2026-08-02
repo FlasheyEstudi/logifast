@@ -187,6 +187,14 @@ export async function POST(req: NextRequest) {
       }).catch(() => null);
     }
 
+    // Difusión instantánea (< 5 segundos) a repartidores y admin
+    try {
+      const { emitOrdenCreada } = await import('@/lib/realtime-emitter');
+      emitOrdenCreada(orden);
+    } catch (e) {
+      console.warn('[REALTIME_EMIT_WARN]', e);
+    }
+
     return NextResponse.json({ orden, status: 'pendiente' }, { status: 201 });
   } catch (error) {
     console.error('[ORDENES_POST]', error);

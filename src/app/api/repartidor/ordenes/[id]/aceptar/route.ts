@@ -22,9 +22,24 @@ export async function PATCH(
     }
     const { profile } = rp;
 
+    // Pilar 3, Regla 4: Límite máximo de 3 servicios activos simultáneos por repartidor
+    const activeCount = await db.ordenServicio.count({
+      where: {
+        repartidorId: profile.id,
+        estado: { in: ['asignado', 'aceptado', 'recogido'] },
+      },
+    });
+
     const orden = await db.ordenServicio.findUnique({ where: { id } });
     if (!orden) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+    }
+
+    if (orden.repartidorId !== profile.id && activeCount >= 3) {
+      return NextResponse.json(
+        { error: 'Límite alcanzado: Ya tienes 3 servicios activos asignados al mismo tiempo.' },
+        { status: 400 }
+      );
     }
 
     // Caso 1: la orden ya está asignada a este repartidor — solo cambiar estado a aceptado
@@ -70,6 +85,16 @@ export async function PATCH(
         where: { id: profile.motoId },
         data: { estado: 'EN_SERVICIO' },
       }).catch(() => null);
+    }
+
+    const updatedOrder = await db.ordenServicio.findUnique({ where: { id } });
+    if (updatedOrder) {
+      try {
+        const { emitOrdenActualizada } = await import('@/lib/realtime-emitter');
+        emitOrdenActualizada(updatedOrder);
+      } catch (e) {
+        console.warn('[REALTIME_EMIT_WARN]', e);
+      }
     }
 
     return NextResponse.json({

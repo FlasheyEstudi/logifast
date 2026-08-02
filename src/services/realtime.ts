@@ -44,6 +44,10 @@ export function getSocket(): Socket {
 // ─── Event types ───
 export type RealtimeEvent =
   | 'repartidor:orden:nueva'           // nueva orden asignada (repartidor recibe)
+  | 'repartidor:orden:disponible'      // nueva orden disponible para agarrar (repartidor recibe)
+  | 'repartidor:orden:actualizada'     // orden actualizada
+  | 'orden:creada'                     // orden creada (admin/cliente reciben)
+  | 'orden:actualizada'                // orden actualizada (admin/cliente reciben)
   | 'repartidor:posicion:update'       // posición del repartidor actualizada (cliente/admin reciben)
   | 'repartidor:estado:update'         // estado del repartidor cambió (cliente recibe)
   | 'chat:mensaje:nuevo'               // nuevo mensaje de chat
