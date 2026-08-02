@@ -29,6 +29,7 @@ const patchSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     await seedIngeniero();
     const motos = await prisma.moto.findMany({
       include: {

@@ -87,14 +87,6 @@ export async function POST(req: NextRequest) {
       }).catch(() => null);
 
       const updatedOrder = await db.ordenServicio.findUnique({ where: { id: orderId } });
-      if (updatedOrder) {
-        try {
-          const { emitOrdenActualizada } = await import('@/lib/realtime-emitter');
-          emitOrdenActualizada(updatedOrder);
-        } catch (e) {
-          console.warn('[REALTIME_EMIT_WARN]', e);
-        }
-      }
       return NextResponse.json({ success: true, orden: updatedOrder });
     }
 

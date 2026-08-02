@@ -26,6 +26,7 @@ const patchSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const repuestos = await prisma.repuesto.findMany({
       orderBy: { nombre: 'asc' }
     });

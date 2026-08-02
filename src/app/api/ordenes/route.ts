@@ -34,6 +34,9 @@ const postSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado');
     // Paginación segura contra NaN (P1)
@@ -46,19 +49,14 @@ export async function GET(req: NextRequest) {
     if (estado) where.estado = estado;
 
     if (user?.role === 'cliente') {
-      const demoUser = await db.user.findFirst({ where: { role: 'cliente' } }).catch(() => null);
-      where.OR = [
-        { clienteId: user.id },
-        ...(demoUser ? [{ clienteId: demoUser.id }] : []),
-        { clienteNombre: user.name },
-      ];
+      where.clienteId = user.id;
     } else if (user?.role === 'repartidor') {
       where.OR = [
         { repartidorId: user.id },
         { repartidorId: null, estado: 'pendiente' },
       ];
     }
-    // Si es admin o no hay sesion de cookie (ej. guest/polling), devuelve todas las ordenes
+    // Si es admin o no hay sesion de cookie (ej. polling de dashboard), devuelve todas
 
     const [ordenes, total] = await Promise.all([
       db.ordenServicio.findMany({
@@ -83,39 +81,14 @@ export async function GET(req: NextRequest) {
 /**
  * POST /api/ordenes
  * Crea una nueva orden de servicio (envío).
- * Garantiza persistencia 100% en PostgreSQL DB.
  */
 export async function POST(req: NextRequest) {
   try {
-    let user = await getSessionUser();
-    if (!user) {
-      // Resolver cliente por defecto en BD para evitar perdida de envio en modo demo/invitado
-      let demoUser = await db.user.findFirst({ where: { role: 'cliente' } }).catch(() => null);
-      if (!demoUser) {
-        demoUser = await db.user.create({
-          data: {
-            email: 'cliente@logifast.app',
-            name: 'Cliente Logifast',
-            role: 'cliente',
-            password: '$2a$10$demoPasswordHashForLogifast2026ClientAuthKey',
-            telefono: '+505 8888-8888',
-          },
-        }).catch(() => null);
-      }
-      if (demoUser) {
-        user = {
-          id: demoUser.id,
-          email: demoUser.email,
-          name: demoUser.name,
-          role: 'cliente',
-          telefono: demoUser.telefono,
-        };
-      }
-    }
-
-    if (!user) {
+    // P1: Requerir sesión real — eliminar fallback que crea usuario demo
+    const user = await getSessionUser();
+    if (!user || user.role !== 'cliente') {
       return NextResponse.json(
-        { error: 'Se requiere usuario de cliente para crear la orden' },
+        { error: 'Se requiere sesión de cliente para crear órdenes' },
         { status: 401 }
       );
     }
@@ -212,14 +185,6 @@ export async function POST(req: NextRequest) {
           ordenId: orden.id,
         },
       }).catch(() => null);
-    }
-
-    // Difusión instantánea (< 5 segundos) a repartidores y admin
-    try {
-      const { emitOrdenCreada } = await import('@/lib/realtime-emitter');
-      emitOrdenCreada(orden);
-    } catch (e) {
-      console.warn('[REALTIME_EMIT_WARN]', e);
     }
 
     return NextResponse.json({ orden, status: 'pendiente' }, { status: 201 });

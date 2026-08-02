@@ -163,7 +163,7 @@
   --lf-shadow-xl: var(--shadow-xl);
 }
 
-[data-theme="dark"], .dark, html.dark, body.dark {
+[data-theme="dark"] {
   /* ─── MODO OSCURO ─── */
   --bg: #0A0A0F;
   --bg-alt: #12121A;

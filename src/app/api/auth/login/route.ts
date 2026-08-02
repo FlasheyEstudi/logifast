@@ -18,28 +18,14 @@ const DUMMY_HASH =
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 200 intentos por IP cada 15 minutos (para pruebas y demos fluídos)
+    // Rate limit: 10 intentos por IP cada 15 minutos (endurecido desde 100)
     const ip = getClientIP(req);
-    const rl = rateLimit(`login:${ip}`, 200, 15 * 60 * 1000);
+    const rl = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
     if (!rl.success) return tooManyRequests(rl.resetAt);
 
     const body = (await req.json()) as LoginBody;
-    const rawEmail = (body.email ?? '').trim().toLowerCase();
+    const email = (body.email ?? '').trim().toLowerCase();
     const password = (body.password ?? '').trim();
-
-    // Normalización de email (mapear .app a .com y alias de roles)
-    let email = rawEmail;
-    if (email.endsWith('@logifast.app')) {
-      email = email.replace('@logifast.app', '@logifast.com');
-    } else if (email === 'admin') {
-      email = 'admin@logifast.com';
-    } else if (email === 'repartidor') {
-      email = 'repartidor@logifast.com';
-    } else if (email === 'cliente') {
-      email = 'cliente@logifast.com';
-    } else if (email === 'ingeniero') {
-      email = 'ingeniero@logifast.com';
-    }
 
     // Validación
     if (!email || !password) {
@@ -51,49 +37,28 @@ export async function POST(req: NextRequest) {
     const pwErr = validateLength(password, 1, 200, 'Contraseña');
     if (pwErr) return fail(pwErr);
 
-    // Cuentas demo principales
-    const DEMO_EMAILS: Record<string, { name: string; role: 'cliente' | 'repartidor' | 'admin' | 'ingeniero'; initials: string; color: string }> = {
-      'cliente@logifast.com': { name: 'María López', role: 'cliente', initials: 'ML', color: '#FF5722' },
-      'repartidor@logifast.com': { name: 'Carlos Martínez', role: 'repartidor', initials: 'CM', color: '#4CAF50' },
-      'admin@logifast.com': { name: 'Administrador', role: 'admin', initials: 'AD', color: '#2196F3' },
-      'ingeniero@logifast.com': { name: 'Ing. Fernando Ruiz', role: 'ingeniero', initials: 'FR', color: '#9C27B0' },
-    };
-
-    // Buscar usuario en PostgreSQL de Supabase
+    // Buscar usuario en la base de datos
     let user: any = null;
     try {
       user = await db.user.findFirst({
-        where: { email },
+        where: { email: { equals: email } },
       });
     } catch (err) {
       console.warn('[AUTH_LOGIN] Database query error:', err);
     }
 
+    // Verificación timing-safe: siempre ejecutamos verifyPassword aunque el user no exista
     let passwordOk = false;
     if (user?.password) {
       passwordOk = await verifyPassword(password, user.password).catch(() => false);
     } else {
+      // Usuario no existe: ejecutamos verifyPassword contra un hash dummy
+      // para que el tiempo de respuesta sea similar al de un login válido.
       await verifyPassword(password, DUMMY_HASH).catch(() => false);
     }
 
-    // Si es una cuenta demo oficial y la contraseña coincide o es 123456, asegurar en BD y permitir acceso
-    if (DEMO_EMAILS[email] && (passwordOk || password === '123456' || password === 'password123' || password === 'admin123')) {
-      const demoConfig = DEMO_EMAILS[email];
-      if (!user) {
-        const hashedPassword = await hashPassword('123456');
-        user = await db.user.create({
-          data: {
-            email,
-            name: demoConfig.name,
-            password: hashedPassword,
-            role: demoConfig.role,
-            initials: demoConfig.initials,
-            color: demoConfig.color,
-          },
-        }).catch(() => null);
-      }
-      passwordOk = true;
-    }
+    // P0: Bloque DEMO eliminado — los usuarios demo se crean con `node scripts/seed.js`
+    // y se validan con bcrypt como cualquier usuario real. No más auto-creación en runtime.
 
     if (!user || !passwordOk) {
       // Audit log de intento fallido (silent catch)

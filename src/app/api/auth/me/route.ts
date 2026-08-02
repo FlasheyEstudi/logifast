@@ -12,6 +12,9 @@ export async function GET() {
     return NextResponse.json({ user });
   } catch (error) {
     console.error('[AUTH_ME]', error);
-    return NextResponse.json({ user: null }, { status: 200 });
+    return NextResponse.json(
+      { error: 'Error al obtener la sesión' },
+      { status: 500 }
+    );
   }
 }

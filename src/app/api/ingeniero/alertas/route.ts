@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const alertas = await prisma.alertaMantenimiento.findMany({
       where: { activa: true },
       include: { moto: { select: { nombre: true } } },

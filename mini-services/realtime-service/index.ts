@@ -99,25 +99,6 @@ io.on('connection', (socket) => {
     io.to(`orden:${data.ordenId}`).emit('repartidor:estado:update', { estado: data.estado });
   });
 
-  // ─── BACKEND EMITTER EVENTS (difusión instantánea < 5s) ───
-  socket.on('backend:orden:creada', (orden: any) => {
-    console.log(`[realtime] Orden creada ${orden?.id} -> notificando a repartidores y admin`);
-    io.to('repartidores').emit('repartidor:orden:disponible', orden);
-    io.to('admin').emit('orden:creada', orden);
-  });
-
-  socket.on('backend:orden:actualizada', (orden: any) => {
-    console.log(`[realtime] Orden actualizada ${orden?.id} (${orden?.estado})`);
-    io.to('repartidores').emit('repartidor:orden:actualizada', orden);
-    io.to('admin').emit('orden:actualizada', orden);
-    if (orden?.repartidorId) {
-      io.to(`repartidor:${orden.repartidorId}`).emit('repartidor:orden:nueva', orden);
-    }
-    if (orden?.id) {
-      io.to(`orden:${orden.id}`).emit('repartidor:estado:update', { estado: orden.estado, orden });
-    }
-  });
-
   // ─── Disconnect ───
   socket.on('disconnect', () => {
     const repartidorId = socket.data.repartidorId;

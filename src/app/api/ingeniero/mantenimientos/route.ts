@@ -22,6 +22,7 @@ const postSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireRole('ingeniero', 'admin');
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado');
     const motoId = searchParams.get('motoId');
