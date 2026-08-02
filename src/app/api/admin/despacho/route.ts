@@ -4,6 +4,20 @@ import { requireRole } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radio de la Tierra en km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 /**
  * GET /api/admin/despacho
  * Returns active dispatch queue (pending/assigned orders) and nearby online drivers.
@@ -31,6 +45,7 @@ export async function GET() {
           lng: true,
           enServicio: true,
           pausado: true,
+          zonaPreferida: true,
         },
       }),
     ]);
@@ -47,7 +62,7 @@ export async function GET() {
 
 /**
  * POST /api/admin/despacho
- * Auto-dispatches or batch assigns pending orders to nearest available drivers.
+ * Auto-dispatches or batch assigns pending orders to nearest available drivers with area preferences.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -82,32 +97,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, orden: updatedOrder });
     }
 
-    // Auto-dispatch all unassigned pending orders
+    // Auto-dispatch inteligente con preferencias de zona y proximidad GPS (<5km)
     const pendingOrders = await db.ordenServicio.findMany({
       where: { estado: 'pendiente', repartidorId: null },
       take: 20,
     });
 
     const availableDrivers = await db.repartidorProfile.findMany({
-      where: { conectado: true, enServicio: false, pausado: false },
+      where: { conectado: true, enServicio: false, pausado: false, aceptaOrdenes: true },
     });
 
+    const usedDriverIds = new Set<string>();
     let assignedCount = 0;
-    for (let i = 0; i < Math.min(pendingOrders.length, availableDrivers.length); i++) {
-      const order = pendingOrders[i];
-      const driver = availableDrivers[i];
 
-      await db.ordenServicio.update({
-        where: { id: order.id },
-        data: { repartidorId: driver.id, estado: 'asignado' },
-      });
+    for (const order of pendingOrders) {
+      const candidateDrivers = availableDrivers.filter((d) => !usedDriverIds.has(d.id));
+      if (candidateDrivers.length === 0) break;
 
-      await db.repartidorProfile.update({
-        where: { id: driver.id },
-        data: { enServicio: true },
-      });
+      let bestDriver = candidateDrivers.find(
+        (d) => d.zonaPreferida && order.origen && d.zonaPreferida.toLowerCase() === order.origen.toLowerCase()
+      );
 
-      assignedCount++;
+      if (!bestDriver && order.origenLat && order.origenLng) {
+        let minDistance = 5; // radio máximo de 5 km
+        for (const driver of candidateDrivers) {
+          if (driver.lat && driver.lng) {
+            const dist = haversineDistance(order.origenLat, order.origenLng, driver.lat, driver.lng);
+            if (dist < minDistance) {
+              minDistance = dist;
+              bestDriver = driver;
+            }
+          }
+        }
+      }
+
+      if (!bestDriver) {
+        bestDriver = candidateDrivers[0];
+      }
+
+      if (bestDriver) {
+        usedDriverIds.add(bestDriver.id);
+        await db.ordenServicio.update({
+          where: { id: order.id },
+          data: { repartidorId: bestDriver.id, estado: 'asignado' },
+        });
+
+        await db.repartidorProfile.update({
+          where: { id: bestDriver.id },
+          data: { enServicio: true },
+        });
+
+        assignedCount++;
+      }
     }
 
     return NextResponse.json({ success: true, assignedCount });
