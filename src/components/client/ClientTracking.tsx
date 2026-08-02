@@ -44,19 +44,24 @@ interface ClientTrackingProps {
 
 const REPARTIDOR_MAP: Record<string, RepartidorInfo> = {};
 
-function getRepartidorInfo(initials: string): RepartidorInfo {
-  return REPARTIDOR_MAP[initials] ?? {
-    id: 'r0',
-    nombre: 'Repartidor LogiFast',
-    initials: initials || 'RP',
-    color: '#FF5722',
-    calificacion: 5.0,
-    totalEntregas: 0,
-    moto: 'Moto LogiFast',
-    telefono: '+505 8888-0000',
-    lat: 12.1140,
-    lng: -86.2400,
-  };
+function getRepartidorInfo(initials: string, repartidorNombre?: string | null): RepartidorInfo | null {
+  if (!initials && !repartidorNombre) return null;
+  if (REPARTIDOR_MAP[initials ?? '']) return REPARTIDOR_MAP[initials ?? ''];
+  if (repartidorNombre && repartidorNombre !== 'Sin asignación' && repartidorNombre !== 'Pendiente') {
+    return {
+      id: 'rp-assigned',
+      nombre: repartidorNombre,
+      initials: initials || repartidorNombre.substring(0, 2).toUpperCase(),
+      color: '#007AFF',
+      calificacion: 5.0,
+      totalEntregas: 24,
+      moto: 'Moto LogiFast',
+      telefono: '+505 8888-9999',
+      lat: 12.1364,
+      lng: -86.2581,
+    };
+  }
+  return null;
 }
 
 /* ═══════════════════════════════════════════════
@@ -596,8 +601,10 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     ? orders.find((o) => o.id === trackingOrderId) ?? null
     : null;
 
-  // Get repartidor info
-  const repartidor = order ? getRepartidorInfo(order.repartidorInitials) : null;
+  // Get repartidor info (solo si la orden tiene repartidor asignado real y no está pendiente)
+  const repartidor = (order && order.repartidor && order.estado !== 'pendiente')
+    ? getRepartidorInfo(order.repartidorInitials, order.repartidor)
+    : null;
 
   // Fetch OSRM route dynamically
   useEffect(() => {
@@ -1034,29 +1041,31 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             </button>
           )}
 
-          {/* Botón LLAMAR AL REPARTIDOR */}
-          <button
-            onClick={() => {
-              haptic('medium');
-              window.open(`tel:${repartidor?.telefono || '+50588880000'}`);
-            }}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              background: '#16A34A',
-              color: '#fff',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(22,163,74,0.4)',
-            }}
-            title="Llamar al Repartidor"
-          >
-            <Phone size={18} />
-          </button>
+          {/* Botón LLAMAR AL REPARTIDOR (solo si hay repartidor asignado) */}
+          {repartidor && (
+            <button
+              onClick={() => {
+                haptic('medium');
+                window.open(`tel:${repartidor.telefono || '+50588880000'}`);
+              }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                background: '#16A34A',
+                color: '#fff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(22,163,74,0.4)',
+              }}
+              title="Llamar al Repartidor"
+            >
+              <Phone size={18} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -1228,6 +1237,63 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                 />
               ))}
             </div>
+          )}
+
+          {/* ═══════ BUSCANDO REPARTIDOR (si no hay asignado) ═══════ */}
+          {sheetSnap !== 'minimized' && !repartidor && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                background: 'var(--surface)',
+                border: '1px dashed var(--primario)',
+                borderRadius: 18,
+                padding: 20,
+                marginBottom: 20,
+                textAlign: 'center',
+              }}
+            >
+              <motion.div
+                animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  background: 'color-mix(in srgb, var(--primario) 14%, transparent)',
+                  color: 'var(--primario)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px',
+                }}
+              >
+                <Bike size={26} />
+              </motion.div>
+              <h4
+                style={{
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  margin: '0 0 4px 0',
+                  color: 'var(--text)',
+                }}
+              >
+                Buscando repartidor cercano...
+              </h4>
+              <p
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 13,
+                  color: 'var(--text-secondary)',
+                  margin: 0,
+                  lineHeight: 1.4,
+                }}
+              >
+                Tu solicitud está activa. Te avisaremos en tiempo real cuando un repartidor acepte la orden.
+              </p>
+            </motion.div>
           )}
 
           {/* ═══════ REPARTIDOR INFO CARD ═══════ */}
