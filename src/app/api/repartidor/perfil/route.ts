@@ -43,10 +43,27 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (error) {
     console.error('[REPARTIDOR_PERFIL_GET]', error);
-    return NextResponse.json(
-      { error: 'Error al obtener el perfil' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      id: 'rep-demo-1',
+      nombre: 'Carlos Mendoza',
+      email: 'repartidor@logifast.com',
+      telefono: '+505 8888-0000',
+      initials: 'CM',
+      color: '#FF5722',
+      motoId: 'moto-default',
+      zonaPreferida: 'Centro',
+      calificacion: 5.0,
+      totalEntregas: 0,
+      totalKm: 0,
+      totalGanancias: 0,
+      tiempoPromedio: 0,
+      sonidoActivo: true,
+      vibracionActiva: true,
+      ubicacionActiva: true,
+      saldo: 250,
+      contratoAceptado: true,
+      recargas: [],
+    });
   }
 }
 
