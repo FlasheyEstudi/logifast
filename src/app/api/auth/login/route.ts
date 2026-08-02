@@ -49,11 +49,16 @@ export async function POST(req: NextRequest) {
       'ingeniero@logifast.app': { name: 'Ingeniero Logifast', role: 'ingeniero', initials: 'IL', color: '#9C27B0' },
     };
 
-    // Buscar usuario en la base de datos
+    // Buscar usuario en la base de datos (sensible e insensible a mayúsculas)
     let user: any = null;
     try {
       user = await db.user.findFirst({
-        where: { email: { equals: email } },
+        where: {
+          OR: [
+            { email: { equals: email } },
+            { email: { equals: email, mode: 'insensitive' } },
+          ],
+        },
       });
     } catch (err) {
       console.warn('[AUTH_LOGIN] Database query error:', err);

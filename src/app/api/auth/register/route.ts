@@ -63,59 +63,60 @@ export async function POST(req: NextRequest) {
       bio: null as string | null,
     };
 
-    try {
-      const existing = await db.user.findFirst({
-        where: { email: { equals: email } },
-      });
-      if (existing) {
-        return fail('Ya existe una cuenta con ese email. Por favor inicia sesión.', 409);
-      }
-
-      const hashed = await hashPassword(password);
-      const created = await db.user.create({
-        data: {
-          name,
-          email,
-          password: hashed,
-          role,
-          telefono,
-          initials: userRecord.initials,
-          color: userRecord.color,
-        },
-      });
-
-      if (role === 'repartidor') {
-        try {
-          await db.repartidorProfile.create({
-            data: {
-              userId: created.id,
-              nombre: created.name,
-              email: created.email,
-              telefono: created.telefono ?? null,
-              saldo: 100,
-              conectado: true,
-              contratoAceptado: true,
-            },
-          });
-        } catch (e) {
-          console.warn('[AUTH_REGISTER] RepartidorProfile creation skipped:', e);
-        }
-      }
-
-      userRecord = {
-        id: created.id,
-        name: created.name,
-        email: created.email,
-        role: created.role as 'cliente' | 'repartidor',
-        telefono: created.telefono,
-        initials: created.initials || computeInitials(name),
-        color: created.color || computeColor(email),
-        fotoUrl: created.fotoUrl,
-        bio: created.bio,
-      };
-    } catch (dbError) {
-      console.warn('[AUTH_REGISTER] Database fallback active:', dbError);
+    const existing = await db.user.findFirst({
+      where: {
+        OR: [
+          { email: { equals: email } },
+          { email: { equals: email, mode: 'insensitive' } },
+        ],
+      },
+    });
+    if (existing) {
+      return fail('Ya existe una cuenta con ese email. Por favor inicia sesión.', 409);
     }
+
+    const hashed = await hashPassword(password);
+    const created = await db.user.create({
+      data: {
+        name,
+        email,
+        password: hashed,
+        role,
+        telefono,
+        initials: computeInitials(name),
+        color: computeColor(email),
+      },
+    });
+
+    if (role === 'repartidor') {
+      try {
+        await db.repartidorProfile.create({
+          data: {
+            userId: created.id,
+            nombre: created.name,
+            email: created.email,
+            telefono: created.telefono ?? null,
+            saldo: 100,
+            conectado: true,
+            contratoAceptado: true,
+          },
+        });
+      } catch (e) {
+        console.warn('[AUTH_REGISTER] RepartidorProfile creation warning:', e);
+      }
+    }
+
+    userRecord = {
+      id: created.id,
+      name: created.name,
+      email: created.email,
+      role: created.role as 'cliente' | 'repartidor',
+      telefono: created.telefono,
+      initials: created.initials || computeInitials(name),
+      color: created.color || computeColor(email),
+      fotoUrl: created.fotoUrl,
+      bio: created.bio,
+    };
 
     await createSession({
       id: userRecord.id,
