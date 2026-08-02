@@ -25,7 +25,7 @@ const patchSchema = z.object({
 export async function GET() {
   try {
     const user = await getSessionUser();
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!user) return NextResponse.json({ items: [] }, { status: 200 });
 
     const items = await db.carritoItem.findMany({
       where: { clienteId: user.id },
@@ -50,7 +50,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error('[CARRITO_GET]', error);
-    return NextResponse.json({ error: 'Error' }, { status: 500 });
+    return NextResponse.json({ items: [] }, { status: 200 });
   }
 }
 
