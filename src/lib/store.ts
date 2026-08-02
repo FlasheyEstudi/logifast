@@ -895,7 +895,7 @@ export const useStore = create<AppState>((set, get) => ({
   filterStatus: 'todos',
   searchQuery: '',
   currentPage: 1,
-  dateFilter: 'hoy',
+  dateFilter: 'todos',
 
   /* Modals */
   createOrderOpen: false,

@@ -86,10 +86,12 @@ export default function ModulePedidos() {
           o.destino.toLowerCase().includes(q) || (o.repartidor && o.repartidor.toLowerCase().includes(q));
         if (!matches) return false;
       }
-      const todayStr = new Date().toISOString().split('T')[0];
-      const sevenDaysAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
-      if (dateFilter === 'hoy' && o.fecha !== todayStr) return false;
-      if (dateFilter === 'semana' && o.fecha < sevenDaysAgoStr) return false;
+      if (dateFilter !== 'todos') {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const sevenDaysAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+        if (dateFilter === 'hoy' && o.fecha !== todayStr && o.estado !== 'pendiente') return false;
+        if (dateFilter === 'semana' && o.fecha < sevenDaysAgoStr) return false;
+      }
       return true;
     });
   }, [orders, filterStatus, searchQuery, dateFilter]);
@@ -222,8 +224,9 @@ export default function ModulePedidos() {
           padding: '8px 12px', borderRadius: 8, border: '1px solid var(--lf-border)',
           background: 'var(--lf-surface)', color: 'var(--lf-text-main)', fontSize: 13, cursor: 'pointer',
         }}>
+          <option value="todos">Todos los pedidos</option>
           <option value="hoy">Hoy</option>
-          <option value="semana">Este semana</option>
+          <option value="semana">Esta semana</option>
           <option value="mes">Este mes</option>
         </select>
         {/* Export */}
