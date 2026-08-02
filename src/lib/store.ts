@@ -12,6 +12,7 @@ export type PaymentStatus = 'pendiente' | 'pagado' | 'reembolsado';
 
 export interface Order {
   id: string;
+  tipo?: 'envio' | 'compra';
   cliente: string;
   clienteTelefono: string;
   origen: string;
