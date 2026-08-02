@@ -288,7 +288,7 @@ export default function ModuleDespacho() {
                     cursor: 'pointer',
                   }}
                 >
-                  📦 Envíos ({envioCount})
+                  Envíos ({envioCount})
                 </button>
                 <button
                   onClick={() => setOrderFilter('compra')}
@@ -303,7 +303,7 @@ export default function ModuleDespacho() {
                     cursor: 'pointer',
                   }}
                 >
-                  🛒 Pedidos ({compraCount})
+                  Pedidos ({compraCount})
                 </button>
               </div>
             </div>
@@ -377,7 +377,7 @@ export default function ModuleDespacho() {
                           color: isEnvio ? '#0066FF' : '#16A34A',
                         }}
                       >
-                        {isEnvio ? '📦 ENVÍO' : '🛒 PEDIDO'}
+                        {isEnvio ? 'ENVÍO' : 'PEDIDO'}
                       </span>
                       <span
                         className="font-mono"

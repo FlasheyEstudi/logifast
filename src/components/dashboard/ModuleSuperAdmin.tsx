@@ -1472,7 +1472,7 @@ export default function ModuleSuperAdmin() {
                   <AlertCircle size={18} style={{ color: 'var(--peligro)', flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--peligro)' }}>
-                      ⚠ Modo mantenimiento activado
+                      Modo mantenimiento activado
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                       El sistema está bloqueado para todos los usuarios excepto Super Admin.

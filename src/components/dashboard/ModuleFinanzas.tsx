@@ -373,7 +373,7 @@ export default function ModuleFinanzas() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
             {/* Monthly Operating Costs Sheet */}
             <div style={cardStyle}>
-              <h3 style={sectionTitleStyle}>💰 Estructura de Costos del Proyecto (Mensual)</h3>
+              <h3 style={sectionTitleStyle}>Estructura de Costos del Proyecto (Mensual)</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
                   <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Programador Principal (Tecnológico)</span>

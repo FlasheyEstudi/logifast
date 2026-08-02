@@ -839,9 +839,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
         {myStore && (
           <div style={{ display: 'flex', gap: 16, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 13, color: 'var(--text-secondary)' }}>
-            <div><strong>Estado:</strong> <span style={{ color: '#16A34A', fontWeight: 700 }}>✅ TIENDA ACTIVA</span></div>
+            <div><strong>Estado:</strong> <span style={{ color: '#16A34A', fontWeight: 700 }}>TIENDA ACTIVA</span></div>
             <div><strong>Pedidos:</strong> {myStore.totalPedidos || 0}</div>
-            <div><strong>Calificación:</strong> ⭐ {myStore.calificacion || 5.0}</div>
+            <div><strong>Calificación:</strong> {myStore.calificacion || 5.0}</div>
           </div>
         )}
       </div>

@@ -501,7 +501,7 @@ export default function RepartidorServicio() {
             <button
               onClick={() => {
                 optimizarRutaAutomatica();
-                showSnackbar({ message: '⚡ Ruta optimizada: ordenada por menor distancia.' });
+                showSnackbar({ message: 'Ruta optimizada: ordenada por menor distancia.' });
               }}
               style={{
                 padding: '5px 10px',
@@ -819,7 +819,7 @@ export default function RepartidorServicio() {
                           fontFamily: 'var(--ios-font)',
                         }}
                       >
-                        📍 Recogida
+                        Recogida
                       </div>
                       <div
                         style={{
@@ -898,7 +898,7 @@ export default function RepartidorServicio() {
                           fontFamily: 'var(--ios-font)',
                         }}
                       >
-                        💰 Ganancia
+                        Ganancia
                       </div>
                       <div
                         className="font-mono"
@@ -925,7 +925,7 @@ export default function RepartidorServicio() {
                         showSnackbar({ message: `Orden ${ord.id} seleccionada como activa.` });
                       }}
                     >
-                      ✅ {isSelected ? 'Seleccionada' : 'Seleccionar'}
+                      {isSelected ? 'Seleccionada' : 'Seleccionar'}
                     </button>
                     <button
                       className="reject"
@@ -936,7 +936,7 @@ export default function RepartidorServicio() {
                         });
                       }}
                     >
-                      ❌ Quitar
+                      Quitar
                     </button>
                   </div>
                 </div>
@@ -1233,35 +1233,7 @@ export default function RepartidorServicio() {
         </BottomSheet>
       )}
 
-      {/* ═══════ ORDEN_ASIGNADA / INCIDENCIA: handled by overlays ═══════ */}
-      {(estado === 'ORDEN_ASIGNADA' || estado === 'INCIDENCIA') && (
-        <div
-          className="modal-overlay visible lf-modal-overlay visible"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-          }}
-        >
-          <div style={{ textAlign: 'center', color: '#fff' }}>
-            <TrendingUp size={28} color="var(--ios-blue)" style={{ margin: '0 auto 8px' }} />
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                fontFamily: 'var(--ios-font)',
-              }}
-            >
-              {estado === 'ORDEN_ASIGNADA' ? 'Revisando orden…' : 'Procesando incidencia…'}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ORDEN_ASIGNADA / INCIDENCIA: handiled by dedicated floating cards/modals without obscuring the interactive map */}
     </div>
   );
 }
@@ -1306,7 +1278,7 @@ function NavButtons({
           transition: 'transform 0.15s ease',
         }}
       >
-        🗺️ Google Maps
+        Google Maps
       </button>
       <button
         onClick={() => onWaze(target.lat, target.lng)}
@@ -1618,7 +1590,7 @@ function OrdenMiniCard({
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            💬 Chat
+            Chat
           </button>
         )}
 
@@ -1642,7 +1614,7 @@ function OrdenMiniCard({
             fontFamily: 'var(--ios-font)',
           }}
         >
-          🗺️ GPS Navegar
+          Navegar GPS
         </a>
       </div>
     </div>

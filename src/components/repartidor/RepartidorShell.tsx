@@ -340,7 +340,7 @@ function GananciasPanel() {
             fontFamily: 'var(--ios-font)',
           }}
         >
-          💡 ¿Cómo se calculan tus ganancias?
+          ¿Cómo se calculan tus ganancias?
         </div>
         <div
           style={{
