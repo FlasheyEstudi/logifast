@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getSessionUser } from '@/lib/auth/session';
+import { requireRole } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
+    await requireRole('admin', 'ingeniero');
     const profiles = await db.repartidorProfile.findMany({
       include: {
         user: {
@@ -40,10 +41,7 @@ export async function GET() {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'ingeniero')) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
+    await requireRole('admin', 'ingeniero');
 
     const body = await req.json();
     const { id, conectado, enServicio, pausado, contratoAceptado, saldo, zonaPreferida } = body;

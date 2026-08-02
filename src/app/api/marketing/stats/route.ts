@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireRole } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
+    await requireRole('admin');
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
