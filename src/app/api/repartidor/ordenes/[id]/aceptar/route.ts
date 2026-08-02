@@ -61,7 +61,7 @@ export async function PATCH(
 
     await db.repartidorProfile.update({
       where: { id: profile.id },
-      data: { enServicio: true },
+      data: { enServicio: true, conectado: true },
     });
 
     // Actualizar moto a EN_SERVICIO si está asignada

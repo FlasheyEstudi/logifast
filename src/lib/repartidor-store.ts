@@ -471,6 +471,11 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       estado: 'EN_LINEA',
       moto: { ...get().moto, estado: 'DISPONIBLE' },
     });
+    fetch('/api/repartidor/conexion', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'conectar' }),
+    }).catch((err) => console.error('[conectar API error]', err));
   },
 
   desconectar: () => {
@@ -482,6 +487,11 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       ordenesActivas: [],
       ordenAsignadaPendiente: null,
     });
+    fetch('/api/repartidor/conexion', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'desconectar' }),
+    }).catch((err) => console.error('[desconectar API error]', err));
   },
 
   recargarSaldo: (monto, codigo) => {
@@ -914,12 +924,16 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       if (conexionRes.ok) {
         const c = await conexionRes.json();
         if (c) {
+          const currentState = get();
+          const hasActiveOrder = (currentState.ordenesActivas || []).length > 0 || !!currentState.ordenActiva;
+          const isConectado = c.conectado || hasActiveOrder || c.enServicio;
+
           set({
-            conectado: c.conectado ?? false,
+            conectado: isConectado,
             enServicio: c.enServicio ?? false,
             pausado: c.pausado ?? false,
             pausaHasta: c.pausaHasta ? new Date(c.pausaHasta).getTime() : null,
-            estado: c.estado ?? 'DESCONECTADO',
+            estado: isConectado ? (c.estado && c.estado !== 'DESCONECTADO' ? c.estado : currentState.estado === 'DESCONECTADO' ? 'EN_LINEA' : currentState.estado) : 'DESCONECTADO',
             rechazosHora: c.rechazosHora ?? 0,
           });
         }

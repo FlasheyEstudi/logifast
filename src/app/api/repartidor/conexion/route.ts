@@ -50,14 +50,17 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
+    // Si tiene una orden activa o está en servicio, asegurar que figure conectado
+    const isConectado = profile.conectado || !!ordenActiva || profile.enServicio;
+
     const estado = calcularEstado(
-      profile.conectado,
+      isConectado,
       profile.enServicio,
       ordenActiva?.estado ?? null
     );
 
     return NextResponse.json({
-      conectado: profile.conectado,
+      conectado: isConectado,
       enServicio: profile.enServicio,
       pausado: profile.pausado,
       pausaHasta: profile.pausaHasta,
