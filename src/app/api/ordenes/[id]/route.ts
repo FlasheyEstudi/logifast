@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 /**
  * PATCH /api/ordenes/[id]
  * Actualiza el estado o reasigna el repartidor de una orden en la BD.
+ * - Solo el cliente dueño, el repartidor asignado o un admin pueden modificar.
  */
 export async function PATCH(
   req: NextRequest,
@@ -19,19 +20,31 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const orden = await db.ordenServicio.findUnique({ where: { id } });
+
+    // Ownership check: cargar la orden y validar que el user sea dueño, repartidor asignado o admin
+    const orden = await db.ordenServicio.findUnique({
+      where: { id },
+      select: { clienteId: true, repartidorId: true },
+    });
     if (!orden) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
 
-    // Validar ownership: el cliente creador, el repartidor asignado o un admin
-    const profile = user.role === 'repartidor' ? await db.repartidorProfile.findUnique({ where: { userId: user.id } }) : null;
-    const isOwner = orden.clienteId === user.id;
-    const isAssignedDriver = profile && orden.repartidorId === profile.id;
-    const isAdmin = user.role === 'admin';
-
-    if (!isOwner && !isAssignedDriver && !isAdmin) {
-      return NextResponse.json({ error: 'No autorizado para modificar esta orden' }, { status: 403 });
+    // Si es repartidor, validar que sea el asignado a esta orden
+    if (user.role === 'repartidor') {
+      const myProfile = await db.repartidorProfile.findUnique({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      if (!myProfile || orden.repartidorId !== myProfile.id) {
+        return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
+      }
+    } else if (user.role === 'cliente') {
+      if (orden.clienteId !== user.id) {
+        return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
+      }
+    } else if (user.role !== 'admin' && user.role !== 'ingeniero') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
     const body = await req.json();
@@ -42,27 +55,30 @@ export async function PATCH(
     if (incidenciaTipo !== undefined) dataToUpdate.incidenciaTipo = incidenciaTipo;
     if (incidenciaDesc !== undefined) dataToUpdate.incidenciaDesc = incidenciaDesc;
 
-    // Solo admin puede reasignar repartidor libremente
-    if (repartidorId !== undefined && isAdmin) {
-      const repProfile = await db.repartidorProfile.findFirst({
+    // Reasignación de repartidor — solo admin puede reasignar
+    if (repartidorId !== undefined) {
+      if (user.role !== 'admin') {
+        return NextResponse.json({ error: 'Solo un admin puede reasignar órdenes' }, { status: 403 });
+      }
+      const profile = await db.repartidorProfile.findFirst({
         where: {
           OR: [
             { id: repartidorId },
             { userId: repartidorId },
-            { user: { name: { contains: repartidorId, mode: 'insensitive' } } },
+            { user: { name: { contains: repartidorId } } },
           ],
         },
         include: { user: true },
       });
-      dataToUpdate.repartidorId = repProfile ? repProfile.id : repartidorId;
+      dataToUpdate.repartidorId = profile ? profile.id : repartidorId;
       if (estado === undefined) {
         dataToUpdate.estado = 'asignado';
       }
 
-      if (repProfile) {
+      if (profile) {
         await db.notificacionRepartidor.create({
           data: {
-            repartidorId: repProfile.id,
+            repartidorId: profile.id,
             tipo: 'reasignacion',
             titulo: 'Orden reasignada',
             contenido: `La orden ${id} te ha sido asignada por el Administrador.`,
@@ -87,7 +103,7 @@ export async function PATCH(
 
 /**
  * DELETE /api/ordenes/[id]
- * Cancela una orden de servicio.
+ * Cancela una orden de servicio. Solo el cliente dueño o un admin.
  */
 export async function DELETE(
   _req: NextRequest,
@@ -100,13 +116,26 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const orden = await db.ordenServicio.findUnique({ where: { id } });
+
+    // Ownership check
+    const orden = await db.ordenServicio.findUnique({
+      where: { id },
+      select: { clienteId: true, estado: true },
+    });
     if (!orden) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
 
-    if (orden.clienteId !== user.id && user.role !== 'admin') {
-      return NextResponse.json({ error: 'No autorizado para cancelar esta orden' }, { status: 403 });
+    if (user.role === 'cliente' && orden.clienteId !== user.id) {
+      return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
+    }
+    if (user.role !== 'cliente' && user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
+    // No permitir cancelar órdenes ya entregadas
+    if (orden.estado === 'entregado') {
+      return NextResponse.json({ error: 'No se puede cancelar una orden ya entregada' }, { status: 400 });
     }
 
     const ordenCancelada = await db.ordenServicio.update({

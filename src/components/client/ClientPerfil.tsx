@@ -6,7 +6,7 @@ import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
   LogOut, Shield, Bell, Globe, ChevronRight, AlertTriangle,
   Star, Banknote, CreditCard, Copy, Home, Building, ShoppingBag, Package,
-  Heart, ShoppingCart, Gift, Users, Check,
+  Heart, ShoppingCart, Gift, Users,
 } from '@/components/icons';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -839,9 +839,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
         {myStore && (
           <div style={{ display: 'flex', gap: 16, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 13, color: 'var(--text-secondary)' }}>
-            <div><strong>Estado:</strong> <span style={{ color: '#16A34A', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={14} /> TIENDA ACTIVA</span></div>
+            <div><strong>Estado:</strong> <span style={{ color: '#16A34A', fontWeight: 700 }}>✅ TIENDA ACTIVA</span></div>
             <div><strong>Pedidos:</strong> {myStore.totalPedidos || 0}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><strong>Calificación:</strong> <Star size={12} style={{ fill: '#F59E0B', color: '#F59E0B' }} /> {myStore.calificacion || 5.0}</div>
+            <div><strong>Calificación:</strong> ⭐ {myStore.calificacion || 5.0}</div>
           </div>
         )}
       </div>

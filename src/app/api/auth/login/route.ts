@@ -12,11 +12,15 @@ interface LoginBody {
   password: string;
 }
 
+// Dummy hash para prevenir timing attacks cuando el usuario no existe.
+const DUMMY_HASH =
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 100 intentos por IP cada 15 minutos
+    // Rate limit: 10 intentos por IP cada 15 minutos (endurecido desde 100)
     const ip = getClientIP(req);
-    const rl = rateLimit(`login:${ip}`, 100, 15 * 60 * 1000);
+    const rl = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
     if (!rl.success) return tooManyRequests(rl.resetAt);
 
     const body = (await req.json()) as LoginBody;
@@ -33,91 +37,59 @@ export async function POST(req: NextRequest) {
     const pwErr = validateLength(password, 1, 200, 'Contraseña');
     if (pwErr) return fail(pwErr);
 
-    // Cuentas demo predefinidas (desactivadas en producción)
-    const isProd = process.env.NODE_ENV === 'production';
-    const DEMO_ACCOUNTS: Record<string, { name: string; role: 'cliente' | 'repartidor' | 'admin' | 'ingeniero' }> = {
-      'cliente@logifast.com': { name: 'María López', role: 'cliente' },
-      'repartidor@logifast.com': { name: 'Carlos Mendoza', role: 'repartidor' },
-      'admin@logifast.com': { name: 'Administrador', role: 'admin' },
-      'ingeniero@logifast.com': { name: 'Ingeniero Demo', role: 'ingeniero' },
-    };
-
-    // Intentar buscar usuario en la base de datos
+    // Buscar usuario en la base de datos
     let user: any = null;
     try {
       user = await db.user.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
+        where: { email: { equals: email } },
       });
     } catch (err) {
       console.warn('[AUTH_LOGIN] Database query error:', err);
     }
 
+    // Verificación timing-safe: siempre ejecutamos verifyPassword aunque el user no exista
     let passwordOk = false;
-
-    // 1. Verificación para cuentas Demo (desactivadas en producción)
-    if (!isProd && DEMO_ACCOUNTS[email] && (password === '123456' || password === 'Logifast2026!' || password === 'admin123')) {
-      const demo = DEMO_ACCOUNTS[email];
-      if (!user) {
-        // Intentar crear el usuario demo en PostgreSQL para persistencia real
-        user = await db.user.create({
-          data: {
-            email,
-            name: demo.name,
-            password: await hashPassword(password),
-            role: demo.role,
-            telefono: '+505 8888-0000',
-            initials: demo.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
-            color: '#FF5722',
-          },
-        }).catch(() => null);
-      }
-      if (!user) {
-        user = {
-          id: `demo-${demo.role}`,
-          email,
-          name: demo.name,
-          role: demo.role,
-          telefono: '+505 8888-0000',
-          initials: demo.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
-          color: '#FF5722',
-        };
-      }
-      passwordOk = true;
-    } else if (user) {
-      // 2. Verificación para usuarios registrados reales en la BD
-      if (user.password) {
-        passwordOk = await verifyPassword(password, user.password).catch(() => false);
-      } else {
-        await verifyPassword(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy').catch(() => false);
-      }
+    if (user?.password) {
+      passwordOk = await verifyPassword(password, user.password).catch(() => false);
     } else {
-      // Dummy verification for timing-attack prevention when user is not found
-      await verifyPassword(password, '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy').catch(() => false);
+      // Usuario no existe: ejecutamos verifyPassword contra un hash dummy
+      // para que el tiempo de respuesta sea similar al de un login válido.
+      await verifyPassword(password, DUMMY_HASH).catch(() => false);
     }
+
+    // P0: Bloque DEMO eliminado — los usuarios demo se crean con `node scripts/seed.js`
+    // y se validan con bcrypt como cualquier usuario real. No más auto-creación en runtime.
 
     if (!user || !passwordOk) {
       // Audit log de intento fallido (silent catch)
-      await db.loginAudit.create({
-        data: {
-          email,
-          ip,
-          success: false,
-          reason: !user ? 'user_not_found' : 'wrong_password',
-        },
-      }).catch(() => null);
-      return fail('Credenciales inválidas. Por favor verifica tu correo y contraseña.', 401);
+      await db.loginAudit
+        .create({
+          data: {
+            email,
+            ip,
+            success: false,
+            reason: !user ? 'user_not_found' : 'wrong_password',
+          },
+        })
+        .catch(() => null);
+      return fail(
+        'Credenciales inválidas. Por favor verifica tu correo y contraseña.',
+        401
+      );
     }
 
     // Audit log de login exitoso (silent catch)
-    await db.loginAudit.create({
-      data: {
-        email,
-        ip,
-        userAgent: req.headers.get('user-agent') ?? null,
-        success: true,
-        reason: 'login_success',
-      },
-    }).catch(() => null);
+    await db.loginAudit
+      .create({
+        data: {
+          email,
+          ip,
+          userAgent: req.headers.get('user-agent') ?? null,
+          success: true,
+          reason: 'login_success',
+        },
+      })
+      .catch(() => null);
 
     // Si es repartidor, asegurar su perfil en DB
     if (user.role === 'repartidor') {
@@ -126,17 +98,19 @@ export async function POST(req: NextRequest) {
           where: { userId: user.id },
         });
         if (!existingProfile) {
-          await db.repartidorProfile.create({
-            data: {
-              userId: user.id,
-              nombre: user.name,
-              email: user.email,
-              telefono: user.telefono ?? null,
-              saldo: 100,
-              conectado: true,
-              contratoAceptado: true,
-            },
-          }).catch(() => null);
+          await db.repartidorProfile
+            .create({
+              data: {
+                userId: user.id,
+                nombre: user.name,
+                email: user.email,
+                telefono: user.telefono ?? null,
+                saldo: 100,
+                conectado: true,
+                contratoAceptado: true,
+              },
+            })
+            .catch(() => null);
         }
       } catch (e) {}
     }

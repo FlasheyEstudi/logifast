@@ -4,20 +4,6 @@ import { requireRole } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radio de la Tierra en km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
 /**
  * GET /api/admin/despacho
  * Returns active dispatch queue (pending/assigned orders) and nearby online drivers.
@@ -45,7 +31,6 @@ export async function GET() {
           lng: true,
           enServicio: true,
           pausado: true,
-          zonaPreferida: true,
         },
       }),
     ]);
@@ -56,13 +41,19 @@ export async function GET() {
     });
   } catch (error) {
     console.error('[ADMIN_DESPACHO_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener cola de despacho' }, { status: 500 });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json(
+      { error: status === 401 ? 'No autenticado' : status === 403 ? 'No autorizado' : 'Error al obtener cola de despacho' },
+      { status }
+    );
   }
 }
 
 /**
  * POST /api/admin/despacho
- * Auto-dispatches or batch assigns pending orders to nearest available drivers with area preferences.
+ * Auto-dispatches or batch assigns pending orders to nearest available drivers.
+ * Respeta: conectado, !enServicio, !pausado, contratoAceptado, zonaPreferida.
+ * Usa updateMany atómico para evitar race conditions (dos órdenes al mismo driver).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -75,13 +66,14 @@ export async function POST(req: NextRequest) {
       const driver = await db.repartidorProfile.findUnique({ where: { id: driverId } });
       if (!driver) return NextResponse.json({ error: 'Repartidor no encontrado' }, { status: 404 });
 
-      const updatedOrder = await db.ordenServicio.update({
-        where: { id: orderId },
-        data: {
-          repartidorId: driver.id,
-          estado: 'asignado',
-        },
+      // Asignación atómica: solo si la orden sigue pendiente y sin repartidor
+      const result = await db.ordenServicio.updateMany({
+        where: { id: orderId, repartidorId: null, estado: 'pendiente' },
+        data: { repartidorId: driver.id, estado: 'asignado' },
       });
+      if (result.count === 0) {
+        return NextResponse.json({ error: 'La orden ya fue asignada o no está pendiente' }, { status: 409 });
+      }
 
       await db.notificacionRepartidor.create({
         data: {
@@ -94,66 +86,114 @@ export async function POST(req: NextRequest) {
         },
       }).catch(() => null);
 
+      const updatedOrder = await db.ordenServicio.findUnique({ where: { id: orderId } });
       return NextResponse.json({ success: true, orden: updatedOrder });
     }
 
-    // Auto-dispatch inteligente con preferencias de zona y proximidad GPS (<5km)
+    // Auto-dispatch: órdenes pendientes sin repartidor
     const pendingOrders = await db.ordenServicio.findMany({
       where: { estado: 'pendiente', repartidorId: null },
       take: 20,
+      orderBy: { createdAt: 'asc' }, // FIFO: las más antiguas primero
     });
 
+    if (pendingOrders.length === 0) {
+      return NextResponse.json({ success: true, assignedCount: 0, message: 'No hay órdenes pendientes' });
+    }
+
+    // Repartidores disponibles (con contrato aceptado y aceptando órdenes)
     const availableDrivers = await db.repartidorProfile.findMany({
-      where: { conectado: true, enServicio: false, pausado: false },
+      where: {
+        conectado: true,
+        enServicio: false,
+        pausado: false,
+        contratoAceptado: true,
+      },
     });
 
-    const usedDriverIds = new Set<string>();
+    if (availableDrivers.length === 0) {
+      return NextResponse.json({ success: true, assignedCount: 0, message: 'No hay repartidores disponibles' });
+    }
+
     let assignedCount = 0;
+    const usedDriverIds = new Set<string>();
 
     for (const order of pendingOrders) {
-      const candidateDrivers = availableDrivers.filter((d) => !usedDriverIds.has(d.id));
-      if (candidateDrivers.length === 0) break;
+      if (usedDriverIds.size >= availableDrivers.length) break;
 
-      let bestDriver = candidateDrivers.find(
-        (d) => d.zonaPreferida && order.origen && d.zonaPreferida.toLowerCase() === order.origen.toLowerCase()
-      );
+      // Filtrar por zona preferida si la orden tiene zona de origen
+      const candidates = availableDrivers.filter((d) => !usedDriverIds.has(d.id));
 
-      if (!bestDriver && order.origenLat && order.origenLng) {
-        let minDistance = 5; // radio máximo de 5 km
-        for (const driver of candidateDrivers) {
-          if (driver.lat && driver.lng) {
-            const dist = haversineDistance(order.origenLat, order.origenLng, driver.lat, driver.lng);
-            if (dist < minDistance) {
-              minDistance = dist;
-              bestDriver = driver;
-            }
-          }
+      // Preferir repartidores cuya zonaPreferida coincida con el origen de la orden
+      let driver = candidates.find((d) => {
+        if (!d.zonaPreferida || !order.origen) return false;
+        return order.origen.toLowerCase().includes(d.zonaPreferida.toLowerCase());
+      });
+
+      // Si no hay match por zona, usar el más cercano por Haversine (si hay coords)
+      if (!driver && order.origenLat && order.origenLng) {
+        const withCoords = candidates.filter((d) => d.lat != null && d.lng != null);
+        if (withCoords.length > 0) {
+          withCoords.sort((a, b) => {
+            const distA = haversine(order.origenLat!, order.origenLng!, a.lat!, a.lng!);
+            const distB = haversine(order.origenLat!, order.origenLng!, b.lat!, b.lng!);
+            return distA - distB;
+          });
+          driver = withCoords[0];
         }
       }
 
-      if (!bestDriver) {
-        bestDriver = candidateDrivers[0];
-      }
+      // Fallback: primer candidato disponible
+      if (!driver) driver = candidates[0];
+      if (!driver) continue;
 
-      if (bestDriver) {
-        usedDriverIds.add(bestDriver.id);
-        await db.ordenServicio.update({
-          where: { id: order.id },
-          data: { repartidorId: bestDriver.id, estado: 'asignado' },
-        });
+      // Asignación atómica con updateMany
+      const result = await db.ordenServicio.updateMany({
+        where: { id: order.id, repartidorId: null, estado: 'pendiente' },
+        data: { repartidorId: driver.id, estado: 'asignado' },
+      });
+      if (result.count === 0) continue; // ya fue asignada por otro proceso
 
-        await db.repartidorProfile.update({
-          where: { id: bestDriver.id },
-          data: { enServicio: true },
-        });
+      await db.repartidorProfile.update({
+        where: { id: driver.id },
+        data: { enServicio: true },
+      }).catch(() => null);
 
-        assignedCount++;
-      }
+      await db.notificacionRepartidor.create({
+        data: {
+          repartidorId: driver.id,
+          tipo: 'orden_asignada',
+          titulo: 'Nueva orden asignada',
+          contenido: `Se te ha asignado la orden ${order.id}. Origen: ${order.origen ?? 'N/A'}`,
+          leido: false,
+          ordenId: order.id,
+        },
+      }).catch(() => null);
+
+      usedDriverIds.add(driver.id);
+      assignedCount++;
     }
 
     return NextResponse.json({ success: true, assignedCount });
   } catch (error) {
     console.error('[ADMIN_DESPACHO_POST]', error);
-    return NextResponse.json({ error: 'Error en auto-despacho' }, { status: 500 });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json(
+      { error: status === 401 ? 'No autenticado' : status === 403 ? 'No autorizado' : 'Error en auto-despacho' },
+      { status }
+    );
   }
+}
+
+/** Distancia Haversine en km entre dos puntos. */
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371; // km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

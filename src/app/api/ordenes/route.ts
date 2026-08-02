@@ -1,10 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { geocodeAddress } from '@/lib/osrm';
-import { emitOrdenCreada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
+
+const postSchema = z.object({
+  tipo: z.enum(['envio', 'compra']).optional(),
+  origen: z.string().min(1, 'Origen es obligatorio').max(500),
+  destino: z.string().min(1, 'Destino es obligatorio').max(500),
+  origenLat: z.union([z.number(), z.string()]).optional(),
+  origenLng: z.union([z.number(), z.string()]).optional(),
+  destinoLat: z.union([z.number(), z.string()]).optional(),
+  destinoLng: z.union([z.number(), z.string()]).optional(),
+  paquete: z.string().max(500).optional().nullable(),
+  tamano: z.string().max(50).optional().nullable(),
+  fragil: z.boolean().optional(),
+  tiendaId: z.string().optional().nullable(),
+  tiendaNombre: z.string().max(200).optional().nullable(),
+  metodoPago: z.enum(['efectivo', 'tarjeta', 'transferencia']).optional(),
+  monto: z.union([z.number().min(0), z.string()]).optional(),
+  ganancia: z.union([z.number().min(0), z.string()]).optional(),
+  kmEstimados: z.union([z.number().min(0), z.string()]).optional(),
+  tiempoEstimado: z.union([z.number().int().min(0), z.string()]).optional(),
+});
 
 /**
  * GET /api/ordenes
@@ -14,9 +34,16 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado');
-    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    // Paginación segura contra NaN (P1)
+    const limitRaw = parseInt(searchParams.get('limit') ?? '100', 10);
+    const offsetRaw = parseInt(searchParams.get('offset') ?? '0', 10);
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 100;
+    const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
 
     const where: Record<string, unknown> = {};
     if (estado) where.estado = estado;
@@ -31,19 +58,23 @@ export async function GET(req: NextRequest) {
     }
     // Si es admin o no hay sesion de cookie (ej. polling de dashboard), devuelve todas
 
-    const ordenes = await db.ordenServicio.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      include: {
-        cliente: { select: { id: true, name: true, email: true, telefono: true, initials: true, color: true } },
-      },
-    });
+    const [ordenes, total] = await Promise.all([
+      db.ordenServicio.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+        include: {
+          cliente: { select: { id: true, name: true, email: true, telefono: true, initials: true, color: true } },
+        },
+      }),
+      db.ordenServicio.count({ where }),
+    ]);
 
-    return NextResponse.json({ ordenes });
+    return NextResponse.json({ ordenes, total, limit, offset, hasMore: offset + limit < total });
   } catch (error) {
     console.error('[ORDENES_GET]', error);
-    return NextResponse.json({ ordenes: [] });
+    return NextResponse.json({ ordenes: [], total: 0 });
   }
 }
 
@@ -53,12 +84,23 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    // P1: Requerir sesión real — eliminar fallback que crea usuario demo
     const user = await getSessionUser();
-    if (!user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (!user || user.role !== 'cliente') {
+      return NextResponse.json(
+        { error: 'Se requiere sesión de cliente para crear órdenes' },
+        { status: 401 }
+      );
     }
 
     const body = await req.json();
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const {
       tipo = 'envio',
       origen,
@@ -85,6 +127,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
 
     const rawOrigLat = Number(origenLat) || 0;
     const rawOrigLng = Number(origenLng) || 0;
@@ -124,8 +167,6 @@ export async function POST(req: NextRequest) {
         clienteTelefono: user.telefono ?? null,
       },
     });
-
-    emitOrdenCreada(orden);
 
     // Notificar a repartidores conectados
     const repartidoresConectados = await db.repartidorProfile.findMany({

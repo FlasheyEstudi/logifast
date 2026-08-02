@@ -695,8 +695,7 @@ interface AppState {
   /* New UI State */
   commandPaletteOpen: boolean;
   notificationsOpen: boolean;
-  simulationRunning: boolean;
-  lastSimulationUpdate: number;
+  // P0: simulationRunning y lastSimulationUpdate eliminados — no hay simulación.
 
   /* Actions */
   setActiveModule: (mod: ModuleKey) => void;
@@ -717,6 +716,7 @@ interface AppState {
 
   reassignRider: (orderId: string, riderName: string, riderInitials: string) => void;
   addOrder: (order: Order) => void;
+  fetchOrders: () => Promise<void>;
   cancelOrder: (orderId: string) => void;
   addMoto: (moto: Moto) => void;
   updateMoto: (moto: Moto) => void;
@@ -733,11 +733,8 @@ interface AppState {
   addActivityEvent: (event: Omit<ActivityEvent, 'id'>) => void;
   markEventsAsRead: () => void;
   conciliatePayment: (id: string) => void;
-  simulateNewOrder: () => void;
-  simulateDelivery: () => void;
-  simulateStatusChange: () => void;
+  // P0: simulateNewOrder, simulateDelivery, simulateStatusChange, toggleSimulation eliminados.
   dispatchOrder: (orderId: string, riderId: string) => void;
-  toggleSimulation: () => void;
 
   /* Toast Actions */
   addToast: (message: string, variant?: ToastVariant) => void;
@@ -808,7 +805,7 @@ interface AppState {
 }
 
 let _eventCounter = 100;
-let _orderCounter = 2860;
+let _orderCounter = 0; // P0: ya no se usa para simulación, se mantiene por compatibilidad.
 
 export const useStore = create<AppState>((set, get) => ({
   /* Data */
@@ -920,8 +917,7 @@ export const useStore = create<AppState>((set, get) => ({
   /* New UI State */
   commandPaletteOpen: false,
   notificationsOpen: false,
-  simulationRunning: process.env.NODE_ENV !== 'production',
-  lastSimulationUpdate: Date.now(),
+  // P0: simulationRunning eliminado — no hay simulación.
 
   /* Actions */
   setActiveModule: (mod) => {
@@ -963,6 +959,45 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
+
+  // P1: fetchOrders carga las órdenes reales del cliente desde la BD.
+  // Se llama al montar ClientShell para que sobrevivan F5.
+  fetchOrders: async () => {
+    try {
+      const res = await fetch('/api/ordenes');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.ordenes && Array.isArray(data.ordenes)) {
+        const mapped = data.ordenes.map((o: any) => ({
+          id: o.id,
+          tipo: o.tipo || 'envio',
+          cliente: o.clienteNombre || o.cliente?.name || 'Cliente',
+          clienteTelefono: o.clienteTelefono || o.cliente?.telefono || '',
+          origen: o.origen || '',
+          destino: o.destino || '',
+          origenLat: o.origenLat || 0,
+          origenLng: o.origenLng || 0,
+          destinoLat: o.destinoLat || 0,
+          destinoLng: o.destinoLng || 0,
+          repartidor: o.repartidorId || null,
+          repartidorInitials: 'RP',
+          descripcion: o.paquete || 'Envío',
+          monto: o.monto || 0,
+          estado: o.estado || 'pendiente',
+          metodoPago: o.metodoPago || 'efectivo',
+          estadoPago: 'pendiente',
+          fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
+          hora: new Date(o.createdAt || Date.now()).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
+          timeline: [
+            { step: 'Orden creada', hora: new Date(o.createdAt || Date.now()).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true },
+          ],
+        }));
+        set({ orders: mapped });
+      }
+    } catch (err) {
+      console.error('[fetchOrders error]', err);
+    }
+  },
 
   cancelOrder: (orderId) => {
     // 1. Actualizar estado en memoria
@@ -1046,19 +1081,13 @@ export const useStore = create<AppState>((set, get) => ({
     }).catch((err) => console.error('[toggleRiderConnection API error]', err));
   },
 
-  updateMotoPositions: () =>
-    set((state) => ({
-      motos: state.motos.map((m) => {
-        if (m.status === 'in-service') {
-          return {
-            ...m,
-            lat: m.lat + (Math.random() - 0.5) * 0.002,
-            lng: m.lng + (Math.random() - 0.5) * 0.002,
-          };
-        }
-        return m;
-      }),
-    })),
+  updateMotoPositions: () => {
+    // P0: Simulación de movimiento de motos ELIMINADA.
+    // Las posiciones reales de las motos vienen de /api/admin/repartidores
+    // (que lee RepartidorProfile.lat/lng actualizado por el GPS del repartidor).
+    // Esta función se mantiene como no-op por compatibilidad.
+    return;
+  },
 
   /* New Actions */
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
@@ -1100,125 +1129,9 @@ export const useStore = create<AppState>((set, get) => ({
     ),
   })),
 
-  simulateNewOrder: () => {
-    const state = get();
-    _orderCounter++;
-    const clients = state.clients;
-    const client = clients[Math.floor(Math.random() * clients.length)];
-    const zones = ['Centro', 'Villa Fontana', 'Los Robles', 'Bello Horizonte', 'Monseñor Lezcano', 'Reparto Schick'];
-    const origins = ['Metrocentro', 'Galerías Santo Domingo', 'Mercado Oriental', 'Plaza Inter', 'Hospital Metropolitano'];
-    const newOrder: Order = {
-      id: `LF-${_orderCounter}`,
-      cliente: client.nombre,
-      clienteTelefono: client.telefono,
-      origen: origins[Math.floor(Math.random() * origins.length)],
-      destino: `${zones[Math.floor(Math.random() * zones.length)]}, Managua`,
-      origenLat: 12.11 + (Math.random() - 0.5) * 0.04,
-      origenLng: -86.24 + (Math.random() - 0.5) * 0.04,
-      destinoLat: 12.11 + (Math.random() - 0.5) * 0.04,
-      destinoLng: -86.24 + (Math.random() - 0.5) * 0.04,
-      repartidor: null, repartidorInitials: '',
-      descripcion: 'Envío simulado',
-      monto: Math.floor(50 + Math.random() * 200),
-      estado: 'pendiente',
-      metodoPago: Math.random() > 0.5 ? 'efectivo' : 'transferencia',
-      estadoPago: 'pendiente',
-      fecha: '2026-06-10',
-      hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
-      timeline: [
-        { step: 'Orden creada', hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true },
-        { step: 'En camino', hora: '—', completado: false },
-        { step: 'Recogida', hora: '—', completado: false },
-        { step: 'Entregada', hora: '—', completado: false },
-      ],
-    };
-    set((state) => ({
-      orders: [newOrder, ...state.orders],
-      lastSimulationUpdate: Date.now(),
-    }));
-    get().addActivityEvent({
-      tipo: 'orden',
-      titulo: 'Nueva orden simulada',
-      detalle: `${newOrder.id} - ${newOrder.cliente}`,
-      timestamp: new Date().toISOString(),
-      leido: false,
-    });
-  },
-
-  simulateDelivery: () => {
-    const state = get();
-    const activeOrders = state.orders.filter((o) => o.estado === 'encamino' || o.estado === 'recogido');
-    if (activeOrders.length === 0) return;
-    const order = activeOrders[Math.floor(Math.random() * activeOrders.length)];
-    set((state) => ({
-      orders: state.orders.map((o) =>
-        o.id === order.id
-          ? {
-              ...o,
-              estado: 'entregado' as OrderStatus,
-              calificacion: Math.floor(3 + Math.random() * 3),
-              timeline: o.timeline.map((t) => ({ ...t, completado: true, hora: t.hora === '—' ? new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : t.hora })),
-            }
-          : o
-      ),
-      lastSimulationUpdate: Date.now(),
-    }));
-    // Set rider back to available
-    if (order.repartidor) {
-      set((state) => ({
-        riders: state.riders.map((r) =>
-          r.nombre === order.repartidor ? { ...r, status: 'available' as RiderStatus, entregasHoy: r.entregasHoy + 1, entregasTotal: r.entregasTotal + 1 } : r
-        ),
-      }));
-    }
-    get().addActivityEvent({
-      tipo: 'orden',
-      titulo: 'Orden entregada',
-      detalle: `${order.id} entregada`,
-      timestamp: new Date().toISOString(),
-      leido: false,
-    });
-  },
-
-  simulateStatusChange: () => {
-    const state = get();
-    const statusFlow: Record<string, OrderStatus> = {
-      pendiente: 'encamino',
-      encamino: 'recogido',
-      recogido: 'entregado',
-    };
-    const changeable = state.orders.filter((o) => o.estado in statusFlow);
-    if (changeable.length === 0) return;
-    const order = changeable[Math.floor(Math.random() * changeable.length)];
-    const newStatus = statusFlow[order.estado];
-    const now = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
-    set((state) => ({
-      orders: state.orders.map((o) =>
-        o.id === order.id
-          ? {
-              ...o,
-              estado: newStatus,
-              timeline: o.timeline.map((t, i) => {
-                const stepMap = ['Orden creada', 'En camino', 'Recogida', 'Entregada'];
-                if (stepMap[i] === 'En camino' && newStatus === 'encamino') return { ...t, completado: true, hora: now };
-                if (stepMap[i] === 'Recogida' && newStatus === 'recogido') return { ...t, completado: true, hora: now };
-                if (stepMap[i] === 'Entregada' && newStatus === 'entregado') return { ...t, completado: true, hora: now };
-                return t;
-              }),
-            }
-          : o
-      ),
-      lastSimulationUpdate: Date.now(),
-    }));
-    const statusLabels: Record<string, string> = { encamino: 'En camino', recogido: 'Recogido', entregado: 'Entregado' };
-    get().addActivityEvent({
-      tipo: 'orden',
-      titulo: `Orden ${statusLabels[newStatus]}`,
-      detalle: `${order.id} → ${statusLabels[newStatus]}`,
-      timestamp: new Date().toISOString(),
-      leido: false,
-    });
-  },
+  // P0: simulateNewOrder, simulateDelivery, simulateStatusChange ELIMINADAS.
+  // El sistema ahora funciona 100% con datos reales. Las órdenes solo se crean
+  // cuando un cliente real pulsa "Confirmar envío" en ClientSolicitar/ClientCarrito.
 
   dispatchOrder: (orderId, riderId) => {
     const state = get();
@@ -1258,7 +1171,7 @@ export const useStore = create<AppState>((set, get) => ({
     }).catch((err) => console.error('[dispatchOrder API error]', err));
   },
 
-  toggleSimulation: () => set((state) => ({ simulationRunning: !state.simulationRunning })),
+  // P0: toggleSimulation eliminado — no hay simulación.
 
   /* Toast Actions — delega a sileo (notify) */
   addToast: (message, variant = 'info') => {

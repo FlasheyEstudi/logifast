@@ -85,6 +85,21 @@ export default function ModuleConfig() {
     setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3000);
   };
 
+  // Helper: persistir ajustes locales con prefijo `logifast-` para que
+  // puedan limpiarse luego con el botón "Limpiar datos de prueba".
+  const persistLocal = (key: string, data: unknown): boolean => {
+    try {
+      window.localStorage.setItem(
+        `logifast-config-${key}`,
+        JSON.stringify({ value: data, savedAt: new Date().toISOString() }),
+      );
+      return true;
+    } catch (err) {
+      console.warn(`[persistLocal:${key}]`, err);
+      return false;
+    }
+  };
+
   // Local editable state (existing)
   const [editRules, setEditRules] = useState<MaintenanceRule[]>(maintenanceRules);
   const [editZones, setEditZones] = useState<Zone[]>(zones);
@@ -185,8 +200,23 @@ export default function ModuleConfig() {
   };
 
   const sendTestEmail = (template: EmailTemplate) => {
-    addToast(`Email de prueba enviado: ${template.nombre}`, 'success');
-    showToast(`Email de prueba enviado: ${template.nombre}`);
+    // Abre el cliente de correo del usuario con una plantilla precargada
+    // para que pueda enviar un email de prueba real a sí mismo.
+    const subject = encodeURIComponent(`[LOGIFAST] Prueba — ${template.nombre}`);
+    const body = encodeURIComponent(
+      `Plantilla: ${template.nombre}\n` +
+      `Vista previa: ${template.preview}\n\n` +
+      `Variables disponibles: ${template.variables.join(', ')}\n\n` +
+      `— Email de prueba generado desde LOGIFAST`,
+    );
+    try {
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      addToast(`Abriendo cliente de correo para: ${template.nombre}`, 'success');
+      showToast(`Email de prueba iniciado: ${template.nombre}`);
+    } catch (err) {
+      console.warn('[sendTestEmail]', err);
+      addToast('No se pudo abrir el cliente de correo', 'error');
+    }
   };
 
   // ─── 9C: Horario handlers ───
@@ -196,6 +226,10 @@ export default function ModuleConfig() {
   };
 
   const handleSaveHorarios = () => {
+    // Cada cambio en horarios ya se persiste vía `updateHorario` (store action)
+    // en `handleHorarioChange`. Este botón confirma visualmente al usuario
+    // y persiste una copia local como respaldo.
+    persistLocal('horarios', localHorarios);
     showToast('Horarios guardados');
   };
 
@@ -233,25 +267,127 @@ export default function ModuleConfig() {
   };
 
   const saveIntegration = () => {
+    if (editingIntegration) {
+      persistLocal(`integration-${editingIntegration.id}`, {
+        nombre: editingIntegration.nombre,
+        apiKey: intApiKey,
+        webhookUrl: intWebhookUrl,
+      });
+    }
     setIntegrationModalOpen(false);
     showToast(`Integración ${editingIntegration?.nombre} configurada`);
   };
 
   // ─── 9E: Backup handlers ───
-  const exportAllData = () => {
+  const exportAllData = async () => {
     addToast('Exportando datos...', 'info');
     showToast('Exportando datos...');
+    try {
+      const res = await fetch('/api/auth/export-data');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `logifast-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addToast('Datos exportados correctamente', 'success');
+    } catch (err) {
+      console.error('[exportAllData]', err);
+      addToast('Error al exportar datos', 'error');
+    }
   };
 
-  const exportMonthlyReport = () => {
+  const exportMonthlyReport = async () => {
     addToast('Generando reporte...', 'info');
     showToast('Generando reporte...');
+    try {
+      const res = await fetch('/api/admin/reportes');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `logifast-reporte-${new Date().toISOString().slice(0, 7)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addToast('Reporte generado correctamente', 'success');
+    } catch (err) {
+      console.error('[exportMonthlyReport]', err);
+      addToast('Error al generar reporte', 'error');
+    }
   };
 
   const cleanTestData = () => {
     setConfirmCleanOpen(false);
-    addToast('Datos de prueba eliminados', 'success');
-    showToast('Datos de prueba eliminados');
+    addToast('Limpiando datos locales y cerrando sesión...', 'info');
+    // Limpiar localStorage con prefijo `logifast-`
+    try {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('logifast-')) localStorage.removeItem(key);
+      });
+    } catch (err) {
+      console.warn('[cleanTestData] error limpiando localStorage', err);
+    }
+    // Llamar logout y redirigir al inicio
+    fetch('/api/auth/logout', { method: 'POST' })
+      .catch((err) => console.warn('[cleanTestData] logout error', err))
+      .finally(() => {
+        window.location.href = '/';
+      });
+  };
+
+  // ─── Save handlers para formularios locales (persisten en localStorage) ───
+  const handleSaveMantenimiento = () => {
+    if (persistLocal('mantenimiento-rules', editRules)) {
+      addToast('Reglas guardadas', 'success');
+      showToast('Reglas guardadas');
+    } else {
+      showToast('Error al guardar reglas');
+    }
+  };
+
+  const handleSaveTarifas = () => {
+    const tarifas = {
+      tarifaBase,
+      tarifaKm,
+      tarifaMin,
+    };
+    if (persistLocal('tarifas', tarifas)) {
+      addToast('Tarifas guardadas', 'success');
+      showToast('Tarifas guardadas');
+    } else {
+      showToast('Error al guardar tarifas');
+    }
+  };
+
+  const handleSaveCompany = () => {
+    if (persistLocal('company-data', editCompany)) {
+      addToast('Datos guardados', 'success');
+      showToast('Datos guardados');
+    } else {
+      showToast('Error al guardar datos');
+    }
+  };
+
+  const handleSaveAppConfig = () => {
+    const appConfig = {
+      appPrimaryColor,
+      appWelcomeText,
+      appOffers,
+    };
+    if (persistLocal('app-config', appConfig)) {
+      addToast('Configuración de app guardada', 'success');
+      showToast('Configuración de app guardada');
+    } else {
+      showToast('Error al guardar configuración');
+    }
   };
 
   /* ─── Shared styles ─── */
@@ -463,7 +599,7 @@ export default function ModuleConfig() {
                   </tbody>
                 </table>
               </div>
-              <button onClick={() => showToast('Reglas guardadas')} style={{ marginTop: 12, ...btnAccent }}><Save size={14} /> Guardar cambios</button>
+              <button onClick={handleSaveMantenimiento} title="Guardar reglas de mantenimiento en este dispositivo" style={{ marginTop: 12, ...btnAccent }}><Save size={14} /> Guardar cambios</button>
             </div>
           )}
 
@@ -484,7 +620,7 @@ export default function ModuleConfig() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => showToast('Tarifas guardadas')} style={{ marginTop: 16, ...btnAccent }}><Save size={14} /> Guardar</button>
+              <button onClick={handleSaveTarifas} title="Guardar tarifas en este dispositivo" style={{ marginTop: 16, ...btnAccent }}><Save size={14} /> Guardar</button>
             </div>
           )}
 
@@ -536,7 +672,7 @@ export default function ModuleConfig() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => showToast('Datos guardados')} style={{ marginTop: 16, ...btnAccent }}><Save size={14} /> Guardar</button>
+              <button onClick={handleSaveCompany} title="Guardar datos de la empresa en este dispositivo" style={{ marginTop: 16, ...btnAccent }}><Save size={14} /> Guardar</button>
             </div>
           )}
 
@@ -695,7 +831,7 @@ export default function ModuleConfig() {
                     </div>
                   </div>
 
-                  <button onClick={() => showToast('Configuración de app guardada')} style={btnAccent}><Save size={14} /> Guardar</button>
+                  <button onClick={handleSaveAppConfig} title="Guardar configuración de la app cliente en este dispositivo" style={btnAccent}><Save size={14} /> Guardar</button>
                 </div>
 
                 {/* Right: Preview */}
@@ -1199,7 +1335,7 @@ export default function ModuleConfig() {
                 <AlertTriangle size={24} style={{ color: 'var(--lf-danger)' }} />
               </div>
               <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>¿Limpiar datos de prueba?</h3>
-              <p style={{ fontSize: 13, color: 'var(--lf-text-muted)', marginBottom: 20 }}>Esta acción eliminará todos los datos de prueba. Esta operación no se puede deshacer.</p>
+              <p style={{ fontSize: 13, color: 'var(--lf-text-muted)', marginBottom: 20 }}>Esta acción limpiará todos los datos locales (preferencias, ajustes guardados en este dispositivo) y cerrará tu sesión. Esta operación no se puede deshacer.</p>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
                 <button onClick={() => setConfirmCleanOpen(false)} style={{
                   padding: '10px 20px', borderRadius: 8, border: '1px solid var(--lf-border)',

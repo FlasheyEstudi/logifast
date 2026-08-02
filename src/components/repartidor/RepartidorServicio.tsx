@@ -16,7 +16,7 @@ import {
   Store,
   TrendingUp,
   Zap,
-  Phone,
+  Target,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
@@ -33,15 +33,15 @@ const RepartidorMap = dynamic(() => import('./RepartidorMap'), {
   loading: () => (
     <div
       style={{
-        height: 300,
-        width: '100%',
-        background: 'var(--md-surface-variant)',
-        borderRadius: 16,
+        position: 'absolute',
+        inset: 0,
+        background: 'var(--ios-bg-secondary, #E5E5EA)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: 'var(--text-muted)',
-        fontSize: 13,
+        color: 'var(--ios-text-tertiary, #8E8E93)',
+        fontSize: 14,
+        fontFamily: 'var(--ios-font, sans-serif)',
       }}
     >
       Cargando mapa…
@@ -54,14 +54,14 @@ const RepartidorMap = dynamic(() => import('./RepartidorMap'), {
    ═══════════════════════════════════════════════ */
 
 const ESTADO_COLOR: Record<string, string> = {
-  DESCONECTADO: '#9E9E9E',
-  EN_LINEA: '#2979FF',
-  ORDEN_ASIGNADA: '#FFB300',
-  EN_CAMINO_RECOGER: '#2979FF',
-  EN_PUNTO_RECOGIDA: '#FF5722',
-  RECOGIDO: '#9C27B0',
-  EN_PUNTO_ENTREGA: '#9C27B0',
-  INCIDENCIA: '#FF1744',
+  DESCONECTADO: '#8E8E93',
+  EN_LINEA: '#007AFF',
+  ORDEN_ASIGNADA: '#FF9500',
+  EN_CAMINO_RECOGER: '#007AFF',
+  EN_PUNTO_RECOGIDA: '#FF3B30',
+  RECOGIDO: '#AF52DE',
+  EN_PUNTO_ENTREGA: '#AF52DE',
+  INCIDENCIA: '#FF3B30',
 };
 
 /* ═══════════════════════════════════════════════
@@ -87,7 +87,7 @@ function TiempoDisplay() {
   return (
     <div
       className="font-mono"
-      style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}
+      style={{ fontSize: 22, fontWeight: 700, color: 'var(--ios-text-primary)' }}
     >
       {texto}
     </div>
@@ -124,7 +124,7 @@ function KmCounter({ value }: { value: number }) {
               left: 0,
               fontSize: 28,
               fontWeight: 700,
-              color: 'var(--text)',
+              color: 'var(--ios-text-primary)',
               lineHeight: 1.2,
             }}
           >
@@ -132,7 +132,7 @@ function KmCounter({ value }: { value: number }) {
           </motion.div>
         </AnimatePresence>
       </div>
-      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)' }}>km</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ios-text-tertiary)' }}>km</span>
     </div>
   );
 }
@@ -291,6 +291,15 @@ export default function RepartidorServicio() {
     HAPTIC_PATTERNS.nuevaOrden();
   };
 
+  const handleEmpezarViaje = () => {
+    optimizarRutaAutomatica();
+    useRepartidorStore.setState({ estado: 'EN_CAMINO_RECOGER', enServicio: true });
+    HAPTIC_PATTERNS.success();
+    showSnackbar({
+      message: `🚀 ¡Viaje iniciado con ${ordenesActivas.length} orden(es) aceptada(s)!`,
+    });
+  };
+
   const handleLlegarRecogida = () => {
     llegarRecogida();
     HAPTIC_PATTERNS.medium();
@@ -315,6 +324,49 @@ export default function RepartidorServicio() {
     showSnackbar({ message: 'Entrega confirmada. Servicio completado.', action: 'Ver historial' });
   };
 
+  /* ─── External navigation (Google Maps / Waze) — NUNCA sale automáticamente ─── */
+  const openInGoogleMaps = (targetLat: number, targetLng: number) => {
+    if (!targetLat || !targetLng) {
+      showSnackbar({ message: 'Coordenadas no disponibles para abrir en Google Maps.' });
+      HAPTIC_PATTERNS.error();
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${targetLat},${targetLng}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+    HAPTIC_PATTERNS.light();
+  };
+
+  const openInWaze = (targetLat: number, targetLng: number) => {
+    if (!targetLat || !targetLng) {
+      showSnackbar({ message: 'Coordenadas no disponibles para abrir en Waze.' });
+      HAPTIC_PATTERNS.error();
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    window.open(
+      `https://www.waze.com/ul?ll=${targetLat},${targetLng}&navigate=yes`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+    HAPTIC_PATTERNS.light();
+  };
+
+  /* ─── Navigation target for current step ─── */
+  const navTarget = useMemo<{ lat: number; lng: number; label: string } | null>(() => {
+    if (!ordenActiva) return null;
+    if (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA') {
+      return { lat: ordenActiva.origenLat, lng: ordenActiva.origenLng, label: 'punto de recogida' };
+    }
+    if (estado === 'RECOGIDO' || estado === 'EN_PUNTO_ENTREGA') {
+      return { lat: ordenActiva.destinoLat, lng: ordenActiva.destinoLng, label: 'punto de entrega' };
+    }
+    return null;
+  }, [ordenActiva, estado]);
+
   /* ═══════════════════════════════════════════════
      RENDER — STATE MACHINE
      ═══════════════════════════════════════════════ */
@@ -322,39 +374,160 @@ export default function RepartidorServicio() {
   return (
     <div
       style={{
-        position: 'fixed',
-        top: 'max(24px, env(safe-area-inset-top, 24px))',
-        bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        position: 'relative',
         width: '100%',
-        maxWidth: 480,
-        zIndex: 1,
+        height: '100%',
         overflow: 'hidden',
+        backgroundColor: 'var(--ios-bg, #F2F2F7)',
+        fontFamily: 'var(--ios-font, sans-serif)',
       }}
     >
-      {/* MAP (background, always) — real Leaflet map, wrapped to prevent
-          horizontal scroll on mobile and to clip the rounded corners. */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          overflow: 'hidden',
-          background: 'var(--md-surface-variant)',
-        }}
-      >
+      {/* ═══════ MAP FULLSCREEN — `.lf-ios-map-fullscreen` ═══════ */}
+      <div className="lf-ios-map-fullscreen">
         <RepartidorMap
           repartidorPos={[lat, lng]}
           origenPos={origenPos}
           destinoPos={destinoPos}
           rutaCoordenadas={rutaCoordenadas.length > 1 ? rutaCoordenadas : undefined}
           estado={estado}
-          altura={300}
+          altura="100%"
           seguirRepartidor
         />
       </div>
 
-      {/* FAB: Chat (top-right) when active order */}
+      {/* ═══════ Status chip (top-left) — iOS pill ═══════ */}
+      {conectado && (
+        <div
+          className="lf-ios-pill active"
+          style={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            zIndex: 10,
+            padding: '6px 12px',
+            borderRadius: 100,
+            background: 'color-mix(in srgb, var(--ios-bg-elevated) 88%, transparent)',
+            backdropFilter: 'saturate(180%) blur(20px)',
+            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+            border: '0.5px solid var(--ios-separator)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            color: 'var(--ios-text-primary)',
+            fontFamily: 'var(--ios-font)',
+          }}
+        >
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: ESTADO_COLOR[estado],
+              boxShadow: `0 0 8px ${ESTADO_COLOR[estado]}`,
+            }}
+          />
+          {estado === 'EN_LINEA' && 'En línea'}
+          {estado === 'EN_CAMINO_RECOGER' && 'Camino a recoger'}
+          {estado === 'EN_PUNTO_RECOGIDA' && 'En recogida'}
+          {estado === 'RECOGIDO' && 'En camino a entrega'}
+          {estado === 'EN_PUNTO_ENTREGA' && 'En entrega'}
+        </div>
+      )}
+
+      {/* ═══════ Multipedidos & Optimización de Ruta — iOS glass bar ═══════ */}
+      {conectado && (ordenesActivas || []).length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 56,
+            left: 16,
+            right: 16,
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            padding: '8px 12px',
+            borderRadius: 'var(--ios-radius-md, 14px)',
+            background: 'color-mix(in srgb, var(--ios-bg-elevated) 92%, transparent)',
+            backdropFilter: 'saturate(180%) blur(20px)',
+            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+            border: '0.5px solid var(--ios-separator)',
+            boxShadow: 'var(--ios-shadow-sm)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto' }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--ios-blue)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                whiteSpace: 'nowrap',
+                fontFamily: 'var(--ios-font)',
+              }}
+            >
+              Pedidos ({ordenesActivas.length}/3):
+            </span>
+            {ordenesActivas.map((ord, idx) => {
+              const isSelected = ordenActiva?.id === ord.id;
+              return (
+                <button
+                  key={ord.id}
+                  onClick={() => seleccionarOrdenActiva(ord.id)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: isSelected ? 'var(--ios-blue)' : 'var(--ios-bg-secondary)',
+                    color: isSelected ? '#FFF' : 'var(--ios-text-primary)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    fontFamily: 'var(--ios-font)',
+                  }}
+                >
+                  #{idx + 1} {ord.id}
+                </button>
+              );
+            })}
+          </div>
+
+          {ordenesActivas.length > 1 && (
+            <button
+              onClick={() => {
+                optimizarRutaAutomatica();
+                showSnackbar({ message: '⚡ Ruta optimizada: ordenada por menor distancia.' });
+              }}
+              style={{
+                padding: '5px 10px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'var(--ios-orange, #FF9500)',
+                color: '#FFF',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                whiteSpace: 'nowrap',
+                fontFamily: 'var(--ios-font)',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <Zap size={12} />
+              Optimizar
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ═══════ FAB: Chat (top-right) when active order — iOS styled ═══════ */}
       {ordenActiva && (
         <motion.button
           initial={{ scale: 0, opacity: 0 }}
@@ -369,145 +542,27 @@ export default function RepartidorServicio() {
             zIndex: 10,
             width: 48,
             height: 48,
-            borderRadius: 16,
+            borderRadius: 14,
             border: 'none',
-            background: 'var(--md-surface)',
-            color: 'var(--primario)',
-            boxShadow: 'var(--md-elevation-3)',
+            background: 'var(--ios-bg-elevated, #FFFFFF)',
+            color: 'var(--ios-blue, #007AFF)',
+            boxShadow: 'var(--ios-shadow-md)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            WebkitTapHighlightColor: 'transparent',
           }}
         >
           <MessageSquare size={22} />
         </motion.button>
       )}
 
-      {/* Status chip (top-left) */}
-      {conectado && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 16,
-            left: 16,
-            zIndex: 10,
-            padding: '6px 12px',
-            borderRadius: 100,
-            background: 'var(--lf-glass-bg)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid var(--lf-glass-border)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: 12,
-            fontWeight: 600,
-            color: 'var(--text)',
-          }}
-        >
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: ESTADO_COLOR[estado],
-              boxShadow: `0 0 8px ${ESTADO_COLOR[estado]}`,
-            }}
-          />
-          {estado === 'EN_LINEA' && 'En línea'}
-          {estado === 'EN_CAMINO_RECOGER' && 'Camino a recoger'}
-          {estado === 'EN_PUNTO_RECOGIDA' && 'En punto de recogida'}
-          {estado === 'RECOGIDO' && 'En camino a entrega'}
-          {estado === 'EN_PUNTO_ENTREGA' && 'En punto de entrega'}
-        </div>
-      )}
-
-      {/* Multipedidos & Optimización de Ruta */}
-      {conectado && (ordenesActivas || []).length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 56,
-            left: 16,
-            right: 16,
-            zIndex: 10,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-            padding: '8px 12px',
-            borderRadius: 16,
-            background: 'var(--lf-glass-bg)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid var(--lf-glass-border)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primario)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
-              Pedidos ({ordenesActivas.length}/3):
-            </span>
-            {ordenesActivas.map((ord, idx) => {
-              const isSelected = ordenActiva?.id === ord.id;
-              return (
-                <button
-                  key={ord.id}
-                  onClick={() => seleccionarOrdenActiva(ord.id)}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: isSelected ? 'var(--primario)' : 'rgba(255,255,255,0.15)',
-                    color: isSelected ? '#FFF' : 'var(--text)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  #{idx + 1} {ord.id}
-                </button>
-              );
-            })}
-          </div>
-
-          {ordenesActivas.length > 1 && (
-            <button
-              onClick={() => {
-                optimizarRutaAutomatica();
-                showSnackbar({ message: 'Ruta optimizada: ordenada por menor distancia.' });
-              }}
-              style={{
-                padding: '5px 10px',
-                borderRadius: 8,
-                border: 'none',
-                background: 'linear-gradient(135deg, #FF5722 0%, #FF9800 100%)',
-                color: '#FFF',
-                fontSize: 11,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                boxShadow: '0 2px 6px rgba(255,87,34,0.3)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <Zap size={12} />
-              Optimizar
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* ─── DESCONECTADO ─── */}
+      {/* ═══════ DESCONECTADO ═══════ */}
       {estado === 'DESCONECTADO' && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
           style={{
             position: 'absolute',
@@ -516,26 +571,23 @@ export default function RepartidorServicio() {
             alignItems: 'center',
             justifyContent: 'center',
             padding: 24,
+            backgroundColor: 'color-mix(in srgb, var(--ios-bg) 70%, transparent)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            zIndex: 5,
           }}
         >
           <div
-            style={{
-              width: '100%',
-              maxWidth: 360,
-              padding: 28,
-              borderRadius: 24,
-              background: 'var(--md-surface)',
-              boxShadow: 'var(--md-elevation-3)',
-              textAlign: 'center',
-            }}
+            className="lf-ios-card"
+            style={{ maxWidth: 360, textAlign: 'center', padding: 28 }}
           >
             <div
               style={{
                 width: 72,
                 height: 72,
                 borderRadius: 20,
-                background: 'color-mix(in srgb, var(--primario) 12%, transparent)',
-                color: 'var(--primario)',
+                background: 'color-mix(in srgb, var(--ios-blue) 12%, transparent)',
+                color: 'var(--ios-blue)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -545,40 +597,29 @@ export default function RepartidorServicio() {
               <Power size={32} />
             </div>
             <h2
-              className="font-syne"
-              style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}
+              style={{
+                fontFamily: 'var(--ios-font)',
+                fontSize: 22,
+                fontWeight: 700,
+                color: 'var(--ios-text-primary)',
+                marginBottom: 8,
+                letterSpacing: '-0.01em',
+              }}
             >
               Estás desconectado
             </h2>
             <p
               style={{
                 fontSize: 14,
-                color: 'var(--text-secondary)',
+                color: 'var(--ios-text-secondary)',
                 marginBottom: 24,
                 lineHeight: 1.5,
+                fontFamily: 'var(--ios-font)',
               }}
             >
               Conéctate para empezar a recibir asignaciones de órdenes en tu zona.
             </p>
-            <button
-              onClick={handleConectar}
-              style={{
-                width: '100%',
-                minHeight: 52,
-                borderRadius: 16,
-                border: 'none',
-                background: 'var(--primario)',
-                color: '#fff',
-                fontSize: 15,
-                fontWeight: 700,
-                fontFamily: "'DM Sans', sans-serif",
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-            >
+            <button onClick={handleConectar} className="lf-ios-button">
               <Power size={20} />
               Conectarse
             </button>
@@ -586,86 +627,89 @@ export default function RepartidorServicio() {
         </motion.div>
       )}
 
-      {/* ─── EN_LINEA (waiting for assignment) ─── */}
+      {/* ═══════ EN_LINEA (waiting for assignment / accepted orders) ═══════ */}
       {estado === 'EN_LINEA' && (
         <>
-          {/* Glass card "Esperando asignación" */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            style={{
-              position: 'absolute',
-              top: '40%',
-              left: 16,
-              right: 16,
-              transform: 'translateY(-50%)',
-              padding: 20,
-              borderRadius: 20,
-              background: 'rgba(255, 255, 255, 0.88)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(255, 255, 255, 0.6)',
-              boxShadow: '0 12px 36px rgba(0,0,0,0.1)',
-              textAlign: 'center',
-            }}
-          >
+          {/* Glass card "Esperando asignación" — only when no accepted orders */}
+          {ordenesActivas.length === 0 && (
             <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
               style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                background: 'color-mix(in srgb, var(--info, #2979FF) 14%, transparent)',
-                color: 'var(--info, #2979FF)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 12px',
+                position: 'absolute',
+                top: '38%',
+                left: 16,
+                right: 16,
+                transform: 'translateY(-50%)',
+                padding: 20,
+                borderRadius: 'var(--ios-radius-md, 14px)',
+                background: 'color-mix(in srgb, var(--ios-bg-elevated) 92%, transparent)',
+                backdropFilter: 'saturate(180%) blur(24px)',
+                WebkitBackdropFilter: 'saturate(180%) blur(24px)',
+                border: '0.5px solid var(--ios-separator)',
+                boxShadow: 'var(--ios-shadow-md)',
+                textAlign: 'center',
+                zIndex: 5,
               }}
             >
-              <Zap size={28} />
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: 'color-mix(in srgb, var(--ios-blue) 14%, transparent)',
+                  color: 'var(--ios-blue)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px',
+                }}
+              >
+                <Zap size={28} />
+              </motion.div>
+              <h3
+                style={{
+                  fontFamily: 'var(--ios-font)',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: 'var(--ios-text-primary)',
+                  marginBottom: 4,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Esperando asignación
+              </h3>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: 'var(--ios-text-secondary)',
+                  fontFamily: 'var(--ios-font)',
+                }}
+              >
+                Te notificaremos cuando llegue una nueva orden.
+              </p>
             </motion.div>
-            <h3
-              className="font-syne"
-              style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}
-            >
-              Esperando asignación
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-              Te notificaremos cuando llegue una nueva orden.
-            </p>
-          </motion.div>
+          )}
 
-          {/* Bottom sheet: today's services + simulate button */}
-          <motion.div
-            initial={{ y: 200 }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="lf-bottom-sheet open bottom-sheet open"
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              padding: 16,
-              paddingBottom: 20,
-              borderRadius: '28px 28px 0 0',
-              background: 'var(--md-surface)',
-              boxShadow: '0 -12px 48px rgba(0,0,0,0.15)',
-            }}
-          >
-            <div
-              className="lf-sheet-handle bottom-sheet-handle"
-              style={{
-                width: 40,
-                height: 4,
-                borderRadius: 2,
-                background: 'var(--md-outline-variant)',
-                margin: '0 auto 12px',
-              }}
-            />
+          {/* ═══════ BOTÓN "EMPEZAR VIAJE" GRANDE, FIJO Y VISIBLE ═══════ */}
+          {/* Aparece cuando hay 1, 2 o 3 servicios aceptados. */}
+          {ordenesActivas.length > 0 && (
+            <button
+              onClick={handleEmpezarViaje}
+              className="lf-ios-start-trip"
+              aria-label={`Empezar viaje con ${ordenesActivas.length} orden(es)`}
+            >
+              <Navigation size={22} />
+              🚀 EMPEZAR VIAJE ({ordenesActivas.length})
+            </button>
+          )}
+
+          {/* ═══════ OFFERS SHEET Uber-style — `.lf-ios-offers-sheet` ═══════ */}
+          <div className="lf-ios-offers-sheet">
+            {/* Header: Servicios de hoy / Órdenes aceptadas */}
             <div
               style={{
                 display: 'flex',
@@ -676,89 +720,270 @@ export default function RepartidorServicio() {
             >
               <div>
                 <div
-                  className="font-syne"
-                  style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}
+                  style={{
+                    fontFamily: 'var(--ios-font)',
+                    fontSize: 17,
+                    fontWeight: 600,
+                    color: 'var(--ios-text-primary)',
+                    letterSpacing: '-0.01em',
+                  }}
                 >
-                  Servicios de hoy
+                  {ordenesActivas.length > 0
+                    ? `Órdenes aceptadas (${ordenesActivas.length}/3)`
+                    : 'Servicios de hoy'}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  {statsHoy.entregas} entregas completadas
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--ios-text-tertiary)',
+                    fontFamily: 'var(--ios-font)',
+                  }}
+                >
+                  {statsHoy.entregas} entrega{statsHoy.entregas === 1 ? '' : 's'} completada{statsHoy.entregas === 1 ? '' : 's'}
                 </div>
               </div>
               <div
                 className="font-mono"
                 style={{
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: 700,
-                  color: 'var(--primario)',
+                  color: 'var(--ios-blue)',
                 }}
               >
                 {statsHoy.entregas}
               </div>
             </div>
 
-            {ordenesActivas && ordenesActivas.length > 0 && (
-              <button
-                onClick={() => {
-                  optimizarRutaAutomatica();
-                  useRepartidorStore.setState({ estado: 'EN_CAMINO_RECOGER', enServicio: true });
-                  showSnackbar({ message: `¡Viaje iniciado con ${ordenesActivas.length} orden(es)!` });
-                }}
+            {/* ═══════ Offer cards (`.lf-ios-offer-card`) ═══════ */}
+            {ordenesActivas.map((ord, idx) => {
+              const isSelected = ordenActiva?.id === ord.id;
+              return (
+                <div
+                  key={ord.id}
+                  className="lf-ios-offer-card"
+                  style={
+                    isSelected
+                      ? {
+                          borderColor: 'var(--ios-blue)',
+                          boxShadow: '0 0 0 1.5px var(--ios-blue)',
+                        }
+                      : undefined
+                  }
+                >
+                  {/* Header: #id + tipo badge */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span
+                      className="font-mono"
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: 'var(--ios-text-primary)',
+                      }}
+                    >
+                      #{idx + 1} {ord.id}
+                    </span>
+                    {ord.tipo && (
+                      <span
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: 8,
+                          background: 'var(--ios-bg-tertiary)',
+                          color: 'var(--ios-text-secondary)',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          textTransform: 'capitalize',
+                          fontFamily: 'var(--ios-font)',
+                        }}
+                      >
+                        {ord.tipo}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 📍 Recogida */}
+                  <div className="lf-ios-offer-row">
+                    <MapPin size={18} style={{ color: 'var(--ios-green)' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--ios-text-tertiary)',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          fontFamily: 'var(--ios-font)',
+                        }}
+                      >
+                        📍 Recogida
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: 'var(--ios-text-primary)',
+                          fontWeight: 500,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {ord.origen}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 🎯 Destino */}
+                  <div className="lf-ios-offer-row">
+                    <Target size={18} style={{ color: 'var(--ios-blue)' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--ios-text-tertiary)',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          fontFamily: 'var(--ios-font)',
+                        }}
+                      >
+                        🎯 Destino
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: 'var(--ios-text-primary)',
+                          fontWeight: 600,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {ord.destino}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 💰 Ganancia + 📏 Distancia */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0 4px',
+                      borderTop: '0.5px solid var(--ios-separator)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 14 }}>📏</span>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: 'var(--ios-text-secondary)',
+                          fontFamily: 'var(--ios-font)',
+                        }}
+                      >
+                        {ord.kmEstimados.toFixed(1)} km
+                      </span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--ios-text-tertiary)',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          fontFamily: 'var(--ios-font)',
+                        }}
+                      >
+                        💰 Ganancia
+                      </div>
+                      <div
+                        className="font-mono"
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 700,
+                          color: 'var(--ios-green)',
+                          letterSpacing: '-0.01em',
+                          lineHeight: 1.1,
+                        }}
+                      >
+                        C${ord.ganancia.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ═══════ Offer actions — `.lf-ios-offer-actions` ═══════ */}
+                  <div className="lf-ios-offer-actions">
+                    <button
+                      className="accept"
+                      onClick={() => {
+                        seleccionarOrdenActiva(ord.id);
+                        HAPTIC_PATTERNS.light();
+                        showSnackbar({ message: `Orden ${ord.id} seleccionada como activa.` });
+                      }}
+                    >
+                      ✅ {isSelected ? 'Seleccionada' : 'Seleccionar'}
+                    </button>
+                    <button
+                      className="reject"
+                      onClick={() => {
+                        HAPTIC_PATTERNS.light();
+                        showSnackbar({
+                          message: 'Una orden ya aceptada no se puede rechazar. Inicia el viaje para continuar.'
+                        });
+                      }}
+                    >
+                      ❌ Quitar
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Empty state hint */}
+            {ordenesActivas.length === 0 && (
+              <div
                 style={{
-                  width: '100%',
-                  minHeight: 52,
-                  borderRadius: 14,
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
-                  color: '#FFFFFF',
-                  fontSize: 15,
-                  fontWeight: 700,
-                  fontFamily: "'DM Sans', sans-serif",
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  marginBottom: 10,
-                  boxShadow: '0 4px 14px rgba(22,163,74,0.35)',
+                  padding: '20px 12px',
+                  textAlign: 'center',
+                  color: 'var(--ios-text-tertiary)',
+                  fontSize: 13,
+                  fontFamily: 'var(--ios-font)',
                 }}
               >
-                <Navigation size={20} />
-                EMPEZAR VIAJE / CARRERA ({ordenesActivas.length} ACEPTADO{ordenesActivas.length > 1 ? 'S' : ''})
-              </button>
+                Aún no hay órdenes aceptadas. Toca <strong style={{ color: 'var(--ios-text-secondary)' }}>“Buscar órdenes cercanas”</strong> para recibir asignaciones.
+              </div>
             )}
 
+            {/* "Buscar Órdenes Cercanas" button — secondary iOS button */}
             <button
               onClick={handleSimularOrden}
-              style={{
-                width: '100%',
-                minHeight: 48,
-                borderRadius: 14,
-                border: 'none',
-                background: 'var(--primario)',
-                color: '#FFFFFF',
-                fontSize: 14,
-                fontWeight: 700,
-                fontFamily: "'DM Sans', sans-serif",
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: '0 4px 14px rgba(255,87,34,0.3)',
-              }}
+              className="lf-ios-button secondary"
+              style={{ marginTop: 8 }}
             >
-              <PackagePlus size={18} />
+              <PackagePlus size={20} />
               Buscar Órdenes Cercanas
             </button>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 8 }}>
+
+            <p
+              style={{
+                fontSize: 11,
+                color: 'var(--ios-text-tertiary)',
+                textAlign: 'center',
+                marginTop: 8,
+                fontFamily: 'var(--ios-font)',
+              }}
+            >
               Monitoreo activo de pedidos en tiempo real.
             </p>
-          </motion.div>
+          </div>
         </>
       )}
 
-      {/* ─── EN_CAMINO_RECOGER ─── */}
+      {/* ═══════ EN_CAMINO_RECOGER ═══════ */}
       {estado === 'EN_CAMINO_RECOGER' && ordenActiva && (
         <BottomSheet>
           <SheetHeader
@@ -775,13 +1000,23 @@ export default function RepartidorServicio() {
               value={`${ordenActiva.kmEstimados.toFixed(1)} km`}
             />
           </div>
-          <PrimaryButton onClick={handleLlegarRecogida} icon={<CheckCircle2 size={18} />}>
-            Llegué al punto de recogida
-          </PrimaryButton>
+          <NavButtons
+            target={navTarget}
+            onGoogleMaps={openInGoogleMaps}
+            onWaze={openInWaze}
+          />
+          <button
+            onClick={handleLlegarRecogida}
+            className="lf-ios-button success"
+            style={{ marginTop: 8 }}
+          >
+            <CheckCircle2 size={18} />
+            Llegué a recogida
+          </button>
         </BottomSheet>
       )}
 
-      {/* ─── EN_PUNTO_RECOGIDA ─── */}
+      {/* ═══════ EN_PUNTO_RECOGIDA ═══════ */}
       {estado === 'EN_PUNTO_RECOGIDA' && ordenActiva && (
         <BottomSheet>
           <SheetHeader
@@ -793,28 +1028,36 @@ export default function RepartidorServicio() {
           <div
             style={{
               padding: 12,
-              borderRadius: 12,
-              background: 'color-mix(in srgb, var(--warning, #FFB300) 10%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--warning, #FFB300) 30%, transparent)',
+              borderRadius: 'var(--ios-radius-sm, 10px)',
+              background: 'rgba(255, 149, 0, 0.10)',
+              border: '0.5px solid rgba(255, 149, 0, 0.3)',
               marginBottom: 12,
-              fontSize: 12,
-              color: 'var(--text-secondary)',
+              fontSize: 13,
+              color: 'var(--ios-text-secondary)',
+              fontFamily: 'var(--ios-font)',
             }}
           >
             Verifica el paquete y confirma la recogida con el cliente.
           </div>
-          <PrimaryButton
+          <NavButtons
+            target={navTarget}
+            onGoogleMaps={openInGoogleMaps}
+            onWaze={openInWaze}
+          />
+          <button
             onClick={handleRecoger}
-            icon={ordenActiva.tipo === 'compra' ? <Store size={18} /> : <Package size={18} />}
+            className="lf-ios-button"
+            style={{ marginTop: 8 }}
           >
+            {ordenActiva.tipo === 'compra' ? <Store size={18} /> : <Package size={18} />}
             {ordenActiva.tipo === 'compra'
               ? `Recoger pedido de ${ordenActiva.tiendaNombre || 'la tienda'}`
-              : 'Recoger paquete'}
-          </PrimaryButton>
+              : 'Recogí paquete'}
+          </button>
         </BottomSheet>
       )}
 
-      {/* ─── RECOGIDO (en camino a entrega) ─── */}
+      {/* ═══════ RECOGIDO (en camino a entrega) ═══════ */}
       {estado === 'RECOGIDO' && ordenActiva && (
         <BottomSheet>
           <SheetHeader
@@ -829,18 +1072,32 @@ export default function RepartidorServicio() {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '12px 0',
-              borderBottom: '1px solid var(--md-outline-variant)',
+              borderBottom: '0.5px solid var(--ios-separator)',
               marginBottom: 12,
             }}
           >
             <div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--ios-text-tertiary)',
+                  marginBottom: 2,
+                  fontFamily: 'var(--ios-font)',
+                }}
+              >
                 Recorrido
               </div>
               <KmCounter value={kmRecorridos} />
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--ios-text-tertiary)',
+                  marginBottom: 2,
+                  fontFamily: 'var(--ios-font)',
+                }}
+              >
                 Tiempo
               </div>
               <TiempoDisplay key={ordenActiva?.id || 'none'} />
@@ -852,7 +1109,7 @@ export default function RepartidorServicio() {
             style={{
               height: 6,
               borderRadius: 3,
-              background: 'var(--md-outline-variant)',
+              background: 'var(--ios-bg-secondary)',
               overflow: 'hidden',
               marginBottom: 4,
             }}
@@ -863,7 +1120,7 @@ export default function RepartidorServicio() {
                 width: `${Math.min(100, (kmRecorridos / Math.max(0.1, ordenActiva.kmEstimados)) * 100)}%`,
               }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              style={{ height: '100%', background: 'var(--primario)' }}
+              style={{ height: '100%', background: 'var(--ios-blue)' }}
             />
           </div>
           <div
@@ -871,8 +1128,9 @@ export default function RepartidorServicio() {
               display: 'flex',
               justifyContent: 'space-between',
               fontSize: 11,
-              color: 'var(--text-muted)',
+              color: 'var(--ios-text-tertiary)',
               marginBottom: 12,
+              fontFamily: 'var(--ios-font)',
             }}
           >
             <span>{kmRecorridos.toFixed(2)} km</span>
@@ -885,29 +1143,45 @@ export default function RepartidorServicio() {
               alignItems: 'center',
               gap: 8,
               padding: '8px 12px',
-              borderRadius: 12,
-              background: 'color-mix(in srgb, var(--info, #2979FF) 10%, transparent)',
+              borderRadius: 'var(--ios-radius-sm, 10px)',
+              background: 'rgba(0, 122, 255, 0.10)',
               marginBottom: 12,
             }}
           >
-            <Clock size={16} color="var(--info, #2979FF)" />
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+            <Clock size={16} color="var(--ios-blue)" />
+            <span
+              style={{
+                fontSize: 13,
+                color: 'var(--ios-text-secondary)',
+                fontFamily: 'var(--ios-font)',
+              }}
+            >
               Llegada estimada en
             </span>
             <span
               className="font-mono"
-              style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
+              style={{ fontSize: 14, fontWeight: 700, color: 'var(--ios-text-primary)' }}
             >
               {eta} min
             </span>
           </div>
-          <PrimaryButton onClick={handleLlegarEntrega} icon={<CheckCircle2 size={18} />}>
-            Llegué al punto de entrega
-          </PrimaryButton>
+          <NavButtons
+            target={navTarget}
+            onGoogleMaps={openInGoogleMaps}
+            onWaze={openInWaze}
+          />
+          <button
+            onClick={handleLlegarEntrega}
+            className="lf-ios-button"
+            style={{ marginTop: 8 }}
+          >
+            <CheckCircle2 size={18} />
+            Llegué a entrega
+          </button>
         </BottomSheet>
       )}
 
-      {/* ─── EN_PUNTO_ENTREGA ─── */}
+      {/* ═══════ EN_PUNTO_ENTREGA ═══════ */}
       {estado === 'EN_PUNTO_ENTREGA' && ordenActiva && (
         <BottomSheet>
           <SheetHeader
@@ -919,46 +1193,47 @@ export default function RepartidorServicio() {
           <div
             style={{
               padding: 12,
-              borderRadius: 12,
-              background: 'color-mix(in srgb, var(--exito, #00C853) 10%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--exito, #00C853) 30%, transparent)',
+              borderRadius: 'var(--ios-radius-sm, 10px)',
+              background: 'rgba(52, 199, 89, 0.10)',
+              border: '0.5px solid rgba(52, 199, 89, 0.3)',
               marginBottom: 12,
-              fontSize: 12,
-              color: 'var(--text-secondary)',
+              fontSize: 13,
+              color: 'var(--ios-text-secondary)',
+              fontFamily: 'var(--ios-font)',
             }}
           >
-            Entrega el paquete a <strong style={{ color: 'var(--text)' }}>{ordenActiva.cliente}</strong> y confirma la entrega.
+            Entrega el paquete a <strong style={{ color: 'var(--ios-text-primary)' }}>{ordenActiva.cliente}</strong> y confirma la entrega.
           </div>
-          <PrimaryButton onClick={handleConfirmarEntrega} icon={<CheckCircle2 size={18} />}>
-            Confirmar entrega
-          </PrimaryButton>
+          <NavButtons
+            target={navTarget}
+            onGoogleMaps={openInGoogleMaps}
+            onWaze={openInWaze}
+          />
+          <button
+            onClick={handleConfirmarEntrega}
+            className="lf-ios-button success"
+            style={{ marginTop: 8 }}
+          >
+            <CheckCircle2 size={18} />
+            Entregué
+          </button>
           <button
             onClick={() => toggleIncidencia(true)}
+            className="lf-ios-button danger"
             style={{
-              width: '100%',
-              minHeight: 44,
               marginTop: 8,
-              borderRadius: 14,
-              border: '1px solid color-mix(in srgb, var(--peligro, #FF1744) 30%, transparent)',
               background: 'transparent',
-              color: 'var(--peligro, #FF1744)',
-              fontSize: 14,
-              fontWeight: 600,
-              fontFamily: "'DM Sans', sans-serif",
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
+              color: 'var(--ios-red)',
+              border: '1px solid var(--ios-red)',
             }}
           >
-            <AlertTriangle size={16} />
+            <AlertTriangle size={18} />
             Reportar incidencia
           </button>
         </BottomSheet>
       )}
 
-      {/* ─── ORDEN_ASIGNADA / INCIDENCIA: handled by overlays ─── */}
+      {/* ═══════ ORDEN_ASIGNADA / INCIDENCIA: handled by overlays ═══════ */}
       {(estado === 'ORDEN_ASIGNADA' || estado === 'INCIDENCIA') && (
         <div
           className="modal-overlay visible lf-modal-overlay visible"
@@ -974,13 +1249,90 @@ export default function RepartidorServicio() {
           }}
         >
           <div style={{ textAlign: 'center', color: '#fff' }}>
-            <TrendingUp size={28} color="var(--primario)" style={{ margin: '0 auto 8px' }} />
-            <div className="font-syne" style={{ fontSize: 14, fontWeight: 700 }}>
+            <TrendingUp size={28} color="var(--ios-blue)" style={{ margin: '0 auto 8px' }} />
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                fontFamily: 'var(--ios-font)',
+              }}
+            >
               {estado === 'ORDEN_ASIGNADA' ? 'Revisando orden…' : 'Procesando incidencia…'}
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   NAV BUTTONS — Google Maps / Waze (secondary)
+   NUNCA se sale automáticamente — usa window.open()
+   ═══════════════════════════════════════════════ */
+
+function NavButtons({
+  target,
+  onGoogleMaps,
+  onWaze,
+}: {
+  target: { lat: number; lng: number; label: string } | null;
+  onGoogleMaps: (lat: number, lng: number) => void;
+  onWaze: (lat: number, lng: number) => void;
+}) {
+  if (!target) return null;
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+      <button
+        onClick={() => onGoogleMaps(target.lat, target.lng)}
+        aria-label={`Abrir ${target.label} en Google Maps`}
+        style={{
+          flex: 1,
+          minHeight: 44,
+          padding: '8px 12px',
+          borderRadius: 'var(--ios-radius-sm, 10px)',
+          border: '0.5px solid var(--ios-separator)',
+          background: 'var(--ios-bg-secondary)',
+          color: 'var(--ios-text-primary)',
+          fontFamily: 'var(--ios-font)',
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          WebkitTapHighlightColor: 'transparent',
+          transition: 'transform 0.15s ease',
+        }}
+      >
+        🗺️ Google Maps
+      </button>
+      <button
+        onClick={() => onWaze(target.lat, target.lng)}
+        aria-label={`Abrir ${target.label} en Waze`}
+        style={{
+          flex: 1,
+          minHeight: 44,
+          padding: '8px 12px',
+          borderRadius: 'var(--ios-radius-sm, 10px)',
+          border: '0.5px solid var(--ios-separator)',
+          background: 'var(--ios-bg-secondary)',
+          color: 'var(--ios-text-primary)',
+          fontFamily: 'var(--ios-font)',
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          WebkitTapHighlightColor: 'transparent',
+          transition: 'transform 0.15s ease',
+        }}
+      >
+        🧭 Waze
+      </button>
     </div>
   );
 }
@@ -1004,7 +1356,11 @@ function BottomSheet({ children }: { children: React.ReactNode }) {
   return (
     <div
       ref={sheetRef}
-      className={`repartidor-sheet ${isDragging ? 'dragging' : ''}`}
+      className={`repartidor-sheet lf-ios-rep-sheet ${isDragging ? 'dragging' : ''}`}
+      style={{
+        /* Sit above the iOS tab bar (avoids overlap) */
+        bottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe))',
+      }}
       {...handlers}
     >
       <div className="sheet-handle-area">
@@ -1018,7 +1374,13 @@ function BottomSheet({ children }: { children: React.ReactNode }) {
           ))}
         </div>
       </div>
-      <div className="sheet-scroll-content">
+      <div
+        className="sheet-scroll-content"
+        style={{
+          /* Override default bottom padding — sheet is already above tab bar */
+          paddingBottom: 20,
+        }}
+      >
         {children}
       </div>
     </div>
@@ -1058,7 +1420,16 @@ function SheetHeader({
       >
         {icon}
       </div>
-      <h3 className="font-syne" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+      <h3
+        style={{
+          fontFamily: 'var(--ios-font)',
+          fontSize: 17,
+          fontWeight: 600,
+          color: 'var(--ios-text-primary)',
+          letterSpacing: '-0.01em',
+          margin: 0,
+        }}
+      >
         {label}
       </h3>
     </div>
@@ -1084,9 +1455,9 @@ function OrdenMiniCard({
     <div
       style={{
         padding: 14,
-        borderRadius: 18,
-        background: 'var(--md-surface-variant)',
-        border: '1px solid var(--md-outline-variant)',
+        borderRadius: 'var(--ios-radius-md, 14px)',
+        background: 'var(--ios-bg-secondary)',
+        border: '0.5px solid var(--ios-separator)',
         marginBottom: 12,
       }}
     >
@@ -1101,11 +1472,18 @@ function OrdenMiniCard({
         <div>
           <span
             className="font-mono"
-            style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
+            style={{ fontSize: 14, fontWeight: 700, color: 'var(--ios-text-primary)' }}
           >
             {orden.id}
           </span>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
+          <span
+            style={{
+              fontSize: 12,
+              color: 'var(--ios-text-tertiary)',
+              marginLeft: 8,
+              fontFamily: 'var(--ios-font)',
+            }}
+          >
             {orden.cliente}
           </span>
         </div>
@@ -1113,11 +1491,16 @@ function OrdenMiniCard({
           style={{
             padding: '4px 10px',
             borderRadius: 100,
-            background: orden.tipo === 'compra' ? 'var(--md-primary-container)' : 'var(--md-secondary-container)',
-            color: orden.tipo === 'compra' ? 'var(--md-on-primary-container)' : 'var(--md-on-secondary-container)',
+            background:
+              orden.tipo === 'compra'
+                ? 'rgba(0, 122, 255, 0.12)'
+                : 'rgba(175, 82, 222, 0.12)',
+            color:
+              orden.tipo === 'compra' ? 'var(--ios-blue)' : 'var(--ios-purple, #AF52DE)',
             fontSize: 11,
             fontWeight: 700,
             textTransform: 'capitalize',
+            fontFamily: 'var(--ios-font)',
           }}
         >
           {orden.tipo}
@@ -1126,10 +1509,28 @@ function OrdenMiniCard({
 
       {(showRecogida || (!showRecogida && !showEntrega)) && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--exito, #00C853)', marginTop: 4, flexShrink: 0 }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--ios-green)', marginTop: 4, flexShrink: 0 }} />
           <div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Recoger en</div>
-            <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, lineHeight: 1.3 }}>
+            <div
+              style={{
+                fontSize: 10,
+                color: 'var(--ios-text-tertiary)',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                fontFamily: 'var(--ios-font)',
+              }}
+            >
+              Recoger en
+            </div>
+            <div
+              style={{
+                fontSize: 13,
+                color: 'var(--ios-text-primary)',
+                fontWeight: 500,
+                lineHeight: 1.3,
+                fontFamily: 'var(--ios-font)',
+              }}
+            >
               {orden.origen}
             </div>
           </div>
@@ -1137,26 +1538,51 @@ function OrdenMiniCard({
       )}
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
-        <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primario)', marginTop: 4, flexShrink: 0 }} />
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--ios-blue)', marginTop: 4, flexShrink: 0 }} />
         <div>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Entregar a</div>
-          <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.3 }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: 'var(--ios-text-tertiary)',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              fontFamily: 'var(--ios-font)',
+            }}
+          >
+            Entregar a
+          </div>
+          <div
+            style={{
+              fontSize: 13,
+              color: 'var(--ios-text-primary)',
+              fontWeight: 600,
+              lineHeight: 1.3,
+              fontFamily: 'var(--ios-font)',
+            }}
+          >
             {orden.destino}
           </div>
         </div>
       </div>
 
       {/* ─── 1-Tap Quick Action Buttons for Motorcycle Drivers ─── */}
-      <div style={{ display: 'flex', gap: 8, paddingTop: 10, borderTop: '1px solid var(--md-outline-variant)' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          paddingTop: 10,
+          borderTop: '0.5px solid var(--ios-separator)',
+        }}
+      >
         {orden.clienteTelefono && (
           <a
             href={`tel:${orden.clienteTelefono}`}
             style={{
               flex: 1,
               padding: '8px 10px',
-              borderRadius: 12,
-              background: 'rgba(22, 163, 74, 0.12)',
-              color: '#16A34A',
+              borderRadius: 'var(--ios-radius-sm, 10px)',
+              background: 'rgba(52, 199, 89, 0.12)',
+              color: 'var(--ios-green)',
               fontWeight: 700,
               fontSize: 12,
               textDecoration: 'none',
@@ -1164,9 +1590,10 @@ function OrdenMiniCard({
               alignItems: 'center',
               justifyContent: 'center',
               gap: 6,
+              fontFamily: 'var(--ios-font)',
             }}
           >
-            <Phone size={14} /> Llamar
+            📞 Llamar
           </a>
         )}
 
@@ -1176,10 +1603,10 @@ function OrdenMiniCard({
             style={{
               flex: 1,
               padding: '8px 10px',
-              borderRadius: 12,
+              borderRadius: 'var(--ios-radius-sm, 10px)',
               border: 'none',
-              background: 'rgba(41, 121, 255, 0.12)',
-              color: '#2979FF',
+              background: 'rgba(0, 122, 255, 0.12)',
+              color: 'var(--ios-blue)',
               fontWeight: 700,
               fontSize: 12,
               cursor: 'pointer',
@@ -1187,9 +1614,11 @@ function OrdenMiniCard({
               alignItems: 'center',
               justifyContent: 'center',
               gap: 6,
+              fontFamily: 'var(--ios-font)',
+              WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <MessageSquare size={14} /> Chat
+            💬 Chat
           </button>
         )}
 
@@ -1200,8 +1629,8 @@ function OrdenMiniCard({
           style={{
             flex: 1.2,
             padding: '8px 10px',
-            borderRadius: 12,
-            background: 'var(--primario)',
+            borderRadius: 'var(--ios-radius-sm, 10px)',
+            background: 'var(--ios-blue)',
             color: '#FFFFFF',
             fontWeight: 700,
             fontSize: 12,
@@ -1210,10 +1639,10 @@ function OrdenMiniCard({
             alignItems: 'center',
             justifyContent: 'center',
             gap: 6,
-            boxShadow: '0 2px 8px rgba(255,87,34,0.3)',
+            fontFamily: 'var(--ios-font)',
           }}
         >
-          <Navigation size={14} /> GPS Navegar
+          🗺️ GPS Navegar
         </a>
       </div>
     </div>
@@ -1226,24 +1655,38 @@ function StatPill({ icon, label, value }: { icon: React.ReactNode; label: string
       style={{
         flex: 1,
         padding: '8px 10px',
-        borderRadius: 12,
-        background: 'var(--md-surface-variant)',
+        borderRadius: 'var(--ios-radius-sm, 10px)',
+        background: 'var(--ios-bg-secondary)',
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 11 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          color: 'var(--ios-text-tertiary)',
+          fontSize: 11,
+          fontFamily: 'var(--ios-font)',
+        }}
+      >
         {icon}
         {label}
       </div>
-      <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+      <div
+        className="font-mono"
+        style={{ fontSize: 14, fontWeight: 700, color: 'var(--ios-text-primary)' }}
+      >
         {value}
       </div>
     </div>
   );
 }
 
+/* PrimaryButton — kept for backward-compat (no longer used by main render,
+   but exported for any external consumer). */
 function PrimaryButton({
   children,
   onClick,
@@ -1257,23 +1700,7 @@ function PrimaryButton({
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      style={{
-        width: '100%',
-        minHeight: 52,
-        borderRadius: 16,
-        border: 'none',
-        background: 'var(--primario)',
-        color: '#fff',
-        fontSize: 15,
-        fontWeight: 700,
-        fontFamily: "'DM Sans', sans-serif",
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        boxShadow: 'var(--lf-shadow-fab)',
-      }}
+      className="lf-ios-button"
     >
       {icon}
       {children}

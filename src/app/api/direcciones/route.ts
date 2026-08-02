@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
+
+const postSchema = z.object({
+  etiqueta: z.string().min(1).max(50).optional(),
+  direccion: z.string().min(1, 'direccion requerida').max(500),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  referencia: z.string().max(300).nullable().optional(),
+  predeterminada: z.boolean().optional(),
+});
+
+const patchSchema = z.object({
+  id: z.string().min(1, 'id requerido'),
+  etiqueta: z.string().min(1).max(50).optional(),
+  direccion: z.string().min(1).max(500).optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  referencia: z.string().max(300).nullable().optional(),
+  predeterminada: z.boolean().optional(),
+});
 
 /**
  * GET /api/direcciones
@@ -35,6 +55,13 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
     const body = await req.json();
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const etiqueta = String(body.etiqueta || 'Casa');
     const direccion = String(body.direccion || '');
     const lat = Number(body.lat) || 0;
@@ -82,6 +109,13 @@ export async function PATCH(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
     const body = await req.json();
+    const parsed = patchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const id = String(body.id);
     if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
 

@@ -124,7 +124,6 @@ export async function POST(req: NextRequest) {
 
     const tienda = await db.tienda.create({
       data: {
-        propietarioId: user.id,
         nombre,
         descripcion: descripcion ?? null,
         categoria,

@@ -11,30 +11,30 @@ export async function PATCH(
     await requireRole('ingeniero', 'admin');
     const { id } = await params;
 
-    const existing = await prisma.mantenimiento.findUnique({ where: { id } });
-    if (!existing) {
+    // P0-21: Validar estado previo (state machine)
+    const mantenimiento = await prisma.mantenimiento.findUnique({ where: { id } });
+    if (!mantenimiento) {
       return NextResponse.json({ error: 'Mantenimiento no encontrado' }, { status: 404 });
     }
-
-    if (existing.estado !== 'PROGRAMADO' && existing.estado !== 'PENDIENTE' && existing.estado !== 'pendiente') {
+    if (mantenimiento.estado !== 'PENDIENTE') {
       return NextResponse.json(
-        { error: `No se puede iniciar un mantenimiento en estado: ${existing.estado}` },
+        { error: `Solo se pueden iniciar mantenimientos pendientes. Estado actual: ${mantenimiento.estado}` },
         { status: 400 }
       );
     }
 
-    const mantenimiento = await prisma.mantenimiento.update({
+    const updated = await prisma.mantenimiento.update({
       where: { id },
-      data: { estado: 'EN_PROCESO', iniciadoEn: new Date() },
+      data: { estado: 'EN_PROCESO', iniciadoEn: new Date() }
     });
 
     // Poner moto en mantenimiento
     await prisma.moto.update({
       where: { id: mantenimiento.motoId },
-      data: { estado: 'EN_MANTENIMIENTO' },
-    });
+      data: { estado: 'EN_MANTENIMIENTO' }
+    }).catch(() => null);
 
-    return NextResponse.json(mantenimiento);
+    return NextResponse.json(updated);
   } catch (error) {
     return handleError(error, 'INGENIERO_MANTENIMIENTO_INICIAR');
   }

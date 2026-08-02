@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
+
+const postSchema = z.object({
+  emisorId: z.string().min(1, 'emisorId requerido'),
+  receptorId: z.string().min(1, 'receptorId requerido'),
+  contenido: z.string().min(1, 'contenido requerido').max(5000),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,6 +75,13 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireRole('admin');
     const body = await request.json();
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const { emisorId, receptorId, contenido } = body;
 
     if (!emisorId || !receptorId || !contenido) {

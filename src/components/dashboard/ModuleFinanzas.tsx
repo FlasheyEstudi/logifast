@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import {
   DollarSign, TrendingUp, TrendingDown, BarChart3, Wallet,
-  ArrowUpRight, ArrowDownRight, Check, Percent, Globe,
+  ArrowUpRight, ArrowDownRight, Check, Percent,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { Client } from '@/lib/store';
@@ -157,6 +157,34 @@ export default function ModuleFinanzas() {
   const [activeTab, setActiveTab] = useState<'overview' | 'valuation'>('overview');
   const [developmentMonths, setDevelopmentMonths] = useState(6);
   const [profitMargin, setProfitMargin] = useState(50);
+
+  /* ─── Real financial stats from /api/admin/finanzas ─── */
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/finanzas')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setStats(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Total monthly operating cost (USD). The /api/admin/finanzas endpoint
+  // does not expose a direct USD costos operativos mensuales field yet, so
+  // we display '-' per rule 3 until the API provides one.
+  // TODO: conectar a /api/admin/finanzas cuando exponga costos operativos USD
+  const costoOperativoMensualUsd: number | null =
+    stats?.resumen?.totalCostosOperativosMensuales ?? null;
+
+  // Total operational expenses (C$) derived from API revenue minus ganancia.
+  const totalGastosReal: number | null = (() => {
+    const resumen = stats?.resumen;
+    if (!resumen || typeof resumen.totalIngresosEnvios !== 'number' || typeof resumen.totalGananciasEnvios !== 'number') {
+      return null;
+    }
+    return Math.max(0, resumen.totalIngresosEnvios - resumen.totalGananciasEnvios);
+  })();
 
   /* Dynamic financials from real orders */
   const totalIngresosReales = useMemo(
@@ -345,9 +373,7 @@ export default function ModuleFinanzas() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
             {/* Monthly Operating Costs Sheet */}
             <div style={cardStyle}>
-              <h3 style={{ ...sectionTitleStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <DollarSign size={18} style={{ color: '#FF6600' }} /> Estructura de Costos del Proyecto (Mensual)
-              </h3>
+              <h3 style={sectionTitleStyle}>💰 Estructura de Costos del Proyecto (Mensual)</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--lf-border)', paddingBottom: 6 }}>
                   <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Programador Principal (Tecnológico)</span>
@@ -375,16 +401,18 @@ export default function ModuleFinanzas() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 6, color: '#FF6600' }}>
                   <span style={{ fontSize: 14, fontWeight: 700 }}>Total Costos Operativos Mensuales</span>
-                  <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>$4,300.00 USD</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {costoOperativoMensualUsd !== null
+                      ? `$${costoOperativoMensualUsd.toLocaleString()}.00 USD`
+                      : '-'}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Valuation Slider Card */}
             <div style={cardStyle}>
-              <h3 style={{ ...sectionTitleStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUp size={18} style={{ color: '#FF6600' }} /> Simulador de Valor Comercial de la Plataforma
-              </h3>
+              <h3 style={sectionTitleStyle}>📈 Simulador de Valor Comercial de la Plataforma</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -429,12 +457,18 @@ export default function ModuleFinanzas() {
                 <div style={{ borderTop: '1.5px solid var(--lf-border)', paddingTop: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 13, color: 'var(--lf-text-muted)' }}>Costo Total Acumulado:</span>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>${(4300 * developmentMonths).toLocaleString()} USD</span>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>
+                      {costoOperativoMensualUsd !== null
+                        ? `$${(costoOperativoMensualUsd * developmentMonths).toLocaleString()} USD`
+                        : '-'}
+                    </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--lf-text-main)' }}>Valor Estimado de Venta:</span>
                     <span style={{ fontSize: 22, fontWeight: 800, color: '#16A34A', fontFamily: "'JetBrains Mono', monospace" }}>
-                      ${Math.round((4300 * developmentMonths) * (1 + profitMargin / 100)).toLocaleString()} USD
+                      {costoOperativoMensualUsd !== null
+                        ? `$${Math.round((costoOperativoMensualUsd * developmentMonths) * (1 + profitMargin / 100)).toLocaleString()} USD`
+                        : '-'}
                     </span>
                   </div>
                 </div>
@@ -444,9 +478,7 @@ export default function ModuleFinanzas() {
 
           {/* Business Layers Overview Card */}
           <div style={cardStyle}>
-            <h3 style={{ ...sectionTitleStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Globe size={18} style={{ color: '#FF6600' }} /> Desglose Estratégico de las 4 Capas de Valor del Sistema
-            </h3>
+            <h3 style={sectionTitleStyle}>🌐 Desglose Estratégico de las 4 Capas de Valor del Sistema</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 12 }}>
               <div style={{ padding: 12, borderRadius: 10, background: 'var(--lf-surface-variant, rgba(0,0,0,0.02))', border: '1px solid var(--lf-border)' }}>
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: '#FF6600', marginBottom: 6 }}>1. Capa Operativa</h4>
@@ -684,7 +716,7 @@ export default function ModuleFinanzas() {
           >
             Total:{' '}
             <span className="font-mono" style={{ fontWeight: 700, color: 'var(--lf-text-main)' }}>
-              C$38,200
+              {totalGastosReal !== null ? `C$${totalGastosReal.toLocaleString()}` : '-'}
             </span>
           </div>
         </div>

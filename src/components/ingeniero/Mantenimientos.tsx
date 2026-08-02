@@ -1,7 +1,7 @@
 // components/ingeniero/Mantenimientos.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useIngenieroStore } from '@/store/ingenieroStore';
 import PullToRefresh from '@/components/ui/PullToRefresh';
 import EmptyState from '@/components/ui/EmptyState';
@@ -14,10 +14,63 @@ interface Foto {
   filename: string;
 }
 
+/* ═══════════════════════════════════════════════
+   FOTOS LRU CACHE
+   Limita `selectedFotos` a FOTOS_CACHE_MAX entradas
+   con política LRU (Least Recently Used).
+   ═══════════════════════════════════════════════ */
+const FOTOS_CACHE_MAX = 50;
+
 export default function Mantenimientos() {
   const store = useIngenieroStore();
   const [selectedFotos, setSelectedFotos] = useState<Record<string, Foto[]>>({});
   const [openId, setOpenId] = useState<string | null>(null);
+  // Orden de acceso LRU: el índice 0 es el menos usado, el último es el más reciente.
+  const fotosOrderRef = useRef<string[]>([]);
+
+  /**
+   * Escribe fotos para `mantId` (acepta un updater) y actualiza el orden LRU.
+   * Si el cache excede FOTOS_CACHE_MAX, evicta la entrada menos usada.
+   */
+  const writeFotos = useCallback(
+    (mantId: string, updater: (prev: Foto[] | undefined) => Foto[]) => {
+      setSelectedFotos((prev) => {
+        const nextFotos = updater(prev[mantId]);
+        // Mover mantId al final (más recientemente usado)
+        const order = fotosOrderRef.current.filter((k) => k !== mantId);
+        order.push(mantId);
+        fotosOrderRef.current = order;
+        const next: Record<string, Foto[]> = { ...prev, [mantId]: nextFotos };
+        // Evictar LRU si excede el cap
+        while (fotosOrderRef.current.length > FOTOS_CACHE_MAX) {
+          const oldest = fotosOrderRef.current.shift();
+          if (oldest !== undefined) delete next[oldest];
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  /**
+   * Marca `mantId` como recientemente usado sin modificar sus fotos.
+   * Útil para bump de LRU al abrir una tarjeta (aunque el fetch aún no retorne).
+   */
+  const touchFotos = useCallback((mantId: string) => {
+    const order = fotosOrderRef.current.filter((k) => k !== mantId);
+    order.push(mantId);
+    fotosOrderRef.current = order;
+    setSelectedFotos((prev) => {
+      if (fotosOrderRef.current.length <= FOTOS_CACHE_MAX) return prev;
+      const next = { ...prev };
+      while (fotosOrderRef.current.length > FOTOS_CACHE_MAX) {
+        const oldest = fotosOrderRef.current.shift();
+        if (oldest !== undefined) delete next[oldest];
+      }
+      return next;
+    });
+  }, []);
+
 
   const mantenimientosFiltrados = store.mantenimientos.filter((m) => {
     if (store.mantenimientosFiltro === 'todos') return true;
@@ -30,15 +83,17 @@ export default function Mantenimientos() {
   // Cargar fotos para el mantenimiento abierto
   useEffect(() => {
     if (!openId) return;
+    // Marcar la tarjeta como recientemente usada (bump LRU) aunque el fetch falle.
+    touchFotos(openId);
     fetch(`/api/mantenimientos/${openId}/fotos`)
       .then((r) => r.json())
       .then((data) => {
         if (data?.fotos) {
-          setSelectedFotos((prev) => ({ ...prev, [openId]: data.fotos }));
+          writeFotos(openId, () => data.fotos);
         }
       })
       .catch(() => null);
-  }, [openId]);
+  }, [openId, touchFotos, writeFotos]);
 
   const getPrioridadColor = (p: string) => {
     const map: Record<string, string> = {
@@ -71,10 +126,7 @@ export default function Mantenimientos() {
   };
 
   const handleFotoSubida = (mantId: string, url: string) => {
-    setSelectedFotos((prev) => ({
-      ...prev,
-      [mantId]: [...(prev[mantId] || []), { id: Date.now().toString(), url, filename: '' }],
-    }));
+    writeFotos(mantId, (prev) => [...(prev || []), { id: Date.now().toString(), url, filename: '' }]);
   };
 
   return (

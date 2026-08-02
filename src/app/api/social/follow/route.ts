@@ -45,6 +45,12 @@ export async function POST(req: NextRequest) {
     const tiendaId = String(body.tiendaId ?? '');
     if (!tiendaId) return NextResponse.json({ error: 'tiendaId requerido' }, { status: 400 });
 
+    const tienda = await db.tienda.findUnique({ where: { id: tiendaId } });
+    if (!tienda) return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
+    if (tienda.propietarioId && tienda.propietarioId === user.id) {
+      return NextResponse.json({ error: 'No puedes seguir tu propia tienda' }, { status: 400 });
+    }
+
     const existing = await db.tiendaFollow.findUnique({
       where: { clienteId_tiendaId: { clienteId: user.id, tiendaId } },
     });

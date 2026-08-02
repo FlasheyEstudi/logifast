@@ -21,11 +21,11 @@ function tiempoRelativo(fecha: Date): string {
  */
 export async function GET() {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.profile) {
+    const rp = await getRepartidorProfile();
+    if (!rp) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const { profile } = repData;
+    const { profile } = rp;
 
     const notifs = await db.notificacionRepartidor.findMany({
       where: { repartidorId: profile.id },
@@ -64,11 +64,11 @@ export async function GET() {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.profile) {
+    const rp = await getRepartidorProfile();
+    if (!rp) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const { profile } = repData;
+    const { profile } = rp;
 
     const body = await req.json().catch(() => ({}));
     if (body?.id) {

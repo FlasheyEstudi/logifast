@@ -49,10 +49,7 @@ export type RealtimeEvent =
   | 'chat:mensaje:nuevo'               // nuevo mensaje de chat
   | 'admin:flota:snapshot'             // snapshot inicial de flota (admin recibe)
   | 'admin:repartidor:offline'         // repartidor se desconectó (admin recibe)
-  | 'admin:asignacion:confirmada'      // confirmación de asignación (admin recibe)
-  | 'orden:creada'                     // nueva orden creada en backend
-  | 'orden:actualizada'                // orden actualizada en backend
-  | 'orden:eliminada';                 // orden eliminada en backend
+  | 'admin:asignacion:confirmada';     // confirmación de asignación (admin recibe)
 
 // ─── Helper para suscribirse a eventos con cleanup ───
 export function onRealtimeEvent(event: RealtimeEvent, handler: (data: any) => void): () => void {

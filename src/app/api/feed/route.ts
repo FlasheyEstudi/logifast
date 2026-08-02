@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
+
+const postSchema = z.object({
+  tipo: z.enum(['anuncio', 'promocion', 'novedad', 'encuesta', 'recordatorio']),
+  titulo: z.string().min(1, 'titulo requerido').max(200),
+  descripcion: z.string().min(1, 'descripcion requerida').max(2000),
+  icono: z.string().max(50).optional().nullable(),
+  botonTexto: z.string().max(50).optional().nullable(),
+  botonLink: z.string().max(500).optional().nullable(),
+  codigoPromo: z.string().max(50).optional().nullable(),
+  segmento: z.string().max(50).optional(),
+  posicion: z.number().int().min(0).optional(),
+  estado: z.enum(['activo', 'inactivo']).optional(),
+  creadoPor: z.string().min(1, 'creadoPor requerido'),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +45,13 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireRole('admin');
     const body = await request.json();
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const {
       tipo,
       titulo,

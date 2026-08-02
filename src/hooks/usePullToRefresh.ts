@@ -6,6 +6,11 @@ interface UsePullToRefreshOptions {
   maxPull?: number; // maximo pixeles de pull
 }
 
+/**
+ * Hook de pull-to-refresh con soporte iOS Safari (P0-37).
+ * - Detecta el contenedor scrolleable real (scrollRef o window/body).
+ * - Usa requestAnimationFrame para throttle de setState (evita re-renders excesivos).
+ */
 export function usePullToRefresh(options: UsePullToRefreshOptions) {
   const { onRefresh, threshold = 80, maxPull = 120 } = options;
   const [pullDistance, setPullDistance] = useState(0);
@@ -13,59 +18,64 @@ export function usePullToRefresh(options: UsePullToRefreshOptions) {
   const [canRefresh, setCanRefresh] = useState(false);
   const startYRef = useRef(0);
   const isPullingRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const animationFrameRef = useRef<number | null>(null);
 
+  // Función helper para detectar el scrollTop real (P0-37)
   const getScrollTop = useCallback(() => {
-    if (scrollRef.current) return scrollRef.current.scrollTop;
-    if (typeof window !== 'undefined') return window.scrollY || document.documentElement.scrollTop || 0;
+    const el = scrollRef.current;
+    if (el) return el.scrollTop;
+    // Fallback: body o window scroll (iOS Safari suele usar body)
+    if (typeof window !== 'undefined') {
+      return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
     return 0;
   }, []);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent | TouchEvent) => {
-    if (getScrollTop() > 0 || isRefreshing) return;
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (getScrollTop() > 0 || isRefreshing) return;
+      startYRef.current = e.touches[0].clientY;
+      isPullingRef.current = true;
+    },
+    [getScrollTop, isRefreshing]
+  );
 
-    const touch = 'touches' in e ? e.touches[0] : null;
-    if (!touch) return;
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isPullingRef.current || isRefreshing) return;
 
-    startYRef.current = touch.clientY;
-    isPullingRef.current = true;
-  }, [getScrollTop, isRefreshing]);
+      const deltaY = e.touches[0].clientY - startYRef.current;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent | TouchEvent) => {
-    if (!isPullingRef.current || isRefreshing || getScrollTop() > 0) return;
-
-    const touch = 'touches' in e ? e.touches[0] : null;
-    if (!touch) return;
-
-    const deltaY = touch.clientY - startYRef.current;
-
-    if (deltaY > 0) {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (deltaY > 0) {
+        // Throttle con requestAnimationFrame (evita 60 setState/seg)
+        if (rafRef.current !== null) return;
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = null;
+          const distance = Math.min(deltaY * 0.5, maxPull); // 0.5 = resistance
+          setPullDistance(distance);
+          setCanRefresh(distance >= threshold);
+        });
       }
-
-      animationFrameRef.current = requestAnimationFrame(() => {
-        const distance = Math.min(deltaY * 0.5, maxPull); // 0.5 = resistencia
-        setPullDistance(distance);
-        setCanRefresh(distance >= threshold);
-      });
-    }
-  }, [getScrollTop, isRefreshing, threshold, maxPull]);
+    },
+    [isRefreshing, threshold, maxPull]
+  );
 
   const handleTouchEnd = useCallback(async () => {
     if (!isPullingRef.current) return;
     isPullingRef.current = false;
 
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
+    // Cancelar cualquier rAF pendiente
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
 
     if (canRefresh && !isRefreshing) {
       setIsRefreshing(true);
       setPullDistance(60); // mantener la animacion
 
+      // Vibración de trigger
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try {
           navigator.vibrate(15);
@@ -87,11 +97,11 @@ export function usePullToRefresh(options: UsePullToRefreshOptions) {
     }
   }, [canRefresh, isRefreshing, onRefresh]);
 
-  // Clean up RAF on unmount
+  // Cleanup del rAF al desmontar
   useEffect(() => {
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
       }
     };
   }, []);
@@ -104,7 +114,7 @@ export function usePullToRefresh(options: UsePullToRefreshOptions) {
     handlers: {
       onTouchStart: handleTouchStart,
       onTouchMove: handleTouchMove,
-      onTouchEnd: handleTouchEnd
-    }
+      onTouchEnd: handleTouchEnd,
+    },
   };
 }

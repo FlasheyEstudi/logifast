@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { sileo } from 'sileo';
 
 /* ═══════════════════════════════════════════════
@@ -123,10 +124,7 @@ export const CATEGORIAS: CategoriaInfo[] = [
    INITIAL DATA CONSTANTS (CLEAN / PRODUCTION-READY)
    ═══════════════════════════════════════════════ */
 
-export const MOCK_TIENDAS: Tienda[] = [];
-export const MOCK_PRODUCTOS: Producto[] = [];
-export const MOCK_ORDENES_COMPRA: OrdenCompra[] = [];
-export const MOCK_RESENAS: ResenaTienda[] = [];
+// (Legacy MOCK arrays removed — data now comes from /api/tiendas, /api/productos, etc.)
 
 /* ═══════════════════════════════════════════════
    ZUSTAND CART STORE
@@ -183,7 +181,7 @@ interface MarketplaceState {
   setCartScheduleMode: (mode: 'ahora' | 'programar') => void;
   setCartScheduleDate: (date: string | null) => void;
   setCartScheduleTime: (time: string | null) => void;
-  confirmarCompra: () => void;
+  // P0: confirmarCompra eliminado (usar confirmarCompraAsync)
   getCartSubtotal: () => number;
   getCartTotal: () => number;
   getCartItemCount: () => number;
@@ -201,13 +199,16 @@ interface MarketplaceState {
   fetchProductosTienda: (tiendaId: string) => Promise<void>;
   fetchOrdenesCompra: () => Promise<void>;
   fetchFavoritos: () => Promise<void>;
+  fetchCarrito: () => Promise<void>;
   confirmarCompraAsync: () => Promise<{ ok: boolean; error?: string; ordenId?: string }>;
   isLoading: boolean;
 }
 
 let _cartIdCounter = 100;
 
-export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
+export const useMarketplaceStore = create<MarketplaceState>()(
+  persist(
+    (set, get) => ({
   /* Data */
   tiendas: [],
   productos: [],
@@ -250,46 +251,105 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   setCarritoOpen: (open) => set({ carritoOpen: open }),
 
   /* Cart Actions */
-  addToCart: (producto, tienda) => set((state) => {
-    const existing = state.cartItems.find((i) => i.productoId === producto.id);
+  // P1: addToCart persiste en BD vía POST /api/carrito (no solo memoria).
+  // Actualización optimista: actualiza UI inmediatamente, luego sincroniza con BD.
+  // Si la BD falla, el item se queda en memoria hasta el siguiente fetchCarrito.
+  addToCart: (producto, tienda) => {
+    const existing = get().cartItems.find((i) => i.productoId === producto.id);
     if (existing) {
-      return {
+      // Item ya existe: incrementar cantidad
+      set((state) => ({
         cartItems: state.cartItems.map((i) =>
           i.id === existing.id ? { ...i, cantidad: i.cantidad + 1 } : i
         ),
+      }));
+      // Persistir incremento en BD
+      fetch('/api/carrito', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productoId: producto.id, cantidad: existing.cantidad + 1 }),
+      }).catch((err) => console.error('[addToCart PATCH error]', err));
+    } else {
+      // Item nuevo: crear en BD
+      _cartIdCounter++;
+      const newItem: CartItem = {
+        id: `ci-${_cartIdCounter}`,
+        productoId: producto.id,
+        tiendaId: producto.tiendaId,
+        nombreProducto: producto.nombre,
+        precioUnitario: producto.precio,
+        cantidad: 1,
+        imagenColor: producto.imagenColor,
+        notas: '',
       };
+      set((state) => ({ cartItems: [...state.cartItems, newItem] }));
+      // Persistir en BD
+      fetch('/api/carrito', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productoId: producto.id,
+          tiendaId: producto.tiendaId,
+          cantidad: 1,
+        }),
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          // Actualizar el ID local con el real de la BD
+          if (data?.item?.id) {
+            set((state) => ({
+              cartItems: state.cartItems.map((i) =>
+                i.id === newItem.id ? { ...i, id: data.item.id } : i
+              ),
+            }));
+          }
+        })
+        .catch((err) => console.error('[addToCart POST error]', err));
     }
-    _cartIdCounter++;
-    const newItem: CartItem = {
-      id: `ci-${_cartIdCounter}`,
-      productoId: producto.id,
-      tiendaId: producto.tiendaId,
-      nombreProducto: producto.nombre,
-      precioUnitario: producto.precio,
-      cantidad: 1,
-      imagenColor: producto.imagenColor,
-      notas: '',
-    };
-    return { cartItems: [...state.cartItems, newItem] };
-  }),
+  },
 
-  removeFromCart: (itemId) => set((state) => ({
-    cartItems: state.cartItems.filter((i) => i.id !== itemId),
-  })),
+  // P1: removeFromCart persiste en BD vía DELETE /api/carrito?productoId=
+  removeFromCart: (itemId) => {
+    const item = get().cartItems.find((i) => i.id === itemId);
+    // Actualización optimista
+    set((state) => ({ cartItems: state.cartItems.filter((i) => i.id !== itemId) }));
+    // Persistir en BD
+    if (item?.productoId) {
+      fetch(`/api/carrito?productoId=${encodeURIComponent(item.productoId)}`, {
+        method: 'DELETE',
+      }).catch((err) => console.error('[removeFromCart DELETE error]', err));
+    }
+  },
 
+  // P1: updateCartItemQty persiste en BD vía PATCH /api/carrito
   updateCartItemQty: (itemId, qty) => {
+    const item = get().cartItems.find((i) => i.id === itemId);
+    if (!item) return;
     if (qty <= 0) {
       get().removeFromCart(itemId);
       return;
     }
+    // Actualización optimista
     set((state) => ({
       cartItems: state.cartItems.map((i) =>
         i.id === itemId ? { ...i, cantidad: qty } : i
       ),
     }));
+    // Persistir en BD
+    fetch('/api/carrito', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productoId: item.productoId, cantidad: qty }),
+    }).catch((err) => console.error('[updateCartItemQty PATCH error]', err));
   },
 
-  clearCart: () => set({ cartItems: [], cartCodigoPromo: '', cartDescuento: 0 }),
+  // P1: clearCart persiste en BD vía DELETE /api/carrito (sin productoId = limpiar todo)
+  clearCart: () => {
+    set({ cartItems: [], cartCodigoPromo: '', cartDescuento: 0 });
+    fetch('/api/carrito', { method: 'DELETE' }).catch((err) =>
+      console.error('[clearCart DELETE error]', err)
+    );
+  },
 
   setCartCodigoPromo: (code) => set({ cartCodigoPromo: code }),
   setCartDescuento: (desc) => set({ cartDescuento: desc }),
@@ -300,9 +360,8 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   setCartScheduleDate: (date) => set({ cartScheduleDate: date }),
   setCartScheduleTime: (time) => set({ cartScheduleTime: time }),
 
-  confirmarCompra: () => {
-    get().confirmarCompraAsync();
-  },
+  // P0: confirmarCompra (sync, con datos falsos 'Carlos Mendoza'/'cliente-1') ELIMINADO.
+  // Usar confirmarCompraAsync() que hace POST real a /api/ordenes-compra con transacción BD.
 
   getCartSubtotal: () => {
     return get().cartItems.reduce((sum, i) => sum + i.precioUnitario * i.cantidad, 0);
@@ -409,15 +468,40 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
     }
   },
 
+  fetchCarrito: async () => {
+    try {
+      const res = await fetch('/api/carrito');
+      if (!res.ok) return;
+      const data = await res.json();
+      const items = Array.isArray(data.items)
+        ? data.items.map((it: any) => ({
+            productoId: it.productoId,
+            nombre: it.nombreProducto ?? it.producto?.nombre ?? '',
+            precio: it.precioUnitario ?? it.producto?.precio ?? 0,
+            cantidad: it.cantidad ?? 1,
+            tiendaId: it.tiendaId ?? it.producto?.tiendaId ?? '',
+            imagen: it.producto?.imagenUrl ?? null,
+            notas: it.notas ?? null,
+          }))
+        : [];
+      set({ cartItems: items });
+    } catch (err) {
+      console.error('[fetchCarrito]', err);
+    }
+  },
+
   confirmarCompraAsync: async () => {
     try {
       const state = get();
       const tiendas = state.getCartTiendas();
       if (tiendas.length === 0) {
-        sileo.error({ title: "Carrito vacío", description: "No hay ítems en el carrito" });
         return { ok: false, error: 'No hay items en el carrito' };
       }
       const tiendaId = tiendas[0];
+      const subtotal = state.getCartSubtotal();
+      const firstTienda = state.tiendas.find((t) => t.id === tiendaId);
+      const costoEnvio = firstTienda?.costoEnvio ?? 20;
+      const total = subtotal + costoEnvio - (state.cartDescuento ?? 0);
 
       const body = {
         tiendaId,
@@ -429,6 +513,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
         direccionEntrega: state.cartDireccionEntrega || 'Col. Los Robles, Managua',
         metodoPago: state.cartMetodoPago || 'efectivo',
         codigoPromo: state.cartCodigoPromo || undefined,
+        descuento: state.cartDescuento ?? 0,
         instrucciones: state.cartInstrucciones || undefined,
       };
 
@@ -439,11 +524,13 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
       });
       const data = await res.json();
       if (!res.ok) {
-        const errorMsg = data.error || 'Error al procesar la compra';
-        sileo.error({ title: "Error en la compra", description: errorMsg });
+        // P0-15: NO crear fallback silencioso. Reportar error real al usuario.
+        const errorMsg = data?.error || 'No se pudo completar la compra. Inténtalo de nuevo.';
+        console.error('[confirmarCompraAsync] API error:', data);
         return { ok: false, error: errorMsg };
       }
 
+      // Recargar órdenes desde el backend
       await get().fetchOrdenesCompra();
 
       set({
@@ -455,11 +542,28 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
       });
 
       return { ok: true, ordenId: data.orden?.id };
-    } catch (err: any) {
+    } catch (err) {
       console.error('[confirmarCompraAsync]', err);
-      const errorMsg = err.message || 'Error de conexión';
-      sileo.error({ title: "Error en la compra", description: errorMsg });
-      return { ok: false, error: errorMsg };
+      // P0-15: NO crear fallback. Reportar error de red al usuario.
+      return {
+        ok: false,
+        error: 'Error de conexión. Verifica tu internet e inténtalo de nuevo.',
+      };
     }
   },
-}));
+    }),
+    {
+      name: 'logifast-marketplace-store',
+      // Persistir carrito y favoritos (datos del usuario), NO tiendas ni órdenes
+      // (esos se rehidratan desde el backend al montar ClientShell).
+      partialize: (state) => ({
+        cartItems: state.cartItems,
+        cartDireccionEntrega: state.cartDireccionEntrega,
+        cartMetodoPago: state.cartMetodoPago,
+        cartInstrucciones: state.cartInstrucciones,
+        favoritosTiendas: state.favoritosTiendas,
+        favoritosProductos: state.favoritosProductos,
+      }),
+    }
+  )
+);

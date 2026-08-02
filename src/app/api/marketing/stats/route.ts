@@ -180,7 +180,7 @@ export async function GET() {
       tasaRetencion,
       frecuenciaPromedio,
       valorPromedioEnvio,
-      costoAdquisicion: 35, // Aproximado - se podría calcular con gastos de marketing
+      costoAdquisicion: null, // Se debe calcular con gastos de marketing reales
       totalOrdenesMes,
       totalOrdenesMesPrev,
       revenueMes,
@@ -197,6 +197,10 @@ export async function GET() {
     return NextResponse.json({ data: stats });
   } catch (error) {
     console.error('[MARKETING_STATS_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener estadísticas de marketing' }, { status: 500 });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json(
+      { error: status === 401 ? 'No autenticado' : status === 403 ? 'No autorizado' : 'Error al obtener estadísticas de marketing' },
+      { status }
+    );
   }
 }

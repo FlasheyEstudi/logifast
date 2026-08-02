@@ -1,9 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
 
 export const dynamic = 'force-dynamic';
+
+const postSchema = z.object({
+  name: z.string().min(1, 'name requerido').max(100),
+  email: z.string().email('email inválido'),
+  role: z.enum(['cliente', 'repartidor', 'admin', 'ingeniero']),
+  telefono: z.string().max(30).optional().nullable(),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(200),
+});
+
+const patchSchema = z.object({
+  id: z.string().min(1, 'id requerido'),
+  role: z.enum(['cliente', 'repartidor', 'admin', 'ingeniero']).optional(),
+  name: z.string().min(1).max(100).optional(),
+  email: z.string().email().optional(),
+  telefono: z.string().max(30).optional().nullable(),
+});
 
 /**
  * GET /api/admin/users?role=&limit=&offset=
@@ -15,8 +32,11 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const role = searchParams.get('role');
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 200);
-    const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+    // Paginación segura contra NaN
+    const limitRaw = parseInt(searchParams.get('limit') ?? '50', 10);
+    const offsetRaw = parseInt(searchParams.get('offset') ?? '0', 10);
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50;
+    const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
     const search = searchParams.get('search');
 
     const where: Record<string, unknown> = {};
@@ -50,10 +70,14 @@ export async function GET(req: NextRequest) {
       db.user.count({ where }),
     ]);
 
-    return NextResponse.json({ users, total });
+    return NextResponse.json({ users, total, limit, offset, hasMore: offset + limit < total });
   } catch (error) {
     console.error('[ADMIN_USERS_GET]', error);
-    return NextResponse.json({ users: [], total: 0 });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json(
+      { users: [], total: 0, error: status === 401 ? 'No autenticado' : status === 403 ? 'No autorizado' : 'Error' },
+      { status }
+    );
   }
 }
 
@@ -65,11 +89,14 @@ export async function POST(req: NextRequest) {
   try {
     await requireRole('admin');
     const body = await req.json();
-    const { name, email, role, telefono, password } = body;
-
-    if (!name || !email || !role) {
-      return NextResponse.json({ error: 'name, email y role son obligatorios' }, { status: 400 });
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
     }
+    const { name, email, role, telefono, password } = parsed.data;
 
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) {
@@ -77,7 +104,7 @@ export async function POST(req: NextRequest) {
     }
 
     const bcrypt = await import('bcryptjs');
-    const hashedPassword = await bcrypt.hash(password || 'Logifast2026!', 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await db.user.create({
       data: {
@@ -120,7 +147,14 @@ export async function PATCH(req: NextRequest) {
   try {
     await requireRole('admin');
     const body = await req.json();
-    const { id, role, name, email, telefono } = body;
+    const parsed = patchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
+    const { id, role, name, email, telefono } = parsed.data;
 
     if (!id) {
       return NextResponse.json({ error: 'id de usuario requerido' }, { status: 400 });

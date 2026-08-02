@@ -19,12 +19,25 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
   const store = useIngenieroStore();
   const config = useConfigStore();
 
-  const handleCerrarSesion = () => {
-    realtime.disconnect();
-    localStorage.removeItem('auth-token');
-    localStorage.removeItem('auth-user');
-    if (typeof onLogout === 'function') {
-      onLogout();
+  const handleCerrarSesion = async () => {
+    try {
+      // Llamar al endpoint de logout para invalidar la cookie httpOnly (P0-24)
+      await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
+    } finally {
+      realtime.disconnect();
+      // Limpiar cualquier estado residual en localStorage
+      try {
+        localStorage.removeItem('auth-token');
+        localStorage.removeItem('auth-user');
+        // Limpiar stores persistidos de Zustand
+        localStorage.removeItem('logifast-repartidor-store');
+        localStorage.removeItem('logifast-marketplace-store');
+        localStorage.removeItem('logifast-config-store');
+        localStorage.removeItem('logifast-ingeniero-store');
+      } catch {}
+      if (typeof onLogout === 'function') {
+        onLogout();
+      }
     }
   };
 

@@ -71,8 +71,6 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
   const {
     activeModule, setActiveModule, moduleFade, alerts,
     commandPaletteOpen, setCommandPaletteOpen,
-    simulationRunning, toggleSimulation,
-    simulateNewOrder, simulateDelivery, simulateStatusChange, updateMotoPositions,
   } = useStore();
 
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -114,7 +112,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           if (data && Array.isArray(data.ordenes)) {
             const mappedServicios = data.ordenes.map((o: any) => ({
               id: o.id,
-              tipo: 'envio',
+              tipo: 'envio' as const,
               cliente: o.clienteNombre || o.cliente?.name || 'Cliente',
               clienteTelefono: o.clienteTelefono || o.cliente?.telefono || '',
               origen: o.origen,
@@ -145,7 +143,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           if (data && Array.isArray(data.ordenes)) {
             const mappedCompras = data.ordenes.map((o: any) => ({
               id: o.id,
-              tipo: 'compra',
+              tipo: 'compra' as const,
               cliente: o.cliente?.name || 'Cliente Marketplace',
               clienteTelefono: o.cliente?.telefono || '',
               origen: o.tienda?.nombre || 'Tienda Marketplace',
@@ -171,9 +169,23 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           }
         }
 
-        const currentStr = JSON.stringify(useStore.getState().orders);
-        const newStr = JSON.stringify(mergedOrders);
-        if (currentStr !== newStr) {
+        // Solo actualizar si hubo cambios reales (evita parpadeo, P0-18)
+        const currentOrders = useStore.getState().orders;
+        const mergedKey = JSON.stringify(
+          mergedOrders.map((o) => ({
+            id: o.id,
+            estado: o.estado,
+            repartidor: o.repartidor,
+          }))
+        );
+        const currentKey = JSON.stringify(
+          currentOrders.map((o: any) => ({
+            id: o.id,
+            estado: o.estado,
+            repartidor: o.repartidor,
+          }))
+        );
+        if (mergedKey !== currentKey) {
           useStore.setState({ orders: mergedOrders });
         }
       } catch (err) {
@@ -205,11 +217,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
                   color: u.color || '#FF5722',
                 };
               });
-            const currentClientsStr = JSON.stringify(useStore.getState().clients);
-            const newClientsStr = JSON.stringify(apiClients);
-            if (currentClientsStr !== newClientsStr) {
-              useStore.setState({ clients: apiClients });
-            }
+            useStore.setState({ clients: apiClients });
           }
         }
       } catch (err) {
@@ -239,21 +247,48 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               conectado: p.conectado || false,
             }));
             if (mappedRiders.length > 0) {
-              const currentRidersStr = JSON.stringify(useStore.getState().riders);
-              const newRidersStr = JSON.stringify(mappedRiders);
-              if (currentRidersStr !== newRidersStr) {
-                useStore.setState({ riders: mappedRiders });
-              }
+              useStore.setState({ riders: mappedRiders });
             }
           }
         }
       } catch (err) {
         console.error('[DashboardShell syncRepartidores]', err);
       }
+
+      // 4. Motos desde API (P0: antes no se cargaban, por eso no aparecían para asignar)
+      try {
+        const resMotos = await fetch('/api/ingeniero/motos');
+        if (resMotos.ok) {
+          const dataMotos = await resMotos.json();
+          const motosList = Array.isArray(dataMotos) ? dataMotos : (dataMotos?.motos ?? []);
+          if (Array.isArray(motosList)) {
+            const mappedMotos = motosList.map((m: any) => ({
+              id: m.id,
+              nombre: m.nombre || m.modelo || 'Moto',
+              modelo: m.modelo || m.nombre || 'Moto',
+              anio: m.anio ?? 2024,
+              placa: m.placa || 'SIN-PLACA',
+              status: (m.estado || m.status || 'DISPONIBLE') as any,
+              lat: m.lat ?? 12.1364,
+              lng: m.lng ?? -86.2581,
+              km: m.kmAcumulados ?? m.km ?? 0,
+              repartidorAsignado: m.asignadaA ?? null,
+              ultimoMantenimiento: m.ultimoMantenimiento ?? '',
+              proximoMantenimiento: m.proximoMantenimiento ?? '',
+              costoTotalMantenimiento: m.costoTotalMantenimiento ?? 0,
+              color: m.color ?? '#FF5722',
+            }));
+            useStore.setState({ motos: mappedMotos });
+          }
+        }
+      } catch (err) {
+        console.error('[DashboardShell syncMotos]', err);
+      }
     };
 
     fetchAllData();
-    const interval = setInterval(fetchAllData, 30000);
+    // Polling no destructivo: 5s para que nuevas órdenes aparezcan rápido (P0-18)
+    const interval = setInterval(fetchAllData, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -343,21 +378,10 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     return () => document.removeEventListener('keydown', handler);
   }, [commandPaletteOpen, setCommandPaletteOpen, setActiveModule, handleFullscreen]);
 
-  // Simulation engine
-  useEffect(() => {
-    if (!simulationRunning) return;
-    const motoInterval = setInterval(() => updateMotoPositions(), 8000);
-    const statusInterval = setInterval(() => simulateStatusChange(), 15000);
-    const orderInterval = setInterval(() => simulateNewOrder(), 60000);
-    const deliveryInterval = setInterval(() => simulateDelivery(), 120000);
-
-    return () => {
-      clearInterval(motoInterval);
-      clearInterval(statusInterval);
-      clearInterval(orderInterval);
-      clearInterval(deliveryInterval);
-    };
-  }, [simulationRunning, updateMotoPositions, simulateStatusChange, simulateNewOrder, simulateDelivery]);
+  // P0: Simulación ELIMINADA — el sistema ahora funciona 100% con datos reales.
+  // Las órdenes solo se crean cuando un cliente real pulsa "Confirmar envío".
+  // Las motos se actualizan desde la API cada 5s (fetchAllData).
+  // No más setInterval que genere órdenes/estados falsos.
 
   const highAlerts = alerts.filter((a) => a.severidad === 'alta').length;
 
@@ -496,23 +520,21 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
 
         {/* Right: Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* En vivo indicator */}
+          {/* Indicador estático: datos reales en tiempo real (P0: simulación eliminada) */}
           <div
-            onClick={toggleSimulation}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 8,
-              background: simulationRunning ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
-              border: `1px solid ${simulationRunning ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
-              cursor: 'pointer', transition: 'all 0.2s',
+              background: 'rgba(22,163,74,0.08)',
+              border: '1px solid rgba(22,163,74,0.2)',
             }}
           >
-            <div className={simulationRunning ? 'lf-live-pulse' : ''} style={{
+            <div className="lf-live-pulse" style={{
               width: 8, height: 8, borderRadius: '50%',
-              background: simulationRunning ? 'var(--lf-success)' : 'var(--lf-danger)',
+              background: 'var(--lf-success)',
             }} />
             <span style={{
               fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-              color: simulationRunning ? 'var(--lf-success)' : 'var(--lf-danger)',
+              color: 'var(--lf-success)',
             }}>En vivo</span>
           </div>
 

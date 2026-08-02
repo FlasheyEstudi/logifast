@@ -7,6 +7,9 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/repartidor/posicion/[repartidorId]
  * Devuelve la última posición conocida del repartidor.
+ * - Admin: puede ver cualquier repartidor.
+ * - Repartidor: solo puede ver su propia posición.
+ * - Cliente: solo puede ver la posición del repartidor que tiene una orden activa con él.
  */
 export async function GET(
   _req: NextRequest,
@@ -20,37 +23,40 @@ export async function GET(
 
     const { repartidorId } = await params;
 
-    let authorized = user.role === 'admin' || user.role === 'ingeniero';
-
-    if (!authorized && user.role === 'repartidor') {
-      const ownProfile = await db.repartidorProfile.findUnique({ where: { userId: user.id } });
-      if (ownProfile && ownProfile.id === repartidorId) {
-        authorized = true;
-      }
-    }
-
-    if (!authorized && user.role === 'cliente') {
-      const activeOrder = await db.ordenServicio.findFirst({
-        where: {
-          clienteId: user.id,
-          repartidorId: repartidorId,
-          estado: { in: ['asignado', 'aceptado', 'recogido', 'en_camino'] },
-        },
-      });
-      if (activeOrder) {
-        authorized = true;
-      }
-    }
-
-    if (!authorized) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
-
     const profile = await db.repartidorProfile.findUnique({
       where: { id: repartidorId },
     });
     if (!profile) {
       return NextResponse.json({ error: 'Repartidor no encontrado' }, { status: 404 });
+    }
+
+    // Authorization
+    if (user.role === 'repartidor') {
+      const myProfile = await db.repartidorProfile.findUnique({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      if (!myProfile || myProfile.id !== repartidorId) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+      }
+    } else if (user.role === 'cliente') {
+      // Solo puede ver la posición si tiene una orden activa con este repartidor
+      const ordenActiva = await db.ordenServicio.findFirst({
+        where: {
+          clienteId: user.id,
+          repartidorId,
+          estado: { in: ['asignado', 'aceptado', 'recogido', 'en_camino'] },
+        },
+        select: { id: true },
+      });
+      if (!ordenActiva) {
+        return NextResponse.json(
+          { error: 'No tienes una orden activa con este repartidor' },
+          { status: 403 }
+        );
+      }
+    } else if (user.role !== 'admin' && user.role !== 'ingeniero') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
     const ultima = await db.posicionRepartidor.findFirst({

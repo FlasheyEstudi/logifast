@@ -36,11 +36,11 @@ function calcularEstado(
  */
 export async function GET() {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.profile) {
+    const rp = await getRepartidorProfile();
+    if (!rp) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const { profile } = repData;
+    const { profile } = rp;
 
     const ordenActiva = await db.ordenServicio.findFirst({
       where: {
@@ -83,11 +83,11 @@ export async function GET() {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.profile) {
+    const rp = await getRepartidorProfile();
+    if (!rp) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const { profile } = repData;
+    const { profile } = rp;
 
     const body = await req.json();
     const accion = String(body.accion ?? '').toLowerCase();

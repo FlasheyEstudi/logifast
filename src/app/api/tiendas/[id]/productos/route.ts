@@ -89,7 +89,7 @@ export async function GET(
 
 /**
  * POST /api/tiendas/[id]/productos
- * Crea un producto en la tienda (solo dueño o admin).
+ * Crea un producto en la tienda.
  */
 export async function POST(
   req: NextRequest,
@@ -98,19 +98,6 @@ export async function POST(
   try {
     const user = await requireSession();
     const { id } = await params;
-    const tienda = await db.tienda.findUnique({ where: { id } });
-
-    if (!tienda) {
-      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
-    }
-
-    if (tienda.propietarioId !== user.id && user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'No autorizado para agregar productos a esta tienda' },
-        { status: 403 }
-      );
-    }
-
     const body = await req.json();
     const {
       nombre,

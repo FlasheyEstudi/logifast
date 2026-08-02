@@ -16,8 +16,18 @@ const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
 function getSecret(): string {
   const secret = process.env.JWT_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error('JWT_SECRET debe estar definido y tener al menos 32 caracteres');
+  if (!secret) {
+    // En desarrollo permitimos un fallback para no romper el primer arranque,
+    // pero en producción exigimos que esté definido.
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'JWT_SECRET debe estar definido en production (>=32 chars). Configura la variable de entorno.'
+      );
+    }
+    return 'logifast-dev-secret-cambiar-en-produccion-9f3a7c2e8b1d4f6a';
+  }
+  if (secret.length < 32) {
+    throw new Error('JWT_SECRET debe tener al menos 32 caracteres.');
   }
   return secret;
 }
@@ -68,7 +78,7 @@ export async function createSession(user: SessionUser): Promise<void> {
     name: COOKIE_NAME,
     value: token,
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: TOKEN_TTL_SECONDS,

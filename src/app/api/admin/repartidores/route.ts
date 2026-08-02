@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    await requireRole('admin', 'ingeniero');
+    await requireRole('admin');
     const profiles = await db.repartidorProfile.findMany({
       include: {
         user: {
@@ -31,7 +31,11 @@ export async function GET() {
     return NextResponse.json({ profiles });
   } catch (error) {
     console.error('[ADMIN_REPARTIDORES_GET]', error);
-    return NextResponse.json({ profiles: [] });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json(
+      { profiles: [], error: status === 401 ? 'No autenticado' : status === 403 ? 'No autorizado' : 'Error' },
+      { status }
+    );
   }
 }
 
@@ -66,6 +70,10 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ profile: updatedProfile });
   } catch (error) {
     console.error('[ADMIN_REPARTIDORES_PATCH]', error);
-    return NextResponse.json({ error: 'Error al actualizar repartidor' }, { status: 500 });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json(
+      { error: status === 401 ? 'No autenticado' : status === 403 ? 'No autorizado' : 'Error al actualizar repartidor' },
+      { status }
+    );
   }
 }

@@ -1,8 +1,29 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
+
+const postSchema = z.object({
+  tipo: z.enum(['promo', 'noticia', 'nuevo_producto']).optional(),
+  titulo: z.string().min(1, 'titulo requerido').max(200),
+  descripcion: z.string().max(1000).optional().nullable(),
+  imagenUrl: z.string().max(500).optional().nullable(),
+  colorFondo: z.string().max(20).optional(),
+  link: z.string().max(500).optional().nullable(),
+  tiendaId: z.string().optional().nullable(),
+  segmento: z.string().max(50).optional(),
+  duracionHoras: z
+    .union([z.number(), z.string()])
+    .optional()
+    .refine(
+      (v) =>
+        v === undefined ||
+        (Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 168),
+      'duracionHoras debe ser un entero entre 1 y 168'
+    ),
+});
 
 /**
  * GET /api/stories
@@ -65,6 +86,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const { tipo, titulo, descripcion, imagenUrl, colorFondo, link, tiendaId, segmento, duracionHoras = 24 } = body;
 
     if (!titulo) return NextResponse.json({ error: 'titulo requerido' }, { status: 400 });
@@ -106,18 +134,24 @@ export async function PATCH(req: Request) {
     const id = String(body.id);
     if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 });
 
-    // Upsert vista
-    await db.storyVista.upsert({
+    // Verificar existencia de la story
+    const story = await db.story.findUnique({ where: { id } });
+    if (!story) return NextResponse.json({ error: 'Story no encontrada' }, { status: 404 });
+
+    // Solo marcar vista + incrementar si NO existía previamente
+    const existingVista = await db.storyVista.findUnique({
       where: { storyId_clienteId: { storyId: id, clienteId: user.id } },
-      update: {},
-      create: { storyId: id, clienteId: user.id },
     });
 
-    // Incrementar contador de vistas
-    await db.story.update({
-      where: { id },
-      data: { vistas: { increment: 1 } },
-    });
+    if (!existingVista) {
+      await db.$transaction([
+        db.storyVista.create({ data: { storyId: id, clienteId: user.id } }),
+        db.story.update({
+          where: { id },
+          data: { vistas: { increment: 1 } },
+        }),
+      ]);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

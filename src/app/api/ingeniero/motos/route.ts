@@ -1,10 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db as prisma } from '@/lib/db';
 import { seedIngeniero } from '@/lib/seedIngeniero';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
 
 export const dynamic = 'force-dynamic';
+
+const postSchema = z.object({
+  nombre: z.string().max(100).optional(),
+  modelo: z.string().max(100).optional(),
+  placa: z.string().max(20).optional().nullable(),
+  anio: z.number().int().min(1900).max(2100).optional().nullable(),
+  color: z.string().max(50).optional().nullable(),
+  status: z.string().max(50).optional(),
+  estado: z.enum(['DISPONIBLE', 'EN_SERVICIO', 'EN_MANTENIMIENTO', 'FUERA_SERVICIO']).optional(),
+});
+
+const patchSchema = z.object({
+  id: z.string().min(1, 'ID es requerido'),
+  estado: z.enum(['DISPONIBLE', 'EN_SERVICIO', 'EN_MANTENIMIENTO', 'FUERA_SERVICIO']).optional(),
+  status: z.enum(['DISPONIBLE', 'EN_SERVICIO', 'EN_MANTENIMIENTO', 'FUERA_SERVICIO']).optional(),
+  asignadaA: z.string().optional().nullable(),
+  kmAcumulados: z.number().min(0).optional(),
+  modelo: z.string().max(100).optional(),
+  placa: z.string().max(20).optional().nullable(),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -42,6 +63,13 @@ export async function POST(req: NextRequest) {
   try {
     await requireRole('ingeniero', 'admin');
     const body = await req.json();
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const { nombre, modelo, placa, anio, color, status, estado } = body;
 
     const moto = await prisma.moto.create({
@@ -65,6 +93,13 @@ export async function PATCH(req: NextRequest) {
   try {
     await requireRole('ingeniero', 'admin');
     const body = await req.json();
+    const parsed = patchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const { id, estado, status, asignadaA, kmAcumulados, modelo, placa } = body;
 
     if (!id) {

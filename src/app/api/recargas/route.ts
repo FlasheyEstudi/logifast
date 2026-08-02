@@ -10,9 +10,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.profile) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    const { profile } = repData;
+    const rp = await getRepartidorProfile();
+    if (!rp) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const { profile } = rp;
 
     const recargas = await db.recargaSaldo.findMany({
       where: { repartidorId: profile.id },
@@ -32,30 +32,43 @@ export async function GET() {
 
 /**
  * POST /api/recargas
- * Body: { monto, metodo, codigo? }
- * Aplica una recarga de saldo al repartidor.
+ * Body: { monto, metodo, codigo?, referencia? }
+ * - metodo='codigo': se valida contra CodigoPromocional y se acredita de inmediato (estado: 'completada').
+ * - Otros métodos (transferencia, efectivo): quedan 'pendientes' hasta aprobación admin (P0-16).
  */
 export async function POST(req: NextRequest) {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.profile) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    const { profile } = repData;
+    const rp = await getRepartidorProfile();
+    if (!rp) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const { profile } = rp;
 
     const body = await req.json();
-    const monto = Number(body.monto);
+    const montoRaw = Number(body.monto);
     const metodo = String(body.metodo || 'codigo');
     const codigo = body.codigo ? String(body.codigo) : null;
+    const referencia = body.referencia ? String(body.referencia) : null;
 
-    // Si es código, no requerir monto (se determina del código)
-    if (metodo !== 'codigo' && (!monto || monto <= 0)) {
-      return NextResponse.json({ error: 'Monto inválido' }, { status: 400 });
-    }
-    if (metodo === 'codigo' && !codigo) {
-      return NextResponse.json({ error: 'Código requerido' }, { status: 400 });
+    // Validación de monto para métodos que no sean código
+    if (metodo !== 'codigo') {
+      if (!Number.isFinite(montoRaw) || montoRaw <= 0) {
+        return NextResponse.json({ error: 'Monto inválido' }, { status: 400 });
+      }
+      if (montoRaw > 10000) {
+        return NextResponse.json({ error: 'Monto excede el máximo permitido (C$10,000)' }, { status: 400 });
+      }
     }
 
-    // Si es código promocional, validarlo
-    if (metodo === 'codigo' && codigo) {
+    // Validación de método
+    const metodosValidos = ['codigo', 'transferencia', 'efectivo', 'tarjeta'];
+    if (!metodosValidos.includes(metodo)) {
+      return NextResponse.json({ error: 'Método no válido' }, { status: 400 });
+    }
+
+    // Caso 1: recarga vía código promocional — validación automática
+    if (metodo === 'codigo') {
+      if (!codigo) {
+        return NextResponse.json({ error: 'Código requerido' }, { status: 400 });
+      }
       const codigoPromo = await db.codigoPromocional.findUnique({ where: { codigo } });
       if (!codigoPromo) {
         return NextResponse.json({ error: 'Código no válido' }, { status: 400 });
@@ -70,56 +83,71 @@ export async function POST(req: NextRequest) {
       if (now < codigoPromo.vigenciaInicio || now > codigoPromo.vigenciaFin) {
         return NextResponse.json({ error: 'Código expirado' }, { status: 400 });
       }
-      // Usar el valor del código como monto si es tipo monto
-      const montoFinal = codigoPromo.tipoDescuento === 'monto' ? codigoPromo.valor : monto;
+      if (codigoPromo.tipoDescuento !== 'monto') {
+        return NextResponse.json({ error: 'El código no es de tipo recarga' }, { status: 400 });
+      }
+      const montoFinal = codigoPromo.valor;
 
-      await db.codigoPromocional.update({
-        where: { id: codigoPromo.id },
-        data: { usosActuales: { increment: 1 } },
+      // Verificar si el repartidor ya usó este código
+      const yaUsado = await db.recargaSaldo.findFirst({
+        where: { repartidorId: profile.id, codigo, estado: 'completada' },
       });
+      if (yaUsado) {
+        return NextResponse.json({ error: 'Ya usaste este código' }, { status: 400 });
+      }
 
-      const recarga = await db.recargaSaldo.create({
-        data: {
-          repartidorId: profile.id,
-          monto: montoFinal,
-          metodo: 'codigo',
-          codigo,
-          estado: 'completada',
-          referencia: codigoPromo.id,
-        },
-      });
-
-      await db.repartidorProfile.update({
-        where: { id: profile.id },
-        data: { saldo: { increment: montoFinal } },
-      });
+      // Transacción: incrementar usos + crear recarga + incrementar saldo
+      const [recarga] = await db.$transaction([
+        db.recargaSaldo.create({
+          data: {
+            repartidorId: profile.id,
+            monto: montoFinal,
+            metodo: 'codigo',
+            codigo,
+            estado: 'completada',
+            referencia: codigoPromo.id,
+          },
+        }),
+        db.repartidorProfile.update({
+          where: { id: profile.id },
+          data: { saldo: { increment: montoFinal } },
+        }),
+        db.codigoPromocional.update({
+          where: { id: codigoPromo.id },
+          data: { usosActuales: { increment: 1 } },
+        }),
+      ]);
 
       return NextResponse.json({
         ok: true,
         nuevoSaldo: profile.saldo + montoFinal,
         recarga,
+        estado: 'completada',
       });
     }
 
-    // Recarga normal (transferencia/efectivo) — requiere aprobación admin
+    // Caso 2: recarga por transferencia/efectivo/tarjeta — queda pendiente
+    // El saldo NO se incrementa hasta que un admin apruebe la recarga.
     const recarga = await db.recargaSaldo.create({
       data: {
         repartidorId: profile.id,
-        monto,
+        monto: montoRaw,
         metodo,
-        codigo,
+        codigo: null,
         estado: 'pendiente',
+        referencia,
       },
     });
 
     return NextResponse.json({
       ok: true,
-      mensaje: 'Recarga solicitada correctamente. Pendiente de aprobación por un administrador.',
-      nuevoSaldo: profile.saldo,
+      nuevoSaldo: profile.saldo, // sin cambio hasta aprobación
       recarga,
+      estado: 'pendiente',
+      mensaje: 'Tu recarga está pendiente de aprobación. El saldo se acreditará cuando un administrador la valide.',
     });
   } catch (error) {
     console.error('[RECARGAS_POST]', error);
-    return NextResponse.json({ error: 'Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Error al procesar la recarga' }, { status: 500 });
   }
 }

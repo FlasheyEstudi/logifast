@@ -33,7 +33,12 @@ const roundedClass = {
 };
 
 /**
- * Componente reutilizable para subir imágenes sin memory leaks.
+ * Componente reutilizable para subir imágenes.
+ * - Drag & drop
+ * - Vista previa
+ * - Barra de progreso
+ * - Validación de tipo y tamaño
+ * - Optimización automática (webp)
  */
 export function ImageUploader({
   categoria,
@@ -53,21 +58,15 @@ export function ImageUploader({
   const objectUrlRef = useRef<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [localPreview, setLocalPreview] = useState<string | null>(previewUrl ?? null);
-
-  // Clean up Object URL on unmount
-  useEffect(() => {
-    return () => {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-      }
-    };
-  }, []);
-
   const { upload, loading, progress } = useUpload({
     categoria,
     entidadId,
     onSuccess: (r) => {
+      // Limpiar blob URL previo si existe
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
       setLocalPreview(r.url);
       onUploaded(r.url, r.id);
       notify.success('Imagen subida correctamente');
@@ -78,13 +77,22 @@ export function ImageUploader({
     },
   });
 
-  const handleFile = useCallback(
-    (file: File | null | undefined) => {
-      if (!file) return;
-      // Cleanup previous object URL to avoid memory leaks
+  // Cleanup del blob URL al desmontar (P0-36)
+  useEffect(() => {
+    return () => {
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleFile = useCallback(
+    (file: File | null | undefined) => {
+      if (!file) return;
+      // Limpiar blob URL previo antes de crear uno nuevo (P0-36)
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
       }
       const url = URL.createObjectURL(file);
       objectUrlRef.current = url;

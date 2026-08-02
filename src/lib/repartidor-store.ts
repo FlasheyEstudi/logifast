@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { reproducirSiActivo, vibrarSiActivo, type SonidoTipo } from '@/services/audio';
 import { useConfigStore } from '@/store/configStore';
 import { realtime } from '@/services/realtime';
@@ -366,7 +367,9 @@ function calcularETA(kmRestantes: number): number {
    STORE
    ═══════════════════════════════════════════════════════ */
 
-export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
+export const useRepartidorStore = create<RepartidorStoreState>()(
+  persist(
+    (set, get) => ({
   // Estado inicial
   estado: 'DESCONECTADO',
   conectado: false,
@@ -410,8 +413,41 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
 
   serviciosHoy: [],
 
-  perfil: MOCK_PERFIL,
-  moto: MOCK_MOTO,
+  // P0: Perfil y moto vacíos por defecto — se cargan desde la BD vía syncFromBackend().
+  // No más MOCK_PERFIL con datos falsos (saldo 999999, etc.).
+  perfil: {
+    id: '',
+    nombre: '',
+    email: '',
+    telefono: '',
+    initials: '',
+    color: '#FF5722',
+    motoId: '',
+    zonaPreferida: 'Centro',
+    calificacion: 0,
+    totalEntregas: 0,
+    totalKm: 0,
+    totalGanancias: 0,
+    tiempoPromedio: 0,
+    sonidoActivo: true,
+    vibracionActiva: true,
+    ubicacionActiva: true,
+    saldo: 0,
+    contratoAceptado: false,
+    recargas: [],
+  } as RepartidorProfile,
+  moto: {
+    id: '',
+    nombre: '',
+    modelo: '',
+    placa: '',
+    kmAcumulados: 0,
+    estado: 'DISPONIBLE',
+    ultimoMantenimiento: '',
+    tipoUltimoMantenimiento: '',
+    proximoMantenimientoKm: null,
+    alertaMantenimiento: false,
+  } as MotoAsignada,
   calificaciones: [],
 
   notificaciones: [],
@@ -771,53 +807,13 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
   },
 
   simularMovimiento: () => {
-    const estado = get().estado;
-    if (estado !== 'EN_CAMINO_RECOGER' && estado !== 'RECOGIDO') {
-      // Si está EN_LINEA, simular pequeña variación (estacionario)
-      if (estado === 'EN_LINEA') {
-        const variacionLat = (Math.random() - 0.5) * 0.0002;
-        const variacionLng = (Math.random() - 0.5) * 0.0002;
-        get().actualizarPosicion(get().lat + variacionLat, get().lng + variacionLng);
-      }
-      return;
-    }
-
-    const orden = get().ordenActiva;
-    if (!orden) return;
-
-    const destinoLat = estado === 'EN_CAMINO_RECOGER' ? orden.origenLat : orden.destinoLat;
-    const destinoLng = estado === 'EN_CAMINO_RECOGER' ? orden.origenLng : orden.destinoLng;
-
-    // 60% hacia el destino + 40% variación random (simula calles)
-    const step = 0.00045; // ~50m
-    const direccionLat = destinoLat - get().lat;
-    const direccionLng = destinoLng - get().lng;
-    const magnitud = Math.sqrt(direccionLat ** 2 + direccionLng ** 2) || 1;
-
-    const haciaDestinoLat = (direccionLat / magnitud) * step * 0.6;
-    const haciaDestinoLng = (direccionLng / magnitud) * step * 0.6;
-    const ruidoLat = (Math.random() - 0.5) * step * 0.4;
-    const ruidoLng = (Math.random() - 0.5) * step * 0.4;
-
-    const nuevaLat = get().lat + haciaDestinoLat + ruidoLat;
-    const nuevaLng = get().lng + haciaDestinoLng + ruidoLng;
-
-    // Verificar si llegó al destino
-    const distanciaDestino = calcularDistancia(nuevaLat, nuevaLng, destinoLat, destinoLng);
-    if (distanciaDestino < 0.05) { // menos de 50m
-      // Auto-avanzar al siguiente estado
-      if (estado === 'EN_CAMINO_RECOGER') {
-        get().llegarRecogida();
-      } else if (estado === 'RECOGIDO') {
-        get().llegarEntrega();
-      }
-      return;
-    }
-
-    get().actualizarPosicion(nuevaLat, nuevaLng);
-
-    // Incrementar tiempo transcurrido
-    set({ tiempoTranscurrido: get().tiempoTranscurrido + 5 });
+    // P0: Simulación de movimiento ELIMINADA.
+    // La posición real del repartidor viene del GPS del navegador vía useGeolocation
+    // en RepartidorShell, que llama a actualizarPosicionAsync(lat, lng) con coords reales.
+    // Esta función se mantiene como no-op por compatibilidad con RepartidorShell
+    // (que la invocaba como fallback cuando el GPS no estaba activo).
+    // Ya NO genera movimiento fantasma ni auto-avanza estados de orden.
+    return;
   },
 
   toggleChat: (ordenId) => {
@@ -1279,7 +1275,23 @@ export const useRepartidorStore = create<RepartidorStoreState>((set, get) => ({
       console.error('[fetchChat]', err);
     }
   },
-}));
+    }),
+    {
+      name: 'logifast-repartidor-store',
+      // Solo persistir datos del perfil del repartidor. NO persistir órdenes
+      // en vivo, posición GPS, ni estado de conexión (siempre arrancar offline).
+      partialize: (state) => ({
+        perfil: state.perfil,
+        conectado: false,
+        enServicio: false,
+        pausado: false,
+        ordenActiva: null,
+        ordenesDisponibles: [],
+        mensajes: [],
+      }),
+    }
+  )
+);
 
 /* ═══════════════════════════════════════════════════════
    EXPORT HELPERS

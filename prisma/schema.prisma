@@ -6,8 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  // PostgreSQL para producción (configura DATABASE_URL en .env).
+  // Para desarrollo local sin Docker: ver README_CORREGIDO.md
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── Usuario Principal ───

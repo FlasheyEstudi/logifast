@@ -1,4 +1,4 @@
-const CACHE_NAME = 'logifast-pwa-v7';
+const CACHE_NAME = 'logifast-pwa-v8';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -42,9 +42,21 @@ self.addEventListener('fetch', (event) => {
   const esNextAsset = url.pathname.startsWith('/_next/');
   const esApi = url.pathname.startsWith('/api/');
 
+  // P0-39: NUNCA cachear respuestas de API. Siempre ir a la red.
+  // Si la red falla, responder 503 en lugar de servir datos stale.
   if (esApi) {
-    // NetworkOnly para endpoints /api/* (evitar cachear respuestas dinámicas)
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return new Response(
+          JSON.stringify({ error: 'Sin conexión. Revisa tu internet e inténtalo de nuevo.' }),
+          {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      })
+    );
     return;
   }
 

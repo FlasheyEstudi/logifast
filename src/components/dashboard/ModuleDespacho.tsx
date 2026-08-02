@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutList, Package, ShoppingCart, User, MapPin, Clock, DollarSign,
+  LayoutList, Package, User, MapPin, Clock, DollarSign,
   Check, X, ChevronRight, Timer, ArrowRight, Bike, Radio,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
@@ -286,12 +286,9 @@ export default function ModuleDespacho() {
                     fontSize: 10,
                     fontWeight: 700,
                     cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
                   }}
                 >
-                  <Package size={12} /> Envíos ({envioCount})
+                  📦 Envíos ({envioCount})
                 </button>
                 <button
                   onClick={() => setOrderFilter('compra')}
@@ -304,12 +301,9 @@ export default function ModuleDespacho() {
                     fontSize: 10,
                     fontWeight: 700,
                     cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
                   }}
                 >
-                  <ShoppingCart size={12} /> Pedidos ({compraCount})
+                  🛒 Pedidos ({compraCount})
                 </button>
               </div>
             </div>
@@ -381,12 +375,9 @@ export default function ModuleDespacho() {
                           borderRadius: 4,
                           background: isEnvio ? 'rgba(0,102,255,0.12)' : 'rgba(22,163,74,0.12)',
                           color: isEnvio ? '#0066FF' : '#16A34A',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
                         }}
                       >
-                        {isEnvio ? <><Package size={11} /> ENVÍO</> : <><ShoppingCart size={11} /> PEDIDO</>}
+                        {isEnvio ? '📦 ENVÍO' : '🛒 PEDIDO'}
                       </span>
                       <span
                         className="font-mono"

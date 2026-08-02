@@ -61,68 +61,90 @@ function CustomTooltipCount({ active, payload, label }: any) {
 }
 
 /* ─── KPI Data ─── */
-const getKpiData = (totalOrders: number, avgDeliveryTime: number, totalRevenue: number) => [
-  {
-    label: 'Tiempo prom. entrega',
-    value: avgDeliveryTime,
-    unit: 'min',
-    trend: -3,
-    trendLabel: 'vs sem. anterior',
-    benchmark: '35 min (meta)',
-    icon: Clock,
-    color: '#002A5C',
-  },
-  {
-    label: 'Distancia prom. envío',
-    value: 4.2,
-    unit: 'km',
-    trend: 0.3,
-    trendLabel: 'vs sem. anterior',
-    benchmark: '5.0 km (prom. zona)',
-    icon: MapPin,
-    color: '#FF6600',
-  },
-  {
-    label: 'Ingreso por km',
-    value: 3.8,
-    unit: 'C$/km',
-    trend: 0.2,
-    trendLabel: 'vs sem. anterior',
-    benchmark: '3.5 C$/km (prom.)',
-    icon: DollarSign,
-    color: '#16A34A',
-  },
-  {
-    label: 'Tasa de incidencias',
-    value: 8,
-    unit: '%',
-    trend: 2,
-    trendLabel: 'vs sem. anterior',
-    benchmark: '5% (umbral)',
-    icon: AlertTriangle,
-    color: '#DC2626',
-  },
-  {
-    label: 'Entrega a tiempo',
-    value: 92,
-    unit: '%',
-    trend: 1,
-    trendLabel: 'vs sem. anterior',
-    benchmark: '90% (meta)',
-    icon: Percent,
-    color: '#002A5C',
-  },
-  {
-    label: 'Utilización de flota',
-    value: 58,
-    unit: '%',
-    trend: -4,
-    trendLabel: 'vs sem. anterior',
-    benchmark: '70% (óptimo)',
-    icon: Truck,
-    color: '#FF6600',
-  },
-];
+const getKpiData = (
+  totalOrders: number,
+  avgDeliveryTime: number,
+  totalRevenue: number,
+  stats: any,
+) => {
+  const metricas = stats?.metricas;
+  const tasaIncidencias: number | '-' =
+    metricas && typeof metricas.totalOrdenes === 'number' && metricas.totalOrdenes > 0
+      ? Math.round((metricas.incidenciasCount / metricas.totalOrdenes) * 100)
+      : '-';
+  const entregaATiempo: number | '-' =
+    typeof metricas?.tasaExito === 'number' ? metricas.tasaExito : '-';
+  const utilizacionFlota: number | '-' =
+    metricas && typeof metricas.motosTotal === 'number' && metricas.motosTotal > 0
+      ? Math.round((metricas.motosEnServicio / metricas.motosTotal) * 100)
+      : '-';
+
+  return [
+    {
+      label: 'Tiempo prom. entrega',
+      // TODO: conectar a /api/admin/reportes cuando exponga tiempo prom. entrega
+      value: '-' as number | '-',
+      unit: 'min',
+      trend: 0,
+      trendLabel: 'vs sem. anterior',
+      benchmark: '35 min (meta)',
+      icon: Clock,
+      color: '#002A5C',
+    },
+    {
+      label: 'Distancia prom. envío',
+      // TODO: conectar a /api/admin/reportes cuando exponga distancia promedio
+      value: '-' as number | '-',
+      unit: 'km',
+      trend: 0,
+      trendLabel: 'vs sem. anterior',
+      benchmark: '5.0 km (prom. zona)',
+      icon: MapPin,
+      color: '#FF6600',
+    },
+    {
+      label: 'Ingreso por km',
+      // TODO: conectar a /api/admin/reportes cuando exponga ingreso por km
+      value: '-' as number | '-',
+      unit: 'C$/km',
+      trend: 0,
+      trendLabel: 'vs sem. anterior',
+      benchmark: '3.5 C$/km (prom.)',
+      icon: DollarSign,
+      color: '#16A34A',
+    },
+    {
+      label: 'Tasa de incidencias',
+      value: tasaIncidencias,
+      unit: '%',
+      trend: 0,
+      trendLabel: 'vs sem. anterior',
+      benchmark: '5% (umbral)',
+      icon: AlertTriangle,
+      color: '#DC2626',
+    },
+    {
+      label: 'Entrega a tiempo',
+      value: entregaATiempo,
+      unit: '%',
+      trend: 0,
+      trendLabel: 'vs sem. anterior',
+      benchmark: '90% (meta)',
+      icon: Percent,
+      color: '#002A5C',
+    },
+    {
+      label: 'Utilización de flota',
+      value: utilizacionFlota,
+      unit: '%',
+      trend: 0,
+      trendLabel: 'vs sem. anterior',
+      benchmark: '70% (óptimo)',
+      icon: Truck,
+      color: '#FF6600',
+    },
+  ];
+};
 
 /* ─── Previous Period Data for Monthly Trend ─── */
 function getPreviousPeriodData(monthlyRevenue: { mes: string; monto: number }[]) {
@@ -135,6 +157,18 @@ function getPreviousPeriodData(monthlyRevenue: { mes: string; monto: number }[])
 export default function ModuleReportes() {
   const { dailyRevenue, monthlyRevenue, zoneOrders, riderPerformance, orderStatusDistribution, motos, orders } = useStore();
   const { toasts, showToast } = useToast();
+
+  /* ─── Real reportes stats from /api/admin/reportes ─── */
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/reportes')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setStats(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const totalOrders = useMemo(() => orderStatusDistribution.reduce((s, d) => s + d.value, 0), [orderStatusDistribution]);
 
@@ -167,8 +201,17 @@ export default function ModuleReportes() {
 
   const KPI_DATA = useMemo(() => {
     const totalRev = orders.reduce((s, o) => s + (o.monto || 0), 0);
-    return getKpiData(orders.length, 25, totalRev);
-  }, [orders]);
+    return getKpiData(orders.length, 25, totalRev, stats);
+  }, [orders, stats]);
+
+  /* ─── Tasa de incidencias real from /api/admin/reportes ─── */
+  const tasaIncidenciasReal = useMemo<number | null>(() => {
+    const metricas = stats?.metricas;
+    if (!metricas || typeof metricas.totalOrdenes !== 'number' || metricas.totalOrdenes <= 0) {
+      return null;
+    }
+    return Math.round((metricas.incidenciasCount / metricas.totalOrdenes) * 100);
+  }, [stats]);
 
   /* ─── Period comparison state ─── */
   const [comparePeriod, setComparePeriod] = useState(false);
@@ -259,7 +302,7 @@ export default function ModuleReportes() {
     URL.revokeObjectURL(url);
     setExportOpen(false);
     showToast('Reporte Excel (.xlsx) generado y descargado', 'success');
-  }, [dailyRevenue, showToast, PIVOT_DATA]);
+  }, [dailyRevenue, showToast]);
 
   /* ─── Export: PDF ─── */
   const handleExportPDF = useCallback(() => {
@@ -331,7 +374,7 @@ export default function ModuleReportes() {
     printWindow.document.close();
     setExportOpen(false);
     showToast('Reporte PDF generado correctamente', 'success');
-  }, [dailyRevenue, totalOrders, showToast, PIVOT_DATA]);
+  }, [dailyRevenue, totalOrders, showToast]);
 
   /* ─── Export: Clipboard ─── */
   const handleCopyData = useCallback(async () => {
@@ -451,6 +494,7 @@ export default function ModuleReportes() {
       {/* ═══════════════════════════════════════════
           ENHANCEMENT 2: Anomaly Alert Banner
           ═══════════════════════════════════════════ */}
+      {tasaIncidenciasReal !== null && tasaIncidenciasReal > 5 && (
       <div style={{
         background: 'rgba(251,191,36,0.08)',
         border: '1px solid rgba(251,191,36,0.4)',
@@ -472,13 +516,14 @@ export default function ModuleReportes() {
         </div>
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--lf-text-main)' }}>
-            Tasa de incidencias 8% — por encima del umbral del 5%
+            Tasa de incidencias {tasaIncidenciasReal}% — por encima del umbral del 5%
           </div>
           <div style={{ fontSize: 11, color: 'var(--lf-text-muted)', marginTop: 2 }}>
             Revisar incidencias activas para reducir la tasa debajo del umbral aceptable
           </div>
         </div>
       </div>
+      )}
 
       {/* ═══════════════════════════════════════════
           CHARTS (existing — kept intact)

@@ -13,11 +13,11 @@ type ConfigCampo = 'sonidoActivo' | 'vibracionActiva' | 'ubicacionActiva' | 'zon
  */
 export async function GET() {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.user || !repData.profile) {
+    const rp = await getRepartidorProfile();
+    if (!rp) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const { user, profile } = repData;
+    const { user, profile } = rp;
 
     const result: RepartidorProfile = {
       id: profile.id,
@@ -44,27 +44,7 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (error) {
     console.error('[REPARTIDOR_PERFIL_GET]', error);
-    return NextResponse.json({
-      id: 'rep-demo-1',
-      nombre: 'Carlos Mendoza',
-      email: 'repartidor@logifast.com',
-      telefono: '+505 8888-0000',
-      initials: 'CM',
-      color: '#FF5722',
-      motoId: 'moto-default',
-      zonaPreferida: 'Centro',
-      calificacion: 5.0,
-      totalEntregas: 0,
-      totalKm: 0,
-      totalGanancias: 0,
-      tiempoPromedio: 0,
-      sonidoActivo: true,
-      vibracionActiva: true,
-      ubicacionActiva: true,
-      saldo: 250,
-      contratoAceptado: true,
-      recargas: [],
-    });
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 }
 
@@ -74,11 +54,11 @@ export async function GET() {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.user || !repData.profile) {
+    const rp = await getRepartidorProfile();
+    if (!rp) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const { user, profile } = repData;
+    const { user: _u, profile } = rp;
 
     const body = await req.json();
     const updates = body as Partial<Record<ConfigCampo | 'contratoAceptado' | 'zonaPreferida', boolean | string>>;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bike, ClipboardList, User } from '@/components/icons';
+import { Moon, Sun, TrendingUp, Clock, Route as RouteIcon } from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
@@ -12,7 +12,7 @@ import { reproducirSiActivo } from '@/services/audio';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 /* ═══════════════════════════════════════════════
-   DYNAMIC MODULE IMPORTS
+   DYNAMIC MODULE IMPORTS — mantienen todos los overlays
    ═══════════════════════════════════════════════ */
 
 const RepartidorServicio = dynamic(() => import('./RepartidorServicio'), { ssr: false });
@@ -51,19 +51,110 @@ interface RepartidorShellProps {
 }
 
 /* ═══════════════════════════════════════════════
-   NAV CONFIG
+   NAV CONFIG — iOS native 4-item tab bar
+   🚚 En Servicio | 📋 Historial | 💰 Ganancias | 👤 Perfil
    ═══════════════════════════════════════════════ */
 
-type RepartidorTab = 'servicio' | 'historial' | 'perfil';
+type RepartidorTabKey = 'servicio' | 'historial' | 'ganancias' | 'perfil';
+type StorePantalla = 'servicio' | 'historial' | 'perfil';
 
-const NAV_ITEMS: { key: RepartidorTab; label: string; icon: React.ReactNode }[] = [
-  { key: 'servicio', label: 'Servicio', icon: <Bike size={22} /> },
-  { key: 'historial', label: 'Historial', icon: <ClipboardList size={22} /> },
-  { key: 'perfil', label: 'Perfil', icon: <User size={22} /> },
+const TAB_LABELS: Record<RepartidorTabKey, string> = {
+  servicio: 'En Servicio',
+  historial: 'Historial',
+  ganancias: 'Ganancias',
+  perfil: 'Perfil',
+};
+
+/* ─── SVG icons (24x24, stroke-width 1.8) para tab bar ─── */
+
+function ServicioIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 6h11v9H3z" />
+      <path d="M14 9h4l3 3v3h-7z" />
+      <circle cx="7" cy="18" r="1.8" />
+      <circle cx="17" cy="18" r="1.8" />
+    </svg>
+  );
+}
+
+function HistorialIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 7h8M8 11h8M8 15h5" />
+    </svg>
+  );
+}
+
+function GananciasIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <circle cx="17" cy="14.5" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function PerfilIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a8 8 0 0116 0v1" />
+    </svg>
+  );
+}
+
+const NAV_ITEMS: { key: RepartidorTabKey; label: string; icon: React.ReactNode }[] = [
+  { key: 'servicio', label: 'En Servicio', icon: <ServicioIcon /> },
+  { key: 'historial', label: 'Historial', icon: <HistorialIcon /> },
+  { key: 'ganancias', label: 'Ganancias', icon: <GananciasIcon /> },
+  { key: 'perfil', label: 'Perfil', icon: <PerfilIcon /> },
 ];
 
 /* ═══════════════════════════════════════════════
-   STATUS BAR SVG ICONS
+   STATUS BAR SVG ICONS (mantener simulación móvil)
    ═══════════════════════════════════════════════ */
 
 function SignalIcon() {
@@ -98,6 +189,203 @@ function BatteryIcon() {
 }
 
 /* ═══════════════════════════════════════════════
+   GANANCIAS PANEL — inline (sin modificar store)
+   Usa obtenerStats y perfil del store existente.
+   ═══════════════════════════════════════════════ */
+
+function GananciasPanel() {
+  const { obtenerStats, perfil } = useRepartidorStore();
+  const [periodo, setPeriodo] = useState<'hoy' | 'semana' | 'mes'>('hoy');
+  const stats = obtenerStats(periodo);
+
+  const promedio = stats.entregas > 0 ? stats.ganancias / stats.entregas : 0;
+
+  return (
+    <div style={{ padding: '8px 0 40px' }}>
+      {/* Period selector — pills iOS */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {(['hoy', 'semana', 'mes'] as const).map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriodo(p)}
+            className={`lf-ios-pill${periodo === p ? ' active' : ''}`}
+            style={{
+              cursor: 'pointer',
+              border: 'none',
+              fontFamily: 'var(--ios-font)',
+              textTransform: 'capitalize',
+            }}
+          >
+            {p === 'hoy' ? 'Hoy' : p === 'semana' ? 'Semana' : 'Mes'}
+          </button>
+        ))}
+      </div>
+
+      {/* Big ganancias card */}
+      <div
+        className="lf-ios-card"
+        style={{ textAlign: 'center', padding: '28px 16px' }}
+      >
+        <div
+          style={{
+            fontSize: 13,
+            color: 'var(--ios-text-tertiary)',
+            marginBottom: 6,
+            fontFamily: 'var(--ios-font)',
+          }}
+        >
+          Ganancias {periodo === 'hoy' ? 'de hoy' : periodo === 'semana' ? 'de la semana' : 'del mes'}
+        </div>
+        <div
+          className="font-mono"
+          style={{
+            fontSize: 42,
+            fontWeight: 700,
+            color: 'var(--ios-green)',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1,
+          }}
+        >
+          C${stats.ganancias.toFixed(2)}
+        </div>
+        <div
+          style={{
+            fontSize: 12,
+            color: 'var(--ios-text-tertiary)',
+            marginTop: 8,
+            fontFamily: 'var(--ios-font)',
+          }}
+        >
+          {stats.entregas} entrega{stats.entregas === 1 ? '' : 's'} completada{stats.entregas === 1 ? '' : 's'}
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="lf-ios-card">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '10px 0',
+            borderBottom: '0.5px solid var(--ios-separator)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ios-text-secondary)' }}>
+            <RouteIcon size={18} />
+            <span style={{ fontSize: 15, fontFamily: 'var(--ios-font)' }}>Kilómetros recorridos</span>
+          </div>
+          <span
+            className="font-mono"
+            style={{ fontSize: 15, fontWeight: 600, color: 'var(--ios-text-primary)' }}
+          >
+            {stats.km.toFixed(1)} km
+          </span>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '10px 0',
+            borderBottom: '0.5px solid var(--ios-separator)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ios-text-secondary)' }}>
+            <Clock size={18} />
+            <span style={{ fontSize: 15, fontFamily: 'var(--ios-font)' }}>Tiempo activo</span>
+          </div>
+          <span
+            className="font-mono"
+            style={{ fontSize: 15, fontWeight: 600, color: 'var(--ios-text-primary)' }}
+          >
+            {stats.tiempoActivo} min
+          </span>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '10px 0',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ios-text-secondary)' }}>
+            <TrendingUp size={18} />
+            <span style={{ fontSize: 15, fontFamily: 'var(--ios-font)' }}>Promedio por entrega</span>
+          </div>
+          <span
+            className="font-mono"
+            style={{ fontSize: 15, fontWeight: 600, color: 'var(--ios-text-primary)' }}
+          >
+            C${promedio.toFixed(2)}
+          </span>
+        </div>
+      </div>
+
+      {/* Info card */}
+      <div
+        className="lf-ios-card"
+        style={{
+          background: 'rgba(0, 122, 255, 0.08)',
+          border: '0.5px solid rgba(0, 122, 255, 0.2)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: 13,
+            color: 'var(--ios-blue)',
+            fontWeight: 600,
+            marginBottom: 4,
+            fontFamily: 'var(--ios-font)',
+          }}
+        >
+          💡 ¿Cómo se calculan tus ganancias?
+        </div>
+        <div
+          style={{
+            fontSize: 12,
+            color: 'var(--ios-text-secondary)',
+            lineHeight: 1.5,
+            fontFamily: 'var(--ios-font)',
+          }}
+        >
+          Las ganancias incluyen todos los servicios completados en el período seleccionado.
+          Las incidencias o cancelaciones no se contabilizan.
+        </div>
+      </div>
+
+      {/* Saldo actual de billetera */}
+      {typeof perfil?.saldo === 'number' && (
+        <div className="lf-ios-card">
+          <div
+            style={{
+              fontSize: 13,
+              color: 'var(--ios-text-tertiary)',
+              marginBottom: 6,
+              fontFamily: 'var(--ios-font)',
+            }}
+          >
+            Saldo actual en billetera
+          </div>
+          <div
+            className="font-mono"
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              color: 'var(--ios-text-primary)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            C${perfil.saldo.toFixed(2)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
@@ -106,8 +394,8 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     pantallaActiva,
     setPantalla,
     conectado,
-    enServicio,
     ordenAsignadaPendiente,
+    ordenesActivas = [],
     chatAbierto,
     incidenciaAbierta,
     servicioDetalle,
@@ -115,26 +403,34 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     perfil,
     actualizarPosicion,
     estado,
+    conectar,
+    desconectar,
   } = useRepartidorStore();
 
   const syncFromBackend = useRepartidorStore((s) => s.syncFromBackend);
   const actualizarPosicionAsync = useRepartidorStore((s) => s.actualizarPosicionAsync);
 
+  /* Local state for "ganancias" tab — no store modification */
+  const [gananciasActive, setGananciasActive] = useState(false);
+
+  const activeTab: RepartidorTabKey = gananciasActive
+    ? 'ganancias'
+    : (pantallaActiva as RepartidorTabKey);
+
   const [snackbar, setSnackbar] = useState<SnackbarData | null>(null);
   const snackbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [clock, setClock] = useState('9:41');
 
-  /* ─── Sync inicial con backend ─── */
+  /* ─── Sync inicial con backend (cada 5s) — MANTENER ─── */
   useEffect(() => {
     syncFromBackend();
-    // Polling cada 15s para refrescar notificaciones y estado
     const interval = setInterval(() => {
       syncFromBackend();
-    }, 15000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [syncFromBackend]);
 
-  // Initialize browser geolocation
+  // Initialize browser geolocation — MANTENER watch: true
   const geo = useGeolocation({ watch: true });
 
   // Start/stop geolocation depending on connected status
@@ -159,12 +455,11 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   useEffect(() => {
     if (conectado && geo.lat !== null && geo.lng !== null) {
       actualizarPosicion(geo.lat, geo.lng);
-      // Enviar al backend (best-effort, no bloquea UI)
       actualizarPosicionAsync(geo.lat, geo.lng);
     }
   }, [conectado, geo.lat, geo.lng, actualizarPosicion, actualizarPosicionAsync]);
 
-  // Emit driver coordinates to the server on any store coordinate changes (real or simulated)
+  // Emit driver coordinates to the server on any store coordinate changes
   const storeLat = useRepartidorStore((s) => s.lat);
   const storeLng = useRepartidorStore((s) => s.lng);
   const storeHeading = useRepartidorStore((s) => s.heading);
@@ -188,7 +483,6 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   useEffect(() => {
     if (!conectado) return;
 
-    // Chat listener
     const cleanupChat = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
       const state = useRepartidorStore.getState();
       const yaExiste = state.mensajes.some((m) => m.id === msg.id);
@@ -196,7 +490,6 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
         useRepartidorStore.setState({
           mensajes: [...state.mensajes, msg]
         });
-        // Play audio alert if message is incoming from customer
         if (msg.emisor === 'cliente') {
           const cfg = useConfigStore.getState();
           reproducirSiActivo('mensaje', {
@@ -208,7 +501,6 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
       }
     });
 
-    // New order assignment listener
     const cleanupOrder = onRealtimeEvent('repartidor:orden:nueva', (orden) => {
       const state = useRepartidorStore.getState();
       if (!state.ordenActiva && !state.ordenAsignadaPendiente) {
@@ -223,8 +515,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     };
   }, [conectado]);
 
-  /* ─── SIMULATION LOOP (5s) ─── */
-  // Falls back to simulation only if browser geolocation is not active or has failed
+  /* ─── SIMULATION LOOP (5s) — MANTENER ─── */
   useEffect(() => {
     if (!conectado) return;
     if (geo.lat !== null && !geo.error) return;
@@ -235,7 +526,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     return () => clearInterval(interval);
   }, [conectado, simularMovimiento, geo.lat, geo.error]);
 
-  /* ─── CLOCK (10s) ─── */
+  /* ─── CLOCK (10s) — MANTENER ─── */
   useEffect(() => {
     const update = () => {
       const d = new Date();
@@ -248,7 +539,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     return () => clearInterval(i);
   }, []);
 
-  /* ─── SNACKBAR AUTO-DISMISS ─── */
+  /* ─── SNACKBAR AUTO-DISMISS — MANTENER ─── */
   const showSnackbar = useCallback((data: SnackbarData | null) => {
     if (snackbarTimerRef.current) clearTimeout(snackbarTimerRef.current);
     setSnackbar(data);
@@ -257,15 +548,44 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     }
   }, []);
 
+  /* ─── handleNav — MANTENER firma, extender para 'ganancias' ─── */
   const handleNav = useCallback(
-    (tab: RepartidorTab) => {
-      setPantalla(tab);
+    (tab: RepartidorTabKey) => {
+      if (tab === 'ganancias') {
+        setGananciasActive(true);
+      } else {
+        setGananciasActive(false);
+        setPantalla(tab as StorePantalla);
+      }
       HAPTIC_PATTERNS.light();
     },
     [setPantalla]
   );
 
+  /* ─── Connection toggle from header pill — usa conectar/desconectar existentes ─── */
+  const handleToggleConnection = useCallback(() => {
+    if (conectado) {
+      desconectar();
+      HAPTIC_PATTERNS.medium();
+      showSnackbar({ message: 'Te has desconectado.' });
+    } else {
+      if (!perfil?.contratoAceptado) {
+        showSnackbar({
+          message: 'Debes firmar el contrato digital en tu Perfil antes de conectarte.',
+        });
+        HAPTIC_PATTERNS.error();
+        return;
+      }
+      conectar();
+      HAPTIC_PATTERNS.medium();
+      showSnackbar({ message: 'Te has conectado. Esperando asignaciones.' });
+    }
+  }, [conectado, conectar, desconectar, perfil, showSnackbar]);
+
   const renderScreen = () => {
+    if (gananciasActive) {
+      return <GananciasPanel />;
+    }
     switch (pantallaActiva) {
       case 'servicio':
         return <RepartidorServicio />;
@@ -285,20 +605,32 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     }
   };
 
+  const title = TAB_LABELS[activeTab];
+
+  /* Servicios badge — ordenesActivas + pendiente de aceptación */
+  const serviciosBadgeCount =
+    (ordenesActivas?.length || 0) + (ordenAsignadaPendiente ? 1 : 0);
+
+  /* Avatar initials */
+  const avatarInitials =
+    perfil?.initials || (userName ? userName.charAt(0).toUpperCase() : 'R');
+  const avatarColor = perfil?.color || 'var(--ios-blue)';
+
   return (
     <SnackbarContext.Provider value={showSnackbar}>
       <div
+        className="lf-ios-app lf-rep-shell"
         style={{
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: 'var(--bg)',
-          color: 'var(--text)',
-          fontFamily: "'DM Sans', sans-serif",
+          backgroundColor: 'var(--ios-bg)',
+          color: 'var(--ios-text-primary)',
+          fontFamily: 'var(--ios-font)',
           transition: 'background-color 0.4s ease, color 0.3s ease',
         }}
       >
-        {/* ═══════ NATIVE STATUS BAR ═══════ */}
+        {/* ═══════ NATIVE STATUS BAR (mobile simulation) ═══════ */}
         <div
           className="lf-rep-status-bar"
           style={{
@@ -318,11 +650,16 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
         >
           <span
             className="font-mono"
-            style={{ fontSize: 14, fontWeight: 500, color: 'var(--md-on-surface)', lineHeight: 1 }}
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              color: 'var(--ios-text-primary)',
+              lineHeight: 1,
+            }}
           >
             {clock}
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--md-on-surface)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ios-text-primary)' }}>
             <SignalIcon />
             <WifiIcon />
             <BatteryIcon />
@@ -351,112 +688,236 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
               width: 120,
               height: 3,
               borderRadius: 2,
-              background: 'var(--md-on-surface-variant)',
+              background: 'var(--ios-text-tertiary)',
               opacity: 0.3,
             }}
           />
         </div>
 
-        {/* ═══════ CONTENT AREA ═══════ */}
-        <main
-          className="lf-rep-content"
-          style={{
-            flex: 1,
-            paddingTop: 'calc(20px + max(24px, env(safe-area-inset-top, 24px)))',
-            paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
-            minHeight: '100vh',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 480,
-              margin: '0 auto',
-              paddingLeft: 16,
-              paddingRight: 16,
-            }}
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={pantallaActiva}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-              >
-                {renderScreen()}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </main>
-
-        {/* ═══════ BOTTOM NAV — Material 3 Pill Indicator ═══════ */}
-        <nav
-          className="lf-rep-bottom-nav"
+        {/* ═══════ iOS HEADER — Large Title + Actions ═══════ */}
+        <header
+          className="lf-ios-header lf-rep-header"
           style={{
             position: 'fixed',
-            bottom: 0,
+            top: 0,
             left: 0,
             right: 0,
-            height: 80,
             zIndex: 50,
             display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-around',
-            background: 'var(--md-surface)',
-            borderTop: '1px solid var(--md-outline-variant)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            flexDirection: 'column',
+            background: 'color-mix(in srgb, var(--ios-bg-elevated) 88%, transparent)',
+            backdropFilter: 'saturate(180%) blur(20px)',
+            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+            borderBottom: '0.5px solid var(--ios-separator)',
             transition: 'background-color 0.3s ease, border-color 0.3s ease',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
           }}
         >
+          {/* Top row: connection pill (left) + theme toggle + avatar (right) */}
+          <div
+            className="lf-ios-header-actions"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 4,
+              padding: '2px 12px 4px',
+              minHeight: 36,
+            }}
+          >
+            {/* Connection status pill — green/red — clickable (usa conectar/desconectar) */}
+            <button
+              onClick={handleToggleConnection}
+              aria-label={conectado ? 'Conectado — tocar para desconectar' : 'Desconectado — tocar para conectar'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: 100,
+                border: 'none',
+                background: conectado ? 'rgba(52, 199, 89, 0.14)' : 'rgba(255, 59, 48, 0.14)',
+                color: conectado ? 'var(--ios-green)' : 'var(--ios-red)',
+                fontFamily: 'var(--ios-font)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'background 0.2s ease, color 0.2s ease',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: conectado ? 'var(--ios-green)' : 'var(--ios-red)',
+                  boxShadow: conectado ? '0 0 6px var(--ios-green)' : 'none',
+                }}
+              />
+              {conectado ? 'En línea' : 'Desconectado'}
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--ios-text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'color 0.2s ease, background 0.2s ease',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {isDark ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
+              </button>
+
+              {/* Avatar button → Perfil tab */}
+              <button
+                onClick={() => handleNav('perfil')}
+                aria-label="Ver perfil"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: avatarColor,
+                  color: '#fff',
+                  fontFamily: 'var(--ios-font)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {avatarInitials}
+              </button>
+            </div>
+          </div>
+
+          {/* iOS Large Title — 34px, font-weight 700 */}
+          <div
+            className="lf-rep-large-title-wrap"
+            style={{
+              padding: '6px 16px 10px',
+              maxWidth: 960,
+              margin: '0 auto',
+              width: '100%',
+            }}
+          >
+            <motion.h1
+              key={title}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              style={{
+                fontFamily: 'var(--ios-font)',
+                fontSize: 34,
+                fontWeight: 700,
+                color: 'var(--ios-text-primary)',
+                letterSpacing: '-0.02em',
+                margin: 0,
+                lineHeight: 1.1,
+              }}
+            >
+              {title}
+            </motion.h1>
+          </div>
+        </header>
+
+        {/* ═══════ CONTENT AREA ═══════ */}
+        <main
+          className="lf-rep-content lf-ios-content"
+          style={{
+            flex: 1,
+            paddingTop: 'calc(96px + env(safe-area-inset-top, 0px))',
+            paddingBottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe))',
+            minHeight: '100vh',
+            backgroundColor: 'var(--ios-bg)',
+            position: 'relative',
+            transition: 'padding 0.3s ease, background-color 0.3s ease',
+          }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className={`lf-ios-screen-transition${activeTab === 'servicio' ? '' : ' lf-rep-pad'}`}
+              style={
+                activeTab === 'servicio'
+                  ? {
+                      position: 'absolute',
+                      top: 0,
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                    }
+                  : {
+                      position: 'relative',
+                      width: '100%',
+                      maxWidth: 960,
+                      margin: '0 auto',
+                      paddingLeft: 16,
+                      paddingRight: 16,
+                      paddingTop: 20,
+                      paddingBottom: 20,
+                    }
+              }
+            >
+              {renderScreen()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+
+        {/* ═══════ iOS NATIVE TAB BAR (4 items) ═══════ */}
+        <nav className="lf-ios-tabbar lf-rep-bottom-nav" aria-label="Navegación repartidor">
           {NAV_ITEMS.map((item) => {
-            const isActive = pantallaActiva === item.key;
+            const isActive = activeTab === item.key;
+            const showServicioBadge = item.key === 'servicio' && serviciosBadgeCount > 0;
             return (
               <button
                 key={item.key}
                 onClick={() => handleNav(item.key)}
+                className={`lf-ios-tabbar-item${isActive ? ' active' : ''}`}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: 'transparent',
-                  color: isActive ? 'var(--md-on-primary-container)' : 'var(--md-on-surface-variant)',
-                  padding: '6px 0 8px',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 12,
-                  fontWeight: isActive ? 700 : 500,
-                  transition: 'color 0.2s ease',
                   position: 'relative',
-                  flex: 1,
-                  maxWidth: 96,
-                  minHeight: 56,
+                  color: isActive ? 'var(--ios-blue)' : 'var(--ios-text-tertiary)',
                 }}
               >
-                <span
-                  style={{
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 64,
-                    height: 32,
-                    borderRadius: 16,
-                    background: isActive ? 'var(--md-primary-container)' : 'transparent',
-                    transition: 'background 0.2s ease',
-                  }}
-                >
+                <span style={{ position: 'relative', display: 'inline-flex' }}>
                   {item.icon}
+                  {showServicioBadge && (
+                    <span className="lf-ios-tabbar-badge">
+                      {serviciosBadgeCount > 9 ? '9+' : serviciosBadgeCount}
+                    </span>
+                  )}
                 </span>
                 <span
                   style={{
-                    fontSize: 12,
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? 'var(--md-on-surface)' : 'var(--md-on-surface-variant)',
+                    fontFamily: 'var(--ios-font)',
+                    fontSize: 10,
+                    fontWeight: isActive ? 600 : 500,
+                    letterSpacing: '0.01em',
+                    color: isActive ? 'var(--ios-blue)' : 'var(--ios-text-tertiary)',
                     transition: 'color 0.2s ease',
                     lineHeight: 1,
                   }}
@@ -468,7 +929,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           })}
         </nav>
 
-        {/* ═══════ SNACKBAR ═══════ */}
+        {/* ═══════ iOS SNACKBAR ═══════ */}
         <AnimatePresence>
           {snackbar && (
             <motion.div
@@ -477,24 +938,24 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 100 }}
               transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-              className="lf-rep-snackbar"
+              className="lf-rep-snackbar lf-ios-snackbar"
               style={{
                 position: 'fixed',
-                bottom: 96,
+                bottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 12px)',
                 left: 16,
                 right: 16,
                 zIndex: 9998,
-                background: 'var(--md-inverse-surface)',
-                color: 'var(--md-inverse-on-surface)',
-                borderRadius: 8,
+                background: 'var(--ios-bg-secondary)',
+                color: 'var(--ios-text-primary)',
+                borderRadius: 'var(--ios-radius-md)',
                 padding: '14px 16px',
-                boxShadow: 'var(--md-elevation-3)',
+                boxShadow: 'var(--ios-shadow-lg)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 14,
-                fontWeight: 400,
+                fontFamily: 'var(--ios-font)',
+                fontSize: 15,
+                fontWeight: 500,
                 lineHeight: 1.4,
               }}
             >
@@ -508,13 +969,13 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
                   style={{
                     border: 'none',
                     background: 'transparent',
-                    color: 'var(--md-inverse-primary)',
-                    fontSize: 14,
+                    color: 'var(--ios-blue)',
+                    fontSize: 15,
                     fontWeight: 600,
                     cursor: 'pointer',
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: 'var(--ios-font)',
                     padding: '4px 8px',
-                    borderRadius: 4,
+                    borderRadius: 'var(--ios-radius-sm)',
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
                   }}
@@ -526,7 +987,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           )}
         </AnimatePresence>
 
-        {/* ═══════ OVERLAYS ═══════ */}
+        {/* ═══════ OVERLAYS — TODOS SE MANTIENEN ═══════ */}
         <AnimatePresence>
           {ordenAsignadaPendiente && <RepartidorNotificacionOrden />}
         </AnimatePresence>
@@ -541,24 +1002,61 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
         <style>{`
           .lf-rep-status-bar,
           .lf-rep-gesture-bar { display: flex !important; }
+
+          /* iOS app container — solid iOS background, no theme flash */
+          .lf-ios-app.lf-rep-shell {
+            background: var(--ios-bg) !important;
+            color: var(--ios-text-primary) !important;
+          }
+
+          /* iOS tab bar — visible at ALL widths (single source of truth) */
+          .lf-ios-tabbar.lf-rep-bottom-nav {
+            display: flex !important;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          /* Wider horizontal padding on desktop (only for non-servicio tabs,
+             since servicio uses full-bleed absolute positioning for the map) */
           @media (min-width: 1024px) {
             .lf-rep-status-bar,
             .lf-rep-gesture-bar { display: none !important; }
-            .lf-rep-snackbar {
+            .lf-rep-large-title-wrap {
+              padding-left: 32px !important;
+              padding-right: 32px !important;
+            }
+            .lf-rep-content.lf-ios-content > .lf-rep-pad {
+              padding-left: 32px !important;
+              padding-right: 32px !important;
+            }
+            .lf-rep-snackbar,
+            .lf-ios-snackbar {
               max-width: 480px;
               left: 50% !important;
               right: auto !important;
               transform: translateX(-50%);
             }
           }
+
           @media (pointer: coarse) {
             .lf-rep-status-bar,
             .lf-rep-gesture-bar { display: none !important; }
           }
+
+          /* Header offset for status bar on mobile */
+          @media (max-width: 1023px) {
+            .lf-rep-header.lf-ios-header {
+              top: max(24px, env(safe-area-inset-top, 24px)) !important;
+            }
+            .lf-rep-content.lf-ios-content {
+              padding-top: calc(96px + max(24px, env(safe-area-inset-top, 24px))) !important;
+            }
+          }
           @media (max-width: 1023px) and (pointer: coarse) {
-            .lf-rep-content {
-              padding-top: calc(16px + env(safe-area-inset-top, 0px)) !important;
-              padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+            .lf-rep-header.lf-ios-header {
+              top: env(safe-area-inset-top, 0px) !important;
+            }
+            .lf-rep-content.lf-ios-content {
+              padding-top: calc(96px + env(safe-area-inset-top, 0px)) !important;
             }
           }
         `}</style>

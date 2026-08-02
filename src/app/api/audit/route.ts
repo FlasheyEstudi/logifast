@@ -6,13 +6,15 @@ import { handleError } from '@/lib/auth/helpers';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireRole('admin');
+    await requireRole('admin');
     const { searchParams } = new URL(request.url);
     const usuario = searchParams.get('usuario');
     const accion = searchParams.get('accion');
     const modulo = searchParams.get('modulo');
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const limitRaw = parseInt(searchParams.get('limit') || '50', 10);
+    const offsetRaw = parseInt(searchParams.get('offset') || '0', 10);
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50;
+    const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
 
     const where: Prisma.AuditLogWhereInput = {};
 

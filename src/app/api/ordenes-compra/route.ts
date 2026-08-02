@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
-import { emitOrdenCreada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/ordenes-compra?clienteId=&estado=&tiendaId=
  * Lista órdenes de compra.
+ * - Cliente: solo sus propias órdenes.
+ * - Repartidor/Ingeniero: no listado (deben usar /api/repartidor/ordenes).
+ * - Admin: puede filtrar por clienteId.
  */
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado');
     const tiendaId = searchParams.get('tiendaId');
@@ -20,10 +25,16 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (estado) where.estado = estado;
     if (tiendaId) where.tiendaId = tiendaId;
-    if (user?.role === 'cliente') {
+
+    if (user.role === 'cliente') {
       where.clienteId = user.id;
-    } else if (clienteIdParam) {
+    } else if (user.role === 'admin' && clienteIdParam) {
       where.clienteId = clienteIdParam;
+    } else if (user.role === 'admin') {
+      // admin sin filtro explícito: lista todo
+    } else {
+      // repartidor/ingeniero: no listado aquí
+      return NextResponse.json({ total: 0, ordenes: [] });
     }
 
     const ordenes = await db.ordenCompra.findMany({
@@ -56,8 +67,6 @@ export async function GET(req: NextRequest) {
       descuento: o.descuento,
       total: o.total,
       codigoUsado: o.codigoUsado ?? undefined,
-      repartidorNombre: 'Por asignar',
-      repartidorInitials: 'PA',
       fecha: o.createdAt.toISOString().slice(0, 10),
       hora: o.createdAt.toLocaleTimeString('es-NI', {
         hour: '2-digit',
@@ -78,13 +87,18 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/ordenes-compra
- * Crea una nueva orden de compra con validación de auth, stock transaccional y re-validación server-side de promociones.
+ * Crea una nueva orden de compra. Requiere sesión de cliente (P0-12).
+ * Re-valida código promocional server-side (P0-13).
+ * Decrementa stock transaccionalmente (P0-14).
  */
 export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser();
     if (!user || user.role !== 'cliente') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Se requiere sesión de cliente para crear órdenes' },
+        { status: 401 }
+      );
     }
 
     const body = await req.json();
@@ -108,90 +122,103 @@ export async function POST(req: NextRequest) {
 
     const tienda = await db.tienda.findUnique({ where: { id: tiendaId } });
     if (!tienda) {
-      return NextResponse.json(
-        { error: 'Tienda no encontrada' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
     }
 
+    // Validar productos, calcular subtotal y verificar stock
+    let subtotal = 0;
+    const itemsData: Array<{
+      productoId: string;
+      nombreProducto: string;
+      cantidad: number;
+      precioUnitario: number;
+      variante?: string | null;
+      notas?: string | null;
+    }> = [];
+
+    for (const item of items) {
+      const producto = await db.producto.findUnique({ where: { id: item.productoId } });
+      if (!producto) {
+        return NextResponse.json(
+          { error: `Producto no encontrado: ${item.productoId}` },
+          { status: 404 }
+        );
+      }
+      if (!producto.disponible) {
+        return NextResponse.json(
+          { error: `Producto no disponible: ${producto.nombre}` },
+          { status: 400 }
+        );
+      }
+      // Validar que el producto pertenece a la tienda indicada
+      if (producto.tiendaId !== tiendaId) {
+        return NextResponse.json(
+          { error: `Producto ${producto.nombre} no pertenece a la tienda indicada` },
+          { status: 400 }
+        );
+      }
+      const cantidad = Math.max(1, Math.floor(Number(item.cantidad ?? 1)));
+      if (!Number.isFinite(cantidad) || cantidad <= 0) {
+        return NextResponse.json({ error: `Cantidad inválida para ${producto.nombre}` }, { status: 400 });
+      }
+      // Validar stock si el producto lo gestiona
+      if (producto.stock !== null && producto.stock < cantidad) {
+        return NextResponse.json(
+          { error: `Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stock}` },
+          { status: 400 }
+        );
+      }
+      itemsData.push({
+        productoId: producto.id,
+        nombreProducto: producto.nombre,
+        cantidad,
+        precioUnitario: producto.precio,
+        variante: item.variante ?? null,
+        notas: item.notas ?? null,
+      });
+      subtotal += producto.precio * cantidad;
+    }
+
+    // Re-validar código promocional server-side (P0-13)
+    let descuentoValidado = 0;
+    let codigoUsado: string | null = null;
+    if (codigoPromo) {
+      const codigoUpper = String(codigoPromo).toUpperCase();
+      const promo = await db.codigoPromocional.findUnique({
+        where: { codigo: codigoUpper },
+      });
+      if (!promo) {
+        return NextResponse.json({ error: 'Código promocional inválido' }, { status: 400 });
+      }
+      if (promo.estado !== 'activo') {
+        return NextResponse.json({ error: 'Código promocional inactivo' }, { status: 400 });
+      }
+      const now = new Date();
+      if (now < promo.vigenciaInicio || now > promo.vigenciaFin) {
+        return NextResponse.json({ error: 'Código promocional expirado' }, { status: 400 });
+      }
+      if (promo.maxUsos > 0 && promo.usosActuales >= promo.maxUsos) {
+        return NextResponse.json({ error: 'Código promocional agotado' }, { status: 400 });
+      }
+      const yaUsado = await db.usoCodigo.findFirst({
+        where: { codigoId: promo.id, clienteId: user.id },
+      });
+      if (yaUsado) {
+        return NextResponse.json({ error: 'Ya usaste este código' }, { status: 400 });
+      }
+      descuentoValidado =
+        promo.tipoDescuento === 'porcentaje'
+          ? Math.round((subtotal * promo.valor) / 100)
+          : Math.min(subtotal, promo.valor);
+      codigoUsado = codigoUpper;
+    }
+
+    const costoEnvio = tienda.costoEnvio;
+    const total = Math.max(0, subtotal + costoEnvio - descuentoValidado);
+
+    // Transacción: crear orden + items + decrementar stock + usar código + crear OrdenServicio
     const result = await db.$transaction(async (tx) => {
-      let subtotal = 0;
-      const itemsData: Array<{
-        productoId: string;
-        nombreProducto: string;
-        cantidad: number;
-        precioUnitario: number;
-        variante?: string | null;
-        notas?: string | null;
-      }> = [];
-
-      for (const item of items) {
-        const producto = await tx.producto.findUnique({ where: { id: item.productoId } });
-        if (!producto) {
-          throw new Error(`PRODUCT_NOT_FOUND:${item.productoId}`);
-        }
-        if (!producto.disponible) {
-          throw new Error(`PRODUCT_NOT_AVAILABLE:${producto.nombre}`);
-        }
-
-        const cantidad = Number(item.cantidad ?? 1);
-        if (producto.stock !== null && producto.stock < cantidad) {
-          throw new Error(`INSUFFICIENT_STOCK:${producto.nombre}`);
-        }
-
-        if (producto.stock !== null) {
-          await tx.producto.update({
-            where: { id: producto.id },
-            data: { stock: { decrement: cantidad } },
-          });
-        }
-
-        itemsData.push({
-          productoId: producto.id,
-          nombreProducto: producto.nombre,
-          cantidad,
-          precioUnitario: producto.precio,
-          variante: item.variante ?? null,
-          notas: item.notas ?? null,
-        });
-        subtotal += producto.precio * cantidad;
-      }
-
-      // Re-validar código promocional server-side
-      let descuentoCalculado = 0;
-      let codigoPromoObj: any = null;
-      if (codigoPromo) {
-        codigoPromoObj = await tx.codigoPromocional.findUnique({ where: { codigo: String(codigoPromo) } });
-        if (codigoPromoObj && codigoPromoObj.estado === 'activo') {
-          const now = new Date();
-          if (now >= codigoPromoObj.vigenciaInicio && now <= codigoPromoObj.vigenciaFin) {
-            if (codigoPromoObj.maxUsos === 0 || codigoPromoObj.usosActuales < codigoPromoObj.maxUsos) {
-              if (codigoPromoObj.tipoDescuento === 'porcentaje') {
-                descuentoCalculado = Math.round((subtotal * codigoPromoObj.valor) / 100);
-              } else {
-                descuentoCalculado = codigoPromoObj.valor;
-              }
-
-              await tx.codigoPromocional.update({
-                where: { id: codigoPromoObj.id },
-                data: { usosActuales: { increment: 1 } },
-              });
-
-              await tx.usoCodigo.create({
-                data: {
-                  codigoId: codigoPromoObj.id,
-                  clienteId: user.id,
-                  descuento: descuentoCalculado,
-                },
-              }).catch(() => null);
-            }
-          }
-        }
-      }
-
-      const costoEnvio = tienda.costoEnvio;
-      const total = Math.max(0, subtotal + costoEnvio - descuentoCalculado);
-
+      // 1. Crear orden de compra
       const orden = await tx.ordenCompra.create({
         data: {
           clienteId: user.id,
@@ -204,24 +231,53 @@ export async function POST(req: NextRequest) {
           metodoPago,
           subtotal,
           costoEnvio,
-          descuento: descuentoCalculado,
-          codigoUsado: codigoPromoObj ? codigoPromoObj.codigo : null,
+          descuento: descuentoValidado,
+          codigoUsado,
           total,
           items: {
             create: itemsData,
           },
         },
-        include: {
-          items: true,
-          tienda: true,
-        },
+        include: { items: true, tienda: true },
       });
 
+      // 2. Decrementar stock por cada item
+      for (const item of itemsData) {
+        const updated = await tx.producto.update({
+          where: { id: item.productoId },
+          data: { stock: { decrement: item.cantidad } },
+        });
+        if (updated.stock !== null && updated.stock < 0) {
+          throw new Error(`Stock insuficiente para ${item.nombreProducto}`);
+        }
+      }
+
+      // 3. Si se usó código, registrar uso
+      if (codigoUsado) {
+        const promo = await tx.codigoPromocional.findUnique({ where: { codigo: codigoUsado } });
+        if (promo) {
+          await tx.usoCodigo.create({
+            data: {
+              codigoId: promo.id,
+              clienteId: user.id,
+              ordenId: orden.id,
+              descuento: descuentoValidado,
+            },
+          });
+          await tx.codigoPromocional.update({
+            where: { id: promo.id },
+            data: { usosActuales: { increment: 1 } },
+          });
+        }
+      }
+
+      // 4. Incrementar totalPedidos de la tienda
       await tx.tienda.update({
         where: { id: tiendaId },
         data: { totalPedidos: { increment: 1 } },
       });
 
+      // 5. Crear OrdenServicio para el repartidor (tipo compra)
       const ordenServicio = await tx.ordenServicio.create({
         data: {
           clienteId: user.id,
@@ -248,24 +304,27 @@ export async function POST(req: NextRequest) {
       return { orden, ordenServicio };
     });
 
-    emitOrdenCreada(result.ordenServicio);
-
-    const repartidoresConectados = await db.repartidorProfile.findMany({
-      where: { conectado: true },
-      take: 10,
-    }).catch(() => []);
+    // Notificar a repartidores conectados con contrato aceptado (fuera de transacción)
+    const repartidoresConectados = await db.repartidorProfile
+      .findMany({
+        where: { conectado: true, pausado: false, contratoAceptado: true },
+        take: 15,
+      })
+      .catch(() => []);
 
     for (const rep of repartidoresConectados) {
-      await db.notificacionRepartidor.create({
-        data: {
-          repartidorId: rep.id,
-          tipo: 'nueva_orden_disponible',
-          titulo: 'Nueva compra disponible',
-          contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre}`,
-          leido: false,
-          ordenId: result.ordenServicio.id,
-        },
-      }).catch(() => null);
+      await db.notificacionRepartidor
+        .create({
+          data: {
+            repartidorId: rep.id,
+            tipo: 'nueva_orden_disponible',
+            titulo: 'Nueva compra disponible',
+            contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre} — Total: C$${total}`,
+            leido: false,
+            ordenId: result.ordenServicio.id,
+          },
+        })
+        .catch(() => null);
     }
 
     return NextResponse.json(
@@ -287,23 +346,9 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    if (error.message?.startsWith('INSUFFICIENT_STOCK:')) {
-      const name = error.message.split('INSUFFICIENT_STOCK:')[1];
-      return NextResponse.json({ error: `Stock insuficiente para: ${name}` }, { status: 400 });
-    }
-    if (error.message?.startsWith('PRODUCT_NOT_AVAILABLE:')) {
-      const name = error.message.split('PRODUCT_NOT_AVAILABLE:')[1];
-      return NextResponse.json({ error: `Producto no disponible: ${name}` }, { status: 400 });
-    }
-    if (error.message?.startsWith('PRODUCT_NOT_FOUND:')) {
-      const id = error.message.split('PRODUCT_NOT_FOUND:')[1];
-      return NextResponse.json({ error: `Producto no encontrado: ${id}` }, { status: 404 });
-    }
+  } catch (error) {
     console.error('Error creando orden de compra:', error);
-    return NextResponse.json(
-      { error: 'Error al crear la orden de compra' },
-      { status: 500 }
-    );
+    const msg = error instanceof Error ? error.message : 'Error al crear la orden de compra';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

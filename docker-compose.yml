@@ -1,0 +1,41 @@
+version: '3.8'
+
+# PostgreSQL para desarrollo local de Logifast
+# Uso:
+#   docker-compose up -d
+#   npx prisma db push
+#   node scripts/seed.js
+#   npm run dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: logifast-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: logifast
+      POSTGRES_PASSWORD: logifast
+      POSTGRES_DB: logifast
+    ports:
+      - "5432:5432"
+    volumes:
+      - logifast_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logifast"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Servicio realtime (socket.io) — opcional
+  realtime:
+    build: ./mini-services/realtime-service
+    container_name: logifast-realtime
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  logifast_pgdata:

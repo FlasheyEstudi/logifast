@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
+
+const postSchema = z.object({
+  productoId: z.string().min(1, 'productoId requerido'),
+  estrellas: z.number().int().min(1, 'Mínimo 1 estrella').max(5, 'Máximo 5 estrellas'),
+  comentario: z.string().max(1000, 'Comentario demasiado largo').optional().nullable(),
+  ordenId: z.string().optional().nullable(),
+});
 
 /**
  * GET /api/valoraciones?productoId=
@@ -55,26 +63,58 @@ export async function GET(req: NextRequest) {
 /**
  * POST /api/valoraciones
  * Body: { productoId, estrellas, comentario?, ordenId? }
+ * P1: Valida que el cliente haya comprado el producto antes de permitir calificar.
  */
 export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser();
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    if (user.role !== 'cliente' && user.role !== 'admin') {
+      return NextResponse.json({ error: 'Solo los clientes pueden calificar' }, { status: 403 });
+    }
 
     const body = await req.json();
-    const productoId = String(body.productoId);
-    const estrellas = Number(body.estrellas);
-    const comentario = body.comentario ? String(body.comentario) : null;
-    const ordenId = body.ordenId ? String(body.ordenId) : null;
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
+    const { productoId, estrellas, comentario, ordenId } = parsed.data;
 
-    if (!productoId || !estrellas || estrellas < 1 || estrellas > 5) {
-      return NextResponse.json({ error: 'productoId y estrellas (1-5) requeridos' }, { status: 400 });
+    // Validar que el producto existe
+    const producto = await db.producto.findUnique({
+      where: { id: productoId },
+      select: { id: true, nombre: true },
+    });
+    if (!producto) {
+      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    }
+
+    // P1: Validar que el cliente haya comprado el producto (al menos una orden entregada)
+    if (user.role === 'cliente') {
+      const compra = await db.itemOrdenCompra.findFirst({
+        where: {
+          productoId,
+          orden: {
+            clienteId: user.id,
+            estado: { in: ['entregado', 'en_camino'] },
+          },
+        },
+      });
+      if (!compra) {
+        return NextResponse.json(
+          { error: 'Solo puedes calificar productos que hayas comprado' },
+          { status: 403 }
+        );
+      }
     }
 
     const valoracion = await db.valoracionProducto.upsert({
       where: { productoId_clienteId: { productoId, clienteId: user.id } },
-      update: { estrellas, comentario },
-      create: { productoId, clienteId: user.id, estrellas, comentario, ordenId },
+      update: { estrellas, comentario, ordenId: ordenId ?? null },
+      create: { productoId, clienteId: user.id, estrellas, comentario, ordenId: ordenId ?? null },
     });
 
     return NextResponse.json({ ok: true, valoracion });

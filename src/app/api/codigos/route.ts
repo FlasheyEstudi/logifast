@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
+
+const postSchema = z.object({
+  codigo: z.string().min(1, 'codigo requerido').max(50),
+  tipoDescuento: z.enum(['porcentaje', 'monto']),
+  valor: z.number().min(0, 'valor debe ser >= 0'),
+  aplicableA: z.enum(['todos', 'primer_envio', 'envio_minimo']),
+  montoMinimo: z.number().min(0).optional().nullable(),
+  maxUsos: z.number().int().min(0).optional(),
+  segmento: z.string().max(50).optional(),
+  vigenciaInicio: z.string().min(1, 'vigenciaInicio requerido'),
+  vigenciaFin: z.string().min(1, 'vigenciaFin requerido'),
+  estado: z.enum(['activo', 'inactivo']).optional(),
+  creadoPor: z.string().min(1, 'creadoPor requerido'),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +45,13 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireRole('admin');
     const body = await request.json();
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
     const {
       codigo,
       tipoDescuento,

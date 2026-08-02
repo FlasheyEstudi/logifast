@@ -10,98 +10,79 @@ export async function PATCH(
   try {
     await requireRole('ingeniero', 'admin');
     const { id } = await params;
-    const body = await req.json().catch(() => ({}));
-    const { repuestosUsados = [] } = body;
+    const body = await req.json();
+    const { costoTotal, repuestosUsados } = body;
 
-    const existing = await prisma.mantenimiento.findUnique({ where: { id } });
-    if (!existing) {
+    // P0-21: Validar estado previo (state machine)
+    const mantenimiento = await prisma.mantenimiento.findUnique({ where: { id } });
+    if (!mantenimiento) {
       return NextResponse.json({ error: 'Mantenimiento no encontrado' }, { status: 404 });
     }
-
-    if (existing.estado !== 'EN_PROCESO' && existing.estado !== 'en_progreso') {
+    if (mantenimiento.estado !== 'EN_PROCESO') {
       return NextResponse.json(
-        { error: `Solo se puede completar un mantenimiento que esté EN_PROCESO. Estado actual: ${existing.estado}` },
+        { error: `Solo se pueden completar mantenimientos en proceso. Estado actual: ${mantenimiento.estado}` },
         { status: 400 }
       );
     }
 
-    const mantenimientoCompletado = await prisma.$transaction(async (tx) => {
-      let costoRepuestosSum = 0;
-
-      if (Array.isArray(repuestosUsados) && repuestosUsados.length > 0) {
-        for (const item of repuestosUsados) {
-          const repuestoId = item.repuestoId || item.id;
-          const cantidad = Number(item.cantidad || 1);
-
-          const repuesto = await tx.repuesto.findUnique({ where: { id: repuestoId } });
-          if (!repuesto) {
-            throw new Error(`REPUESTO_NOT_FOUND:${repuestoId}`);
-          }
-          if (repuesto.stock < cantidad) {
-            throw new Error(`INSUFFICIENT_STOCK:${repuesto.nombre}`);
-          }
-
-          await tx.repuesto.update({
-            where: { id: repuestoId },
+    // P0-22: Decrementar stock de repuestos transaccionalmente
+    let costoRepuestos = 0;
+    if (Array.isArray(repuestosUsados) && repuestosUsados.length > 0) {
+      await prisma.$transaction(async (tx) => {
+        for (const ru of repuestosUsados) {
+          const cantidad = Math.max(1, Math.floor(Number(ru.cantidad ?? 1)));
+          const repuesto = await tx.repuesto.update({
+            where: { id: ru.repuestoId },
             data: { stock: { decrement: cantidad } },
           });
-
-          const precio = item.precioUnitario !== undefined ? Number(item.precioUnitario) : repuesto.precioUnitario;
-          costoRepuestosSum += precio * cantidad;
-
+          if (repuesto.stock < 0) {
+            throw new Error(`Stock insuficiente para ${repuesto.nombre}`);
+          }
+          const precioUnitario = repuesto.precioUnitario;
+          const subtotalRep = precioUnitario * cantidad;
+          costoRepuestos += subtotalRep;
           await tx.repuestoUsado.create({
             data: {
               mantenimientoId: id,
-              repuestoId,
+              repuestoId: ru.repuestoId,
               cantidad,
-              precioUnitario: precio,
-              subtotal: precio * cantidad,
+              precioUnitario,
+              subtotal: subtotalRep,
             },
-          });
+          }).catch(() => null);
         }
-      }
-
-      const costoTotalFinal = existing.costoManoObra + costoRepuestosSum;
-
-      const updated = await tx.mantenimiento.update({
-        where: { id },
-        data: {
-          estado: 'COMPLETADO',
-          costoRepuestos: costoRepuestosSum,
-          costoTotal: costoTotalFinal,
-          completadoEn: new Date(),
-        },
       });
+    }
 
-      // P0-23: Verificar si hay otros mantenimientos activos antes de liberar moto
-      const otrosActivos = await tx.mantenimiento.count({
-        where: {
-          motoId: existing.motoId,
-          estado: { in: ['PROGRAMADO', 'PENDIENTE', 'EN_PROCESO', 'pendiente', 'en_progreso'] },
-          id: { not: id },
-        },
-      });
+    const costoManoObra = parseFloat(costoTotal) || 0;
+    const costoTotalFinal = costoManoObra + costoRepuestos;
 
-      if (otrosActivos === 0) {
-        await tx.moto.update({
-          where: { id: existing.motoId },
-          data: { estado: 'DISPONIBLE' },
-        });
+    const updated = await prisma.mantenimiento.update({
+      where: { id },
+      data: {
+        estado: 'COMPLETADO',
+        costoTotal: costoTotalFinal,
+        completadoEn: new Date()
       }
-
-      return updated;
     });
 
-    return NextResponse.json(mantenimientoCompletado);
-  } catch (error: any) {
-    if (error.message?.startsWith('INSUFFICIENT_STOCK:')) {
-      const name = error.message.split('INSUFFICIENT_STOCK:')[1];
-      return NextResponse.json({ error: `Stock insuficiente para repuesto: ${name}` }, { status: 400 });
+    // P0-23: Solo liberar la moto si no hay otros mantenimientos activos para esa moto
+    const otrosActivos = await prisma.mantenimiento.count({
+      where: {
+        motoId: mantenimiento.motoId,
+        estado: { in: ['PENDIENTE', 'EN_PROCESO'] },
+        id: { not: id },
+      },
+    });
+    if (otrosActivos === 0) {
+      await prisma.moto.update({
+        where: { id: mantenimiento.motoId },
+        data: { estado: 'DISPONIBLE' }
+      }).catch(() => null);
     }
-    if (error.message?.startsWith('REPUESTO_NOT_FOUND:')) {
-      const repId = error.message.split('REPUESTO_NOT_FOUND:')[1];
-      return NextResponse.json({ error: `Repuesto no encontrado: ${repId}` }, { status: 404 });
-    }
+
+    return NextResponse.json(updated);
+  } catch (error) {
     return handleError(error, 'INGENIERO_MANTENIMIENTO_COMPLETAR');
   }
 }

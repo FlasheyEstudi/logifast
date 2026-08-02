@@ -47,6 +47,10 @@ export async function POST(req: NextRequest) {
     const productoId = String(body.productoId ?? '');
     if (!productoId) return NextResponse.json({ error: 'productoId requerido' }, { status: 400 });
 
+    const producto = await db.producto.findUnique({ where: { id: productoId } });
+    if (!producto) return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    if (!producto.disponible) return NextResponse.json({ error: 'Producto no disponible' }, { status: 400 });
+
     const existing = await db.productoLike.findUnique({
       where: { clienteId_productoId: { clienteId: user.id, productoId } },
     });

@@ -80,7 +80,7 @@ export default function ModuleRepartidores() {
       {/* Rider list */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12, flex: 1 }}>
         {riders.map((rider) => {
-          const cfg = STATUS_CONFIG[rider.status] || { label: rider.status || 'Desconocido', bg: 'rgba(107,114,128,0.1)', color: '#6B7280' };
+          const cfg = STATUS_CONFIG[rider.status];
           const moto = motos.find((m) => m.id === rider.motoId);
           const riderOrders = orders.filter((o) => o.repartidor === rider.nombre);
           const isDetail = riderDetail?.id === rider.id;

@@ -7,15 +7,15 @@ export const dynamic = 'force-dynamic';
 /**
  * POST /api/repartidor/posicion
  * Body: { lat, lng, velocidad?, heading? }
- * Guarda la posición actual del repartidor y actualiza las coordenadas de su perfil.
+ * Guarda la posición actual del repartidor (para tracking).
  */
 export async function POST(req: NextRequest) {
   try {
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.profile) {
+    const rp = await getRepartidorProfile();
+    if (!rp) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const { profile } = repData;
+    const { profile } = rp;
 
     const body = await req.json();
     const lat = Number(body.lat);

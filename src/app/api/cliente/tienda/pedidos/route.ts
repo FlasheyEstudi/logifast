@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { ok } from '@/lib/auth/helpers';
-import { emitOrdenActualizada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,36 +9,47 @@ export const dynamic = 'force-dynamic';
  * GET /api/cliente/tienda/pedidos
  * Devuelve los pedidos recibidos por la tienda del cliente autenticado.
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
     if (!user) {
       return ok({ ok: true, pedidos: [] });
     }
 
-    const tienda = await db.tienda.findFirst({
-      where: { propietarioId: user.id },
-    });
-    if (!tienda) {
-      return ok({ ok: true, pedidos: [] });
+    try {
+      const tienda = await db.tienda.findFirst({ where: { propietarioId: user.id } });
+      if (!tienda) {
+        return ok({ ok: true, pedidos: [] });
+      }
+
+      const ordenes = await db.ordenCompra.findMany({
+        where: { tiendaId: tienda.id },
+        orderBy: { createdAt: 'desc' },
+        include: { items: true, cliente: true },
+      });
+
+      return ok({ ok: true, pedidos: ordenes });
+    } catch (dbErr) {
+      console.warn('[CLIENTE_TIENDA_PEDIDOS_DB]', dbErr);
     }
 
-    const ordenes = await db.ordenCompra.findMany({
-      where: { tiendaId: tienda.id },
-      orderBy: { createdAt: 'desc' },
-      include: { items: true, cliente: true },
-    });
-
-    return ok({ ok: true, pedidos: ordenes });
+    return ok({ ok: true, pedidos: [] });
   } catch (error) {
-    console.error('[CLIENTE_TIENDA_PEDIDOS_GET]', error);
+    console.error('[CLIENTE_TIENDA_PEDIDOS]', error);
     return ok({ ok: true, pedidos: [] });
   }
 }
 
 /**
- * PATCH /api/cliente/tienda/pedidos
- * Actualiza el estado de un pedido de la tienda con validación de transiciones de estado.
+ * PATCH /api/cliente/tienda/pedidos (P0-29)
+ * Actualiza el estado de un pedido recibido en la tienda del cliente autenticado.
+ * Body: { id, estado }
+ * estados válidos: 'recibido', 'preparando', 'listo', 'en_camino', 'entregado', 'cancelado'
+ * Transiciones válidas:
+ *   recibido → preparando | cancelado
+ *   preparando → listo | cancelado
+ *   listo → en_camino | cancelado
+ *   en_camino → entregado
  */
 export async function PATCH(req: NextRequest) {
   try {
@@ -52,56 +62,55 @@ export async function PATCH(req: NextRequest) {
     const { id, estado } = body;
 
     if (!id || !estado) {
-      return NextResponse.json({ error: 'ID y estado son requeridos' }, { status: 400 });
+      return NextResponse.json({ error: 'Se requiere id y estado' }, { status: 400 });
     }
 
-    const VALID_STATES = ['preparando', 'listo', 'en_camino', 'entregado'];
-    if (!VALID_STATES.includes(estado)) {
-      return NextResponse.json(
-        { error: `Estado inválido. Debe ser uno de: ${VALID_STATES.join(', ')}` },
-        { status: 400 }
-      );
+    const estadosValidos = ['recibido', 'preparando', 'listo', 'en_camino', 'entregado', 'cancelado'];
+    if (!estadosValidos.includes(estado)) {
+      return NextResponse.json({ error: 'Estado no válido' }, { status: 400 });
     }
 
+    // Obtener la tienda del cliente
+    const tienda = await db.tienda.findFirst({ where: { propietarioId: user.id } });
+    if (!tienda) {
+      return NextResponse.json({ error: 'No tienes una tienda' }, { status: 404 });
+    }
+
+    // Validar ownership del pedido
     const orden = await db.ordenCompra.findUnique({
       where: { id },
-      include: { tienda: true },
+      select: { id: true, tiendaId: true, estado: true },
     });
-
     if (!orden) {
       return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
     }
-
-    const isOwner = orden.tienda.propietarioId === user.id;
-    const isAdmin = user.role === 'admin';
-
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json({ error: 'No autorizado para actualizar este pedido' }, { status: 403 });
+    if (orden.tiendaId !== tienda.id) {
+      return NextResponse.json({ error: 'No autorizado para este pedido' }, { status: 403 });
     }
 
-    const stateTransitions: Record<string, string[]> = {
-      recibido: ['preparando'],
-      preparando: ['listo'],
-      listo: ['en_camino'],
+    // Validar transición de estado (state machine)
+    const transicionesValidas: Record<string, string[]> = {
+      recibido: ['preparando', 'cancelado'],
+      preparando: ['listo', 'cancelado'],
+      listo: ['en_camino', 'cancelado'],
       en_camino: ['entregado'],
+      entregado: [],
+      cancelado: [],
     };
-
-    const allowedNext = stateTransitions[orden.estado] || [];
-    if (!isAdmin && !allowedNext.includes(estado)) {
+    const permitidas = transicionesValidas[orden.estado] ?? [];
+    if (!permitidas.includes(estado)) {
       return NextResponse.json(
-        { error: `Transición de estado no válida de '${orden.estado}' a '${estado}'` },
+        { error: `Transición no válida: ${orden.estado} → ${estado}. Permitidas: ${permitidas.join(', ') || 'ninguna'}` },
         { status: 400 }
       );
     }
 
-    const updatedOrder = await db.ordenCompra.update({
+    const updated = await db.ordenCompra.update({
       where: { id },
       data: { estado },
     });
 
-    emitOrdenActualizada({ id, estado, tipo: 'compra' });
-
-    return NextResponse.json({ ok: true, pedido: updatedOrder });
+    return NextResponse.json({ ok: true, pedido: updated });
   } catch (error) {
     console.error('[CLIENTE_TIENDA_PEDIDOS_PATCH]', error);
     return NextResponse.json({ error: 'Error al actualizar el pedido' }, { status: 500 });

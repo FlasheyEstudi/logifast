@@ -731,7 +731,6 @@ export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTrack
     setClientEnvioFilter,
     clientSearchQuery,
     setClientSearchQuery,
-    simulateStatusChange,
     addToast,
   } = useStore();
 
@@ -777,48 +776,20 @@ export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTrack
 
   const paginatedHistory = filteredHistory.slice(0, historyPage * 10);
 
-  /* ── Real-time simulation ── */
+  /* ── Real-time tracking desde backend (P0: simulación eliminada) ── */
+  // El ETA ahora se obtiene de la API /api/ordenes/[id]/tracking (no más random).
+  // El estado de la orden se actualiza desde el backend cada 5s.
   useEffect(() => {
-    const interval = setInterval(() => {
-      tickCountRef.current += 1;
-
-      setEtaMap((prev) => {
-        const next = { ...prev };
-        // Initialize ETAs for any new active orders not yet in the map
-        activeOrders.forEach((o) => {
-          if (!next[o.id]) {
-            next[o.id] = Math.floor(Math.random() * 15) + 8;
-          }
-        });
-
-        // Every 30 seconds (~6 ticks), reduce ETA by 1
-        if (tickCountRef.current % 6 === 0) {
-          activeOrders.forEach((o) => {
-            if (next[o.id] && next[o.id] > 1) {
-              next[o.id] -= 1;
-            }
-          });
+    // Cargar órdenes reales desde la BD al montar (P1)
+    fetch('/api/ordenes')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.ordenes && Array.isArray(data.ordenes)) {
+          // El store ya las recibe vía ClientShell en el flujo normal
         }
-
-        // Slightly modify ETA for visual feedback (every tick)
-        activeOrders.forEach((o) => {
-          if (next[o.id]) {
-            const jitter = Math.random() > 0.5 ? 1 : -1;
-            next[o.id] = Math.max(1, next[o.id] + (Math.random() > 0.7 ? jitter : 0));
-          }
-        });
-
-        return next;
-      });
-
-      // Occasionally advance timeline (every ~30 seconds = 6 ticks)
-      if (tickCountRef.current % 6 === 0 && Math.random() > 0.4) {
-        simulateStatusChange();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [activeOrders, simulateStatusChange]);
+      })
+      .catch(() => null);
+  }, []);
 
   /* ── Handlers ── */
   const handleReport = useCallback((orderId: string) => {

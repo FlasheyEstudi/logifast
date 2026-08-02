@@ -31,7 +31,7 @@ function emit(variant: NotifyVariant, message: string, opts?: NotifyOptions): st
     duration: opts?.duration ?? 4000,
     type: variant,
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const id = sileo.show(args as any);
   return id;
 }

@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/productos
  * Lista productos con filtros + info de tienda.
+ * P1: Paginación real (limit + offset) y búsqueda case-insensitive.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -19,6 +20,12 @@ export async function GET(req: NextRequest) {
     const nuevos = searchParams.get('nuevos');
     const disponibles = searchParams.get('disponibles');
     const enOferta = searchParams.get('enOferta');
+
+    // Paginación segura contra NaN
+    const limitRaw = parseInt(searchParams.get('limit') ?? '20', 10);
+    const offsetRaw = parseInt(searchParams.get('offset') ?? '0', 10);
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : 20;
+    const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
 
     const where: Record<string, unknown> = {};
     if (tiendaId) where.tiendaId = tiendaId;
@@ -42,12 +49,16 @@ export async function GET(req: NextRequest) {
       where.precioOriginal = { not: null };
     }
 
-    const productosRaw = await db.producto.findMany({
-      where,
-      include: { tienda: true },
-      orderBy: [{ posicion: 'asc' }, { createdAt: 'desc' }],
-      take: 200,
-    });
+    const [productosRaw, total] = await Promise.all([
+      db.producto.findMany({
+        where,
+        include: { tienda: true },
+        orderBy: [{ posicion: 'asc' }, { createdAt: 'desc' }],
+        take: limit,
+        skip: offset,
+      }),
+      db.producto.count({ where }),
+    ]);
 
     const productos = productosRaw.map((p) => ({
       id: p.id,
@@ -69,7 +80,10 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json({
-      total: productos.length,
+      total,
+      limit,
+      offset,
+      hasMore: offset + limit < total,
       productos,
     });
   } catch (error) {

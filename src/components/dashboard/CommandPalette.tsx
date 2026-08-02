@@ -289,26 +289,27 @@ export default function CommandPalette() {
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
-            paddingTop: 'min(15vh, 40px)',
-            paddingLeft: 'max(12px, env(safe-area-inset-left))',
-            paddingRight: 'max(12px, env(safe-area-inset-right))',
+            paddingTop: '15vh',
             background: 'rgba(0,0,0,0.5)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
           onClick={() => closePalette()}
+          role="button"
+          aria-label="Cerrar paleta de comandos"
         >
           <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Paleta de comandos"
             initial={{ opacity: 0, scale: 0.98, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: -10 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Paleta de comandos"
             transition={{ duration: 0.15, ease: 'easeOut' }}
             style={{
               width: '100%',
-              maxWidth: 600,
+              maxWidth: 'min(600px, calc(100vw - 24px))',
+              margin: '0 12px',
               background: 'var(--lf-surface)',
               borderRadius: 16,
               border: '1px solid var(--lf-border)',
@@ -337,10 +338,6 @@ export default function CommandPalette() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded={true}
-                aria-controls="cmd-palette-results"
                 placeholder="Buscar órdenes, motos, repartidores, acciones..."
                 style={{
                   flex: 1,
@@ -370,7 +367,6 @@ export default function CommandPalette() {
 
             {/* ── Results ── */}
             <div
-              id="cmd-palette-results"
               style={{ maxHeight: 400, overflowY: 'auto' }}
               className="lf-scrollbar"
             >
@@ -422,8 +418,6 @@ export default function CommandPalette() {
                       return (
                         <div
                           key={`${item.type}-${item.id}`}
-                          role="option"
-                          aria-selected={isActive}
                           onClick={() => selectItem(item)}
                           onMouseEnter={() => setSelectedIdx(globalIdx)}
                           style={{

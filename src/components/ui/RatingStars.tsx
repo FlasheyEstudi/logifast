@@ -65,6 +65,17 @@ export function RatingStars({
           aria-label={`${star} estrellas`}
           disabled={readOnly}
           className={`lf-star-btn ${readOnly ? 'read-only' : ''}`}
+          style={{
+            minHeight: 44,
+            minWidth: 44,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 8,
+            background: 'transparent',
+            border: 'none',
+            cursor: readOnly ? 'default' : 'pointer',
+          }}
           onMouseEnter={() => !readOnly && setHover(star)}
           onMouseLeave={() => !readOnly && setHover(0)}
           onClick={() => handleClick(star)}

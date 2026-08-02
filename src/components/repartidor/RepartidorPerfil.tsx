@@ -357,8 +357,14 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
 
   const handleRefresh = async () => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setLoading(false);
+    try {
+      // Sincroniza datos reales desde la API (perfil, moto, calificaciones, etc.)
+      await syncFromBackend();
+    } catch (err) {
+      console.error('[RepartidorPerfil.handleRefresh]', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

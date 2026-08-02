@@ -248,7 +248,7 @@ export default function ModuleIncidencias() {
       timestamp: new Date().toISOString(),
       leido: false,
     });
-    showToast(`Reporte creado para ${inc.id}`, 'info');
+    showToast(`📝 Reporte creado para ${inc.id}`, 'info');
   };
 
   const toggleSort = (col: SortCol) => {

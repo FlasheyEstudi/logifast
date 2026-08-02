@@ -82,7 +82,7 @@ export async function GET(
 
 /**
  * PATCH /api/tiendas/[id]
- * Actualiza una tienda con validación estricta de ownership y campos admin-only.
+ * Actualiza una tienda.
  */
 export async function PATCH(
   req: NextRequest,
@@ -91,35 +91,14 @@ export async function PATCH(
   try {
     const user = await requireSession();
     const { id } = await params;
-    const existing = await db.tienda.findUnique({ where: { id } });
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
-    }
-
-    const isAdmin = user.role === 'admin';
-    const isOwner = existing.propietarioId === user.id;
-
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json({ error: 'No autorizado para editar esta tienda' }, { status: 403 });
-    }
-
     const body = await req.json();
 
     const data: Record<string, unknown> = {};
-    const allowedStandard = ['nombre', 'descripcion', 'categoria', 'logoColor', 'logoIniciales', 'portadaColor', 'direccion', 'telefono', 'email', 'tiempoEstimado'];
-    const allowedAdminOnly = ['verificado', 'popular', 'estado'];
+    const allowed = ['nombre', 'descripcion', 'categoria', 'logoColor', 'logoIniciales', 'portadaColor', 'direccion', 'telefono', 'email', 'tiempoEstimado', 'verificado', 'popular', 'estado'];
 
-    for (const key of allowedStandard) {
+    for (const key of allowed) {
       if (key in body) data[key] = body[key];
     }
-
-    if (isAdmin) {
-      for (const key of allowedAdminOnly) {
-        if (key in body) data[key] = body[key];
-      }
-    }
-
     if ('lat' in body) data.lat = Number(body.lat);
     if ('lng' in body) data.lng = Number(body.lng);
     if ('costoEnvio' in body) data.costoEnvio = Number(body.costoEnvio);
@@ -144,16 +123,6 @@ export async function DELETE(
   try {
     const user = await requireSession();
     const { id } = await params;
-    const existing = await db.tienda.findUnique({ where: { id } });
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
-    }
-
-    if (existing.propietarioId !== user.id && user.role !== 'admin') {
-      return NextResponse.json({ error: 'No autorizado para eliminar esta tienda' }, { status: 403 });
-    }
-
     await db.tienda.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {

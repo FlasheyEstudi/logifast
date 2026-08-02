@@ -137,23 +137,17 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
 
   const unreadCount = activityEvents.filter((e) => !e.leido).length;
 
-  /* ── Close on outside click / touch ── */
+  /* ── Close on outside click ── */
   useEffect(() => {
-    const handler = (e: MouseEvent | TouchEvent) => {
+    const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         close();
       }
     };
     if (open) {
-      setTimeout(() => {
-        document.addEventListener('mousedown', handler);
-        document.addEventListener('touchstart', handler);
-      }, 0);
+      setTimeout(() => document.addEventListener('mousedown', handler), 0);
     }
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
-    };
+    return () => document.removeEventListener('mousedown', handler);
   }, [open, close]);
 
   /* ── Filtered & grouped events ── */
@@ -307,8 +301,7 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
                     display: 'flex',
                     alignItems: 'center',
                     gap: 5,
-                    padding: '8px 12px',
-                    minHeight: 36,
+                    padding: '5px 10px',
                     borderRadius: 8,
                     border: '1px solid var(--lf-border)',
                     background: 'transparent',
@@ -350,8 +343,7 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
                     key={opt.key}
                     onClick={() => setFilter(opt.key)}
                     style={{
-                      padding: '8px 14px',
-                      minHeight: 36,
+                      padding: '4px 10px',
                       borderRadius: 999,
                       border: '1px solid',
                       borderColor: isActive
@@ -361,13 +353,11 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
                         ? 'var(--lf-accent)'
                         : 'transparent',
                       color: isActive ? '#fff' : 'var(--lf-muted)',
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: 600,
                       cursor: 'pointer',
                       transition: 'all 0.15s',
                       lineHeight: '16px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
                     }}
                   >
                     {opt.label}

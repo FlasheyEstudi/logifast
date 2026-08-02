@@ -32,7 +32,11 @@ export async function GET() {
     return NextResponse.json({ clientes: clientesFormatted });
   } catch (error) {
     console.error('[ADMIN_CLIENTES_GET]', error);
-    return NextResponse.json({ error: 'Error al obtener clientes' }, { status: 500 });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json(
+      { error: status === 401 ? 'No autenticado' : status === 403 ? 'No autorizado' : 'Error al obtener clientes' },
+      { status }
+    );
   }
 }
 
@@ -63,6 +67,10 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ cliente: updated });
   } catch (error) {
     console.error('[ADMIN_CLIENTES_PATCH]', error);
-    return NextResponse.json({ error: 'Error al actualizar cliente' }, { status: 500 });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json(
+      { error: status === 401 ? 'No autenticado' : status === 403 ? 'No autorizado' : 'Error al actualizar cliente' },
+      { status }
+    );
   }
 }

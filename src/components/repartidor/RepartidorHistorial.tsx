@@ -386,7 +386,7 @@ function ServicioRow({
    ═══════════════════════════════════════════════ */
 
 export default function RepartidorHistorial() {
-  const { serviciosHoy, obtenerStats, verServicioDetalle } = useRepartidorStore();
+  const { serviciosHoy, obtenerStats, verServicioDetalle, syncFromBackend } = useRepartidorStore();
   const [periodo, setPeriodo] = useState<Periodo>('hoy');
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [loading, setLoading] = useState(false);
@@ -416,9 +416,14 @@ export default function RepartidorHistorial() {
 
   const handleRefresh = async () => {
     setLoading(true);
-    // Cargar datos en tiempo real de API
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setLoading(false);
+    try {
+      // Sincroniza datos reales desde la API (perfil, moto, ordenes, stats, historial, etc.)
+      await syncFromBackend();
+    } catch (err) {
+      console.error('[RepartidorHistorial.handleRefresh]', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

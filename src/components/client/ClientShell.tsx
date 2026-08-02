@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Home,
-  PackagePlus,
   Package,
   User,
   Bell,
@@ -18,12 +17,9 @@ import {
   Bike,
   Tag,
   Heart,
-  X,
-  Search,
   ShoppingBag,
-  Store,
-  ChevronLeft,
-  Sparkles,
+  ShoppingCart,
+  Wallet,
 } from '@/components/icons';
 import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
@@ -176,7 +172,8 @@ function getNotifIcon(tipo: ClientNotificacion['tipo']): { icon: React.ReactNode
 }
 
 /* ═══════════════════════════════════════════════
-   NAV CONFIG
+   NAV CONFIG — iOS native tab bar (5 items)
+   🏠 Inicio | 📦 Envíos | 🛒 Pedidos | 💳 Billetera | 👤 Perfil
    ═══════════════════════════════════════════════ */
 interface NavItem {
   key: ClientModuleKey;
@@ -185,12 +182,25 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'inicio', label: 'Inicio', icon: <Home size={22} /> },
-  { key: 'explorar', label: 'Explorar', icon: <Search size={22} /> },
-  { key: 'solicitar', label: 'Enviar', icon: <PackagePlus size={22} /> },
-  { key: 'pedidos', label: 'Pedidos', icon: <Package size={22} /> },
-  { key: 'perfil', label: 'Perfil', icon: <User size={22} /> },
+  { key: 'inicio', label: 'Inicio', icon: <Home size={24} strokeWidth={1.8} /> },
+  { key: 'envios', label: 'Envíos', icon: <Package size={24} strokeWidth={1.8} /> },
+  { key: 'pedidos', label: 'Pedidos', icon: <ShoppingCart size={24} strokeWidth={1.8} /> },
+  { key: 'puntos', label: 'Billetera', icon: <Wallet size={24} strokeWidth={1.8} /> },
+  { key: 'perfil', label: 'Perfil', icon: <User size={24} strokeWidth={1.8} /> },
 ];
+
+/* ─── iOS Large Title map (header) ─── */
+const IOS_TITLE_MAP: Record<ClientModuleKey, string> = {
+  inicio: 'Inicio',
+  solicitar: 'Nuevo Envío',
+  envios: 'Mis Envíos',
+  explorar: 'Explorar',
+  pedidos: 'Mis Pedidos',
+  perfil: 'Perfil',
+  ayuda: 'Ayuda',
+  puntos: 'Billetera',
+  tienda: 'Mi Tienda',
+};
 
 /* ═══════════════════════════════════════════════
    MAIN COMPONENT
@@ -214,9 +224,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     setChatOrderId,
     setRatingModalOpen,
     setRatingOrderId,
+    fetchOrders,
+    orders,
   } = useStore();
 
-  const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount, fetchTiendas, fetchOrdenesCompra, fetchFavoritos } = useMarketplaceStore();
+  const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount, fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, ordenesCompra } = useMarketplaceStore();
 
   /* ─── Sync Dynamic URL Hash ─── */
   useEffect(() => {
@@ -225,12 +237,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     }
   }, [clientActiveModule]);
 
-  /* ─── Cargar datos del backend al montar ─── */
+  /* ─── Cargar datos del backend al montar (P1: persistencia BD) ─── */
   useEffect(() => {
     fetchTiendas();
     fetchOrdenesCompra();
     fetchFavoritos();
-  }, [fetchTiendas, fetchOrdenesCompra, fetchFavoritos]);
+    fetchCarrito();
+    fetchOrders(); // P1: cargar envíos del cliente desde la BD (sobrevive F5)
+  }, [fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, fetchOrders]);
 
   /* ─── SPLASH STATE ─── */
   const [showSplash, setShowSplash] = useState(true);
@@ -246,6 +260,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   const unreadCount = clientNotificaciones.filter((n) => !n.leida).length;
   const initials = getInitials(userName);
+
+  /* ─── Active orders count for Pedidos badge (envíos + compras no entregadas) ─── */
+  const activeOrdersCount =
+    orders.filter((o) => !['entregado', 'incidencia'].includes(o.estado)).length +
+    ordenesCompra.filter((o) => o.estado !== 'entregado').length;
+
+  /* ─── iOS Large Title for current module ─── */
+  const iosTitle = IOS_TITLE_MAP[clientActiveModule] || 'Logifast';
 
   /* ─── SPLASH TIMER ─── */
   useEffect(() => {
@@ -351,6 +373,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         return <ClientSolicitar {...moduleProps} />;
       case 'explorar':
         return <ClientExplorar {...moduleProps} />;
+      case 'envios':
+        return <ClientEnvios {...moduleProps} />;
       case 'pedidos':
         return <ClientPedidos {...moduleProps} />;
       case 'perfil':
@@ -369,28 +393,29 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   return (
     <SnackbarContext.Provider value={showSnackbar}>
       <div
-        className="cliente-app"
+        className="cliente-app lf-ios-app"
         style={{
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: 'var(--bg)',
-          color: 'var(--text)',
-          fontFamily: "'DM Sans', sans-serif",
+          backgroundColor: 'var(--ios-bg)',
+          color: 'var(--ios-text-primary)',
+          fontFamily: 'var(--ios-font)',
           transition: 'background-color 0.4s ease, color 0.3s ease',
         }}
       >
-        {/* ═══════ SPLASH SCREEN ═══════ */}
+        {/* ═══════ SPLASH SCREEN — iOS native ═══════ */}
         {showSplash && (
           <motion.div
             initial={{ opacity: 1 }}
             animate={{ opacity: splashFading ? 0 : 1 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="lf-ios-splash"
             style={{
               position: 'fixed',
               inset: 0,
               zIndex: 99999,
-              background: 'var(--md-surface)',
+              background: 'var(--ios-bg)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -400,35 +425,35 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           >
             {/* Logo */}
             <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.6, ease: [0.2, 0, 0, 1] }}
               style={{
-                width: 72,
-                height: 72,
+                width: 76,
+                height: 76,
                 borderRadius: 20,
                 background: 'linear-gradient(135deg, #FF5722, #FF8A65)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#FFFFFF',
-                boxShadow: '0 8px 32px rgba(255, 87, 34, 0.25)',
+                boxShadow: '0 12px 36px rgba(255, 87, 34, 0.28)',
               }}
             >
-              <Bike size={32} />
+              <Bike size={34} />
             </motion.div>
             {/* Brand text */}
             <motion.span
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: [0.2, 0, 0, 1] }}
+              transition={{ duration: 0.6, delay: 0.25, ease: [0.2, 0, 0, 1] }}
               style={{
-                fontFamily: "'Syne', sans-serif",
+                fontFamily: 'var(--ios-font)',
                 fontWeight: 700,
-                fontSize: 24,
-                color: 'var(--md-on-surface)',
+                fontSize: 22,
+                color: 'var(--ios-text-primary)',
                 marginTop: 20,
-                letterSpacing: '-0.5px',
+                letterSpacing: '-0.02em',
               }}
             >
               LOGIFAST
@@ -502,129 +527,37 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           />
         </div>
 
-        {/* ─── HEADER ─── */}
+        {/* ─── HEADER — iOS native large title ─── */}
         <header
+          className="lf-ios-header lf-header-bar"
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
-            height: 60,
             zIndex: 50,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 16px',
-            background: 'color-mix(in srgb, var(--surface) 85%, transparent)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderBottom: '1px solid var(--border)',
+            flexDirection: 'column',
+            background: 'color-mix(in srgb, var(--ios-bg-elevated) 88%, transparent)',
+            backdropFilter: 'saturate(180%) blur(20px)',
+            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+            borderBottom: '0.5px solid var(--ios-separator)',
             transition: 'background-color 0.3s ease, border-color 0.3s ease',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
           }}
-          className="lf-header-bar"
         >
-          {/* Left: Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, #FF5722, #FF8A65)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: 13,
-                fontFamily: "'Syne', sans-serif",
-                letterSpacing: '-0.5px',
-                flexShrink: 0,
-              }}
-            >
-              LF
-            </div>
-            <span
-              style={{
-                fontFamily: "'Syne', sans-serif",
-                fontWeight: 700,
-                fontSize: 18,
-                color: 'var(--text)',
-                letterSpacing: '-0.3px',
-              }}
-            >
-              LOGIFAST
-            </span>
-          </div>
-
-          {/* Center: Desktop Nav Pills */}
-          <nav
+          {/* Top row: right-aligned action buttons (theme + bell + cart + avatar) */}
+          <div
+            className="lf-ios-header-actions"
             style={{
-              display: 'none',
+              display: 'flex',
               alignItems: 'center',
+              justifyContent: 'flex-end',
               gap: 4,
+              padding: '2px 8px 4px',
+              minHeight: 36,
             }}
-            className="lf-desktop-nav"
           >
-            {NAV_ITEMS.map((item) => {
-              const isActive = clientActiveModule === item.key;
-              const isEnviar = item.key === 'solicitar';
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => handleNav(item.key)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: isEnviar ? '6px 16px' : '6px 14px',
-                    borderRadius: 100,
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 14,
-                    fontWeight: isActive ? 600 : 500,
-                    background: isEnviar
-                      ? isActive
-                        ? 'var(--primario)'
-                        : 'color-mix(in srgb, var(--primario) 10%, transparent)'
-                      : isActive
-                        ? 'color-mix(in srgb, var(--primario) 10%, transparent)'
-                        : 'transparent',
-                    color: isEnviar
-                      ? isActive
-                        ? '#FFFFFF'
-                        : 'var(--primario)'
-                      : isActive
-                        ? 'var(--primario)'
-                        : 'var(--text-muted)',
-                    transition: 'all 0.2s ease',
-                    whiteSpace: 'nowrap',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLButtonElement).style.background = isEnviar
-                        ? 'color-mix(in srgb, var(--primario) 15%, transparent)'
-                        : 'color-mix(in srgb, var(--text-muted) 8%, transparent)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLButtonElement).style.background = isEnviar
-                        ? 'color-mix(in srgb, var(--primario) 10%, transparent)'
-                        : 'transparent';
-                    }
-                  }}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Right: Theme + Notif + Cart + Avatar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -635,7 +568,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 borderRadius: 10,
                 border: 'none',
                 background: 'transparent',
-                color: 'var(--text-muted)',
+                color: 'var(--ios-text-secondary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -643,16 +576,15 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 transition: 'color 0.2s ease, background 0.2s ease',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background =
-                  'color-mix(in srgb, var(--text-muted) 8%, transparent)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-primary)';
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-secondary)';
               }}
             >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
             </button>
 
             {/* Notification Bell */}
@@ -669,9 +601,9 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                   borderRadius: 10,
                   border: 'none',
                   background: clientNotifOpen
-                    ? 'color-mix(in srgb, var(--primario) 10%, transparent)'
+                    ? 'color-mix(in srgb, var(--ios-blue) 12%, transparent)'
                     : 'transparent',
-                  color: clientNotifOpen ? 'var(--primario)' : 'var(--text-muted)',
+                  color: clientNotifOpen ? 'var(--ios-blue)' : 'var(--ios-text-secondary)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -681,19 +613,18 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 }}
                 onMouseEnter={(e) => {
                   if (!clientNotifOpen) {
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      'color-mix(in srgb, var(--text-muted) 8%, transparent)';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-primary)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!clientNotifOpen) {
                     (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-secondary)';
                   }
                 }}
               >
-                <Bell size={18} />
+                <Bell size={20} strokeWidth={1.8} />
                 {unreadCount > 0 && (
                   <span
                     style={{
@@ -728,11 +659,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                     exit={{ opacity: 0, y: -8, scale: 0.96 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     style={{
-                      position: 'absolute',
-                      top: 46,
-                      right: 0,
-                      width: 360,
-                      maxHeight: 460,
+                      position: 'fixed',
+                      top: 'max(56px, env(safe-area-inset-top))',
+                      right: 'max(8px, env(safe-area-inset-right))',
+                      left: 'max(8px, env(safe-area-inset-left))',
+                      width: 'auto',
+                      maxWidth: 360,
+                      maxHeight: 'min(70vh, 460px)',
                       borderRadius: 16,
                       background: 'var(--surface)',
                       border: '1px solid var(--border)',
@@ -937,16 +870,49 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               </AnimatePresence>
             </div>
 
-            {/* Cart Badge (desktop) */}
+            {/* Cart (always visible — iOS) */}
             <button
               onClick={() => setCarritoOpen(true)}
-              style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: carritoOpen ? 'color-mix(in srgb, var(--primario) 10%, transparent)' : 'transparent', color: carritoOpen ? 'var(--primario)' : 'var(--text-muted)', cursor: 'pointer', display: 'none', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'color 0.2s ease, background 0.2s ease' }}
-              className="lf-cart-desktop-btn"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                border: 'none',
+                background: carritoOpen ? 'color-mix(in srgb, var(--ios-blue) 12%, transparent)' : 'transparent',
+                color: carritoOpen ? 'var(--ios-blue)' : 'var(--ios-text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                transition: 'color 0.2s ease, background 0.2s ease',
+              }}
               aria-label="Carrito"
             >
-              <ShoppingBag size={18} />
+              <ShoppingBag size={20} strokeWidth={1.8} />
               {getCartItemCount() > 0 && (
-                <span style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, borderRadius: '50%', background: 'var(--peligro)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'JetBrains Mono', monospace" }}>{getCartItemCount() > 9 ? '9+' : getCartItemCount()}</span>
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    padding: '0 4px',
+                    background: 'var(--ios-red)',
+                    color: '#fff',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'var(--ios-font-mono)',
+                    lineHeight: 1,
+                  }}
+                >
+                  {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
+                </span>
               )}
             </button>
 
@@ -963,17 +929,17 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                   height: 36,
                   borderRadius: '50%',
                   border: 'none',
-                  background: 'var(--primario-soft)',
-                  color: 'var(--primario)',
+                  background: 'color-mix(in srgb, var(--ios-blue) 12%, transparent)',
+                  color: 'var(--ios-blue)',
                   fontWeight: 700,
                   fontSize: 13,
-                  fontFamily: "'Syne', sans-serif",
+                  fontFamily: 'var(--ios-font)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'box-shadow 0.2s ease',
-                  boxShadow: avatarOpen ? '0 0 0 2px var(--primario)' : 'none',
+                  boxShadow: avatarOpen ? '0 0 0 2px var(--ios-blue)' : 'none',
                 }}
               >
                 {initials}
@@ -991,11 +957,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                       position: 'absolute',
                       top: 46,
                       right: 0,
-                      width: 200,
-                      borderRadius: 14,
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      boxShadow: 'var(--shadow-lg)',
+                      width: 220,
+                      borderRadius: 'var(--ios-radius-md)',
+                      background: 'var(--ios-bg-elevated)',
+                      border: '0.5px solid var(--ios-separator)',
+                      boxShadow: 'var(--ios-shadow-lg)',
                       overflow: 'hidden',
                       zIndex: 60,
                     }}
@@ -1004,24 +970,26 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                     <div
                       style={{
                         padding: '14px 16px',
-                        borderBottom: '1px solid var(--border)',
+                        borderBottom: '0.5px solid var(--ios-separator)',
                       }}
                     >
                       <div
                         style={{
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: 600,
-                          color: 'var(--text)',
+                          color: 'var(--ios-text-primary)',
                           lineHeight: 1.3,
+                          fontFamily: 'var(--ios-font)',
                         }}
                       >
                         {userName}
                       </div>
                       <div
                         style={{
-                          fontSize: 12,
-                          color: 'var(--text-muted)',
+                          fontSize: 13,
+                          color: 'var(--ios-text-tertiary)',
                           marginTop: 2,
+                          fontFamily: 'var(--ios-font)',
                         }}
                       >
                         Cliente
@@ -1042,24 +1010,23 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                           gap: 10,
                           padding: '10px 12px',
                           border: 'none',
-                          borderRadius: 10,
+                          borderRadius: 'var(--ios-radius-sm)',
                           background: 'transparent',
-                          color: 'var(--text)',
-                          fontSize: 14,
+                          color: 'var(--ios-text-primary)',
+                          fontSize: 15,
                           fontWeight: 500,
                           cursor: 'pointer',
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: 'var(--ios-font)',
                           transition: 'background 0.15s ease',
                         }}
                         onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background =
-                            'color-mix(in srgb, var(--text-muted) 6%, transparent)';
+                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
                         }}
                         onMouseLeave={(e) => {
                           (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
                         }}
                       >
-                        <User size={16} style={{ color: 'var(--text-muted)' }} />
+                        <User size={16} strokeWidth={1.8} style={{ color: 'var(--ios-text-tertiary)' }} />
                         Mi perfil
                       </button>
 
@@ -1072,31 +1039,30 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                           gap: 10,
                           padding: '10px 12px',
                           border: 'none',
-                          borderRadius: 10,
+                          borderRadius: 'var(--ios-radius-sm)',
                           background: 'transparent',
-                          color: 'var(--text)',
-                          fontSize: 14,
+                          color: 'var(--ios-text-primary)',
+                          fontSize: 15,
                           fontWeight: 500,
                           cursor: 'pointer',
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: 'var(--ios-font)',
                           transition: 'background 0.15s ease',
                         }}
                         onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background =
-                            'color-mix(in srgb, var(--text-muted) 6%, transparent)';
+                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
                         }}
                         onMouseLeave={(e) => {
                           (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
                         }}
                       >
-                        <Settings size={16} style={{ color: 'var(--text-muted)' }} />
+                        <Settings size={16} strokeWidth={1.8} style={{ color: 'var(--ios-text-tertiary)' }} />
                         Configuración
                       </button>
 
                       <div
                         style={{
-                          height: 1,
-                          background: 'var(--border)',
+                          height: 0.5,
+                          background: 'var(--ios-separator)',
                           margin: '4px 0',
                         }}
                       />
@@ -1113,24 +1079,24 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                           gap: 10,
                           padding: '10px 12px',
                           border: 'none',
-                          borderRadius: 10,
+                          borderRadius: 'var(--ios-radius-sm)',
                           background: 'transparent',
-                          color: 'var(--peligro)',
-                          fontSize: 14,
+                          color: 'var(--ios-red)',
+                          fontSize: 15,
                           fontWeight: 500,
                           cursor: 'pointer',
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: 'var(--ios-font)',
                           transition: 'background 0.15s ease',
                         }}
                         onMouseEnter={(e) => {
                           (e.currentTarget as HTMLButtonElement).style.background =
-                            'color-mix(in srgb, var(--peligro) 6%, transparent)';
+                            'color-mix(in srgb, var(--ios-red) 8%, transparent)';
                         }}
                         onMouseLeave={(e) => {
                           (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
                         }}
                       >
-                        <LogOut size={16} />
+                        <LogOut size={16} strokeWidth={1.8} />
                         Cerrar sesión
                       </button>
                     </div>
@@ -1139,18 +1105,48 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               </AnimatePresence>
             </div>
           </div>
+
+          {/* iOS Large Title — 34px, font-weight 700 */}
+          <div
+            className="lf-ios-large-title-wrap"
+            style={{
+              padding: '6px 16px 10px',
+              maxWidth: 960,
+              margin: '0 auto',
+              width: '100%',
+            }}
+          >
+            <motion.h1
+              key={iosTitle}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              style={{
+                fontFamily: 'var(--ios-font)',
+                fontSize: 34,
+                fontWeight: 700,
+                color: 'var(--ios-text-primary)',
+                letterSpacing: '-0.02em',
+                margin: 0,
+                lineHeight: 1.1,
+              }}
+            >
+              {iosTitle}
+            </motion.h1>
+          </div>
         </header>
 
         {/* ─── CONTENT AREA ─── */}
         <main
           style={{
             flex: 1,
-            paddingTop: 60,
-            paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+            paddingTop: 'calc(96px + env(safe-area-inset-top, 0px))',
+            paddingBottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
             minHeight: '100vh',
-            transition: 'padding 0.3s ease',
+            backgroundColor: 'var(--ios-bg)',
+            transition: 'padding 0.3s ease, background-color 0.3s ease',
           }}
-          className="lf-client-content-padded"
+          className="lf-client-content-padded lf-ios-content"
         >
           <div
             style={{
@@ -1166,10 +1162,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             <AnimatePresence mode="wait">
               <motion.div
                 key={clientActiveModule}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: clientModuleFade ? 0 : 1 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: clientModuleFade ? 0 : 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="lf-ios-screen-transition"
               >
                 {renderModule()}
               </motion.div>
@@ -1177,187 +1174,40 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           </div>
         </main>
 
-        {/* ═══════ BOTTOM NAV — Material 3 Pill Indicator ═══════ */}
-        <nav
-          className="lf-client-bottom-nav"
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 80,
-            zIndex: 50,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-around',
-            background: 'var(--md-surface)',
-            borderTop: '1px solid var(--md-outline-variant)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            transition: 'background-color 0.3s ease, border-color 0.3s ease',
-          }}
-        >
+        {/* ═══════ iOS NATIVE TAB BAR (5 items) ═══════ */}
+        <nav className="lf-ios-tabbar lf-client-bottom-nav" aria-label="Navegación principal">
           {NAV_ITEMS.map((item) => {
             const isActive = clientActiveModule === item.key;
-            const isEnviar = item.key === 'solicitar';
-
-            /* ─── CENTER: Enviar protagonist button (Material 3 FAB style) ─── */
-            if (isEnviar) {
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => handleNav(item.key)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 52,
-                    height: 52,
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: 'var(--md-primary-container)',
-                    color: 'var(--md-on-primary-container)',
-                    borderRadius: 16,
-                    transform: 'translateY(-12px)',
-                    boxShadow: 'var(--md-elevation-3)',
-                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                    position: 'relative',
-                    zIndex: 2,
-                    flexShrink: 0,
-                  }}
-                  onMouseDown={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(0.92)';
-                  }}
-                  onMouseUp={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
-                  }}
-                  onTouchStart={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(0.92)';
-                  }}
-                  onTouchEnd={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-12px) scale(1)';
-                  }}
-                  aria-label="Enviar"
-                >
-                  <PackagePlus size={24} />
-                </button>
-              );
-            }
-
-            /* ─── REGULAR NAV ITEMS (Material 3 Pill Pattern) ─── */
+            /* Badge on Pedidos tab — active orders counter */
+            const showPedidosBadge = item.key === 'pedidos' && activeOrdersCount > 0;
             return (
               <button
                 key={item.key}
                 onClick={() => handleNav(item.key)}
+                className={`lf-ios-tabbar-item${isActive ? ' active' : ''}`}
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: 'transparent',
-                  color: isActive ? 'var(--md-on-primary-container)' : 'var(--md-on-surface-variant)',
-                  padding: '6px 0 8px',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 12,
-                  fontWeight: isActive ? 700 : 500,
-                  transition: 'color 0.2s ease',
                   position: 'relative',
-                  flex: 1,
-                  maxWidth: 72,
-                  minHeight: 56,
+                  color: isActive ? 'var(--ios-blue)' : 'var(--ios-text-tertiary)',
                 }}
               >
-                {/* Pill indicator behind icon */}
-                <span
-                  style={{
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 64,
-                    height: 32,
-                    borderRadius: 16,
-                  }}
-                >
-                  {isActive && (
-                    <motion.span
-                      layoutId="activeTabPill"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: 16,
-                        background: 'var(--md-primary-container)',
-                        zIndex: 0,
-                      }}
-                    />
-                  )}
-                  <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center' }}>
-                    {item.icon}
-                  </span>
-                  {/* Notification badge on Inicio tab */}
-                  {item.key === 'inicio' && unreadCount > 0 && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: -3,
-                        right: 6,
-                        width: 16,
-                        height: 16,
-                        borderRadius: '50%',
-                        background: 'var(--peligro)',
-                        color: '#FFFFFF',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontFamily: "'JetBrains Mono', monospace",
-                        lineHeight: 1,
-                        zIndex: 2,
-                      }}
-                    >
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                  {/* Cart count badge on Explorar tab */}
-                  {item.key === 'explorar' && getCartItemCount() > 0 && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: -3,
-                        right: 6,
-                        width: 16,
-                        height: 16,
-                        borderRadius: '50%',
-                        background: 'var(--peligro)',
-                        color: '#fff',
-                        fontSize: 9,
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontFamily: "'JetBrains Mono', monospace",
-                        lineHeight: 1,
-                        zIndex: 2,
-                      }}
-                    >
-                      {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
+                <span style={{ position: 'relative', display: 'inline-flex' }}>
+                  {item.icon}
+                  {showPedidosBadge && (
+                    <span className="lf-ios-tabbar-badge">
+                      {activeOrdersCount > 9 ? '9+' : activeOrdersCount}
                     </span>
                   )}
                 </span>
-                {/* Label */}
                 <span
                   style={{
-                    fontSize: 12,
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? 'var(--md-on-surface)' : 'var(--md-on-surface-variant)',
-                    transition: 'color 0.2s ease, font-weight 0.15s ease',
+                    fontFamily: 'var(--ios-font)',
+                    fontSize: 10,
+                    fontWeight: isActive ? 600 : 500,
+                    letterSpacing: '0.01em',
+                    color: isActive ? 'var(--ios-blue)' : 'var(--ios-text-tertiary)',
+                    transition: 'color 0.2s ease',
                     lineHeight: 1,
                   }}
                 >
@@ -1368,7 +1218,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           })}
         </nav>
 
-        {/* ═══════ MATERIAL 3 SNACKBAR ═══════ */}
+        {/* ═══════ iOS SNACKBAR ═══════ */}
         <AnimatePresence>
           {snackbar && (
             <motion.div
@@ -1377,25 +1227,25 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 100 }}
               transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-              className="lf-snackbar visible"
+              className="lf-snackbar visible lf-ios-snackbar"
               style={{
                 position: 'fixed',
-                bottom: 96,
+                bottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 12px)',
                 left: 16,
                 right: 16,
                 zIndex: 9998,
-                background: 'var(--md-inverse-surface)',
-                color: 'var(--md-inverse-on-surface)',
-                borderRadius: 4,
+                background: 'var(--ios-bg-secondary)',
+                color: 'var(--ios-text-primary)',
+                borderRadius: 'var(--ios-radius-md)',
                 padding: '14px 16px',
-                boxShadow: 'var(--md-elevation-3)',
+                boxShadow: 'var(--ios-shadow-lg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 12,
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 14,
-                fontWeight: 400,
+                fontFamily: 'var(--ios-font)',
+                fontSize: 15,
+                fontWeight: 500,
                 lineHeight: 1.4,
               }}
             >
@@ -1409,13 +1259,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                   style={{
                     border: 'none',
                     background: 'transparent',
-                    color: 'var(--md-inverse-primary)',
-                    fontSize: 14,
+                    color: 'var(--ios-blue)',
+                    fontSize: 15,
                     fontWeight: 600,
                     cursor: 'pointer',
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: 'var(--ios-font)',
                     padding: '4px 8px',
-                    borderRadius: 4,
+                    borderRadius: 'var(--ios-radius-sm)',
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
                   }}
@@ -1427,58 +1277,73 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           )}
         </AnimatePresence>
 
-        {/* ─── V2 OVERLAYS ─── */}
+        {/* ─── V2 OVERLAYS (modales como bottom sheets iOS — `.lf-ios-sheet`) ─── */}
         <AnimatePresence>
           {trackingOrderId && (
-            <ClientTracking
-              isDark={isDark}
-              onBack={handleCloseTracking}
-              onOpenChat={handleOpenChat}
-              onRate={handleOpenRating}
-            />
+            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Seguimiento de envío">
+              <div className="lf-ios-sheet-handle" />
+              <ClientTracking
+                isDark={isDark}
+                onBack={handleCloseTracking}
+                onOpenChat={handleOpenChat}
+                onRate={handleOpenRating}
+              />
+            </div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {chatOpen && (
-            <ClientChat
-              isDark={isDark}
-              onClose={() => setChatOpen(false)}
-            />
+            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Chat con repartidor">
+              <div className="lf-ios-sheet-handle" />
+              <ClientChat
+                isDark={isDark}
+                onClose={() => setChatOpen(false)}
+              />
+            </div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {ratingModalOpen && (
-            <ClientRating
-              isDark={isDark}
-              onClose={() => setRatingModalOpen(false)}
-            />
+            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Calificar servicio">
+              <div className="lf-ios-sheet-handle" />
+              <ClientRating
+                isDark={isDark}
+                onClose={() => setRatingModalOpen(false)}
+              />
+            </div>
           )}
         </AnimatePresence>
 
         {/* Tienda Profile Overlay */}
         {tiendaSeleccionada && (
-          <ClientTienda
-            isDark={isDark}
-            tiendaId={tiendaSeleccionada}
-            onBack={() => setTiendaSeleccionada(null)}
-            onOpenCart={() => setCarritoOpen(true)}
-          />
+          <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Detalle de tienda">
+            <div className="lf-ios-sheet-handle" />
+            <ClientTienda
+              isDark={isDark}
+              tiendaId={tiendaSeleccionada}
+              onBack={() => setTiendaSeleccionada(null)}
+              onOpenCart={() => setCarritoOpen(true)}
+            />
+          </div>
         )}
 
         {/* Cart Overlay */}
         <AnimatePresence>
           {carritoOpen && (
-            <ClientCarrito
-              isDark={isDark}
-              onClose={() => setCarritoOpen(false)}
-              onBackToTienda={() => setCarritoOpen(false)}
-            />
+            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Carrito de compras">
+              <div className="lf-ios-sheet-handle" />
+              <ClientCarrito
+                isDark={isDark}
+                onClose={() => setCarritoOpen(false)}
+                onBackToTienda={() => setCarritoOpen(false)}
+              />
+            </div>
           )}
         </AnimatePresence>
 
-        {/* ─── RESPONSIVE STYLES ─── */}
+        {/* ─── RESPONSIVE STYLES (iOS native) ─── */}
         <style>{`
           /* ─── Status bar & gesture bar: mobile simulation only ─── */
           .lf-status-bar,
@@ -1498,29 +1363,31 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             }
           }
 
-          /* Desktop nav: hidden by default, shown at >1024px */
-          .lf-desktop-nav {
-            display: none !important;
+          /* iOS app container — solid iOS background, no theme flash */
+          .lf-ios-app {
+            background: var(--ios-bg) !important;
+            color: var(--ios-text-primary) !important;
           }
+
+          /* iOS tab bar — visible at ALL widths (single source of truth) */
+          .lf-ios-tabbar.lf-client-bottom-nav {
+            display: flex !important;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          /* Wider horizontal padding on desktop */
           @media (min-width: 1024px) {
-            .lf-desktop-nav {
-              display: flex !important;
-            }
-            /* Hide bottom nav on desktop */
-            .lf-client-bottom-nav {
-              display: none !important;
-            }
-            /* Remove bottom padding on desktop */
-            .lf-client-content-padded {
-              padding-bottom: 0 !important;
-            }
-            /* Wider horizontal padding on desktop */
             .lf-client-inner-pad {
               padding-left: 32px !important;
               padding-right: 32px !important;
             }
-            /* Hide snackbar on desktop (or keep — adjust as needed) */
-            .lf-snackbar {
+            .lf-ios-large-title-wrap {
+              padding-left: 32px !important;
+              padding-right: 32px !important;
+            }
+            /* Snackbar centered on desktop */
+            .lf-snackbar,
+            .lf-ios-snackbar {
               max-width: 480px;
               left: 50% !important;
               right: auto !important;
@@ -1528,37 +1395,34 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             }
           }
 
-          /* Cart desktop button */
-          .lf-cart-desktop-btn { display: none !important; }
-          @media (min-width: 1024px) { .lf-cart-desktop-btn { display: flex !important; } }
-
           /* Header offset for status bar on mobile */
           @media (max-width: 1023px) {
-            .lf-header-bar {
+            .lf-header-bar.lf-ios-header {
               top: max(24px, env(safe-area-inset-top, 24px)) !important;
             }
-            .lf-client-content-padded {
-              padding-top: calc(60px + max(24px, env(safe-area-inset-top, 24px))) !important;
+            .lf-client-content-padded.lf-ios-content {
+              padding-top: calc(96px + max(24px, env(safe-area-inset-top, 24px))) !important;
             }
           }
           @media (max-width: 1023px) and (pointer: coarse) {
-            .lf-header-bar {
+            .lf-header-bar.lf-ios-header {
               top: env(safe-area-inset-top, 0px) !important;
             }
-            .lf-client-content-padded {
-              padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
+            .lf-client-content-padded.lf-ios-content {
+              padding-top: calc(96px + env(safe-area-inset-top, 0px)) !important;
             }
           }
 
-          /* Notification list custom scrollbar */
-          .lf-client-bottom-nav {
-            -webkit-overflow-scrolling: touch;
+          /* iOS sheet — wrapper applies bottom-sheet styling (border-radius, padding,
+             safe-area) as required; inner modal components retain their own positioning */
+          .lf-ios-sheet {
+            will-change: transform, opacity;
           }
 
           /* ─── Splash keyframes (fallback) ─── */
           @keyframes lf-splash-logo {
-            from { transform: scale(0.8); }
-            to { transform: scale(1); }
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
           }
           @keyframes lf-splash-text {
             from { opacity: 0; transform: translateY(8px); }

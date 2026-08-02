@@ -14,11 +14,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const repData = await getRepartidorProfile();
-    if (!repData || !repData.profile) {
+    const rp = await getRepartidorProfile();
+    if (!rp) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-    const { profile } = repData;
+    const { profile } = rp;
 
     // Liberar la orden
     const orden = await db.ordenServicio.findUnique({ where: { id } });

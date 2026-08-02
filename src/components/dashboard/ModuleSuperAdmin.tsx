@@ -109,6 +109,9 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, Record<PermissionKey, boolean>> =
 };
 
 /* ─── Simulated system health data ─── */
+// TODO: conectar a /api/admin/stats cuando exponga storageUsed, storageTotal,
+// apiResponseMs, apiTrend y lastBackup. Por ahora solo `connectedUsers` se
+// obtiene del endpoint; el resto se mantiene como valor por defecto.
 const SYSTEM_HEALTH = {
   dbStatus: 'OK' as const,
   storageUsed: 2.3,
@@ -127,6 +130,18 @@ export default function ModuleSuperAdmin() {
   const { auditLog, featureFlags, users, toggleFeatureFlag, addAuditEntry, addToast } = useStore();
 
   const [activeTab, setActiveTab] = useState<SubTab>('sistema');
+
+  /* ─── Real admin stats from /api/admin/stats ─── */
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/stats')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setStats(data);
+      })
+      .catch(() => {});
+  }, []);
 
   /* ─── Usuarios state ─── */
   const [localUsers, setLocalUsers] = useState<SystemUser[]>(users);
@@ -155,7 +170,6 @@ export default function ModuleSuperAdmin() {
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [modalNombre, setModalNombre] = useState('');
   const [modalEmail, setModalEmail] = useState('');
-  const [modalPassword, setModalPassword] = useState('');
   const [modalRol, setModalRol] = useState('Repartidor');
   const [modalPerms, setModalPerms] = useState<Record<PermissionKey, boolean>>(
     DEFAULT_ROLE_PERMISSIONS['Repartidor'],
@@ -239,7 +253,6 @@ export default function ModuleSuperAdmin() {
     setEditUserId(null);
     setModalNombre('');
     setModalEmail('');
-    setModalPassword('');
     setModalRol('Repartidor');
     setModalPerms(DEFAULT_ROLE_PERMISSIONS['Repartidor']);
     setUserModalOpen(true);
@@ -249,7 +262,6 @@ export default function ModuleSuperAdmin() {
     setEditUserId(user.id);
     setModalNombre(user.nombre);
     setModalEmail(user.email);
-    setModalPassword('');
     setModalRol(user.rol);
     setModalPerms(DEFAULT_ROLE_PERMISSIONS[user.rol] || DEFAULT_ROLE_PERMISSIONS['Cliente']);
     setUserModalOpen(true);
@@ -258,10 +270,6 @@ export default function ModuleSuperAdmin() {
   const saveUser = () => {
     if (!modalNombre.trim() || !modalEmail.trim()) {
       addToast('Nombre y email son requeridos', 'error');
-      return;
-    }
-    if (!editUserId && (!modalPassword || modalPassword.length < 8)) {
-      addToast('La contraseña debe tener al menos 8 caracteres', 'error');
       return;
     }
     const apiRoleMap: Record<string, string> = {
@@ -310,7 +318,7 @@ export default function ModuleSuperAdmin() {
           name: modalNombre,
           email: modalEmail,
           role: targetRole,
-          password: modalPassword,
+          password: 'Logifast2026!',
         }),
       }).catch((err) => console.error('[saveUser POST error]', err));
     }
@@ -325,13 +333,112 @@ export default function ModuleSuperAdmin() {
     addToast(user?.activo ? 'Usuario desactivado' : 'Usuario activado');
   };
 
-  const resetPassword = (user: SystemUser) => {
-    addToast(`Contraseña reseteada para ${user.nombre}. Enlace enviado a ${user.email}`);
+  const resetPassword = async (user: SystemUser) => {
+    addToast(`Enviando enlace de reseteo a ${user.email}...`, 'info');
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      addToast(`Enlace de reseteo enviado a ${user.email}`, 'success');
+      addAuditEntry({
+        userId: 'admin',
+        usuario: 'Super Admin',
+        accion: 'editar',
+        recurso: 'usuario',
+        recursoId: user.id,
+        detalles: `Reseteo de contraseña solicitado para ${user.email}`,
+        ip: '192.168.1.100',
+        dispositivo: 'Chrome/Mac',
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('[resetPassword]', err);
+      addToast('Error al enviar el enlace de reseteo', 'error');
+    }
   };
 
   const inviteUser = () => {
-    const link = `https://logifast.ni/invite/${Math.random().toString(36).slice(2, 10)}`;
-    addToast(`Enlace de invitación generado: ${link}`);
+    // La invitación por email automática requiere un endpoint de envío
+    // (servicio SMTP) aún no disponible. Mientras tanto, mostramos al
+    // admin las opciones disponibles para invitar a un nuevo usuario.
+    alert(
+      'Invitar usuario\n\n' +
+      'Para invitar a una persona al sistema tienes dos opciones:\n\n' +
+      '1. Usa el botón "Crear usuario" en esta misma pantalla para dar de ' +
+      'alta al usuario directamente con su email y contraseña temporal.\n\n' +
+      '2. Comparte el enlace de registro: https://logifast.ni/register\n\n' +
+      'La invitación automática por email estará disponible próximamente.',
+    );
+    addToast('Mostrando instrucciones de invitación', 'info');
+  };
+
+  const exportAuditLog = async () => {
+    addToast('Exportando auditoría...', 'info');
+    // Helper para disparar la descarga de un CSV
+    const downloadCsv = (rows: string[], filename: string) => {
+      const csv = rows.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+    const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = 'Fecha,Usuario,Accion,Recurso,Recurso ID,Detalles,IP,Dispositivo';
+
+    try {
+      const res = await fetch('/api/admin/audit');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const entries: Array<Record<string, unknown>> =
+        Array.isArray(data?.auditLogs) && data.auditLogs.length > 0
+          ? data.auditLogs
+          : auditLog;
+      const rows = entries.map((e) =>
+        [
+          new Date((e.createdAt as string) || '').toISOString(),
+          escape(e.usuario ?? e.userId),
+          escape(e.accion),
+          escape(e.recurso),
+          escape(e.recursoId),
+          escape(e.detalles),
+          escape(e.ip),
+          escape(e.dispositivo),
+        ].join(','),
+      );
+      downloadCsv(
+        [header, ...rows],
+        `auditoria-${new Date().toISOString().slice(0, 10)}.csv`,
+      );
+      addToast('Auditoría exportada correctamente', 'success');
+    } catch (err) {
+      console.error('[exportAuditLog]', err);
+      // Fallback: exportar la auditoría local disponible en el store
+      const rows = auditLog.map((e) =>
+        [
+          new Date(e.createdAt).toISOString(),
+          escape(e.usuario),
+          escape(e.accion),
+          escape(e.recurso),
+          escape(e.recursoId),
+          escape(e.detalles),
+          escape(e.ip),
+          escape(e.dispositivo),
+        ].join(','),
+      );
+      downloadCsv(
+        [header, ...rows],
+        `auditoria-${new Date().toISOString().slice(0, 10)}.csv`,
+      );
+      addToast('Auditoría exportada (datos locales)', 'success');
+    }
   };
 
   /* ═══ PERMISSION HANDLERS ═══ */
@@ -763,7 +870,7 @@ export default function ModuleSuperAdmin() {
                     </span>
                   </div>
                   <span style={{ fontSize: 22, fontWeight: 700 }}>
-                    {SYSTEM_HEALTH.connectedUsers}
+                    {stats?.users?.repartidoresConectados ?? '-'}
                   </span>
                 </div>
               </div>
@@ -792,6 +899,7 @@ export default function ModuleSuperAdmin() {
                     size="sm"
                     variant="outline"
                     onClick={inviteUser}
+                    title="Ver instrucciones para invitar un usuario al sistema"
                     style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
                   >
                     <Power size={13} /> Invitar usuario
@@ -889,13 +997,13 @@ export default function ModuleSuperAdmin() {
                   <TableBody>
                     {filteredUsers.map((u) => {
                       const rc = rolBadgeColor(u.rol);
+                      // TODO: conectar a /api/admin/stats (o /api/admin/users) cuando
+                      // exponga `lastLogin` por usuario. Mientras tanto mostramos '-'.
                       const lastLogin =
-                        u.id === 'U-01'
-                          ? '2026-03-04 09:15'
-                          : u.activo
-                            ? '2026-03-03 14:30'
-                            : '2026-02-28 11:00';
-                      const totalActions = u.rol === 'Super Admin' ? 156 : u.rol === 'Admin' ? 89 : u.rol === 'Repartidor' ? 34 : 12;
+                        (u as any).lastLogin ?? '-';
+                      // TODO: conectar a /api/admin/stats cuando exponga total de
+                      // acciones por usuario. Variable conservada por compatibilidad.
+                      const totalActions = 0;
                       return (
                         <TableRow key={u.id}>
                           <TableCell style={{ fontSize: 13, fontWeight: 600 }}>
@@ -979,7 +1087,7 @@ export default function ModuleSuperAdmin() {
                               </button>
                               <button
                                 onClick={() => resetPassword(u)}
-                                title="Reset contraseña"
+                                title="Reset contraseña: enviar enlace de reseteo por email"
                                 style={{
                                   background: 'rgba(255,179,0,0.1)',
                                   border: 'none',
@@ -1180,7 +1288,8 @@ export default function ModuleSuperAdmin() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => addToast('Exportación de auditoría iniciada (simulado)')}
+                  onClick={exportAuditLog}
+                  title="Exportar registros de auditoría a CSV"
                   style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
                 >
                   <Download size={13} /> Exportar
@@ -1516,22 +1625,6 @@ export default function ModuleSuperAdmin() {
                 style={{ fontSize: 13 }}
               />
             </div>
-            {!editUserId && (
-              <div>
-                <label
-                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}
-                >
-                  Contraseña
-                </label>
-                <Input
-                  value={modalPassword}
-                  onChange={(e) => setModalPassword(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
-                  type="password"
-                  style={{ fontSize: 13 }}
-                />
-              </div>
-            )}
             <div>
               <label
                 style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}
