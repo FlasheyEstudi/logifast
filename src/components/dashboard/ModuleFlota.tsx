@@ -151,7 +151,7 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
         {/* List */}
         <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
           {filtered.map((moto) => {
-            const cfg = STATUS_CONFIG[moto.status];
+            const cfg = STATUS_CONFIG[moto.status] || { label: moto.status || 'Desconocido', bg: 'rgba(107,114,128,0.1)', color: '#6B7280' };
             const isExpanded = expandedMoto === moto.id;
             const rider = riders.find((r) => r.motoId === moto.id);
             return (
