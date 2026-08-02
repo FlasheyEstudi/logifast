@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback, createContext, useContext } from 'react';
+import React, { useState, useCallback, createContext, useContext } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -20,40 +20,24 @@ import {
   ShoppingBag,
   ShoppingCart,
   Wallet,
+  Search,
+  ChevronRight,
+  Shield,
+  Sparkles,
+  Navigation,
 } from '@/components/icons';
-import { useStore, type ClientModuleKey } from '@/lib/store';
-import type { ClientNotificacion } from '@/lib/store';
+import { useStore, type ClientModuleKey, type ClientNotificacion } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
-import { LogoSpinner } from '@/components/ui/loaders';
 
-/* ═══════════════════════════════════════════════
-   SKELETON COMPONENT (PLACEHOLDER)
-   ═══════════════════════════════════════════════ */
 function MobileModuleSkeleton() {
   return (
-    <div className="w-full space-y-4 p-4 animate-pulse">
-      {/* Banner Skeleton */}
-      <div className="w-full h-44 bg-slate-200 dark:bg-slate-800/60 rounded-3xl" />
-      
-      {/* Categories Grid Skeleton */}
-      <div className="grid grid-cols-4 gap-3 pt-2">
+    <div className="w-full max-w-4xl mx-auto space-y-6 p-4 sm:p-6 animate-pulse">
+      <div className="w-full h-48 bg-zinc-200/60 dark:bg-zinc-800/40 rounded-[28px] backdrop-blur-md" />
+      <div className="grid grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center space-y-2">
-            <div className="w-14 h-14 bg-slate-200 dark:bg-slate-800/60 rounded-2xl" />
-            <div className="w-10 h-3 bg-slate-200 dark:bg-slate-800/60 rounded-full" />
-          </div>
-        ))}
-      </div>
-
-      {/* Cards List Skeleton */}
-      <div className="space-y-3 pt-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="p-4 bg-slate-200 dark:bg-slate-800/40 rounded-2xl flex items-center space-x-3">
-            <div className="w-12 h-12 bg-slate-300 dark:bg-slate-700/60 rounded-xl flex-shrink-0" />
-            <div className="flex-1 space-y-2">
-              <div className="w-3/4 h-4 bg-slate-300 dark:bg-slate-700/60 rounded-full" />
-              <div className="w-1/2 h-3 bg-slate-300 dark:bg-slate-700/60 rounded-full" />
-            </div>
+            <div className="w-16 h-16 bg-zinc-200/60 dark:bg-zinc-800/40 rounded-2xl" />
+            <div className="w-12 h-3 bg-zinc-200/60 dark:bg-zinc-800/40 rounded-full" />
           </div>
         ))}
       </div>
@@ -61,9 +45,6 @@ function MobileModuleSkeleton() {
   );
 }
 
-/* ═══════════════════════════════════════════════
-   DYNAMIC MODULE IMPORTS WITH ELEGANT SKELETON
-   ═══════════════════════════════════════════════ */
 const ClientInicio = dynamic(() => import('./ClientInicio'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
 const ClientSolicitar = dynamic(() => import('./ClientSolicitar'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
 const ClientEnvios = dynamic(() => import('./ClientEnvios'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
@@ -80,9 +61,6 @@ const ClientAyuda = dynamic(() => import('./ClientAyuda'), { ssr: false, loading
 const ClientPuntos = dynamic(() => import('./ClientPuntos'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
 const ClientMiTienda = dynamic(() => import('./ClientMiTienda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
 
-/* ═══════════════════════════════════════════════
-   SNACKBAR CONTEXT
-   ═══════════════════════════════════════════════ */
 interface SnackbarData {
   message: string;
   action?: string;
@@ -94,9 +72,6 @@ export function useSnackbar() {
   return useContext(SnackbarContext);
 }
 
-/* ═══════════════════════════════════════════════
-   PROPS INTERFACE
-   ═══════════════════════════════════════════════ */
 interface ClientShellProps {
   isDark: boolean;
   toggleTheme: () => void;
@@ -104,77 +79,12 @@ interface ClientShellProps {
   userName: string;
 }
 
-/* ═══════════════════════════════════════════════
-   HELPERS & ICON UTILS
-   ═══════════════════════════════════════════════ */
 function getInitials(name: string): string {
   const parts = (name || 'Usuario').trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return parts[0].substring(0, 2).toUpperCase();
 }
 
-function relativeTime(timestamp: string): string {
-  const now = Date.now();
-  const then = new Date(timestamp).getTime();
-  const diff = now - then;
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Ahora mismo';
-  if (minutes < 60) return `Hace ${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Hace ${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `Hace ${days}d`;
-}
-
-function SignalIcon() {
-  return (
-    <svg width="14" height="10" viewBox="0 0 16 12" fill="currentColor">
-      <rect x="0" y="9" width="3" height="3" rx="0.5" />
-      <rect x="4.5" y="6" width="3" height="6" rx="0.5" />
-      <rect x="9" y="3" width="3" height="9" rx="0.5" />
-      <rect x="13.5" y="0" width="3" height="12" rx="0.5" opacity="0.4" />
-    </svg>
-  );
-}
-
-function WifiIcon() {
-  return (
-    <svg width="14" height="10" viewBox="0 0 16 12" fill="currentColor">
-      <circle cx="8" cy="9" r="1.5" />
-      <path d="M4.93 6.47a4.36 4.36 0 016.14 0" stroke="currentColor" strokeWidth="1.4" fill="none" />
-      <path d="M2.1 3.64a7.8 7.8 0 0111.8 0" stroke="currentColor" strokeWidth="1.4" fill="none" />
-    </svg>
-  );
-}
-
-function BatteryIcon() {
-  return (
-    <svg width="22" height="12" viewBox="0 0 22 12" fill="currentColor">
-      <rect x="0" y="0.5" width="19" height="11" rx="2" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" />
-      <rect x="1.5" y="2" width="14" height="8" rx="1" />
-      <rect x="19.5" y="3.5" width="2" height="5" rx="0.8" opacity="0.4" />
-    </svg>
-  );
-}
-
-function getNotifIcon(tipo: ClientNotificacion['tipo']): { icon: React.ReactNode; color: string } {
-  switch (tipo) {
-    case 'orden_confirmada': return { icon: <CheckCircle size={18} />, color: '#00C853' };
-    case 'repartidor_asignado': return { icon: <User size={18} />, color: '#2979FF' };
-    case 'repartidor_camino': return { icon: <Bike size={18} />, color: '#FF9800' };
-    case 'paquete_recogido': return { icon: <Package size={18} />, color: '#2979FF' };
-    case 'entrega_exitosa': return { icon: <CheckCircle size={20} />, color: '#00C853' };
-    case 'incidencia': return { icon: <AlertTriangle size={18} />, color: '#FF1744' };
-    case 'codigo_nuevo': return { icon: <Tag size={18} />, color: '#FF9800' };
-    case 'te_extranamos': return { icon: <Heart size={18} />, color: '#E91E63' };
-    default: return { icon: <Bell size={18} />, color: '#FF5722' };
-  }
-}
-
-/* ═══════════════════════════════════════════════
-   NAV CONFIG — iOS native tab bar (5 items)
-   🏠 Inicio | 📦 Envíos | 🛒 Pedidos | 💳 Billetera | 👤 Perfil
-   ═══════════════════════════════════════════════ */
 interface NavItem {
   key: ClientModuleKey;
   label: string;
@@ -182,1253 +92,317 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'inicio', label: 'Inicio', icon: <Home size={24} strokeWidth={1.8} /> },
-  { key: 'envios', label: 'Envíos', icon: <Package size={24} strokeWidth={1.8} /> },
-  { key: 'pedidos', label: 'Pedidos', icon: <ShoppingCart size={24} strokeWidth={1.8} /> },
-  { key: 'puntos', label: 'Billetera', icon: <Wallet size={24} strokeWidth={1.8} /> },
-  { key: 'perfil', label: 'Perfil', icon: <User size={24} strokeWidth={1.8} /> },
+  { key: 'inicio', label: 'Inicio', icon: <Home size={22} strokeWidth={2} /> },
+  { key: 'explorar', label: 'Explorar', icon: <Search size={22} strokeWidth={2} /> },
+  { key: 'solicitar', label: 'Envío', icon: <Package size={22} strokeWidth={2} /> },
+  { key: 'pedidos', label: 'Pedidos', icon: <ShoppingCart size={22} strokeWidth={2} /> },
+  { key: 'perfil', label: 'Perfil', icon: <User size={22} strokeWidth={2} /> },
 ];
 
-/* ─── iOS Large Title map (header) ─── */
-const IOS_TITLE_MAP: Record<ClientModuleKey, string> = {
-  inicio: 'Inicio',
-  solicitar: 'Nuevo Envío',
-  envios: 'Mis Envíos',
-  explorar: 'Explorar',
-  pedidos: 'Mis Pedidos',
-  perfil: 'Perfil',
-  ayuda: 'Ayuda',
-  puntos: 'Billetera',
-  tienda: 'Mi Tienda',
-};
-
-/* ═══════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════ */
-
 export default function ClientShell({ isDark, toggleTheme, onLogout, userName }: ClientShellProps) {
-  const {
-    clientActiveModule,
-    clientModuleFade,
-    setClientActiveModule,
-    clientNotificaciones,
-    clientNotifOpen,
-    setClientNotifOpen,
-    markClientNotifRead,
-    markAllClientNotifRead,
-    trackingOrderId,
-    chatOpen,
-    ratingModalOpen,
-    setTrackingOrder,
-    setChatOpen,
-    setChatOrderId,
-    setRatingModalOpen,
-    setRatingOrderId,
-    fetchOrders,
-    orders,
-  } = useStore();
+  const activeModule = useStore((s) => s.clientActiveModule);
+  const setClientActiveModule = useStore((s) => s.setClientActiveModule);
+  const notificaciones = useStore((s) => s.clientNotificaciones);
+  const markAllClientNotifRead = useStore((s) => s.markAllClientNotifRead);
+  const setTrackingOrder = useStore((s) => s.setTrackingOrder);
+  const setChatOrderId = useStore((s) => s.setChatOrderId);
 
-  const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount, fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, ordenesCompra } = useMarketplaceStore();
+  const cartItemsCount = useMarketplaceStore((s) => s.cartItems.reduce((acc, item) => acc + item.cantidad, 0));
 
-  /* ─── Sync Dynamic URL Hash ─── */
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.location.hash = `#/cliente/${clientActiveModule}`;
-    }
-  }, [clientActiveModule]);
-
-  /* ─── Cargar datos del backend al montar (P1: persistencia BD) ─── */
-  useEffect(() => {
-    fetchTiendas();
-    fetchOrdenesCompra();
-    fetchFavoritos();
-    fetchCarrito();
-    fetchOrders(); // P1: cargar envíos del cliente desde la BD (sobrevive F5)
-  }, [fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, fetchOrders]);
-
-  /* ─── SPLASH STATE ─── */
-  const [showSplash, setShowSplash] = useState(true);
-  const [splashFading, setSplashFading] = useState(false);
-
-  /* ─── SNACKBAR STATE ─── */
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<SnackbarData | null>(null);
 
-  const [avatarOpen, setAvatarOpen] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
-  const avatarRef = useRef<HTMLDivElement>(null);
-  const snackbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unreadNotifs = notificaciones.filter((n) => !n.leida).length;
 
-  const unreadCount = clientNotificaciones.filter((n) => !n.leida).length;
-  const initials = getInitials(userName);
-
-  /* ─── Active orders count for Pedidos badge (envíos + compras no entregadas) ─── */
-  const activeOrdersCount =
-    orders.filter((o) => !['entregado', 'incidencia'].includes(o.estado)).length +
-    ordenesCompra.filter((o) => o.estado !== 'entregado').length;
-
-  /* ─── iOS Large Title for current module ─── */
-  const iosTitle = IOS_TITLE_MAP[clientActiveModule] || 'Logifast';
-
-  /* ─── SPLASH TIMER ─── */
-  useEffect(() => {
-    const fadeTimer = setTimeout(() => {
-      setSplashFading(true);
-    }, 1500);
-    const removeTimer = setTimeout(() => {
-      setShowSplash(false);
-    }, 1900);
-    return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(removeTimer);
-    };
-  }, []);
-
-  /* ─── SNACKBAR AUTO-DISMISS ─── */
   const showSnackbar = useCallback((data: SnackbarData | null) => {
-    if (snackbarTimerRef.current) clearTimeout(snackbarTimerRef.current);
     setSnackbar(data);
     if (data) {
-      snackbarTimerRef.current = setTimeout(() => {
-        setSnackbar(null);
-      }, 4000);
+      setTimeout(() => setSnackbar(null), 4000);
     }
   }, []);
 
-  /* Close dropdowns on outside click */
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setClientNotifOpen(false);
-      }
-      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
-        setAvatarOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [setClientNotifOpen]);
-
-  /* Close dropdowns on escape */
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setClientNotifOpen(false);
-        setAvatarOpen(false);
-      }
-    }
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [setClientNotifOpen]);
-
-  const handleNav = useCallback(
-    (mod: ClientModuleKey) => {
-      setClientActiveModule(mod);
-      setTrackingOrder(null);
-      if (mod !== 'explorar') {
-        setTiendaSeleccionada(null);
-      }
-      // Haptic feedback on nav tap
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate(20); } catch { /* ignore */ }
-      }
-    },
-    [setClientActiveModule, setTrackingOrder, setTiendaSeleccionada]
-  );
-
-  const handleOpenTracking = useCallback(
-    (orderId: string) => {
-      setTrackingOrder(orderId);
-    },
-    [setTrackingOrder]
-  );
-
-  const handleCloseTracking = useCallback(
-    () => setTrackingOrder(null),
-    [setTrackingOrder]
-  );
-
-  const handleOpenChat = useCallback(
-    (orderId: string) => {
-      setChatOrderId(orderId);
-      setChatOpen(true);
-    },
-    [setChatOrderId, setChatOpen]
-  );
-
-  const handleOpenRating = useCallback(
-    (orderId: string) => {
-      setRatingOrderId(orderId);
-      setRatingModalOpen(true);
-    },
-    [setRatingOrderId, setRatingModalOpen]
-  );
-
-  const renderModule = () => {
-    const moduleProps = { isDark, userName, onNavigate: handleNav, onOpenTracking: handleOpenTracking, onOpenChat: handleOpenChat };
-    const perfilProps = { ...moduleProps, onLogout };
-    switch (clientActiveModule) {
-      case 'inicio':
-        return <ClientInicio {...moduleProps} />;
-      case 'solicitar':
-        return <ClientSolicitar {...moduleProps} />;
-      case 'explorar':
-        return <ClientExplorar {...moduleProps} />;
-      case 'envios':
-        return <ClientEnvios {...moduleProps} />;
-      case 'pedidos':
-        return <ClientPedidos {...moduleProps} />;
-      case 'perfil':
-        return <ClientPerfil {...perfilProps} />;
-      case 'tienda':
-        return <ClientMiTienda />;
-      case 'ayuda':
-        return <ClientAyuda isDark={isDark} onClose={() => setClientActiveModule('perfil')} />;
-      case 'puntos':
-        return <ClientPuntos isDark={isDark} onClose={() => setClientActiveModule('perfil')} />;
-      default:
-        return <ClientInicio {...moduleProps} />;
-    }
+  const handleNavigate = (mod: ClientModuleKey) => {
+    setClientActiveModule(mod);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <SnackbarContext.Provider value={showSnackbar}>
-      <div
-        className="cliente-app lf-ios-app"
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: 'var(--ios-bg)',
-          color: 'var(--ios-text-primary)',
-          fontFamily: 'var(--ios-font)',
-          transition: 'background-color 0.4s ease, color 0.3s ease',
-        }}
-      >
-        {/* ═══════ SPLASH SCREEN — iOS native ═══════ */}
-        {showSplash && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: splashFading ? 0 : 1 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="lf-ios-splash"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 99999,
-              background: 'var(--ios-bg)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
-            }}
-          >
-            {/* Logo */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6, ease: [0.2, 0, 0, 1] }}
-              style={{
-                width: 76,
-                height: 76,
-                borderRadius: 20,
-                background: 'linear-gradient(135deg, #FF5722, #FF8A65)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#FFFFFF',
-                boxShadow: '0 12px 36px rgba(255, 87, 34, 0.28)',
-              }}
-            >
-              <Bike size={34} />
-            </motion.div>
-            {/* Brand text */}
-            <motion.span
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.25, ease: [0.2, 0, 0, 1] }}
-              style={{
-                fontFamily: 'var(--ios-font)',
-                fontWeight: 700,
-                fontSize: 22,
-                color: 'var(--ios-text-primary)',
-                marginTop: 20,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              LOGIFAST
-            </motion.span>
-          </motion.div>
-        )}
+      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-zinc-900 dark:text-zinc-100 font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Display','Inter',sans-serif] selection:bg-blue-500 selection:text-white pb-28 pt-20">
 
-        {/* ═══════ NATIVE STATUS BAR (mobile) ═══════ */}
-        <div
-          className="lf-status-bar"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 'max(24px, env(safe-area-inset-top, 24px))',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 20px',
-            background: 'transparent',
-            pointerEvents: 'none',
-          }}
-        >
-          {/* Left: Time */}
-          <span
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 14,
-              fontWeight: 500,
-              color: 'var(--md-on-surface)',
-              lineHeight: 1,
-            }}
-          >
-            9:41
-          </span>
-          {/* Right: Signal + Wifi + Battery */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--md-on-surface)' }}>
-            <SignalIcon />
-            <WifiIcon />
-            <BatteryIcon />
-          </div>
-        </div>
-
-        {/* ═══════ ANDROID GESTURE BAR (mobile) ═══════ */}
-        <div
-          className="lf-gesture-bar"
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 'max(20px, env(safe-area-inset-bottom, 20px))',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            pointerEvents: 'none',
-          }}
-        >
-          <div
-            style={{
-              width: 120,
-              height: 3,
-              borderRadius: 2,
-              background: 'var(--md-on-surface-variant)',
-              opacity: 0.3,
-            }}
-          />
-        </div>
-
-        {/* ─── HEADER — iOS native large title ─── */}
-        <header
-          className="lf-ios-header lf-header-bar"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 50,
-            display: 'flex',
-            flexDirection: 'column',
-            background: 'color-mix(in srgb, var(--ios-bg-elevated) 88%, transparent)',
-            backdropFilter: 'saturate(180%) blur(20px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-            borderBottom: '0.5px solid var(--ios-separator)',
-            transition: 'background-color 0.3s ease, border-color 0.3s ease',
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
-          }}
-        >
-          {/* Top row: right-aligned action buttons (theme + bell + cart + avatar) */}
-          <div
-            className="lf-ios-header-actions"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 4,
-              padding: '2px 8px 4px',
-              minHeight: 36,
-            }}
-          >
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--ios-text-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'color 0.2s ease, background 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-secondary)';
-              }}
+        {/* 🍏 APPLE FLOATING GLASS HEADER */}
+        <header className="fixed top-0 inset-x-0 z-40 px-4 sm:px-8 py-3 backdrop-blur-2xl bg-white/70 dark:bg-zinc-950/70 border-b border-white/20 dark:border-white/10 shadow-sm transition-all duration-300">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            
+            {/* Brand Logo */}
+            <button 
+              onClick={() => handleNavigate('inicio')}
+              className="flex items-center gap-3 focus:outline-none group"
             >
-              {isDark ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
+                <Bike size={22} strokeWidth={2.2} />
+              </div>
+              <div className="text-left">
+                <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-600 dark:from-white dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent">
+                  Logi<span className="text-blue-600 dark:text-blue-500">Fast</span>
+                </span>
+                <span className="block text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                  Client Edition
+                </span>
+              </div>
             </button>
 
-            {/* Notification Bell */}
-            <div ref={notifRef} style={{ position: 'relative' }}>
+            {/* Right Action Icons */}
+            <div className="flex items-center gap-2 sm:gap-3">
+
+              {/* Shopping Cart Pill */}
               <button
-                onClick={() => {
-                  setClientNotifOpen(!clientNotifOpen);
-                  setAvatarOpen(false);
-                }}
-                aria-label="Notificaciones"
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  border: 'none',
-                  background: clientNotifOpen
-                    ? 'color-mix(in srgb, var(--ios-blue) 12%, transparent)'
-                    : 'transparent',
-                  color: clientNotifOpen ? 'var(--ios-blue)' : 'var(--ios-text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'color 0.2s ease, background 0.2s ease',
-                  position: 'relative',
-                }}
-                onMouseEnter={(e) => {
-                  if (!clientNotifOpen) {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-primary)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!clientNotifOpen) {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-secondary)';
-                  }
-                }}
+                onClick={() => handleNavigate('carrito')}
+                className="relative p-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors"
+                title="Ver Carrito"
               >
-                <Bell size={20} strokeWidth={1.8} />
-                {unreadCount > 0 && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: 'var(--peligro)',
-                      color: '#FFFFFF',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      lineHeight: 1,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                <ShoppingCart size={19} />
+                {cartItemsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full shadow-md animate-bounce">
+                    {cartItemsCount}
                   </span>
                 )}
               </button>
 
-              {/* Notification Dropdown */}
-              <AnimatePresence>
-                {clientNotifOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    style={{
-                      position: 'fixed',
-                      top: 'max(56px, env(safe-area-inset-top))',
-                      right: 'max(8px, env(safe-area-inset-right))',
-                      left: 'max(8px, env(safe-area-inset-left))',
-                      width: 'auto',
-                      maxWidth: 360,
-                      maxHeight: 'min(70vh, 460px)',
-                      borderRadius: 16,
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      boxShadow: 'var(--shadow-lg)',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      zIndex: 60,
-                    }}
-                  >
-                    {/* Header */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '14px 16px',
-                        borderBottom: '1px solid var(--border)',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "'Syne', sans-serif",
-                          fontWeight: 700,
-                          fontSize: 15,
-                          color: 'var(--text)',
-                        }}
-                      >
-                        Notificaciones
-                      </span>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={() => markAllClientNotifRead()}
-                          style={{
-                            border: 'none',
-                            background: 'transparent',
-                            color: 'var(--primario)',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            fontFamily: "'DM Sans', sans-serif",
-                            padding: '4px 8px',
-                            borderRadius: 6,
-                            transition: 'background 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.background =
-                              'var(--primario-soft)';
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                          }}
-                        >
-                          Marcar todo como leído
-                        </button>
-                      )}
-                    </div>
-
-                    {/* List */}
-                    <div
-                      style={{
-                        flex: 1,
-                        overflowY: 'auto',
-                        maxHeight: 360,
-                      }}
-                    >
-                      {clientNotificaciones.slice(0, 10).map((notif) => {
-                        const { icon, color } = getNotifIcon(notif.tipo);
-                        return (
-                          <div
-                            key={notif.id}
-                            onClick={() => markClientNotifRead(notif.id)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              gap: 12,
-                              padding: '12px 16px',
-                              cursor: 'pointer',
-                              background: !notif.leida
-                                ? 'color-mix(in srgb, var(--info) 5%, transparent)'
-                                : 'transparent',
-                              borderLeft: !notif.leida
-                                ? '3px solid var(--info)'
-                                : '3px solid transparent',
-                              transition: 'background 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLDivElement).style.background =
-                                'color-mix(in srgb, var(--text-muted) 5%, transparent)';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLDivElement).style.background = !notif.leida
-                                ? 'color-mix(in srgb, var(--info) 5%, transparent)'
-                                : 'transparent';
-                            }}
-                          >
-                            <div
-                              style={{
-                                flexShrink: 0,
-                                width: 34,
-                                height: 34,
-                                borderRadius: 10,
-                                background: `color-mix(in srgb, ${color} 12%, transparent)`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: color,
-                              }}
-                            >
-                              {icon}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div
-                                style={{
-                                  fontSize: 14,
-                                  fontWeight: 600,
-                                  color: 'var(--text)',
-                                  lineHeight: 1.3,
-                                  marginBottom: 2,
-                                }}
-                              >
-                                {notif.titulo}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 13,
-                                  color: 'var(--text-muted)',
-                                  lineHeight: 1.4,
-                                }}
-                              >
-                                {notif.descripcion}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: 'var(--text-muted)',
-                                  marginTop: 4,
-                                  fontFamily: "'JetBrains Mono', monospace",
-                                  opacity: 0.7,
-                                }}
-                              >
-                                {relativeTime(notif.timestamp)}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {clientNotificaciones.length === 0 && (
-                        <div
-                          style={{
-                            padding: 32,
-                            textAlign: 'center',
-                            color: 'var(--text-muted)',
-                            fontSize: 14,
-                          }}
-                        >
-                          No hay notificaciones
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    {clientNotificaciones.length > 0 && (
-                      <div
-                        style={{
-                          borderTop: '1px solid var(--border)',
-                          padding: '10px 16px',
-                          display: 'flex',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <button
-                          onClick={() => {
-                            clientNotificaciones.forEach((n) => markClientNotifRead(n.id));
-                            setClientNotifOpen(false);
-                          }}
-                          style={{
-                            border: 'none',
-                            background: 'transparent',
-                            color: 'var(--text-muted)',
-                            fontSize: 12,
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            fontFamily: "'DM Sans', sans-serif",
-                            padding: '4px 8px',
-                            borderRadius: 6,
-                            transition: 'color 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-                          }}
-                        >
-                          Limpiar todo
-                        </button>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Cart (always visible — iOS) */}
-            <button
-              onClick={() => setCarritoOpen(true)}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                border: 'none',
-                background: carritoOpen ? 'color-mix(in srgb, var(--ios-blue) 12%, transparent)' : 'transparent',
-                color: carritoOpen ? 'var(--ios-blue)' : 'var(--ios-text-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                transition: 'color 0.2s ease, background 0.2s ease',
-              }}
-              aria-label="Carrito"
-            >
-              <ShoppingBag size={20} strokeWidth={1.8} />
-              {getCartItemCount() > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    right: 2,
-                    minWidth: 16,
-                    height: 16,
-                    borderRadius: 8,
-                    padding: '0 4px',
-                    background: 'var(--ios-red)',
-                    color: '#fff',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: 'var(--ios-font-mono)',
-                    lineHeight: 1,
+              {/* Notifications Popover Toggle */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setNotifOpen(!notifOpen);
+                    setUserMenuOpen(false);
                   }}
+                  className="relative p-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors"
                 >
-                  {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
-                </span>
-              )}
-            </button>
+                  <Bell size={19} />
+                  {unreadNotifs > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white dark:ring-zinc-950 animate-ping" />
+                  )}
+                  {unreadNotifs > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white dark:ring-zinc-950" />
+                  )}
+                </button>
 
-            {/* Avatar */}
-            <div ref={avatarRef} style={{ position: 'relative' }}>
+                {/* Notifications Drawer */}
+                <AnimatePresence>
+                  {notifOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-3 w-80 sm:w-96 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden z-50"
+                    >
+                      <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Bell size={18} className="text-blue-500" />
+                          <h4 className="font-bold text-sm">Notificaciones</h4>
+                        </div>
+                        {unreadNotifs > 0 && (
+                          <button
+                            onClick={markAllClientNotifRead}
+                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            Marcar leídas
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-80 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800/60 p-2">
+                        {notificaciones.length === 0 ? (
+                          <div className="p-6 text-center text-xs text-zinc-400">
+                            No tienes notificaciones pendientes
+                          </div>
+                        ) : (
+                          notificaciones.map((n) => (
+                            <div
+                              key={n.id}
+                              className={`p-3 rounded-2xl transition-colors ${
+                                !n.leida ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+                              }`}
+                            >
+                              <p className="font-semibold text-xs text-zinc-800 dark:text-zinc-200">{n.titulo}</p>
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{n.descripcion}</p>
+                              <span className="text-[10px] text-zinc-400 block mt-1">{n.timestamp}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Theme Toggle */}
               <button
-                onClick={() => {
-                  setAvatarOpen(!avatarOpen);
-                  setClientNotifOpen(false);
-                }}
-                aria-label="Menú de usuario"
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'color-mix(in srgb, var(--ios-blue) 12%, transparent)',
-                  color: 'var(--ios-blue)',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  fontFamily: 'var(--ios-font)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'box-shadow 0.2s ease',
-                  boxShadow: avatarOpen ? '0 0 0 2px var(--ios-blue)' : 'none',
-                }}
+                onClick={toggleTheme}
+                className="p-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors"
+                title="Cambiar Tema"
               >
-                {initials}
+                {isDark ? <Sun size={19} className="text-amber-400" /> : <Moon size={19} className="text-zinc-700" />}
               </button>
 
-              {/* Avatar Dropdown */}
-              <AnimatePresence>
-                {avatarOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    style={{
-                      position: 'absolute',
-                      top: 46,
-                      right: 0,
-                      width: 220,
-                      borderRadius: 'var(--ios-radius-md)',
-                      background: 'var(--ios-bg-elevated)',
-                      border: '0.5px solid var(--ios-separator)',
-                      boxShadow: 'var(--ios-shadow-lg)',
-                      overflow: 'hidden',
-                      zIndex: 60,
-                    }}
-                  >
-                    {/* User info */}
-                    <div
-                      style={{
-                        padding: '14px 16px',
-                        borderBottom: '0.5px solid var(--ios-separator)',
-                      }}
+              {/* User Avatar Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setUserMenuOpen(!userMenuOpen);
+                    setNotifOpen(false);
+                  }}
+                  className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-md">
+                    {getInitials(userName)}
+                  </div>
+                  <span className="hidden sm:inline font-semibold text-xs max-w-[100px] truncate">{userName}</span>
+                </button>
+
+                <AnimatePresence>
+                  {userMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-3 w-56 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 rounded-3xl shadow-2xl p-2 z-50"
                     >
-                      <div
-                        style={{
-                          fontSize: 15,
-                          fontWeight: 600,
-                          color: 'var(--ios-text-primary)',
-                          lineHeight: 1.3,
-                          fontFamily: 'var(--ios-font)',
-                        }}
-                      >
-                        {userName}
+                      <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800">
+                        <p className="font-bold text-xs text-zinc-800 dark:text-zinc-200">{userName}</p>
+                        <p className="text-[10px] text-zinc-400">Cliente Logifast</p>
                       </div>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: 'var(--ios-text-tertiary)',
-                          marginTop: 2,
-                          fontFamily: 'var(--ios-font)',
-                        }}
-                      >
-                        Cliente
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            handleNavigate('perfil');
+                            setUserMenuOpen(false);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                        >
+                          <User size={15} /> Mi Perfil
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleNavigate('pedidos');
+                            setUserMenuOpen(false);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                        >
+                          <ShoppingCart size={15} /> Mis Pedidos
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleNavigate('puntos');
+                            setUserMenuOpen(false);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                        >
+                          <Wallet size={15} /> Billetera & Puntos
+                        </button>
                       </div>
-                    </div>
+                      <div className="pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                        <button
+                          onClick={onLogout}
+                          className="w-full px-3 py-2 rounded-xl text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2"
+                        >
+                          <LogOut size={15} /> Cerrar Sesión
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-                    {/* Menu items */}
-                    <div style={{ padding: '6px 6px' }}>
-                      <button
-                        onClick={() => {
-                          handleNav('perfil');
-                          setAvatarOpen(false);
-                        }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '10px 12px',
-                          border: 'none',
-                          borderRadius: 'var(--ios-radius-sm)',
-                          background: 'transparent',
-                          color: 'var(--ios-text-primary)',
-                          fontSize: 15,
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          fontFamily: 'var(--ios-font)',
-                          transition: 'background 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                        }}
-                      >
-                        <User size={16} strokeWidth={1.8} style={{ color: 'var(--ios-text-tertiary)' }} />
-                        Mi perfil
-                      </button>
-
-                      <button
-                        onClick={() => setAvatarOpen(false)}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '10px 12px',
-                          border: 'none',
-                          borderRadius: 'var(--ios-radius-sm)',
-                          background: 'transparent',
-                          color: 'var(--ios-text-primary)',
-                          fontSize: 15,
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          fontFamily: 'var(--ios-font)',
-                          transition: 'background 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                        }}
-                      >
-                        <Settings size={16} strokeWidth={1.8} style={{ color: 'var(--ios-text-tertiary)' }} />
-                        Configuración
-                      </button>
-
-                      <div
-                        style={{
-                          height: 0.5,
-                          background: 'var(--ios-separator)',
-                          margin: '4px 0',
-                        }}
-                      />
-
-                      <button
-                        onClick={() => {
-                          setAvatarOpen(false);
-                          onLogout();
-                        }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '10px 12px',
-                          border: 'none',
-                          borderRadius: 'var(--ios-radius-sm)',
-                          background: 'transparent',
-                          color: 'var(--ios-red)',
-                          fontSize: 15,
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          fontFamily: 'var(--ios-font)',
-                          transition: 'background 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background =
-                            'color-mix(in srgb, var(--ios-red) 8%, transparent)';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                        }}
-                      >
-                        <LogOut size={16} strokeWidth={1.8} />
-                        Cerrar sesión
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
-          </div>
-
-          {/* iOS Large Title — 34px, font-weight 700 */}
-          <div
-            className="lf-ios-large-title-wrap"
-            style={{
-              padding: '6px 16px 10px',
-              maxWidth: 960,
-              margin: '0 auto',
-              width: '100%',
-            }}
-          >
-            <motion.h1
-              key={iosTitle}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              style={{
-                fontFamily: 'var(--ios-font)',
-                fontSize: 34,
-                fontWeight: 700,
-                color: 'var(--ios-text-primary)',
-                letterSpacing: '-0.02em',
-                margin: 0,
-                lineHeight: 1.1,
-              }}
-            >
-              {iosTitle}
-            </motion.h1>
           </div>
         </header>
 
-        {/* ─── CONTENT AREA ─── */}
-        <main
-          style={{
-            flex: 1,
-            paddingTop: 'calc(96px + env(safe-area-inset-top, 0px))',
-            paddingBottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
-            minHeight: '100vh',
-            backgroundColor: 'var(--ios-bg)',
-            transition: 'padding 0.3s ease, background-color 0.3s ease',
-          }}
-          className="lf-client-content-padded lf-ios-content"
-        >
-          <div
-            style={{
-              maxWidth: 960,
-              margin: '0 auto',
-              paddingLeft: 16,
-              paddingRight: 16,
-              paddingTop: 20,
-              paddingBottom: 20,
-            }}
-            className="lf-client-inner-pad"
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={clientActiveModule}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: clientModuleFade ? 0 : 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="lf-ios-screen-transition"
-              >
-                {renderModule()}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+        {/* 🍏 MAIN CONTENT CANVAS */}
+        <main className="max-w-6xl mx-auto px-4 sm:px-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeModule}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {activeModule === 'inicio' && (
+                <ClientInicio
+                  isDark={isDark}
+                  userName={userName}
+                  onNavigate={handleNavigate}
+                  onOpenTracking={(id) => {
+                    setTrackingOrder(id);
+                    handleNavigate('tracking');
+                  }}
+                  onOpenChat={(id) => {
+                    setChatOrderId(id);
+                    handleNavigate('chat');
+                  }}
+                />
+              )}
+              {activeModule === 'explorar' && <ClientExplorar isDark={isDark} userName={userName} onNavigate={handleNavigate} />}
+              {activeModule === 'solicitar' && <ClientSolicitar isDark={isDark} userName={userName} onNavigate={handleNavigate} />}
+              {activeModule === 'envios' && (
+                <ClientEnvios
+                  isDark={isDark}
+                  userName={userName}
+                  onNavigate={handleNavigate}
+                  onOpenTracking={(id) => {
+                    setTrackingOrder(id);
+                    handleNavigate('tracking');
+                  }}
+                  onOpenChat={(id) => {
+                    setChatOrderId(id);
+                    handleNavigate('chat');
+                  }}
+                />
+              )}
+              {activeModule === 'pedidos' && <ClientPedidos isDark={isDark} userName={userName} onNavigate={handleNavigate} />}
+              {activeModule === 'perfil' && <ClientPerfil isDark={isDark} userName={userName} onLogout={onLogout} onNavigate={handleNavigate} />}
+              {activeModule === 'carrito' && <ClientCarrito isDark={isDark} onClose={() => handleNavigate('explorar')} />}
+              {activeModule === 'tracking' && <ClientTracking isDark={isDark} onBack={() => handleNavigate('pedidos')} onOpenChat={(id) => { if (id) setChatOrderId(id); handleNavigate('chat'); }} onRate={() => handleNavigate('rating')} />}
+              {activeModule === 'chat' && <ClientChat isDark={isDark} onClose={() => handleNavigate('pedidos')} />}
+              {activeModule === 'rating' && <ClientRating isDark={isDark} onClose={() => handleNavigate('inicio')} />}
+              {activeModule === 'tienda' && <ClientTienda isDark={isDark} tiendaId="" onBack={() => handleNavigate('explorar')} onOpenCart={() => handleNavigate('carrito')} />}
+              {activeModule === 'ayuda' && <ClientAyuda isDark={isDark} onClose={() => handleNavigate('inicio')} />}
+              {activeModule === 'puntos' && <ClientPuntos isDark={isDark} onClose={() => handleNavigate('inicio')} />}
+            </motion.div>
+          </AnimatePresence>
         </main>
 
-        {/* ═══════ iOS NATIVE TAB BAR (5 items) ═══════ */}
-        <nav className="lf-ios-tabbar lf-client-bottom-nav" aria-label="Navegación principal">
-          {NAV_ITEMS.map((item) => {
-            const isActive = clientActiveModule === item.key;
-            /* Badge on Pedidos tab — active orders counter */
-            const showPedidosBadge = item.key === 'pedidos' && activeOrdersCount > 0;
-            return (
-              <button
-                key={item.key}
-                onClick={() => handleNav(item.key)}
-                className={`lf-ios-tabbar-item${isActive ? ' active' : ''}`}
-                aria-label={item.label}
-                aria-current={isActive ? 'page' : undefined}
-                style={{
-                  position: 'relative',
-                  color: isActive ? 'var(--ios-blue)' : 'var(--ios-text-tertiary)',
-                }}
-              >
-                <span style={{ position: 'relative', display: 'inline-flex' }}>
-                  {item.icon}
-                  {showPedidosBadge && (
-                    <span className="lf-ios-tabbar-badge">
-                      {activeOrdersCount > 9 ? '9+' : activeOrdersCount}
-                    </span>
-                  )}
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--ios-font)',
-                    fontSize: 10,
-                    fontWeight: isActive ? 600 : 500,
-                    letterSpacing: '0.01em',
-                    color: isActive ? 'var(--ios-blue)' : 'var(--ios-text-tertiary)',
-                    transition: 'color 0.2s ease',
-                    lineHeight: 1,
-                  }}
+        {/* 🍏 APPLE FLOATING GLASS DOCK (BOTTOM TAB BAR) */}
+        <nav className="fixed bottom-4 inset-x-0 z-40 px-4 flex justify-center pointer-events-none">
+          <div className="pointer-events-auto backdrop-blur-3xl bg-white/80 dark:bg-zinc-900/80 border border-white/40 dark:border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.6)] rounded-full px-3 py-2 flex items-center gap-1 sm:gap-2 transition-all">
+            {NAV_ITEMS.map((item) => {
+              const isActive = activeModule === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => handleNavigate(item.key)}
+                  className={`relative px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-semibold transition-all duration-300 ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  }`}
                 >
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeDockTab"
+                      className="absolute inset-0 bg-blue-600 rounded-full shadow-lg shadow-blue-500/30"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                  <span className="relative z-10">{item.icon}</span>
+                  {isActive && <span className="relative z-10 font-bold">{item.label}</span>}
+                </button>
+              );
+            })}
+          </div>
         </nav>
 
-        {/* ═══════ iOS SNACKBAR ═══════ */}
-        <AnimatePresence>
-          {snackbar && (
-            <motion.div
-              key="snackbar"
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 100 }}
-              transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-              className="lf-snackbar visible lf-ios-snackbar"
-              style={{
-                position: 'fixed',
-                bottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 12px)',
-                left: 16,
-                right: 16,
-                zIndex: 9998,
-                background: 'var(--ios-bg-secondary)',
-                color: 'var(--ios-text-primary)',
-                borderRadius: 'var(--ios-radius-md)',
-                padding: '14px 16px',
-                boxShadow: 'var(--ios-shadow-lg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                fontFamily: 'var(--ios-font)',
-                fontSize: 15,
-                fontWeight: 500,
-                lineHeight: 1.4,
-              }}
-            >
-              <span style={{ flex: 1, minWidth: 0 }}>{snackbar.message}</span>
-              {snackbar.action && (
-                <button
-                  onClick={() => {
-                    snackbar.onAction?.();
-                    setSnackbar(null);
-                  }}
-                  style={{
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--ios-blue)',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: 'var(--ios-font)',
-                    padding: '4px 8px',
-                    borderRadius: 'var(--ios-radius-sm)',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                  }}
-                >
-                  {snackbar.action}
-                </button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ─── V2 OVERLAYS (modales como bottom sheets iOS — `.lf-ios-sheet`) ─── */}
-        <AnimatePresence>
-          {trackingOrderId && (
-            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Seguimiento de envío">
-              <div className="lf-ios-sheet-handle" />
-              <ClientTracking
-                isDark={isDark}
-                onBack={handleCloseTracking}
-                onOpenChat={handleOpenChat}
-                onRate={handleOpenRating}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {chatOpen && (
-            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Chat con repartidor">
-              <div className="lf-ios-sheet-handle" />
-              <ClientChat
-                isDark={isDark}
-                onClose={() => setChatOpen(false)}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {ratingModalOpen && (
-            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Calificar servicio">
-              <div className="lf-ios-sheet-handle" />
-              <ClientRating
-                isDark={isDark}
-                onClose={() => setRatingModalOpen(false)}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Tienda Profile Overlay */}
-        {tiendaSeleccionada && (
-          <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Detalle de tienda">
-            <div className="lf-ios-sheet-handle" />
-            <ClientTienda
-              isDark={isDark}
-              tiendaId={tiendaSeleccionada}
-              onBack={() => setTiendaSeleccionada(null)}
-              onOpenCart={() => setCarritoOpen(true)}
-            />
-          </div>
-        )}
-
-        {/* Cart Overlay */}
-        <AnimatePresence>
-          {carritoOpen && (
-            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Carrito de compras">
-              <div className="lf-ios-sheet-handle" />
-              <ClientCarrito
-                isDark={isDark}
-                onClose={() => setCarritoOpen(false)}
-                onBackToTienda={() => setCarritoOpen(false)}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* ─── RESPONSIVE STYLES (iOS native) ─── */}
-        <style>{`
-          /* ─── Status bar & gesture bar: mobile simulation only ─── */
-          .lf-status-bar,
-          .lf-gesture-bar {
-            display: flex !important;
-          }
-          @media (min-width: 1024px) {
-            .lf-status-bar,
-            .lf-gesture-bar {
-              display: none !important;
-            }
-          }
-          @media (pointer: coarse) {
-            .lf-status-bar,
-            .lf-gesture-bar {
-              display: none !important;
-            }
-          }
-
-          /* iOS app container — solid iOS background, no theme flash */
-          .lf-ios-app {
-            background: var(--ios-bg) !important;
-            color: var(--ios-text-primary) !important;
-          }
-
-          /* iOS tab bar — visible at ALL widths (single source of truth) */
-          .lf-ios-tabbar.lf-client-bottom-nav {
-            display: flex !important;
-            -webkit-overflow-scrolling: touch;
-          }
-
-          /* Wider horizontal padding on desktop */
-          @media (min-width: 1024px) {
-            .lf-client-inner-pad {
-              padding-left: 32px !important;
-              padding-right: 32px !important;
-            }
-            .lf-ios-large-title-wrap {
-              padding-left: 32px !important;
-              padding-right: 32px !important;
-            }
-            /* Snackbar centered on desktop */
-            .lf-snackbar,
-            .lf-ios-snackbar {
-              max-width: 480px;
-              left: 50% !important;
-              right: auto !important;
-              transform: translateX(-50%);
-            }
-          }
-
-          /* Header offset for status bar on mobile */
-          @media (max-width: 1023px) {
-            .lf-header-bar.lf-ios-header {
-              top: max(24px, env(safe-area-inset-top, 24px)) !important;
-            }
-            .lf-client-content-padded.lf-ios-content {
-              padding-top: calc(96px + max(24px, env(safe-area-inset-top, 24px))) !important;
-            }
-          }
-          @media (max-width: 1023px) and (pointer: coarse) {
-            .lf-header-bar.lf-ios-header {
-              top: env(safe-area-inset-top, 0px) !important;
-            }
-            .lf-client-content-padded.lf-ios-content {
-              padding-top: calc(96px + env(safe-area-inset-top, 0px)) !important;
-            }
-          }
-
-          /* iOS sheet — wrapper applies bottom-sheet styling (border-radius, padding,
-             safe-area) as required; inner modal components retain their own positioning */
-          .lf-ios-sheet {
-            will-change: transform, opacity;
-          }
-
-          /* ─── Splash keyframes (fallback) ─── */
-          @keyframes lf-splash-logo {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-          }
-          @keyframes lf-splash-text {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
       </div>
     </SnackbarContext.Provider>
   );

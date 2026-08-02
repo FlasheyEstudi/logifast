@@ -405,7 +405,7 @@ export interface SolicitudEnvio {
   terminosAceptados: boolean;
 }
 
-export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil' | 'ayuda' | 'puntos' | 'tienda';
+export type ClientModuleKey = 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil' | 'ayuda' | 'puntos' | 'tienda' | 'carrito' | 'tracking' | 'chat' | 'rating' | 'busqueda' | 'mi-tienda';
 
 export interface DireccionSugerencia {
   id: string;
