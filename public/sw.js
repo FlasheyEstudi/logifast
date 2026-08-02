@@ -42,7 +42,13 @@ self.addEventListener('fetch', (event) => {
   const esNextAsset = url.pathname.startsWith('/_next/');
   const esApi = url.pathname.startsWith('/api/');
 
-  if (esNavegacion || esNextAsset || esApi) {
+  if (esApi) {
+    // NetworkOnly para endpoints /api/* (evitar cachear respuestas dinámicas)
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  if (esNavegacion || esNextAsset) {
     event.respondWith(
       fetch(event.request).catch(() => {
         return caches.match(event.request).then((cached) => {

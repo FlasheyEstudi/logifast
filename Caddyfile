@@ -1,9 +1,12 @@
 :81 {
-	@transform_port_query {
-		query XTransformPort=*
+	@allowed_ports {
+		query XTransformPort=3000
+		query XTransformPort=3001
+		query XTransformPort=3002
+		query XTransformPort=3003
 	}
 
-	handle @transform_port_query {
+	handle @allowed_ports {
 		reverse_proxy localhost:{query.XTransformPort} {
 			header_up Host {host}
 			header_up X-Forwarded-For {remote_host}
