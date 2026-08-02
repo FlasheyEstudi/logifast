@@ -17,6 +17,8 @@ import {
   TrendingUp,
   Zap,
   Target,
+  Maximize2,
+  Minimize2,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
@@ -166,6 +168,9 @@ export default function RepartidorServicio() {
   } = useRepartidorStore();
 
   const showSnackbar = useRepartidorSnackbar();
+
+  /* ─── State for 100% Fullscreen Map mode ─── */
+  const [mapaExpandido, setMapaExpandido] = useState(false);
 
   /* ─── Real route polyline (OSRM, with straight-line fallback) ─── */
   const [rutaCoordenadas, setRutaCoordenadas] = useState<[number, number][]>([]);
@@ -395,6 +400,43 @@ export default function RepartidorServicio() {
         />
       </div>
 
+      {/* ═══════ BOTÓN PANTALLA COMPLETA DEL MAPA (Top-Right) ═══════ */}
+      <button
+        onClick={() => {
+          setMapaExpandido(!mapaExpandido);
+          HAPTIC_PATTERNS.light();
+        }}
+        aria-label={mapaExpandido ? 'Restaurar vista' : 'Pantalla completa de mapa'}
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          zIndex: 40,
+          padding: '8px 14px',
+          borderRadius: 100,
+          background: mapaExpandido
+            ? 'var(--ios-blue)'
+            : 'color-mix(in srgb, var(--ios-bg-elevated) 90%, transparent)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          border: '0.5px solid var(--ios-separator)',
+          color: mapaExpandido ? '#FFFFFF' : 'var(--ios-text-primary)',
+          fontSize: 12,
+          fontWeight: 700,
+          fontFamily: 'var(--ios-font)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          boxShadow: 'var(--ios-shadow-md)',
+          transition: 'all 0.25s ease',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        {mapaExpandido ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        {mapaExpandido ? 'Restaurar vista' : 'Pantalla completa'}
+      </button>
+
       {/* ═══════ Status chip (top-left) — iOS pill ═══════ */}
       {conectado && (
         <div
@@ -559,7 +601,7 @@ export default function RepartidorServicio() {
       )}
 
       {/* ═══════ DESCONECTADO ═══════ */}
-      {estado === 'DESCONECTADO' && (
+      {estado === 'DESCONECTADO' && !mapaExpandido && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -628,7 +670,7 @@ export default function RepartidorServicio() {
       )}
 
       {/* ═══════ EN_LINEA (waiting for assignment / accepted orders) ═══════ */}
-      {estado === 'EN_LINEA' && (
+      {estado === 'EN_LINEA' && !mapaExpandido && (
         <>
           {/* Glass card "Esperando asignación" — only when no accepted orders */}
           {ordenesActivas.length === 0 && (
@@ -984,7 +1026,7 @@ export default function RepartidorServicio() {
       )}
 
       {/* ═══════ EN_CAMINO_RECOGER ═══════ */}
-      {estado === 'EN_CAMINO_RECOGER' && ordenActiva && (
+      {estado === 'EN_CAMINO_RECOGER' && !mapaExpandido && ordenActiva && (
         <BottomSheet>
           <SheetHeader
             label="Camino al punto de recogida"
@@ -1017,7 +1059,7 @@ export default function RepartidorServicio() {
       )}
 
       {/* ═══════ EN_PUNTO_RECOGIDA ═══════ */}
-      {estado === 'EN_PUNTO_RECOGIDA' && ordenActiva && (
+      {estado === 'EN_PUNTO_RECOGIDA' && !mapaExpandido && ordenActiva && (
         <BottomSheet>
           <SheetHeader
             label="En punto de recogida"
@@ -1058,7 +1100,7 @@ export default function RepartidorServicio() {
       )}
 
       {/* ═══════ RECOGIDO (en camino a entrega) ═══════ */}
-      {estado === 'RECOGIDO' && ordenActiva && (
+      {estado === 'RECOGIDO' && !mapaExpandido && ordenActiva && (
         <BottomSheet>
           <SheetHeader
             label="En camino a la entrega"
@@ -1182,7 +1224,7 @@ export default function RepartidorServicio() {
       )}
 
       {/* ═══════ EN_PUNTO_ENTREGA ═══════ */}
-      {estado === 'EN_PUNTO_ENTREGA' && ordenActiva && (
+      {estado === 'EN_PUNTO_ENTREGA' && !mapaExpandido && ordenActiva && (
         <BottomSheet>
           <SheetHeader
             label="En punto de entrega"

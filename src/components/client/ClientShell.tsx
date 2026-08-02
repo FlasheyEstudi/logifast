@@ -1316,18 +1316,36 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           )}
         </AnimatePresence>
 
-        {/* Tienda Profile Overlay */}
-        {tiendaSeleccionada && (
-          <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Detalle de tienda">
-            <div className="lf-ios-sheet-handle" />
-            <ClientTienda
-              isDark={isDark}
-              tiendaId={tiendaSeleccionada}
-              onBack={() => setTiendaSeleccionada(null)}
-              onOpenCart={() => setCarritoOpen(true)}
-            />
-          </div>
-        )}
+        {/* Tienda Profile Full Page */}
+        <AnimatePresence>
+          {tiendaSeleccionada && (
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9990,
+                backgroundColor: 'var(--bg)',
+                color: 'var(--text)',
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Detalle de tienda"
+            >
+              <ClientTienda
+                isDark={isDark}
+                tiendaId={tiendaSeleccionada}
+                onBack={() => setTiendaSeleccionada(null)}
+                onOpenCart={() => setCarritoOpen(true)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Cart Overlay */}
         <AnimatePresence>
