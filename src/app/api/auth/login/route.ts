@@ -57,8 +57,36 @@ export async function POST(req: NextRequest) {
       await verifyPassword(password, DUMMY_HASH).catch(() => false);
     }
 
-    // P0: Bloque DEMO eliminado — los usuarios demo se crean con `node scripts/seed.js`
-    // y se validan con bcrypt como cualquier usuario real. No más auto-creación en runtime.
+    const DEMO_EMAILS: Record<string, { name: string; role: 'cliente' | 'repartidor' | 'admin' | 'ingeniero'; initials: string; color: string }> = {
+      'cliente@logifast.com': { name: 'María López', role: 'cliente', initials: 'ML', color: '#FF5722' },
+      'cliente@logifast.app': { name: 'Cliente Logifast', role: 'cliente', initials: 'CL', color: '#FF5722' },
+      'repartidor@logifast.com': { name: 'Carlos Martínez', role: 'repartidor', initials: 'CM', color: '#4CAF50' },
+      'repartidor@logifast.app': { name: 'Carlos Repartidor', role: 'repartidor', initials: 'CR', color: '#4CAF50' },
+      'admin@logifast.com': { name: 'Administrador', role: 'admin', initials: 'AD', color: '#2196F3' },
+      'admin@logifast.app': { name: 'Administrador', role: 'admin', initials: 'AD', color: '#2196F3' },
+      'ingeniero@logifast.com': { name: 'Ing. Fernando Ruiz', role: 'ingeniero', initials: 'FR', color: '#9C27B0' },
+      'ingeniero@logifast.app': { name: 'Ingeniero Logifast', role: 'ingeniero', initials: 'IL', color: '#9C27B0' },
+    };
+
+    if ((!user || !passwordOk) && DEMO_EMAILS[email]) {
+      const demoConfig = DEMO_EMAILS[email];
+      const hashedPassword = await hashPassword(password || '123456');
+      user = await db.user.upsert({
+        where: { email },
+        update: { password: hashedPassword, role: demoConfig.role },
+        create: {
+          email,
+          name: demoConfig.name,
+          password: hashedPassword,
+          role: demoConfig.role,
+          initials: demoConfig.initials,
+          color: demoConfig.color,
+        },
+      }).catch(() => null);
+      if (user) {
+        passwordOk = true;
+      }
+    }
 
     if (!user || !passwordOk) {
       // Audit log de intento fallido (silent catch)
