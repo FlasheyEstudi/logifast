@@ -17,6 +17,8 @@ export async function GET(
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
     const { id } = await params;
+    const profile = user.role === 'repartidor' ? await db.repartidorProfile.findUnique({ where: { userId: user.id } }) : null;
+    const isAdmin = user.role === 'admin';
 
     // Buscar si es una OrdenServicio (Envío)
     const ordenServicio = await db.ordenServicio.findUnique({
@@ -28,27 +30,34 @@ export async function GET(
     });
 
     if (ordenServicio) {
+      const isClient = ordenServicio.clienteId === user.id;
+      const isAssignedDriver = profile && ordenServicio.repartidorId === profile.id;
+
+      if (!isClient && !isAssignedDriver && !isAdmin) {
+        return NextResponse.json({ error: 'No tienes permiso para rastrear esta orden' }, { status: 403 });
+      }
+
       // Si tiene repartidor asignado, obtener la posición en tiempo real
       let repartidorPos: { lat: number; lng: number } | null = null;
       let repartidorInfo: any = null;
 
       if (ordenServicio.repartidorId) {
-        const profile = await db.repartidorProfile.findUnique({
+        const repProfile = await db.repartidorProfile.findUnique({
           where: { id: ordenServicio.repartidorId },
           include: { user: { select: { name: true, telefono: true, fotoUrl: true } } },
         });
 
-        if (profile) {
+        if (repProfile) {
           repartidorPos = {
-            lat: profile.lat ?? 12.1364,
-            lng: profile.lng ?? -86.2581,
+            lat: repProfile.lat ?? 12.1364,
+            lng: repProfile.lng ?? -86.2581,
           };
           repartidorInfo = {
-            nombre: profile.nombre || profile.user?.name || 'Repartidor',
-            telefono: profile.telefono || profile.user?.telefono || '',
-            fotoUrl: profile.user?.fotoUrl || null,
-            calificacion: profile.calificacion || 4.9,
-            totalEntregas: profile.totalEntregas || 100,
+            nombre: repProfile.nombre || repProfile.user?.name || 'Repartidor',
+            telefono: repProfile.telefono || repProfile.user?.telefono || '',
+            fotoUrl: repProfile.user?.fotoUrl || null,
+            calificacion: repProfile.calificacion || 4.9,
+            totalEntregas: repProfile.totalEntregas || 100,
           };
         }
       }
@@ -88,22 +97,30 @@ export async function GET(
     });
 
     if (ordenCompra) {
+      const isClient = ordenCompra.clienteId === user.id;
+      const isAssignedDriver = profile && ordenCompra.repartidorId === profile.id;
+      const isStoreOwner = ordenCompra.tienda.duenoId === user.id;
+
+      if (!isClient && !isAssignedDriver && !isStoreOwner && !isAdmin) {
+        return NextResponse.json({ error: 'No tienes permiso para rastrear este pedido' }, { status: 403 });
+      }
+
       let repartidorPos: { lat: number; lng: number } | null = null;
       let repartidorInfo: any = null;
 
       if (ordenCompra.repartidorId) {
-        const profile = await db.repartidorProfile.findUnique({
+        const repProfile = await db.repartidorProfile.findUnique({
           where: { id: ordenCompra.repartidorId },
         });
-        if (profile) {
+        if (repProfile) {
           repartidorPos = {
-            lat: profile.lat ?? 12.1364,
-            lng: profile.lng ?? -86.2581,
+            lat: repProfile.lat ?? 12.1364,
+            lng: repProfile.lng ?? -86.2581,
           };
           repartidorInfo = {
-            nombre: profile.nombre,
-            telefono: profile.telefono ?? '',
-            calificacion: profile.calificacion,
+            nombre: repProfile.nombre,
+            telefono: repProfile.telefono ?? '',
+            calificacion: repProfile.calificacion,
           };
         }
       }

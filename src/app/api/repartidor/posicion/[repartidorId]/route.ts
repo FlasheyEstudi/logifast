@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import { getSessionUser } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +13,38 @@ export async function GET(
   { params }: { params: Promise<{ repartidorId: string }> }
 ) {
   try {
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { repartidorId } = await params;
+
+    let authorized = user.role === 'admin' || user.role === 'ingeniero';
+
+    if (!authorized && user.role === 'repartidor') {
+      const ownProfile = await db.repartidorProfile.findUnique({ where: { userId: user.id } });
+      if (ownProfile && ownProfile.id === repartidorId) {
+        authorized = true;
+      }
+    }
+
+    if (!authorized && user.role === 'cliente') {
+      const activeOrder = await db.ordenServicio.findFirst({
+        where: {
+          clienteId: user.id,
+          repartidorId: repartidorId,
+          estado: { in: ['asignado', 'aceptado', 'recogido', 'en_camino'] },
+        },
+      });
+      if (activeOrder) {
+        authorized = true;
+      }
+    }
+
+    if (!authorized) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
 
     const profile = await db.repartidorProfile.findUnique({
       where: { id: repartidorId },

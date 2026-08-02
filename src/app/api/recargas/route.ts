@@ -10,8 +10,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const { profile } = await getRepartidorProfile();
-    if (!profile) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const { profile } = repData;
 
     const recargas = await db.recargaSaldo.findMany({
       where: { repartidorId: profile.id },
@@ -36,8 +37,9 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   try {
-    const { profile } = await getRepartidorProfile();
-    if (!profile) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const repData = await getRepartidorProfile();
+    if (!repData || !repData.profile) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const { profile } = repData;
 
     const body = await req.json();
     const monto = Number(body.monto);
