@@ -289,7 +289,9 @@ export default function CommandPalette() {
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
-            paddingTop: '15vh',
+            paddingTop: 'min(15vh, 40px)',
+            paddingLeft: 'max(12px, env(safe-area-inset-left))',
+            paddingRight: 'max(12px, env(safe-area-inset-right))',
             background: 'rgba(0,0,0,0.5)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
@@ -297,6 +299,9 @@ export default function CommandPalette() {
           onClick={() => closePalette()}
         >
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Paleta de comandos"
             initial={{ opacity: 0, scale: 0.98, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: -10 }}
@@ -332,6 +337,9 @@ export default function CommandPalette() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={true}
                 placeholder="Buscar órdenes, motos, repartidores, acciones..."
                 style={{
                   flex: 1,
@@ -412,6 +420,8 @@ export default function CommandPalette() {
                       return (
                         <div
                           key={`${item.type}-${item.id}`}
+                          role="option"
+                          aria-selected={isActive}
                           onClick={() => selectItem(item)}
                           onMouseEnter={() => setSelectedIdx(globalIdx)}
                           style={{

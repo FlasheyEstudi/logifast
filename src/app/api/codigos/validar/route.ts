@@ -44,6 +44,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'El código ha alcanzado su límite de usos' }, { status: 400 });
     }
 
+    if (user) {
+      const yaUsado = await db.usoCodigo.findFirst({
+        where: { codigoId: promo.id, clienteId: user.id },
+      });
+      if (yaUsado) {
+        return NextResponse.json({ error: 'Ya has utilizado este código promocional previamente' }, { status: 400 });
+      }
+    }
+
     // Calcular monto de descuento
     let descuento = 0;
     if (promo.tipoDescuento === 'porcentaje') {
