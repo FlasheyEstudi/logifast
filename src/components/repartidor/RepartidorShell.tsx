@@ -886,45 +886,113 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           </AnimatePresence>
         </main>
 
-        {/* ═══════ iOS NATIVE TAB BAR (4 items) ═══════ */}
-        <nav className="lf-ios-tabbar lf-rep-bottom-nav" aria-label="Navegación repartidor">
+        {/* ═══════ NAVBAR FLOTANTE ESTILO LÍQUIDO (REPARTIDOR) ═══════ */}
+        <nav
+          style={{
+            position: 'fixed',
+            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 16px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9990,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '6px 8px',
+            borderRadius: 100,
+            background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 88%, transparent)',
+            backdropFilter: 'saturate(200%) blur(24px)',
+            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
+            border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 25%, transparent)',
+            boxShadow: '0 16px 36px rgba(0, 0, 0, 0.35), 0 0 20px color-mix(in srgb, var(--ios-blue, #0066FF) 15%, transparent)',
+            maxWidth: 'calc(100vw - 32px)',
+          }}
+          aria-label="Navegación repartidor flotante"
+        >
           {NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.key;
             const showServicioBadge = item.key === 'servicio' && serviciosBadgeCount > 0;
             return (
-              <button
+              <motion.button
                 key={item.key}
+                whileTap={{ scale: 0.92 }}
                 onClick={() => handleNav(item.key)}
-                className={`lf-ios-tabbar-item${isActive ? ' active' : ''}`}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
                 style={{
                   position: 'relative',
-                  color: isActive ? 'var(--ios-blue)' : 'var(--ios-text-tertiary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: isActive ? 6 : 0,
+                  padding: isActive ? '8px 16px' : '8px 12px',
+                  borderRadius: 100,
+                  border: 'none',
+                  background: 'transparent',
+                  color: isActive ? '#FFFFFF' : 'var(--ios-text-tertiary, #94A3B8)',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  fontFamily: 'var(--ios-font, sans-serif)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                <span style={{ position: 'relative', display: 'inline-flex' }}>
+                {isActive && (
+                  <motion.div
+                    layoutId="liquidActiveRepartidor"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: 100,
+                      background: 'var(--ios-blue, #0066FF)',
+                      boxShadow: '0 4px 14px color-mix(in srgb, var(--ios-blue, #0066FF) 50%, transparent)',
+                      zIndex: -1,
+                    }}
+                  />
+                )}
+
+                <span style={{ position: 'relative', display: 'inline-flex', zIndex: 1 }}>
                   {item.icon}
                   {showServicioBadge && (
-                    <span className="lf-ios-tabbar-badge">
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: -4,
+                        right: -6,
+                        minWidth: 16,
+                        height: 16,
+                        borderRadius: 8,
+                        background: '#FF1744',
+                        color: '#FFF',
+                        fontSize: 9,
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0 4px',
+                        border: '2px solid var(--ios-bg-elevated, #1E293B)',
+                      }}
+                    >
                       {serviciosBadgeCount > 9 ? '9+' : serviciosBadgeCount}
                     </span>
                   )}
                 </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--ios-font)',
-                    fontSize: 10,
-                    fontWeight: isActive ? 600 : 500,
-                    letterSpacing: '0.01em',
-                    color: isActive ? 'var(--ios-blue)' : 'var(--ios-text-tertiary)',
-                    transition: 'color 0.2s ease',
-                    lineHeight: 1,
-                  }}
-                >
-                  {item.label}
-                </span>
-              </button>
+
+                {isActive && (
+                  <motion.span
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      whiteSpace: 'nowrap',
+                      zIndex: 1,
+                    }}
+                  >
+                    {item.label}
+                  </motion.span>
+                )}
+              </motion.button>
             );
           })}
         </nav>
