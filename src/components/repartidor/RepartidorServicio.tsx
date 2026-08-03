@@ -21,6 +21,7 @@ import {
   Minimize2,
   Sliders,
   ChevronRight,
+  ChevronLeft,
   Play,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
@@ -178,6 +179,9 @@ export default function RepartidorServicio() {
 
   /* ─── State for Collapsible Liquid Glass Menu (Left-Center) ─── */
   const [menuHerramientasAbierto, setMenuHerramientasAbierto] = useState(false);
+
+  /* ─── State for Sliding Edge Tab (Top-Left) ─── */
+  const [leyendaAbierta, setLeyendaAbierta] = useState(false);
 
   /* ─── Real route polyline (OSRM, with straight-line fallback) ─── */
   const [rutaCoordenadas, setRutaCoordenadas] = useState<[number, number][]>([]);
@@ -603,46 +607,187 @@ export default function RepartidorServicio() {
         </AnimatePresence>
       </div>
 
-      {/* ═══════ Status chip (top-left) — iOS pill ═══════ */}
-      {conectado && (
-        <div
-          className="lf-ios-pill active"
-          style={{
-            position: 'absolute',
-            top: 16,
-            left: 16,
-            zIndex: 10,
-            padding: '6px 12px',
-            borderRadius: 100,
-            background: 'color-mix(in srgb, var(--ios-bg-elevated) 88%, transparent)',
-            backdropFilter: 'saturate(180%) blur(20px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-            border: '0.5px solid var(--ios-separator)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 12,
-            fontWeight: 600,
-            color: 'var(--ios-text-primary)',
-            fontFamily: 'var(--ios-font)',
-          }}
-        >
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: ESTADO_COLOR[estado],
-              boxShadow: `0 0 8px ${ESTADO_COLOR[estado]}`,
-            }}
-          />
-          {estado === 'EN_LINEA' && 'En línea'}
-          {estado === 'EN_CAMINO_RECOGER' && 'Camino a recoger'}
-          {estado === 'EN_PUNTO_RECOGIDA' && 'En recogida'}
-          {estado === 'RECOGIDO' && 'En camino a entrega'}
-          {estado === 'EN_PUNTO_ENTREGA' && 'En entrega'}
-        </div>
-      )}
+      {/* ═══════ PESTAÑA / PÍLDORA DESLIZANTE EN EL BORDE IZQUIERDO SUPERIOR ═══════ */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 16,
+          left: 0,
+          zIndex: 45,
+        }}
+      >
+        <AnimatePresence mode="wait">
+          {!leyendaAbierta ? (
+            /* 🔒 ESTADO 1 · CERRADO: Pestaña pequeña en el borde izquierdo con flechita "›" */
+            <motion.button
+              key="closed-tab"
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -20, opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              onClick={() => {
+                setLeyendaAbierta(true);
+                if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                  try { navigator.vibrate(12); } catch {}
+                }
+              }}
+              aria-label="Abrir leyenda del mapa"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 5,
+                padding: '8px 10px 8px 12px',
+                borderRadius: '0 100px 100px 0',
+                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 92%, transparent)',
+                backdropFilter: 'saturate(200%) blur(24px)',
+                WebkitBackdropFilter: 'saturate(200%) blur(24px)',
+                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 30%, transparent)',
+                borderLeft: 'none',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                color: 'var(--ios-text-primary, #F8FAFC)',
+                cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3,
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34C759' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0066FF' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF3B30' }} />
+              </span>
+              <ChevronRight size={16} strokeWidth={2.5} style={{ color: 'var(--ios-blue, #0066FF)' }} />
+            </motion.button>
+          ) : (
+            /* 🔓 ESTADO 2 · ABIERTO: Píldora horizontal desplegada con Leyenda + Chat + Incidencias */
+            <motion.div
+              key="open-pill"
+              initial={{ x: -100, opacity: 0, scale: 0.95 }}
+              animate={{ x: 12, opacity: 1, scale: 1 }}
+              exit={{ x: -100, opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 14px',
+                borderRadius: 100,
+                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
+                backdropFilter: 'saturate(200%) blur(28px)',
+                WebkitBackdropFilter: 'saturate(200%) blur(28px)',
+                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 35%, transparent)',
+                boxShadow: '0 12px 36px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--ios-blue, #0066FF) 15%, transparent)',
+                zIndex: 50,
+              }}
+            >
+              {/* 1. Leyenda de colores */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  fontFamily: 'var(--ios-font)',
+                  color: 'var(--ios-text-primary, #F8FAFC)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 6px #34C759' }} />
+                  TÚ
+                </span>
+                <span style={{ opacity: 0.3 }}>•</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 6px #0066FF' }} />
+                  RECOGER
+                </span>
+                <span style={{ opacity: 0.3 }}>•</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF3B30', boxShadow: '0 0 6px #FF3B30' }} />
+                  ENTREGAR
+                </span>
+              </div>
+
+              <div style={{ width: 1, height: 16, background: 'color-mix(in srgb, var(--ios-text-primary) 15%, transparent)' }} />
+
+              {/* 2. Botón Chat */}
+              {ordenActiva && (
+                <button
+                  onClick={() => toggleChat(ordenActiva.id)}
+                  aria-label="Abrir Chat"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 10px',
+                    borderRadius: 100,
+                    border: 'none',
+                    background: 'rgba(52, 199, 89, 0.18)',
+                    color: '#34C759',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--ios-font)',
+                  }}
+                >
+                  <MessageSquare size={13} />
+                  <span>Chat</span>
+                </button>
+              )}
+
+              {/* 3. Botón Incidencias */}
+              <button
+                onClick={() => toggleIncidencia()}
+                aria-label="Reportar Incidencia"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '4px 10px',
+                  borderRadius: 100,
+                  border: 'none',
+                  background: 'rgba(255, 59, 48, 0.18)',
+                  color: '#FF3B30',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--ios-font)',
+                }}
+              >
+                <AlertTriangle size={13} />
+                <span>Incidencias</span>
+              </button>
+
+              {/* Botón cerrar "‹" */}
+              <button
+                onClick={() => setLeyendaAbierta(false)}
+                aria-label="Cerrar panel"
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: 'color-mix(in srgb, var(--ios-text-primary) 10%, transparent)',
+                  color: 'var(--ios-text-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  marginLeft: 2,
+                }}
+              >
+                <ChevronLeft size={16} strokeWidth={2.5} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* ═══════ Multipedidos & Optimización de Ruta — iOS glass bar ═══════ */}
       {conectado && (ordenesActivas || []).length > 0 && (
