@@ -148,7 +148,7 @@ function PerfilIcon() {
 
 const NAV_ITEMS: { key: RepartidorTabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'servicio', label: 'En Servicio', icon: <ServicioIcon /> },
-  { key: 'historial', label: 'Historial', icon: <HistorialIcon /> },
+  { key: 'historial', label: 'Mis Servicios', icon: <HistorialIcon /> },
   { key: 'ganancias', label: 'Ganancias', icon: <GananciasIcon /> },
   { key: 'perfil', label: 'Perfil', icon: <PerfilIcon /> },
 ];
