@@ -733,12 +733,16 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             gap: 4,
             padding: '6px 8px',
             borderRadius: 100,
-            background: 'color-mix(in srgb, var(--surface, #1E293B) 88%, transparent)',
+            background: isDark
+              ? 'rgba(15, 23, 42, 0.88)'
+              : 'rgba(255, 255, 255, 0.92)',
             backdropFilter: 'saturate(200%) blur(24px)',
             WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-            border: '1px solid color-mix(in srgb, var(--primario) 25%, transparent)',
-            boxShadow: '0 16px 36px rgba(0, 0, 0, 0.35), 0 0 20px color-mix(in srgb, var(--primario) 15%, transparent)',
-            maxWidth: 'calc(100vw - 32px)',
+            border: isDark
+              ? '1px solid rgba(255, 255, 255, 0.15)'
+              : '1px solid rgba(0, 0, 0, 0.10)',
+            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.25), 0 0 20px rgba(0, 102, 255, 0.15)',
+            maxWidth: 'calc(100vw - 24px)',
           }}
           aria-label="Navegación principal flotante"
         >
@@ -761,7 +765,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                   borderRadius: 100,
                   border: 'none',
                   background: 'transparent',
-                  color: isActive ? '#FFFFFF' : 'color-mix(in srgb, var(--text, #F8FAFC) 75%, transparent)',
+                  color: isActive
+                    ? '#FFFFFF'
+                    : isDark
+                    ? '#CBD5E1'
+                    : '#334155',
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: 700,
@@ -785,7 +793,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                   />
                 )}
 
-                <span style={{ position: 'relative', display: 'inline-flex', zIndex: 1 }}>
+                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', zIndex: 1, color: isActive ? '#FFFFFF' : isDark ? '#CBD5E1' : '#334155' }}>
                   {item.icon}
                   {showPedidosBadge && (
                     <span
