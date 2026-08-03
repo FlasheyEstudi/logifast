@@ -400,44 +400,7 @@ export default function RepartidorServicio() {
         />
       </div>
 
-      {/* ═══════ BOTÓN PANTALLA COMPLETA DEL MAPA (Top-Right) ═══════ */}
-      <button
-        onClick={() => {
-          setMapaExpandido(!mapaExpandido);
-          HAPTIC_PATTERNS.light();
-        }}
-        aria-label={mapaExpandido ? 'Restaurar vista' : 'Pantalla completa de mapa'}
-        style={{
-          position: 'absolute',
-          top: 16,
-          right: 16,
-          zIndex: 40,
-          padding: '8px 14px',
-          borderRadius: 100,
-          background: mapaExpandido
-            ? 'var(--ios-blue)'
-            : 'color-mix(in srgb, var(--ios-bg-elevated) 90%, transparent)',
-          backdropFilter: 'saturate(180%) blur(20px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-          border: '0.5px solid var(--ios-separator)',
-          color: mapaExpandido ? '#FFFFFF' : 'var(--ios-text-primary)',
-          fontSize: 12,
-          fontWeight: 700,
-          fontFamily: 'var(--ios-font)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          boxShadow: 'var(--ios-shadow-md)',
-          transition: 'all 0.25s ease',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        {mapaExpandido ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        {mapaExpandido ? 'Restaurar vista' : 'Pantalla completa'}
-      </button>
-
-      {/* ═══════ BOTÓN PANTALLA COMPLETA MAPA 100% ═══════ */}
+      {/* ═══════ BOTÓN DESTACADO: MODO ENTREGA (MAPA 100% PANTALLA) ═══════ */}
       <motion.button
         whileTap={{ scale: 0.94 }}
         onClick={() => {
