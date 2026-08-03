@@ -527,64 +527,95 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           />
         </div>
 
-        {/* ─── HEADER — iOS native large title ─── */}
+        {/* ═══════ HEADER / LAYOUT FLOTANTE ESTILO LÍQUIDO (CLIENTE) ═══════ */}
         <header
-          className="lf-ios-header lf-header-bar"
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 50,
+            top: 'calc(env(safe-area-inset-top, 12px) + 8px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9980,
+            width: 'calc(100vw - 24px)',
+            maxWidth: 960,
             display: 'flex',
-            flexDirection: 'column',
-            background: 'color-mix(in srgb, var(--ios-bg-elevated) 88%, transparent)',
-            backdropFilter: 'saturate(180%) blur(20px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-            borderBottom: '0.5px solid var(--ios-separator)',
-            transition: 'background-color 0.3s ease, border-color 0.3s ease',
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 16px',
+            borderRadius: 100,
+            background: 'color-mix(in srgb, var(--surface, #1E293B) 88%, transparent)',
+            backdropFilter: 'saturate(200%) blur(24px)',
+            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
+            border: '1px solid color-mix(in srgb, var(--primario) 25%, transparent)',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.3), 0 0 16px color-mix(in srgb, var(--primario) 12%, transparent)',
+            transition: 'all 0.3s ease',
           }}
         >
-          {/* Top row: right-aligned action buttons (theme + bell + cart + avatar) */}
-          <div
-            className="lf-ios-header-actions"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 4,
-              padding: '2px 8px 4px',
-              minHeight: 36,
-            }}
-          >
+          {/* Left: Brand Logo & Title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: 'var(--primario, #0066FF)',
+                color: '#FFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: 14,
+                fontFamily: "'Syne', sans-serif",
+                boxShadow: '0 2px 8px color-mix(in srgb, var(--primario) 40%, transparent)',
+              }}
+            >
+              LF
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: 'var(--text)',
+                  fontFamily: "'Syne', sans-serif",
+                  lineHeight: 1.1,
+                }}
+              >
+                LogiFast
+              </span>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--primario)',
+                  fontWeight: 600,
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {iosTitle}
+              </span>
+            </div>
+          </div>
+
+          {/* Right Actions: Theme + Bell + Cart + Avatar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
                 border: 'none',
-                background: 'transparent',
-                color: 'var(--ios-text-secondary)',
+                background: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
+                color: 'var(--text)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'color 0.2s ease, background 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-secondary)';
               }}
             >
-              {isDark ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
+              {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}
             </button>
 
             {/* Notification Bell */}
@@ -596,318 +627,81 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 }}
                 aria-label="Notificaciones"
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
                   border: 'none',
-                  background: clientNotifOpen
-                    ? 'color-mix(in srgb, var(--ios-blue) 12%, transparent)'
-                    : 'transparent',
-                  color: clientNotifOpen ? 'var(--ios-blue)' : 'var(--ios-text-secondary)',
+                  background: clientNotifOpen ? 'var(--primario)' : 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
+                  color: clientNotifOpen ? '#FFFFFF' : 'var(--text)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'color 0.2s ease, background 0.2s ease',
                   position: 'relative',
                 }}
-                onMouseEnter={(e) => {
-                  if (!clientNotifOpen) {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-primary)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!clientNotifOpen) {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--ios-text-secondary)';
-                  }
-                }}
               >
-                <Bell size={20} strokeWidth={1.8} />
+                <Bell size={17} strokeWidth={1.8} />
                 {unreadCount > 0 && (
                   <span
                     style={{
                       position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      width: 16,
-                      height: 16,
+                      top: 1,
+                      right: 1,
+                      width: 14,
+                      height: 14,
                       borderRadius: '50%',
-                      background: 'var(--peligro)',
+                      background: '#FF1744',
                       color: '#FFFFFF',
-                      fontSize: 10,
-                      fontWeight: 700,
+                      fontSize: 9,
+                      fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       lineHeight: 1,
-                      fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
-
-              {/* Notification Dropdown */}
-              <AnimatePresence>
-                {clientNotifOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    style={{
-                      position: 'fixed',
-                      top: 'max(56px, env(safe-area-inset-top))',
-                      right: 'max(8px, env(safe-area-inset-right))',
-                      left: 'max(8px, env(safe-area-inset-left))',
-                      width: 'auto',
-                      maxWidth: 360,
-                      maxHeight: 'min(70vh, 460px)',
-                      borderRadius: 16,
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      boxShadow: 'var(--shadow-lg)',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      zIndex: 60,
-                    }}
-                  >
-                    {/* Header */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '14px 16px',
-                        borderBottom: '1px solid var(--border)',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "'Syne', sans-serif",
-                          fontWeight: 700,
-                          fontSize: 15,
-                          color: 'var(--text)',
-                        }}
-                      >
-                        Notificaciones
-                      </span>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={() => markAllClientNotifRead()}
-                          style={{
-                            border: 'none',
-                            background: 'transparent',
-                            color: 'var(--primario)',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            fontFamily: "'DM Sans', sans-serif",
-                            padding: '4px 8px',
-                            borderRadius: 6,
-                            transition: 'background 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.background =
-                              'var(--primario-soft)';
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                          }}
-                        >
-                          Marcar todo como leído
-                        </button>
-                      )}
-                    </div>
-
-                    {/* List */}
-                    <div
-                      style={{
-                        flex: 1,
-                        overflowY: 'auto',
-                        maxHeight: 360,
-                      }}
-                    >
-                      {clientNotificaciones.slice(0, 10).map((notif) => {
-                        const { icon, color } = getNotifIcon(notif.tipo);
-                        return (
-                          <div
-                            key={notif.id}
-                            onClick={() => markClientNotifRead(notif.id)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              gap: 12,
-                              padding: '12px 16px',
-                              cursor: 'pointer',
-                              background: !notif.leida
-                                ? 'color-mix(in srgb, var(--info) 5%, transparent)'
-                                : 'transparent',
-                              borderLeft: !notif.leida
-                                ? '3px solid var(--info)'
-                                : '3px solid transparent',
-                              transition: 'background 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLDivElement).style.background =
-                                'color-mix(in srgb, var(--text-muted) 5%, transparent)';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLDivElement).style.background = !notif.leida
-                                ? 'color-mix(in srgb, var(--info) 5%, transparent)'
-                                : 'transparent';
-                            }}
-                          >
-                            <div
-                              style={{
-                                flexShrink: 0,
-                                width: 34,
-                                height: 34,
-                                borderRadius: 10,
-                                background: `color-mix(in srgb, ${color} 12%, transparent)`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: color,
-                              }}
-                            >
-                              {icon}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div
-                                style={{
-                                  fontSize: 14,
-                                  fontWeight: 600,
-                                  color: 'var(--text)',
-                                  lineHeight: 1.3,
-                                  marginBottom: 2,
-                                }}
-                              >
-                                {notif.titulo}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 13,
-                                  color: 'var(--text-muted)',
-                                  lineHeight: 1.4,
-                                }}
-                              >
-                                {notif.descripcion}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: 'var(--text-muted)',
-                                  marginTop: 4,
-                                  fontFamily: "'JetBrains Mono', monospace",
-                                  opacity: 0.7,
-                                }}
-                              >
-                                {relativeTime(notif.timestamp)}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {clientNotificaciones.length === 0 && (
-                        <div
-                          style={{
-                            padding: 32,
-                            textAlign: 'center',
-                            color: 'var(--text-muted)',
-                            fontSize: 14,
-                          }}
-                        >
-                          No hay notificaciones
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    {clientNotificaciones.length > 0 && (
-                      <div
-                        style={{
-                          borderTop: '1px solid var(--border)',
-                          padding: '10px 16px',
-                          display: 'flex',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <button
-                          onClick={() => {
-                            clientNotificaciones.forEach((n) => markClientNotifRead(n.id));
-                            setClientNotifOpen(false);
-                          }}
-                          style={{
-                            border: 'none',
-                            background: 'transparent',
-                            color: 'var(--text-muted)',
-                            fontSize: 12,
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            fontFamily: "'DM Sans', sans-serif",
-                            padding: '4px 8px',
-                            borderRadius: 6,
-                            transition: 'color 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)';
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-                          }}
-                        >
-                          Limpiar todo
-                        </button>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
 
-            {/* Cart (always visible — iOS) */}
+            {/* Cart */}
             <button
               onClick={() => setCarritoOpen(true)}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
                 border: 'none',
-                background: carritoOpen ? 'color-mix(in srgb, var(--ios-blue) 12%, transparent)' : 'transparent',
-                color: carritoOpen ? 'var(--ios-blue)' : 'var(--ios-text-secondary)',
+                background: carritoOpen ? 'var(--primario)' : 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
+                color: carritoOpen ? '#FFFFFF' : 'var(--text)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 position: 'relative',
-                transition: 'color 0.2s ease, background 0.2s ease',
               }}
               aria-label="Carrito"
             >
-              <ShoppingBag size={20} strokeWidth={1.8} />
+              <ShoppingBag size={17} strokeWidth={1.8} />
               {getCartItemCount() > 0 && (
                 <span
                   style={{
                     position: 'absolute',
-                    top: 2,
-                    right: 2,
-                    minWidth: 16,
-                    height: 16,
-                    borderRadius: 8,
-                    padding: '0 4px',
-                    background: 'var(--ios-red)',
+                    top: 1,
+                    right: 1,
+                    minWidth: 14,
+                    height: 14,
+                    borderRadius: 7,
+                    padding: '0 3px',
+                    background: '#FF1744',
                     color: '#fff',
-                    fontSize: 10,
-                    fontWeight: 700,
+                    fontSize: 9,
+                    fontWeight: 800,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontFamily: 'var(--ios-font-mono)',
                     lineHeight: 1,
                   }}
                 >
@@ -925,21 +719,20 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 }}
                 aria-label="Menú de usuario"
                 style={{
-                  width: 36,
-                  height: 36,
+                  width: 34,
+                  height: 34,
                   borderRadius: '50%',
                   border: 'none',
-                  background: 'color-mix(in srgb, var(--ios-blue) 12%, transparent)',
-                  color: 'var(--ios-blue)',
+                  background: 'var(--primario)',
+                  color: '#FFFFFF',
                   fontWeight: 700,
-                  fontSize: 13,
-                  fontFamily: 'var(--ios-font)',
+                  fontSize: 12,
+                  fontFamily: "'Syne', sans-serif",
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'box-shadow 0.2s ease',
-                  boxShadow: avatarOpen ? '0 0 0 2px var(--ios-blue)' : 'none',
+                  boxShadow: '0 2px 8px color-mix(in srgb, var(--primario) 40%, transparent)',
                 }}
               >
                 {initials}

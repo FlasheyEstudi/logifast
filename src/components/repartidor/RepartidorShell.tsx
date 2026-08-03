@@ -694,148 +694,107 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           />
         </div>
 
-        {/* ═══════ iOS HEADER — Large Title + Actions ═══════ */}
+        {/* ═══════ HEADER / LAYOUT FLOTANTE ESTILO LÍQUIDO (REPARTIDOR) ═══════ */}
         <header
-          className="lf-ios-header lf-rep-header"
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 50,
+            top: 'calc(env(safe-area-inset-top, 12px) + 8px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9980,
+            width: 'calc(100vw - 24px)',
+            maxWidth: 960,
             display: 'flex',
-            flexDirection: 'column',
-            background: 'color-mix(in srgb, var(--ios-bg-elevated) 88%, transparent)',
-            backdropFilter: 'saturate(180%) blur(20px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-            borderBottom: '0.5px solid var(--ios-separator)',
-            transition: 'background-color 0.3s ease, border-color 0.3s ease',
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 16px',
+            borderRadius: 100,
+            background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 88%, transparent)',
+            backdropFilter: 'saturate(200%) blur(24px)',
+            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
+            border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 25%, transparent)',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.3), 0 0 16px color-mix(in srgb, var(--ios-blue, #0066FF) 12%, transparent)',
+            transition: 'all 0.3s ease',
           }}
         >
-          {/* Top row: connection pill (left) + theme toggle + avatar (right) */}
-          <div
-            className="lf-ios-header-actions"
+          {/* Connection Pill */}
+          <button
+            onClick={handleToggleConnection}
+            aria-label={conectado ? 'Conectado — tocar para desconectar' : 'Desconectado — tocar para conectar'}
             style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 4,
-              padding: '2px 12px 4px',
-              minHeight: 36,
+              gap: 6,
+              padding: '6px 14px',
+              borderRadius: 100,
+              border: 'none',
+              background: conectado ? 'rgba(52, 199, 89, 0.18)' : 'rgba(255, 59, 48, 0.18)',
+              color: conectado ? '#34C759' : '#FF3B30',
+              fontFamily: 'var(--ios-font)',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              WebkitTapHighlightColor: 'transparent',
             }}
           >
-            {/* Connection status pill — green/red — clickable (usa conectar/desconectar) */}
-            <button
-              onClick={handleToggleConnection}
-              aria-label={conectado ? 'Conectado — tocar para desconectar' : 'Desconectado — tocar para conectar'}
+            <span
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                borderRadius: 100,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: conectado ? '#34C759' : '#FF3B30',
+                boxShadow: conectado ? '0 0 8px #34C759' : 'none',
+              }}
+            />
+            {conectado ? 'En línea' : 'Desconectado'}
+          </button>
+
+          {/* Right Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
                 border: 'none',
-                background: conectado ? 'rgba(52, 199, 89, 0.14)' : 'rgba(255, 59, 48, 0.14)',
-                color: conectado ? 'var(--ios-green)' : 'var(--ios-red)',
-                fontFamily: 'var(--ios-font)',
-                fontSize: 13,
-                fontWeight: 600,
+                background: 'color-mix(in srgb, var(--ios-text-primary) 10%, transparent)',
+                color: 'var(--ios-text-primary)',
                 cursor: 'pointer',
-                transition: 'background 0.2s ease, color 0.2s ease',
-                WebkitTapHighlightColor: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: conectado ? 'var(--ios-green)' : 'var(--ios-red)',
-                  boxShadow: conectado ? '0 0 6px var(--ios-green)' : 'none',
-                }}
-              />
-              {conectado ? 'En línea' : 'Desconectado'}
+              {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--ios-text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'color 0.2s ease, background 0.2s ease',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                {isDark ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
-              </button>
-
-              {/* Avatar button → Perfil tab */}
-              <button
-                onClick={() => handleNav('perfil')}
-                aria-label="Ver perfil"
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: avatarColor,
-                  color: '#fff',
-                  fontFamily: 'var(--ios-font)',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                {avatarInitials}
-              </button>
-            </div>
-          </div>
-
-          {/* iOS Large Title — 34px, font-weight 700 */}
-          <div
-            className="lf-rep-large-title-wrap"
-            style={{
-              padding: '6px 16px 10px',
-              maxWidth: 960,
-              margin: '0 auto',
-              width: '100%',
-            }}
-          >
-            <motion.h1
-              key={title}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+            {/* Avatar button */}
+            <button
+              onClick={() => handleNav('perfil')}
+              aria-label="Ver perfil"
               style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                border: 'none',
+                background: 'var(--ios-blue, #0066FF)',
+                color: '#fff',
                 fontFamily: 'var(--ios-font)',
-                fontSize: 34,
+                fontSize: 12,
                 fontWeight: 700,
-                color: 'var(--ios-text-primary)',
-                letterSpacing: '-0.02em',
-                margin: 0,
-                lineHeight: 1.1,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px color-mix(in srgb, var(--ios-blue, #0066FF) 40%, transparent)',
               }}
             >
-              {title}
-            </motion.h1>
+              {avatarInitials}
+            </button>
           </div>
         </header>
 
