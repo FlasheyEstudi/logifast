@@ -43,6 +43,7 @@ export interface RepartidorMapProps {
   destinoPos?: [number, number];
   rutaCoordenadas?: [number, number][];
   estado: string;
+  tipoServicio?: 'envio' | 'compra';
   altura?: number | string;
   zoom?: number;
   seguirRepartidor?: boolean;
@@ -56,6 +57,7 @@ export default function RepartidorMap({
   destinoPos,
   rutaCoordenadas,
   estado,
+  tipoServicio = 'envio',
   altura = 280,
   zoom = 14,
   seguirRepartidor = false,
@@ -175,20 +177,39 @@ export default function RepartidorMap({
     return rutaCoordenadas.map(c => [c[1], c[0]] as [number, number]);
   }, [rutaCoordenadas]);
 
+  const isCompra = tipoServicio === 'compra';
+  const pickupColor = isCompra ? '#FF9500' : '#0066FF';
+  const pickupLabel = isCompra ? 'TIENDA' : 'RECOGER';
+
   return (
     <div className={className} style={{ position: 'relative', width: '100%', height: altura }}>
       <style>{`
         .marker-pulse-ring {
           position: absolute;
-          width: 40px; height: 40px;
+          width: 44px; height: 44px;
           border-radius: 50%;
-          background: rgba(15, 82, 186, 0.4);
-          top: 0; left: 0;
+          background: rgba(22, 163, 74, 0.4);
+          top: -2px; left: -2px;
           animation: marker-pulse 1.8s ease-out infinite;
         }
         @keyframes marker-pulse {
           0% { transform: scale(0.6); opacity: 1; }
           100% { transform: scale(2.4); opacity: 0; }
+        }
+        .marker-pill {
+          position: absolute;
+          top: -22px;
+          left: 50%;
+          transform: translateX(-50%);
+          white-space: nowrap;
+          padding: 2px 7px;
+          border-radius: 99px;
+          font-size: 10px;
+          font-weight: 800;
+          color: #FFFFFF;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          font-family: 'DM Sans', sans-serif;
+          letter-spacing: 0.3px;
         }
         .btn-auto-center {
           position: absolute;
@@ -242,12 +263,48 @@ export default function RepartidorMap({
           color: #FFFFFF;
           border-color: var(--lf-primario);
         }
+        .map-legend-box {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+          background: rgba(19, 24, 34, 0.88);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 0.5px solid rgba(255, 255, 255, 0.15);
+          border-radius: 12px;
+          padding: 6px 12px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          z-index: 40;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11px;
+          font-weight: 700;
+          color: #FFFFFF;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
         .maplibre-popup-content {
           font-family: 'DM Sans', sans-serif;
           padding: 8px 12px;
           color: var(--text);
         }
       `}</style>
+
+      {/* Floating Map Legend */}
+      <div className="map-legend-box">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A' }} />
+          <span>TÚ</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: pickupColor }} />
+          <span>{pickupLabel}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#DC2626' }} />
+          <span>ENTREGAR</span>
+        </div>
+      </div>
 
       <Map
         ref={mapRef}
@@ -262,49 +319,56 @@ export default function RepartidorMap({
         {mapLibreRoute.length > 1 && (
           <MapRoute
             coordinates={mapLibreRoute}
-            color="#FF5722"
+            color={isCompra ? '#FF9500' : '#0066FF'}
             width={5}
             opacity={0.85}
             dashArray={isDashArray ? [8, 6] : undefined}
           />
         )}
 
-        {/* Marcador de Origen */}
+        {/* Marcador de Origen / Tienda / Recogida */}
         {origen && (
           <MapMarker longitude={origen[1]} latitude={origen[0]}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#16A34A', border: '3px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: PACKAGE_SVG }} />
+            <div style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="marker-pill" style={{ background: pickupColor }}>{pickupLabel}</span>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: pickupColor, border: '3px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: PACKAGE_SVG }} />
+            </div>
             <MarkerPopup>
               <div className="maplibre-popup-content">
-                <strong>Punto de recogida</strong>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Origen del servicio</div>
+                <strong>{pickupLabel}</strong>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{isCompra ? 'Ubicación de la Tienda' : 'Origen del paquete'}</div>
               </div>
             </MarkerPopup>
           </MapMarker>
         )}
 
-        {/* Marcador de Destino */}
+        {/* Marcador de Destino / Cliente */}
         {destino && (
           <MapMarker longitude={destino[1]} latitude={destino[0]}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#DC2626', border: '3px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: MAPPIN_SVG }} />
+            <div style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="marker-pill" style={{ background: '#DC2626' }}>{isCompra ? 'CLIENTE' : 'ENTREGAR'}</span>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#DC2626', border: '3px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: MAPPIN_SVG }} />
+            </div>
             <MarkerPopup>
               <div className="maplibre-popup-content">
-                <strong>Punto de entrega</strong>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Destino del servicio</div>
+                <strong>{isCompra ? 'Ubicación del Cliente' : 'Punto de entrega'}</strong>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Destino final</div>
               </div>
             </MarkerPopup>
           </MapMarker>
         )}
 
-        {/* Marcador de Repartidor */}
+        {/* Marcador de Repartidor (Yo - Verde) */}
         <MapMarker longitude={driverPos[1]} latitude={driverPos[0]}>
           <div style={{ position: 'relative', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span className="marker-pill" style={{ background: '#16A34A' }}>TÚ</span>
             <span className="marker-pulse-ring"></span>
-            <div style={{ position: 'relative', width: 40, height: 40, borderRadius: '50%', background: 'var(--lf-primario)', border: '3px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }} dangerouslySetInnerHTML={{ __html: MOTO_SVG }} />
+            <div style={{ position: 'relative', width: 40, height: 40, borderRadius: '50%', background: '#16A34A', border: '3px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }} dangerouslySetInnerHTML={{ __html: MOTO_SVG }} />
           </div>
           <MarkerPopup>
             <div className="maplibre-popup-content">
-              <strong>Repartidor</strong>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Tu ubicación actual</div>
+              <strong>Tú (Repartidor)</strong>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Tu ubicación actual en vivo</div>
             </div>
           </MarkerPopup>
         </MapMarker>

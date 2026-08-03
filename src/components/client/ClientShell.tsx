@@ -1277,42 +1277,90 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           )}
         </AnimatePresence>
 
-        {/* ─── V2 OVERLAYS (modales como bottom sheets iOS — `.lf-ios-sheet`) ─── */}
+        {/* ─── FULL-SCREEN SUBPAGES (100% Pantalla Completa — No Bottom Sheets) ─── */}
         <AnimatePresence>
           {trackingOrderId && (
-            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Seguimiento de envío">
-              <div className="lf-ios-sheet-handle" />
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9995,
+                backgroundColor: 'var(--bg)',
+                color: 'var(--text)',
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Seguimiento de envío"
+            >
               <ClientTracking
                 isDark={isDark}
                 onBack={handleCloseTracking}
                 onOpenChat={handleOpenChat}
                 onRate={handleOpenRating}
               />
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {chatOpen && (
-            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Chat con repartidor">
-              <div className="lf-ios-sheet-handle" />
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9996,
+                backgroundColor: 'var(--bg)',
+                color: 'var(--text)',
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Chat con repartidor"
+            >
               <ClientChat
                 isDark={isDark}
                 onClose={() => setChatOpen(false)}
               />
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {ratingModalOpen && (
-            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Calificar servicio">
-              <div className="lf-ios-sheet-handle" />
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9997,
+                backgroundColor: 'var(--bg)',
+                color: 'var(--text)',
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Calificar servicio"
+            >
               <ClientRating
                 isDark={isDark}
                 onClose={() => setRatingModalOpen(false)}
               />
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -1347,17 +1395,33 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           )}
         </AnimatePresence>
 
-        {/* Cart Overlay */}
+        {/* Cart Overlay (Full Screen Page) */}
         <AnimatePresence>
           {carritoOpen && (
-            <div className="lf-ios-sheet" role="dialog" aria-modal="true" aria-label="Carrito de compras">
-              <div className="lf-ios-sheet-handle" />
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9998,
+                backgroundColor: 'var(--bg)',
+                color: 'var(--text)',
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Carrito de compras"
+            >
               <ClientCarrito
                 isDark={isDark}
                 onClose={() => setCarritoOpen(false)}
                 onBackToTienda={() => setCarritoOpen(false)}
               />
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
 

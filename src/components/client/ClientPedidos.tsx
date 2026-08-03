@@ -869,17 +869,7 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
     [orders, userName]
   );
 
-  const activeEnvios = useMemo(
-    () => clientOrders.filter((o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'),
-    [clientOrders]
-  );
-
-  const historicalEnvios = useMemo(
-    () => clientOrders.filter((o) => o.estado === 'entregado' || o.estado === 'incidencia'),
-    [clientOrders]
-  );
-
-  /* ── Computed: compras ── */
+  /* ── Computed: compras (pedidos de tienda) ── */
   const activeCompras = useMemo(
     () => ordenesCompra.filter((oc) => oc.estado !== 'entregado'),
     [ordenesCompra]
@@ -890,34 +880,26 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
     [ordenesCompra]
   );
 
-  /* ── Filtered history ── */
+  /* ── Filtered history (solo pedidos de tienda) ── */
   const filteredHistory = useMemo(() => {
-    const envios = historicalEnvios.map(o => ({ ...o, _type: 'envio' as const }));
     const compras = deliveredCompras.map(oc => ({ ...oc, _type: 'compra' as const }));
-
-    if (historiaFilter === 'envios') return envios;
-    if (historiaFilter === 'compras') return compras;
-    if (historiaFilter === 'entregados') return [...envios.filter(e => e.estado === 'entregado'), ...compras.filter(c => c.estado === 'entregado')];
-    if (historiaFilter === 'cancelados') return envios.filter(e => e.estado === 'incidencia');
-    return [...envios, ...compras];
-  }, [historicalEnvios, deliveredCompras, historiaFilter]);
+    if (historiaFilter === 'compras' || historiaFilter === 'todos' || historiaFilter === 'entregados') return compras;
+    return compras;
+  }, [deliveredCompras, historiaFilter]);
 
   /* ── Counts ── */
-  const activosCount = activeEnvios.length + activeCompras.length;
+  const activosCount = activeCompras.length;
 
   /* ── Tab definition ── */
   const tabs: { key: TabKey; label: string; count: number }[] = [
     { key: 'activos', label: 'Activos', count: activosCount },
-    { key: 'historial', label: 'Historial', count: historicalEnvios.length + deliveredCompras.length },
+    { key: 'historial', label: 'Historial', count: deliveredCompras.length },
   ];
 
   /* ── Filter pills ── */
   const filterPills: { key: HistoriaFilterKey; label: string }[] = [
-    { key: 'todos', label: 'Todos' },
-    { key: 'envios', label: 'Envios' },
-    { key: 'compras', label: 'Compras' },
+    { key: 'todos', label: 'Todos los Pedidos' },
     { key: 'entregados', label: 'Entregados' },
-    { key: 'cancelados', label: 'Cancelados' },
   ];
 
   /* ═══════════════════════════════════════════════
@@ -1020,46 +1002,6 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.25 }}
           >
-            {/* Active Envios */}
-            {activeEnvios.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <Truck size={16} style={{ color: 'var(--primario)' }} />
-                  <span style={{ fontSize: 14, fontWeight: 600, fontFamily: "'Syne', sans-serif", color: 'var(--text)' }}>
-                    Envios activos
-                  </span>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minWidth: 20,
-                      height: 20,
-                      borderRadius: 10,
-                      padding: '0 6px',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      background: 'var(--primario)',
-                      color: '#fff',
-                    }}
-                  >
-                    {activeEnvios.length}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {activeEnvios.map((order) => (
-                    <ActiveEnvioCard
-                      key={order.id}
-                      order={order}
-                      onOpenTracking={onOpenTracking}
-                      onOpenChat={onOpenChat}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Active Compras */}
             {activeCompras.length > 0 && (
               <div style={{ marginBottom: 20 }}>
@@ -1100,7 +1042,7 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
             )}
 
             {/* Both empty */}
-            {activeEnvios.length === 0 && activeCompras.length === 0 && (
+            {activeCompras.length === 0 && (
               <div>
                 <EmptyActive />
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16, padding: '0 16px' }}>
@@ -1241,28 +1183,13 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
                   scrollbarWidth: 'thin',
                 }}
               >
-                {filteredHistory.map((item) => {
-                  if ('_type' in item && item._type === 'envio') {
-                    const envio = item as Order & { _type: 'envio' };
-                    return (
-                      <HistoryEnvioItem
-                        key={envio.id}
-                        order={envio}
-                        onNavigate={onNavigate}
-                        onOpenTracking={onOpenTracking}
-                      />
-                    );
-                  } else {
-                    const compra = item as OrdenCompra & { _type: 'compra' };
-                    return (
-                      <CompraHistoryItem
-                        key={compra.id}
-                        oc={compra}
-                        onNavigate={onNavigate}
-                      />
-                    );
-                  }
-                })}
+                {filteredHistory.map((item) => (
+                  <CompraHistoryItem
+                    key={item.id}
+                    oc={item}
+                    onNavigate={onNavigate}
+                  />
+                ))}
               </div>
             )}
           </motion.div>

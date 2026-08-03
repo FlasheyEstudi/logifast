@@ -48,15 +48,16 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (estado) where.estado = estado;
 
-    if (user?.role === 'cliente') {
+    if (user.role === 'cliente') {
       where.clienteId = user.id;
-    } else if (user?.role === 'repartidor') {
+    } else if (user.role === 'repartidor') {
       where.OR = [
         { repartidorId: user.id },
         { repartidorId: null, estado: 'pendiente' },
       ];
+    } else if (user.role !== 'admin') {
+      where.clienteId = user.id;
     }
-    // Si es admin o no hay sesion de cookie (ej. polling de dashboard), devuelve todas
 
     const [ordenes, total] = await Promise.all([
       db.ordenServicio.findMany({
