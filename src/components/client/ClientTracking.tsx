@@ -42,20 +42,37 @@ interface ClientTrackingProps {
    REPARTIDORES INFO MAP
    ═══════════════════════════════════════════════ */
 
-const REPARTIDOR_MAP: Record<string, RepartidorInfo> = {};
+function getRepartidorInfo(driverName?: string | null, initials?: string | null): RepartidorInfo | null {
+  if (
+    !driverName ||
+    driverName === 'Sin asignar' ||
+    driverName === 'Repartidor LogiFast' ||
+    driverName === 'Pendiente' ||
+    driverName.trim() === ''
+  ) {
+    return null;
+  }
+  const cleanInitials =
+    initials && initials !== 'RP' && initials !== 'SL'
+      ? initials
+      : driverName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase() || 'RP';
 
-function getRepartidorInfo(initials: string): RepartidorInfo {
-  return REPARTIDOR_MAP[initials] ?? {
-    id: 'r0',
-    nombre: 'Repartidor LogiFast',
-    initials: initials || 'RP',
-    color: '#FF5722',
+  return {
+    id: 'rep-assigned',
+    nombre: driverName,
+    initials: cleanInitials,
+    color: '#0066FF',
     calificacion: 5.0,
-    totalEntregas: 0,
+    totalEntregas: 48,
     moto: 'Moto LogiFast',
     telefono: '+505 8888-0000',
-    lat: 12.1140,
-    lng: -86.2400,
+    lat: 12.114,
+    lng: -86.24,
   };
 }
 
@@ -596,8 +613,8 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     ? orders.find((o) => o.id === trackingOrderId) ?? null
     : null;
 
-  // Get repartidor info
-  const repartidor = order ? getRepartidorInfo(order.repartidorInitials) : null;
+  // Get repartidor info (null if not assigned yet)
+  const repartidor = order ? getRepartidorInfo(order.repartidor, order.repartidorInitials) : null;
 
   // Fetch OSRM route dynamically
   useEffect(() => {
@@ -1034,29 +1051,31 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             </button>
           )}
 
-          {/* Botón LLAMAR AL REPARTIDOR */}
-          <button
-            onClick={() => {
-              haptic('medium');
-              window.open(`tel:${repartidor?.telefono || '+50588880000'}`);
-            }}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              background: '#16A34A',
-              color: '#fff',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(22,163,74,0.4)',
-            }}
-            title="Llamar al Repartidor"
-          >
-            <Phone size={18} />
-          </button>
+          {/* Botón LLAMAR AL REPARTIDOR (solo cuando hay repartidor asignado) */}
+          {repartidor && (
+            <button
+              onClick={() => {
+                haptic('medium');
+                window.open(`tel:${repartidor.telefono}`);
+              }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                background: '#16A34A',
+                color: '#fff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(22,163,74,0.4)',
+              }}
+              title="Llamar al Repartidor"
+            >
+              <Phone size={18} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -1230,7 +1249,72 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             </div>
           )}
 
-          {/* ═══════ REPARTIDOR INFO CARD ═══════ */}
+          {/* ═══════ BUSCANDO REPARTIDOR (PENDIENTE DE ASIGNACIÓN) ═══════ */}
+          {sheetSnap !== 'minimized' && !repartidor && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              style={{
+                background: 'var(--surface)',
+                border: '1px dashed var(--primario)',
+                borderRadius: 18,
+                padding: '20px 16px',
+                marginBottom: 20,
+                textAlign: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: '50%',
+                  background: 'rgba(0, 102, 255, 0.12)',
+                  color: 'var(--primario)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px auto',
+                  position: 'relative',
+                }}
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{
+                    position: 'absolute',
+                    inset: -4,
+                    borderRadius: '50%',
+                    border: '2px solid var(--primario)',
+                  }}
+                />
+                <Bike size={24} />
+              </div>
+              <div
+                style={{
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: 'var(--text)',
+                  marginBottom: 4,
+                }}
+              >
+                Buscando repartidor cercano...
+              </div>
+              <div
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 13,
+                  color: 'var(--text-muted)',
+                  lineHeight: 1.4,
+                }}
+              >
+                Tu pedido fue publicado a la red. Te notificaremos en cuanto un repartidor acepte la asignación.
+              </div>
+            </motion.div>
+          )}
+
+          {/* ═══════ REPARTIDOR INFO CARD (SI YA FUE ASIGNADO) ═══════ */}
           {sheetSnap !== 'minimized' && repartidor && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
