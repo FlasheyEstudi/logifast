@@ -62,8 +62,23 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
+              // Auto-recover from Next.js ChunkLoadError after deployment/HMR asset updates
+              window.addEventListener('error', function(e) {
+                var msg = e && e.message ? String(e.message) : '';
+                if (msg.indexOf('Loading chunk') !== -1 || msg.indexOf('failed to load chunk') !== -1 || msg.indexOf('ChunkLoadError') !== -1) {
+                  console.warn('Next.js ChunkLoadError interceptado. Recargando aplicación con assets actualizados...');
+                  var reloadKey = 'lf_chunk_reload';
+                  var now = Date.now();
+                  var lastReload = Number(sessionStorage.getItem(reloadKey) || 0);
+                  if (now - lastReload > 8000) {
+                    sessionStorage.setItem(reloadKey, String(now));
+                    window.location.reload();
+                  }
+                }
+              }, true);
+
               // Register PWA Service Worker
-              if ('serviceWorker' in navigator && window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
+              if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').then(function(reg) {
                     console.log('LOGIFAST PWA Service Worker registrado:', reg.scope);
