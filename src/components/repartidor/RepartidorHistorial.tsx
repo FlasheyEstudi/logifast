@@ -1,10 +1,31 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
-import { TrendingUp, TrendingDown, Package, ShoppingBag, AlertTriangle, ChevronRight, Bike, Clock, DollarSign, Route as RouteIcon } from '@/components/icons';
-import { useRepartidorStore, type ServicioHistorial } from '@/lib/repartidor-store';
+import {
+  TrendingUp,
+  TrendingDown,
+  Package,
+  ShoppingBag,
+  AlertTriangle,
+  ChevronRight,
+  Bike,
+  Clock,
+  DollarSign,
+  Route as RouteIcon,
+  Check,
+  X,
+  MessageSquare,
+  MapPin,
+  CheckCircle2,
+  Store,
+  User,
+  Phone,
+  Maximize2,
+  Zap,
+} from '@/components/icons';
+import { useRepartidorStore, type ServicioHistorial, type OrdenActiva } from '@/lib/repartidor-store';
 import PullToRefresh from '@/components/ui/PullToRefresh';
 import { HistorialSkeleton } from '@/components/ui/Skeletons';
 
@@ -12,8 +33,8 @@ import { HistorialSkeleton } from '@/components/ui/Skeletons';
    TYPES & HELPERS
    ═══════════════════════════════════════════════ */
 
+type ModuloSubTab = 'ofertas' | 'activos' | 'envios' | 'pedidos' | 'historial';
 type Periodo = 'hoy' | 'semana' | 'mes';
-type Filtro = 'todos' | 'envios' | 'compras' | 'incidencias';
 
 const PERIODO_LABEL: Record<Periodo, string> = {
   hoy: 'Hoy',
@@ -27,57 +48,6 @@ const ESTADO_SERVICIO_COLOR: Record<string, string> = {
   cancelado: '#9E9E9E',
 };
 
-function getBarData(periodo: Periodo, servicios: ServicioHistorial[] = []) {
-  if (periodo === 'hoy') {
-    const hours = ['8h', '9h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h'];
-    const map: Record<string, number> = {};
-    hours.forEach((h) => (map[h] = 0));
-    servicios.forEach((s) => {
-      const hr = parseInt(s.hora?.split(':')[0] || '12', 10);
-      const key = `${hr}h`;
-      if (map[key] !== undefined) map[key] += 1;
-    });
-    return hours.map((x) => ({ x, v: map[x] }));
-  }
-  if (periodo === 'semana') {
-    const days = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-    const map: Record<string, number> = {};
-    days.forEach((d) => (map[d] = 0));
-    servicios.forEach((s, idx) => {
-      const day = days[idx % 7];
-      map[day] += 1;
-    });
-    return days.map((x) => ({ x, v: map[x] }));
-  }
-  const weeks = ['S1', 'S2', 'S3', 'S4'];
-  const map: Record<string, number> = {};
-  weeks.forEach((w) => (map[w] = 0));
-  servicios.forEach((s, idx) => {
-    const w = weeks[idx % 4];
-    map[w] += 1;
-  });
-  return weeks.map((x) => ({ x, v: map[x] }));
-}
-
-/* CountUp animation */
-function useCountUp(target: number, duration = 800) {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    let raf: number;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setVal(target * eased);
-      if (t < 1) raf = requestAnimationFrame(tick);
-      else setVal(target);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return val;
-}
-
 function formatTiempo(min: number) {
   const h = Math.floor(min / 60);
   const m = min % 60;
@@ -86,338 +56,73 @@ function formatTiempo(min: number) {
 }
 
 /* ═══════════════════════════════════════════════
-   KPI CARD
-   ═══════════════════════════════════════════════ */
-
-interface KpiCardProps {
-  label: string;
-  value: number;
-  format: (v: number) => string;
-  trend: number;
-  icon: React.ReactNode;
-  color: string;
-}
-
-function KpiCard({ label, value, format, trend, icon, color }: KpiCardProps) {
-  const animated = useCountUp(value, 800);
-  const isUp = trend >= 0;
-  return (
-    <div
-      className="lf-card-elevated"
-      style={{
-        padding: 16,
-        borderRadius: 16,
-        background: 'var(--md-surface)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 11,
-            color: 'var(--text-muted)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            fontWeight: 600,
-          }}
-        >
-          {label}
-        </span>
-        <span
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: 8,
-            background: `color-mix(in srgb, ${color} 12%, transparent)`,
-            color,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {icon}
-        </span>
-      </div>
-      <div
-        className="font-mono"
-        style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}
-      >
-        {format(animated)}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-          fontSize: 11,
-          color: isUp ? 'var(--exito, #00C853)' : 'var(--peligro, #FF1744)',
-          fontWeight: 600,
-        }}
-      >
-        {isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-        <span>
-          {isUp ? '+' : ''}
-          {trend}% vs anterior
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   SERVICE TIMELINE ROW
-   ═══════════════════════════════════════════════ */
-
-function ServicioRow({
-  servicio,
-  isLast,
-  onOpen,
-}: {
-  servicio: ServicioHistorial;
-  isLast: boolean;
-  onOpen: (s: ServicioHistorial) => void;
-}) {
-  const color = ESTADO_SERVICIO_COLOR[servicio.estado] || '#9E9E9E';
-  const TipoIcon = servicio.tipo === 'compra' ? ShoppingBag : Package;
-
-  return (
-    <button
-      onClick={() => onOpen(servicio)}
-      style={{
-        width: '100%',
-        display: 'grid',
-        gridTemplateColumns: '52px 18px 1fr',
-        gap: 8,
-        padding: '4px 0',
-        background: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        textAlign: 'left',
-        fontFamily: "'DM Sans', sans-serif",
-      }}
-    >
-      {/* Time */}
-      <div
-        className="font-mono"
-        style={{ fontSize: 13, color: 'var(--text-muted)', paddingTop: 4 }}
-      >
-        {servicio.hora}
-      </div>
-      {/* Dot + connector */}
-      <div
-        style={{
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: 6,
-        }}
-      >
-        <span
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: color,
-            boxShadow: `0 0 0 3px color-mix(in srgb, ${color} 18%, transparent)`,
-            flexShrink: 0,
-            zIndex: 1,
-          }}
-        />
-        {!isLast && (
-          <span
-            style={{
-              position: 'absolute',
-              top: 16,
-              bottom: -8,
-              width: 2,
-              background: 'var(--md-outline-variant)',
-            }}
-          />
-        )}
-      </div>
-      {/* Content */}
-      <div
-        style={{
-          padding: 12,
-          borderRadius: 14,
-          background: 'var(--md-surface)',
-          border: '1px solid var(--md-outline-variant)',
-          marginBottom: 4,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 4,
-          }}
-        >
-          <span
-            className="font-mono"
-            style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}
-          >
-            {servicio.ordenId}
-          </span>
-          <span
-            className={`lf-badge ${servicio.tipo === 'compra' ? 'lf-badge-en-camino' : 'lf-badge-preparando'}`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: '3px 8px',
-              borderRadius: 100,
-              background:
-                servicio.tipo === 'compra'
-                  ? 'var(--md-primary-container)'
-                  : 'var(--md-secondary-container)',
-              color:
-                servicio.tipo === 'compra'
-                  ? 'var(--md-on-primary-container)'
-                  : 'var(--md-on-secondary-container)',
-              fontSize: 11,
-              fontWeight: 600,
-              textTransform: 'capitalize',
-            }}
-          >
-            <TipoIcon size={11} />
-            {servicio.tipo}
-          </span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 14,
-            color: 'var(--text)',
-            fontWeight: 500,
-            marginBottom: 6,
-          }}
-        >
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {servicio.origen}
-          </span>
-          <ChevronRight size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {servicio.destino}
-          </span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            fontSize: 12,
-            color: 'var(--text-muted)',
-          }}
-        >
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-            }}
-          >
-            <RouteIcon size={12} />
-            <span className="font-mono">{servicio.kmRecorridos.toFixed(1)} km</span>
-          </span>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-            }}
-          >
-            <DollarSign size={12} />
-            <span className="font-mono">C${servicio.ganancia}</span>
-          </span>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-            }}
-          >
-            <Clock size={12} />
-            <span className="font-mono">{servicio.tiempoTotal} min</span>
-          </span>
-          <span style={{ marginLeft: 'auto' }}>
-            <span
-              className={`lf-badge ${
-                servicio.estado === 'entregado'
-                  ? 'lf-badge-entregado'
-                  : servicio.estado === 'incidencia'
-                    ? 'lf-badge-incidencia'
-                    : 'lf-badge-cancelado'
-              }`}
-              style={{
-                padding: '2px 8px',
-                borderRadius: 100,
-                background: `color-mix(in srgb, ${color} 14%, transparent)`,
-                color,
-                fontSize: 10,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              {servicio.estado}
-            </span>
-          </span>
-        </div>
-      </div>
-    </button>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   MAIN COMPONENT
+   MAIN COMPONENT — MÓDULO DE GESTIÓN DE OFERTAS & SERVICIOS
    ═══════════════════════════════════════════════ */
 
 export default function RepartidorHistorial() {
-  const { serviciosHoy, obtenerStats, verServicioDetalle, syncFromBackend } = useRepartidorStore();
+  const {
+    ordenesActivas = [],
+    ordenActiva,
+    ofertasDisponibles = [],
+    ordenAsignadaPendiente,
+    serviciosHoy = [],
+    obtenerStats,
+    verServicioDetalle,
+    syncFromBackend,
+    aceptarOfertaDirecta,
+    rechazarOfertaDirecta,
+    seleccionarOrdenActiva,
+    toggleChat,
+    toggleIncidencia,
+    setPantalla,
+  } = useRepartidorStore();
+
+  const [activeSubTab, setActiveSubTab] = useState<ModuloSubTab>('activos');
   const [periodo, setPeriodo] = useState<Periodo>('hoy');
-  const [filtro, setFiltro] = useState<Filtro>('todos');
   const [loading, setLoading] = useState(false);
+  const [selectedActiveDetail, setSelectedActiveDetail] = useState<OrdenActiva | null>(null);
 
   const stats = obtenerStats(periodo);
 
-  const barData = useMemo(() => getBarData(periodo, serviciosHoy), [periodo, serviciosHoy]);
-
-  const serviciosFiltrados = useMemo(() => {
-    return serviciosHoy.filter((s) => {
-      if (filtro === 'todos') return true;
-      if (filtro === 'envios') return s.tipo === 'envio';
-      if (filtro === 'compras') return s.tipo === 'compra';
-      if (filtro === 'incidencias') return s.estado === 'incidencia';
-      return true;
+  /* Build list of incoming offers combining ordenAsignadaPendiente + ofertasDisponibles */
+  const ofertasLista = useMemo(() => {
+    const lista: OrdenActiva[] = [];
+    if (ordenAsignadaPendiente && !lista.some((o) => o.id === ordenAsignadaPendiente.id)) {
+      lista.push(ordenAsignadaPendiente);
+    }
+    (ofertasDisponibles || []).forEach((of) => {
+      if (!lista.some((o) => o.id === of.id)) {
+        lista.push(of);
+      }
     });
-  }, [serviciosHoy, filtro]);
-
-  const today = new Date();
-  const fechaStr = today.toLocaleDateString('es-NI', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-
-  const handleOpen = (s: ServicioHistorial) => verServicioDetalle(s);
+    // Mock sample offer if empty for instant preview & testing
+    if (lista.length === 0) {
+      lista.push({
+        id: 'OF-8842',
+        tipo: 'envio',
+        cliente: 'Carlos Mendoza',
+        clienteTelefono: '+505 8888-1234',
+        origen: 'Altamira, Managua (Super Express)',
+        destino: 'Bello Horizonte, Managua',
+        origenLat: 12.1245,
+        origenLng: -86.2412,
+        destinoLat: 12.1388,
+        destinoLng: -86.2295,
+        paquete: 'Documentos urgentes',
+        tamano: 'Mediano',
+        metodoPago: 'efectivo',
+        monto: 150,
+        ganancia: 120,
+        kmEstimados: 3.8,
+        tiempoEstimado: 15,
+      });
+    }
+    return lista;
+  }, [ordenAsignadaPendiente, ofertasDisponibles]);
 
   const handleRefresh = async () => {
     setLoading(true);
     try {
-      // Sincroniza datos reales desde la API (perfil, moto, ordenes, stats, historial, etc.)
       await syncFromBackend();
     } catch (err) {
       console.error('[RepartidorHistorial.handleRefresh]', err);
@@ -428,277 +133,424 @@ export default function RepartidorHistorial() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div style={{ paddingBottom: 16 }}>
-        {/* Header */}
+      <div style={{ paddingBottom: 80, maxWidth: 960, margin: '0 auto' }}>
+
+        {/* ═══════ ENCABEZADO Y PESTAÑAS DE GESTIÓN ═══════ */}
         <div style={{ marginBottom: 16 }}>
-          <h1
-            className="font-syne"
-            style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.5px' }}
-          >
-            {PERIODO_LABEL[periodo] === 'Hoy' ? 'Hoy' : PERIODO_LABEL[periodo]}
-          </h1>
-          <p
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div>
+              <h1
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: 'var(--text, #F8FAFC)',
+                  fontFamily: "'Syne', sans-serif",
+                  letterSpacing: '-0.02em',
+                  margin: 0,
+                }}
+              >
+                Gestión de Servicios
+              </h1>
+              <p style={{ fontSize: 12, color: 'var(--text-muted, #94A3B8)', margin: '2px 0 0' }}>
+                Ofertas, solicitudes activas e historial de entregas
+              </p>
+            </div>
+
+            {/* Shortcut to Map */}
+            <button
+              onClick={() => setPantalla('servicio')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                borderRadius: 100,
+                border: 'none',
+                background: 'var(--primario, #0066FF)',
+                color: '#FFFFFF',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'var(--ios-font)',
+                boxShadow: '0 4px 12px color-mix(in srgb, var(--primario, #0066FF) 40%, transparent)',
+              }}
+            >
+              <MapPin size={14} />
+              <span>Ver Mapa</span>
+            </button>
+          </div>
+
+          {/* ═══════ SUB-PESTAÑAS DE FILTRO PRINCIPALES ═══════ */}
+          <div
             style={{
-              fontSize: 13,
-              color: 'var(--text-muted)',
-              textTransform: 'capitalize',
-              marginTop: 2,
+              display: 'flex',
+              gap: 6,
+              padding: 4,
+              borderRadius: 100,
+              background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 90%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 20%, transparent)',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
             }}
           >
-            {fechaStr}
-          </p>
+            {[
+              { key: 'activos' as ModuloSubTab, label: `Activos (${ordenesActivas.length})`, icon: <Bike size={14} /> },
+              { key: 'ofertas' as ModuloSubTab, label: `Ofertas (${ofertasLista.length})`, icon: <Zap size={14} /> },
+              { key: 'envios' as ModuloSubTab, label: 'Envíos', icon: <Package size={14} /> },
+              { key: 'pedidos' as ModuloSubTab, label: 'Pedidos', icon: <ShoppingBag size={14} /> },
+              { key: 'historial' as ModuloSubTab, label: 'Historial', icon: <Clock size={14} /> },
+            ].map((tab) => {
+              const isActive = activeSubTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveSubTab(tab.key)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    padding: '8px 12px',
+                    borderRadius: 100,
+                    border: 'none',
+                    background: isActive ? 'var(--primario, #0066FF)' : 'transparent',
+                    color: isActive ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
+                    fontSize: 12,
+                    fontWeight: isActive ? 800 : 600,
+                    fontFamily: 'var(--ios-font)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Period selector pills */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 6,
-            padding: 4,
-            borderRadius: 100,
-            background: 'var(--md-surface-variant)',
-            marginBottom: 16,
-          }}
-        >
-          {(['hoy', 'semana', 'mes'] as Periodo[]).map((p) => {
-            const isActive = periodo === p;
-            return (
-              <button
-                key={p}
-                onClick={() => setPeriodo(p)}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: 100,
-                  border: 'none',
-                  background: isActive ? 'var(--md-surface)' : 'transparent',
-                  color: isActive ? 'var(--text)' : 'var(--text-muted)',
-                  fontSize: 13,
-                  fontWeight: isActive ? 700 : 500,
-                  fontFamily: "'DM Sans', sans-serif",
-                  cursor: 'pointer',
-                  transition: 'background 0.2s ease, color 0.2s ease',
-                  boxShadow: isActive ? 'var(--md-elevation-1)' : 'none',
-                }}
-              >
-                {PERIODO_LABEL[p]}
-              </button>
-            );
-          })}
-        </div>
-
-        {loading ? (
-          <HistorialSkeleton />
-        ) : (
-          <>
-            {/* KPI grid */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 10,
-                marginBottom: 16,
-              }}
-            >
-              <KpiCard
-                label="Entregas"
-                value={stats.entregas}
-                format={(v) => Math.round(v).toString()}
-                trend={12}
-                icon={<Bike size={14} />}
-                color="var(--primario)"
-              />
-              <KpiCard
-                label="Km recorridos"
-                value={stats.km}
-                format={(v) => v.toFixed(1)}
-                trend={8}
-                icon={<RouteIcon size={14} />}
-                color="var(--info, #2979FF)"
-              />
-              <KpiCard
-                label="Ganancias"
-                value={stats.ganancias}
-                format={(v) => `C$${Math.round(v)}`}
-                trend={15}
-                icon={<DollarSign size={14} />}
-                color="var(--exito, #00C853)"
-              />
-              <KpiCard
-                label="Tiempo activo"
-                value={stats.tiempoActivo}
-                format={(v) => formatTiempo(Math.round(v))}
-                trend={-3}
-                icon={<Clock size={14} />}
-                color="var(--warning, #FFB300)"
-              />
+        {/* ═══════ PESTAÑA 1: OFERTAS ENTRANTES ═══════ */}
+        {activeSubTab === 'ofertas' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
+              {ofertasLista.length} Solicitud{ofertasLista.length !== 1 ? 'es' : ''} disponible{ofertasLista.length !== 1 ? 's' : ''}
             </div>
 
-            {/* Bar chart */}
-            <div
-              className="lf-card-elevated"
-              style={{
-                padding: 16,
-                borderRadius: 16,
-                background: 'var(--md-surface)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                marginBottom: 16,
-              }}
-            >
-              <div
+            {ofertasLista.map((oferta) => (
+              <motion.div
+                key={oferta.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 style={{
+                  borderRadius: 20,
+                  padding: 16,
+                  background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 25%, transparent)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: 12,
+                  flexDirection: 'column',
+                  gap: 12,
                 }}
               >
-                <div>
-                  <div
-                    className="font-syne"
-                    style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
-                  >
-                    Entregas
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    {periodo === 'hoy' ? 'Por hora' : periodo === 'semana' ? 'Por día' : 'Por semana'}
-                  </div>
-                </div>
-              </div>
-              <div style={{ height: 120, width: '100%' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
-                    <XAxis
-                      dataKey="x"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'color-mix(in srgb, var(--primario) 8%, transparent)' }}
-                      contentStyle={{
-                        borderRadius: 8,
-                        border: '1px solid var(--md-outline-variant)',
-                        background: 'var(--md-surface)',
-                        fontSize: 12,
-                        fontFamily: "'DM Sans', sans-serif",
+                {/* Header card */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 100,
+                        background: oferta.tipo === 'compra' ? 'rgba(255, 149, 0, 0.2)' : 'rgba(0, 102, 255, 0.2)',
+                        color: oferta.tipo === 'compra' ? '#FF9500' : '#0066FF',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
                       }}
-                      labelStyle={{ color: 'var(--text)' }}
-                      formatter={(v: any) => [`${v} entregas`, '']}
-                    />
-                    <Bar dataKey="v" radius={[6, 6, 0, 0]} maxBarSize={32}>
-                      {barData.map((entry, i) => (
-                        <Cell
-                          key={`cell-${i}`}
-                          fill={entry.v === 0 ? 'var(--md-outline-variant)' : 'var(--primario)'}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+                    >
+                      {oferta.tipo === 'compra' ? '🛒 PEDIDO TIENDA' : '📦 ENVÍO MENSAJERÍA'}
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>
+                      #{oferta.id}
+                    </span>
+                  </div>
 
-            {/* Filter pills */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 6,
-                marginBottom: 12,
-                overflowX: 'auto',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-              }}
-            >
-              {([
-                { k: 'todos' as Filtro, label: 'Todos', icon: null },
-                { k: 'envios' as Filtro, label: 'Envíos', icon: <Package size={12} /> },
-                { k: 'compras' as Filtro, label: 'Compras', icon: <ShoppingBag size={12} /> },
-                { k: 'incidencias' as Filtro, label: 'Incidencias', icon: <AlertTriangle size={12} /> },
-              ]).map((f) => {
-                const isActive = filtro === f.k;
-                return (
-                  <button
-                    key={f.k}
-                    onClick={() => setFiltro(f.k)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      padding: '6px 12px',
-                      borderRadius: 100,
-                      border: `1px solid ${isActive ? 'var(--primario)' : 'var(--md-outline-variant)'}`,
-                      background: isActive ? 'color-mix(in srgb, var(--primario) 10%, transparent)' : 'transparent',
-                      color: isActive ? 'var(--primario)' : 'var(--text-secondary)',
-                      fontSize: 12,
-                      fontWeight: isActive ? 700 : 500,
-                      fontFamily: "'DM Sans', sans-serif",
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {f.icon}
-                    {f.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Services list (timeline) */}
-            <div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: 'var(--text-muted)',
-                  marginBottom: 8,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                {serviciosFiltrados.length} servicio{serviciosFiltrados.length !== 1 ? 's' : ''}
-              </div>
-              <div>
-                {serviciosFiltrados.length === 0 && (
-                  <div
-                    className="lf-card-elevated"
-                    style={{
-                      padding: 0,
-                      borderRadius: 16,
-                      background: 'var(--md-surface)',
-                      boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <div className="lf-empty" style={{ padding: '40px 24px' }}>
-                      <div className="lf-empty-icon">
-                        <Package size={32} />
-                      </div>
-                      <div className="lf-empty-title">Sin servicios</div>
-                      <div className="lf-empty-desc">
-                        No hay servicios para este filtro en el período seleccionado.
-                      </div>
+                  {/* Earnings Highlight */}
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>Ganancia Est.</span>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: '#34C759', fontFamily: 'var(--font-mono)' }}>
+                      C${oferta.ganancia}
                     </div>
                   </div>
-                )}
-                {serviciosFiltrados.map((s, i) => (
+                </div>
+
+                {/* Addresses */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 12px', borderRadius: 14, background: 'color-mix(in srgb, var(--ios-bg-secondary, #0F172A) 80%, transparent)' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', marginTop: 4, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', color: '#0066FF', fontWeight: 700 }}>Origen / Recogida</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{oferta.origen}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF3B30', marginTop: 4, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', color: '#FF3B30', fontWeight: 700 }}>Destino / Entrega</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{oferta.destino}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer metrics & actions */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+                    <span>📍 {oferta.kmEstimados} km</span>
+                    <span>⏱️ {oferta.tiempoEstimado} min</span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => rechazarOfertaDirecta(oferta.id)}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: 100,
+                        border: 'none',
+                        background: 'rgba(255, 59, 48, 0.18)',
+                        color: '#FF3B30',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ❌ Rechazar
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        aceptarOfertaDirecta(oferta);
+                        setPantalla('servicio');
+                      }}
+                      style={{
+                        padding: '8px 18px',
+                        borderRadius: 100,
+                        border: 'none',
+                        background: '#34C759',
+                        color: '#FFFFFF',
+                        fontSize: 12,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(52, 199, 89, 0.4)',
+                      }}
+                    >
+                      ✅ ACEPTAR
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* ═══════ PESTAÑA 2: SERVICIOS ACTIVOS ═══════ */}
+        {activeSubTab === 'activos' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
+              {ordenesActivas.length}/3 Servicios en curso
+            </div>
+
+            {ordenesActivas.length === 0 ? (
+              <div
+                style={{
+                  borderRadius: 20,
+                  padding: '40px 24px',
+                  textAlign: 'center',
+                  background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 80%, transparent)',
+                  border: '1px border-mix(in srgb, var(--ios-blue) 20%, transparent)',
+                }}
+              >
+                <Bike size={40} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>No tienes servicios en curso</div>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 16px' }}>
+                  Revisa las ofertas entrantes para aceptar nuevas entregas.
+                </p>
+                <button
+                  onClick={() => setActiveSubTab('ofertas')}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 100,
+                    border: 'none',
+                    background: 'var(--primario, #0066FF)',
+                    color: '#FFF',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Ver Ofertas Disponibles
+                </button>
+              </div>
+            ) : (
+              ordenesActivas.map((ord, idx) => (
+                <motion.div
+                  key={ord.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    borderRadius: 20,
+                    padding: 16,
+                    background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
+                    border: ordenActiva?.id === ord.id ? '2px solid #0066FF' : '1px solid color-mix(in srgb, var(--ios-blue) 20%, transparent)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: '#0066FF' }}>
+                        #{idx + 1} SERVICIO EN CURSO
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>ID: {ord.id}</span>
+                    </div>
+
+                    <span style={{ fontSize: 16, fontWeight: 800, color: '#34C759' }}>
+                      C${ord.ganancia}
+                    </span>
+                  </div>
+
+                  {/* Origen / Destino */}
+                  <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>
+                    <div>📍 <strong>Origen:</strong> {ord.origen}</div>
+                    <div style={{ marginTop: 4 }}>🏁 <strong>Destino:</strong> {ord.destino}</div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 8, paddingTop: 6, borderTop: '1px solid color-mix(in srgb, var(--text-muted) 15%, transparent)' }}>
+                    <button
+                      onClick={() => {
+                        seleccionarOrdenActiva(ord.id);
+                        setPantalla('servicio');
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        borderRadius: 100,
+                        border: 'none',
+                        background: '#0066FF',
+                        color: '#FFF',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🗺️ Ver en Mapa
+                    </button>
+
+                    <button
+                      onClick={() => setSelectedActiveDetail(ord)}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: 100,
+                        border: 'none',
+                        background: 'color-mix(in srgb, var(--text) 10%, transparent)',
+                        color: 'var(--text)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      📋 Detalles
+                    </button>
+
+                    <button
+                      onClick={() => toggleChat(ord.id)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 100,
+                        border: 'none',
+                        background: 'rgba(52, 199, 89, 0.2)',
+                        color: '#34C759',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      💬 Chat
+                    </button>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ═══════ PESTAÑA 3 & 4: ENVÍOS / PEDIDOS / HISTORIAL COMPLETO ═══════ */}
+        {(activeSubTab === 'envios' || activeSubTab === 'pedidos' || activeSubTab === 'historial') && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Analytics Summary */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ padding: 14, borderRadius: 16, background: 'color-mix(in srgb, var(--ios-bg-elevated) 90%, transparent)', border: '1px solid color-mix(in srgb, var(--ios-blue) 20%, transparent)' }}>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>ENTREGAS COMPLETADAS</span>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>{stats.entregas}</div>
+              </div>
+
+              <div style={{ padding: 14, borderRadius: 16, background: 'color-mix(in srgb, var(--ios-bg-elevated) 90%, transparent)', border: '1px solid color-mix(in srgb, var(--ios-blue) 20%, transparent)' }}>
+                <span style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>TOTAL GANANCIAS</span>
+                <div style={{ fontSize: 24, fontWeight: 800, color: '#34C759', marginTop: 2 }}>C${stats.ganancias}</div>
+              </div>
+            </div>
+
+            {/* List of past services */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10 }}>
+                Registro Histórico ({serviciosHoy.length})
+              </div>
+
+              {serviciosHoy.length === 0 ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', background: 'color-mix(in srgb, var(--ios-bg-elevated) 80%, transparent)', borderRadius: 16 }}>
+                  No hay entregas registradas en este período.
+                </div>
+              ) : (
+                serviciosHoy.map((s, i) => (
                   <motion.div
                     key={s.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: i * 0.03 }}
+                    onClick={() => verServicioDetalle(s)}
+                    style={{
+                      padding: 14,
+                      borderRadius: 16,
+                      background: 'color-mix(in srgb, var(--ios-bg-elevated) 92%, transparent)',
+                      marginBottom: 8,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
                   >
-                    <ServicioRow
-                      servicio={s}
-                      isLast={i === serviciosFiltrados.length - 1}
-                      onOpen={handleOpen}
-                    />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                        {s.tipo === 'compra' ? '🛒 PEDIDO' : '📦 ENVÍO'} #{s.ordenId}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                        {s.origen} ➔ {s.destino}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: '#34C759' }}>+C${s.ganancia}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{s.hora}</div>
+                    </div>
                   </motion.div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </PullToRefresh>

@@ -252,6 +252,7 @@ interface RepartidorStoreState {
   ordenActiva: OrdenActiva | null;
   ordenesActivas: OrdenActiva[]; // hasta 3 pedidos simultáneos
   ordenAsignadaPendiente: OrdenActiva | null; // orden esperando aceptación (timer 30s)
+  ofertasDisponibles: OrdenActiva[];
   tiempoAceptacion: number; // segundos restantes para aceptar
 
   // Posición
@@ -303,6 +304,8 @@ interface RepartidorStoreState {
   aceptarContrato: () => void;
   recibirOrdenAsignada: (orden: OrdenActiva) => void;
   aceptarOrden: () => void;
+  aceptarOfertaDirecta: (orden: OrdenActiva) => void;
+  rechazarOfertaDirecta: (ordenId: string) => void;
   rechazarOrden: () => void;
   timeoutOrden: () => void;
   llegarRecogida: () => void;
@@ -382,6 +385,7 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
   ordenActiva: null,
   ordenesActivas: [],
   ordenAsignadaPendiente: null,
+  ofertasDisponibles: [],
   tiempoAceptacion: 30,
 
   lat: 12.1364,
@@ -559,6 +563,41 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     fetch(`/api/repartidor/ordenes/${orden.id}/aceptar`, {
       method: 'PATCH',
     }).catch((err) => console.error('[aceptarOrden API error]', err));
+  },
+
+  aceptarOfertaDirecta: (orden) => {
+    const actuales = get().ordenesActivas || [];
+    if (actuales.length >= 3) return;
+
+    const nuevasActivas = [...actuales.filter((o) => o.id !== orden.id), orden];
+    const nuevasOfertas = (get().ofertasDisponibles || []).filter((o) => o.id !== orden.id);
+
+    set({
+      ordenesActivas: nuevasActivas,
+      ordenActiva: orden,
+      ofertasDisponibles: nuevasOfertas,
+      ordenAsignadaPendiente: get().ordenAsignadaPendiente?.id === orden.id ? null : get().ordenAsignadaPendiente,
+      estado: 'EN_CAMINO_RECOGER',
+      enServicio: true,
+      tiempoTranscurrido: 0,
+      kmRecorridos: 0,
+      eta: calcularETA(orden.kmEstimados || 3),
+      moto: { ...get().moto, estado: 'EN_SERVICIO' },
+    });
+    dispararFeedback('orden_aceptada', 80);
+
+    fetch(`/api/repartidor/ordenes/${orden.id}/aceptar`, {
+      method: 'PATCH',
+    }).catch((err) => console.error('[aceptarOfertaDirecta API error]', err));
+  },
+
+  rechazarOfertaDirecta: (ordenId) => {
+    const nuevasOfertas = (get().ofertasDisponibles || []).filter((o) => o.id !== ordenId);
+    set({
+      ofertasDisponibles: nuevasOfertas,
+      ordenAsignadaPendiente: get().ordenAsignadaPendiente?.id === ordenId ? null : get().ordenAsignadaPendiente,
+    });
+    dispararFeedback('toggle_off', 40);
   },
 
   seleccionarOrdenActiva: (ordenId) => {

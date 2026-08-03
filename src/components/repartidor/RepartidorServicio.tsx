@@ -23,6 +23,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Play,
+  Bike,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
@@ -170,6 +171,7 @@ export default function RepartidorServicio() {
     toggleChat,
     toggleIncidencia,
     simularMovimiento,
+    setPantalla,
   } = useRepartidorStore();
 
   const showSnackbar = useRepartidorSnackbar();
@@ -411,219 +413,24 @@ export default function RepartidorServicio() {
         />
       </div>
 
-      {/* ═══════ MENÚ FLOTANTE LÍQUIDO COLAPSABLE (IZQUIERDA CENTRO) ═══════ */}
+      {/* ═══════ CÁPSULA / PÍLDORA DESLIZANTE EN EL BORDE IZQUIERDO (CENTRO VERTICAL) ═══════ */}
       <div
         style={{
           position: 'absolute',
-          top: '48%',
-          left: 16,
-          transform: 'translateY(-50%)',
-          zIndex: 45,
-        }}
-      >
-        <motion.button
-          whileTap={{ scale: 0.92 }}
-          onClick={() => {
-            setMenuHerramientasAbierto(!menuHerramientasAbierto);
-            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-              try { navigator.vibrate(15); } catch {}
-            }
-          }}
-          aria-label="Abrir menú de herramientas"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '10px 16px',
-            borderRadius: 100,
-            background: menuHerramientasAbierto
-              ? '#0066FF'
-              : 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 92%, transparent)',
-            color: '#FFFFFF',
-            backdropFilter: 'saturate(200%) blur(24px)',
-            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-            border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 40%, transparent)',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35), 0 0 16px color-mix(in srgb, var(--ios-blue, #0066FF) 20%, transparent)',
-            cursor: 'pointer',
-            fontSize: 12,
-            fontWeight: 700,
-            fontFamily: 'var(--ios-font)',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-        >
-          <Sliders size={18} />
-          <span>Herramientas</span>
-          <ChevronRight
-            size={16}
-            style={{
-              transform: menuHerramientasAbierto ? 'rotate(90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.25s ease',
-            }}
-          />
-        </motion.button>
-
-        {/* Liquid Glass Collapsible Popup Options */}
-        <AnimatePresence>
-          {menuHerramientasAbierto && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.88, x: -10, y: 10 }}
-              animate={{ opacity: 1, scale: 1, x: 0, y: 10 }}
-              exit={{ opacity: 0, scale: 0.88, x: -10, y: 10 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                width: 230,
-                borderRadius: 20,
-                padding: 8,
-                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
-                backdropFilter: 'saturate(200%) blur(28px)',
-                WebkitBackdropFilter: 'saturate(200%) blur(28px)',
-                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 30%, transparent)',
-                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), 0 0 24px color-mix(in srgb, var(--ios-blue, #0066FF) 15%, transparent)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-                zIndex: 50,
-              }}
-            >
-              {/* Option 1: Mapa 100% Pantalla / Restaurar */}
-              <button
-                onClick={() => {
-                  setMapaExpandido(!mapaExpandido);
-                  setMenuHerramientasAbierto(false);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 14px',
-                  borderRadius: 14,
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--ios-text-primary, #F8FAFC)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  fontFamily: 'var(--ios-font)',
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                }}
-              >
-                {mapaExpandido ? <Minimize2 size={16} color="#0066FF" /> : <Maximize2 size={16} color="#0066FF" />}
-                <span>{mapaExpandido ? 'Restaurar Vista' : 'Mapa 100% Pantalla'}</span>
-              </button>
-
-              {/* Option 2: Chat con Cliente (if active order) */}
-              {ordenActiva && (
-                <button
-                  onClick={() => {
-                    toggleChat(ordenActiva.id);
-                    setMenuHerramientasAbierto(false);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--ios-text-primary, #F8FAFC)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    fontFamily: 'var(--ios-font)',
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
-                >
-                  <MessageSquare size={16} color="#34C759" />
-                  <span>Chat con Cliente</span>
-                </button>
-              )}
-
-              {/* Option 3: Optimizar Ruta (if multipedidos) */}
-              {ordenesActivas.length > 1 && (
-                <button
-                  onClick={() => {
-                    optimizarRutaAutomatica();
-                    showSnackbar({ message: 'Ruta optimizada por menor distancia.' });
-                    setMenuHerramientasAbierto(false);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--ios-text-primary, #F8FAFC)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    fontFamily: 'var(--ios-font)',
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Zap size={16} color="#FF9500" />
-                  <span>Optimizar Ruta</span>
-                </button>
-              )}
-
-
-
-              {/* Option 5: Reportar Incidencia */}
-              <button
-                onClick={() => {
-                  toggleIncidencia();
-                  setMenuHerramientasAbierto(false);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 14px',
-                  borderRadius: 14,
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--ios-text-primary, #F8FAFC)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  fontFamily: 'var(--ios-font)',
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                }}
-              >
-                <AlertTriangle size={16} color="#FF3B30" />
-                <span>Reportar Incidencia</span>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* ═══════ PESTAÑA / PÍLDORA DESLIZANTE EN EL BORDE IZQUIERDO SUPERIOR ═══════ */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 16,
+          top: '50%',
           left: 0,
+          transform: 'translateY(-50%)',
           zIndex: 45,
         }}
       >
         <AnimatePresence mode="wait">
           {!leyendaAbierta ? (
-            /* 🔒 ESTADO 1 · CERRADO: Pestaña pequeña en el borde izquierdo con flechita "›" */
+            /* 🔒 ESTADO 1 · CERRADO: Flechita colapsada en el centro del borde izquierdo "›" */
             <motion.button
-              key="closed-tab"
-              initial={{ x: -20, opacity: 0 }}
+              key="closed-edge-tab"
+              initial={{ x: -30, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -20, opacity: 0 }}
+              exit={{ x: -30, opacity: 0 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
               onClick={() => {
                 setLeyendaAbierta(true);
@@ -631,285 +438,216 @@ export default function RepartidorServicio() {
                   try { navigator.vibrate(12); } catch {}
                 }
               }}
-              aria-label="Abrir leyenda del mapa"
+              aria-label="Abrir panel de herramientas y servicios"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 5,
-                padding: '8px 10px 8px 12px',
+                gap: 6,
+                padding: '14px 12px 14px 14px',
                 borderRadius: '0 100px 100px 0',
-                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 92%, transparent)',
+                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
                 backdropFilter: 'saturate(200%) blur(24px)',
                 WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 30%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 40%, transparent)',
                 borderLeft: 'none',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4), 0 0 16px color-mix(in srgb, var(--ios-blue, #0066FF) 20%, transparent)',
                 color: 'var(--ios-text-primary, #F8FAFC)',
                 cursor: 'pointer',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 3,
-                }}
-              >
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34C759' }} />
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0066FF' }} />
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF3B30' }} />
-              </span>
-              <ChevronRight size={16} strokeWidth={2.5} style={{ color: 'var(--ios-blue, #0066FF)' }} />
+              <ChevronRight size={20} strokeWidth={3} style={{ color: '#0066FF' }} />
             </motion.button>
           ) : (
-            /* 🔓 ESTADO 2 · ABIERTO: Píldora horizontal desplegada con Leyenda + Chat + Incidencias */
+            /* 🔓 ESTADO 2 · ABIERTO: Cápsula Larga Horizontal casi de lado a lado */
             <motion.div
-              key="open-pill"
-              initial={{ x: -100, opacity: 0, scale: 0.95 }}
+              key="open-edge-capsule"
+              initial={{ x: -200, opacity: 0, scale: 0.92 }}
               animate={{ x: 12, opacity: 1, scale: 1 }}
-              exit={{ x: -100, opacity: 0, scale: 0.95 }}
+              exit={{ x: -200, opacity: 0, scale: 0.92 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
-                padding: '8px 14px',
+                justifyContent: 'space-between',
+                gap: 12,
+                padding: '10px 16px',
                 borderRadius: 100,
-                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
+                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 96%, transparent)',
                 backdropFilter: 'saturate(200%) blur(28px)',
                 WebkitBackdropFilter: 'saturate(200%) blur(28px)',
-                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 35%, transparent)',
-                boxShadow: '0 12px 36px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--ios-blue, #0066FF) 15%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 40%, transparent)',
+                boxShadow: '0 16px 40px rgba(0, 0, 0, 0.45), 0 0 24px color-mix(in srgb, var(--ios-blue, #0066FF) 20%, transparent)',
+                width: 'calc(100vw - 32px)',
+                maxWidth: 860,
                 zIndex: 50,
               }}
             >
-              {/* 1. Leyenda de colores */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  fontFamily: 'var(--ios-font)',
-                  color: 'var(--ios-text-primary, #F8FAFC)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 6px #34C759' }} />
-                  TÚ
-                </span>
-                <span style={{ opacity: 0.3 }}>•</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 6px #0066FF' }} />
-                  RECOGER
-                </span>
-                <span style={{ opacity: 0.3 }}>•</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF3B30', boxShadow: '0 0 6px #FF3B30' }} />
-                  ENTREGAR
-                </span>
+              {/* Left group: Services summary + Map Legend */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, overflowX: 'auto', scrollbarWidth: 'none' }}>
+                {/* 1. INFORMACIÓN DE SERVICIOS ACTIVOS */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 10px',
+                    borderRadius: 100,
+                    background: 'rgba(0, 102, 255, 0.18)',
+                    color: '#0066FF',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Bike size={14} />
+                  <span>({ordenesActivas.length}/3)</span>
+                  {ordenActiva && <span style={{ opacity: 0.8 }}>#{ordenActiva.id}</span>}
+                </div>
+
+                <div style={{ width: 1, height: 16, background: 'color-mix(in srgb, var(--ios-text-primary) 15%, transparent)', flexShrink: 0 }} />
+
+                {/* 2. LEYENDA DE PUNTOS DEL MAPA */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    fontFamily: 'var(--ios-font)',
+                    color: 'var(--ios-text-primary, #F8FAFC)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 6px #34C759' }} />
+                    YO
+                  </span>
+                  <span style={{ opacity: 0.3 }}>•</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 6px #0066FF' }} />
+                    RECOGER
+                  </span>
+                  <span style={{ opacity: 0.3 }}>•</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF9500', boxShadow: '0 0 6px #FF9500' }} />
+                    TIENDA
+                  </span>
+                  <span style={{ opacity: 0.3 }}>•</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF3B30', boxShadow: '0 0 6px #FF3B30' }} />
+                    ENTREGAR
+                  </span>
+                </div>
               </div>
 
-              <div style={{ width: 1, height: 16, background: 'color-mix(in srgb, var(--ios-text-primary) 15%, transparent)' }} />
+              {/* Right group: Action buttons (Chat + Incidencia + Modulo Gestion + Close) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                {/* 3. BOTÓN CHAT */}
+                {ordenActiva && (
+                  <button
+                    onClick={() => {
+                      toggleChat(ordenActiva.id);
+                      setLeyendaAbierta(false);
+                    }}
+                    aria-label="Abrir Chat"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '6px 12px',
+                      borderRadius: 100,
+                      border: 'none',
+                      background: 'rgba(52, 199, 89, 0.2)',
+                      color: '#34C759',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <MessageSquare size={13} />
+                    <span>Chat</span>
+                  </button>
+                )}
 
-              {/* 2. Botón Chat */}
-              {ordenActiva && (
+                {/* 4. BOTÓN REPORTAR INCIDENCIA */}
                 <button
-                  onClick={() => toggleChat(ordenActiva.id)}
-                  aria-label="Abrir Chat"
+                  onClick={() => {
+                    toggleIncidencia();
+                    setLeyendaAbierta(false);
+                  }}
+                  aria-label="Reportar Incidencia"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 4,
-                    padding: '4px 10px',
+                    padding: '6px 12px',
                     borderRadius: 100,
                     border: 'none',
-                    background: 'rgba(52, 199, 89, 0.18)',
-                    color: '#34C759',
+                    background: 'rgba(255, 59, 48, 0.2)',
+                    color: '#FF3B30',
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     cursor: 'pointer',
-                    fontFamily: 'var(--ios-font)',
                   }}
                 >
-                  <MessageSquare size={13} />
-                  <span>Chat</span>
+                  <AlertTriangle size={13} />
+                  <span>Incidencias</span>
                 </button>
-              )}
 
-              {/* 3. Botón Incidencias */}
-              <button
-                onClick={() => toggleIncidencia()}
-                aria-label="Reportar Incidencia"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '4px 10px',
-                  borderRadius: 100,
-                  border: 'none',
-                  background: 'rgba(255, 59, 48, 0.18)',
-                  color: '#FF3B30',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--ios-font)',
-                }}
-              >
-                <AlertTriangle size={13} />
-                <span>Incidencias</span>
-              </button>
+                {/* 5. BOTÓN DIRECTO AL MÓDULO DE GESTIÓN */}
+                <button
+                  onClick={() => {
+                    setPantalla('historial');
+                    setLeyendaAbierta(false);
+                  }}
+                  aria-label="Abrir Módulo de Gestión de Ofertas"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '6px 14px',
+                    borderRadius: 100,
+                    border: 'none',
+                    background: '#0066FF',
+                    color: '#FFFFFF',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(0, 102, 255, 0.4)',
+                  }}
+                >
+                  <Zap size={13} />
+                  <span>Ofertas / Servicios</span>
+                </button>
 
-              {/* Botón cerrar "‹" */}
-              <button
-                onClick={() => setLeyendaAbierta(false)}
-                aria-label="Cerrar panel"
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'color-mix(in srgb, var(--ios-text-primary) 10%, transparent)',
-                  color: 'var(--ios-text-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  marginLeft: 2,
-                }}
-              >
-                <ChevronLeft size={16} strokeWidth={2.5} />
-              </button>
+                {/* 6. BOTÓN CERRAR "‹" */}
+                <button
+                  onClick={() => setLeyendaAbierta(false)}
+                  aria-label="Cerrar cápsula"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'color-mix(in srgb, var(--ios-text-primary) 12%, transparent)',
+                    color: 'var(--ios-text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    marginLeft: 2,
+                  }}
+                >
+                  <ChevronLeft size={18} strokeWidth={2.5} />
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
-      {/* ═══════ Multipedidos & Optimización de Ruta — iOS glass bar ═══════ */}
-      {conectado && (ordenesActivas || []).length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 56,
-            left: 16,
-            right: 16,
-            zIndex: 10,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-            padding: '8px 12px',
-            borderRadius: 'var(--ios-radius-md, 14px)',
-            background: 'color-mix(in srgb, var(--ios-bg-elevated) 92%, transparent)',
-            backdropFilter: 'saturate(180%) blur(20px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-            border: '0.5px solid var(--ios-separator)',
-            boxShadow: 'var(--ios-shadow-sm)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto' }}>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'var(--ios-blue)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                whiteSpace: 'nowrap',
-                fontFamily: 'var(--ios-font)',
-              }}
-            >
-              Pedidos ({ordenesActivas.length}/3):
-            </span>
-            {ordenesActivas.map((ord, idx) => {
-              const isSelected = ordenActiva?.id === ord.id;
-              return (
-                <button
-                  key={ord.id}
-                  onClick={() => seleccionarOrdenActiva(ord.id)}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: isSelected ? 'var(--ios-blue)' : 'var(--ios-bg-secondary)',
-                    color: isSelected ? '#FFF' : 'var(--ios-text-primary)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    fontFamily: 'var(--ios-font)',
-                  }}
-                >
-                  #{idx + 1} {ord.id}
-                </button>
-              );
-            })}
-          </div>
-
-          {ordenesActivas.length > 1 && (
-            <button
-              onClick={() => {
-                optimizarRutaAutomatica();
-                showSnackbar({ message: 'Ruta optimizada: ordenada por menor distancia.' });
-              }}
-              style={{
-                padding: '5px 10px',
-                borderRadius: 8,
-                border: 'none',
-                background: 'var(--ios-orange, #FF9500)',
-                color: '#FFF',
-                fontSize: 11,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                whiteSpace: 'nowrap',
-                fontFamily: 'var(--ios-font)',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <Zap size={12} />
-              Optimizar
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* ═══════ FAB: Chat (top-right) when active order — iOS styled ═══════ */}
-      {ordenActiva && (
-        <motion.button
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          onClick={() => toggleChat(ordenActiva.id)}
-          aria-label="Chat con cliente"
-          style={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            zIndex: 10,
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            border: 'none',
-            background: 'var(--ios-bg-elevated, #FFFFFF)',
-            color: 'var(--ios-blue, #007AFF)',
-            boxShadow: 'var(--ios-shadow-md)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-        >
-          <MessageSquare size={22} />
-        </motion.button>
-      )}
 
       {/* ═══════ DESCONECTADO ═══════ */}
       {estado === 'DESCONECTADO' && !mapaExpandido && (
