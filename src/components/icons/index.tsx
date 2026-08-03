@@ -256,6 +256,7 @@ export {
   IconShoppingCart as ShoppingCart,
   IconArrowsShuffle as Shuffle,
   IconAdjustmentsHorizontal as SlidersHorizontal,
+  IconAdjustmentsHorizontal as Sliders,
   IconDeviceMobile as Smartphone,
   IconSparkles as Sparkles,
   IconStar as Star,

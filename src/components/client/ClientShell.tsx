@@ -182,11 +182,12 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'inicio', label: 'Inicio', icon: <Home size={24} strokeWidth={1.8} /> },
-  { key: 'envios', label: 'Envíos', icon: <Package size={24} strokeWidth={1.8} /> },
-  { key: 'pedidos', label: 'Pedidos', icon: <ShoppingCart size={24} strokeWidth={1.8} /> },
-  { key: 'puntos', label: 'Billetera', icon: <Wallet size={24} strokeWidth={1.8} /> },
-  { key: 'perfil', label: 'Perfil', icon: <User size={24} strokeWidth={1.8} /> },
+  { key: 'inicio', label: 'Inicio', icon: <Home size={20} strokeWidth={2} /> },
+  { key: 'explorar', label: 'Explorar', icon: <ShoppingBag size={20} strokeWidth={2} /> },
+  { key: 'envios', label: 'Envíos', icon: <Package size={20} strokeWidth={2} /> },
+  { key: 'pedidos', label: 'Pedidos', icon: <ShoppingCart size={20} strokeWidth={2} /> },
+  { key: 'puntos', label: 'Billetera', icon: <Wallet size={20} strokeWidth={2} /> },
+  { key: 'perfil', label: 'Perfil', icon: <User size={20} strokeWidth={2} /> },
 ];
 
 /* ─── iOS Large Title map (header) ─── */
@@ -550,50 +551,19 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             transition: 'all 0.3s ease',
           }}
         >
-          {/* Left: Brand Logo & Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
+          {/* Left: Clean Module Title (Logo removed as requested) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: 'var(--primario, #0066FF)',
-                color: '#FFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                fontSize: 15,
                 fontWeight: 800,
-                fontSize: 14,
+                color: 'var(--text)',
                 fontFamily: "'Syne', sans-serif",
-                boxShadow: '0 2px 8px color-mix(in srgb, var(--primario) 40%, transparent)',
+                letterSpacing: '-0.01em',
               }}
             >
-              LF
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: 'var(--text)',
-                  fontFamily: "'Syne', sans-serif",
-                  lineHeight: 1.1,
-                }}
-              >
-                LogiFast
-              </span>
-              <span
-                style={{
-                  fontSize: 10,
-                  color: 'var(--primario)',
-                  fontWeight: 600,
-                  fontFamily: "'DM Sans', sans-serif",
-                  letterSpacing: '0.02em',
-                }}
-              >
-                {iosTitle}
-              </span>
-            </div>
+              {iosTitle}
+            </span>
           </div>
 
           {/* Right Actions: Theme + Bell + Cart + Avatar */}
@@ -709,223 +679,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 </span>
               )}
             </button>
-
-            {/* Avatar */}
-            <div ref={avatarRef} style={{ position: 'relative' }}>
-              <button
-                onClick={() => {
-                  setAvatarOpen(!avatarOpen);
-                  setClientNotifOpen(false);
-                }}
-                aria-label="Menú de usuario"
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'var(--primario)',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: 12,
-                  fontFamily: "'Syne', sans-serif",
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px color-mix(in srgb, var(--primario) 40%, transparent)',
-                }}
-              >
-                {initials}
-              </button>
-
-              {/* Avatar Dropdown */}
-              <AnimatePresence>
-                {avatarOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    style={{
-                      position: 'absolute',
-                      top: 46,
-                      right: 0,
-                      width: 220,
-                      borderRadius: 'var(--ios-radius-md)',
-                      background: 'var(--ios-bg-elevated)',
-                      border: '0.5px solid var(--ios-separator)',
-                      boxShadow: 'var(--ios-shadow-lg)',
-                      overflow: 'hidden',
-                      zIndex: 60,
-                    }}
-                  >
-                    {/* User info */}
-                    <div
-                      style={{
-                        padding: '14px 16px',
-                        borderBottom: '0.5px solid var(--ios-separator)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 15,
-                          fontWeight: 600,
-                          color: 'var(--ios-text-primary)',
-                          lineHeight: 1.3,
-                          fontFamily: 'var(--ios-font)',
-                        }}
-                      >
-                        {userName}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: 'var(--ios-text-tertiary)',
-                          marginTop: 2,
-                          fontFamily: 'var(--ios-font)',
-                        }}
-                      >
-                        Cliente
-                      </div>
-                    </div>
-
-                    {/* Menu items */}
-                    <div style={{ padding: '6px 6px' }}>
-                      <button
-                        onClick={() => {
-                          handleNav('perfil');
-                          setAvatarOpen(false);
-                        }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '10px 12px',
-                          border: 'none',
-                          borderRadius: 'var(--ios-radius-sm)',
-                          background: 'transparent',
-                          color: 'var(--ios-text-primary)',
-                          fontSize: 15,
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          fontFamily: 'var(--ios-font)',
-                          transition: 'background 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                        }}
-                      >
-                        <User size={16} strokeWidth={1.8} style={{ color: 'var(--ios-text-tertiary)' }} />
-                        Mi perfil
-                      </button>
-
-                      <button
-                        onClick={() => setAvatarOpen(false)}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '10px 12px',
-                          border: 'none',
-                          borderRadius: 'var(--ios-radius-sm)',
-                          background: 'transparent',
-                          color: 'var(--ios-text-primary)',
-                          fontSize: 15,
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          fontFamily: 'var(--ios-font)',
-                          transition: 'background 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'var(--ios-bg-secondary)';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                        }}
-                      >
-                        <Settings size={16} strokeWidth={1.8} style={{ color: 'var(--ios-text-tertiary)' }} />
-                        Configuración
-                      </button>
-
-                      <div
-                        style={{
-                          height: 0.5,
-                          background: 'var(--ios-separator)',
-                          margin: '4px 0',
-                        }}
-                      />
-
-                      <button
-                        onClick={() => {
-                          setAvatarOpen(false);
-                          onLogout();
-                        }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '10px 12px',
-                          border: 'none',
-                          borderRadius: 'var(--ios-radius-sm)',
-                          background: 'transparent',
-                          color: 'var(--ios-red)',
-                          fontSize: 15,
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          fontFamily: 'var(--ios-font)',
-                          transition: 'background 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background =
-                            'color-mix(in srgb, var(--ios-red) 8%, transparent)';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                        }}
-                      >
-                        <LogOut size={16} strokeWidth={1.8} />
-                        Cerrar sesión
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* iOS Large Title — 34px, font-weight 700 */}
-          <div
-            className="lf-ios-large-title-wrap"
-            style={{
-              padding: '6px 16px 10px',
-              maxWidth: 960,
-              margin: '0 auto',
-              width: '100%',
-            }}
-          >
-            <motion.h1
-              key={iosTitle}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              style={{
-                fontFamily: 'var(--ios-font)',
-                fontSize: 34,
-                fontWeight: 700,
-                color: 'var(--ios-text-primary)',
-                letterSpacing: '-0.02em',
-                margin: 0,
-                lineHeight: 1.1,
-              }}
-            >
-              {iosTitle}
-            </motion.h1>
           </div>
         </header>
 
@@ -1008,7 +761,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                   borderRadius: 100,
                   border: 'none',
                   background: 'transparent',
-                  color: isActive ? '#FFFFFF' : 'var(--text-muted)',
+                  color: isActive ? '#FFFFFF' : 'color-mix(in srgb, var(--text, #F8FAFC) 75%, transparent)',
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: 700,

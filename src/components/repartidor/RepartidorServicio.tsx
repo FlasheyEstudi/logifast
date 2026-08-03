@@ -19,6 +19,9 @@ import {
   Target,
   Maximize2,
   Minimize2,
+  Sliders,
+  ChevronRight,
+  Play,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
@@ -165,12 +168,16 @@ export default function RepartidorServicio() {
     confirmarEntrega,
     toggleChat,
     toggleIncidencia,
+    simularMovimiento,
   } = useRepartidorStore();
 
   const showSnackbar = useRepartidorSnackbar();
 
   /* ─── State for 100% Fullscreen Map mode ─── */
   const [mapaExpandido, setMapaExpandido] = useState(false);
+
+  /* ─── State for Collapsible Liquid Glass Menu (Left-Center) ─── */
+  const [menuHerramientasAbierto, setMenuHerramientasAbierto] = useState(false);
 
   /* ─── Real route polyline (OSRM, with straight-line fallback) ─── */
   const [rutaCoordenadas, setRutaCoordenadas] = useState<[number, number][]>([]);
@@ -400,41 +407,201 @@ export default function RepartidorServicio() {
         />
       </div>
 
-      {/* ═══════ BOTÓN DESTACADO: MODO ENTREGA (MAPA 100% PANTALLA) ═══════ */}
-      <motion.button
-        whileTap={{ scale: 0.94 }}
-        onClick={() => {
-          setMapaExpandido(!mapaExpandido);
-          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-            try { navigator.vibrate(15); } catch {}
-          }
-        }}
+      {/* ═══════ MENÚ FLOTANTE LÍQUIDO COLAPSABLE (IZQUIERDA CENTRO) ═══════ */}
+      <div
         style={{
           position: 'absolute',
-          top: 16,
-          right: ordenActiva ? 72 : 16,
-          zIndex: 40,
-          padding: '8px 14px',
-          borderRadius: 100,
-          background: mapaExpandido ? 'var(--ios-blue, #007AFF)' : 'color-mix(in srgb, var(--ios-bg-elevated) 90%, transparent)',
-          color: mapaExpandido ? '#FFFFFF' : 'var(--ios-text-primary)',
-          backdropFilter: 'saturate(180%) blur(20px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-          border: '0.5px solid var(--ios-separator)',
-          boxShadow: 'var(--ios-shadow-md)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          fontSize: 12,
-          fontWeight: 700,
-          fontFamily: 'var(--ios-font)',
-          WebkitTapHighlightColor: 'transparent',
+          top: '48%',
+          left: 16,
+          transform: 'translateY(-50%)',
+          zIndex: 45,
         }}
       >
-        {mapaExpandido ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        <span>{mapaExpandido ? 'Restaurar Vista' : 'Mapa 100% Pantalla'}</span>
-      </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.92 }}
+          onClick={() => {
+            setMenuHerramientasAbierto(!menuHerramientasAbierto);
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              try { navigator.vibrate(15); } catch {}
+            }
+          }}
+          aria-label="Abrir menú de herramientas"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 16px',
+            borderRadius: 100,
+            background: menuHerramientasAbierto
+              ? '#0066FF'
+              : 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 92%, transparent)',
+            color: '#FFFFFF',
+            backdropFilter: 'saturate(200%) blur(24px)',
+            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
+            border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 40%, transparent)',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35), 0 0 16px color-mix(in srgb, var(--ios-blue, #0066FF) 20%, transparent)',
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 700,
+            fontFamily: 'var(--ios-font)',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <Sliders size={18} />
+          <span>Herramientas</span>
+          <ChevronRight
+            size={16}
+            style={{
+              transform: menuHerramientasAbierto ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.25s ease',
+            }}
+          />
+        </motion.button>
+
+        {/* Liquid Glass Collapsible Popup Options */}
+        <AnimatePresence>
+          {menuHerramientasAbierto && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.88, x: -10, y: 10 }}
+              animate={{ opacity: 1, scale: 1, x: 0, y: 10 }}
+              exit={{ opacity: 0, scale: 0.88, x: -10, y: 10 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                width: 230,
+                borderRadius: 20,
+                padding: 8,
+                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
+                backdropFilter: 'saturate(200%) blur(28px)',
+                WebkitBackdropFilter: 'saturate(200%) blur(28px)',
+                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 30%, transparent)',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), 0 0 24px color-mix(in srgb, var(--ios-blue, #0066FF) 15%, transparent)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4,
+                zIndex: 50,
+              }}
+            >
+              {/* Option 1: Mapa 100% Pantalla / Restaurar */}
+              <button
+                onClick={() => {
+                  setMapaExpandido(!mapaExpandido);
+                  setMenuHerramientasAbierto(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 14px',
+                  borderRadius: 14,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--ios-text-primary, #F8FAFC)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  fontFamily: 'var(--ios-font)',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
+                {mapaExpandido ? <Minimize2 size={16} color="#0066FF" /> : <Maximize2 size={16} color="#0066FF" />}
+                <span>{mapaExpandido ? 'Restaurar Vista' : 'Mapa 100% Pantalla'}</span>
+              </button>
+
+              {/* Option 2: Chat con Cliente (if active order) */}
+              {ordenActiva && (
+                <button
+                  onClick={() => {
+                    toggleChat(ordenActiva.id);
+                    setMenuHerramientasAbierto(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--ios-text-primary, #F8FAFC)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: 'var(--ios-font)',
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
+                  }}
+                >
+                  <MessageSquare size={16} color="#34C759" />
+                  <span>Chat con Cliente</span>
+                </button>
+              )}
+
+              {/* Option 3: Optimizar Ruta (if multipedidos) */}
+              {ordenesActivas.length > 1 && (
+                <button
+                  onClick={() => {
+                    optimizarRutaAutomatica();
+                    showSnackbar({ message: 'Ruta optimizada por menor distancia.' });
+                    setMenuHerramientasAbierto(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--ios-text-primary, #F8FAFC)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: 'var(--ios-font)',
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
+                  }}
+                >
+                  <Zap size={16} color="#FF9500" />
+                  <span>Optimizar Ruta</span>
+                </button>
+              )}
+
+
+
+              {/* Option 5: Reportar Incidencia */}
+              <button
+                onClick={() => {
+                  toggleIncidencia();
+                  setMenuHerramientasAbierto(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 14px',
+                  borderRadius: 14,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--ios-text-primary, #F8FAFC)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  fontFamily: 'var(--ios-font)',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
+                <AlertTriangle size={16} color="#FF3B30" />
+                <span>Reportar Incidencia</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* ═══════ Status chip (top-left) — iOS pill ═══════ */}
       {conectado && (

@@ -694,20 +694,17 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           />
         </div>
 
-        {/* ═══════ HEADER / LAYOUT FLOTANTE ESTILO LÍQUIDO (REPARTIDOR) ═══════ */}
+        {/* ═══════ REPARTIDOR TOP-RIGHT ELEGANT FLOATING CAPSULE ═══════ */}
         <header
           style={{
             position: 'fixed',
             top: 'calc(env(safe-area-inset-top, 12px) + 8px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            right: 16,
             zIndex: 9980,
-            width: 'calc(100vw - 24px)',
-            maxWidth: 960,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '8px 16px',
+            gap: 6,
+            padding: '5px 8px 5px 6px',
             borderRadius: 100,
             background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 88%, transparent)',
             backdropFilter: 'saturate(200%) blur(24px)',
@@ -717,7 +714,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
             transition: 'all 0.3s ease',
           }}
         >
-          {/* Connection Pill */}
+          {/* Connection status pill */}
           <button
             onClick={handleToggleConnection}
             aria-label={conectado ? 'Conectado — tocar para desconectar' : 'Desconectado — tocar para conectar'}
@@ -725,7 +722,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              padding: '6px 14px',
+              padding: '6px 12px',
               borderRadius: 100,
               border: 'none',
               background: conectado ? 'rgba(52, 199, 89, 0.18)' : 'rgba(255, 59, 48, 0.18)',
@@ -750,52 +747,26 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
             {conectado ? 'En línea' : 'Desconectado'}
           </button>
 
-          {/* Right Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                border: 'none',
-                background: 'color-mix(in srgb, var(--ios-text-primary) 10%, transparent)',
-                color: 'var(--ios-text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}
-            </button>
-
-            {/* Avatar button */}
-            <button
-              onClick={() => handleNav('perfil')}
-              aria-label="Ver perfil"
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                border: 'none',
-                background: 'var(--ios-blue, #0066FF)',
-                color: '#fff',
-                fontFamily: 'var(--ios-font)',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px color-mix(in srgb, var(--ios-blue, #0066FF) 40%, transparent)',
-              }}
-            >
-              {avatarInitials}
-            </button>
-          </div>
+          {/* Theme Toggle (Sun/Moon) */}
+          <button
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              border: 'none',
+              background: 'color-mix(in srgb, var(--ios-text-primary) 10%, transparent)',
+              color: 'var(--ios-text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
+          </button>
         </header>
 
         {/* ═══════ CONTENT AREA ═══════ */}
