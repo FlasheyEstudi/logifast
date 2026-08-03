@@ -290,21 +290,7 @@ export default function RepartidorMap({
         }
       `}</style>
 
-      {/* Floating Map Legend */}
-      <div className="map-legend-box">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A' }} />
-          <span>TÚ</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: pickupColor }} />
-          <span>{pickupLabel}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#DC2626' }} />
-          <span>ENTREGAR</span>
-        </div>
-      </div>
+
 
       <Map
         ref={mapRef}

@@ -413,240 +413,51 @@ export default function RepartidorServicio() {
         />
       </div>
 
-      {/* ═══════ CÁPSULA / PÍLDORA DESLIZANTE EN EL BORDE IZQUIERDO (CENTRO VERTICAL) ═══════ */}
+      {/* ═══════ LEYENDA REUBICADA Y INTEGRADA DISCRETA ARRIBA ═══════ */}
       <div
         style={{
           position: 'absolute',
-          top: '50%',
-          left: 0,
-          transform: 'translateY(-50%)',
-          zIndex: 45,
+          top: 'calc(env(safe-area-inset-top, 12px) + 12px)',
+          left: 16,
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '6px 14px',
+          borderRadius: 100,
+          background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 92%, transparent)',
+          backdropFilter: 'saturate(200%) blur(24px)',
+          WebkitBackdropFilter: 'saturate(200%) blur(24px)',
+          border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 30%, transparent)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+          fontSize: 11,
+          fontWeight: 700,
+          fontFamily: 'var(--ios-font, sans-serif)',
+          color: 'var(--ios-text-primary, #F8FAFC)',
+          maxWidth: 'calc(100vw - 180px)',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
         }}
       >
-        <AnimatePresence mode="wait">
-          {!leyendaAbierta ? (
-            /* 🔒 ESTADO 1 · CERRADO: Flechita colapsada en el centro del borde izquierdo "›" */
-            <motion.button
-              key="closed-edge-tab"
-              initial={{ x: -30, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -30, opacity: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              onClick={() => {
-                setLeyendaAbierta(true);
-                if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-                  try { navigator.vibrate(12); } catch {}
-                }
-              }}
-              aria-label="Abrir panel de herramientas y servicios"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '14px 12px 14px 14px',
-                borderRadius: '0 100px 100px 0',
-                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
-                backdropFilter: 'saturate(200%) blur(24px)',
-                WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 40%, transparent)',
-                borderLeft: 'none',
-                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4), 0 0 16px color-mix(in srgb, var(--ios-blue, #0066FF) 20%, transparent)',
-                color: 'var(--ios-text-primary, #F8FAFC)',
-                cursor: 'pointer',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <ChevronRight size={20} strokeWidth={3} style={{ color: '#0066FF' }} />
-            </motion.button>
-          ) : (
-            /* 🔓 ESTADO 2 · ABIERTO: Cápsula Larga Horizontal casi de lado a lado */
-            <motion.div
-              key="open-edge-capsule"
-              initial={{ x: -200, opacity: 0, scale: 0.92 }}
-              animate={{ x: 12, opacity: 1, scale: 1 }}
-              exit={{ x: -200, opacity: 0, scale: 0.92 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                padding: '10px 16px',
-                borderRadius: 100,
-                background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 96%, transparent)',
-                backdropFilter: 'saturate(200%) blur(28px)',
-                WebkitBackdropFilter: 'saturate(200%) blur(28px)',
-                border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 40%, transparent)',
-                boxShadow: '0 16px 40px rgba(0, 0, 0, 0.45), 0 0 24px color-mix(in srgb, var(--ios-blue, #0066FF) 20%, transparent)',
-                width: 'calc(100vw - 32px)',
-                maxWidth: 860,
-                zIndex: 50,
-              }}
-            >
-              {/* Left group: Services summary + Map Legend */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, overflowX: 'auto', scrollbarWidth: 'none' }}>
-                {/* 1. INFORMACIÓN DE SERVICIOS ACTIVOS */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '4px 10px',
-                    borderRadius: 100,
-                    background: 'rgba(0, 102, 255, 0.18)',
-                    color: '#0066FF',
-                    fontSize: 12,
-                    fontWeight: 800,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  <Bike size={14} />
-                  <span>({ordenesActivas.length}/3)</span>
-                  {ordenActiva && <span style={{ opacity: 0.8 }}>#{ordenActiva.id}</span>}
-                </div>
-
-                <div style={{ width: 1, height: 16, background: 'color-mix(in srgb, var(--ios-text-primary) 15%, transparent)', flexShrink: 0 }} />
-
-                {/* 2. LEYENDA DE PUNTOS DEL MAPA */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    fontFamily: 'var(--ios-font)',
-                    color: 'var(--ios-text-primary, #F8FAFC)',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 6px #34C759' }} />
-                    YO
-                  </span>
-                  <span style={{ opacity: 0.3 }}>•</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 6px #0066FF' }} />
-                    RECOGER
-                  </span>
-                  <span style={{ opacity: 0.3 }}>•</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF9500', boxShadow: '0 0 6px #FF9500' }} />
-                    TIENDA
-                  </span>
-                  <span style={{ opacity: 0.3 }}>•</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF3B30', boxShadow: '0 0 6px #FF3B30' }} />
-                    ENTREGAR
-                  </span>
-                </div>
-              </div>
-
-              {/* Right group: Action buttons (Chat + Incidencia + Modulo Gestion + Close) */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                {/* 3. BOTÓN CHAT */}
-                {ordenActiva && (
-                  <button
-                    onClick={() => {
-                      toggleChat(ordenActiva.id);
-                      setLeyendaAbierta(false);
-                    }}
-                    aria-label="Abrir Chat"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      padding: '6px 12px',
-                      borderRadius: 100,
-                      border: 'none',
-                      background: 'rgba(52, 199, 89, 0.2)',
-                      color: '#34C759',
-                      fontSize: 11,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <MessageSquare size={13} />
-                    <span>Chat</span>
-                  </button>
-                )}
-
-                {/* 4. BOTÓN REPORTAR INCIDENCIA */}
-                <button
-                  onClick={() => {
-                    toggleIncidencia();
-                    setLeyendaAbierta(false);
-                  }}
-                  aria-label="Reportar Incidencia"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '6px 12px',
-                    borderRadius: 100,
-                    border: 'none',
-                    background: 'rgba(255, 59, 48, 0.2)',
-                    color: '#FF3B30',
-                    fontSize: 11,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <AlertTriangle size={13} />
-                  <span>Incidencias</span>
-                </button>
-
-                {/* 5. BOTÓN DIRECTO AL MÓDULO DE GESTIÓN */}
-                <button
-                  onClick={() => {
-                    setPantalla('historial');
-                    setLeyendaAbierta(false);
-                  }}
-                  aria-label="Abrir Módulo de Gestión de Ofertas"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '6px 14px',
-                    borderRadius: 100,
-                    border: 'none',
-                    background: '#0066FF',
-                    color: '#FFFFFF',
-                    fontSize: 11,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(0, 102, 255, 0.4)',
-                  }}
-                >
-                  <Zap size={13} />
-                  <span>Ofertas / Servicios</span>
-                </button>
-
-                {/* 6. BOTÓN CERRAR "‹" */}
-                <button
-                  onClick={() => setLeyendaAbierta(false)}
-                  aria-label="Cerrar cápsula"
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: 'color-mix(in srgb, var(--ios-text-primary) 12%, transparent)',
-                    color: 'var(--ios-text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    marginLeft: 2,
-                  }}
-                >
-                  <ChevronLeft size={18} strokeWidth={2.5} />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 6px #34C759' }} />
+          TU UBICACIÓN
+        </span>
+        <span style={{ opacity: 0.3, flexShrink: 0 }}>•</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 6px #0066FF' }} />
+          RETIRAR / RECOGER
+        </span>
+        <span style={{ opacity: 0.3, flexShrink: 0 }}>•</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF9500', boxShadow: '0 0 6px #FF9500' }} />
+          PEDIDO / TIENDA
+        </span>
+        <span style={{ opacity: 0.3, flexShrink: 0 }}>•</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF3B30', boxShadow: '0 0 6px #FF3B30' }} />
+          ENTREGAR / DESTINO
+        </span>
       </div>
 
       {/* ═══════ DESCONECTADO ═══════ */}

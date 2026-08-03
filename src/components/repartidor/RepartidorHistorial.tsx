@@ -95,28 +95,6 @@ export default function RepartidorHistorial() {
         lista.push(of);
       }
     });
-    // Mock sample offer if empty for instant preview & testing
-    if (lista.length === 0) {
-      lista.push({
-        id: 'OF-8842',
-        tipo: 'envio',
-        cliente: 'Carlos Mendoza',
-        clienteTelefono: '+505 8888-1234',
-        origen: 'Altamira, Managua (Super Express)',
-        destino: 'Bello Horizonte, Managua',
-        origenLat: 12.1245,
-        origenLng: -86.2412,
-        destinoLat: 12.1388,
-        destinoLng: -86.2295,
-        paquete: 'Documentos urgentes',
-        tamano: 'Mediano',
-        metodoPago: 'efectivo',
-        monto: 150,
-        ganancia: 120,
-        kmEstimados: 3.8,
-        tiempoEstimado: 15,
-      });
-    }
     return lista;
   }, [ordenAsignadaPendiente, ofertasDisponibles]);
 
@@ -269,7 +247,7 @@ export default function RepartidorHistorial() {
                         textTransform: 'uppercase',
                       }}
                     >
-                      {oferta.tipo === 'compra' ? '🛒 PEDIDO TIENDA' : '📦 ENVÍO MENSAJERÍA'}
+                      {oferta.tipo === 'compra' ? 'PEDIDO TIENDA' : 'ENVÍO MENSAJERÍA'}
                     </span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>
                       #{oferta.id}
@@ -307,8 +285,8 @@ export default function RepartidorHistorial() {
                 {/* Footer metrics & actions */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-                    <span>📍 {oferta.kmEstimados} km</span>
-                    <span>⏱️ {oferta.tiempoEstimado} min</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {oferta.kmEstimados} km</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {oferta.tiempoEstimado} min</span>
                   </div>
 
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -323,9 +301,13 @@ export default function RepartidorHistorial() {
                         fontSize: 12,
                         fontWeight: 700,
                         cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
                       }}
                     >
-                      ❌ Rechazar
+                      <X size={12} />
+                      Rechazar
                     </button>
 
                     <button
@@ -342,10 +324,14 @@ export default function RepartidorHistorial() {
                         fontSize: 12,
                         fontWeight: 800,
                         cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
                         boxShadow: '0 4px 12px rgba(52, 199, 89, 0.4)',
                       }}
                     >
-                      ✅ ACEPTAR
+                      <Check size={12} />
+                      ACEPTAR
                     </button>
                   </div>
                 </div>
@@ -424,8 +410,8 @@ export default function RepartidorHistorial() {
 
                   {/* Origen / Destino */}
                   <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>
-                    <div>📍 <strong>Origen:</strong> {ord.origen}</div>
-                    <div style={{ marginTop: 4 }}>🏁 <strong>Destino:</strong> {ord.destino}</div>
+                    <div><strong>Origen:</strong> {ord.origen}</div>
+                    <div style={{ marginTop: 4 }}><strong>Destino:</strong> {ord.destino}</div>
                   </div>
 
                   {/* Actions */}
@@ -445,9 +431,14 @@ export default function RepartidorHistorial() {
                         fontSize: 12,
                         fontWeight: 700,
                         cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
                       }}
                     >
-                      🗺️ Ver en Mapa
+                      <MapPin size={13} />
+                      <span>Ver en Mapa</span>
                     </button>
 
                     <button
@@ -463,7 +454,7 @@ export default function RepartidorHistorial() {
                         cursor: 'pointer',
                       }}
                     >
-                      📋 Detalles
+                      Detalles
                     </button>
 
                     <button
@@ -477,9 +468,13 @@ export default function RepartidorHistorial() {
                         fontSize: 12,
                         fontWeight: 700,
                         cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
                       }}
                     >
-                      💬 Chat
+                      <MessageSquare size={13} />
+                      <span>Chat</span>
                     </button>
                   </div>
                 </motion.div>
@@ -535,7 +530,7 @@ export default function RepartidorHistorial() {
                   >
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                        {s.tipo === 'compra' ? '🛒 PEDIDO' : '📦 ENVÍO'} #{s.ordenId}
+                        {s.tipo === 'compra' ? 'PEDIDO' : 'ENVÍO'} #{s.ordenId}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                         {s.origen} ➔ {s.destino}
