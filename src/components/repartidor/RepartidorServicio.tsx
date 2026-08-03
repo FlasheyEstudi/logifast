@@ -1475,6 +1475,7 @@ function OrdenMiniCard({
         marginBottom: 12,
       }}
     >
+      {/* Header: ID + Cliente + Badge */}
       <div
         style={{
           display: 'flex',
@@ -1492,8 +1493,9 @@ function OrdenMiniCard({
           </span>
           <span
             style={{
-              fontSize: 12,
-              color: 'var(--ios-text-tertiary)',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--ios-text-primary)',
               marginLeft: 8,
               fontFamily: 'var(--ios-font)',
             }}
@@ -1513,14 +1515,82 @@ function OrdenMiniCard({
               orden.tipo === 'compra' ? 'var(--ios-blue)' : 'var(--ios-purple, #AF52DE)',
             fontSize: 11,
             fontWeight: 700,
-            textTransform: 'capitalize',
+            textTransform: 'uppercase',
             fontFamily: 'var(--ios-font)',
           }}
         >
-          {orden.tipo}
+          {orden.tipo === 'compra' ? `Compra (${orden.tiendaNombre || 'Tienda'})` : 'Envío Directo'}
         </span>
       </div>
 
+      {/* DETALLES DE CARGA Y PAQUETE (Lo que estoy llevando) */}
+      <div
+        style={{
+          padding: '10px 12px',
+          borderRadius: 'var(--ios-radius-sm, 10px)',
+          background: 'color-mix(in srgb, var(--ios-bg-elevated) 80%, transparent)',
+          border: '0.5px solid var(--ios-separator)',
+          marginBottom: 10,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--ios-text-tertiary)',
+            textTransform: 'uppercase',
+            marginBottom: 4,
+            fontFamily: 'var(--ios-font)',
+          }}
+        >
+          Detalle del pedido / carga
+        </div>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--ios-text-primary)',
+            fontFamily: 'var(--ios-font)',
+            marginBottom: 4,
+          }}
+        >
+          {orden.paquete || orden.tiendaNombre || 'Paquete estándar'}
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {orden.tamano && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: 6,
+                background: 'rgba(0, 122, 255, 0.1)',
+                color: 'var(--ios-blue)',
+                fontFamily: 'var(--ios-font)',
+              }}
+            >
+              Tamaño: {orden.tamano}
+            </span>
+          )}
+          {orden.fragil && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 6,
+                background: 'rgba(255, 59, 48, 0.12)',
+                color: 'var(--ios-red)',
+                fontFamily: 'var(--ios-font)',
+              }}
+            >
+              Frágil
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* DIRECCIONES DE ORIGEN Y DESTINO */}
       {(showRecogida || (!showRecogida && !showEntrega)) && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--ios-green)', marginTop: 4, flexShrink: 0 }} />
@@ -1551,7 +1621,7 @@ function OrdenMiniCard({
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--ios-blue)', marginTop: 4, flexShrink: 0 }} />
         <div>
           <div
@@ -1575,6 +1645,45 @@ function OrdenMiniCard({
             }}
           >
             {orden.destino}
+          </div>
+        </div>
+      </div>
+
+      {/* RESUMEN DE GANANCIA, COBRO Y DISTANCIA */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 6,
+          padding: '8px 10px',
+          borderRadius: 'var(--ios-radius-sm, 10px)',
+          background: 'rgba(52, 199, 89, 0.08)',
+          border: '0.5px solid rgba(52, 199, 89, 0.2)',
+          marginBottom: 10,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--ios-text-tertiary)', fontWeight: 600, fontFamily: 'var(--ios-font)' }}>
+            Tu Ganancia
+          </div>
+          <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: 'var(--ios-green)' }}>
+            C${orden.ganancia.toFixed(2)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--ios-text-tertiary)', fontWeight: 600, fontFamily: 'var(--ios-font)' }}>
+            Cobrar Cliente
+          </div>
+          <div className="font-mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ios-text-primary)' }}>
+            C${orden.monto.toFixed(2)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--ios-text-tertiary)', fontWeight: 600, fontFamily: 'var(--ios-font)' }}>
+            Distancia
+          </div>
+          <div className="font-mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ios-text-primary)' }}>
+            {orden.kmEstimados.toFixed(1)} km
           </div>
         </div>
       </div>
@@ -1607,7 +1716,7 @@ function OrdenMiniCard({
               fontFamily: 'var(--ios-font)',
             }}
           >
-            📞 Llamar
+            Llamar
           </a>
         )}
 
