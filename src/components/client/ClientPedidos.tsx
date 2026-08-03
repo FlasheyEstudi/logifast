@@ -315,9 +315,11 @@ function ActiveEnvioCard({
 function ActiveCompraCard({
   oc,
   onOpenTracking,
+  onOpenChat,
 }: {
   oc: OrdenCompra;
   onOpenTracking: (orderId: string) => void;
+  onOpenChat?: (orderId: string) => void;
 }) {
   const color = compraStatusColor(oc.estado);
   const etaMin = useMemo(() => Math.floor(Math.random() * 20) + 15, []);
@@ -419,32 +421,56 @@ function ActiveCompraCard({
           </div>
         </div>
 
-        {/* Row 3: Total + Button */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+        {/* Row 3: Total + Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 16 }}>
           <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
             C$ {oc.total}
           </span>
-          <button
-            onClick={() => onOpenTracking(oc.id)}
-            style={{
-              padding: '12px 24px',
-              borderRadius: 'var(--lf-button-radius, 16px)',
-              border: 'none',
-              background: 'var(--primario)',
-              color: '#fff',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: 'var(--shadow-primario)',
-            }}
-          >
-            <Navigation size={16} />
-            Rastrear
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {onOpenChat && (
+              <button
+                onClick={() => onOpenChat(oc.id)}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 'var(--lf-button-radius, 14px)',
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <MessageCircle size={15} />
+                Mensaje
+              </button>
+            )}
+            <button
+              onClick={() => onOpenTracking(oc.id)}
+              style={{
+                padding: '10px 18px',
+                borderRadius: 'var(--lf-button-radius, 14px)',
+                border: 'none',
+                background: 'var(--primario)',
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: 'var(--shadow-primario)',
+              }}
+            >
+              <Navigation size={15} />
+              Rastrear
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -1035,6 +1061,7 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
                       key={oc.id}
                       oc={oc}
                       onOpenTracking={onOpenTracking}
+                      onOpenChat={onOpenChat}
                     />
                   ))}
                 </div>

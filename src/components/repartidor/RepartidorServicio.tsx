@@ -437,6 +437,42 @@ export default function RepartidorServicio() {
         {mapaExpandido ? 'Restaurar vista' : 'Pantalla completa'}
       </button>
 
+      {/* ═══════ BOTÓN PANTALLA COMPLETA MAPA 100% ═══════ */}
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={() => {
+          setMapaExpandido(!mapaExpandido);
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            try { navigator.vibrate(15); } catch {}
+          }
+        }}
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: ordenActiva ? 72 : 16,
+          zIndex: 40,
+          padding: '8px 14px',
+          borderRadius: 100,
+          background: mapaExpandido ? 'var(--ios-blue, #007AFF)' : 'color-mix(in srgb, var(--ios-bg-elevated) 90%, transparent)',
+          color: mapaExpandido ? '#FFFFFF' : 'var(--ios-text-primary)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          border: '0.5px solid var(--ios-separator)',
+          boxShadow: 'var(--ios-shadow-md)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 12,
+          fontWeight: 700,
+          fontFamily: 'var(--ios-font)',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        {mapaExpandido ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        <span>{mapaExpandido ? 'Restaurar Vista' : 'Mapa 100% Pantalla'}</span>
+      </motion.button>
+
       {/* ═══════ Status chip (top-left) — iOS pill ═══════ */}
       {conectado && (
         <div

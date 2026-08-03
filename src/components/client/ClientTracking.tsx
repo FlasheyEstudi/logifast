@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -22,6 +22,7 @@ import {
   ChevronUp,
 } from '@/components/icons';
 import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/lib/store';
+import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 
@@ -608,10 +609,49 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     };
   }, [trackingOrderId]);
 
-  // Find the current order
-  const order = trackingOrderId
-    ? orders.find((o) => o.id === trackingOrderId) ?? null
-    : null;
+  const { ordenesCompra } = useMarketplaceStore();
+
+  const currentOrdenCompra = useMemo(() => {
+    if (!trackingOrderId) return null;
+    return ordenesCompra.find((oc) => oc.id === trackingOrderId) ?? null;
+  }, [trackingOrderId, ordenesCompra]);
+
+  // Find current order (from orders or ordenesCompra)
+  const order: Order | null = useMemo(() => {
+    if (!trackingOrderId) return null;
+    const foundEnvio = orders.find((o) => o.id === trackingOrderId);
+    if (foundEnvio) return foundEnvio;
+
+    if (currentOrdenCompra) {
+      return {
+        id: currentOrdenCompra.id,
+        tipo: 'compra',
+        origen: currentOrdenCompra.tiendaNombre || 'Tienda',
+        destino: currentOrdenCompra.direccionEntrega || 'Managua',
+        origenLat: 12.1245,
+        origenLng: -86.2520,
+        destinoLat: 12.1365,
+        destinoLng: -86.2514,
+        estado: currentOrdenCompra.estado === 'entregado' ? 'entregado' : 'encamino',
+        monto: currentOrdenCompra.total,
+        ganancia: currentOrdenCompra.total * 0.2,
+        kmEstimados: 3.2,
+        tiempoEstimado: 18,
+        cliente: 'Cliente',
+        clienteTelefono: '+505 8888-0000',
+        descripcion: 'Compra en tienda ' + (currentOrdenCompra.tiendaNombre || 'Marketplace'),
+        estadoPago: 'pagado',
+        fecha: currentOrdenCompra.fecha,
+        hora: currentOrdenCompra.hora || '12:00',
+        timeline: [],
+        repartidor: currentOrdenCompra.repartidorNombre,
+        repartidorInitials: currentOrdenCompra.repartidorInitials,
+        metodoPago: currentOrdenCompra.metodoPago,
+        createdAt: currentOrdenCompra.fecha,
+      };
+    }
+    return null;
+  }, [trackingOrderId, orders, currentOrdenCompra]);
 
   // Get repartidor info (null if not assigned yet)
   const repartidor = order ? getRepartidorInfo(order.repartidor, order.repartidorInitials) : null;
