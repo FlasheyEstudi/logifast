@@ -715,6 +715,29 @@ export default function RepartidorServicio() {
               </button>
             </>
           )}
+
+          {/* FALLBACK: CUALQUIER OTRO ESTADO ACTIVO */}
+          {estado !== 'EN_CAMINO_RECOGER' &&
+            estado !== 'EN_PUNTO_RECOGIDA' &&
+            estado !== 'RECOGIDO' &&
+            estado !== 'EN_PUNTO_ENTREGA' && (
+              <>
+                <SheetHeader
+                  label={`Orden #${ordenActiva.id} — ${ordenActiva.cliente}`}
+                  color="#007AFF"
+                  icon={<Package size={18} />}
+                />
+                <OrdenMiniCard orden={ordenActiva} showRecogida showEntrega />
+                <button
+                  onClick={handleEmpezarViaje}
+                  className="lf-ios-button success"
+                  style={{ marginTop: 12, width: '100%', padding: '16px', fontSize: 16, fontWeight: 700 }}
+                >
+                  <Navigation size={20} />
+                  INICIAR VIAJE AL COMERCIO
+                </button>
+              </>
+            )}
         </BottomSheet>
       )}
 

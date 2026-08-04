@@ -18,7 +18,7 @@ const MOTO_SVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" st
   <path d="M15 6h2l3 6M5.5 14L10 6h4M9 6L7 14"/>
 </svg>`;
 
-const PACKAGE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>`;
+const STORE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 
 const MAPPIN_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3" fill="#DC2626"/></svg>`;
 
@@ -321,7 +321,7 @@ export default function RepartidorMap({
           <MapMarker longitude={origen[1]} latitude={origen[0]}>
             <div style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span className="marker-pill" style={{ background: pickupColor }}>{pickupLabel}</span>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: pickupColor, border: '3px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: PACKAGE_SVG }} />
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: pickupColor, border: '3px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: STORE_SVG }} />
             </div>
             <MarkerPopup>
               <div className="maplibre-popup-content">
