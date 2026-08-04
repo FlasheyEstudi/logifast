@@ -347,7 +347,7 @@ export default function RepartidorMap({
         }
         .map-legend-box {
           position: absolute;
-          top: 16px;
+          top: 68px;
           left: 16px;
           background: rgba(19, 24, 34, 0.88);
           backdrop-filter: blur(12px);
