@@ -22,6 +22,8 @@ import {
   X,
   Key,
   FileText,
+  ChevronDown,
+  ChevronUp,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
@@ -1074,9 +1076,28 @@ function BottomSheet({ children, snapRef }: { children: React.ReactNode; snapRef
       <div
         className="sheet-handle-area"
         onClick={toggleSnap}
-        style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12, cursor: 'pointer', touchAction: 'none' }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, cursor: 'pointer', touchAction: 'none' }}
       >
+        <div style={{ width: 32 }} />
         <div className="sheet-handle" style={{ width: 44, height: 5, borderRadius: 3, background: 'rgba(255, 255, 255, 0.4)' }} />
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleSnap(); }}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: 'rgba(255, 255, 255, 0.12)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            color: '#F8FAFC',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+          title={currentSnap === 'min' ? 'Expandir orden' : 'Minimizar orden'}
+        >
+          {currentSnap === 'min' ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </button>
       </div>
       <div className="sheet-scroll-content" style={{ paddingBottom: 20, maxHeight: 'calc(85vh - 60px)', overflowY: 'auto' }}>
         {children}

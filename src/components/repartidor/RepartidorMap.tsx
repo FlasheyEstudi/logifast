@@ -104,16 +104,58 @@ export default function RepartidorMap({
 
   const isDashArray = estado === 'EN_CAMINO_RECOGER';
 
-  // Centrar en repartidor cuando cambie de posición o cuando se active shouldFollow o cambie el modo 3D
+  const [gyroBearing, setGyroBearing] = useState<number | null>(null);
+
+  // Giroscopio / Orientación del celular en tiempo real cuando el modo 3D está activo
+  useEffect(() => {
+    if (!is3DMode) return;
+
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      const compassHeading = (e as any).webkitCompassHeading;
+      let heading: number | null = null;
+
+      if (typeof compassHeading === 'number' && !isNaN(compassHeading)) {
+        heading = compassHeading;
+      } else if (typeof e.alpha === 'number' && !isNaN(e.alpha)) {
+        heading = (360 - e.alpha) % 360;
+      }
+
+      if (heading !== null) {
+        setGyroBearing(heading);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      if (typeof (DeviceOrientationEvent as any) !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        (DeviceOrientationEvent as any).requestPermission().then((res: string) => {
+          if (res === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+          }
+        }).catch(() => null);
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+      }
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('deviceorientation', handleOrientation, true);
+      }
+    };
+  }, [is3DMode]);
+
+  const activeBearing = gyroBearing !== null ? gyroBearing : currentBearing;
+
+  // Centrar en repartidor con zoom de navegación cercana (18.8) en 3D
   useEffect(() => {
     if (mapRef.current && shouldFollow) {
       if (is3DMode) {
         mapRef.current.easeTo({
           center: [driverPos[1], driverPos[0]],
-          pitch: 65,
-          bearing: currentBearing,
-          zoom: 17.5,
-          duration: 1200
+          pitch: 68,
+          bearing: activeBearing,
+          zoom: 18.8,
+          duration: 800
         });
       } else {
         mapRef.current.easeTo({
@@ -121,11 +163,11 @@ export default function RepartidorMap({
           pitch: 0,
           bearing: 0,
           zoom: zoom,
-          duration: 1200
+          duration: 1000
         });
       }
     }
-  }, [driverPos, shouldFollow, is3DMode, currentBearing, zoom]);
+  }, [driverPos, shouldFollow, is3DMode, activeBearing, zoom]);
 
   // Centrar/encajar ruta y marcadores origen/destino en 2D, pero preservar cámara 3D cuando is3DMode está activo
   useEffect(() => {
