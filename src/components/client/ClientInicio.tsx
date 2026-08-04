@@ -352,7 +352,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
      ═══════════════════════════════════════════════ */
 
   return (
-    <div className="w-full max-w-3xl mx-auto" style={{ position: 'relative' }}>
+    <div className="w-full px-1 sm:px-4" style={{ position: 'relative' }}>
       {/* ─────────────────────────────────────────────
           SCROLLABLE CONTENT
           ───────────────────────────────────────────── */}

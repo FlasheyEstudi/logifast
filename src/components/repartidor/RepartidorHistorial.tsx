@@ -115,25 +115,7 @@ export default function RepartidorHistorial() {
 
         {/* ═══════ ENCABEZADO Y PESTAÑAS DE GESTIÓN ═══════ */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div>
-              <h1
-                style={{
-                  fontSize: 22,
-                  fontWeight: 700,
-                  color: 'var(--text, #F8FAFC)',
-                  fontFamily: "'Syne', sans-serif",
-                  letterSpacing: '-0.02em',
-                  margin: 0,
-                }}
-              >
-                Gestión de Servicios
-              </h1>
-              <p style={{ fontSize: 12, color: 'var(--text-muted, #94A3B8)', margin: '2px 0 0' }}>
-                Ofertas, solicitudes activas e historial de entregas
-              </p>
-            </div>
-
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
             {/* Shortcut to Map */}
             <button
               onClick={() => setPantalla('servicio')}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package,
@@ -8,21 +8,19 @@ import {
   Clock,
   User,
   ChevronDown,
-  ChevronUp,
   AlertTriangle,
   Search,
   Download,
-  RefreshCw,
   ArrowRight,
   CheckCircle,
   XCircle,
   Bike,
   Navigation,
   MessageCircle,
+  Phone,
   Banknote,
   CreditCard,
-  Phone,
-  FileText,
+  Zap,
 } from '@/components/icons';
 import dynamic from 'next/dynamic';
 import { useStore, type Order } from '@/lib/store';
@@ -30,8 +28,8 @@ import { useStore, type Order } from '@/lib/store';
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-60 rounded-2xl bg-slate-800/60 animate-pulse flex items-center justify-center text-slate-400 text-xs font-mono">
-      Cargando mapa en vivo...
+    <div className="w-full h-56 rounded-2xl bg-slate-800/70 animate-pulse flex items-center justify-center text-slate-400 text-xs font-mono">
+      Cargando mapa GPS en vivo...
     </div>
   ),
 });
@@ -41,8 +39,8 @@ const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), {
    ═══════════════════════════════════════════════ */
 
 interface ClientEnviosProps {
-  isDark: boolean;
-  userName: string;
+  isDark?: boolean;
+  userName?: string;
   onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
   onOpenTracking: (orderId: string) => void;
   onOpenChat: (orderId: string) => void;
@@ -55,762 +53,36 @@ interface ReportModalState {
   description: string;
 }
 
-/* ═══════════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════════ */
-
 const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  pendiente: { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-700 dark:text-yellow-400', label: 'Pendiente' },
-  encamino: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', label: 'En camino' },
-  recogido: { bg: 'bg-violet-100 dark:bg-violet-900/40', text: 'text-violet-700 dark:text-violet-400', label: 'Recogido' },
-  entregado: { bg: 'bg-green-100 dark:bg-green-900/40', text: 'text-green-700 dark:text-green-400', label: 'Entregado' },
-  incidencia: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-400', label: 'Incidencia' },
-  programada: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', label: 'Programada' },
+  pendiente: { bg: 'rgba(255, 149, 0, 0.15)', text: '#FF9500', label: 'Buscando repartidor' },
+  encamino: { bg: 'rgba(0, 122, 255, 0.15)', text: '#007AFF', label: 'En camino' },
+  recogido: { bg: 'rgba(175, 82, 222, 0.15)', text: '#AF52DE', label: 'Paquete recogido' },
+  entregado: { bg: 'rgba(52, 199, 89, 0.15)', text: '#34C759', label: 'Entregado' },
+  incidencia: { bg: 'rgba(255, 59, 48, 0.15)', text: '#FF3B30', label: 'Incidencia' },
 };
 
-const STATUS_CIRCLE_COLOR: Record<string, string> = {
-  pendiente: 'var(--warning)',
-  encamino: 'var(--info)',
-  recogido: '#7C3AED',
-  entregado: 'var(--exito)',
-  incidencia: 'var(--peligro)',
-  programada: 'var(--info)',
-};
-
-const TIMELINE_STEPS = ['Orden creada', 'En camino', 'Recogida', 'Entregada'];
-
-function getStepIndex(estado: string): number {
-  const map: Record<string, number> = { pendiente: 0, encamino: 1, recogido: 2, entregado: 3 };
-  return map[estado] ?? 0;
+function shorten(text: string, max = 26) {
+  if (!text) return '—';
+  if (text.length <= max) return text;
+  return text.substring(0, max - 3) + '...';
 }
 
-function getStatusFromStepIdx(idx: number): string {
-  const map: Record<number, string> = { 0: 'pendiente', 1: 'encamino', 2: 'recogido', 3: 'entregado' };
-  return map[idx] ?? 'pendiente';
-}
-
-function shortenLocation(loc: string): string {
-  if (loc.length <= 28) return loc;
-  return loc.substring(0, 25) + '...';
-}
-
-/* ═══════════════════════════════════════════════
-   SUB-COMPONENTS
-   ═══════════════════════════════════════════════ */
-
-function StatusBadge({ estado }: { estado: string }) {
-  const s = STATUS_BADGE[estado] ?? STATUS_BADGE.pendiente;
-  const lfClass = (() => {
-    switch (estado) {
-      case 'pendiente': return 'lf-badge-pendiente';
-      case 'encamino': return 'lf-badge-en-camino';
-      case 'recogido': return 'lf-badge-recogido';
-      case 'entregado': return 'lf-badge-entregado';
-      case 'incidencia': return 'lf-badge-incidencia';
-      case 'programada': return 'lf-badge-programada';
-      default: return 'lf-badge-pendiente';
-    }
-  })();
-  return (
-    <span className={`lf-badge ${lfClass} inline-flex items-center px-2 py-0.5 text-xs font-semibold`} aria-label={s.label}>
-      {s.label}
-    </span>
-  );
-}
-
-function RiderAvatar({ initials, name, size = 'md' }: { initials: string; name: string; size?: 'sm' | 'md' }) {
-  const sz = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-9 h-9 text-sm';
-  return (
-    <div className="flex items-center gap-2">
-      <div
-        className={`${sz} rounded-full flex items-center justify-center font-bold`}
-        style={{ background: 'var(--primario-soft)', color: 'var(--primario)' }}
-      >
-        {initials || <User className="w-3 h-3" />}
-      </div>
-      <span className={`font-medium ${size === 'sm' ? 'text-xs' : 'text-sm'}`} style={{ color: 'var(--text)' }}>
-        {name || 'Sin asignar'}
-      </span>
-    </div>
-  );
-}
-
-/* ── Progress Timeline ──────────────────────── */
-
-function ProgressTimeline({ estado }: { estado: string }) {
-  const currentStep = getStepIndex(estado);
-
-  return (
-    <div className="w-full px-2 py-4">
-      <div className="flex items-center justify-between relative">
-        {/* Background line */}
-        <div className="absolute top-4 left-6 right-6 h-0.5" style={{ background: 'var(--border)' }} />
-
-        {/* Completed line overlay */}
-        {currentStep > 0 && (
-          <motion.div
-            className="absolute top-4 left-6 h-0.5"
-            style={{ background: 'var(--primario)' }}
-            initial={{ width: 0 }}
-            animate={{ width: `${(currentStep / 3) * 100}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-          />
-        )}
-
-        {TIMELINE_STEPS.map((step, idx) => {
-          const isCompleted = idx <= currentStep && estado !== 'pendiente' ? idx < currentStep : false;
-          const isCurrent = idx === currentStep;
-          const isPending = idx > currentStep;
-
-          return (
-            <div key={step} className="flex flex-col items-center z-10" style={{ flex: '1 0 0' }}>
-              <motion.div
-                className="w-8 h-8 rounded-full flex items-center justify-center border-2"
-                style={{
-                  borderColor: isCompleted || isCurrent ? 'var(--primario)' : 'var(--border)',
-                  background: isCompleted ? 'var(--primario)' : isCurrent ? 'transparent' : 'var(--surface)',
-                }}
-                animate={isCurrent ? {
-                  boxShadow: [
-                    '0 0 0 0px rgba(255,87,34,0)',
-                    '0 0 0 6px rgba(255,87,34,0.3)',
-                    '0 0 0 0px rgba(255,87,34,0)',
-                  ],
-                } : {}}
-                transition={isCurrent ? { duration: 2, repeat: Infinity } : {}}
-              >
-                {isCompleted ? (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20, delay: idx * 0.15 }}
-                  >
-                    <CheckCircle className="w-4 h-4 text-white" />
-                  </motion.div>
-                ) : isCurrent ? (
-                  <motion.div
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  >
-                    <Bike className="w-4 h-4" style={{ color: 'var(--primario)' }} />
-                  </motion.div>
-                ) : (
-                  <div className="w-2 h-2 rounded-full" style={{ background: 'var(--border)' }} />
-                )}
-              </motion.div>
-              <span
-                className="text-[10px] sm:text-xs mt-1.5 text-center leading-tight"
-                style={{
-                  color: isCompleted || isCurrent ? 'var(--text)' : 'var(--text-muted)',
-                  fontWeight: isCurrent ? 700 : 400,
-                }}
-              >
-                {step}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ── Map Placeholder ────────────────────────── */
-
-function MapPlaceholder() {
-  return (
-    <div
-      className="w-full rounded-xl flex flex-col items-center justify-center gap-3"
-      style={{
-        height: 250,
-        background: 'var(--bg-alt)',
-        border: '1px dashed var(--border)',
-      }}
-    >
-      <MapPin className="w-10 h-10" style={{ color: 'var(--text-muted)' }} />
-      <span className="text-sm font-medium" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-        Mapa en tiempo real
-      </span>
-      <div className="flex items-center gap-1">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-        >
-          <RefreshCw className="w-3 h-3" style={{ color: 'var(--primario)' }} />
-        </motion.div>
-        <span className="text-xs" style={{ color: 'var(--primario)', fontFamily: 'JetBrains Mono' }}>
-          Actualizando...
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ── Empty State ────────────────────────────── */
-
-function EmptyActiveState({ onNavigate }: { onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center py-16 px-4"
-    >
-      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" className="mb-6">
-        {/* Package body */}
-        <rect x="30" y="45" width="60" height="50" rx="6" style={{ fill: 'var(--bg-alt)' }} stroke="var(--border)" strokeWidth="2" />
-        <rect x="30" y="45" width="60" height="18" rx="6" style={{ fill: 'var(--primario-soft)' }} stroke="var(--primario)" strokeWidth="1.5" />
-        {/* Flap */}
-        <path d="M30 55 L60 38 L90 55" stroke="var(--primario)" strokeWidth="2" fill="none" />
-        {/* Arrow */}
-        <motion.g
-          animate={{ x: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <path d="M62 82 L78 82" stroke="var(--primario)" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M73 76 L79 82 L73 88" stroke="var(--primario)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        </motion.g>
-        {/* Dots decoration */}
-        <circle cx="20" cy="30" r="3" style={{ fill: 'var(--primario-soft)' }} />
-        <circle cx="100" cy="35" r="2.5" style={{ fill: 'var(--primario-soft)' }} />
-        <circle cx="15" cy="80" r="2" style={{ fill: 'var(--border)' }} />
-      </svg>
-      <h3
-        className="text-xl font-bold mb-2"
-        style={{ fontFamily: 'Syne', color: 'var(--text)' }}
-      >
-        No tienes envíos activos
-      </h3>
-      <p
-        className="text-sm mb-6 text-center max-w-xs"
-        style={{ color: 'var(--text-secondary)', fontFamily: 'DM Sans' }}
-      >
-        Solicita un envío y seguirá aquí en tiempo real
-      </p>
-      <button
-        onClick={() => onNavigate('solicitar')}
-        className="px-6 py-3 rounded-xl font-semibold text-white text-sm transition-all hover:scale-105 active:scale-95"
-        style={{ background: 'var(--primario)', fontFamily: 'DM Sans' }}
-      >
-        Solicitar envío
-      </button>
-    </motion.div>
-  );
-}
-
-/* ── Report Problem Modal ───────────────────── */
-
-function ReportModal({
-  state,
-  setState,
-  onSubmit,
-}: {
-  state: ReportModalState;
-  setState: React.Dispatch<React.SetStateAction<ReportModalState>>;
-  onSubmit: () => void;
-}) {
-  if (!state.open) return null;
-
-  const reasons = [
-    { value: 'repartidor_no_llega', label: 'El repartidor no llega' },
-    { value: 'direccion_incorrecta', label: 'Dirección incorrecta' },
-    { value: 'otro', label: 'Otro' },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="modal-overlay visible fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={() => setState((s) => ({ ...s, open: false }))}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="lf-modal open w-full max-w-md p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--peligro)', opacity: 0.15 }}>
-            <AlertTriangle className="w-5 h-5" style={{ color: 'var(--peligro)' }} />
-          </div>
-          <h3 className="text-lg font-bold" style={{ fontFamily: 'Syne', color: 'var(--text)' }}>
-            ¿Qué pasó?
-          </h3>
-        </div>
-
-        <div className="space-y-3 mb-4">
-          {reasons.map((r) => (
-            <button
-              key={r.value}
-              onClick={() => setState((s) => ({ ...s, reason: r.value }))}
-              className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all"
-              style={{
-                background: state.reason === r.value ? 'var(--primario-soft)' : 'var(--bg-alt)',
-                color: state.reason === r.value ? 'var(--primario)' : 'var(--text)',
-                border: state.reason === r.value ? '1.5px solid var(--primario)' : '1px solid var(--border)',
-                fontFamily: 'DM Sans',
-              }}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-
-        <textarea
-          placeholder="Describe el problema (opcional)..."
-          value={state.description}
-          onChange={(e) => setState((s) => ({ ...s, description: e.target.value }))}
-          className="lf-textarea w-full h-20"
-        />
-
-        <div className="flex gap-3 mt-5">
-          <button
-            onClick={() => setState((s) => ({ ...s, open: false }))}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={{
-              background: 'var(--bg-alt)',
-              color: 'var(--text-secondary)',
-              border: '1px solid var(--border)',
-              fontFamily: 'DM Sans',
-            }}
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onSubmit}
-            disabled={!state.reason}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40"
-            style={{
-              background: 'var(--peligro)',
-              fontFamily: 'DM Sans',
-            }}
-          >
-            Enviar reporte
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-/* ── Active Order Card ──────────────────────── */
-
-function ActiveOrderCard({
-  order,
-  eta,
-  onReport,
+export default function ClientEnvios({
+  userName,
+  onNavigate,
   onOpenTracking,
   onOpenChat,
-}: {
-  order: Order;
-  eta: number;
-  onReport: (orderId: string) => void;
-  onOpenTracking: (orderId: string) => void;
-  onOpenChat: (orderId: string) => void;
-}) {
-  const [lastUpdate, setLastUpdate] = useState(Date.now());
-
-  useEffect(() => {
-    const interval = setInterval(() => setLastUpdate(Date.now()), 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const statusColor = STATUS_CIRCLE_COLOR[order.estado] ?? 'var(--border)';
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="rounded-3xl overflow-hidden cursor-pointer transition-all duration-200 hover:opacity-95"
-      style={{
-        background: 'rgba(30, 41, 59, 0.8)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-        boxShadow: '0 12px 32px rgba(0,0,0,0.3)',
-      }}
-      onClick={() => onOpenTracking(order.id)}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 pb-2">
-        <div className="flex items-center gap-2">
-          <StatusBadge estado={order.estado} />
-          <span
-            className="text-xs font-bold"
-            style={{ fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}
-          >
-            {order.id}
-          </span>
-        </div>
-        <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-          {order.fecha}
-        </span>
-      </div>
-
-      {/* Route */}
-      <div className="px-4 py-2">
-        <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
-          <div className="w-2 h-2 rounded-full" style={{ background: 'var(--exito)' }} />
-          <span>De: {order.origen}</span>
-          <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-          <div className="w-2 h-2 rounded-full" style={{ background: 'var(--primario)' }} />
-          <span>A: {order.destino}</span>
-        </div>
-      </div>
-
-      {/* Rider + ETA */}
-      <div className="px-4 py-3 flex items-center justify-between">
-        <RiderAvatar initials={order.repartidorInitials} name={order.repartidor ?? ''} />
-        <div className="text-right">
-          <div
-            className="text-2xl font-bold"
-            style={{ fontFamily: 'JetBrains Mono', color: 'var(--primario)' }}
-          >
-            ~{eta} min
-          </div>
-          <div className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-            Llega en ~{eta} min
-          </div>
-        </div>
-      </div>
-
-      {/* REAL MAP DISPLAY */}
-      <div className="px-4 pb-3">
-        <div className="w-full h-64 rounded-2xl overflow-hidden border border-white/10 shadow-lg relative" onClick={(e) => e.stopPropagation()}>
-          <RepartidorMap
-            repartidorPos={[order.repartidorLat || 12.1364, order.repartidorLng || -86.2581]}
-            origenPos={[order.origenLat || 12.1264, order.origenLng || -86.2652]}
-            destinoPos={[order.destinoLat || 12.1402, order.destinoLng || -86.2954]}
-            estado={order.estado === 'encamino' ? 'EN_CAMINO_RECOGER' : order.estado === 'recogido' ? 'RECOGIDO' : 'ORDEN_ASIGNADA'}
-            altura="100%"
-            zoom={13}
-          />
-        </div>
-      </div>
-
-      {/* Progress Timeline */}
-      <div className="px-4 pb-4">
-        <div className="rounded-xl p-3" style={{ background: 'var(--bg-alt)' }}>
-          <ProgressTimeline estado={order.estado} />
-        </div>
-      </div>
-
-      {/* Live indicator */}
-      <div className="px-4 pb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <motion.div
-            className="w-2 h-2 rounded-full"
-            style={{ background: 'var(--exito)' }}
-            animate={{ opacity: [1, 0.3, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          />
-          <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'JetBrains Mono' }}>
-            En vivo · Actualizado hace {Math.floor((Date.now() - lastUpdate) / 1000)}s
-          </span>
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      <div className="px-4 pb-4 flex flex-wrap gap-2">
-        <button
-          onClick={(e) => { e.stopPropagation(); onOpenTracking(order.id); }}
-          style={{
-            padding: '10px 18px',
-            borderRadius: 12,
-            border: 'none',
-            background: 'var(--primario)',
-            color: '#FFFFFF',
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: 'pointer',
-            fontFamily: "'DM Sans', sans-serif",
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <Navigation size={16} />
-          Ver seguimiento en mapa
-        </button>
-
-        {order.repartidor && (
-          <>
-            <button
-              onClick={(e) => { e.stopPropagation(); onOpenChat(order.id); }}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 12,
-                border: '1px solid var(--border)',
-                background: 'rgba(255,255,255,0.06)',
-                color: 'var(--text)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif",
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <MessageCircle size={16} />
-              Chat
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                window.location.href = `tel:22220000`;
-              }}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 12,
-                border: '1px solid var(--border)',
-                background: 'rgba(255,255,255,0.06)',
-                color: 'var(--text)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif",
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <Phone size={16} />
-              Llamar
-            </button>
-          </>
-        )}
-
-        <button
-          onClick={(e) => { e.stopPropagation(); onReport(order.id); }}
-          className="py-2.5 px-4 rounded-xl text-xs font-semibold transition-all hover:opacity-80"
-          style={{
-            background: 'transparent',
-            color: 'var(--peligro)',
-            border: '1px solid var(--peligro)',
-            fontFamily: 'DM Sans',
-          }}
-        >
-          <AlertTriangle className="w-3.5 h-3.5 inline mr-1" />
-          Reportar problema
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ── History Order Item ─────────────────────── */
-
-function HistoryOrderItem({
-  order,
-  onNavigate,
-  onDownload,
-}: {
-  order: Order;
-  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'perfil') => void;
-  onDownload: (orderId: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <motion.div
-      layout
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: 'rgba(30, 41, 59, 0.8)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-      }}
-    >
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full text-left p-4 transition-all hover:opacity-90"
-        style={{ background: 'var(--surface)' }}
-      >
-        {/* Row 1: ID + status + date */}
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-2">
-            <span className="text-[13px]" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}>
-              {order.id}
-            </span>
-            <StatusBadge estado={order.estado} />
-          </div>
-          <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-            {order.fecha}
-          </span>
-        </div>
-
-        {/* Row 2: Route */}
-        <div className="flex items-center gap-1.5 text-sm mb-1.5" style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
-          <span>{shortenLocation(order.origen)}</span>
-          <ArrowRight className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-          <span>{shortenLocation(order.destino)}</span>
-        </div>
-
-        {/* Row 3: Rider + amount + payment */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <RiderAvatar initials={order.repartidorInitials} name={order.repartidor ?? ''} size="sm" />
-          </div>
-          <div className="flex items-center gap-2">
-            {order.metodoPago === 'efectivo' ? (
-              <span className="text-xs px-1.5 py-0.5 rounded flex items-center" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                <Banknote size={14} />
-              </span>
-            ) : (
-              <span className="text-xs px-1.5 py-0.5 rounded flex items-center" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                <CreditCard size={14} />
-              </span>
-            )}
-            <span className="text-sm font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text)' }}>
-              C$ {order.monto}
-            </span>
-            {expanded ? (
-              <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-            ) : (
-              <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-            )}
-          </div>
-        </div>
-      </button>
-
-      {/* Expanded details */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
-              {/* Route traveled */}
-              <div className="pt-3">
-                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                  Ruta recorrida
-                </p>
-                <p className="text-sm" style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
-                  {order.origen} → {order.destino}
-                </p>
-              </div>
-
-              {/* Timeline */}
-              <div>
-                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                  Timeline completo
-                </p>
-                {order.timeline.map((t, i) => (
-                  <div key={i} className="flex items-center gap-3 py-1">
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ background: t.completado ? 'var(--primario)' : 'var(--border)' }}
-                    />
-                    <span className="text-sm flex-1" style={{ color: 'var(--text)', fontFamily: 'DM Sans' }}>
-                      {t.step}
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'JetBrains Mono' }}>
-                      {t.hora}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Simulated metrics */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg p-3" style={{ background: 'var(--bg-alt)' }}>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                    Km recorridos
-                  </p>
-                  <p className="text-lg font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text)' }}>
-                    {((Math.abs(order.destinoLat - order.origenLat) + Math.abs(order.destinoLng - order.origenLng)) * 111 * 10).toFixed(1)} km
-                  </p>
-                </div>
-                <div className="rounded-lg p-3" style={{ background: 'var(--bg-alt)' }}>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                    Tiempo total
-                  </p>
-                  <p className="text-lg font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text)' }}>
-                    {order.timeline[3]?.completado && order.timeline[0]?.hora && order.timeline[3]?.hora
-                      ? (() => {
-                          const [h1, m1] = order.timeline[0].hora.split(':').map(Number);
-                          const [h2, m2] = order.timeline[3].hora.split(':').map(Number);
-                          const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
-                          return diff > 0 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : `${diff}m`;
-                        })()
-                      : '—'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex gap-2">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onNavigate('solicitar'); }}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
-                  style={{
-                    background: 'var(--primario)',
-                    color: 'white',
-                    fontFamily: 'DM Sans',
-                  }}
-                >
-                  Volver a enviar a esta ruta
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDownload(order.id); }}
-                  className="py-2 px-3 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
-                  style={{
-                    background: 'var(--bg-alt)',
-                    color: 'var(--text-secondary)',
-                    border: '1px solid var(--border)',
-                    fontFamily: 'DM Sans',
-                  }}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════ */
-
-export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientEnviosProps) {
-  const {
-    orders,
-    clientEnvioTab,
-    setClientEnvioTab,
-    clientEnvioFilter,
-    setClientEnvioFilter,
-    clientSearchQuery,
-    setClientSearchQuery,
-    addToast,
-  } = useStore();
-
-  /* ── State ────────────────────── */
+}: ClientEnviosProps) {
+  const { orders, clientEnvioTab, setClientEnvioTab, addToast } = useStore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterState, setFilterState] = useState<'todos' | 'entregados' | 'incidencia'>('todos');
   const [reportModal, setReportModal] = useState<ReportModalState>({
     open: false,
     orderId: '',
     reason: '',
     description: '',
   });
-  const [etaMap, setEtaMap] = useState<Record<string, number>>({});
-  const [historyPage, setHistoryPage] = useState(1);
-  const tickCountRef = useRef(0);
 
-  /* ── Filter orders for current client ── */
   const clientOrders = orders.filter(
     (o) =>
       !userName ||
@@ -829,15 +101,11 @@ export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTrack
     (o) => o.estado === 'entregado' || o.estado === 'incidencia'
   );
 
-  /* ── Filtered history ── */
   const filteredHistory = historicalOrders.filter((o) => {
-    if (clientEnvioFilter === 'entregados') return o.estado === 'entregado';
-    if (clientEnvioFilter === 'cancelados') return o.estado === 'incidencia';
-    if (clientEnvioFilter === 'incidencia') return o.estado === 'incidencia';
-    return true;
-  }).filter((o) => {
-    if (!clientSearchQuery) return true;
-    const q = clientSearchQuery.toLowerCase();
+    if (filterState === 'entregados' && o.estado !== 'entregado') return false;
+    if (filterState === 'incidencia' && o.estado !== 'incidencia') return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
     return (
       o.id.toLowerCase().includes(q) ||
       o.destino.toLowerCase().includes(q) ||
@@ -845,235 +113,379 @@ export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTrack
     );
   });
 
-  const paginatedHistory = filteredHistory.slice(0, historyPage * 10);
-
-  /* ── Real-time tracking desde backend (P0: simulación eliminada) ── */
-  // El ETA ahora se obtiene de la API /api/ordenes/[id]/tracking (no más random).
-  // El estado de la orden se actualiza desde el backend cada 5s.
-  useEffect(() => {
-    // Cargar órdenes reales desde la BD al montar (P1)
-    fetch('/api/ordenes')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.ordenes && Array.isArray(data.ordenes)) {
-          // El store ya las recibe vía ClientShell en el flujo normal
-        }
-      })
-      .catch(() => null);
-  }, []);
-
-  /* ── Handlers ── */
-  const handleReport = useCallback((orderId: string) => {
-    setReportModal({ open: true, orderId, reason: '', description: '' });
-  }, []);
-
-  const handleReportSubmit = useCallback(() => {
-    addToast(`Reporte enviado para ${reportModal.orderId}`, 'info');
+  const handleReportSubmit = () => {
+    if (!reportModal.reason) return;
+    addToast(`Reporte enviado para el envío ${reportModal.orderId}`, 'info');
     setReportModal({ open: false, orderId: '', reason: '', description: '' });
-  }, [reportModal.orderId, addToast]);
-
-  const handleDownload = useCallback((orderId: string) => {
-    addToast(`Descargando comprobante de ${orderId}...`, 'info');
-  }, [addToast]);
-
-  /* ── Client metrics ── */
-  const totalEnvios = clientOrders.length;
-  const totalGastado = clientOrders.reduce((sum, o) => sum + o.monto, 0);
-  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
-  const enviosEsteMes = clientOrders.filter((o) => o.fecha.startsWith(currentMonthPrefix)).length;
-
-  /* ── Filter pills ── */
-  const filterPills = [
-    { key: 'todos', label: 'Todos' },
-    { key: 'entregados', label: 'Entregados' },
-    { key: 'cancelados', label: 'Cancelados' },
-    { key: 'incidencia', label: 'Con incidencia' },
-  ];
-
-  /* ═══════════════════════════════════════════════
-     RENDER
-     ═══════════════════════════════════════════════ */
+  };
 
   return (
-    <div className="w-full">
-      {/* ── Tab Switcher ── */}
-      <div className="flex gap-1 p-1 rounded-xl mb-6" style={{ background: 'var(--bg-alt)' }}>
-        {(['activos', 'historial'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => { setClientEnvioTab(tab); setHistoryPage(1); }}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative"
-            style={{
-              fontFamily: 'DM Sans',
-              color: clientEnvioTab === tab ? 'var(--primario)' : 'var(--text-muted)',
-            }}
-          >
-            {clientEnvioTab === tab && (
-              <motion.div
-                layoutId="envio-tab-indicator"
-                className="absolute inset-0 rounded-lg"
-                style={{ background: 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-            <span className="relative z-10">
-              {tab === 'activos' ? 'Activos' : 'Historial'}
-              {tab === 'activos' && activeOrders.length > 0 && (
-                <span
-                  className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white"
-                  style={{ background: 'var(--primario)' }}
-                >
-                  {activeOrders.length}
-                </span>
-              )}
-            </span>
-          </button>
-        ))}
+    <div className="w-full px-1 sm:px-4 py-2 space-y-5">
+      {/* ── Tabs Selector Edge-to-Edge ── */}
+      <div
+        className="flex p-1.5 rounded-2xl w-full"
+        style={{
+          background: 'rgba(30, 41, 59, 0.75)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+        }}
+      >
+        <button
+          onClick={() => setClientEnvioTab('activos')}
+          className="flex-1 py-3 rounded-xl text-sm font-bold transition-all relative flex items-center justify-center gap-2"
+          style={{
+            color: clientEnvioTab === 'activos' ? '#007AFF' : '#94A3B8',
+            fontFamily: "'Syne', sans-serif",
+          }}
+        >
+          {clientEnvioTab === 'activos' && (
+            <motion.div
+              layoutId="envio-tab-pill"
+              className="absolute inset-0 rounded-xl"
+              style={{ background: 'rgba(0, 122, 255, 0.18)', border: '1px solid rgba(0, 122, 255, 0.3)' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <Zap size={16} />
+            En vivo ({activeOrders.length})
+          </span>
+        </button>
+
+        <button
+          onClick={() => setClientEnvioTab('historial')}
+          className="flex-1 py-3 rounded-xl text-sm font-bold transition-all relative flex items-center justify-center gap-2"
+          style={{
+            color: clientEnvioTab === 'historial' ? '#007AFF' : '#94A3B8',
+            fontFamily: "'Syne', sans-serif",
+          }}
+        >
+          {clientEnvioTab === 'historial' && (
+            <motion.div
+              layoutId="envio-tab-pill"
+              className="absolute inset-0 rounded-xl"
+              style={{ background: 'rgba(0, 122, 255, 0.18)', border: '1px solid rgba(0, 122, 255, 0.3)' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <Package size={16} />
+            Historial ({historicalOrders.length})
+          </span>
+        </button>
       </div>
 
-      {/* ── Tab Content ── */}
+      {/* ── Content ── */}
       <AnimatePresence mode="wait">
         {clientEnvioTab === 'activos' ? (
           <motion.div
-            key="activos"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.25 }}
+            key="tab-activos"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-4"
           >
             {activeOrders.length === 0 ? (
-              <EmptyActiveState onNavigate={onNavigate} />
-            ) : (
-              <div className="space-y-4">
-                {activeOrders.map((order) => (
-                  <ActiveOrderCard
-                    key={order.id}
-                    order={order}
-                    eta={etaMap[order.id] ?? 12}
-                    onReport={handleReport}
-                    onOpenTracking={onOpenTracking}
-                    onOpenChat={onOpenChat}
-                  />
-                ))}
+              <div
+                className="w-full text-center py-16 px-6 rounded-3xl flex flex-col items-center justify-center"
+                style={{
+                  background: 'rgba(30, 41, 59, 0.8)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                }}
+              >
+                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4">
+                  <Bike size={32} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-100 font-syne mb-2">No tienes envíos activos en este momento</h3>
+                <p className="text-xs text-slate-400 max-w-sm mb-6">
+                  Solicita un mensajero exprés en tiempo real para enviar paquetes, documentos o encomiendas.
+                </p>
+                <button
+                  onClick={() => onNavigate('solicitar')}
+                  className="px-6 py-3.5 rounded-2xl font-bold text-sm text-white transition-transform active:scale-95 shadow-lg shadow-blue-500/25"
+                  style={{ background: 'linear-gradient(135deg, #007AFF 0%, #0056B3 100%)', fontFamily: "'Syne', sans-serif" }}
+                >
+                  Solicitar Envió Ahora
+                </button>
               </div>
+            ) : (
+              activeOrders.map((order) => {
+                const badge = STATUS_BADGE[order.estado] || STATUS_BADGE.pendiente;
+                return (
+                  <motion.div
+                    key={order.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="w-full rounded-3xl p-4 sm:p-5 space-y-4 transition-all duration-200"
+                    style={{
+                      background: 'rgba(30, 41, 59, 0.85)',
+                      backdropFilter: 'blur(20px)',
+                      WebkitBackdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(255, 255, 255, 0.14)',
+                      boxShadow: '0 16px 40px rgba(0,0,0,0.35)',
+                    }}
+                  >
+                    {/* Header: ID + Status + ETA */}
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="px-3 py-1 rounded-full text-xs font-bold"
+                          style={{ background: badge.bg, color: badge.text }}
+                        >
+                          {badge.label}
+                        </span>
+                        <span className="text-xs font-mono text-slate-400 font-bold">{order.id}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-slate-400 block">Llega en aprox.</span>
+                        <span className="text-lg font-mono font-bold text-blue-400">~12 min</span>
+                      </div>
+                    </div>
+
+                    {/* Route preview */}
+                    <div className="space-y-2 text-sm text-slate-200 font-sans">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                        <span className="font-semibold text-slate-400 text-xs">Origen:</span>
+                        <span className="font-medium truncate">{order.origen}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0" />
+                        <span className="font-semibold text-slate-400 text-xs">Destino:</span>
+                        <span className="font-medium truncate">{order.destino}</span>
+                      </div>
+                    </div>
+
+                    {/* GPS Map preview */}
+                    <div className="w-full h-56 rounded-2xl overflow-hidden border border-white/10 relative">
+                      <RepartidorMap
+                        repartidorPos={[order.repartidorLat || 12.1364, order.repartidorLng || -86.2581]}
+                        origenPos={[order.origenLat || 12.1264, order.origenLng || -86.2652]}
+                        destinoPos={[order.destinoLat || 12.1402, order.destinoLng || -86.2954]}
+                        estado={order.estado === 'encamino' ? 'EN_CAMINO_RECOGER' : order.estado === 'recogido' ? 'RECOGIDO' : 'ORDEN_ASIGNADA'}
+                        altura="100%"
+                        zoom={13}
+                      />
+                    </div>
+
+                    {/* Rider info if assigned */}
+                    {order.repartidor && (
+                      <div className="flex items-center justify-between bg-slate-900/60 p-3 rounded-2xl border border-white/5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-md">
+                            {order.repartidorInitials || 'RP'}
+                          </div>
+                          <div>
+                            <span className="text-sm font-bold text-slate-100 block">{order.repartidor}</span>
+                            <span className="text-xs text-slate-400 flex items-center gap-1">
+                              <Bike size={12} /> Moto Repartidor
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onOpenChat(order.id)}
+                            className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all"
+                            title="Chat"
+                          >
+                            <MessageCircle size={18} />
+                          </button>
+                          <button
+                            onClick={() => (window.location.href = 'tel:22220000')}
+                            className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all"
+                            title="Llamar"
+                          >
+                            <Phone size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bottom Action buttons */}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        onClick={() => onOpenTracking(order.id)}
+                        className="py-3 px-4 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-2 transition-all shadow-md"
+                      >
+                        <Navigation size={15} />
+                        Seguimiento GPS
+                      </button>
+                      <button
+                        onClick={() => setReportModal({ open: true, orderId: order.id, reason: '', description: '' })}
+                        className="py-3 px-4 rounded-xl font-bold text-xs text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 flex items-center justify-center gap-1.5 transition-all"
+                      >
+                        <AlertTriangle size={15} />
+                        Reportar
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })
             )}
           </motion.div>
         ) : (
           <motion.div
-            key="historial"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25 }}
+            key="tab-historial"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-4"
           >
-            {/* Client metrics */}
-            <div className="flex items-center justify-center gap-6 mb-5">
-              {[
-                { value: totalEnvios, label: 'envíos totales' },
-                { value: `C$ ${totalGastado.toLocaleString()}`, label: 'gastados' },
-                { value: enviosEsteMes, label: 'envíos este mes' },
-              ].map((m, i) => (
-                <div key={i} className="text-center">
-                  <div className="text-base font-bold" style={{ fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}>
-                    {m.value}
-                  </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                    {m.label}
-                  </div>
-                </div>
-              ))}
+            {/* Search & Filters */}
+            <div className="space-y-3">
+              <div className="relative w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Buscar por ID, origen o destino..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-800/80 border border-white/10 text-sm text-slate-100 placeholder-slate-400 outline-none focus:border-blue-500 transition-all font-sans"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                {[
+                  { key: 'todos', label: 'Todos' },
+                  { key: 'entregados', label: 'Entregados' },
+                  { key: 'incidencia', label: 'Incidencias' },
+                ].map((f) => (
+                  <button
+                    key={f.key}
+                    onClick={() => setFilterState(f.key as any)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                      filterState === f.key
+                        ? 'bg-blue-600 border-blue-500 text-white'
+                        : 'bg-slate-800/60 border-white/10 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Filter pills */}
-            <div className="flex gap-2 mb-4 flex-wrap">
-              {filterPills.map((pill) => (
-                <button
-                  key={pill.key}
-                  onClick={() => { setClientEnvioFilter(pill.key); setHistoryPage(1); }}
-                  className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                  style={{
-                    fontFamily: 'DM Sans',
-                    background: clientEnvioFilter === pill.key ? 'var(--primario)' : 'var(--bg-alt)',
-                    color: clientEnvioFilter === pill.key ? 'white' : 'var(--text-secondary)',
-                    border: clientEnvioFilter === pill.key ? '1px solid var(--primario)' : '1px solid var(--border)',
-                  }}
-                >
-                  {pill.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-              <input
-                type="text"
-                placeholder="Buscar por ID o destino..."
-                value={clientSearchQuery}
-                onChange={(e) => { setClientSearchQuery(e.target.value); setHistoryPage(1); }}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all"
-                style={{
-                  background: 'var(--bg-alt)',
-                  color: 'var(--text)',
-                  border: '1px solid var(--border)',
-                  fontFamily: 'DM Sans',
-                }}
-                onFocus={(e) => (e.target.style.borderColor = 'var(--primario)')}
-                onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}
-              />
-            </div>
-
-            {/* Counter */}
-            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-              {filteredHistory.length} envío{filteredHistory.length !== 1 ? 's' : ''} en tu historial
-            </p>
-
-            {/* Order list */}
+            {/* List */}
             {filteredHistory.length === 0 ? (
-              <div className="flex flex-col items-center py-12">
-                <Package className="w-10 h-10 mb-3" style={{ color: 'var(--text-muted)' }} />
-                <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans' }}>
-                  No se encontraron envíos
-                </p>
+              <div className="text-center py-12 text-slate-400 text-xs font-sans">
+                No se encontraron envíos en el historial.
               </div>
             ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
-                {paginatedHistory.map((order) => (
-                  <HistoryOrderItem
+              filteredHistory.map((order) => {
+                const isEntregado = order.estado === 'entregado';
+                return (
+                  <div
                     key={order.id}
-                    order={order}
-                    onNavigate={onNavigate}
-                    onDownload={handleDownload}
-                  />
-                ))}
-                {paginatedHistory.length < filteredHistory.length && (
-                  <button
-                    onClick={() => setHistoryPage((p) => p + 1)}
-                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
-                    style={{
-                      background: 'var(--bg-alt)',
-                      color: 'var(--primario)',
-                      border: '1px solid var(--border)',
-                      fontFamily: 'DM Sans',
-                    }}
+                    className="w-full rounded-2xl p-4 space-y-3 bg-slate-800/80 border border-white/10"
                   >
-                    Cargar más
-                  </button>
-                )}
-              </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            isEntregado ? 'bg-emerald-400' : 'bg-red-500'
+                          }`}
+                        />
+                        <span className="font-mono font-bold text-slate-300">{order.id}</span>
+                      </div>
+                      <span className="text-slate-400">{order.fecha}</span>
+                    </div>
+
+                    <div className="text-xs text-slate-300 space-y-1">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-slate-500 font-bold">De:</span> {order.origen}
+                      </div>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-slate-500 font-bold">A:</span> {order.destino}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs">
+                      <span className="font-mono font-bold text-slate-200">C$ {order.monto.toFixed(2)}</span>
+                      <button
+                        onClick={() => onNavigate('solicitar')}
+                        className="text-blue-400 font-bold hover:underline flex items-center gap-1"
+                      >
+                        Repetir envío <ArrowRight size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Report Problem Modal ── */}
+      {/* ── Report Modal ── */}
       <AnimatePresence>
         {reportModal.open && (
-          <ReportModal
-            state={reportModal}
-            setState={setReportModal}
-            onSubmit={handleReportSubmit}
-          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="w-full max-w-md bg-slate-900 border border-white/15 rounded-3xl p-6 space-y-4 text-slate-100 shadow-2xl"
+            >
+              <h3 className="text-lg font-bold font-syne flex items-center gap-2 text-red-400">
+                <AlertTriangle size={20} /> Reportar Problema
+              </h3>
+              <p className="text-xs text-slate-400">
+                Selecciona la causa de la incidencia para el envío <span className="font-mono text-white">{reportModal.orderId}</span>.
+              </p>
+
+              <div className="space-y-2">
+                {[
+                  { value: 'repartidor_demorado', label: 'Repartidor demorado' },
+                  { value: 'paquete_danado', label: 'Paquete dañado' },
+                  { value: 'direccion_incorrecta', label: 'Dirección incorrecta' },
+                  { value: 'otro', label: 'Otro motivo' },
+                ].map((r) => (
+                  <button
+                    key={r.value}
+                    onClick={() => setReportModal((s) => ({ ...s, reason: r.value }))}
+                    className={`w-full text-left p-3 rounded-xl text-xs font-semibold border transition-all ${
+                      reportModal.reason === r.value
+                        ? 'bg-blue-600/20 border-blue-500 text-blue-400'
+                        : 'bg-slate-800 border-white/10 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                placeholder="Detalles adicionales (opcional)..."
+                value={reportModal.description}
+                onChange={(e) => setReportModal((s) => ({ ...s, description: e.target.value }))}
+                className="w-full h-24 p-3 rounded-xl bg-slate-800 border border-white/10 text-xs text-slate-100 outline-none focus:border-blue-500"
+              />
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setReportModal({ open: false, orderId: '', reason: '', description: '' })}
+                  className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleReportSubmit}
+                  disabled={!reportModal.reason}
+                  className="flex-1 py-3 rounded-xl bg-red-600 disabled:opacity-40 text-white font-bold text-xs hover:bg-red-500 transition-all shadow-md"
+                >
+                  Enviar Reporte
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

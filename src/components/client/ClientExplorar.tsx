@@ -218,7 +218,7 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
      ═══════════════════════════════════════════════ */
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', paddingTop: 8 }}>
+    <div className="w-full px-1 sm:px-4" style={{ position: 'relative', minHeight: '100vh', paddingTop: 8 }}>
 
       {/* ─── Location text below header ─── */}
       <div style={{ padding: '8px 16px 0' }}>
