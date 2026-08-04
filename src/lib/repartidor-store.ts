@@ -940,6 +940,9 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
   syncFromBackend: async () => {
     try {
+      const currentState = get();
+      const isManualDisconnected = !currentState.conectado && (currentState.ordenesActivas || []).length === 0;
+
       const [perfilRes, motoRes, conexionRes, ordenesRes, statsRes, notifsRes, calsRes] = await Promise.all([
         fetch('/api/repartidor/perfil'),
         fetch('/api/repartidor/moto'),
@@ -960,43 +963,56 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         const moto = await motoRes.json();
         if (moto && moto.id) set({ moto });
       }
+
+      if (ordenesRes.ok) {
+        const data = await ordenesRes.json();
+        const serverOrdenes: OrdenActiva[] = data?.ordenes || (data?.orden ? [data.orden] : []);
+        if (serverOrdenes.length > 0) {
+          const currentActive = currentState.ordenActiva;
+          const matchingActive = currentActive ? serverOrdenes.find((o) => o.id === currentActive.id) : null;
+
+          set({
+            ordenesActivas: serverOrdenes,
+            ordenActiva: matchingActive || serverOrdenes[0],
+            enServicio: true,
+            conectado: true,
+          });
+        } else if ((currentState.ordenesActivas || []).length === 0) {
+          set({ ordenesActivas: [], ordenActiva: null });
+        }
+      }
+
       if (conexionRes.ok) {
         const c = await conexionRes.json();
         if (c) {
-          const currentState = get();
-          const hasActiveOrder = (currentState.ordenesActivas || []).length > 0 || !!currentState.ordenActiva;
-          const isDisconnected = !currentState.conectado && !hasActiveOrder;
+          const freshState = get();
+          const hasActiveOrder = (freshState.ordenesActivas || []).length > 0 || !!freshState.ordenActiva;
 
-          const isConectado = isDisconnected ? false : (c.conectado || hasActiveOrder || c.enServicio);
+          if (isManualDisconnected && !hasActiveOrder) {
+            set({
+              conectado: false,
+              enServicio: false,
+              pausado: false,
+              pausaHasta: null,
+              estado: 'DESCONECTADO',
+            });
+          } else {
+            const ACTIVE_TRIP_STATES = ['EN_CAMINO_RECOGER', 'EN_PUNTO_RECOGIDA', 'RECOGIDO', 'EN_CAMINO_ENTREGAR', 'EN_PUNTO_ENTREGA'];
+            const isCurrentlyInTrip = ACTIVE_TRIP_STATES.includes(freshState.estado);
 
-          set({
-            conectado: isConectado,
-            enServicio: isConectado ? (c.enServicio ?? false) : false,
-            pausado: isConectado ? (c.pausado ?? false) : false,
-            pausaHasta: isConectado ? (c.pausaHasta ? new Date(c.pausaHasta).getTime() : null) : null,
-            estado: isConectado
-              ? (c.estado && c.estado !== 'DESCONECTADO' ? c.estado : 'EN_LINEA')
-              : 'DESCONECTADO',
-            rechazosHora: c.rechazosHora ?? 0,
-          });
-        }
-      }
-      if (ordenesRes.ok) {
-        const data = await ordenesRes.json();
-        if (data?.ordenes && Array.isArray(data.ordenes) && data.ordenes.length > 0) {
-          set({
-            ordenesActivas: data.ordenes,
-            ordenActiva: data.ordenes[0],
-            enServicio: true,
-          });
-        } else if (data?.orden) {
-          set({
-            ordenesActivas: [data.orden],
-            ordenActiva: data.orden,
-            enServicio: true,
-          });
-        } else {
-          set({ ordenesActivas: [], ordenActiva: null });
+            set({
+              conectado: isManualDisconnected ? false : (c.conectado || hasActiveOrder || c.enServicio),
+              enServicio: isManualDisconnected ? false : (c.enServicio || hasActiveOrder),
+              pausado: c.pausado ?? false,
+              pausaHasta: c.pausaHasta ? new Date(c.pausaHasta).getTime() : null,
+              estado: isManualDisconnected
+                ? 'DESCONECTADO'
+                : (isCurrentlyInTrip
+                    ? freshState.estado
+                    : (hasActiveOrder ? 'EN_CAMINO_RECOGER' : (c.estado && c.estado !== 'DESCONECTADO' ? c.estado : 'EN_LINEA'))),
+              rechazosHora: c.rechazosHora ?? 0,
+            });
+          }
         }
       }
       if (statsRes.ok) {
