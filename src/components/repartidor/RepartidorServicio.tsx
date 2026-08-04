@@ -66,10 +66,6 @@ const ESTADO_COLOR: Record<string, string> = {
   INCIDENCIA: '#FF3B30',
 };
 
-/* ═══════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════ */
-
 export default function RepartidorServicio() {
   const {
     estado,
@@ -175,7 +171,7 @@ export default function RepartidorServicio() {
         : geocodeAddress(ordenActiva.destino, [12.1402, -86.2954]))
     : undefined;
 
-  /* ─── Handlers ─── */
+  /* Handlers */
   const handleConectar = () => {
     if (!perfil.contratoAceptado) {
       showSnackbar({ message: 'Error: Debes firmar el contrato digital en tu Perfil antes de conectarte.' });
@@ -266,10 +262,6 @@ export default function RepartidorServicio() {
     HAPTIC_PATTERNS.light();
   };
 
-  /* ═══════════════════════════════════════════════
-     RENDER — STATE MACHINE
-     ═══════════════════════════════════════════════ */
-
   return (
     <div
       style={{
@@ -294,18 +286,18 @@ export default function RepartidorServicio() {
         />
       </div>
 
-      {/* ═══════ TOP FLOATING STATUS BAR ═══════ */}
+      {/* ═══════ TOP-LEFT STATUS BADGE (DOES NOT OVERLAP RIGHT HEADER CAPSULE) ═══════ */}
       <div
         style={{
           position: 'absolute',
-          top: 'calc(env(safe-area-inset-top, 12px) + 12px)',
+          top: 'calc(env(safe-area-inset-top, 12px) + 8px)',
           left: 16,
-          right: 16,
+          maxWidth: 'calc(100vw - 195px)',
           zIndex: 30,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '8px 16px',
+          gap: 10,
+          padding: '8px 14px',
           borderRadius: 100,
           background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 92%, transparent)',
           backdropFilter: 'saturate(200%) blur(24px)',
@@ -315,30 +307,34 @@ export default function RepartidorServicio() {
           fontSize: 12,
           fontWeight: 700,
           color: 'var(--ios-text-primary, #F8FAFC)',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
           <span
             style={{
               width: 10,
               height: 10,
               borderRadius: '50%',
+              flexShrink: 0,
               background: ESTADO_COLOR[estado] || '#007AFF',
               boxShadow: `0 0 8px ${ESTADO_COLOR[estado] || '#007AFF'}`,
             }}
           />
-          <span style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <span style={{ textTransform: 'uppercase', letterSpacing: '0.5px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {estado.replace(/_/g, ' ')}
           </span>
         </div>
 
         {ordenActiva && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, flexShrink: 0 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#34C759' }}>
-              <Clock size={14} /> {eta} min
+              <Clock size={13} /> {eta} min
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#007AFF' }}>
-              <Navigation size={14} /> {ordenActiva.kmEstimados.toFixed(1)} km
+              <Navigation size={13} /> {ordenActiva.kmEstimados.toFixed(1)} km
             </span>
           </div>
         )}
@@ -452,58 +448,74 @@ export default function RepartidorServicio() {
         </div>
       )}
 
-      {/* ═══════ DESCONECTADO OVERLAY ═══════ */}
+      {/* ═══════ DESCONECTADO FLOATING BOTTOM BANNER (NON-BLOCKING) ═══════ */}
       {estado === 'DESCONECTADO' && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
           style={{
             position: 'absolute',
-            inset: 0,
+            bottom: 'calc(var(--ios-tabbar-height) + 24px)',
+            left: 16,
+            right: 16,
+            maxWidth: 420,
+            margin: '0 auto',
+            padding: 16,
+            borderRadius: 20,
+            background: 'rgba(15, 23, 42, 0.92)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
+            zIndex: 40,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: 24,
-            backgroundColor: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            zIndex: 40,
+            gap: 14,
           }}
         >
           <div
-            className="lf-ios-card"
-            style={{ maxWidth: 360, textAlign: 'center', padding: 28 }}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              background: 'rgba(255, 59, 48, 0.15)',
+              color: '#FF3B30',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
           >
-            <div
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 20,
-                background: 'rgba(0, 122, 255, 0.15)',
-                color: '#007AFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-              }}
-            >
-              <Power size={32} />
-            </div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: '#F8FAFC' }}>
-              Estás desconectado
-            </h2>
-            <p style={{ fontSize: 14, color: '#94A3B8', marginBottom: 24, lineHeight: 1.5 }}>
-              Conéctate para empezar a recibir asignaciones de órdenes en tiempo real.
-            </p>
-            <button onClick={handleConectar} className="lf-ios-button">
-              <Power size={20} />
-              Conectarse
-            </button>
+            <Power size={22} />
           </div>
+          <div style={{ flex: 1 }}>
+            <h4 style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', margin: 0, marginBottom: 2 }}>
+              Estás desconectado
+            </h4>
+            <p style={{ fontSize: 12, color: '#94A3B8', margin: 0 }}>
+              Conéctate para recibir asignaciones en tiempo real.
+            </p>
+          </div>
+          <button
+            onClick={handleConectar}
+            style={{
+              padding: '10px 16px',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #007AFF 0%, #0056B3 100%)',
+              color: '#FFFFFF',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            Conectar
+          </button>
         </motion.div>
       )}
 
-      {/* ═══════ EN_LINEA (WAITING OR ACCEPTED ORDERS) ═══════ */}
+      {/* ═══════ EN_LINEA FLOATING BOTTOM BANNER (NON-BLOCKING) ═══════ */}
       {estado === 'EN_LINEA' && (
         <>
           {ordenesActivas.length === 0 ? (
@@ -512,17 +524,21 @@ export default function RepartidorServicio() {
               animate={{ opacity: 1, y: 0 }}
               style={{
                 position: 'absolute',
-                top: '35%',
+                bottom: 'calc(var(--ios-tabbar-height) + 24px)',
                 left: 16,
                 right: 16,
-                padding: 24,
+                maxWidth: 420,
+                margin: '0 auto',
+                padding: '14px 18px',
                 borderRadius: 20,
-                background: 'rgba(15, 23, 42, 0.85)',
+                background: 'rgba(15, 23, 42, 0.92)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
-                textAlign: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
                 zIndex: 30,
               }}
             >
@@ -530,25 +546,27 @@ export default function RepartidorServicio() {
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
                 style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
                   background: 'rgba(0, 122, 255, 0.15)',
                   color: '#007AFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 12px',
+                  flexShrink: 0,
                 }}
               >
-                <Zap size={28} />
+                <Zap size={22} />
               </motion.div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#F8FAFC', marginBottom: 4 }}>
-                En línea — Esperando asignaciones
-              </h3>
-              <p style={{ fontSize: 13, color: '#94A3B8' }}>
-                Tu ubicación GPS se está transmitiendo en vivo a la flota.
-              </p>
+              <div>
+                <h4 style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', margin: 0, marginBottom: 2 }}>
+                  En línea — Esperando asignaciones
+                </h4>
+                <p style={{ fontSize: 12, color: '#94A3B8', margin: 0 }}>
+                  Tu posición GPS se está transmitiendo en vivo.
+                </p>
+              </div>
             </motion.div>
           ) : (
             <div
