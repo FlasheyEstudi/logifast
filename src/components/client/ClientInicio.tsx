@@ -1932,17 +1932,24 @@ function BannerSlideCard({
     return (
       <div
         className="flex items-center gap-3 px-5 py-4"
-        style={{ ...bgStyle, borderRadius: 24, color: banner.colorTexto, minHeight: 170 }}
+        style={{ ...bgStyle, borderRadius: 24, color: banner.colorTexto, minHeight: 100 }}
       >
-        <Bell size={18} style={{ flexShrink: 0 }} />
-        <span className="flex-1 font-medium" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
-          {banner.titulo}
-        </span>
+        <Bell size={20} style={{ flexShrink: 0 }} />
+        <div className="flex-1">
+          <h4 className="font-bold text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            {banner.titulo}
+          </h4>
+          {banner.descripcion && (
+            <p className="text-xs opacity-90 font-medium mt-0.5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              {banner.descripcion}
+            </p>
+          )}
+        </div>
         {banner.botonTexto && (
           <button
             onClick={(e) => { e.stopPropagation(); onCTA(banner); }}
-            className="shrink-0 px-3 py-1.5 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90"
-            style={{ background: 'rgba(255,255,255,0.2)', color: banner.colorTexto }}
+            className="shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs transition-transform active:scale-95 shadow-sm"
+            style={{ background: 'rgba(255,255,255,0.25)', color: banner.colorTexto, backdropFilter: 'blur(8px)' }}
           >
             {banner.botonTexto}
           </button>

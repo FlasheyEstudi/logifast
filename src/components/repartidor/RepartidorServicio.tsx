@@ -21,6 +21,7 @@ import {
   Compass,
   X,
   Key,
+  FileText,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
@@ -1124,6 +1125,74 @@ function OrdenMiniCard({ orden, showRecogida, showEntrega }: { orden: OrdenActiv
         <span className="font-mono" style={{ fontSize: 16, fontWeight: 700, color: '#34C759' }}>
           C${orden.ganancia.toFixed(2)}
         </span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 10, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <button
+          onClick={() => useRepartidorStore.setState({ chatAbierto: true, chatOrdenId: orden.id })}
+          style={{
+            padding: '8px 10px',
+            borderRadius: 10,
+            background: 'rgba(0, 122, 255, 0.15)',
+            border: '1px solid rgba(0, 122, 255, 0.3)',
+            color: '#007AFF',
+            fontSize: 12,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 5,
+            cursor: 'pointer',
+          }}
+        >
+          <MessageSquare size={14} />
+          Chat
+        </button>
+
+        <button
+          onClick={() => {
+            const phone = (orden.clienteTelefono || '22220000').replace(/[^0-9+]/g, '');
+            window.location.href = `tel:${phone}`;
+          }}
+          style={{
+            padding: '8px 10px',
+            borderRadius: 10,
+            background: 'rgba(52, 199, 89, 0.15)',
+            border: '1px solid rgba(52, 199, 89, 0.3)',
+            color: '#34C759',
+            fontSize: 12,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 5,
+            cursor: 'pointer',
+          }}
+        >
+          <Phone size={14} />
+          Llamar
+        </button>
+
+        <button
+          onClick={() => useRepartidorStore.setState({ servicioDetalle: orden as any })}
+          style={{
+            padding: '8px 10px',
+            borderRadius: 10,
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            color: '#F8FAFC',
+            fontSize: 12,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 5,
+            cursor: 'pointer',
+          }}
+        >
+          <FileText size={14} />
+          Detalle
+        </button>
       </div>
     </div>
   );

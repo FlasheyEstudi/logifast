@@ -126,17 +126,22 @@ export default function RepartidorMap({
     }
   }, [driverPos, shouldFollow, is3DMode, currentBearing, zoom]);
 
-  // Centrar/encajar ruta y marcadores origen/destino
+  // Centrar/encajar ruta y marcadores origen/destino de forma óptima sin arrastrar al rincón
   useEffect(() => {
     if (mapRef.current && mapReady) {
-      if (origen && destino) {
-        mapRef.current.fitBounds([
-          [origen[1], origen[0]],
-          [destino[1], destino[0]]
-        ], { padding: 50, duration: 1500 });
+      if (origen && destino && isValidPos(origen) && isValidPos(destino)) {
+        const bounds: [[number, number], [number, number]] = [
+          [Math.min(origen[1], destino[1], driverPos[1]), Math.min(origen[0], destino[0], driverPos[0])],
+          [Math.max(origen[1], destino[1], driverPos[1]), Math.max(origen[0], destino[0], driverPos[0])],
+        ];
+        mapRef.current.fitBounds(bounds, {
+          padding: { top: 80, bottom: 200, left: 50, right: 50 },
+          duration: 1200,
+          maxZoom: 16,
+        });
       }
     }
-  }, [mapReady, origen, destino]);
+  }, [mapReady, origen, destino, driverPos]);
 
   // Manejo de clics en el mapa
   useEffect(() => {
