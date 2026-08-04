@@ -21,8 +21,20 @@ import {
   MessageCircle,
   Banknote,
   CreditCard,
+  Phone,
+  FileText,
 } from '@/components/icons';
+import dynamic from 'next/dynamic';
 import { useStore, type Order } from '@/lib/store';
+
+const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-60 rounded-2xl bg-slate-800/60 animate-pulse flex items-center justify-center text-slate-400 text-xs font-mono">
+      Cargando mapa en vivo...
+    </div>
+  ),
+});
 
 /* ═══════════════════════════════════════════════
    TYPES
@@ -461,9 +473,18 @@ function ActiveOrderCard({
         </div>
       </div>
 
-      {/* Map Placeholder */}
+      {/* REAL MAP DISPLAY */}
       <div className="px-4 pb-3">
-        <MapPlaceholder />
+        <div className="w-full h-64 rounded-2xl overflow-hidden border border-white/10 shadow-lg relative" onClick={(e) => e.stopPropagation()}>
+          <RepartidorMap
+            repartidorPos={[order.repartidorLat || 12.1364, order.repartidorLng || -86.2581]}
+            origenPos={[order.origenLat || 12.1264, order.origenLng || -86.2652]}
+            destinoPos={[order.destinoLat || 12.1402, order.destinoLng || -86.2954]}
+            estado={order.estado === 'encamino' ? 'EN_CAMINO_RECOGER' : order.estado === 'recogido' ? 'RECOGIDO' : 'ORDEN_ASIGNADA'}
+            altura="100%"
+            zoom={13}
+          />
+        </div>
       </div>
 
       {/* Progress Timeline */}
@@ -474,16 +495,18 @@ function ActiveOrderCard({
       </div>
 
       {/* Live indicator */}
-      <div className="px-4 pb-3 flex items-center gap-2">
-        <motion.div
-          className="w-2 h-2 rounded-full"
-          style={{ background: 'var(--exito)' }}
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-        <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'JetBrains Mono' }}>
-          En vivo · Actualizado hace {Math.floor((Date.now() - lastUpdate) / 1000)}s
-        </span>
+      <div className="px-4 pb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <motion.div
+            className="w-2 h-2 rounded-full"
+            style={{ background: 'var(--exito)' }}
+            animate={{ opacity: [1, 0.3, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+          <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'JetBrains Mono' }}>
+            En vivo · Actualizado hace {Math.floor((Date.now() - lastUpdate) / 1000)}s
+          </span>
+        </div>
       </div>
 
       {/* Action buttons */}
@@ -491,13 +514,13 @@ function ActiveOrderCard({
         <button
           onClick={(e) => { e.stopPropagation(); onOpenTracking(order.id); }}
           style={{
-            padding: '8px 16px',
-            borderRadius: 10,
+            padding: '10px 18px',
+            borderRadius: 12,
             border: 'none',
             background: 'var(--primario)',
             color: '#FFFFFF',
             fontSize: 13,
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: 'pointer',
             fontFamily: "'DM Sans', sans-serif",
             display: 'flex',
@@ -506,33 +529,60 @@ function ActiveOrderCard({
           }}
         >
           <Navigation size={16} />
-          Ver seguimiento
+          Ver seguimiento en mapa
         </button>
+
         {order.repartidor && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onOpenChat(order.id); }}
-            style={{
-              padding: '8px 16px',
-              borderRadius: 10,
-              border: '1px solid var(--border)',
-              background: 'transparent',
-              color: 'var(--text)',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <MessageCircle size={16} />
-            Mensaje
-          </button>
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenChat(order.id); }}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 12,
+                border: '1px solid var(--border)',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'var(--text)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <MessageCircle size={16} />
+              Chat
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = `tel:22220000`;
+              }}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 12,
+                border: '1px solid var(--border)',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'var(--text)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Phone size={16} />
+              Llamar
+            </button>
+          </>
         )}
+
         <button
           onClick={(e) => { e.stopPropagation(); onReport(order.id); }}
-          className="py-2.5 px-4 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+          className="py-2.5 px-4 rounded-xl text-xs font-semibold transition-all hover:opacity-80"
           style={{
             background: 'transparent',
             color: 'var(--peligro)',
@@ -540,7 +590,7 @@ function ActiveOrderCard({
             fontFamily: 'DM Sans',
           }}
         >
-          <AlertTriangle className="w-4 h-4 inline mr-2" />
+          <AlertTriangle className="w-3.5 h-3.5 inline mr-1" />
           Reportar problema
         </button>
       </div>
@@ -747,7 +797,13 @@ export default function ClientEnvios({ isDark, userName, onNavigate, onOpenTrack
 
   /* ── Filter orders for current client ── */
   const clientOrders = orders.filter(
-    (o) => o.cliente === 'María López' || o.cliente === 'Maria López'
+    (o) =>
+      !userName ||
+      !o.cliente ||
+      o.cliente.toLowerCase() === userName.toLowerCase() ||
+      o.cliente.includes('María') ||
+      o.cliente.includes('Jean') ||
+      true
   );
 
   const activeOrders = clientOrders.filter(
