@@ -772,8 +772,9 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
           style={{ marginBottom: 28 }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text)' }}>
-              📢 Negocios Patrocinados
+            <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Megaphone size={18} color="#FF9500" />
+              <span>Negocios Patrocinados</span>
             </h3>
             <button
               onClick={() => setAdModalOpen(true)}
@@ -1743,8 +1744,9 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
                 boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
               }}
             >
-              <h3 className="font-syne" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
-                📢 Anunciar mi Negocio en Logifast
+              <h3 className="font-syne" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Megaphone size={20} color="#FF9500" />
+                <span>Anunciar mi Negocio en Logifast</span>
               </h3>
               <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: 16 }}>
                 Aparece en las primeras posiciones y atrae a miles de clientes activos. Plan publicitario mensual por solo <strong>C$ 350 ($10 USD)</strong>.
