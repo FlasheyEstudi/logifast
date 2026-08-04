@@ -50,9 +50,7 @@ export async function POST(req: NextRequest) {
     let user: any = null;
     try {
       user = await db.user.findFirst({
-        where: {
-          email: { equals: email, mode: 'insensitive' },
-        },
+        where: { email },
       });
     } catch (err) {
       console.warn('[AUTH_LOGIN] Database query error:', err);

@@ -43,8 +43,8 @@ const PERIODO_LABEL: Record<Periodo, string> = {
 };
 
 const ESTADO_SERVICIO_COLOR: Record<string, string> = {
-  entregado: 'var(--exito, #00C853)',
-  incidencia: 'var(--peligro, #FF1744)',
+  entregado: 'var(--exito, var(--exito))',
+  incidencia: 'var(--peligro, var(--peligro))',
   cancelado: '#9E9E9E',
 };
 
@@ -120,7 +120,7 @@ export default function RepartidorHistorial() {
               <h1
                 style={{
                   fontSize: 22,
-                  fontWeight: 800,
+                  fontWeight: 700,
                   color: 'var(--text, #F8FAFC)',
                   fontFamily: "'Syne', sans-serif",
                   letterSpacing: '-0.02em',
@@ -144,13 +144,13 @@ export default function RepartidorHistorial() {
                 padding: '8px 14px',
                 borderRadius: 100,
                 border: 'none',
-                background: 'var(--primario, #0066FF)',
+                background: 'var(--primario, var(--primario))',
                 color: '#FFFFFF',
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: 'pointer',
                 fontFamily: 'var(--ios-font)',
-                boxShadow: '0 4px 12px color-mix(in srgb, var(--primario, #0066FF) 40%, transparent)',
+                boxShadow: '0 4px 12px color-mix(in srgb, var(--primario, var(--primario)) 40%, transparent)',
               }}
             >
               <MapPin size={14} />
@@ -166,7 +166,7 @@ export default function RepartidorHistorial() {
               padding: 4,
               borderRadius: 100,
               background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 90%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 20%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--ios-blue, var(--primario)) 20%, transparent)',
               overflowX: 'auto',
               scrollbarWidth: 'none',
             }}
@@ -192,10 +192,10 @@ export default function RepartidorHistorial() {
                     padding: '8px 12px',
                     borderRadius: 100,
                     border: 'none',
-                    background: isActive ? 'var(--primario, #0066FF)' : 'transparent',
+                    background: isActive ? 'var(--primario, var(--primario))' : 'transparent',
                     color: isActive ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
                     fontSize: 12,
-                    fontWeight: isActive ? 800 : 600,
+                    fontWeight: isActive ? 700 : 600,
                     fontFamily: 'var(--ios-font)',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
@@ -226,7 +226,7 @@ export default function RepartidorHistorial() {
                   borderRadius: 20,
                   padding: 16,
                   background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 25%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--ios-blue, var(--primario)) 25%, transparent)',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -241,9 +241,9 @@ export default function RepartidorHistorial() {
                         padding: '4px 10px',
                         borderRadius: 100,
                         background: oferta.tipo === 'compra' ? 'rgba(255, 149, 0, 0.2)' : 'rgba(0, 102, 255, 0.2)',
-                        color: oferta.tipo === 'compra' ? '#FF9500' : '#0066FF',
+                        color: oferta.tipo === 'compra' ? '#FF9500' : 'var(--primario)',
                         fontSize: 11,
-                        fontWeight: 800,
+                        fontWeight: 700,
                         textTransform: 'uppercase',
                       }}
                     >
@@ -257,7 +257,7 @@ export default function RepartidorHistorial() {
                   {/* Earnings Highlight */}
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>Ganancia Est.</span>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: '#34C759', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#34C759', fontFamily: 'var(--font-mono)' }}>
                       C${oferta.ganancia}
                     </div>
                   </div>
@@ -266,9 +266,9 @@ export default function RepartidorHistorial() {
                 {/* Addresses */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 12px', borderRadius: 14, background: 'color-mix(in srgb, var(--ios-bg-secondary, #0F172A) 80%, transparent)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', marginTop: 4, flexShrink: 0 }} />
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primario)', marginTop: 4, flexShrink: 0 }} />
                     <div>
-                      <div style={{ fontSize: 10, textTransform: 'uppercase', color: '#0066FF', fontWeight: 700 }}>Origen / Recogida</div>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--primario)', fontWeight: 700 }}>Origen / Recogida</div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{oferta.origen}</div>
                     </div>
                   </div>
@@ -322,7 +322,7 @@ export default function RepartidorHistorial() {
                         background: '#34C759',
                         color: '#FFFFFF',
                         fontSize: 12,
-                        fontWeight: 800,
+                        fontWeight: 700,
                         cursor: 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -368,7 +368,7 @@ export default function RepartidorHistorial() {
                     padding: '10px 20px',
                     borderRadius: 100,
                     border: 'none',
-                    background: 'var(--primario, #0066FF)',
+                    background: 'var(--primario, var(--primario))',
                     color: '#FFF',
                     fontSize: 13,
                     fontWeight: 700,
@@ -388,7 +388,7 @@ export default function RepartidorHistorial() {
                     borderRadius: 20,
                     padding: 16,
                     background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 94%, transparent)',
-                    border: ordenActiva?.id === ord.id ? '2px solid #0066FF' : '1px solid color-mix(in srgb, var(--ios-blue) 20%, transparent)',
+                    border: ordenActiva?.id === ord.id ? '2px solid var(--primario)' : '1px solid color-mix(in srgb, var(--ios-blue) 20%, transparent)',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                     display: 'flex',
                     flexDirection: 'column',
@@ -397,13 +397,13 @@ export default function RepartidorHistorial() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: '#0066FF' }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primario)' }}>
                         #{idx + 1} SERVICIO EN CURSO
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>ID: {ord.id}</span>
                     </div>
 
-                    <span style={{ fontSize: 16, fontWeight: 800, color: '#34C759' }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#34C759' }}>
                       C${ord.ganancia}
                     </span>
                   </div>
@@ -426,7 +426,7 @@ export default function RepartidorHistorial() {
                         padding: '8px 12px',
                         borderRadius: 100,
                         border: 'none',
-                        background: '#0066FF',
+                        background: 'var(--primario)',
                         color: '#FFF',
                         fontSize: 12,
                         fontWeight: 700,
@@ -490,12 +490,12 @@ export default function RepartidorHistorial() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <div style={{ padding: 14, borderRadius: 16, background: 'color-mix(in srgb, var(--ios-bg-elevated) 90%, transparent)', border: '1px solid color-mix(in srgb, var(--ios-blue) 20%, transparent)' }}>
                 <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>ENTREGAS COMPLETADAS</span>
-                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>{stats.entregas}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{stats.entregas}</div>
               </div>
 
               <div style={{ padding: 14, borderRadius: 16, background: 'color-mix(in srgb, var(--ios-bg-elevated) 90%, transparent)', border: '1px solid color-mix(in srgb, var(--ios-blue) 20%, transparent)' }}>
                 <span style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>TOTAL GANANCIAS</span>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#34C759', marginTop: 2 }}>C${stats.ganancias}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: '#34C759', marginTop: 2 }}>C${stats.ganancias}</div>
               </div>
             </div>
 
@@ -538,7 +538,7 @@ export default function RepartidorHistorial() {
                     </div>
 
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: '#34C759' }}>+C${s.ganancia}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#34C759' }}>+C${s.ganancia}</div>
                       <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{s.hora}</div>
                     </div>
                   </motion.div>

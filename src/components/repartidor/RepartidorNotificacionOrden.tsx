@@ -106,9 +106,9 @@ function RouteVisualization({ origen, destino }: { origen: string; destino: stri
               width: 12,
               height: 12,
               borderRadius: '50%',
-              background: 'var(--exito, #00C853)',
+              background: 'var(--exito, var(--exito))',
               border: '2px solid #fff',
-              boxShadow: '0 0 0 2px var(--exito, #00C853)',
+              boxShadow: '0 0 0 2px var(--exito, var(--exito))',
             }}
           />
         </div>
@@ -140,9 +140,9 @@ function RouteVisualization({ origen, destino }: { origen: string; destino: stri
               width: 12,
               height: 12,
               borderRadius: '50%',
-              background: 'var(--warning, #FFB300)',
+              background: 'var(--warning, var(--warning))',
               border: '2px solid #fff',
-              boxShadow: '0 0 0 2px var(--warning, #FFB300)',
+              boxShadow: '0 0 0 2px var(--warning, var(--warning))',
             }}
           />
         </div>

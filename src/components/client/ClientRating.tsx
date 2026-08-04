@@ -223,7 +223,7 @@ function RatingForm({ isDark, repartidorNombre, ratingOrderId, order, onClose }:
             >
               <CheckCircle
                 size={64}
-                style={{ color: 'var(--exito, #00C853)' }}
+                style={{ color: 'var(--exito, var(--exito))' }}
               />
             </motion.div>
             <h2

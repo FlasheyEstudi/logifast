@@ -317,7 +317,7 @@ export default function RepartidorServicio() {
           background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 92%, transparent)',
           backdropFilter: 'saturate(200%) blur(24px)',
           WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-          border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 30%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--ios-blue, var(--primario)) 30%, transparent)',
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
           fontSize: 12,
           fontWeight: 700,

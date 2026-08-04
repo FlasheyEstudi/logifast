@@ -178,7 +178,7 @@ export default function RepartidorMap({
   }, [rutaCoordenadas]);
 
   const isCompra = tipoServicio === 'compra';
-  const pickupColor = isCompra ? '#FF9500' : '#0066FF';
+  const pickupColor = isCompra ? '#FF9500' : 'var(--primario)';
   const pickupLabel = isCompra ? 'TIENDA' : 'RECOGER';
 
   return (
@@ -309,7 +309,7 @@ export default function RepartidorMap({
         {mapLibreRoute.length > 1 && (
           <MapRoute
             coordinates={mapLibreRoute}
-            color={isCompra ? '#FF9500' : '#0066FF'}
+            color={isCompra ? '#FF9500' : 'var(--primario)'}
             width={5}
             opacity={0.85}
             dashArray={isDashArray ? [8, 6] : undefined}

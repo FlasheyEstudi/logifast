@@ -153,7 +153,7 @@ export default function ClientMiTienda() {
             <p className="lf-mt-subtitle">
               {CATEGORIAS.find((c) => c.value === tienda.categoria)?.icon}{' '}
               {CATEGORIAS.find((c) => c.value === tienda.categoria)?.label} ·{' '}
-              <span style={{ color: tienda.estado === 'activo' ? '#4CAF50' : '#FFB300' }}>
+              <span style={{ color: tienda.estado === 'activo' ? 'var(--exito)' : 'var(--warning)' }}>
                 {tienda.estado === 'activo' ? 'Activa' : 'Pausada'}
               </span>
             </p>
@@ -182,7 +182,7 @@ export default function ClientMiTienda() {
           </div>
         </div>
         <div className="lf-mt-kpi">
-          <div className="lf-mt-kpi-icon" style={{ background: 'rgba(76,175,80,0.12)', color: '#4CAF50' }}>
+          <div className="lf-mt-kpi-icon" style={{ background: 'rgba(76,175,80,0.12)', color: 'var(--exito)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
           </div>
           <div>
@@ -191,7 +191,7 @@ export default function ClientMiTienda() {
           </div>
         </div>
         <div className="lf-mt-kpi">
-          <div className="lf-mt-kpi-icon" style={{ background: 'rgba(255,193,7,0.12)', color: '#FFB300' }}>
+          <div className="lf-mt-kpi-icon" style={{ background: 'rgba(255,193,7,0.12)', color: 'var(--warning)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 18.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
           </div>
           <div>
@@ -278,7 +278,7 @@ function CrearTiendaForm({ onCreated }: { onCreated: () => void }) {
     pedidoMinimo: 50,
     tiempoEstimado: '20-30 min',
     logoColor: '#FF5722',
-    portadaColor: '#1B1B2F',
+    portadaColor: 'var(--text)',
     imagenUrl: '',
   });
   const [loading, setLoading] = useState(false);
@@ -872,7 +872,7 @@ function ProductoFormModal({ producto, onClose, onSaved }: {
     categoriaNombre: producto?.categoriaNombre || 'General',
     precio: producto?.precio || 0,
     precioOriginal: producto?.precioOriginal || 0,
-    imagenColor: producto?.imagenColor || '#E8E4DE',
+    imagenColor: producto?.imagenColor || 'var(--border)',
     imagenUrl: producto?.imagenUrl || '',
     disponible: producto?.disponible ?? true,
     esNuevo: producto?.esNuevo ?? false,

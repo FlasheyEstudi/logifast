@@ -244,9 +244,9 @@ export default function RepartidorDetalleServicio() {
               padding: '4px 10px',
               borderRadius: 100,
               background: isEntregado
-                ? 'color-mix(in srgb, var(--exito, #00C853) 14%, transparent)'
-                : 'color-mix(in srgb, var(--peligro, #FF1744) 14%, transparent)',
-              color: isEntregado ? 'var(--exito, #00C853)' : 'var(--peligro, #FF1744)',
+                ? 'color-mix(in srgb, var(--exito, var(--exito)) 14%, transparent)'
+                : 'color-mix(in srgb, var(--peligro, var(--peligro)) 14%, transparent)',
+              color: isEntregado ? 'var(--exito, var(--exito))' : 'var(--peligro, var(--peligro))',
               fontSize: 11,
               fontWeight: 700,
               textTransform: 'uppercase',
@@ -370,8 +370,8 @@ export default function RepartidorDetalleServicio() {
             style={{
               padding: 16,
               borderRadius: 20,
-              background: 'color-mix(in srgb, var(--peligro, #FF1744) 6%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--peligro, #FF1744) 25%, transparent)',
+              background: 'color-mix(in srgb, var(--peligro, var(--peligro)) 6%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--peligro, var(--peligro)) 25%, transparent)',
               marginBottom: 12,
             }}
           >
@@ -383,7 +383,7 @@ export default function RepartidorDetalleServicio() {
                 marginBottom: 8,
               }}
             >
-              <AlertTriangle size={16} color="var(--peligro, #FF1744)" />
+              <AlertTriangle size={16} color="var(--peligro, var(--peligro))" />
               <span
                 className="font-syne"
                 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
@@ -492,9 +492,9 @@ export default function RepartidorDetalleServicio() {
                         height: 22,
                         borderRadius: '50%',
                         background: isCompleted
-                          ? 'var(--exito, #00C853)'
+                          ? 'var(--exito, var(--exito))'
                           : isCurrentIncidencia
-                            ? 'var(--peligro, #FF1744)'
+                            ? 'var(--peligro, var(--peligro))'
                             : 'var(--md-outline-variant)',
                         color: '#fff',
                         display: 'flex',
@@ -520,7 +520,7 @@ export default function RepartidorDetalleServicio() {
                           bottom: -14,
                           width: 2,
                           background: isCompleted
-                            ? 'var(--exito, #00C853)'
+                            ? 'var(--exito, var(--exito))'
                             : 'var(--md-outline-variant)',
                         }}
                       />
@@ -537,7 +537,7 @@ export default function RepartidorDetalleServicio() {
                   >
                     {step.label}
                     {isCurrentIncidencia && (
-                      <div style={{ fontSize: 11, color: 'var(--peligro, #FF1744)', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--peligro, var(--peligro))', marginTop: 2 }}>
                         Detenido por incidencia
                       </div>
                     )}

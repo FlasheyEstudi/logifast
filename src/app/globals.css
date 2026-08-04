@@ -14,24 +14,24 @@
    ======================================== */
 
 :root {
-  /* ─── MODO CLARO ─── */
-  --bg: #FAF8F5;
-  --bg-alt: #F2EDE8;
+  /* ─── MODO CLARO — Apple System Colors ─── */
+  --bg: #F2F2F7;
+  --bg-alt: #E5E5EA;
   --surface: #FFFFFF;
   --surface-elevated: #FFFFFF;
-  --text: #1B1B2F;
-  --text-secondary: #5A5A72;
-  --text-muted: #8E8EA0;
-  --border: #E8E4DE;
-  --primario: #0066FF;
-  --primario-hover: #0052CC;
-  --primario-soft: rgba(0, 102, 255, 0.05);
-  --secundario: #D4AF37;
-  --secundario-soft: rgba(212, 175, 55, 0.05);
-  --exito: #00C853;
-  --warning: #FFB300;
-  --peligro: #FF1744;
-  --info: #0764E2;
+  --text: #1C1C1E;
+  --text-secondary: #8E8E93;
+  --text-muted: #AEAEB2;
+  --border: rgba(60, 60, 67, 0.12);
+  --primario: #007AFF;
+  --primario-hover: #0051D5;
+  --primario-soft: rgba(0, 122, 255, 0.08);
+  --secundario: #FF9500;
+  --secundario-soft: rgba(255, 149, 0, 0.08);
+  --exito: #34C759;
+  --warning: #FF9500;
+  --peligro: #FF3B30;
+  --info: #5AC8FA;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
@@ -48,11 +48,11 @@
   --grain-opacity: 0.025;
 
   /* ─── Mobile 2026 Tokens ─── */
-  --lf-sheet-radius: 28px;
-  --lf-card-radius: 22px;
+  --lf-sheet-radius: 20px;
+  --lf-card-radius: 14px;
   --lf-pill-radius: 100px;
-  --lf-input-radius: 16px;
-  --lf-button-radius: 16px;
+  --lf-input-radius: 10px;
+  --lf-button-radius: 14px;
   --lf-fab-size: 60px;
   --lf-bottom-nav-height: 72px;
   --lf-safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -102,26 +102,26 @@
   --md-elevation-4: 0 6px 10px rgba(0,0,0,0.15), 0 2px 3px rgba(0,0,0,0.08);
   --md-elevation-5: 0 8px 12px rgba(0,0,0,0.15), 0 4px 4px rgba(0,0,0,0.08);
 
-  /* Keep shadcn compatibility */
+  /* Keep shadcn compatibility — Apple light mode */
   --radius: 0.75rem;
-  --background: #FAF8F5;
-  --foreground: #1B1B2F;
+  --background: #F2F2F7;
+  --foreground: #1C1C1E;
   --card: #FFFFFF;
-  --card-foreground: #1B1B2F;
+  --card-foreground: #1C1C1E;
   --popover: #FFFFFF;
-  --popover-foreground: #1B1B2F;
-  --primary: #0764E2;
+  --popover-foreground: #1C1C1E;
+  --primary: #007AFF;
   --primary-foreground: #FFFFFF;
-  --secondary: #F2EDE8;
-  --secondary-foreground: #1B1B2F;
-  --muted: #F2EDE8;
-  --muted-foreground: #8E8EA0;
-  --accent: #D4AF37;
+  --secondary: #E5E5EA;
+  --secondary-foreground: #1C1C1E;
+  --muted: #E5E5EA;
+  --muted-foreground: #8E8E93;
+  --accent: #007AFF;
   --accent-foreground: #FFFFFF;
-  --destructive: #FF1744;
-  --border-shadcn: #E8E4DE;
-  --input: #E8E4DE;
-  --ring: #0764E2;
+  --destructive: #FF3B30;
+  --border-shadcn: rgba(60, 60, 67, 0.12);
+  --input: rgba(120, 120, 128, 0.2);
+  --ring: #007AFF;
 
   /* ─── Alias tokens (dashboard inline-style compatibility) ───
      The dashboard components (ModuleConfig, ModulePedidos, etc.)
@@ -164,24 +164,24 @@
 }
 
 [data-theme="dark"] {
-  /* ─── MODO OSCURO ─── */
-  --bg: #0A0A0F;
-  --bg-alt: #12121A;
-  --surface: #1A1A24;
-  --surface-elevated: #22222E;
-  --text: #F0EDE8;
-  --text-secondary: #A8A8BE;
-  --text-muted: #6B6B80;
-  --border: #2A2A38;
-  --primario: #0066FF;
-  --primario-hover: #3385FF;
-  --primario-soft: rgba(0, 102, 255, 0.12);
-  --secundario: #F59E0B;
-  --secundario-soft: rgba(245, 158, 11, 0.05);
-  --exito: #69F0AE;
-  --warning: #FFD740;
-  --peligro: #FF5252;
-  --info: #3B82F6;
+  /* ─── MODO OSCURO — Apple System Colors (Dark) ─── */
+  --bg: #000000;
+  --bg-alt: #1C1C1E;
+  --surface: #1C1C1E;
+  --surface-elevated: #2C2C2E;
+  --text: #FFFFFF;
+  --text-secondary: #98989D;
+  --text-muted: #636366;
+  --border: rgba(84, 84, 88, 0.36);
+  --primario: #0A84FF;
+  --primario-hover: #409CFF;
+  --primario-soft: rgba(10, 132, 255, 0.15);
+  --secundario: #FF9F0A;
+  --secundario-soft: rgba(255, 159, 10, 0.15);
+  --exito: #30D158;
+  --warning: #FF9F0A;
+  --peligro: #FF453A;
+  --info: #64D2FF;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
@@ -194,7 +194,7 @@
   --nav-bg: transparent;
 
   /* ─── Mobile 2026 Tokens (Dark) ─── */
-  --lf-glass-bg: rgba(10,10,15,0.82);
+  --lf-glass-bg: rgba(28,28,30,0.78);
   --lf-glass-border: rgba(255,255,255,0.08);
   --lf-glass-blur: 24px;
 
@@ -237,25 +237,25 @@
   /* Grain */
   --grain-opacity: 0.03;
 
-  /* shadcn dark */
-  --background: #0A0A0F;
-  --foreground: #F0EDE8;
-  --card: #1A1A24;
-  --card-foreground: #F0EDE8;
-  --popover: #1A1A24;
-  --popover-foreground: #F0EDE8;
-  --primary: #4F93FF;
+  /* shadcn dark — Apple dark mode colors */
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --card: #1C1C1E;
+  --card-foreground: #FFFFFF;
+  --popover: #1C1C1E;
+  --popover-foreground: #FFFFFF;
+  --primary: #0A84FF;
   --primary-foreground: #FFFFFF;
-  --secondary: #12121A;
-  --secondary-foreground: #F0EDE8;
-  --muted: #12121A;
-  --muted-foreground: #6B6B80;
-  --accent: #F59E0B;
+  --secondary: #2C2C2E;
+  --secondary-foreground: #FFFFFF;
+  --muted: #2C2C2E;
+  --muted-foreground: #98989D;
+  --accent: #3A3A3C;
   --accent-foreground: #FFFFFF;
-  --destructive: #FF5252;
-  --border-shadcn: #2A2A38;
-  --input: #2A2A38;
-  --ring: #4F93FF;
+  --destructive: #FF453A;
+  --border-shadcn: rgba(84, 84, 88, 0.36);
+  --input: rgba(120, 120, 128, 0.36);
+  --ring: #0A84FF;
 
   /* ─── Alias tokens (dark) — keep dashboard inline styles solid in dark mode ─── */
   --lf-bg: var(--bg);
@@ -7404,7 +7404,7 @@ body {
 .lf-splash-text {
   font-family: 'Syne', var(--font-syne), sans-serif;
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.5px;
   display: flex;
   align-items: center;
@@ -7543,7 +7543,7 @@ body {
 .lp-hero-title {
   font-family: 'Syne', var(--font-syne), sans-serif;
   font-size: clamp(40px, 5.5vw, 68px);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: -2px;
   color: var(--text);
@@ -7647,7 +7647,7 @@ body {
 .lp-section-title {
   font-family: 'Syne', var(--font-syne), sans-serif;
   font-size: clamp(32px, 3.5vw, 48px);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -1px;
   color: var(--text);
 }
@@ -7862,7 +7862,7 @@ body {
 
 .apple-hero-title {
   font-size: clamp(34px, 5.8vw, 64px);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.03em;
   color: var(--text);
@@ -7984,7 +7984,7 @@ body {
 
 .apple-section-title {
   font-size: clamp(24px, 4vw, 36px);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text);
   max-width: 600px;
@@ -8155,7 +8155,7 @@ body {
 
 .apple-timeline-num {
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--border);
   font-family: 'JetBrains Mono', monospace;
   line-height: 1;
@@ -8229,7 +8229,7 @@ body {
 
 .apple-cta-title {
   font-size: clamp(24px, 4vw, 40px);
-  font-weight: 800;
+  font-weight: 700;
   margin-bottom: 14px;
   letter-spacing: -0.02em;
 }
@@ -8558,7 +8558,7 @@ body {
 .lp-timeline-number {
   font-family: 'Syne', var(--font-syne), sans-serif;
   font-size: 64px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   color: rgba(7, 100, 226, 0.1);
   margin-bottom: 16px;
@@ -8638,7 +8638,7 @@ body {
 .lp-auth-sidebar-title {
   font-family: 'Syne', var(--font-syne), sans-serif;
   font-size: clamp(32px, 3vw, 44px);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: -1px;
 }
@@ -8792,7 +8792,7 @@ body {
 .ud-calc-price {
   font-family: 'JetBrains Mono', var(--font-jetbrains), monospace;
   font-size: 44px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--primario);
 }
 
@@ -10594,7 +10594,7 @@ body {
 .lf-role-loader-title {
   font-family: var(--font-syne, sans-serif);
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text, #1B1B2F);
   margin: 0;
   letter-spacing: -0.02em;
@@ -10826,7 +10826,7 @@ body {
 .lf-landing-stat-num {
   font-family: var(--font-syne, sans-serif);
   font-size: 56px;
-  font-weight: 800;
+  font-weight: 700;
   background: linear-gradient(135deg, #FF5722, #FF8A65, #FFB74D);
   -webkit-background-clip: text;
   background-clip: text;
@@ -12065,7 +12065,7 @@ textarea.lf-form-input {
   align-items: center;
   gap: 10px;
   font-family: 'Syne', sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 20px;
   letter-spacing: -0.02em;
 }
@@ -12164,7 +12164,7 @@ textarea.lf-form-input {
 .lf-hero-title {
   font-family: 'Syne', sans-serif;
   font-size: clamp(36px, 6vw, 56px);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.05;
   margin: 0;
@@ -12318,7 +12318,7 @@ textarea.lf-form-input {
 .lf-stat-num {
   font-family: 'Syne', sans-serif;
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 700;
   background: linear-gradient(135deg, #0066FF, #FFE0B2);
   -webkit-background-clip: text;
   background-clip: text;
@@ -12363,7 +12363,7 @@ textarea.lf-form-input {
 .lf-section-title {
   font-family: 'Syne', sans-serif;
   font-size: clamp(28px, 4vw, 40px);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 12px;
   color: #1B1B2F;
@@ -12565,7 +12565,7 @@ textarea.lf-form-input {
 .lf-final-cta h2 {
   font-family: 'Syne', sans-serif;
   font-size: clamp(28px, 4vw, 40px);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0;
   color: #1B1B2F;
@@ -12605,7 +12605,7 @@ textarea.lf-form-input {
   gap: 8px;
   justify-content: center;
   font-family: 'Syne', sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 18px;
   margin-bottom: 8px;
 }
@@ -12700,7 +12700,7 @@ textarea.lf-form-input {
 .lf-auth-card-header h1 {
   font-family: 'Syne', sans-serif;
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0;
   color: #1B1B2F;
@@ -13404,7 +13404,7 @@ textarea.lf-form-input {
 
 .lf-brand-text {
   font-family: var(--font-syne, 'Syne', sans-serif);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 20px;
   letter-spacing: -0.03em;
   color: var(--text);
@@ -13518,7 +13518,7 @@ textarea.lf-form-input {
 .lf-hero-heading {
   font-family: var(--font-syne, 'Syne', sans-serif);
   font-size: 48px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.03em;
   color: var(--text);
@@ -13609,7 +13609,7 @@ textarea.lf-form-input {
 .lf-trust-val {
   font-family: var(--font-jetbrains, monospace);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
   display: flex;
   align-items: center;
@@ -13677,7 +13677,7 @@ textarea.lf-form-input {
 .lf-carousel-title {
   font-family: var(--font-syne, 'Syne', sans-serif);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
   margin: 0 0 8px;
 }
@@ -13731,7 +13731,7 @@ textarea.lf-form-input {
 
 .lf-subheading {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--primario);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -13740,7 +13740,7 @@ textarea.lf-form-input {
 .lf-section-title {
   font-family: var(--font-syne, 'Syne', sans-serif);
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
   margin: 4px 0 6px;
 }
@@ -13853,7 +13853,7 @@ textarea.lf-form-input {
 
 .lf-bento-tag {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--primario);
   margin-bottom: 8px;
@@ -13863,7 +13863,7 @@ textarea.lf-form-input {
 .lf-bento-card h3 {
   font-family: var(--font-syne, 'Syne', sans-serif);
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
   margin: 0 0 8px;
 }
@@ -13935,7 +13935,7 @@ textarea.lf-form-input {
 .lf-role-card h3 {
   font-family: var(--font-syne, 'Syne', sans-serif);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
   margin: 0;
 }
@@ -13991,7 +13991,7 @@ textarea.lf-form-input {
 .lf-final-cta-box h2 {
   font-family: var(--font-syne, 'Syne', sans-serif);
   font-size: 36px;
-  font-weight: 800;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -14257,7 +14257,7 @@ textarea.lf-form-input {
 
 .apple-hero-title {
   font-size: 54px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.06;
   letter-spacing: -0.04em;
   color: #FFFFFF;
@@ -14594,7 +14594,7 @@ textarea.lf-form-input {
 
 .apple-card-chip {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.1em;
   color: #00F2FE;
 }
@@ -14627,7 +14627,7 @@ textarea.lf-form-input {
 
 .apple-card-brand {
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   font-style: italic;
   color: #FFFFFF;
 }
@@ -14711,7 +14711,7 @@ textarea.lf-form-input {
 
 .apple-section-header h2 {
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 700;
   color: #FFFFFF;
   margin: 6px 0 0;
   letter-spacing: -0.03em;
@@ -15791,4 +15791,109 @@ html, body {
   font-weight: 600;
   color: var(--ios-text-primary);
   margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   APPLE SYSTEM TOKENS — Fill, Label, Separator
+   Aplicados al final para máxima precedencia.
+   ═══════════════════════════════════════════════════════ */
+
+:root,
+[data-theme='light'] {
+  --fill-primary: rgba(120, 120, 128, 0.2);
+  --fill-secondary: rgba(120, 120, 128, 0.16);
+  --fill-tertiary: rgba(120, 120, 128, 0.12);
+  --separator: rgba(60, 60, 67, 0.12);
+  --label-primary: #1C1C1E;
+  --label-secondary: #8E8E93;
+  --label-tertiary: #AEAEB2;
+  --system-blue: #007AFF;
+  --system-green: #34C759;
+  --system-red: #FF3B30;
+  --system-orange: #FF9500;
+  --system-yellow: #FFCC00;
+  --system-purple: #AF52DE;
+  --system-teal: #5AC8FA;
+  --system-gray: #8E8E93;
+}
+
+[data-theme='dark'],
+.dark {
+  --fill-primary: rgba(120, 120, 128, 0.36);
+  --fill-secondary: rgba(120, 120, 128, 0.32);
+  --fill-tertiary: rgba(120, 120, 128, 0.24);
+  --separator: rgba(84, 84, 88, 0.36);
+  --label-primary: #FFFFFF;
+  --label-secondary: #98989D;
+  --label-tertiary: #636366;
+  --system-blue: #0A84FF;
+  --system-green: #30D158;
+  --system-red: #FF453A;
+  --system-orange: #FF9F0A;
+  --system-yellow: #FFD60A;
+  --system-purple: #BF5AF2;
+  --system-teal: #64D2FF;
+  --system-gray: #98989D;
+}
+
+/* Inputs deben usar fill de iOS, no bordes */
+.lf-input,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+textarea,
+select {
+  background: var(--fill-tertiary) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  color: var(--label-primary) !important;
+  font-size: 16px !important;
+}
+
+.lf-input:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  background: var(--fill-secondary) !important;
+  box-shadow: 0 0 0 2px var(--system-blue) !important;
+}
+
+.lf-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--label-tertiary) !important;
+}
+
+/* Separadores Apple — 0.5px */
+.lf-card,
+.card {
+  border: none !important;
+  box-shadow: 0 0.5px 0 var(--separator) !important;
+}
+
+/* Botones primarios sin sombra (Apple style) */
+.lf-btn,
+button[class*="btn"]:not([class*="ghost"]):not([class*="outline"]) {
+  box-shadow: none !important;
+}
+
+/* Transición suave global al cambiar tema */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 0.25s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

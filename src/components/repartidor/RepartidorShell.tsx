@@ -709,8 +709,8 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
             background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 88%, transparent)',
             backdropFilter: 'saturate(200%) blur(24px)',
             WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-            border: '1px solid color-mix(in srgb, var(--ios-blue, #0066FF) 25%, transparent)',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.3), 0 0 16px color-mix(in srgb, var(--ios-blue, #0066FF) 12%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--ios-blue, var(--primario)) 25%, transparent)',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.3), 0 0 16px color-mix(in srgb, var(--ios-blue, var(--primario)) 12%, transparent)',
             transition: 'all 0.3s ease',
           }}
         >
@@ -882,8 +882,8 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
                       position: 'absolute',
                       inset: 0,
                       borderRadius: 100,
-                      background: 'var(--ios-blue, #0066FF)',
-                      boxShadow: '0 4px 14px color-mix(in srgb, var(--ios-blue, #0066FF) 50%, transparent)',
+                      background: 'var(--ios-blue, var(--primario))',
+                      boxShadow: '0 4px 14px color-mix(in srgb, var(--ios-blue, var(--primario)) 50%, transparent)',
                       zIndex: -1,
                     }}
                   />
@@ -900,10 +900,10 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
                         minWidth: 16,
                         height: 16,
                         borderRadius: 8,
-                        background: '#FF1744',
+                        background: 'var(--peligro)',
                         color: '#FFF',
                         fontSize: 9,
-                        fontWeight: 800,
+                        fontWeight: 700,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

@@ -51,11 +51,11 @@ interface ClientInicioProps {
 
 function statusColor(estado: string) {
   switch (estado) {
-    case 'pendiente': return 'var(--warning, #FFB300)';
+    case 'pendiente': return 'var(--warning, var(--warning))';
     case 'encamino': return 'var(--info, #2979FF)';
     case 'recogido': return 'var(--info, #2979FF)';
-    case 'entregado': return 'var(--exito, #00C853)';
-    case 'incidencia': return 'var(--peligro, #FF1744)';
+    case 'entregado': return 'var(--exito, var(--exito))';
+    case 'incidencia': return 'var(--peligro, var(--peligro))';
     default: return 'var(--text-muted, #999)';
   }
 }
@@ -73,11 +73,11 @@ function statusLabel(estado: string) {
 
 function compraStatusColor(estado: string) {
   switch (estado) {
-    case 'recibido': return '#FFB300';
+    case 'recibido': return 'var(--warning)';
     case 'preparando': return '#FF9800';
     case 'listo': return '#2196F3';
     case 'en_camino': return '#2979FF';
-    case 'entregado': return '#00C853';
+    case 'entregado': return 'var(--exito)';
     default: return '#999';
   }
 }
@@ -420,7 +420,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
               width: 18,
               height: 18,
               borderRadius: '50%',
-              background: 'var(--peligro, #FF1744)',
+              background: 'var(--peligro, var(--peligro))',
               color: '#fff',
               fontSize: 11,
               fontFamily: "'JetBrains Mono', monospace",
@@ -679,7 +679,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
               padding: 18,
               borderRadius: 20,
               minHeight: 100,
-              background: 'linear-gradient(135deg, #1B1B2F, #3949AB)',
+              background: 'linear-gradient(135deg, var(--text), var(--info))',
               color: '#fff',
               cursor: 'pointer',
               position: 'relative',
@@ -992,7 +992,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
                     flexWrap: 'wrap' as const,
                   }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                      <Star size={11} fill="var(--warning, #FFB300)" stroke="none" />
+                      <Star size={11} fill="var(--warning, var(--warning))" stroke="none" />
                       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 500, fontSize: 12 }}>
                         {tienda.calificacion}
                       </span>
@@ -1559,7 +1559,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
               </span>
               <span
                 className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                style={{ background: 'rgba(0,200,83,0.12)', color: 'var(--exito, #00C853)' }}
+                style={{ background: 'rgba(0,200,83,0.12)', color: 'var(--exito, var(--exito))' }}
               >
                 Entregado
               </span>

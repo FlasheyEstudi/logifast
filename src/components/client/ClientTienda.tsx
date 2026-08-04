@@ -100,7 +100,7 @@ function StarsDisplay({ rating, size = 14 }: { rating: number; size?: number }) 
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
       {Array.from({ length: full }).map((_, i) => (
-        <Star key={`f${i}`} size={size} fill="#FFB300" color="#FFB300" strokeWidth={0} />
+        <Star key={`f${i}`} size={size} fill="var(--warning)" color="var(--warning)" strokeWidth={0} />
       ))}
       {Array.from({ length: Math.max(0, empty) }).map((_, i) => (
         <Star key={`e${i}`} size={size} color="var(--border)" strokeWidth={1.5} />
@@ -492,7 +492,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
             flexWrap: 'wrap',
           }}
         >
-          <Star size={14} fill="#FFB300" color="#FFB300" strokeWidth={0} />
+          <Star size={14} fill="var(--warning)" color="var(--warning)" strokeWidth={0} />
           <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
             {tienda.calificacion}
           </span>
@@ -1406,7 +1406,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                         >
                           {star}
                         </span>
-                        <Star size={11} fill="#FFB300" color="#FFB300" strokeWidth={0} />
+                        <Star size={11} fill="var(--warning)" color="var(--warning)" strokeWidth={0} />
                         <div
                           style={{
                             flex: 1,

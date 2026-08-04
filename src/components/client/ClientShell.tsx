@@ -159,12 +159,12 @@ function BatteryIcon() {
 
 function getNotifIcon(tipo: ClientNotificacion['tipo']): { icon: React.ReactNode; color: string } {
   switch (tipo) {
-    case 'orden_confirmada': return { icon: <CheckCircle size={18} />, color: '#00C853' };
+    case 'orden_confirmada': return { icon: <CheckCircle size={18} />, color: 'var(--exito)' };
     case 'repartidor_asignado': return { icon: <User size={18} />, color: '#2979FF' };
     case 'repartidor_camino': return { icon: <Bike size={18} />, color: '#FF9800' };
     case 'paquete_recogido': return { icon: <Package size={18} />, color: '#2979FF' };
-    case 'entrega_exitosa': return { icon: <CheckCircle size={20} />, color: '#00C853' };
-    case 'incidencia': return { icon: <AlertTriangle size={18} />, color: '#FF1744' };
+    case 'entrega_exitosa': return { icon: <CheckCircle size={20} />, color: 'var(--exito)' };
+    case 'incidencia': return { icon: <AlertTriangle size={18} />, color: 'var(--peligro)' };
     case 'codigo_nuevo': return { icon: <Tag size={18} />, color: '#FF9800' };
     case 'te_extranamos': return { icon: <Heart size={18} />, color: '#E91E63' };
     default: return { icon: <Bell size={18} />, color: '#FF5722' };
@@ -556,7 +556,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             <span
               style={{
                 fontSize: 15,
-                fontWeight: 800,
+                fontWeight: 700,
                 color: 'var(--text)',
                 fontFamily: "'Syne', sans-serif",
                 letterSpacing: '-0.01em',
@@ -620,10 +620,10 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                       width: 14,
                       height: 14,
                       borderRadius: '50%',
-                      background: '#FF1744',
+                      background: 'var(--peligro)',
                       color: '#FFFFFF',
                       fontSize: 9,
-                      fontWeight: 800,
+                      fontWeight: 700,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -665,10 +665,10 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                     height: 14,
                     borderRadius: 7,
                     padding: '0 3px',
-                    background: '#FF1744',
+                    background: 'var(--peligro)',
                     color: '#fff',
                     fontSize: 9,
-                    fontWeight: 800,
+                    fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -786,7 +786,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                       position: 'absolute',
                       inset: 0,
                       borderRadius: 100,
-                      background: 'var(--primario, #0066FF)',
+                      background: 'var(--primario, var(--primario))',
                       boxShadow: '0 4px 14px color-mix(in srgb, var(--primario) 50%, transparent)',
                       zIndex: -1,
                     }}
@@ -804,10 +804,10 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                         minWidth: 16,
                         height: 16,
                         borderRadius: 8,
-                        background: '#FF1744',
+                        background: 'var(--peligro)',
                         color: '#FFF',
                         fontSize: 9,
-                        fontWeight: 800,
+                        fontWeight: 700,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

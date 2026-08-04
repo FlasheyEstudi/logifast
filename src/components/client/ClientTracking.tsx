@@ -67,7 +67,7 @@ function getRepartidorInfo(driverName?: string | null, initials?: string | null)
     id: 'rep-assigned',
     nombre: driverName,
     initials: cleanInitials,
-    color: '#0066FF',
+    color: 'var(--primario)',
     calificacion: 5.0,
     totalEntregas: 48,
     moto: 'Moto LogiFast',
@@ -1026,7 +1026,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             zIndex: 30,
             fontSize: 13,
             fontWeight: 700,
-            color: isDark ? '#fff' : '#1B1B2F',
+            color: isDark ? '#fff' : 'var(--text)',
           }}
           aria-label="Volver atrás"
         >
@@ -1076,7 +1076,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                background: '#0066FF',
+                background: 'var(--primario)',
                 color: '#fff',
                 border: 'none',
                 display: 'flex',

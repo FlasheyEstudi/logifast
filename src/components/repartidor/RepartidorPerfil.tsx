@@ -40,7 +40,7 @@ export function StarRating({ value, size = 16 }: { value: number; size?: number 
         const half = !filled && i < value;
         return (
           <span key={i} style={{ position: 'relative', display: 'inline-flex' }}>
-            <Star size={size} color="var(--warning, #FFB300)" fill="none" strokeWidth={2} />
+            <Star size={size} color="var(--warning, var(--warning))" fill="none" strokeWidth={2} />
             {(filled || half) && (
               <span
                 style={{
@@ -52,7 +52,7 @@ export function StarRating({ value, size = 16 }: { value: number; size?: number 
                   display: 'inline-flex',
                 }}
               >
-                <Star size={size} color="var(--warning, #FFB300)" fill="var(--warning, #FFB300)" strokeWidth={2} />
+                <Star size={size} color="var(--warning, var(--warning))" fill="var(--warning, var(--warning))" strokeWidth={2} />
               </span>
             )}
           </span>
@@ -470,13 +470,13 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             label="Calificación"
             value={perfil.calificacion.toFixed(1)}
             icon={<Star size={12} />}
-            color="var(--warning, #FFB300)"
+            color="var(--warning, var(--warning))"
           />
           <StatBox
             label="Tiempo prom."
             value={`${perfil.tiempoPromedio} min`}
             icon={<Clock size={12} />}
-            color="var(--exito, #00C853)"
+            color="var(--exito, var(--exito))"
           />
         </div>
         <div
@@ -567,16 +567,16 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
               borderRadius: 100,
               background:
                 moto.estado === 'DISPONIBLE'
-                  ? 'color-mix(in srgb, var(--exito, #00C853) 14%, transparent)'
+                  ? 'color-mix(in srgb, var(--exito, var(--exito)) 14%, transparent)'
                   : moto.estado === 'EN_SERVICIO'
                     ? 'color-mix(in srgb, var(--primario) 14%, transparent)'
-                    : 'color-mix(in srgb, var(--warning, #FFB300) 14%, transparent)',
+                    : 'color-mix(in srgb, var(--warning, var(--warning)) 14%, transparent)',
               color:
                 moto.estado === 'DISPONIBLE'
-                  ? 'var(--exito, #00C853)'
+                  ? 'var(--exito, var(--exito))'
                   : moto.estado === 'EN_SERVICIO'
                     ? 'var(--primario)'
-                    : 'var(--warning, #FFB300)',
+                    : 'var(--warning, var(--warning))',
               fontSize: 11,
               fontWeight: 700,
             }}
@@ -631,14 +631,14 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
               marginTop: 12,
               padding: 12,
               borderRadius: 12,
-              background: 'color-mix(in srgb, var(--warning, #FFB300) 10%, transparent)',
-              border: '1px solid var(--warning, #FFB300)',
+              background: 'color-mix(in srgb, var(--warning, var(--warning)) 10%, transparent)',
+              border: '1px solid var(--warning, var(--warning))',
               display: 'flex',
               alignItems: 'flex-start',
               gap: 8,
             }}
           >
-            <AlertTriangle size={16} color="var(--warning, #FFB300)" style={{ flexShrink: 0, marginTop: 1 }} />
+            <AlertTriangle size={16} color="var(--warning, var(--warning))" style={{ flexShrink: 0, marginTop: 1 }} />
             <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
               <strong style={{ color: 'var(--text)' }}>Mantenimiento pronto.</strong> La moto está
               cerca del próximo servicio programado.
@@ -685,7 +685,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                 }}
               >
                 {d.stars}
-                <Star size={10} color="var(--warning, #FFB300)" fill="var(--warning, #FFB300)" />
+                <Star size={10} color="var(--warning, var(--warning))" fill="var(--warning, var(--warning))" />
               </span>
               <div
                 style={{
@@ -702,7 +702,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                   transition={{ duration: 0.6, ease: 'easeOut' }}
                   style={{
                     height: '100%',
-                    background: 'var(--warning, #FFB300)',
+                    background: 'var(--warning, var(--warning))',
                   }}
                 />
               </div>
@@ -781,7 +781,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
         >
           <div>
             <div style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Saldo disponible</div>
-            <div style={{ fontSize: '26px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", marginTop: '2px' }}>
+            <div style={{ fontSize: '26px', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", marginTop: '2px' }}>
               C$ {perfil.saldo.toLocaleString('es-NI')}
             </div>
           </div>
@@ -876,8 +876,8 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                 fontSize: '12px',
                 fontWeight: 600,
                 background: rechargeMsg.type === 'success' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 23, 68, 0.1)',
-                color: rechargeMsg.type === 'success' ? '#00C853' : '#FF1744',
-                border: `1px solid ${rechargeMsg.type === 'success' ? '#00C853' : '#FF1744'}`,
+                color: rechargeMsg.type === 'success' ? 'var(--exito)' : 'var(--peligro)',
+                border: `1px solid ${rechargeMsg.type === 'success' ? 'var(--exito)' : 'var(--peligro)'}`,
               }}
             >
               {rechargeMsg.text}
@@ -914,7 +914,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                       {new Date(r.createdAt).toLocaleDateString('es-NI', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#00C853', fontFamily: "'JetBrains Mono', monospace" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--exito)', fontFamily: "'JetBrains Mono', monospace" }}>
                     +C$ {r.monto}
                   </div>
                 </div>
@@ -984,7 +984,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                   padding: '4px 10px',
                   borderRadius: '100px',
                   background: 'rgba(0, 200, 83, 0.12)',
-                  color: '#00C853',
+                  color: 'var(--exito)',
                   fontSize: '11px',
                   fontWeight: 700,
                 }}
@@ -1199,7 +1199,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             marginTop: 12,
             background: 'transparent',
             border: 'none',
-            color: 'var(--peligro, #FF1744)',
+            color: 'var(--peligro, var(--peligro))',
             fontSize: 14,
             fontWeight: 700,
             fontFamily: "'DM Sans', sans-serif",

@@ -32,7 +32,7 @@ const TIPO_OPCIONES: TipoOpcion[] = [
     label: 'Falla mecánica',
     desc: 'Problema con la moto',
     icon: <Wrench size={20} />,
-    color: 'var(--warning, #FFB300)',
+    color: 'var(--warning, var(--warning))',
   },
   {
     key: 'cliente',
@@ -46,7 +46,7 @@ const TIPO_OPCIONES: TipoOpcion[] = [
     label: 'Accidente',
     desc: 'Colisión o caída',
     icon: <AlertOctagon size={20} />,
-    color: 'var(--peligro, #FF1744)',
+    color: 'var(--peligro, var(--peligro))',
   },
   {
     key: 'otro',
@@ -160,8 +160,8 @@ export default function RepartidorIncidencia() {
               width: 36,
               height: 36,
               borderRadius: 12,
-              background: 'color-mix(in srgb, var(--peligro, #FF1744) 14%, transparent)',
-              color: 'var(--peligro, #FF1744)',
+              background: 'color-mix(in srgb, var(--peligro, var(--peligro)) 14%, transparent)',
+              color: 'var(--peligro, var(--peligro))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -216,15 +216,15 @@ export default function RepartidorIncidencia() {
             style={{
               padding: 12,
               borderRadius: 12,
-              background: 'color-mix(in srgb, var(--warning, #FFB300) 10%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--warning, #FFB300) 30%, transparent)',
+              background: 'color-mix(in srgb, var(--warning, var(--warning)) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--warning, var(--warning)) 30%, transparent)',
               display: 'flex',
               alignItems: 'flex-start',
               gap: 8,
               marginBottom: 16,
             }}
           >
-            <AlertTriangle size={16} color="var(--warning, #FFB300)" style={{ flexShrink: 0, marginTop: 1 }} />
+            <AlertTriangle size={16} color="var(--warning, var(--warning))" style={{ flexShrink: 0, marginTop: 1 }} />
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
               La orden cambiará a incidencia y el admin será notificado. Solo reporta si es
               necesario.
@@ -366,7 +366,7 @@ export default function RepartidorIncidencia() {
               border: 'none',
               background:
                 tipo && descripcion.trim()
-                  ? 'var(--peligro, #FF1744)'
+                  ? 'var(--peligro, var(--peligro))'
                   : 'var(--md-outline-variant)',
               color: '#fff',
               fontSize: 15,
