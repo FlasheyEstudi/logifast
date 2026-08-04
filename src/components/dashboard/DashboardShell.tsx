@@ -239,6 +239,8 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               color: p.user?.color || '#FF5722',
               status: p.enServicio ? 'in-service' : p.conectado ? 'available' : 'available',
               motoId: p.motoId || 'Sin asignación',
+              lat: p.lat ?? 12.1364,
+              lng: p.lng ?? -86.2581,
               entregasHoy: p.totalEntregas || 0,
               kmHoy: Math.round(p.totalKm || 0),
               entregasTotal: p.totalEntregas || 0,
@@ -255,29 +257,36 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
         console.error('[DashboardShell syncRepartidores]', err);
       }
 
-      // 4. Motos desde API (P0: antes no se cargaban, por eso no aparecían para asignar)
+      // 4. Motos desde API con normalización de estado
       try {
         const resMotos = await fetch('/api/ingeniero/motos');
         if (resMotos.ok) {
           const dataMotos = await resMotos.json();
           const motosList = Array.isArray(dataMotos) ? dataMotos : (dataMotos?.motos ?? []);
           if (Array.isArray(motosList)) {
-            const mappedMotos = motosList.map((m: any) => ({
-              id: m.id,
-              nombre: m.nombre || m.modelo || 'Moto',
-              modelo: m.modelo || m.nombre || 'Moto',
-              anio: m.anio ?? 2024,
-              placa: m.placa || 'SIN-PLACA',
-              status: (m.estado || m.status || 'DISPONIBLE') as any,
-              lat: m.lat ?? 12.1364,
-              lng: m.lng ?? -86.2581,
-              km: m.kmAcumulados ?? m.km ?? 0,
-              repartidorAsignado: m.asignadaA ?? null,
-              ultimoMantenimiento: m.ultimoMantenimiento ?? '',
-              proximoMantenimiento: m.proximoMantenimiento ?? '',
-              costoTotalMantenimiento: m.costoTotalMantenimiento ?? 0,
-              color: m.color ?? '#FF5722',
-            }));
+            const mappedMotos = motosList.map((m: any) => {
+              const raw = String(m.estado || m.status || 'available').toLowerCase();
+              let motoStatus: 'available' | 'in-service' | 'maintenance' = 'available';
+              if (raw.includes('servicio') || raw === 'in-service') motoStatus = 'in-service';
+              else if (raw.includes('mantenimiento') || raw === 'maintenance') motoStatus = 'maintenance';
+
+              return {
+                id: m.id,
+                nombre: m.nombre || m.modelo || 'Moto',
+                modelo: m.modelo || m.nombre || 'Moto',
+                anio: m.anio ?? 2024,
+                placa: m.placa || 'SIN-PLACA',
+                status: motoStatus,
+                lat: m.lat ?? 12.1364,
+                lng: m.lng ?? -86.2581,
+                km: m.kmAcumulados ?? m.km ?? 0,
+                repartidorAsignado: m.asignadaA ?? null,
+                ultimoMantenimiento: m.ultimoMantenimiento ?? '',
+                proximoMantenimiento: m.proximoMantenimiento ?? '',
+                costoTotalMantenimiento: m.costoTotalMantenimiento ?? 0,
+                color: m.color ?? '#FF5722',
+              };
+            });
             useStore.setState({ motos: mappedMotos });
           }
         }
@@ -287,8 +296,8 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     };
 
     fetchAllData();
-    // Polling no destructivo: 5s para que nuevas órdenes aparezcan rápido (P0-18)
-    const interval = setInterval(fetchAllData, 5000);
+    // Rapid 3-second synchronization loop
+    const interval = setInterval(fetchAllData, 3000);
     return () => clearInterval(interval);
   }, []);
 

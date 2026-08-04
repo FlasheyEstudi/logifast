@@ -18,7 +18,7 @@ const STATUS_CONFIG: Record<MotoStatus, { label: string; color: string; bg: stri
   maintenance: { label: 'Mantenimiento', color: '#DC2626', bg: 'rgba(220,38,38,0.1)' },
 };
 
-function FlotaMap({ motos, isDark }: { motos: Moto[]; isDark: boolean }) {
+function FlotaMap({ motos, riders, isDark }: { motos: Moto[]; riders: any[]; isDark: boolean }) {
   return (
     <div style={{ height: '100%', borderRadius: 12, overflow: 'hidden' }}>
       <Map
@@ -27,20 +27,59 @@ function FlotaMap({ motos, isDark }: { motos: Moto[]; isDark: boolean }) {
         className="rounded-xl overflow-hidden"
         theme={isDark ? 'dark' : 'light'}
       >
-        {motos.map((moto) => (
-          <MapMarker key={moto.id} longitude={moto.lng} latitude={moto.lat}>
+        {motos.map((moto) => {
+          const cfg = STATUS_CONFIG[moto.status] || STATUS_CONFIG.available;
+          return (
+            <MapMarker key={`moto-${moto.id}`} longitude={moto.lng || -86.2581} latitude={moto.lat || 12.1364}>
+              <div style={{
+                width: 26,
+                height: 26,
+                borderRadius: '50%',
+                background: cfg.color,
+                border: '3px solid white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: 12,
+              }}>
+                <Bike size={14} />
+              </div>
+              <MarkerPopup>
+                <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>
+                  <div style={{ fontWeight: 700 }}>{moto.nombre} ({moto.modelo})</div>
+                  <div style={{ fontSize: 12, color: cfg.color, fontWeight: 600 }}>{cfg.label}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Placa: {moto.placa}</div>
+                </div>
+              </MarkerPopup>
+            </MapMarker>
+          );
+        })}
+
+        {riders.filter((r) => r.conectado).map((rider) => (
+          <MapMarker key={`rider-${rider.id}`} longitude={rider.lng || -86.2550} latitude={rider.lat || 12.1400}>
             <div style={{
-              width: 24,
-              height: 24,
+              width: 28,
+              height: 28,
               borderRadius: '50%',
-              background: STATUS_CONFIG[moto.status].color,
-              border: '3px solid white',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-            }} />
+              background: '#007AFF',
+              border: '3px solid #FFFFFF',
+              boxShadow: '0 0 10px rgba(0, 122, 255, 0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontSize: 11,
+              fontWeight: 700,
+            }}>
+              {rider.initials || 'RP'}
+            </div>
             <MarkerPopup>
               <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>
-                <div style={{ fontWeight: 700 }}>{moto.nombre}</div>
-                <div style={{ fontSize: 12, color: STATUS_CONFIG[moto.status].color }}>{STATUS_CONFIG[moto.status].label}</div>
+                <div style={{ fontWeight: 700 }}>Repartidor: {rider.nombre}</div>
+                <div style={{ fontSize: 12, color: '#007AFF', fontWeight: 600 }}>En línea — Transmitiendo GPS</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Tel: {rider.telefono || 'N/A'}</div>
               </div>
             </MarkerPopup>
           </MapMarker>
@@ -213,7 +252,7 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
 
       {/* RIGHT: Map */}
       <div className="lf-flota-map-desktop" style={{ flex: '0 0 40%', minWidth: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--lf-border)' }}>
-        <FlotaMapDynamic motos={filtered} isDark={isDark} />
+        <FlotaMapDynamic motos={filtered} riders={riders} isDark={isDark} />
       </div>
 
       {/* ═══ ADD/EDIT MOTO MODAL ═══ */}
