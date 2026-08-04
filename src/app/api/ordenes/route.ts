@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { geocodeAddress } from '@/lib/osrm';
+import { emitOrdenCreada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -168,6 +169,9 @@ export async function POST(req: NextRequest) {
         clienteTelefono: user.telefono ?? null,
       },
     });
+
+    // Emitir evento en tiempo real a Admin y Repartidores
+    emitOrdenCreada(orden);
 
     // Notificar a repartidores conectados
     const repartidoresConectados = await db.repartidorProfile.findMany({

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutList, Package, User, MapPin, Clock, DollarSign,
@@ -39,6 +39,24 @@ export default function ModuleDespacho() {
   const [viewMode, setViewMode] = useState<'cards' | 'timeline'>('cards');
   const [orderFilter, setOrderFilter] = useState<'todos' | 'envio' | 'compra'>('todos');
   const { toasts, showToast } = useToast();
+
+  /* Rapid 3-second polling to guarantee instant order synchronization */
+  useEffect(() => {
+    const fetchDespacho = async () => {
+      try {
+        const res = await fetch('/api/admin/despacho');
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.queue) {
+            useStore.setState({ orders: data.queue });
+          }
+        }
+      } catch (e) {}
+    };
+    fetchDespacho();
+    const interval = setInterval(fetchDespacho, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   /* ─── Derived data ─── */
   const pendingOrdersAll = useMemo(

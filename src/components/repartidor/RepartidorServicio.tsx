@@ -67,78 +67,6 @@ const ESTADO_COLOR: Record<string, string> = {
 };
 
 /* ═══════════════════════════════════════════════
-   MOCK ORDEN (for demo)
-   ═══════════════════════════════════════════════ */
-const MOCK_ORDENES: OrdenActiva[] = [];
-let mockOrdenIndex = 0;
-
-/* ═══════════════════════════════════════════════
-   TIEMPO DISPLAY (1s timer)
-   ═══════════════════════════════════════════════ */
-
-function TiempoDisplay() {
-  const [segundos, setSegundos] = useState(0);
-  useEffect(() => {
-    const i = setInterval(() => setSegundos((s) => s + 1), 1000);
-    return () => clearInterval(i);
-  }, []);
-  const m = Math.floor(segundos / 60);
-  const s = segundos % 60;
-  const texto = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  return (
-    <div
-      className="font-mono"
-      style={{ fontSize: 22, fontWeight: 700, color: 'var(--ios-text-primary)' }}
-    >
-      {texto}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   KM COUNTER (vertical slide)
-   ═══════════════════════════════════════════════ */
-
-function KmCounter({ value }: { value: number }) {
-  const formatted = value.toFixed(2);
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'baseline',
-        gap: 4,
-        fontFamily: "'JetBrains Mono', monospace",
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{ position: 'relative', height: 36, overflow: 'hidden', minWidth: 90 }}>
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.div
-            key={formatted}
-            initial={{ y: 24, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -24, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              fontSize: 28,
-              fontWeight: 700,
-              color: 'var(--ios-text-primary)',
-              lineHeight: 1.2,
-            }}
-          >
-            {formatted}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ios-text-tertiary)' }}>km</span>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
@@ -259,48 +187,37 @@ export default function RepartidorServicio() {
     showSnackbar({ message: 'Te has conectado. Esperando asignaciones.' });
   };
 
-  const handleSimularOrden = () => {
-    if (!MOCK_ORDENES || MOCK_ORDENES.length === 0) {
-      showSnackbar({ message: 'No hay órdenes de prueba disponibles.' });
-      return;
-    }
-    const orden = MOCK_ORDENES[mockOrdenIndex % MOCK_ORDENES.length];
-    mockOrdenIndex += 1;
-    recibirOrdenAsignada(orden);
-    HAPTIC_PATTERNS.nuevaOrden();
-  };
-
   const handleEmpezarViaje = () => {
     optimizarRutaAutomatica();
     useRepartidorStore.setState({ estado: 'EN_CAMINO_RECOGER', enServicio: true });
     HAPTIC_PATTERNS.success();
     showSnackbar({
-      message: `🚀 ¡Viaje iniciado hacia la recogida!`,
+      message: 'Viaje iniciado hacia la recogida.',
     });
   };
 
   const handleLlegarRecogida = () => {
     llegarRecogida();
     HAPTIC_PATTERNS.medium();
-    showSnackbar({ message: '📍 Llegaste al sitio de recogida. Verifica los paquetes.' });
+    showSnackbar({ message: 'Llegaste al sitio de recogida. Verifica los paquetes.' });
   };
 
   const handleRecoger = () => {
     recogerPaquete();
     HAPTIC_PATTERNS.medium();
-    showSnackbar({ message: '📦 Paquete verificado y recogido. ¡Viaje a entrega iniciado!' });
+    showSnackbar({ message: 'Paquete verificado y recogido. Viaje a entrega iniciado.' });
   };
 
   const handleLlegarEntrega = () => {
     llegarEntrega();
     HAPTIC_PATTERNS.medium();
-    showSnackbar({ message: '📍 Llegaste donde el cliente. Solicita la entrega.' });
+    showSnackbar({ message: 'Llegaste donde el cliente. Solicita la entrega.' });
   };
 
   const handleConfirmarEntrega = () => {
     confirmarEntrega();
     HAPTIC_PATTERNS.success();
-    showSnackbar({ message: '✅ Entrega confirmada con éxito. ¡Buen trabajo!', action: 'Ver historial' });
+    showSnackbar({ message: 'Entrega confirmada con éxito.', action: 'Ver historial' });
   };
 
   /* External Navigation Helpers */
@@ -663,7 +580,7 @@ export default function RepartidorServicio() {
                 }}
               >
                 <Navigation size={22} />
-                🚀 INICIAR VIAJE AL COMERCIO ({ordenesActivas.length})
+                INICIAR VIAJE AL COMERCIO ({ordenesActivas.length})
               </button>
             </div>
           )}
@@ -688,7 +605,7 @@ export default function RepartidorServicio() {
                 style={{ marginTop: 12, width: '100%', padding: '16px', fontSize: 16, fontWeight: 700 }}
               >
                 <MapPin size={20} />
-                📍 LLEGUÉ AL SITIO / COMERCIO
+                LLEGUÉ AL SITIO / COMERCIO
               </button>
             </>
           )}
@@ -713,7 +630,7 @@ export default function RepartidorServicio() {
                   color: '#F8FAFC',
                 }}
               >
-                📦 Revisa los productos del paquete antes de confirmar la recolección.
+                Revisa los productos del paquete antes de confirmar la recolección.
               </div>
               <button
                 onClick={handleRecoger}
@@ -721,7 +638,7 @@ export default function RepartidorServicio() {
                 style={{ marginTop: 8, width: '100%', padding: '16px', fontSize: 16, fontWeight: 700 }}
               >
                 <Package size={20} />
-                📦 CONFIRMAR RECOLECCIÓN / INICIAR ENTREGA
+                CONFIRMAR RECOLECCIÓN / INICIAR ENTREGA
               </button>
             </>
           )}
@@ -741,7 +658,7 @@ export default function RepartidorServicio() {
                 style={{ marginTop: 12, width: '100%', padding: '16px', fontSize: 16, fontWeight: 700 }}
               >
                 <MapPin size={20} />
-                📍 LLEGUÉ DONDE EL CLIENTE
+                LLEGUÉ DONDE EL CLIENTE
               </button>
             </>
           )}
@@ -761,7 +678,7 @@ export default function RepartidorServicio() {
                 style={{ marginTop: 12, width: '100%', padding: '16px', fontSize: 16, fontWeight: 700 }}
               >
                 <CheckCircle2 size={20} />
-                ✅ CONFIRMAR Y ENTREGAR PEDIDO
+                CONFIRMAR Y ENTREGAR PEDIDO
               </button>
             </>
           )}
@@ -804,9 +721,12 @@ export default function RepartidorServicio() {
                 border: '1px solid rgba(255, 255, 255, 0.1)',
               }}
             >
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#F8FAFC', marginBottom: 4 }}>
-                🧭 Elegir Aplicación de Mapas
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <Compass size={22} color="#007AFF" />
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>
+                  Elegir Aplicación de Mapas
+                </h3>
+              </div>
               <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: 20 }}>
                 Navegar hacia: <strong style={{ color: '#F8FAFC' }}>{currentNavTarget.label}</strong>
               </p>
@@ -829,7 +749,7 @@ export default function RepartidorServicio() {
                     cursor: 'pointer',
                   }}
                 >
-                  <span style={{ fontSize: 24 }}>🧭</span>
+                  <Compass size={24} color="#33CCFF" />
                   <div style={{ textAlign: 'left', flex: 1 }}>
                     <div>Waze Navigation</div>
                     <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 500 }}>
@@ -855,7 +775,7 @@ export default function RepartidorServicio() {
                     cursor: 'pointer',
                   }}
                 >
-                  <span style={{ fontSize: 24 }}>🗺️</span>
+                  <Navigation size={24} color="#4285F4" />
                   <div style={{ textAlign: 'left', flex: 1 }}>
                     <div>Google Maps</div>
                     <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 500 }}>
@@ -881,7 +801,7 @@ export default function RepartidorServicio() {
                     cursor: 'pointer',
                   }}
                 >
-                  <span style={{ fontSize: 24 }}>📱</span>
+                  <Target size={24} color="#F8FAFC" />
                   <div style={{ textAlign: 'left', flex: 1 }}>
                     <div>Apple Maps / Nativo</div>
                     <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 500 }}>
@@ -927,7 +847,7 @@ function BottomSheet({ children }: { children: React.ReactNode }) {
     { id: 'max', height: 85 }
   ];
 
-  const { sheetRef, currentSnap, isDragging, handlers } = useBottomSheetGesture({
+  const { sheetRef, isDragging, handlers } = useBottomSheetGesture({
     snapPoints: SNAP_POINTS,
     initialSnap: 'med'
   });

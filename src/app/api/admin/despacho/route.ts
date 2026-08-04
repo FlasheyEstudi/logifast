@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
+import { emitOrdenAsignada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
       }).catch(() => null);
 
       const updatedOrder = await db.ordenServicio.findUnique({ where: { id: orderId } });
+      if (updatedOrder) emitOrdenAsignada(driver.id, updatedOrder);
       return NextResponse.json({ success: true, orden: updatedOrder });
     }
 
@@ -172,6 +174,7 @@ export async function POST(req: NextRequest) {
 
       usedDriverIds.add(driver.id);
       assignedCount++;
+      emitOrdenAsignada(driver.id, { ...order, repartidorId: driver.id, estado: 'asignado' });
     }
 
     return NextResponse.json({ success: true, assignedCount });

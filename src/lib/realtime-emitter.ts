@@ -1,37 +1,47 @@
-import { io, Socket } from 'socket.io-client';
+/**
+ * LOGIFAST — Emitter de eventos realtime desde Next.js Serverless API routes hacia el microservicio en Railway.
+ */
 
-let socket: Socket | null = null;
+export async function emitirEventoRealtime(payload: { room?: string; event: string; data: any }) {
+  try {
+    const baseUrl =
+      process.env.REALTIME_SERVICE_URL ||
+      process.env.NEXT_PUBLIC_REALTIME_URL ||
+      'https://logifast-production.up.railway.app';
 
-function getSocket(): Socket | null {
-  if (!socket) {
-    const url = process.env.REALTIME_SERVICE_URL || process.env.NEXT_PUBLIC_WS_URL;
-    if (url) {
-      socket = io(url, { transports: ['websocket'] });
-    }
+    if (!baseUrl) return;
+
+    const endpoint = `${baseUrl.replace(/\/$/, '')}/api/emit`;
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch((err) => {
+      console.warn('[REALTIME_HTTP_EMIT_WARN]', err?.message || err);
+    });
+  } catch (e) {
+    console.warn('[REALTIME_EMIT_ERR]', e);
   }
-  return socket;
 }
 
 export function emitOrdenCreada(orden: any) {
-  try {
-    getSocket()?.emit('backend:orden:creada', orden);
-  } catch (e) {
-    console.warn('[REALTIME_EMIT_ERR]', e);
-  }
+  emitirEventoRealtime({ room: 'admin', event: 'admin:orden:nueva', data: orden });
+  emitirEventoRealtime({ room: 'repartidores', event: 'repartidor:orden:disponible', data: orden });
+}
+
+export function emitOrdenAsignada(repartidorId: string, orden: any) {
+  emitirEventoRealtime({ room: `repartidor:${repartidorId}`, event: 'repartidor:orden:nueva', data: orden });
+  emitirEventoRealtime({ room: 'admin', event: 'admin:orden:asignada', data: { repartidorId, ordenId: orden?.id } });
 }
 
 export function emitOrdenActualizada(orden: any) {
-  try {
-    getSocket()?.emit('backend:orden:actualizada', orden);
-  } catch (e) {
-    console.warn('[REALTIME_EMIT_ERR]', e);
+  emitirEventoRealtime({ room: 'admin', event: 'admin:orden:actualizada', data: orden });
+  if (orden?.id) {
+    emitirEventoRealtime({ room: `orden:${orden.id}`, event: 'orden:estado:update', data: orden });
   }
 }
 
 export function emitOrdenEliminada(ordenId: string) {
-  try {
-    getSocket()?.emit('backend:orden:eliminada', { id: ordenId });
-  } catch (e) {
-    console.warn('[REALTIME_EMIT_ERR]', e);
-  }
+  emitirEventoRealtime({ room: 'admin', event: 'admin:orden:eliminada', data: { id: ordenId } });
 }

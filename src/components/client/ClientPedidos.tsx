@@ -889,6 +889,24 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
   const [historiaFilter, setHistoriaFilter] = useState<HistoriaFilterKey>('todos');
   const [searchQuery, setSearchQuery] = useState('');
 
+  /* Rapid 3-second polling for active client orders */
+  React.useEffect(() => {
+    const fetchClientOrders = async () => {
+      try {
+        const res = await fetch('/api/ordenes');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data?.ordenes)) {
+            useStore.setState({ orders: data.ordenes });
+          }
+        }
+      } catch (e) {}
+    };
+    fetchClientOrders();
+    const interval = setInterval(fetchClientOrders, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   /* ── Computed: envios ── */
   const clientOrders = useMemo(
     () => orders.filter((o) => o.cliente === 'Maria Lopez' || o.cliente === 'Maria Lopez' || o.cliente === userName),

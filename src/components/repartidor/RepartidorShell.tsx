@@ -426,7 +426,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     syncFromBackend();
     const interval = setInterval(() => {
       syncFromBackend();
-    }, 5000);
+    }, 2000);
     return () => clearInterval(interval);
   }, [syncFromBackend]);
 
