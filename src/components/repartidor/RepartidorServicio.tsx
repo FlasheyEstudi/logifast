@@ -1019,17 +1019,23 @@ export default function RepartidorServicio() {
    REUSABLE UI BITS
    ═══════════════════════════════════════════════ */
 
-function BottomSheet({ children }: { children: React.ReactNode }) {
+function BottomSheet({ children, snapRef }: { children: React.ReactNode; snapRef?: React.MutableRefObject<((snapId: string) => void) | null> }) {
   const SNAP_POINTS = [
-    { id: 'min', height: 20 },
+    { id: 'min', height: 22 },
     { id: 'med', height: 50 },
     { id: 'max', height: 85 }
   ];
 
-  const { sheetRef, isDragging, handlers } = useBottomSheetGesture({
+  const { sheetRef, isDragging, snapTo, handlers } = useBottomSheetGesture({
     snapPoints: SNAP_POINTS,
-    initialSnap: 'med'
+    initialSnap: 'min'
   });
+
+  useEffect(() => {
+    if (snapRef) {
+      snapRef.current = snapTo;
+    }
+  }, [snapRef, snapTo]);
 
   return (
     <div
@@ -1041,20 +1047,23 @@ function BottomSheet({ children }: { children: React.ReactNode }) {
         right: 0,
         bottom: 'calc(var(--ios-tabbar-height, 80px) + var(--ios-tabbar-safe, 0px))',
         zIndex: 35,
-        background: '#1E293B',
+        background: 'rgba(15, 23, 42, 0.85)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         color: '#F8FAFC',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
         boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.65)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
+        border: '1px solid rgba(255, 255, 255, 0.14)',
         padding: '12px 16px',
+        overflow: 'hidden',
       }}
       {...handlers}
     >
-      <div className="sheet-handle-area" style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12, cursor: 'grab' }}>
-        <div className="sheet-handle" style={{ width: 44, height: 5, borderRadius: 3, background: 'rgba(255, 255, 255, 0.35)' }} />
+      <div className="sheet-handle-area" style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12, cursor: 'grab', touchAction: 'none' }}>
+        <div className="sheet-handle" style={{ width: 44, height: 5, borderRadius: 3, background: 'rgba(255, 255, 255, 0.4)' }} />
       </div>
-      <div className="sheet-scroll-content" style={{ paddingBottom: 20 }}>
+      <div className="sheet-scroll-content" style={{ paddingBottom: 20, maxHeight: 'calc(85vh - 60px)', overflowY: 'auto' }}>
         {children}
       </div>
     </div>

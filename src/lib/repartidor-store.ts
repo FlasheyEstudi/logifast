@@ -965,19 +965,17 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         if (c) {
           const currentState = get();
           const hasActiveOrder = (currentState.ordenesActivas || []).length > 0 || !!currentState.ordenActiva;
-          const userManuallyDisconnected = !currentState.conectado && !hasActiveOrder;
+          const isDisconnected = !currentState.conectado && !hasActiveOrder;
 
-          const isConectado = userManuallyDisconnected
-            ? false
-            : (c.conectado || hasActiveOrder || c.enServicio);
+          const isConectado = isDisconnected ? false : (c.conectado || hasActiveOrder || c.enServicio);
 
           set({
             conectado: isConectado,
             enServicio: isConectado ? (c.enServicio ?? false) : false,
-            pausado: c.pausado ?? false,
-            pausaHasta: c.pausaHasta ? new Date(c.pausaHasta).getTime() : null,
+            pausado: isConectado ? (c.pausado ?? false) : false,
+            pausaHasta: isConectado ? (c.pausaHasta ? new Date(c.pausaHasta).getTime() : null) : null,
             estado: isConectado
-              ? (c.estado && c.estado !== 'DESCONECTADO' ? c.estado : currentState.estado === 'DESCONECTADO' ? 'EN_LINEA' : currentState.estado)
+              ? (c.estado && c.estado !== 'DESCONECTADO' ? c.estado : 'EN_LINEA')
               : 'DESCONECTADO',
             rechazosHora: c.rechazosHora ?? 0,
           });
