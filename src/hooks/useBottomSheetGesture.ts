@@ -31,9 +31,14 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
     return snap ? (snap.height / 100) * window.innerHeight : 0;
   }, [snapPoints]);
 
-  const startDrag = useCallback((clientY: number) => {
+  const startDrag = useCallback((clientY: number, target?: HTMLElement) => {
     const sheet = sheetRef.current;
     if (!sheet) return;
+
+    // Si el toque fue sobre un botón, input o elemento interactivo, no activar drag del sheet
+    if (target && target.closest('button, a, input, select, textarea, [role="button"]')) {
+      return;
+    }
 
     // Permitir scroll normal si el usuario está scrolleando contenido interno
     const scrollableContent = sheet.querySelector('.sheet-scroll-content');
@@ -152,10 +157,10 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
     isDragging,
     snapTo,
     handlers: {
-      onTouchStart: (e: React.TouchEvent) => startDrag(e.touches[0].clientY),
+      onTouchStart: (e: React.TouchEvent) => startDrag(e.touches[0].clientY, e.target as HTMLElement),
       onTouchMove: (e: React.TouchEvent) => moveDrag(e.touches[0].clientY),
       onTouchEnd: () => endDrag(),
-      onMouseDown: (e: React.MouseEvent) => startDrag(e.clientY),
+      onMouseDown: (e: React.MouseEvent) => startDrag(e.clientY, e.target as HTMLElement),
       onMouseMove: (e: React.MouseEvent) => moveDrag(e.clientY),
       onMouseUp: () => endDrag(),
     }

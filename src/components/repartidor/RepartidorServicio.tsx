@@ -1039,10 +1039,12 @@ function BottomSheet({ children, snapRef }: { children: React.ReactNode; snapRef
     }
   }, [snapRef, snapTo]);
 
-  const toggleSnap = () => {
+  const toggleSnap = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     if (currentSnap === 'min') {
-      snapTo('med');
-    } else if (currentSnap === 'med') {
       snapTo('max');
     } else {
       snapTo('min');
@@ -1081,13 +1083,13 @@ function BottomSheet({ children, snapRef }: { children: React.ReactNode; snapRef
         <div style={{ width: 32 }} />
         <div className="sheet-handle" style={{ width: 44, height: 5, borderRadius: 3, background: 'rgba(255, 255, 255, 0.4)' }} />
         <button
-          onClick={(e) => { e.stopPropagation(); toggleSnap(); }}
+          onClick={toggleSnap}
           style={{
             width: 32,
             height: 32,
             borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.12)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
+            background: 'rgba(255, 255, 255, 0.14)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             color: '#F8FAFC',
             display: 'flex',
             alignItems: 'center',
