@@ -19,6 +19,7 @@ interface ClientPedidosProps {
   onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
   onOpenTracking: (orderId: string) => void;
   onOpenChat: (orderId: string) => void;
+  onOpenRating?: (orderId: string) => void;
 }
 
 type TabKey = 'activos' | 'historial';
@@ -485,10 +486,12 @@ function HistoryEnvioItem({
   order,
   onNavigate,
   onOpenTracking,
+  onOpenRating,
 }: {
   order: Order;
   onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
   onOpenTracking: (orderId: string) => void;
+  onOpenRating?: (orderId: string) => void;
 }) {
   const badge = ENVIO_STATUS_BADGE[order.estado] ?? ENVIO_STATUS_BADGE.pendiente;
   const statusBg = ENVIO_STATUS_COLOR[order.estado] ?? 'var(--border)';
@@ -621,6 +624,7 @@ function HistoryEnvioItem({
           </button>
           {!order.calificacion && (
             <button
+              onClick={() => onOpenRating?.(order.id)}
               style={{
                 padding: '8px 14px',
                 borderRadius: 12,
@@ -654,9 +658,13 @@ function HistoryEnvioItem({
 function CompraHistoryItem({
   oc,
   onNavigate,
+  onOpenTracking,
+  onOpenRating,
 }: {
   oc: OrdenCompra;
   onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+  onOpenTracking?: (orderId: string) => void;
+  onOpenRating?: (orderId: string) => void;
 }) {
   const color = compraStatusColor(oc.estado);
   const itemCount = oc.items.reduce((s, i) => s + i.cantidad, 0);
@@ -783,6 +791,7 @@ function CompraHistoryItem({
             Reordenar
           </button>
           <button
+            onClick={() => onOpenTracking?.(oc.id)}
             style={{
               padding: '8px 14px',
               borderRadius: 12,
@@ -795,10 +804,11 @@ function CompraHistoryItem({
               fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            Reenviar
+            Ver Detalle
           </button>
           {!oc.calificacion && (
             <button
+              onClick={() => onOpenRating?.(oc.id)}
               style={{
                 padding: '8px 14px',
                 borderRadius: 12,
@@ -1233,6 +1243,8 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
                     key={item.id}
                     oc={item}
                     onNavigate={onNavigate}
+                    onOpenTracking={onOpenTracking}
+                    onOpenRating={onOpenRating}
                   />
                 ))}
               </div>

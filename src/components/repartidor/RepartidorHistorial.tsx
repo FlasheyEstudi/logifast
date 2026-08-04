@@ -442,7 +442,20 @@ export default function RepartidorHistorial() {
                     </button>
 
                     <button
-                      onClick={() => setSelectedActiveDetail(ord)}
+                      onClick={() =>
+                        verServicioDetalle({
+                          id: ord.id,
+                          ordenId: ord.id,
+                          clienteNombre: ord.cliente,
+                          clienteFoto: '',
+                          origen: ord.origen,
+                          destino: ord.destino,
+                          ganancia: ord.ganancia,
+                          estado: 'entregado',
+                          hora: 'En curso',
+                          tipo: ord.tipo || 'envio',
+                        })
+                      }
                       style={{
                         padding: '8px 14px',
                         borderRadius: 100,

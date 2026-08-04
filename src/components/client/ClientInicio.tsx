@@ -118,7 +118,7 @@ function feedIcon(tipo: string) {
 
 function feedBadge(tipo: string) {
   switch (tipo) {
-    case 'promocion': return { label: 'Promo', bg: 'var(--primario, #FF5722)', color: '#fff' };
+    case 'promocion': return { label: 'Promo', bg: 'var(--primario, #007AFF)', color: '#fff' };
     case 'novedad': return { label: 'Nuevo', bg: 'var(--info, #2979FF)', color: '#fff' };
     case 'anuncio': return { label: 'Aviso', bg: 'var(--text-muted, #999)', color: '#fff' };
     case 'recordatorio': return { label: 'Aviso', bg: 'var(--text-muted, #999)', color: '#fff' };
@@ -470,7 +470,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
                 background: 'var(--lf-glass-bg)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                border: `1.5px solid ${searchFocused ? 'var(--primario, #FF5722)' : 'var(--lf-glass-border)'}`,
+                border: `1.5px solid ${searchFocused ? 'var(--primario, #007AFF)' : 'var(--lf-glass-border)'}`,
                 borderRadius: 28,
                 padding: '14px 20px 14px 48px',
                 fontFamily: "'DM Sans', sans-serif",
@@ -510,7 +510,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
                           onNavigate('envios');
                         }}
                       >
-                        <Package size={18} style={{ color: 'var(--primario, #FF5722)', flexShrink: 0 }} />
+                        <Package size={18} style={{ color: 'var(--primario, #007AFF)', flexShrink: 0 }} />
                         <div className="min-w-0 flex-1">
                           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: 'var(--text)' }}>
                             {o.id}
@@ -643,7 +643,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
               padding: 18,
               borderRadius: 20,
               minHeight: 100,
-              background: 'linear-gradient(135deg, #FF5722, #FF8A65)',
+              background: 'linear-gradient(135deg, #007AFF, #0056B3)',
               color: '#fff',
               cursor: 'pointer',
               position: 'relative',
@@ -1163,7 +1163,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
 
             {/* Route */}
             <div className="flex items-center gap-2 mt-2" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--text)' }}>
-              <MapPin size={14} style={{ color: 'var(--primario, #FF5722)', flexShrink: 0 }} />
+              <MapPin size={14} style={{ color: 'var(--primario, #007AFF)', flexShrink: 0 }} />
               <span className="truncate">De: {activeOrder.origen}</span>
               <ArrowRight size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               <span className="truncate">A: {activeOrder.destino}</span>
@@ -1176,7 +1176,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
                   width: 32,
                   height: 32,
                   borderRadius: '50%',
-                  background: 'var(--primario, #FF5722)',
+                  background: 'var(--primario, #007AFF)',
                   color: '#fff',
                   fontFamily: "'DM Sans', sans-serif",
                   fontWeight: 700,
@@ -1196,7 +1196,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
 
             {/* ETA */}
             <div className="mt-3">
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--primario, #FF5722)' }}>
+              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--primario, #007AFF)' }}>
                 Llega en ~15 min
               </span>
             </div>
@@ -1287,7 +1287,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <ShoppingBag size={18} style={{ color: 'var(--primario, #FF5722)' }} />
+                <ShoppingBag size={18} style={{ color: 'var(--primario, #007AFF)' }} />
                 <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>
                   Tu compra activa
                 </span>
@@ -1334,7 +1334,7 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
                 width: 28,
                 height: 28,
                 borderRadius: '50%',
-                background: 'var(--primario, #FF5722)',
+                background: 'var(--primario, #007AFF)',
                 color: '#fff',
                 fontFamily: "'DM Sans', sans-serif",
                 fontWeight: 700,
@@ -1979,7 +1979,7 @@ function BannerSlideCard({
           style={{
             fontFamily: "'DM Sans', sans-serif",
             background: '#fff',
-            color: 'var(--primario, #FF5722)',
+            color: 'var(--primario, #007AFF)',
           }}
         >
           {banner.botonTexto}

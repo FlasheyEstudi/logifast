@@ -27,7 +27,7 @@ interface ClientCarritoProps {
   onSuccessCheckout?: () => void;
 }
 
-export default function ClientCarrito({ isOpen, onClose, onSuccessCheckout }: ClientCarritoProps) {
+export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckout }: ClientCarritoProps) {
   const {
     cartItems,
     cartCodigoPromo,

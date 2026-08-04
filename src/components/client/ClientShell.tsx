@@ -365,7 +365,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   );
 
   const renderModule = () => {
-    const moduleProps = { isDark, userName, onNavigate: handleNav, onOpenTracking: handleOpenTracking, onOpenChat: handleOpenChat };
+    const moduleProps = { isDark, userName, onNavigate: handleNav, onOpenTracking: handleOpenTracking, onOpenChat: handleOpenChat, onOpenRating: handleOpenRating };
     const perfilProps = { ...moduleProps, onLogout };
     switch (clientActiveModule) {
       case 'inicio':
@@ -433,7 +433,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 width: 76,
                 height: 76,
                 borderRadius: 20,
-                background: 'linear-gradient(135deg, #FF5722, #FF8A65)',
+                background: 'linear-gradient(135deg, #007AFF, #0056B3)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1038,9 +1038,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               aria-label="Carrito de compras"
             >
               <ClientCarrito
-                isDark={isDark}
+                isOpen={true}
                 onClose={() => setCarritoOpen(false)}
-                onBackToTienda={() => setCarritoOpen(false)}
               />
             </motion.div>
           )}
