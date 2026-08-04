@@ -19,6 +19,8 @@ import {
   Target,
   Phone,
   Compass,
+  X,
+  Key,
 } from '@/components/icons';
 import { useRepartidorStore, type OrdenActiva } from '@/lib/repartidor-store';
 import { obtenerRuta, obtenerRutaMultiples, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
@@ -95,6 +97,11 @@ export default function RepartidorServicio() {
 
   /* Modal state for external map app selector */
   const [showNavSelector, setShowNavSelector] = useState(false);
+
+  /* PIN Modal state for delivery confirmation */
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState(false);
 
   /* Real route polyline (OSRM, with straight-line fallback) */
   const [rutaCoordenadas, setRutaCoordenadas] = useState<[number, number][]>([]);
@@ -210,8 +217,16 @@ export default function RepartidorServicio() {
     showSnackbar({ message: 'Llegaste donde el cliente. Solicita la entrega.' });
   };
 
-  const handleConfirmarEntrega = () => {
+  const handleOpenPinModal = () => {
+    setPinInput('');
+    setPinError(false);
+    setShowPinModal(true);
+    HAPTIC_PATTERNS.medium();
+  };
+
+  const handleConfirmarEntregaFinal = () => {
     confirmarEntrega();
+    setShowPinModal(false);
     HAPTIC_PATTERNS.success();
     showSnackbar({ message: 'Entrega confirmada con éxito.', action: 'Ver historial' });
   };
@@ -346,7 +361,7 @@ export default function RepartidorServicio() {
           style={{
             position: 'absolute',
             right: 16,
-            top: '50%',
+            top: '45%',
             transform: 'translateY(-50%)',
             zIndex: 40,
             display: 'flex',
@@ -691,7 +706,7 @@ export default function RepartidorServicio() {
               />
               <OrdenMiniCard orden={ordenActiva} showEntrega />
               <button
-                onClick={handleConfirmarEntrega}
+                onClick={handleOpenPinModal}
                 className="lf-ios-button success"
                 style={{ marginTop: 12, width: '100%', padding: '16px', fontSize: 16, fontWeight: 700 }}
               >
@@ -702,6 +717,128 @@ export default function RepartidorServicio() {
           )}
         </BottomSheet>
       )}
+
+      {/* ═══════ MODAL: CONFIRMACIÓN CON PIN DE ENTREGA ═══════ */}
+      <AnimatePresence>
+        {showPinModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowPinModal(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.8)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              zIndex: 110,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '100%',
+                maxWidth: 380,
+                background: '#1E293B',
+                borderRadius: 24,
+                padding: 24,
+                boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                textAlign: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 18,
+                  background: 'rgba(52, 199, 89, 0.15)',
+                  color: '#34C759',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}
+              >
+                <Key size={28} />
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: '#F8FAFC', marginBottom: 6 }}>
+                Confirmación de Entrega
+              </h3>
+              <p style={{ fontSize: 13, color: '#94A3B8', marginBottom: 20 }}>
+                Solicita al cliente el PIN de 4 dígitos o presiona confirmar para registrar la entrega.
+              </p>
+
+              <input
+                type="tel"
+                maxLength={4}
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value)}
+                placeholder="4 Digítos (Opcional)"
+                style={{
+                  width: '100%',
+                  textAlign: 'center',
+                  letterSpacing: '8px',
+                  fontSize: 24,
+                  fontWeight: 700,
+                  padding: '12px',
+                  borderRadius: 14,
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#FFFFFF',
+                  outline: 'none',
+                  marginBottom: 20,
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              />
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setShowPinModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: 14,
+                    borderRadius: 14,
+                    background: 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#94A3B8',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmarEntregaFinal}
+                  style={{
+                    flex: 1.5,
+                    padding: 14,
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, #34C759 0%, #28A745 100%)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 8px 20px rgba(52, 199, 89, 0.4)',
+                  }}
+                >
+                  Entregar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ═══════ MODAL: SELECTOR DE NAVEGACIÓN EXTERNA (WAZE / GOOGLE MAPS / APPLE MAPS) ═══════ */}
       <AnimatePresence>
