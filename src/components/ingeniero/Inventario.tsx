@@ -9,12 +9,12 @@ import { notify } from '@/lib/notify';
 const CATEGORIA_INFO: Record<string, { label: string; color: string; icon: string }> = {
   ACEITE:    { label: 'Aceite',    color: '#FFB300', icon: 'M12 2L2 7v10a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 22 17V7L12 2z' },
   FRENO:     { label: 'Freno',     color: '#FF1744', icon: 'M12 2v6M12 22v-6M4.93 4.93l4.24 4.24M19.07 19.07l-4.24-4.24M2 12h6M22 12h-6' },
-  LLANTA:    { label: 'Llanta',    color: '#1B1B2F', icon: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 4a6 6 0 0 1 6 6' },
+  LLANTA:    { label: 'Llanta',    color: 'var(--text)', icon: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 4a6 6 0 0 1 6 6' },
   CADENA:    { label: 'Cadena',    color: '#9C27B0', icon: 'M4 12a4 4 0 1 1 4 4M12 12a4 4 0 1 1 4 4M20 12a4 4 0 1 1-4-4' },
   ELECTRICO: { label: 'Eléctrico', color: '#2196F3', icon: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z' },
   MOTOR:     { label: 'Motor',     color: '#FF5722', icon: 'M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4' },
   GENERAL:   { label: 'General',   color: '#00BCD4', icon: 'M12 2L2 7v10a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 22 17V7L12 2z' },
-  OTRO:      { label: 'Otro',      color: '#8E8EA0', icon: 'M12 2v4M12 18v4' },
+  OTRO:      { label: 'Otro',      color: 'var(--text-muted)', icon: 'M12 2v4M12 18v4' },
 };
 
 export default function Inventario() {

@@ -116,24 +116,24 @@ export function MotoLoader({ size = 120 }: { size?: number }) {
         {/* Moto */}
         <g className="lf-moto-body">
           {/* Rueda trasera */}
-          <circle cx="30" cy="55" r="12" fill="#1B1B2F" />
+          <circle cx="30" cy="55" r="12" fill="var(--text)" />
           <circle cx="30" cy="55" r="8" fill="#FF5722" className="lf-wheel-spin" style={{ transformOrigin: '30px 55px' }} />
           <circle cx="30" cy="55" r="3" fill="#fff" />
 
           {/* Rueda delantera */}
-          <circle cx="90" cy="55" r="12" fill="#1B1B2F" />
+          <circle cx="90" cy="55" r="12" fill="var(--text)" />
           <circle cx="90" cy="55" r="8" fill="#FF5722" className="lf-wheel-spin" style={{ transformOrigin: '90px 55px' }} />
           <circle cx="90" cy="55" r="3" fill="#fff" />
 
           {/* Cuerpo moto */}
           <path d="M30 55 L48 35 L70 35 L82 55 L70 55 L62 42 L52 42 L42 55 Z" fill="#FF5722" />
           {/* Manillar */}
-          <path d="M82 45 L92 30 L96 30" stroke="#1B1B2F" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+          <path d="M82 45 L92 30 L96 30" stroke="var(--text)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
           {/* Asiento */}
-          <path d="M50 35 L70 35 L68 32 L52 32 Z" fill="#1B1B2F" />
+          <path d="M50 35 L70 35 L68 32 L52 32 Z" fill="var(--text)" />
           {/* Casco repartidor */}
           <circle cx="78" cy="25" r="6" fill="#FF5722" />
-          <path d="M72 25 Q78 18 84 25" stroke="#1B1B2F" strokeWidth="1.5" fill="none" />
+          <path d="M72 25 Q78 18 84 25" stroke="var(--text)" strokeWidth="1.5" fill="none" />
         </g>
       </svg>
     </div>

@@ -48,7 +48,7 @@ const SEGMENTOS = ['todos', 'Clientes nuevos', 'Clientes frecuentes', 'Clientes 
 const TIPOS_CAMPANA: Campana['tipo'][] = ['push', 'email', 'sms'];
 const TIPOS_BANNER: Banner['tipo'][] = ['promo_grande', 'tarjeta_compacta', 'slider', 'notificacion'];
 const TIPOS_FEED: FeedItem['tipo'][] = ['anuncio', 'promocion', 'novedad', 'encuesta', 'recordatorio'];
-const COLOR_PRESETS = ['#FF5722', '#1B1B2F', '#2979FF', '#00C853', '#FFB300', '#FF1744', '#9C27B0', '#00BCD4'];
+const COLOR_PRESETS = ['#FF5722', 'var(--text)', '#2979FF', '#00C853', '#FFB300', '#FF1744', '#9C27B0', '#00BCD4'];
 
 const SEGMENT_LABELS: Record<string, string> = {
   todos: 'Todos',
@@ -674,7 +674,7 @@ function SubBanners() {
   const [colorFondo, setColorFondo] = useState('#FF5722');
   const [colorTexto, setColorTexto] = useState('#FFFFFF');
   const [useGradient, setUseGradient] = useState(false);
-  const [gradFrom, setGradFrom] = useState('#1B1B2F');
+  const [gradFrom, setGradFrom] = useState('var(--text)');
   const [gradTo, setGradTo] = useState('#FF5722');
   const [gradDirection, setGradDirection] = useState('to right');
   const [botonTexto, setBotonTexto] = useState('');
@@ -689,7 +689,7 @@ function SubBanners() {
     setEditing(null);
     setTitulo(''); setSubtitulo(''); setTipo('promo_grande');
     setColorFondo('#FF5722'); setColorTexto('#FFFFFF');
-    setUseGradient(false); setGradFrom('#1B1B2F'); setGradTo('#FF5722');
+    setUseGradient(false); setGradFrom('var(--text)'); setGradTo('#FF5722');
     setGradDirection('to right'); setBotonTexto(''); setIcono('');
     setSegmento('todos'); setMostrarEn('app'); setPosicion(String(banners.length + 1));
     setModalOpen(true);
@@ -699,7 +699,7 @@ function SubBanners() {
     setEditing(b);
     setTitulo(b.titulo); setSubtitulo(b.subtitulo || ''); setTipo(b.tipo);
     setColorFondo(b.colorFondo); setColorTexto(b.colorTexto);
-    setUseGradient(!!b.gradiente); setGradFrom(b.gradiente?.from || '#1B1B2F');
+    setUseGradient(!!b.gradiente); setGradFrom(b.gradiente?.from || 'var(--text)');
     setGradTo(b.gradiente?.to || '#FF5722'); setGradDirection(b.gradiente?.direction || 'to right');
     setBotonTexto(b.botonTexto || ''); setIcono(b.icono || '');
     setSegmento(b.segmento); setMostrarEn(b.mostrarEn); setPosicion(String(b.posicion));
@@ -1354,7 +1354,7 @@ function SubAnalitica() {
                   {Math.abs(k.trend)}%
                 </div>
               </div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
                 {k.value}{k.suffix}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{k.label}</div>
@@ -1529,7 +1529,7 @@ export default function ModuleMarketing() {
             <Megaphone size={22} />
           </div>
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Marketing</h2>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Marketing</h2>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Gestiona campañas, promociones y contenido</p>
           </div>
         </div>

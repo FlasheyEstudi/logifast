@@ -102,7 +102,7 @@
 - **Login con Google/Facebook** (OAuth)
 - **Rate limiting** en endpoints críticos (login, registro)
 - **Audit logs** más granulares (ya tienes el modelo `AuditLog`)
-- **Backups automáticos** programados de SQLite/PostgreSQL
+- **Backups automáticos** programados de PostgreSQL en Supabase
 
 ### Performance
 - **Redis** para caché de productos, tiendas y sesiones

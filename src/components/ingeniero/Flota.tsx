@@ -112,7 +112,7 @@ export default function Flota() {
                 >
                   <div
                     className="flota-moto-color"
-                    style={{ background: moto.color || '#8E8EA0' }}
+                    style={{ background: moto.color || 'var(--text-muted)' }}
                   />
 
                   <div className="flota-moto-info">
@@ -146,7 +146,7 @@ export default function Flota() {
                     )}
                   </div>
 
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8EA0" strokeWidth="2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2">
                     <polyline points="9 18 15 12 9 6"/>
                   </svg>
                 </div>

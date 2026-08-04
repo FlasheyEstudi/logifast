@@ -169,8 +169,8 @@ const SLIDES = [
 function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
   const cardBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
-  const textColor = isDark ? '#FFFFFF' : '#1B1B2F';
-  const subColor = isDark ? '#86868B' : '#5A5A72';
+  const textColor = isDark ? '#FFFFFF' : 'var(--text)';
+  const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
 
   if (type === 'order_widget') {
     return (
@@ -237,14 +237,14 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
   if (type === 'wallet_widget') {
     return (
       <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,102,255,0.15))' : 'linear-gradient(135deg, rgba(0,102,255,0.08), rgba(0,102,255,0.03))', border, borderRadius: 20, padding: 16, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', color: '#0066FF' }}>LOGIFAST PAY</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#0066FF' }}>LOGIFAST PAY</div>
         <div style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 2, color: textColor, margin: '6px 0' }}>•••• •••• •••• 4920</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <div style={{ fontSize: 9, color: subColor }}>TITULAR</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: textColor }}>MARÍA LÓPEZ</div>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, fontStyle: 'italic', color: textColor }}>VISA</div>
+          <div style={{ fontSize: 16, fontWeight: 700, fontStyle: 'italic', color: textColor }}>VISA</div>
         </div>
         <div style={{ fontSize: 11, color: '#00C853', fontWeight: 600 }}>✓ Pago de C$ 180.00 verificado sin comisiones</div>
       </div>
@@ -321,8 +321,8 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
     return () => clearInterval(interval);
   }, [view]);
 
-  const bg = isDark ? '#0A0A0C' : '#FAF8F5';
-  const textColor = isDark ? '#F5F5F7' : '#1B1B2F';
+  const bg = isDark ? '#0A0A0C' : 'var(--bg)';
+  const textColor = isDark ? '#F5F5F7' : 'var(--text)';
 
   return (
     <div style={{
@@ -422,8 +422,8 @@ function LandingView({
   setMobileMenuOpen: (b: boolean) => void;
 }) {
   const slide = SLIDES[currentSlide];
-  const textColor = isDark ? '#FFFFFF' : '#1B1B2F';
-  const subColor = isDark ? '#86868B' : '#5A5A72';
+  const textColor = isDark ? '#FFFFFF' : 'var(--text)';
+  const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
   const navBg = isDark ? 'rgba(10, 10, 12, 0.85)' : 'rgba(250, 248, 245, 0.88)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)';
 
@@ -442,7 +442,7 @@ function LandingView({
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Icon.Logo size={36} />
-            <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em', color: textColor }}>LOGIFAST</span>
+            <span style={{ fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', color: textColor }}>LOGIFAST</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -505,7 +505,7 @@ function LandingView({
               <span>Logística & Marketplace Pro v2.0</span>
             </div>
 
-            <h1 style={{ fontSize: 'clamp(32px, 5.5vw, 54px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
+            <h1 style={{ fontSize: 'clamp(32px, 5.5vw, 54px)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
               Envíos ultrarrápidos y compras en Managua.
             </h1>
 
@@ -604,7 +604,7 @@ function LandingView({
       <section id="aliados" style={{ padding: '48px 20px', borderTop: border, borderBottom: border, background: isDark ? 'rgba(15,15,20,0.5)' : 'rgba(0,0,0,0.02)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', letterSpacing: '0.1em', marginBottom: 6 }}>ALIADOS ESTRATÉGICOS</div>
-          <h2 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: textColor, margin: '0 0 28px' }}>Comercios Verificados en Managua</h2>
+          <h2 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 700, color: textColor, margin: '0 0 28px' }}>Comercios Verificados en Managua</h2>
           <div style={{ overflow: 'hidden', display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             {PARTNERS.map((partner, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRadius: 16, background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.8)', border: border, minWidth: 180 }}>
@@ -622,7 +622,7 @@ function LandingView({
       <section id="ecosistema" style={{ padding: '70px 20px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', letterSpacing: '0.1em' }}>ECOSISTEMA UNIFICADO</span>
-          <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 800, color: textColor, margin: '6px 0 0' }}>Diseñado para máxima velocidad y control</h2>
+          <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 700, color: textColor, margin: '6px 0 0' }}>Diseñado para máxima velocidad y control</h2>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
@@ -646,10 +646,10 @@ function LandingView({
         </div>
       </section>
 
-      <footer style={{ padding: '40px 20px', background: isDark ? '#060608' : '#F2EDE8', borderTop: border, textAlign: 'center', color: subColor, fontSize: 13 }}>
+      <footer style={{ padding: '40px 20px', background: isDark ? '#060608' : 'var(--bg-alt)', borderTop: border, textAlign: 'center', color: subColor, fontSize: 13 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
           <Icon.Logo size={28} />
-          <span style={{ fontWeight: 800, color: textColor }}>LOGIFAST</span>
+          <span style={{ fontWeight: 700, color: textColor }}>LOGIFAST</span>
         </div>
         <p>© {new Date().getFullYear()} LOGIFAST Nicaragua. Todos los derechos reservados.</p>
       </footer>
@@ -676,8 +676,8 @@ function LoginView({
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  const textColor = isDark ? '#FFFFFF' : '#1B1B2F';
-  const subColor = isDark ? '#86868B' : '#5A5A72';
+  const textColor = isDark ? '#FFFFFF' : 'var(--text)';
+  const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -888,8 +888,8 @@ function RegisterView({
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const textColor = isDark ? '#FFFFFF' : '#1B1B2F';
-  const subColor = isDark ? '#86868B' : '#5A5A72';
+  const textColor = isDark ? '#FFFFFF' : 'var(--text)';
+  const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
 
   const validateStep1 = () => {

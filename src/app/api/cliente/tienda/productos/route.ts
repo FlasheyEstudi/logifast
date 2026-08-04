@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       categoriaNombre = 'General',
       precio,
       precioOriginal,
-      imagenColor = '#E8E4DE',
+      imagenColor = 'var(--border)',
       imagenUrl,
       disponible = true,
       esNuevo = false,

@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       categoria,
       logoColor = '#FF5722',
       logoIniciales,
-      portadaColor = '#1B1B2F',
+      portadaColor = 'var(--text)',
       direccion,
       lat,
       lng,

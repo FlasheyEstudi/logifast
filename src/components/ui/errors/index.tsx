@@ -187,15 +187,15 @@ export function EmptyBoxState({
           <g className="lf-error-float">
             <path
               d="M50 60 L100 40 L150 60 L100 80 Z"
-              fill="#E8E4DE"
-              stroke="#8E8EA0"
+              fill="var(--border)"
+              stroke="var(--text-muted)"
               strokeWidth="2"
             />
-            <path d="M50 60 L50 110 L100 130 L100 80 Z" fill="#F5F0EB" stroke="#8E8EA0" strokeWidth="2" />
-            <path d="M150 60 L150 110 L100 130 L100 80 Z" fill="#EDE7E0" stroke="#8E8EA0" strokeWidth="2" />
+            <path d="M50 60 L50 110 L100 130 L100 80 Z" fill="#F5F0EB" stroke="var(--text-muted)" strokeWidth="2" />
+            <path d="M150 60 L150 110 L100 130 L100 80 Z" fill="#EDE7E0" stroke="var(--text-muted)" strokeWidth="2" />
             {/* Líneas punteadas indicando vacío */}
-            <line x1="70" y1="70" x2="90" y2="78" stroke="#8E8EA0" strokeWidth="1.5" strokeDasharray="3 3" />
-            <line x1="115" y1="78" x2="135" y2="70" stroke="#8E8EA0" strokeWidth="1.5" strokeDasharray="3 3" />
+            <line x1="70" y1="70" x2="90" y2="78" stroke="var(--text-muted)" strokeWidth="1.5" strokeDasharray="3 3" />
+            <line x1="115" y1="78" x2="135" y2="70" stroke="var(--text-muted)" strokeWidth="1.5" strokeDasharray="3 3" />
           </g>
         </svg>
       )}

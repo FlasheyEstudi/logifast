@@ -401,7 +401,7 @@ export default function ModuleFinanzas() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 6, color: '#FF6600' }}>
                   <span style={{ fontSize: 14, fontWeight: 700 }}>Total Costos Operativos Mensuales</span>
-                  <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
                     {costoOperativoMensualUsd !== null
                       ? `$${costoOperativoMensualUsd.toLocaleString()}.00 USD`
                       : '-'}
@@ -465,7 +465,7 @@ export default function ModuleFinanzas() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--lf-text-main)' }}>Valor Estimado de Venta:</span>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: '#16A34A', fontFamily: "'JetBrains Mono', monospace" }}>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: '#16A34A', fontFamily: "'JetBrains Mono', monospace" }}>
                       {costoOperativoMensualUsd !== null
                         ? `$${Math.round((costoOperativoMensualUsd * developmentMonths) * (1 + profitMargin / 100)).toLocaleString()} USD`
                         : '-'}

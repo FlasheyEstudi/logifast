@@ -6,7 +6,7 @@ export async function seedIngeniero() {
 
   // Seed Motos
   const motos = [
-    { id: 'moto01', nombre: 'Moto-01', modelo: 'Honda Wave 110', placa: 'M 4521', anio: 2024, color: '#1B1B2F', kmAcumulados: 15230, estado: 'EN_SERVICIO', asignadaA: 'rep001' },
+    { id: 'moto01', nombre: 'Moto-01', modelo: 'Honda Wave 110', placa: 'M 4521', anio: 2024, color: 'var(--text)', kmAcumulados: 15230, estado: 'EN_SERVICIO', asignadaA: 'rep001' },
     { id: 'moto02', nombre: 'Moto-02', modelo: 'Honda Wave 110', placa: 'M 4522', anio: 2024, color: '#FF5722', kmAcumulados: 18750, estado: 'EN_SERVICIO', asignadaA: 'rep002' },
     { id: 'moto03', nombre: 'Moto-03', modelo: 'Honda Wave 110', placa: 'M 4523', anio: 2023, color: '#2979FF', kmAcumulados: 12450, estado: 'DISPONIBLE', asignadaA: null },
     { id: 'moto04', nombre: 'Moto-04', modelo: 'Yamaha YBR 125', placa: 'M 5100', anio: 2025, color: '#00C853', kmAcumulados: 8900, estado: 'DISPONIBLE', asignadaA: null },

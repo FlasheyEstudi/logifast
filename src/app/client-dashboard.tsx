@@ -7,7 +7,7 @@ const ClientShell = dynamic(() => import('@/components/client/ClientShell'), {
   loading: () => (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      height: '100vh', background: 'var(--bg, #FAF8F5)', color: 'var(--text-muted, #8E8EA0)',
+      height: '100vh', background: 'var(--bg, var(--bg))', color: 'var(--text-muted, var(--text-muted))',
       fontFamily: "'DM Sans', sans-serif", gap: 16,
     }}>
       <div style={{
@@ -70,7 +70,7 @@ class ClientErrorBoundary extends Component<ClientErrorBoundaryProps, ClientErro
       return (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          height: '100vh', background: 'var(--bg, #FAF8F5)',
+          height: '100vh', background: 'var(--bg, var(--bg))',
           fontFamily: "'DM Sans', sans-serif", padding: 24, gap: 20,
         }}>
           <div style={{
@@ -83,7 +83,7 @@ class ClientErrorBoundary extends Component<ClientErrorBoundaryProps, ClientErro
               <line x1="9" y1="9" x2="15" y2="15"/>
             </svg>
           </div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text, #1B1B2F)', margin: 0 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text, var(--text))', margin: 0 }}>
             Error al cargar
           </h2>
           <p style={{ fontSize: 14, color: '#6B7280', maxWidth: 420, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
@@ -113,7 +113,7 @@ class ClientErrorBoundary extends Component<ClientErrorBoundaryProps, ClientErro
               onClick={this.props.onGoHome}
               style={{
                 padding: '10px 24px', borderRadius: 10, border: '1px solid #e5e7eb',
-                background: '#fff', color: '#1B1B2F',
+                background: '#fff', color: 'var(--text)',
                 cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
                 transition: 'all 0.2s',
               }}

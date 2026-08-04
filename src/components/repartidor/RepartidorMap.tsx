@@ -205,7 +205,7 @@ export default function RepartidorMap({
           padding: 2px 7px;
           border-radius: 99px;
           font-size: 10px;
-          font-weight: 800;
+          font-weight: 700;
           color: #FFFFFF;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
           font-family: 'DM Sans', sans-serif;

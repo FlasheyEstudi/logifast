@@ -106,7 +106,7 @@ export function TemaToggle() {
         flexDirection: 'row',
         gap: 4,
         padding: 4,
-        background: 'var(--bg-alt, #F2EDE8)',
+        background: 'var(--bg-alt, var(--bg-alt))',
         borderRadius: 14,
         width: '100%',
       }}
@@ -135,7 +135,7 @@ export function TemaToggle() {
                 : 'transparent',
               color: active
                 ? 'var(--primario, #FF5722)'
-                : 'var(--text-muted, #8E8EA0)',
+                : 'var(--text-muted, var(--text-muted))',
               fontWeight: 600,
               fontSize: 13,
               fontFamily: 'inherit',

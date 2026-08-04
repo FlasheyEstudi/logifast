@@ -105,7 +105,7 @@ export async function POST(
       categoriaNombre = 'General',
       precio,
       precioOriginal,
-      imagenColor = '#E8E4DE',
+      imagenColor = 'var(--border)',
       disponible = true,
       esNuevo = false,
       esPopular = false,

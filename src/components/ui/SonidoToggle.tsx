@@ -104,7 +104,7 @@ export function SonidoToggle() {
     <div
       style={{
         background: 'var(--surface, #FFFFFF)',
-        border: '1px solid var(--border, #E8E4DE)',
+        border: '1px solid var(--border, var(--border))',
         borderRadius: 14,
         padding: 16,
         display: 'flex',
@@ -125,10 +125,10 @@ export function SonidoToggle() {
             justifyContent: 'center',
             background: sonidoActivo
               ? 'var(--primario-soft, rgba(255,87,34,0.05))'
-              : 'var(--bg-alt, #F2EDE8)',
+              : 'var(--bg-alt, var(--bg-alt))',
             color: sonidoActivo
               ? 'var(--primario, #FF5722)'
-              : 'var(--text-muted, #8E8EA0)',
+              : 'var(--text-muted, var(--text-muted))',
             flexShrink: 0,
           }}
         >
@@ -139,7 +139,7 @@ export function SonidoToggle() {
             style={{
               fontSize: 14,
               fontWeight: 600,
-              color: 'var(--text, #1B1B2F)',
+              color: 'var(--text, var(--text))',
             }}
           >
             Sonido
@@ -147,7 +147,7 @@ export function SonidoToggle() {
           <div
             style={{
               fontSize: 12,
-              color: 'var(--text-muted, #8E8EA0)',
+              color: 'var(--text-muted, var(--text-muted))',
             }}
           >
             {sonidoActivo ? 'Activado' : 'Desactivado'}
@@ -167,7 +167,7 @@ export function SonidoToggle() {
             aria-hidden="true"
             style={{
               height: 1,
-              background: 'var(--border, #E8E4DE)',
+              background: 'var(--border, var(--border))',
               margin: '0 -4px',
             }}
           />
@@ -181,8 +181,8 @@ export function SonidoToggle() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'var(--bg-alt, #F2EDE8)',
-                color: 'var(--text-secondary, #5A5A72)',
+                background: 'var(--bg-alt, var(--bg-alt))',
+                color: 'var(--text-secondary, var(--text-secondary))',
                 flexShrink: 0,
               }}
             >
@@ -208,7 +208,7 @@ export function SonidoToggle() {
                   style={{
                     fontSize: 13,
                     fontWeight: 600,
-                    color: 'var(--text, #1B1B2F)',
+                    color: 'var(--text, var(--text))',
                   }}
                 >
                   Volumen
@@ -217,7 +217,7 @@ export function SonidoToggle() {
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: 'var(--text-muted, #8E8EA0)',
+                    color: 'var(--text-muted, var(--text-muted))',
                     fontFamily: "'JetBrains Mono', monospace",
                   }}
                 >
@@ -252,9 +252,9 @@ export function SonidoToggle() {
               gap: 8,
               padding: '8px 14px',
               borderRadius: 10,
-              border: '1px solid var(--border, #E8E4DE)',
-              background: 'var(--bg-alt, #F2EDE8)',
-              color: 'var(--text, #1B1B2F)',
+              border: '1px solid var(--border, var(--border))',
+              background: 'var(--bg-alt, var(--bg-alt))',
+              color: 'var(--text, var(--text))',
               fontSize: 13,
               fontWeight: 600,
               fontFamily: 'inherit',

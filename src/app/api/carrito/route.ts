@@ -44,7 +44,7 @@ export async function GET() {
         notas: i.notas,
         nombreProducto: i.producto?.nombre ?? '',
         precioUnitario: i.producto?.precio ?? 0,
-        imagenColor: i.producto?.imagenColor ?? '#E8E4DE',
+        imagenColor: i.producto?.imagenColor ?? 'var(--border)',
         tiendaNombre: i.producto?.tienda?.nombre ?? '',
       })),
     });

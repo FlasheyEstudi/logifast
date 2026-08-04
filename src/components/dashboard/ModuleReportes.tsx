@@ -317,14 +317,14 @@ export default function ModuleReportes() {
       <head>
         <title>LOGIFAST - Reporte Oficial</title>
         <style>
-          body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 32px; color: #1B1B2F; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 32px; color: var(--text); }
           .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0066FF; padding-bottom: 12px; margin-bottom: 20px; }
-          .title { font-size: 24px; font-weight: 800; color: #0066FF; letter-spacing: -0.5px; }
+          .title { font-size: 24px; font-weight: 700; color: #0066FF; letter-spacing: -0.5px; }
           .subtitle { font-size: 12px; color: #666; margin-top: 2px; }
           .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-          .kpi-card { border: 1px solid #E8E4DE; border-radius: 8px; padding: 12px; background: #FAF8F5; }
+          .kpi-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg); }
           .kpi-title { font-size: 10px; text-transform: uppercase; color: #888; font-weight: 700; }
-          .kpi-val { font-size: 20px; font-weight: 800; color: #1B1B2F; margin-top: 4px; }
+          .kpi-val { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 4px; }
           table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px; }
           th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #EEE; font-size: 12px; }
           th { background: #F5F0EB; font-weight: 700; text-transform: uppercase; font-size: 10px; color: #555; }

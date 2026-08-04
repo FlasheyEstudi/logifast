@@ -139,8 +139,8 @@ function Logo({ large, onClick, darkText }: { large?: boolean; onClick?: () => v
         }} 
       />
       <div className="lf-logo-wordmark" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-        <span className="lf-logo-logi" style={{ color: darkText ? '#1A1A24' : '#FFFFFF', fontWeight: 800, letterSpacing: '-0.5px' }}>LOGI</span>
-        <span className="lf-logo-fast" style={{ color: '#0066FF', fontWeight: 800, letterSpacing: '-0.5px' }}>FAST</span>
+        <span className="lf-logo-logi" style={{ color: darkText ? 'var(--surface)' : '#FFFFFF', fontWeight: 700, letterSpacing: '-0.5px' }}>LOGI</span>
+        <span className="lf-logo-fast" style={{ color: '#0066FF', fontWeight: 700, letterSpacing: '-0.5px' }}>FAST</span>
       </div>
     </div>
   );
@@ -191,7 +191,7 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
           <h2 style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginBottom: 12 }}>
             Algo salió mal al cargar el Módulo
           </h2>
-          <p style={{ color: '#8E8EA0', maxWidth: 450, margin: '0 auto 24px', fontSize: 15, lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--text-muted)', maxWidth: 450, margin: '0 auto 24px', fontSize: 15, lineHeight: 1.5 }}>
             Se produjo un fallo inesperado en la interfaz. Puedes reintentar cargar la vista o reiniciar la sesión para ingresar a otro rol.
           </p>
           <div style={{
@@ -816,10 +816,10 @@ export default function Home() {
         /* Minimalist auth labels */
         .obsidian-label {
           font-size: 10px;
-          font-weight: 800;
+          font-weight: 700;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #8E8EA0;
+          color: var(--text-muted);
         }
 
         /* Dynamic keypads demo */

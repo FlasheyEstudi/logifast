@@ -113,7 +113,7 @@ import { ImageUploader } from '@/components/ui/ImageUploader';
 
 ## 🗄️ Migración a PostgreSQL
 
-El schema es **100% compatible con SQLite y PostgreSQL** (no usa tipos específicos).
+El schema es **100% PostgreSQL — configurado para Supabase** (no usa tipos específicos).
 
 ### Pasos para migrar (cuando estés listo):
 
@@ -125,7 +125,7 @@ El schema es **100% compatible con SQLite y PostgreSQL** (no usa tipos específi
 2. **Editar `prisma/schema.prisma`** — cambiar el provider:
    ```prisma
    datasource db {
-     provider = "postgresql"   // era "sqlite"
+     provider = "postgresql"   // Único proveedor: PostgreSQL en Supabase
      url      = env("DATABASE_URL")
    }
    ```
@@ -236,7 +236,7 @@ El schema es **100% compatible con SQLite y PostgreSQL** (no usa tipos específi
 
 ## 🛠️ Stack
 - Next.js 16 + React 19 + TypeScript
-- Prisma 6 + SQLite (desarrollo) / PostgreSQL (producción)
+- Prisma 6 + PostgreSQL en Supabase
 - Zustand para estado
 - sileo para toasts
 - sharp para procesamiento de imágenes

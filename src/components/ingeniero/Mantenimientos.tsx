@@ -102,7 +102,7 @@ export default function Mantenimientos() {
       ALTA: '#FFB300',
       URGENTE: '#FF1744',
     };
-    return map[p] || '#8E8EA0';
+    return map[p] || 'var(--text-muted)';
   };
 
   const getPrioridadGlow = (p: string) => {
@@ -120,9 +120,9 @@ export default function Mantenimientos() {
       PROGRAMADO: { bg: 'rgba(41,121,255,0.12)', fg: '#2979FF', label: 'Programado', icon: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
       EN_PROCESO: { bg: 'rgba(255,179,0,0.12)', fg: '#FFB300', label: 'En proceso', icon: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
       COMPLETADO: { bg: 'rgba(0,200,83,0.12)', fg: '#00C853', label: 'Completado', icon: 'M5 13l4 4L19 7' },
-      CANCELADO: { bg: 'rgba(142,142,160,0.12)', fg: '#8E8EA0', label: 'Cancelado', icon: 'M6 18L18 6M6 6l12 12' },
+      CANCELADO: { bg: 'rgba(142,142,160,0.12)', fg: 'var(--text-muted)', label: 'Cancelado', icon: 'M6 18L18 6M6 6l12 12' },
     };
-    return map[e] || { bg: 'rgba(142,142,160,0.12)', fg: '#8E8EA0', label: e, icon: 'M12 8v4l3 3' };
+    return map[e] || { bg: 'rgba(142,142,160,0.12)', fg: 'var(--text-muted)', label: e, icon: 'M12 8v4l3 3' };
   };
 
   const handleFotoSubida = (mantId: string, url: string) => {

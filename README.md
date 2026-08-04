@@ -227,7 +227,7 @@ Tests cubren:
 
 ## 🛠️ Stack técnico
 - Next.js 16 + React 19 + TypeScript
-- Prisma 6 + SQLite (desarrollo) / PostgreSQL (producción, schema compatible)
+- Prisma 6 + PostgreSQL en Supabase (única base de datos)
 - Zustand para estado
 - sileo para toasts (con animación premium)
 - sharp para procesamiento de imágenes (WebP)
@@ -237,7 +237,7 @@ Tests cubren:
 
 ## 🚦 Migración a PostgreSQL
 
-1. Edita `prisma/schema.prisma`: cambia `provider = "sqlite"` → `provider = "postgresql"`
+1. Edita `prisma/schema.prisma`: El provider ya es "postgresql" — configura DATABASE_URL con tu URL de Supabase
 2. Edita `.env`: `DATABASE_URL="postgresql://user:pass@localhost:5432/logifast"`
 3. `createdb logifast`
 4. `npx prisma migrate reset --force`

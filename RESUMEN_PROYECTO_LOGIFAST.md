@@ -9,7 +9,7 @@
 
 ### 1. Migración y Conexión de Base de Datos a Supabase
 - **Proveedor:** PostgreSQL alojado en **Supabase** (región AWS `us-east-2`).
-- **Prisma Schema:** Se actualizó `prisma/schema.prisma` de `sqlite` a `postgresql` añadiendo soporte para `directUrl`.
+- **Prisma Schema:** Se actualizó `prisma/schema.prisma` de `PostgreSQL` a `postgresql` añadiendo soporte para `directUrl`.
 - **Variables de Entorno Local:** Se actualizó `.env` con la cadena de conexión de Supabase usando Connection Pooling (puerto 6543 y 5432).
 - **Esquema de Base de Datos:** Se ejecutó `npx prisma db push` exitosamente, creando todas las tablas y relaciones en Supabase en la nube.
 - **Cliente Prisma:** Se regeneró el cliente de Prisma (`v6.19.3`).

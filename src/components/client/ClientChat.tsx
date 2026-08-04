@@ -542,7 +542,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
               className="flex-1 overflow-y-auto px-4 py-3"
               style={{
                 scrollbarWidth: 'thin',
-                scrollbarColor: isDark ? '#2A2A38 transparent' : '#D1CBC4 transparent',
+                scrollbarColor: isDark ? 'var(--border) transparent' : '#D1CBC4 transparent',
               }}
             >
               {/* Custom scrollbar styles */}
@@ -550,7 +550,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                 [data-messages-scroll]::-webkit-scrollbar { width: 5px; }
                 [data-messages-scroll]::-webkit-scrollbar-track { background: transparent; }
                 [data-messages-scroll]::-webkit-scrollbar-thumb {
-                  background: ${isDark ? '#2A2A38' : '#D1CBC4'};
+                  background: ${isDark ? 'var(--border)' : '#D1CBC4'};
                   border-radius: 10px;
                 }
               `}</style>

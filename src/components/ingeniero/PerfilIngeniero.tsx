@@ -55,7 +55,7 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
             width: 80,
             height: 80,
             borderRadius: 24,
-            background: 'linear-gradient(135deg, #1B1B2F, #3949AB)',
+            background: 'linear-gradient(135deg, var(--text), #3949AB)',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
