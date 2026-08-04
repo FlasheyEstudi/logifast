@@ -127,9 +127,9 @@ export default function RepartidorMap({
     }
   }, [driverPos, shouldFollow, is3DMode, currentBearing, zoom]);
 
-  // Centrar/encajar ruta y marcadores origen/destino de forma óptima sin arrastrar al rincón
+  // Centrar/encajar ruta y marcadores origen/destino en 2D, pero preservar cámara 3D cuando is3DMode está activo
   useEffect(() => {
-    if (mapRef.current && mapReady) {
+    if (mapRef.current && mapReady && !is3DMode) {
       if (origen && destino && isValidPos(origen) && isValidPos(destino)) {
         const bounds: [[number, number], [number, number]] = [
           [Math.min(origen[1], destino[1], driverPos[1]), Math.min(origen[0], destino[0], driverPos[0])],
@@ -139,10 +139,12 @@ export default function RepartidorMap({
           padding: { top: 80, bottom: 200, left: 50, right: 50 },
           duration: 1200,
           maxZoom: 16,
+          pitch: 0,
+          bearing: 0,
         });
       }
     }
-  }, [mapReady, origen, destino, driverPos]);
+  }, [mapReady, origen, destino, driverPos, is3DMode]);
 
   // Manejo de clics en el mapa
   useEffect(() => {
@@ -333,7 +335,10 @@ export default function RepartidorMap({
       <Map
         ref={mapRef}
         center={[driverPos[1], driverPos[0]]}
-        zoom={zoom}
+        zoom={is3DMode ? 17.5 : zoom}
+        pitch={is3DMode ? 65 : 0}
+        bearing={is3DMode ? currentBearing : 0}
+        maxPitch={85}
         className="rounded-2xl overflow-hidden"
         onLoad={() => setMapReady(true)}
         dragPan={true}
