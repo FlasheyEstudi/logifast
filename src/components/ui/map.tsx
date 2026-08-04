@@ -72,7 +72,9 @@ type Theme = "light" | "dark";
 function getDocumentTheme(): Theme | null {
   if (typeof document === "undefined") return null;
   if (document.documentElement.classList.contains("dark")) return "dark";
+  if (document.documentElement.getAttribute("data-theme") === "dark") return "dark";
   if (document.documentElement.classList.contains("light")) return "light";
+  if (document.documentElement.getAttribute("data-theme") === "light") return "light";
   return null;
 }
 
@@ -92,7 +94,7 @@ function useResolvedTheme(themeProp?: "light" | "dark"): Theme {
   useEffect(() => {
     if (themeProp) return; // Skip detection if theme is provided via prop
 
-    // Watch for document class changes (e.g., next-themes toggling dark class)
+    // Watch for document class & attribute changes
     const observer = new MutationObserver(() => {
       const docTheme = getDocumentTheme();
       if (docTheme) {
@@ -101,7 +103,7 @@ function useResolvedTheme(themeProp?: "light" | "dark"): Theme {
     });
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["class"],
+      attributeFilter: ["class", "data-theme"],
     });
 
     // Also watch for system preference changes

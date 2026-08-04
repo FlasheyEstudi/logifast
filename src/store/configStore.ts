@@ -61,6 +61,13 @@ export function aplicarTema(tema: Tema): void {
   } else {
     resolved = tema;
   }
+  if (resolved === 'dark') {
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+  }
   document.documentElement.setAttribute('data-theme', resolved);
 }
 

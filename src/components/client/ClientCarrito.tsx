@@ -63,9 +63,9 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       existing.items.push(item);
     } else {
       acc.push({
-        tiendaId: item.tiendaId,
-        tiendaNombre: item.tiendaNombre,
-        tiendaLogoIniciales: item.tiendaNombre.substring(0, 2).toUpperCase(),
+        tiendaId: item.tiendaId || 'default',
+        tiendaNombre: item.tiendaNombre || 'Tienda',
+        tiendaLogoIniciales: (item.tiendaNombre || 'TL').substring(0, 2).toUpperCase(),
         items: [item],
       });
     }
