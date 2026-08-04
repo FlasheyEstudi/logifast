@@ -91,12 +91,15 @@ export default function RepartidorChat() {
           maxWidth: 480,
           maxHeight: '85vh',
           zIndex: 9991,
-          background: 'var(--md-surface)',
+          background: 'rgba(15, 23, 42, 0.95)',
+          backdropFilter: 'blur(20px)',
           borderRadius: '28px 28px 0 0',
-          boxShadow: '0 -12px 48px rgba(0,0,0,0.18)',
+          boxShadow: '0 -12px 48px rgba(0,0,0,0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
           display: 'flex',
           flexDirection: 'column',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          color: '#F8FAFC',
         }}
       >
         {/* Drag handle */}
@@ -114,7 +117,7 @@ export default function RepartidorChat() {
               width: 40,
               height: 4,
               borderRadius: 2,
-              background: 'var(--md-outline-variant)',
+              background: 'rgba(255, 255, 255, 0.2)',
             }}
           />
         </div>
@@ -126,7 +129,7 @@ export default function RepartidorChat() {
             alignItems: 'center',
             gap: 12,
             padding: '8px 16px 12px',
-            borderBottom: '1px solid var(--md-outline-variant)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           }}
         >
           <div
@@ -134,8 +137,8 @@ export default function RepartidorChat() {
               width: 36,
               height: 36,
               borderRadius: 12,
-              background: 'var(--md-primary-container)',
-              color: 'var(--md-on-primary-container)',
+              background: 'rgba(0, 122, 255, 0.15)',
+              color: '#007AFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -169,8 +172,8 @@ export default function RepartidorChat() {
               height: 36,
               borderRadius: 10,
               border: 'none',
-              background: 'var(--md-surface-variant)',
-              color: 'var(--text-secondary)',
+              background: 'rgba(255, 255, 255, 0.08)',
+              color: '#94A3B8',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -193,7 +196,7 @@ export default function RepartidorChat() {
             gap: 8,
             maxHeight: 'calc(85vh - 130px)',
             minHeight: 200,
-            background: 'var(--md-surface-variant)',
+            background: 'rgba(15, 23, 42, 0.6)',
           }}
         >
           {mensajesFiltrados.length === 0 && (
@@ -205,12 +208,12 @@ export default function RepartidorChat() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                color: 'var(--text-muted)',
+                color: '#94A3B8',
                 fontSize: 13,
                 textAlign: 'center',
               }}
             >
-              <MessageSquare size={28} color="var(--text-muted)" />
+              <MessageSquare size={28} color="#94A3B8" />
               <div>No hay mensajes aún. Inicia la conversación.</div>
             </div>
           )}
@@ -235,7 +238,9 @@ export default function RepartidorChat() {
                     borderRadius: 18,
                     borderBottomRightRadius: isRepartidor ? 4 : 18,
                     borderBottomLeftRadius: isRepartidor ? 18 : 4,
-                    boxShadow: 'var(--md-elevation-1)',
+                    background: isRepartidor ? '#007AFF' : 'rgba(30, 41, 59, 0.9)',
+                    color: '#FFFFFF',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                   }}
                 >
                   <div>{m.contenido}</div>
@@ -243,7 +248,7 @@ export default function RepartidorChat() {
                     className="font-mono"
                     style={{
                       fontSize: 10,
-                      color: isRepartidor ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+                      color: isRepartidor ? 'rgba(255,255,255,0.7)' : '#94A3B8',
                       textAlign: isRepartidor ? 'right' : 'left',
                       marginTop: 2,
                     }}
@@ -265,8 +270,8 @@ export default function RepartidorChat() {
               gap: 8,
               padding: '10px 16px',
               overflowX: 'auto',
-              borderTop: '1px solid var(--md-outline-variant)',
-              background: 'var(--md-surface)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'rgba(15, 23, 42, 0.9)',
               flexShrink: 0,
               scrollbarWidth: 'none',
             }}
@@ -282,12 +287,12 @@ export default function RepartidorChat() {
                   flexShrink: 0,
                   padding: '8px 16px',
                   borderRadius: 100,
-                  border: '1.5px solid var(--md-outline-variant)',
-                  background: 'var(--md-surface-variant)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  background: 'rgba(30, 41, 59, 0.8)',
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: 13,
                   fontWeight: 500,
-                  color: 'var(--text-secondary)',
+                  color: '#CBD5E1',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                 }}
@@ -306,8 +311,8 @@ export default function RepartidorChat() {
             alignItems: 'center',
             gap: 8,
             padding: 12,
-            borderTop: '1px solid var(--md-outline-variant)',
-            background: 'var(--md-surface)',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            background: 'rgba(15, 23, 42, 0.95)',
           }}
         >
           <button
@@ -321,9 +326,9 @@ export default function RepartidorChat() {
               width: 44,
               height: 44,
               borderRadius: 14,
-              border: '1px solid var(--md-outline-variant)',
-              background: 'var(--md-surface)',
-              color: 'var(--text-secondary)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: 'rgba(255, 255, 255, 0.08)',
+              color: '#34C759',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -340,9 +345,9 @@ export default function RepartidorChat() {
               width: 44,
               height: 44,
               borderRadius: 14,
-              border: '1px solid var(--md-outline-variant)',
-              background: mostrarRapidos ? 'var(--md-primary-container)' : 'var(--md-surface)',
-              color: mostrarRapidos ? 'var(--md-on-primary-container)' : 'var(--text-secondary)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: mostrarRapidos ? '#007AFF' : 'rgba(255, 255, 255, 0.08)',
+              color: mostrarRapidos ? '#FFFFFF' : '#94A3B8',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -364,9 +369,9 @@ export default function RepartidorChat() {
               minHeight: 44,
               padding: '0 18px',
               borderRadius: 22,
-              border: '1.5px solid transparent',
-              background: 'var(--md-surface-variant)',
-              color: 'var(--text)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: 'rgba(30, 41, 59, 0.8)',
+              color: '#F8FAFC',
               fontSize: 15,
               fontFamily: "'DM Sans', sans-serif",
               outline: 'none',
@@ -384,7 +389,10 @@ export default function RepartidorChat() {
               height: 44,
               borderRadius: '50%',
               border: 'none',
-              background: input.trim() ? 'var(--primario)' : 'var(--md-outline-variant)',
+              background: input.trim() ? '#007AFF' : 'rgba(255, 255, 255, 0.15)',
+              color: '#fff',
+              cursor: input.trim() ? 'pointer' : 'not-allowed',
+              display: 'flex',
               color: '#fff',
               cursor: input.trim() ? 'pointer' : 'not-allowed',
               display: 'flex',

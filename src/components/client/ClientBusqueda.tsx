@@ -22,10 +22,11 @@ export default function ClientBusqueda({ onClose }: ClientBusquedaProps) {
         position: 'fixed',
         inset: 0,
         zIndex: 9000,
-        background: 'var(--md-surface)',
+        background: '#0B0E14',
         display: 'flex',
         flexDirection: 'column',
         fontFamily: "'DM Sans', sans-serif",
+        color: '#F8FAFC',
       }}
     >
       {/* Search header */}
@@ -34,11 +35,13 @@ export default function ClientBusqueda({ onClose }: ClientBusquedaProps) {
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          padding: '16px 16px 12px',
-          borderBottom: '1px solid var(--md-outline-variant)',
+          padding: '16px 20px',
+          background: 'rgba(19, 24, 34, 0.95)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
-        <Search size={22} style={{ color: 'var(--md-on-surface-variant)', flexShrink: 0 }} />
+        <Search size={22} style={{ color: '#007AFF', flexShrink: 0 }} />
         <input
           type="text"
           value={query}
@@ -50,7 +53,7 @@ export default function ClientBusqueda({ onClose }: ClientBusquedaProps) {
             border: 'none',
             outline: 'none',
             background: 'transparent',
-            color: 'var(--md-on-surface)',
+            color: '#F8FAFC',
             fontSize: 16,
             fontFamily: "'DM Sans', sans-serif",
           }}
@@ -61,9 +64,9 @@ export default function ClientBusqueda({ onClose }: ClientBusquedaProps) {
             width: 36,
             height: 36,
             borderRadius: '50%',
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--md-on-surface-variant)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            background: 'rgba(255, 255, 255, 0.08)',
+            color: '#F8FAFC',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -90,18 +93,19 @@ export default function ClientBusqueda({ onClose }: ClientBusquedaProps) {
           style={{
             width: 64,
             height: 64,
-            borderRadius: 16,
-            background: 'var(--md-primary-container)',
+            borderRadius: 20,
+            background: 'rgba(0, 122, 255, 0.15)',
+            border: '1px solid rgba(0, 122, 255, 0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--md-on-primary-container)',
+            color: '#007AFF',
           }}
         >
           <Search size={28} />
         </div>
-        <p style={{ color: 'var(--md-on-surface-variant)', fontSize: 14, textAlign: 'center' }}>
-          {query ? `Sin resultados para "${query}"` : 'Escribe para buscar'}
+        <p style={{ color: '#94A3B8', fontSize: 14, textAlign: 'center' }}>
+          {query ? `Sin resultados para "${query}"` : 'Escribe para buscar tiendas o productos'}
         </p>
       </div>
     </motion.div>

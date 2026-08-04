@@ -93,8 +93,9 @@ function SectionCard({
       style={{
         padding: 16,
         borderRadius: 20,
-        background: 'var(--md-surface)',
-        border: '1px solid var(--md-outline-variant)',
+        background: 'rgba(30, 41, 59, 0.8)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        backdropFilter: 'blur(16px)',
         marginBottom: 12,
       }}
     >
@@ -108,7 +109,7 @@ function SectionCard({
       >
         <h2
           className="font-syne"
-          style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.2px' }}
+          style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.2px' }}
         >
           {title}
         </h2>
@@ -135,7 +136,8 @@ function StatBox({
       style={{
         padding: 12,
         borderRadius: 14,
-        background: 'var(--md-surface-variant)',
+        background: 'rgba(15, 23, 42, 0.6)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
         display: 'flex',
         flexDirection: 'column',
         gap: 4,
