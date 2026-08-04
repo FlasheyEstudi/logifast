@@ -218,56 +218,7 @@ export default function ClientExplorar({ isDark, userName, onNavigate, onOpenTra
      ═══════════════════════════════════════════════ */
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh' }}>
-      {/* ─── 1. HEADER (glassmorphism, 56px, sticky) ─── */}
-      <div
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 30,
-          height: 56,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          background: 'var(--lf-glass-bg)',
-          backdropFilter: 'blur(var(--lf-glass-blur))',
-          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
-          borderBottom: '1px solid var(--lf-glass-border)',
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontFamily: "'Syne', sans-serif",
-              fontWeight: 700,
-              fontSize: 22,
-              color: 'var(--text)',
-              margin: 0,
-              lineHeight: 1.2,
-            }}
-          >
-            Explorar
-          </h1>
-        </div>
-        <button
-          onClick={() => { haptic(10); setShowFilterPanel(!showFilterPanel); }}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            border: '1px solid var(--border)',
-            background: showFilterPanel ? 'var(--primario-soft)' : 'var(--surface)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <SlidersHorizontal size={18} style={{ color: showFilterPanel ? 'var(--primario)' : 'var(--text-muted)' }} />
-        </button>
-      </div>
+    <div style={{ position: 'relative', minHeight: '100vh', paddingTop: 8 }}>
 
       {/* ─── Location text below header ─── */}
       <div style={{ padding: '8px 16px 0' }}>

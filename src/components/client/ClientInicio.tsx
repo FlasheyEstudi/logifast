@@ -354,92 +354,9 @@ export default function ClientInicio({ isDark, userName, onNavigate, onOpenTrack
   return (
     <div className="w-full max-w-3xl mx-auto" style={{ position: 'relative' }}>
       {/* ─────────────────────────────────────────────
-          1. HEADER DE UBICACION (64px, glassmorphism)
-          ───────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
-          height: 64,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 20px',
-          background: 'var(--lf-glass-bg)',
-          backdropFilter: 'blur(var(--lf-glass-blur))',
-          WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
-          borderBottom: '1px solid var(--lf-glass-border)',
-        }}
-      >
-        {/* Left: Location */}
-        <div style={{ cursor: 'pointer' }}>
-          <div style={{
-            fontSize: 11,
-            textTransform: 'uppercase' as const,
-            letterSpacing: '0.1em',
-            color: 'var(--text-muted)',
-            fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 500,
-          }}>
-            Entregar en:
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{
-              fontFamily: "'Syne', sans-serif",
-              fontWeight: 700,
-              fontSize: 18,
-              color: 'var(--text)',
-            }}>
-              Col. Los Robles
-            </span>
-            <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} />
-          </div>
-        </div>
-
-        {/* Right: Bell with badge */}
-        <button
-          onClick={() => onNavigate('pedidos')}
-          style={{
-            position: 'relative',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 4,
-          }}
-        >
-          <Bell size={22} style={{ color: 'var(--text)' }} />
-          {notifCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: 18,
-              height: 18,
-              borderRadius: '50%',
-              background: 'var(--peligro, var(--peligro))',
-              color: '#fff',
-              fontSize: 11,
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1,
-            }}>
-              {notifCount}
-            </span>
-          )}
-        </button>
-      </motion.div>
-
-      {/* ─────────────────────────────────────────────
           SCROLLABLE CONTENT
           ───────────────────────────────────────────── */}
-      <div style={{ padding: '16px 16px 140px' }}>
+      <div style={{ padding: '8px 16px 140px' }}>
         {/* ─────────────────────────────────────────────
             2. BUSCADOR (52px, glassmorphism pill)
             ───────────────────────────────────────────── */}
