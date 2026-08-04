@@ -9,6 +9,7 @@ import {
   MapRoute,
   MapRef
 } from '@/components/ui/map';
+import { obtenerRuta } from '@/lib/osrm';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
@@ -176,11 +177,39 @@ export default function RepartidorMap({
     }
   };
 
+  const [osrmRouteCoords, setOsrmRouteCoords] = useState<[number, number][]>([]);
+
+  // Activar modo 3D automáticamente cuando el repartidor inicia viaje / navegación
+  useEffect(() => {
+    if (estado === 'EN_CAMINO_RECOGER' || estado === 'RECOGIDO' || estado === 'EN_CAMINO_ENTREGAR') {
+      setIs3DMode(true);
+      setShouldFollow(true);
+    }
+  }, [estado]);
+
+  // Obtener geometría real de calles con OSRM si no se proporcionan coordenadas personalizadas
+  useEffect(() => {
+    if (rutaCoordenadas && rutaCoordenadas.length >= 2) return;
+
+    let targetPos = (estado === 'EN_CAMINO_RECOGER' || estado === 'ORDEN_ASIGNADA') ? origen : (destino || origen);
+    if (!targetPos) return;
+
+    obtenerRuta(
+      { lat: driverPos[0], lng: driverPos[1] },
+      { lat: targetPos[0], lng: targetPos[1] }
+    ).then((res) => {
+      if (res && res.exito && res.coordenadas && res.coordenadas.length > 1) {
+        setOsrmRouteCoords(res.coordenadas);
+      }
+    }).catch(() => null);
+  }, [driverPos, origen, destino, estado, rutaCoordenadas]);
+
   // Convertir ruta [lat, lng][] a [lng, lat][] para MapLibre
   const mapLibreRoute = useMemo(() => {
-    if (!rutaCoordenadas || rutaCoordenadas.length < 2) return [];
-    return rutaCoordenadas.map(c => [c[1], c[0]] as [number, number]);
-  }, [rutaCoordenadas]);
+    const raw = (rutaCoordenadas && rutaCoordenadas.length >= 2) ? rutaCoordenadas : osrmRouteCoords;
+    if (!raw || raw.length < 2) return [];
+    return raw.map(c => [c[1], c[0]] as [number, number]);
+  }, [rutaCoordenadas, osrmRouteCoords]);
 
   const isCompra = tipoServicio === 'compra';
   const pickupColor = isCompra ? '#FF9500' : 'var(--primario)';
@@ -310,13 +339,23 @@ export default function RepartidorMap({
         dragPan={true}
         touchZoomRotate={true}
       >
-        {/* Ruta del servicio */}
+        {/* Casing 3D de la ruta para contraste */}
         {mapLibreRoute.length > 1 && (
           <MapRoute
             coordinates={mapLibreRoute}
-            color={isCompra ? '#FF9500' : 'var(--primario)'}
+            color="#0F172A"
+            width={9}
+            opacity={0.7}
+          />
+        )}
+
+        {/* Línea principal de navegación 3D OSRM */}
+        {mapLibreRoute.length > 1 && (
+          <MapRoute
+            coordinates={mapLibreRoute}
+            color={estado === 'RECOGIDO' ? '#34C759' : (isCompra ? '#FF9500' : '#007AFF')}
             width={5}
-            opacity={0.85}
+            opacity={0.95}
             dashArray={isDashArray ? [8, 6] : undefined}
           />
         )}
