@@ -367,7 +367,7 @@ export default function ClientCarrito({ isDark, onClose, onBackToTienda }: Clien
             <button
               onClick={handlePagar}
               disabled={isProcessing}
-              className="w-full h-14 bg-gradient-to-r from-[#FF5722] to-[#FF7043] hover:from-[#E64A19] hover:to-[#F4511E] text-white rounded-2xl font-extrabold text-sm shadow-xl shadow-[#FF5722]/30 active:scale-98 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
+              className="w-full h-14 bg-gradient-to-r from-[#007AFF] to-[#0056B3] hover:from-[#0066CC] hover:to-[#004499] text-white rounded-2xl font-extrabold text-sm shadow-xl shadow-[#007AFF]/30 active:scale-98 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
             >
               {isProcessing ? (
                 <div className="flex items-center space-x-2">

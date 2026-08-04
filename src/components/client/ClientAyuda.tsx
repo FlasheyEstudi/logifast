@@ -10,15 +10,15 @@ interface ClientAyudaProps {
 }
 
 const HELP_ITEMS = [
-  { icon: <MessageCircle size={20} />, title: 'Chat en vivo', desc: 'Habla con un agente' },
-  { icon: <Phone size={20} />, title: 'Llámanos', desc: '+52 800 123 4567' },
-  { icon: <Mail size={20} />, title: 'Email', desc: 'soporte@logifast.com' },
+  { icon: <MessageCircle size={20} color="#007AFF" />, title: 'Chat en vivo con Soporte', desc: 'Habla con un agente 24/7' },
+  { icon: <Phone size={20} color="#34C759" />, title: 'Llámanos', desc: '+505 2222-7777 (Atención directa)' },
+  { icon: <Mail size={20} color="#FF9500" />, title: 'Correo electrónico', desc: 'soporte@logifast.com' },
 ];
 
 const FAQ_ITEMS = [
-  { q: '¿Cómo rastreo mi envío?', a: 'Ve a la sección Pedidos y selecciona el envío que quieres rastrear.' },
-  { q: '¿Puedo cancelar un pedido?', a: 'Sí, siempre que el repartidor no haya recogido el paquete.' },
-  { q: '¿Cómo aplico un código de descuento?', a: 'En el carrito, ingresa tu código en el campo "Código promocional".' },
+  { q: '¿Cómo rastreo mi envío en tiempo real?', a: 'Ve a la sección Mis Envíos y presiona en la tarjeta activa para ver el mapa 3D con la posición GPS del repartidor.' },
+  { q: '¿Puedo cancelar un pedido?', a: 'Sí, siempre que el repartidor no haya recogido el paquete o confirmado la orden en la tienda.' },
+  { q: '¿Cómo aplico un código promocional?', a: 'En tu Carrito de Compras o al solicitar un envío, ingresa el código en el campo correspondiente.' },
 ];
 
 export default function ClientAyuda({ onClose }: ClientAyudaProps) {
@@ -32,11 +32,11 @@ export default function ClientAyuda({ onClose }: ClientAyudaProps) {
         position: 'fixed',
         inset: 0,
         zIndex: 9000,
-        background: 'var(--md-surface)',
+        background: '#0B0E14',
         display: 'flex',
         flexDirection: 'column',
         fontFamily: "'DM Sans', sans-serif",
-        color: 'var(--md-on-surface)',
+        color: '#F8FAFC',
       }}
     >
       {/* Header */}
@@ -45,8 +45,10 @@ export default function ClientAyuda({ onClose }: ClientAyudaProps) {
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          padding: '16px 16px 12px',
-          borderBottom: '1px solid var(--md-outline-variant)',
+          padding: '16px 20px',
+          background: 'rgba(19, 24, 34, 0.95)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
         <button
@@ -55,9 +57,9 @@ export default function ClientAyuda({ onClose }: ClientAyudaProps) {
             width: 36,
             height: 36,
             borderRadius: '50%',
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--md-on-surface-variant)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            background: 'rgba(255, 255, 255, 0.08)',
+            color: '#F8FAFC',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -66,12 +68,14 @@ export default function ClientAyuda({ onClose }: ClientAyudaProps) {
         >
           <X size={20} />
         </button>
-        <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18 }}>Ayuda</span>
+        <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: '#F8FAFC' }}>
+          Centro de Ayuda & Soporte
+        </span>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
         {/* Contact options */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           {HELP_ITEMS.map((item, i) => (
             <button
               key={i}
@@ -79,11 +83,12 @@ export default function ClientAyuda({ onClose }: ClientAyudaProps) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 14,
-                padding: '14px 16px',
-                borderRadius: 16,
-                border: 'none',
-                background: 'var(--md-surface-variant)',
-                color: 'var(--md-on-surface)',
+                padding: '16px 18px',
+                borderRadius: 20,
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: 'rgba(30, 41, 59, 0.8)',
+                backdropFilter: 'blur(16px)',
+                color: '#F8FAFC',
                 cursor: 'pointer',
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: 14,
@@ -91,32 +96,38 @@ export default function ClientAyuda({ onClose }: ClientAyudaProps) {
                 width: '100%',
               }}
             >
-              <div style={{ color: 'var(--md-on-primary-container)' }}>{item.icon}</div>
+              <div>{item.icon}</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>{item.title}</div>
-                <div style={{ fontSize: 13, color: 'var(--md-on-surface-variant)', marginTop: 2 }}>{item.desc}</div>
+                <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{item.title}</div>
+                <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>{item.desc}</div>
               </div>
-              <ChevronRight size={16} style={{ color: 'var(--md-on-surface-variant)' }} />
+              <ChevronRight size={18} style={{ color: '#94A3B8' }} />
             </button>
           ))}
         </div>
 
         {/* FAQ */}
-        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, marginBottom: 12 }}>
-          Preguntas frecuentes
+        <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: '#F8FAFC', marginBottom: 14 }}>
+          Preguntas Frecuentes
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {FAQ_ITEMS.map((item, i) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {FAQ_ITEMS.map((faq, i) => (
             <div
               key={i}
               style={{
-                padding: '14px 16px',
-                borderRadius: 16,
-                background: 'var(--md-surface-variant)',
+                padding: '16px 18px',
+                borderRadius: 20,
+                background: 'rgba(30, 41, 59, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(16px)',
               }}
             >
-              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{item.q}</div>
-              <div style={{ fontSize: 13, color: 'var(--md-on-surface-variant)', lineHeight: 1.5 }}>{item.a}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#F8FAFC', marginBottom: 6 }}>
+                {faq.q}
+              </div>
+              <div style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.4 }}>
+                {faq.a}
+              </div>
             </div>
           ))}
         </div>

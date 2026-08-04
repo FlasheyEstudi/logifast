@@ -77,7 +77,7 @@ function MiniMap({
         borderRadius: 16,
         overflow: 'hidden',
         position: 'relative',
-        border: '1px solid var(--md-outline-variant)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
       }}
     >
       <RepartidorMiniMap
@@ -103,8 +103,8 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        padding: '8px 0',
-        borderBottom: '1px solid var(--md-outline-variant)',
+        padding: '10px 0',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
       }}
     >
       <span
@@ -112,8 +112,8 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
           width: 28,
           height: 28,
           borderRadius: 8,
-          background: 'var(--md-surface-variant)',
-          color: 'var(--text-secondary)',
+          background: 'rgba(255, 255, 255, 0.08)',
+          color: '#CBD5E1',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -122,12 +122,12 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
       >
         {icon}
       </span>
-      <span style={{ flex: 1, fontSize: 13, color: 'var(--text-muted)' }}>{label}</span>
+      <span style={{ flex: 1, fontSize: 13, color: '#94A3B8' }}>{label}</span>
       <span
         style={{
           fontSize: 13,
-          fontWeight: 600,
-          color: 'var(--text)',
+          fontWeight: 700,
+          color: '#F8FAFC',
           textAlign: 'right',
           maxWidth: '60%',
           overflow: 'hidden',
@@ -171,7 +171,6 @@ export default function RepartidorDetalleServicio() {
   const TipoIcon = s.tipo === 'compra' ? ShoppingBag : Package;
   const isEntregado = s.estado === 'entregado';
 
-  // Steps completion: if entregado, all 8 done; if incidencia, only first 4 (up to "Paquete recogido")
   const completedCount = isEntregado ? 8 : 4;
 
   return (
@@ -184,8 +183,9 @@ export default function RepartidorDetalleServicio() {
         position: 'fixed',
         inset: 0,
         zIndex: 9995,
-        background: 'var(--bg)',
+        background: '#0B0E14',
         overflowY: 'auto',
+        color: '#F8FAFC',
       }}
     >
       <div
