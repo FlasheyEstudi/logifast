@@ -967,6 +967,8 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       if (ordenesRes.ok) {
         const data = await ordenesRes.json();
         const serverOrdenes: OrdenActiva[] = data?.ordenes || (data?.orden ? [data.orden] : []);
+        const serverOfertas: OrdenActiva[] = data?.ofertas || [];
+
         if (serverOrdenes.length > 0) {
           const currentActive = currentState.ordenActiva;
           const matchingActive = currentActive ? serverOrdenes.find((o) => o.id === currentActive.id) : null;
@@ -974,11 +976,16 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
           set({
             ordenesActivas: serverOrdenes,
             ordenActiva: matchingActive || serverOrdenes[0],
+            ofertasDisponibles: serverOfertas,
             enServicio: true,
             conectado: true,
           });
-        } else if ((currentState.ordenesActivas || []).length === 0) {
-          set({ ordenesActivas: [], ordenActiva: null });
+        } else {
+          set({
+            ordenesActivas: [],
+            ordenActiva: null,
+            ofertasDisponibles: serverOfertas,
+          });
         }
       }
 
