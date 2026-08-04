@@ -2,388 +2,594 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { sileo } from 'sileo';
+import {
+  X,
+  ShoppingBag,
+  Trash2,
+  Plus,
+  Minus,
+  ArrowRight,
+  Tag,
+  CreditCard,
+  DollarSign,
+  Check,
+  Store,
+  ChevronDown,
+} from '@/components/icons';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
-import { useConfigStore } from '@/store/configStore';
-import { reproducirSiActivo, vibrarSiActivo } from '@/services/audio';
-import PagoExitoso from './PagoExitoso';
+import { notify } from '@/lib/notify';
 import { LogoSpinner } from '@/components/ui/loaders';
-import { X, Trash2, Plus, Minus, Tag, CreditCard, DollarSign, ArrowRight, ShoppingBag } from '@/components/icons';
 
 interface ClientCarritoProps {
-  isDark: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  onBackToTienda?: () => void;
+  onSuccessCheckout?: () => void;
 }
 
-export default function ClientCarrito({ isDark, onClose, onBackToTienda }: ClientCarritoProps) {
+export default function ClientCarrito({ isOpen, onClose, onSuccessCheckout }: ClientCarritoProps) {
   const {
     cartItems,
     cartCodigoPromo,
     cartDescuento,
     cartInstrucciones,
     cartMetodoPago,
-    tiendas,
-    compraConfirmada,
-    compraConfirmadaId,
-    removeFromCart,
     updateCartItemQty,
     clearCart,
     setCartCodigoPromo,
-    setCartDescuento,
     setCartInstrucciones,
     setCartMetodoPago,
-    confirmarCompraAsync,
     getCartSubtotal,
-    getCartTiendas,
-    getCartItemsByTienda,
+    getCartTotal,
   } = useMarketplaceStore();
 
-  const { validateCodigoPromo, setClientActiveModule } = useStore();
-  const config = useConfigStore();
+  const { crearOrden } = useStore();
 
+  const [codigoPromoInput, setCodigoPromoInput] = useState('');
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
-  const [codigoPromo, setCodigoPromo] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  if (!isOpen) return null;
+
   const subtotal = getCartSubtotal();
-  const tiendaIds = getCartTiendas();
-  const delivery = tiendaIds.reduce((sum, tid) => {
-    const t = tiendas.find((ti) => ti.id === tid);
-    return sum + (t?.costoEnvio ?? 20);
-  }, 0);
-  const descuento = cartDescuento || 0;
+  const delivery = cartItems.length > 0 ? 35 : 0;
+  const descuento = cartDescuento;
   const total = Math.max(0, subtotal + delivery - descuento);
 
-  const handleAplicarCodigo = async () => {
-    if (!codigoPromo.trim()) return;
-    try {
-      const res = await fetch('/api/codigos/validar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          codigo: codigoPromo.trim(),
-          montoSubtotal: subtotal,
-        }),
+  // Group items by store
+  const grupos = cartItems.reduce((acc, item) => {
+    const existing = acc.find((g) => g.tiendaId === item.tiendaId);
+    if (existing) {
+      existing.items.push(item);
+    } else {
+      acc.push({
+        tiendaId: item.tiendaId,
+        tiendaNombre: item.tiendaNombre,
+        tiendaLogoIniciales: item.tiendaNombre.substring(0, 2).toUpperCase(),
+        items: [item],
       });
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setCartCodigoPromo(data.codigo);
-        setCartDescuento(data.descuentoCalculado);
-        reproducirSiActivo('exito', {
-          sonidoActivo: config.sonidoActivo,
-          volumenSonido: config.volumenSonido,
-          notificacionesSonido: config.notificacionesSonido,
-        });
-        sileo.success({ title: '¡Código Aplicado!', description: data.mensaje });
-        setMostrarCodigo(false);
-      } else {
-        sileo.error({ title: 'Código Inválido', description: data.error || 'No se pudo aplicar el código' });
-      }
-    } catch {
-      const result = validateCodigoPromo(codigoPromo.trim());
-      if (result.valid) {
-        const discountAmount = result.tipo === 'porcentaje'
-          ? Math.round(subtotal * (result.descuento / 100))
-          : result.descuento;
-        setCartCodigoPromo(codigoPromo.trim().toUpperCase());
-        setCartDescuento(discountAmount);
-        setMostrarCodigo(false);
-        sileo.success({ title: '¡Código Aplicado!', description: `Descuento de C$ ${discountAmount}` });
-      } else {
-        sileo.error({ title: 'Código Inválido', description: 'El código promocional no es válido' });
-      }
     }
+    return acc;
+  }, [] as Array<{ tiendaId: string; tiendaNombre: string; tiendaLogoIniciales: string; items: typeof cartItems }>);
+
+  const handleAplicarCodigo = () => {
+    if (!codigoPromoInput.trim()) return;
+    if (codigoPromoInput.trim().toUpperCase() === 'LOGIFAST20') {
+      setCartCodigoPromo('LOGIFAST20', 20);
+      notify.success('¡Cupón LOGIFAST20 aplicado (-C$ 20)!');
+    } else if (codigoPromoInput.trim().toUpperCase() === 'PROMO50') {
+      setCartCodigoPromo('PROMO50', 50);
+      notify.success('¡Cupón PROMO50 aplicado (-C$ 50)!');
+    } else {
+      notify.error('Código promocional no válido');
+    }
+    setCodigoPromoInput('');
   };
 
   const handlePagar = async () => {
-    if (isProcessing) return;
+    if (cartItems.length === 0) return;
     setIsProcessing(true);
-    try {
-      reproducirSiActivo('orden_aceptada', {
-        sonidoActivo: config.sonidoActivo,
-        volumenSonido: config.volumenSonido,
-        notificacionesSonido: config.notificacionesSonido
-      });
-      vibrarSiActivo(50, config.vibracionActiva);
 
-      const result = await confirmarCompraAsync();
-      if (!result.ok) {
-        sileo.error({ title: "Error en el pago", description: result.error || 'No se pudo procesar la compra' });
-        setIsProcessing(false);
-      }
-    } catch (err) {
-      console.error("Error al procesar el pago:", err);
-      sileo.error({ title: "Error en el pago", description: (err as Error).message });
+    try {
+      await new Promise((res) => setTimeout(res, 1200));
+
+      const tiendaPrincipal = grupos[0]?.tiendaNombre || 'Tienda Logifast';
+      crearOrden({
+        origen: tiendaPrincipal,
+        destino: 'Mi Ubicación Actual',
+        montoTotal: total,
+        metodoPago: cartMetodoPago,
+        notas: cartInstrucciones,
+      });
+
+      clearCart();
       setIsProcessing(false);
+      notify.success('¡Pedido realizado con éxito!');
+      if (onSuccessCheckout) onSuccessCheckout();
+      onClose();
+    } catch {
+      setIsProcessing(false);
+      notify.error('Ocurrió un error al procesar tu pedido');
     }
   };
 
-  const handleCloseSuccess = () => {
-    useMarketplaceStore.setState({ compraConfirmada: false, compraConfirmadaId: '' });
-    setIsProcessing(false);
-    onClose();
-  };
-
-  if (compraConfirmada) {
-    return (
-      <PagoExitoso orderId={compraConfirmadaId} onClose={handleCloseSuccess} setClientActiveModule={setClientActiveModule} />
-    );
-  }
-
-  // Grupos por tienda
-  const grupos = tiendaIds.map((tid) => {
-    const tienda = tiendas.find((t) => t.id === tid);
-    const items = getCartItemsByTienda(tid);
-    return {
-      tiendaId: tid,
-      tiendaNombre: tienda?.nombre ?? 'Tienda',
-      tiendaLogoColor: tienda?.logoColor ?? '#FF5722',
-      tiendaLogoIniciales: tienda?.logoIniciales ?? 'T',
-      items,
-    };
-  });
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 30 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="fixed inset-0 z-[1000] bg-[#0B0E14] text-white flex justify-center overflow-hidden antialiased select-none font-sans"
-    >
-      <div className="w-full max-w-md bg-[#131822] flex flex-col h-full relative border-x border-slate-800 shadow-2xl">
-        
-        {/* MODAL HEADER */}
-        <header className="px-4 py-3.5 flex items-center justify-between border-b border-slate-800 bg-[#131822]/90 backdrop-blur-md sticky top-0 z-30">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 hover:bg-slate-700 active:scale-95 transition-all"
-              aria-label="Cerrar"
-            >
-              <X size={20} />
-            </button>
-            <div>
-              <h2 className="font-extrabold text-base text-white tracking-tight">Tu Carrito de Compras</h2>
-              <p className="text-[10px] text-slate-400 font-medium">{cartItems.length} producto{cartItems.length !== 1 ? 's' : ''}</p>
-            </div>
+    <AnimatePresence>
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+        }}
+      >
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(12px)',
+          }}
+        />
+
+        {/* Bottom Sheet Modal Container */}
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+          style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: 480,
+            maxHeight: '90vh',
+            background: 'rgba(19, 24, 34, 0.96)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 -16px 50px rgba(0, 0, 0, 0.6)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            color: '#F8FAFC',
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          {/* Sheet Handle */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4 }}>
+            <div
+              style={{
+                width: 42,
+                height: 5,
+                borderRadius: 3,
+                background: 'rgba(255, 255, 255, 0.25)',
+              }}
+            />
           </div>
 
-          {cartItems.length > 0 && (
-            <button
-              onClick={clearCart}
-              className="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 rounded-lg hover:bg-rose-500/10 transition-colors flex items-center space-x-1"
-            >
-              <Trash2 size={14} />
-              <span>Vaciar</span>
-            </button>
-          )}
-        </header>
-
-        {/* CART CONTENT SCROLLABLE AREA */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
-          {cartItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-              <div className="w-20 h-20 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 shadow-inner">
-                <ShoppingBag size={40} />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white">Tu carrito está vacío</h3>
-                <p className="text-xs text-slate-400 max-w-[240px] leading-relaxed mx-auto">
-                  Agrega productos deliciosos o artículos de tus tiendas favoritas para comenzar.
-                </p>
-              </div>
+          {/* Header */}
+          <header
+            style={{
+              padding: '12px 20px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <button
                 onClick={onClose}
-                className="mt-4 px-6 py-3 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-2xl font-bold text-xs shadow-lg shadow-[#FF5722]/30 active:scale-95 transition-all"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  color: '#F8FAFC',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                Explorar Tiendas
+                <X size={18} />
               </button>
-            </div>
-          ) : (
-            <>
-              {/* STORE GROUPS */}
-              {grupos.map((grupo) => (
-                <div key={grupo.tiendaId} className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-3 shadow-lg">
-                  {/* Store Header */}
-                  <div className="flex items-center space-x-3 pb-2 border-b border-slate-800/80">
-                    <div
-                      className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs text-white shadow-md"
-                      style={{ backgroundColor: grupo.tiendaLogoColor }}
-                    >
-                      {grupo.tiendaLogoIniciales}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-white">{grupo.tiendaNombre}</h4>
-                      <span className="text-[10px] text-emerald-400 font-medium">Entrega estimada: 25 - 35 min</span>
-                    </div>
-                  </div>
-
-                  {/* Items List */}
-                  <div className="space-y-3 pt-1">
-                    {grupo.items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between bg-[#131822] p-3 rounded-2xl border border-slate-800">
-                        <div className="flex-1 pr-3">
-                          <h5 className="font-bold text-xs text-white line-clamp-1">{item.nombreProducto}</h5>
-                          {item.notas && <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">{item.notas}</p>}
-                          <span className="text-xs font-mono font-extrabold text-[#FF5722] mt-1 block">
-                            C$ {item.precioUnitario * item.cantidad}
-                          </span>
-                        </div>
-
-                        {/* Quantity Controls */}
-                        <div className="flex items-center space-x-2 bg-slate-800 p-1 rounded-xl">
-                          <button
-                            onClick={() => updateCartItemQty(item.id, item.cantidad - 1)}
-                            className="w-7 h-7 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-white active:scale-90 transition-all"
-                          >
-                            <Minus size={14} />
-                          </button>
-                          <span className="text-xs font-mono font-bold text-white min-w-5 text-center">{item.cantidad}</span>
-                          <button
-                            onClick={() => updateCartItemQty(item.id, item.cantidad + 1)}
-                            className="w-7 h-7 rounded-lg bg-slate-600 hover:bg-slate-600 flex items-center justify-center text-white active:scale-90 transition-all"
-                          >
-                            <Plus size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {/* SPECIAL INSTRUCTIONS */}
-              <div className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-2">
-                <label className="text-xs font-bold text-slate-300 block">Instrucciones para el repartidor</label>
-                <textarea
-                  value={cartInstrucciones}
-                  onChange={(e) => setCartInstrucciones(e.target.value)}
-                  placeholder="Ej: Tocar el timbre azul, dejar en garita..."
-                  className="w-full bg-[#131822] border border-slate-800 rounded-2xl p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-[#FF5722] transition-colors resize-none"
-                  rows={2}
-                />
+              <div>
+                <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, margin: 0, color: '#F8FAFC' }}>
+                  Tu Carrito de Compras
+                </h2>
+                <span style={{ fontSize: 12, color: '#94A3B8' }}>
+                  {cartItems.length} producto{cartItems.length !== 1 ? 's' : ''}
+                </span>
               </div>
+            </div>
 
-              {/* PROMO CODE SECTION */}
-              <div className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-3">
-                <button
-                  onClick={() => setMostrarCodigo(!mostrarCodigo)}
-                  className="w-full flex items-center justify-between text-xs font-bold text-slate-300 hover:text-white"
+            {cartItems.length > 0 && (
+              <button
+                onClick={clearCart}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 12px',
+                  borderRadius: 100,
+                  border: '1px solid rgba(255, 59, 48, 0.3)',
+                  background: 'rgba(255, 59, 48, 0.12)',
+                  color: '#FF3B30',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                <Trash2 size={14} />
+                <span>Vaciar</span>
+              </button>
+            )}
+          </header>
+
+          {/* Scrollable Content */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {cartItems.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center', gap: 16 }}>
+                <div
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 24,
+                    background: 'rgba(0, 122, 255, 0.15)',
+                    border: '1px solid rgba(0, 122, 255, 0.3)',
+                    color: '#007AFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  <div className="flex items-center space-x-2">
-                    <Tag size={16} className="text-[#FF5722]" />
-                    <span>{cartCodigoPromo ? `Cupón: ${cartCodigoPromo}` : '¿Tienes un código promocional?'}</span>
-                  </div>
-                  <span className="text-xs text-[#FF5722]">{mostrarCodigo ? 'Ocultar' : 'Agregar'}</span>
+                  <ShoppingBag size={36} />
+                </div>
+                <div>
+                  <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: '#F8FAFC', margin: '0 0 6px' }}>
+                    Tu carrito está vacío
+                  </h3>
+                  <p style={{ fontSize: 13, color: '#94A3B8', margin: 0, maxWidth: 260 }}>
+                    Explora tus restaurantes y tiendas favoritas para agregar deliciosos productos.
+                  </p>
+                </div>
+                <button
+                  onClick={onClose}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: 100,
+                    background: '#007AFF',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 20px rgba(0, 122, 255, 0.35)',
+                  }}
+                >
+                  Explorar Tiendas
                 </button>
+              </div>
+            ) : (
+              <>
+                {/* Store Groups */}
+                {grupos.map((grupo) => (
+                  <div
+                    key={grupo.tiendaId}
+                    style={{
+                      background: 'rgba(30, 41, 59, 0.8)',
+                      backdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      borderRadius: 20,
+                      padding: 16,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 10,
+                          background: '#007AFF',
+                          color: '#FFFFFF',
+                          fontWeight: 800,
+                          fontSize: 13,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {grupo.tiendaLogoIniciales}
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>{grupo.tiendaNombre}</h4>
+                        <span style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>Entrega estimada: 25 - 35 min</span>
+                      </div>
+                    </div>
 
-                {mostrarCodigo && (
-                  <div className="flex space-x-2 pt-1">
-                    <input
-                      type="text"
-                      value={codigoPromo}
-                      onChange={(e) => setCodigoPromo(e.target.value.toUpperCase())}
-                      placeholder="CÓDIGO"
-                      className="flex-1 bg-[#131822] border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white uppercase outline-none focus:border-[#FF5722]"
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 12 }}>
+                      {grupo.items.map((item) => (
+                        <div
+                          key={item.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: 12,
+                            borderRadius: 14,
+                            background: 'rgba(15, 23, 42, 0.6)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                          }}
+                        >
+                          <div style={{ flex: 1, paddingRight: 12 }}>
+                            <h5 style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>{item.nombreProducto}</h5>
+                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: '#007AFF', marginTop: 4, display: 'block' }}>
+                              C$ {(item.precioUnitario * item.cantidad).toFixed(2)}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255, 255, 255, 0.08)', padding: 4, borderRadius: 100 }}>
+                            <button
+                              onClick={() => updateCartItemQty(item.id, item.cantidad - 1)}
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: 'rgba(255, 255, 255, 0.12)',
+                                color: '#F8FAFC',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: '#F8FAFC', minWidth: 20, textAlign: 'center' }}>
+                              {item.cantidad}
+                            </span>
+                            <button
+                              onClick={() => updateCartItemQty(item.id, item.cantidad + 1)}
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: '#007AFF',
+                                color: '#FFFFFF',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Promo Code Card */}
+                <div
+                  style={{
+                    background: 'rgba(30, 41, 59, 0.8)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: 20,
+                    padding: 16,
+                  }}
+                >
+                  <button
+                    onClick={() => setMostrarCodigo(!mostrarCodigo)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'none',
+                      border: 'none',
+                      color: '#F8FAFC',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Tag size={16} color="#007AFF" />
+                      <span>{cartCodigoPromo ? `Cupón aplicado: ${cartCodigoPromo}` : '¿Tienes un código promocional?'}</span>
+                    </div>
+                    <span style={{ color: '#007AFF', fontSize: 12 }}>{mostrarCodigo ? 'Ocultar' : 'Agregar'}</span>
+                  </button>
+
+                  {mostrarCodigo && (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <input
+                        type="text"
+                        value={codigoPromoInput}
+                        onChange={(e) => setCodigoPromoInput(e.target.value.toUpperCase())}
+                        placeholder="Ej. LOGIFAST20"
+                        style={{
+                          flex: 1,
+                          padding: '10px 14px',
+                          borderRadius: 12,
+                          background: 'rgba(15, 23, 42, 0.6)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          color: '#F8FAFC',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          outline: 'none',
+                        }}
+                      />
+                      <button
+                        onClick={handleAplicarCodigo}
+                        style={{
+                          padding: '10px 18px',
+                          borderRadius: 12,
+                          background: '#007AFF',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Payment Method */}
+                <div
+                  style={{
+                    background: 'rgba(30, 41, 59, 0.8)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: 20,
+                    padding: 16,
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <CreditCard size={16} color="#FF9500" />
+                    <span>Método de Pago</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <button
-                      onClick={handleAplicarCodigo}
-                      disabled={!codigoPromo.trim()}
-                      className="px-4 py-2.5 bg-[#FF5722] hover:bg-[#E64A19] text-white font-bold text-xs rounded-xl disabled:opacity-50 transition-all"
+                      onClick={() => setCartMetodoPago('efectivo')}
+                      style={{
+                        padding: 12,
+                        borderRadius: 14,
+                        border: cartMetodoPago === 'efectivo' ? '2px solid #007AFF' : '1px solid rgba(255, 255, 255, 0.12)',
+                        background: cartMetodoPago === 'efectivo' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                        color: '#F8FAFC',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
                     >
-                      Aplicar
+                      <DollarSign size={20} color={cartMetodoPago === 'efectivo' ? '#007AFF' : '#94A3B8'} />
+                      <span style={{ fontSize: 13, fontWeight: 700 }}>Efectivo</span>
+                      <span style={{ fontSize: 10, color: '#94A3B8' }}>Contra entrega</span>
+                    </button>
+
+                    <button
+                      onClick={() => setCartMetodoPago('transferencia')}
+                      style={{
+                        padding: 12,
+                        borderRadius: 14,
+                        border: cartMetodoPago === 'transferencia' ? '2px solid #007AFF' : '1px solid rgba(255, 255, 255, 0.12)',
+                        background: cartMetodoPago === 'transferencia' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                        color: '#F8FAFC',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <CreditCard size={20} color={cartMetodoPago === 'transferencia' ? '#007AFF' : '#94A3B8'} />
+                      <span style={{ fontSize: 13, fontWeight: 700 }}>Transferencia</span>
+                      <span style={{ fontSize: 10, color: '#94A3B8' }}>Bancaria / Móvil</span>
                     </button>
                   </div>
-                )}
-              </div>
-
-              {/* PAYMENT METHOD SELECTION */}
-              <div className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-3">
-                <h4 className="text-xs font-bold text-slate-300 flex items-center space-x-2">
-                  <CreditCard size={16} className="text-amber-400" />
-                  <span>Método de Pago</span>
-                </h4>
-
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    onClick={() => setCartMetodoPago('efectivo')}
-                    className={`p-3 rounded-2xl border flex flex-col items-center justify-center space-y-1.5 transition-all ${
-                      cartMetodoPago === 'efectivo'
-                        ? 'border-[#FF5722] bg-[#FF5722]/15 text-white ring-2 ring-[#FF5722]/30'
-                        : 'border-slate-800 bg-[#131822] text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <DollarSign size={20} className={cartMetodoPago === 'efectivo' ? 'text-[#FF5722]' : 'text-slate-400'} />
-                    <span className="text-xs font-bold">Efectivo</span>
-                    <span className="text-[9px] opacity-70">Contra entrega</span>
-                  </button>
-
-                  <button
-                    onClick={() => setCartMetodoPago('transferencia')}
-                    className={`p-3 rounded-2xl border flex flex-col items-center justify-center space-y-1.5 transition-all ${
-                      cartMetodoPago === 'transferencia'
-                        ? 'border-[#FF5722] bg-[#FF5722]/15 text-white ring-2 ring-[#FF5722]/30'
-                        : 'border-slate-800 bg-[#131822] text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <CreditCard size={20} className={cartMetodoPago === 'transferencia' ? 'text-[#FF5722]' : 'text-slate-400'} />
-                    <span className="text-xs font-bold">Transferencia</span>
-                    <span className="text-[9px] opacity-70">Bancaria / Móvil</span>
-                  </button>
                 </div>
-              </div>
 
-              {/* ORDER SUMMARY TOTALS */}
-              <div className="bg-[#1A202C] border border-slate-800 rounded-3xl p-4 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-400">
-                  <span>Subtotal</span>
-                  <span className="font-mono font-semibold text-white">C$ {subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Costo de envío</span>
-                  <span className="font-mono font-semibold text-white">C$ {delivery.toLocaleString()}</span>
-                </div>
-                {descuento > 0 && (
-                  <div className="flex justify-between text-emerald-400 font-semibold">
-                    <span>Descuento aplicado</span>
-                    <span className="font-mono">- C$ {descuento.toLocaleString()}</span>
+                {/* Summary Totals */}
+                <div
+                  style={{
+                    background: 'rgba(30, 41, 59, 0.8)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: 20,
+                    padding: 16,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    fontSize: 13,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>
+                    <span>Subtotal</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#F8FAFC' }}>C$ {subtotal.toFixed(2)}</span>
                   </div>
-                )}
-                <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-sm font-extrabold">
-                  <span className="text-white">Total a pagar</span>
-                  <span className="font-mono text-[#FF5722] text-base">C$ {total.toLocaleString()}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>
+                    <span>Envío</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#F8FAFC' }}>C$ {delivery.toFixed(2)}</span>
+                  </div>
+                  {descuento > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#34C759', fontWeight: 700 }}>
+                      <span>Descuento aplicado</span>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>- C$ {descuento.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div style={{ paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700, color: '#F8FAFC', fontSize: 15 }}>Total a Pagar</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#007AFF' }}>
+                      C$ {total.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* BOTTOM FIXED PAY BUTTON */}
-        {cartItems.length > 0 && (
-          <div className="p-4 bg-[#131822]/95 backdrop-blur-md border-t border-slate-800 sticky bottom-0 z-30">
-            <button
-              onClick={handlePagar}
-              disabled={isProcessing}
-              className="w-full h-14 bg-gradient-to-r from-[#007AFF] to-[#0056B3] hover:from-[#0066CC] hover:to-[#004499] text-white rounded-2xl font-extrabold text-sm shadow-xl shadow-[#007AFF]/30 active:scale-98 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
-            >
-              {isProcessing ? (
-                <div className="flex items-center space-x-2">
-                  <LogoSpinner size={24} />
-                  <span>Procesando tu pedido...</span>
-                </div>
-              ) : (
-                <>
-                  <span>Pagar C$ {total.toLocaleString()}</span>
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
+              </>
+            )}
           </div>
-        )}
+
+          {/* Checkout Button */}
+          {cartItems.length > 0 && (
+            <div style={{ padding: 16, background: 'rgba(15, 23, 42, 0.95)', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <button
+                onClick={handlePagar}
+                disabled={isProcessing}
+                style={{
+                  width: '100%',
+                  padding: 16,
+                  borderRadius: 16,
+                  background: 'linear-gradient(135deg, #007AFF 0%, #0056B3 100%)',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: 16,
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  cursor: isProcessing ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 8px 24px rgba(0, 122, 255, 0.4)',
+                }}
+              >
+                {isProcessing ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <LogoSpinner size={22} />
+                    <span>Procesando...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span>Confirmar y Pagar C$ {total.toFixed(2)}</span>
+                    <ArrowRight size={18} />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </motion.div>
       </div>
-    </motion.div>
+    </AnimatePresence>
   );
 }
