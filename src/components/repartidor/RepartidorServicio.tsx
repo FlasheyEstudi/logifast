@@ -1026,7 +1026,7 @@ function BottomSheet({ children, snapRef }: { children: React.ReactNode; snapRef
     { id: 'max', height: 85 }
   ];
 
-  const { sheetRef, isDragging, snapTo, handlers } = useBottomSheetGesture({
+  const { sheetRef, currentSnap, isDragging, snapTo, handlers } = useBottomSheetGesture({
     snapPoints: SNAP_POINTS,
     initialSnap: 'min'
   });
@@ -1036,6 +1036,16 @@ function BottomSheet({ children, snapRef }: { children: React.ReactNode; snapRef
       snapRef.current = snapTo;
     }
   }, [snapRef, snapTo]);
+
+  const toggleSnap = () => {
+    if (currentSnap === 'min') {
+      snapTo('med');
+    } else if (currentSnap === 'med') {
+      snapTo('max');
+    } else {
+      snapTo('min');
+    }
+  };
 
   return (
     <div
@@ -1057,10 +1067,15 @@ function BottomSheet({ children, snapRef }: { children: React.ReactNode; snapRef
         border: '1px solid rgba(255, 255, 255, 0.14)',
         padding: '12px 16px',
         overflow: 'hidden',
+        touchAction: 'pan-y',
       }}
       {...handlers}
     >
-      <div className="sheet-handle-area" style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12, cursor: 'grab', touchAction: 'none' }}>
+      <div
+        className="sheet-handle-area"
+        onClick={toggleSnap}
+        style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12, cursor: 'pointer', touchAction: 'none' }}
+      >
         <div className="sheet-handle" style={{ width: 44, height: 5, borderRadius: 3, background: 'rgba(255, 255, 255, 0.4)' }} />
       </div>
       <div className="sheet-scroll-content" style={{ paddingBottom: 20, maxHeight: 'calc(85vh - 60px)', overflowY: 'auto' }}>

@@ -17,6 +17,7 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
   
   const [currentSnap, setCurrentSnap] = useState(initialSnap);
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef(0);
   const currentYRef = useRef(0);
@@ -30,47 +31,43 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
     return snap ? (snap.height / 100) * window.innerHeight : 0;
   }, [snapPoints]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+  const startDrag = useCallback((clientY: number) => {
     const sheet = sheetRef.current;
     if (!sheet) return;
 
-    // Permitir scroll normal si el usuario está scrolleando contenido
+    // Permitir scroll normal si el usuario está scrolleando contenido interno
     const scrollableContent = sheet.querySelector('.sheet-scroll-content');
     if (scrollableContent && scrollableContent.scrollTop > 5) {
       return;
     }
 
-    startYRef.current = e.touches[0].clientY;
-    currentYRef.current = e.touches[0].clientY;
+    startYRef.current = clientY;
+    currentYRef.current = clientY;
     startTimeRef.current = Date.now();
     startHeightRef.current = sheet.getBoundingClientRect().height;
     velocityRef.current = 0;
+    isDraggingRef.current = true;
     setIsDragging(true);
 
     sheet.style.transition = 'none';
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging || !sheetRef.current || typeof window === 'undefined') return;
+  const moveDrag = useCallback((clientY: number) => {
+    if (!isDraggingRef.current || !sheetRef.current || typeof window === 'undefined') return;
 
-    const currentY = e.touches[0].clientY;
-    const deltaY = startYRef.current - currentY; // positivo = arrriba
+    const deltaY = startYRef.current - clientY; // positivo = arriba
     
-    // Calcular velocidad
     const timeDelta = Date.now() - startTimeRef.current;
     if (timeDelta > 0) {
-      velocityRef.current = (currentYRef.current - currentY) / timeDelta;
+      velocityRef.current = (currentYRef.current - clientY) / timeDelta;
     }
-    currentYRef.current = currentY;
+    currentYRef.current = clientY;
 
-    // Nueva altura propuesta
     let newHeight = startHeightRef.current + deltaY;
 
-    // Límites
     const minSnap = Math.min(...snapPoints.map(s => (s.height / 100) * window.innerHeight));
     const maxSnap = Math.max(...snapPoints.map(s => (s.height / 100) * window.innerHeight));
 
-    // Resistencia al pasar los límites
     if (newHeight < minSnap) {
       const overflow = minSnap - newHeight;
       newHeight = minSnap - overflow * resistanceFactor;
@@ -81,19 +78,19 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
     }
 
     sheetRef.current.style.height = `${newHeight}px`;
-  }, [isDragging, snapPoints, resistanceFactor]);
+  }, [snapPoints, resistanceFactor]);
 
-  const handleTouchEnd = useCallback(() => {
-    if (!isDragging || !sheetRef.current || typeof window === 'undefined') return;
+  const endDrag = useCallback(() => {
+    if (!isDraggingRef.current || !sheetRef.current || typeof window === 'undefined') return;
+    isDraggingRef.current = false;
     setIsDragging(false);
 
     const sheet = sheetRef.current;
     sheet.style.transition = 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
 
     const currentHeight = sheet.getBoundingClientRect().height;
-    const velocity = velocityRef.current; // px/ms
+    const velocity = velocityRef.current;
 
-    // Vibración de snap
     const triggerHaptic = () => {
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try {
@@ -104,20 +101,17 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
       }
     };
 
-    // Si la velocidad es alta, snap al siguiente punto en esa dirección
-    if (Math.abs(velocity) > 0.3) {
+    if (Math.abs(velocity) > 0.2) {
       const currentIdx = snapPoints.findIndex(s => s.id === currentSnap);
       let targetIdx;
 
-      if (velocity > 0.3) {
-        // Swipe arriba -> snap más alto
+      if (velocity > 0.2) {
         targetIdx = Math.min(currentIdx + 1, snapPoints.length - 1);
       } else {
-        // Swipe abajo -> snap más bajo
         targetIdx = Math.max(currentIdx - 1, 0);
       }
 
-      const targetSnap = snapPoints[targetIdx];
+      const targetSnap = snapPoints[targetIdx] || snapPoints[0];
       const targetHeight = (targetSnap.height / 100) * window.innerHeight;
       sheet.style.height = `${targetHeight}px`;
       setCurrentSnap(targetSnap.id);
@@ -126,7 +120,6 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
       return;
     }
 
-    // Si la velocidad es baja, snap al punto más cercano
     const distances = snapPoints.map(s => ({
       id: s.id,
       dist: Math.abs(currentHeight - (s.height / 100) * window.innerHeight)
@@ -138,9 +131,8 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
     setCurrentSnap(closest.id);
     triggerHaptic();
     onSnapChange?.(closest.id);
-  }, [isDragging, currentSnap, snapPoints, getSnapHeight, onSnapChange]);
+  }, [currentSnap, snapPoints, getSnapHeight, onSnapChange]);
 
-  // Snap programático
   const snapTo = useCallback((id: string) => {
     if (!sheetRef.current || typeof window === 'undefined') return;
     const height = getSnapHeight(id);
@@ -150,7 +142,6 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
     onSnapChange?.(id);
   }, [getSnapHeight, onSnapChange]);
 
-  // Inicializar altura
   useEffect(() => {
     snapTo(initialSnap);
   }, [initialSnap, snapTo]);
@@ -161,9 +152,12 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
     isDragging,
     snapTo,
     handlers: {
-      onTouchStart: handleTouchStart,
-      onTouchMove: handleTouchMove,
-      onTouchEnd: handleTouchEnd
+      onTouchStart: (e: React.TouchEvent) => startDrag(e.touches[0].clientY),
+      onTouchMove: (e: React.TouchEvent) => moveDrag(e.touches[0].clientY),
+      onTouchEnd: () => endDrag(),
+      onMouseDown: (e: React.MouseEvent) => startDrag(e.clientY),
+      onMouseMove: (e: React.MouseEvent) => moveDrag(e.clientY),
+      onMouseUp: () => endDrag(),
     }
   };
 }
