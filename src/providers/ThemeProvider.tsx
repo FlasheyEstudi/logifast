@@ -87,9 +87,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => {
-      if (typeof document === 'undefined') return;
-      const resolved = mq.matches ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', resolved);
+      aplicarTema('system');
     };
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
