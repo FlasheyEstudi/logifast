@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, Component } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutGrid, Package, Bike, Users, BarChart3, Settings,
@@ -29,6 +29,47 @@ const ModuleSuperAdmin = dynamic(() => import('./ModuleSuperAdmin'), { ssr: fals
 import CommandPalette from './CommandPalette';
 import NotificationCenter from './NotificationCenter';
 import { SkeletonLoader, getSkeletonVariant, type SkeletonVariant } from './SkeletonLoader';
+
+class ModuleErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any) {
+    console.error('[ModuleErrorBoundary]', error);
+  }
+  render() {
+    if ((this.state as any).hasError) {
+      return (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--lf-text-main, #F8FAFC)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Actualizando módulo...</h3>
+          <p style={{ fontSize: 13, opacity: 0.7, marginBottom: 16 }}>Se ha desplegado una actualización de la vista.</p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false });
+              window.location.reload();
+            }}
+            style={{
+              padding: '10px 20px',
+              borderRadius: 12,
+              background: '#007AFF',
+              color: '#fff',
+              border: 'none',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Reintentar Cargar
+          </button>
+        </div>
+      );
+    }
+    return (this.props as any).children;
+  }
+}
 
 const NAV_ITEMS: { key: ModuleKey; label: string; icon: typeof LayoutGrid; shortcut?: string; desktop?: boolean }[] = [
   { key: 'overview', label: 'General', icon: LayoutGrid, shortcut: '1', desktop: true },
@@ -650,7 +691,9 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               transition={{ duration: 0.2 }}
               style={{ height: '100%' }}
             >
-              {renderModule()}
+              <ModuleErrorBoundary>
+                {renderModule()}
+              </ModuleErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>

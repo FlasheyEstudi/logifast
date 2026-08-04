@@ -60,7 +60,7 @@ export async function GET() {
     );
 
     return NextResponse.json({
-      conectado: isConectado,
+      conectado: profile.conectado,
       enServicio: profile.enServicio,
       pausado: profile.pausado,
       pausaHasta: profile.pausaHasta,
@@ -70,11 +70,11 @@ export async function GET() {
   } catch (error) {
     console.error('[REPARTIDOR_CONEXION_GET]', error);
     return NextResponse.json({
-      conectado: true,
+      conectado: false,
       enServicio: false,
       pausado: false,
       pausaHasta: null,
-      estado: 'EN_LINEA',
+      estado: 'DESCONECTADO',
       rechazosHora: 0,
     });
   }

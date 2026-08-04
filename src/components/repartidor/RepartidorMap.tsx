@@ -213,46 +213,50 @@ export default function RepartidorMap({
         }
         .btn-auto-center {
           position: absolute;
-          bottom: 16px;
+          bottom: calc(var(--ios-tabbar-height, 80px) + 24px);
           right: 16px;
           width: 48px;
           height: 48px;
           border-radius: 14px;
-          background: var(--lf-card);
-          border: 1px solid var(--lf-border);
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+          background: rgba(30, 41, 59, 0.92);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          boxShadow: 0 4px 16px rgba(0, 0, 0, 0.35);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           z-index: 40;
-          color: var(--lf-text);
+          color: #F8FAFC;
           transition: all 0.2s;
         }
         .btn-auto-center:active {
           transform: scale(0.92);
         }
         .btn-auto-center.following {
-          background: var(--lf-primario);
+          background: #007AFF;
           color: #FFFFFF;
-          border-color: var(--lf-primario);
+          border-color: #007AFF;
         }
         .btn-3d-toggle {
           position: absolute;
-          bottom: 76px;
+          bottom: calc(var(--ios-tabbar-height, 80px) + 84px);
           right: 16px;
           width: 48px;
           height: 48px;
           border-radius: 14px;
-          background: var(--lf-card);
-          border: 1px solid var(--lf-border);
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+          background: rgba(30, 41, 59, 0.92);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          boxShadow: 0 4px 16px rgba(0, 0, 0, 0.35);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           z-index: 40;
-          color: var(--lf-text);
+          color: #F8FAFC;
           transition: all 0.2s;
         }
         .btn-3d-toggle:active {

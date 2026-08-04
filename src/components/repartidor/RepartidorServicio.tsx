@@ -1012,13 +1012,23 @@ function BottomSheet({ children }: { children: React.ReactNode }) {
       ref={sheetRef}
       className={`repartidor-sheet lf-ios-rep-sheet ${isDragging ? 'dragging' : ''}`}
       style={{
-        bottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe))',
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 'calc(var(--ios-tabbar-height, 80px) + var(--ios-tabbar-safe, 0px))',
         zIndex: 35,
+        background: '#1E293B',
+        color: '#F8FAFC',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.65)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        padding: '12px 16px',
       }}
       {...handlers}
     >
-      <div className="sheet-handle-area">
-        <div className="sheet-handle" />
+      <div className="sheet-handle-area" style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12, cursor: 'grab' }}>
+        <div className="sheet-handle" style={{ width: 44, height: 5, borderRadius: 3, background: 'rgba(255, 255, 255, 0.35)' }} />
       </div>
       <div className="sheet-scroll-content" style={{ paddingBottom: 20 }}>
         {children}
