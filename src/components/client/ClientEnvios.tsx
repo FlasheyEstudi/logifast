@@ -426,8 +426,14 @@ function ActiveOrderCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="rounded-2xl overflow-hidden cursor-pointer transition-colors duration-200 hover:bg-[var(--bg-alt)]"
-      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      className="rounded-3xl overflow-hidden cursor-pointer transition-all duration-200 hover:opacity-95"
+      style={{
+        background: 'rgba(30, 41, 59, 0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        boxShadow: '0 12px 32px rgba(0,0,0,0.3)',
+      }}
       onClick={() => onOpenTracking(order.id)}
     >
       {/* Header */}
@@ -612,7 +618,16 @@ function HistoryOrderItem({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <motion.div layout className="rounded-xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+    <motion.div
+      layout
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: 'rgba(30, 41, 59, 0.8)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+      }}
+    >
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full text-left p-4 transition-all hover:opacity-90"
