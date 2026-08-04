@@ -1,1947 +1,316 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
-  Package,
-  MapPin,
-  Clock,
-  Megaphone,
-  Tag,
-  Star,
-  Bell,
-  ChevronRight,
-  ChevronDown,
-  ArrowRight,
-  Plus,
-  Navigation,
-  MessageCircle,
-  ShoppingBag,
+  Sparkles,
+  Bike,
   Store,
+  Package,
+  Star,
+  ChevronRight,
+  TrendingUp,
+  Megaphone,
+  CheckCircle,
+  Clock,
+  Shield,
   Zap,
-  Utensils,
-  Pill,
   Gift,
-  ShoppingCart,
-  Smartphone,
-  Dumbbell,
-  Send,
-  Flame,
+  Plus,
+  Compass,
 } from '@/components/icons';
-import { useStore, type Order, type Banner, type FeedItem } from '@/lib/store';
-import { useMarketplaceStore, CATEGORIAS } from '@/lib/marketplace-store';
-
-/* ═══════════════════════════════════════════════
-   PROPS
-   ═══════════════════════════════════════════════ */
+import { useStore } from '@/lib/store';
+import { useMarketplaceStore } from '@/lib/marketplace-store';
 
 interface ClientInicioProps {
-  isDark: boolean;
-  userName: string;
-  onNavigate: (mod: 'inicio' | 'solicitar' | 'envios' | 'explorar' | 'pedidos' | 'perfil') => void;
+  isDark?: boolean;
+  userName?: string;
+  onNavigate: (mod: 'inicio' | 'solicitar' | 'explorar' | 'envios' | 'pedidos' | 'perfil' | 'puntos') => void;
   onOpenTracking: (orderId: string) => void;
   onOpenChat: (orderId: string) => void;
 }
 
-/* ═══════════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════════ */
+export default function ClientInicio({
+  userName,
+  onNavigate,
+  onOpenTracking,
+}: ClientInicioProps) {
+  const { orders, banners = [], feed = [], addToast } = useStore();
+  const { tiendas = [], setExplorarCategoria, setTiendaSeleccionada } = useMarketplaceStore();
 
-
-function statusColor(estado: string) {
-  switch (estado) {
-    case 'pendiente': return 'var(--warning, var(--warning))';
-    case 'encamino': return 'var(--info, #2979FF)';
-    case 'recogido': return 'var(--info, #2979FF)';
-    case 'entregado': return 'var(--exito, var(--exito))';
-    case 'incidencia': return 'var(--peligro, var(--peligro))';
-    default: return 'var(--text-muted, #999)';
-  }
-}
-
-function statusLabel(estado: string) {
-  switch (estado) {
-    case 'pendiente': return 'Pendiente';
-    case 'encamino': return 'En camino';
-    case 'recogido': return 'Recogido';
-    case 'entregado': return 'Entregado';
-    case 'incidencia': return 'Incidencia';
-    default: return estado;
-  }
-}
-
-function compraStatusColor(estado: string) {
-  switch (estado) {
-    case 'recibido': return 'var(--warning)';
-    case 'preparando': return '#FF9800';
-    case 'listo': return '#2196F3';
-    case 'en_camino': return '#2979FF';
-    case 'entregado': return 'var(--exito)';
-    default: return '#999';
-  }
-}
-
-function compraStatusLabel(estado: string) {
-  switch (estado) {
-    case 'recibido': return 'Recibido';
-    case 'preparando': return 'Preparando';
-    case 'listo': return 'Listo';
-    case 'en_camino': return 'En camino';
-    case 'entregado': return 'Entregado';
-    default: return estado;
-  }
-}
-
-function relativeTime(dateStr: string) {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return 'Hoy';
-  if (diffDays === 1) return 'Ayer';
-  if (diffDays < 7) return `Hace ${diffDays} dias`;
-  if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
-  return `Hace ${Math.floor(diffDays / 30)} meses`;
-}
-
-function feedIcon(tipo: string) {
-  switch (tipo) {
-    case 'anuncio': return Megaphone;
-    case 'promocion': return Tag;
-    case 'novedad': return Star;
-    case 'recordatorio': return Clock;
-    case 'encuesta': return Plus;
-    default: return Bell;
-  }
-}
-
-function feedBadge(tipo: string) {
-  switch (tipo) {
-    case 'promocion': return { label: 'Promo', bg: 'var(--primario, #007AFF)', color: '#fff' };
-    case 'novedad': return { label: 'Nuevo', bg: 'var(--info, #2979FF)', color: '#fff' };
-    case 'anuncio': return { label: 'Aviso', bg: 'var(--text-muted, #999)', color: '#fff' };
-    case 'recordatorio': return { label: 'Aviso', bg: 'var(--text-muted, #999)', color: '#fff' };
-    default: return { label: 'Info', bg: 'var(--text-muted, #999)', color: '#fff' };
-  }
-}
-
-/* ─── Category icon map ─── */
-const CATEGORY_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
-  utensils: Utensils,
-  store: Store,
-  pill: Pill,
-  gift: Gift,
-  'shopping-cart': ShoppingCart,
-  smartphone: Smartphone,
-  dumbbell: Dumbbell,
-};
-
-function CategoryIcon({ name, size = 24 }: { name: string; size?: number }) {
-  const Comp = CATEGORY_ICON_MAP[name];
-  if (!Comp) return null;
-  return <Comp size={size} />;
-}
-
-/* ═══════════════════════════════════════════════
-   ANIMATION VARIANTS
-   ═══════════════════════════════════════════════ */
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.07, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
-  }),
-};
-
-/* ═══════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════ */
-
-export default function ClientInicio({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientInicioProps) {
-  const orders = useStore((s) => s.orders);
-  const banners = useStore((s) => s.banners);
-  
-  /* ─── Sponsored Ads State (Requirement 7) ─── */
-  const [sponsoredAds, setSponsoredAds] = useState([
-    { id: 'ad-1', title: 'Burger Boss', description: '¡Las mejores hamburguesas de Managua! Plan Comercial Activo.', image: '/logos/image3.png', category: 'Alimentos', budget: 'C$ 350 / $10 mes' },
-    { id: 'ad-2', title: 'Salud y Vida', description: 'Medicamentos y cuidado personal con entrega express prioritaria.', image: '/logos/image4.png', category: 'Farmacia', budget: 'C$ 350 / $10 mes' },
-  ]);
+  const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [adModalOpen, setAdModalOpen] = useState(false);
-  const [newAdName, setNewAdName] = useState('');
-  const [newAdDesc, setNewAdDesc] = useState('');
-  const [newAdCat, setNewAdCat] = useState('Alimentos');
-  const [adSuccessMsg, setAdSuccessMsg] = useState(false);
-  const feedItems = useStore((s) => s.feedItems);
-  const clientSearchQuery = useStore((s) => s.clientSearchQuery);
-  const setClientSearchQuery = useStore((s) => s.setClientSearchQuery);
-  const setSolicitudEnvio = useStore((s) => s.setSolicitudEnvio);
-  const fidelizacion = useStore((s) => s.fidelizacion);
+  const [adSuccessMsg, setAdSuccessMsg] = useState('');
 
-  const ordenesCompra = useMarketplaceStore((s) => s.ordenesCompra);
-  const productos = useMarketplaceStore((s) => s.productos);
-  const tiendas = useMarketplaceStore((s) => s.tiendas);
-
-  /* ─── Loyalty calculations ─── */
-  const nivelThresholds = { bronce: 100, plata: 300, oro: 600, platino: 9999 };
-  const nextLevelPoints = nivelThresholds[fidelizacion.nivel];
-  const pointsToNext = Math.max(0, nextLevelPoints - fidelizacion.puntos);
-
-  /* ─── Client orders ─── */
-  const clientOrders = useMemo(
-    () => orders.filter((o) =>
-      !userName || o.cliente?.toLowerCase().trim() === userName.toLowerCase().trim()
-    ),
-    [orders, userName]
-  );
-
-  const activeOrder = useMemo(
-    () =>
-      clientOrders.find((o) =>
-        ['pendiente', 'encamino', 'recogido'].includes(o.estado)
-      ) ?? null,
-    [clientOrders]
-  );
-
-  const recentCompleted = useMemo(
-    () => clientOrders.filter((o) => o.estado === 'entregado'),
-    [clientOrders]
-  );
-
-  const lastCompleted = useMemo(
-    () => (recentCompleted.length > 0 ? recentCompleted[recentCompleted.length - 1] : null),
-    [recentCompleted]
-  );
-
-  /* ─── Active purchase order ─── */
-  const activeCompra = useMemo(
-    () => ordenesCompra.find((oc) => oc.estado !== 'entregado') ?? null,
-    [ordenesCompra]
-  );
-
-  /* ─── Popular products ─── */
-  const popularProducts = useMemo(
-    () => productos.filter((p) => p.esPopular).slice(0, 6),
-    [productos]
-  );
-
-  /* ─── Stats ─── */
-  const totalEnvios = clientOrders.length;
-  const totalGastado = clientOrders.reduce((s, o) => s + o.monto, 0);
-  const enviosEsteMes = useMemo(() => {
-    const now = new Date();
-    return clientOrders.filter((o) => {
-      const d = new Date(o.fecha);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).length;
-  }, [clientOrders]);
-
-  /* ─── Search ─── */
-  const [searchFocused, setSearchFocused] = useState(false);
-
-  const filteredOrders = useMemo(() => {
-    const q = clientSearchQuery.trim().toLowerCase();
-    if (!q) return [];
-    return clientOrders.filter(
-      (o) =>
-        o.id.toLowerCase().includes(q) ||
-        o.destino.toLowerCase().includes(q) ||
-        o.origen.toLowerCase().includes(q)
-    );
-  }, [clientSearchQuery, clientOrders]);
-
-  /* ─── Banners ─── */
-  const clientBanners = useMemo(
-    () =>
-      banners
-        .filter(
-          (b) =>
-            b.estado === 'activo' &&
-            (b.segmento === 'todos' || b.segmento.toLowerCase().includes('cliente'))
-        )
-        .sort((a, b) => a.posicion - b.posicion),
-    [banners]
-  );
-
-  const [bannerIdx, setBannerIdx] = useState(0);
-  const [bannerPaused, setBannerPaused] = useState(false);
-  const bannerTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const bannerScrollRef = useRef<HTMLDivElement>(null);
-
+  /* Banner auto-scroll */
   useEffect(() => {
-    if (clientBanners.length <= 1 || bannerPaused) return;
-    bannerTimer.current = setInterval(() => {
-      setBannerIdx((i) => (i + 1) % clientBanners.length);
-    }, 5000);
-    return () => {
-      if (bannerTimer.current) clearInterval(bannerTimer.current);
-    };
-  }, [clientBanners.length, bannerPaused]);
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveBannerIdx((prev) => (prev + 1) % banners.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [banners.length]);
 
-  /* ─── Feed ─── */
-  const clientFeed = useMemo(
-    () =>
-      feedItems
-        .filter(
-          (f) =>
-            f.estado === 'activo' &&
-            (f.segmento === 'todos' || f.segmento.toLowerCase().includes('cliente'))
-        )
-        .sort((a, b) => a.posicion - b.posicion),
-    [feedItems]
-  );
+  const activeOrders = useMemo(() => {
+    return orders.filter((o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido');
+  }, [orders]);
 
-  const [feedVisible, setFeedVisible] = useState(5);
+  const featuredTiendas = useMemo(() => {
+    return tiendas.slice(0, 6);
+  }, [tiendas]);
 
-  /* ─── Show more feed ─── */
-  const showMoreFeed = useCallback(() => {
-    setFeedVisible((v) => Math.min(v + 5, clientFeed.length));
-  }, [clientFeed.length]);
-
-  /* ─── Banner CTA handler ─── */
-  const handleBannerCTA = useCallback(
-    (banner: Banner) => {
-      if (banner.botonLink === 'solicitar') {
-        onNavigate('solicitar');
-      }
-    },
-    [onNavigate]
-  );
-
-  /* ─── Feed CTA handler ─── */
-  const handleFeedCTA = useCallback(
-    (item: FeedItem) => {
-      if (item.botonLink === 'solicitar') {
-        onNavigate('solicitar');
-      }
-    },
-    [onNavigate]
-  );
-
-  /* ─── Re-send to same address ─── */
-  const handleResend = useCallback(() => {
-    if (lastCompleted) {
-      setSolicitudEnvio({
-        destino: lastCompleted.destino,
-        destinoLat: lastCompleted.destinoLat,
-        destinoLng: lastCompleted.destinoLng,
-      });
-    }
-    onNavigate('solicitar');
-  }, [lastCompleted, onNavigate, setSolicitudEnvio]);
-
-  /* ─── Notification count ─── */
-  const notifCount = useMemo(() => {
-    let count = 0;
-    if (activeOrder) count++;
-    if (activeCompra) count++;
-    return count;
-  }, [activeOrder, activeCompra]);
-
-  /* ─── Haptic feedback ─── */
-  const haptic = useCallback(() => {
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(10);
-    }
-  }, []);
-
-  /* ═══════════════════════════════════════════════
-     RENDER
-     ═══════════════════════════════════════════════ */
+  const handleAdSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdSuccessMsg('¡Solicitud enviada! Nuestro equipo se pondrá en contacto.');
+    setTimeout(() => {
+      setAdSuccessMsg('');
+      setAdModalOpen(false);
+    }, 2500);
+  };
 
   return (
-    <div className="w-full px-1 sm:px-4" style={{ position: 'relative' }}>
-      {/* ─────────────────────────────────────────────
-          SCROLLABLE CONTENT
-          ───────────────────────────────────────────── */}
-      <div style={{ padding: '8px 16px 140px' }}>
-        {/* ─────────────────────────────────────────────
-            2. BUSCADOR (52px, glassmorphism pill)
-            ───────────────────────────────────────────── */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={0}
-          className="relative"
-          style={{ marginBottom: 20 }}
-        >
-          <div className="relative">
-            <Search
-              size={20}
-              className="absolute left-5 top-1/2 -translate-y-1/2"
-              style={{ color: 'var(--text-muted)', zIndex: 2 }}
-            />
-            <input
-              type="text"
-              placeholder="Buscar tiendas, productos, envios..."
-              value={clientSearchQuery}
-              onChange={(e) => setClientSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-              className="w-full outline-none"
-              style={{
-                height: 52,
-                background: 'var(--lf-glass-bg)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: `1.5px solid ${searchFocused ? 'var(--primario, #007AFF)' : 'var(--lf-glass-border)'}`,
-                borderRadius: 28,
-                padding: '14px 20px 14px 48px',
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 15,
-                color: 'var(--text)',
-                boxShadow: searchFocused
-                  ? '0 0 0 3px rgba(255,87,34,0.12)'
-                  : 'var(--lf-shadow-card)',
-              }}
-            />
-          </div>
-          {/* Search results dropdown */}
-          <AnimatePresence>
-            {clientSearchQuery.trim().length > 0 && searchFocused && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="absolute left-0 right-0 top-full mt-2 z-30 overflow-hidden"
-                style={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 20,
-                  boxShadow: 'var(--lf-shadow-float)',
-                }}
-              >
-                {filteredOrders.length > 0 ? (
-                  <div className="max-h-64 overflow-y-auto">
-                    {filteredOrders.map((o) => (
-                      <button
-                        key={o.id}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:opacity-80"
-                        style={{ borderBottom: '1px solid var(--border)' }}
-                        onClick={() => {
-                          setClientSearchQuery('');
-                          onNavigate('envios');
-                        }}
-                      >
-                        <Package size={18} style={{ color: 'var(--primario, #007AFF)', flexShrink: 0 }} />
-                        <div className="min-w-0 flex-1">
-                          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: 'var(--text)' }}>
-                            {o.id}
-                          </div>
-                          <div className="truncate" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text-secondary)' }}>
-                            {o.origen} → {o.destino}
-                          </div>
-                        </div>
-                        <span
-                          className="px-2 py-0.5 rounded-full text-xs font-medium shrink-0"
-                          style={{ background: statusColor(o.estado) + '22', color: statusColor(o.estado) }}
-                        >
-                          {statusLabel(o.estado)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-4 py-6 text-center" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--text-muted)' }}>
-                    No se encontraron envios
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* ─────────────────────────────────────────────
-            3. CARRUSEL DE BANNERS (180px)
-            ───────────────────────────────────────────── */}
-        {clientBanners.length > 0 && (
+    <div className="w-full min-h-screen pb-24 space-y-6 pt-1">
+      {/* ── Active Order Tracker Widget (if any) ── */}
+      <AnimatePresence>
+        {activeOrders.length > 0 && (
           <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={1}
-            style={{ marginBottom: 24 }}
-            onTouchStart={() => setBannerPaused(true)}
-            onTouchEnd={() => setBannerPaused(false)}
-            onMouseEnter={() => setBannerPaused(true)}
-            onMouseLeave={() => setBannerPaused(false)}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="w-full px-3"
           >
-            {/* Horizontal scroll carousel */}
             <div
-              ref={bannerScrollRef}
-              className="lf-scrollbar"
+              onClick={() => onOpenTracking(activeOrders[0].id)}
+              className="w-full p-4 rounded-3xl cursor-pointer flex items-center justify-between transition-transform active:scale-[0.98]"
               style={{
-                display: 'flex',
-                gap: 12,
-                overflowX: 'auto',
-                scrollSnapType: 'x mandatory',
-                paddingLeft: 0,
-                paddingRight: 0,
-                paddingBottom: 8,
-                msOverflowStyle: 'none',
-                scrollbarWidth: 'none',
+                background: 'linear-gradient(135deg, rgba(0,122,255,0.25) 0%, rgba(0,86,179,0.35) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(0, 122, 255, 0.4)',
+                boxShadow: '0 12px 32px rgba(0, 122, 255, 0.2)',
               }}
             >
-              {clientBanners.map((banner, i) => (
-                <div
-                  key={banner.id}
-                  style={{
-                    minWidth: 'calc(100vw - 48px)',
-                    maxWidth: 'calc(100vw - 48px)',
-                    scrollSnapAlign: 'start',
-                    borderRadius: 24,
-                    minHeight: 170,
-                    overflow: 'hidden',
-                    flexShrink: 0,
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => {
-                    if (i === bannerIdx) handleBannerCTA(banner);
-                    else setBannerIdx(i);
-                  }}
-                >
-                  <BannerSlideCard
-                    banner={banner}
-                    isDark={isDark}
-                    onCTA={handleBannerCTA}
-                    isActive={i === bannerIdx}
-                  />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500 text-white flex items-center justify-center font-bold shadow-lg shadow-blue-500/40">
+                  <Bike size={22} />
                 </div>
-              ))}
-            </div>
-
-            {/* Progress bar (not dots) */}
-            {clientBanners.length > 1 && (
-              <div style={{ marginTop: 10, padding: '0 4px' }}>
-                <div style={{
-                  width: '100%',
-                  height: 3,
-                  borderRadius: 2,
-                  background: 'var(--border)',
-                  overflow: 'hidden',
-                }}>
-                  <motion.div
-                    style={{
-                      height: '100%',
-                      borderRadius: 2,
-                      background: 'var(--primario)',
-                    }}
-                    animate={{
-                      width: `${((bannerIdx + 1) / clientBanners.length) * 100}%`,
-                    }}
-                    transition={{ duration: 0.35, ease: 'easeOut' }}
-                  />
-                </div>
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* ─────────────────────────────────────────────
-            4. QUICK ACTIONS DUAL (100px)
-            ───────────────────────────────────────────── */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={2}
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}
-        >
-          {/* Enviar */}
-          <motion.div
-            whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.1 }}
-            onClick={() => { haptic(); onNavigate('solicitar'); }}
-            style={{
-              padding: 18,
-              borderRadius: 20,
-              minHeight: 100,
-              background: 'linear-gradient(135deg, #007AFF, #0056B3)',
-              color: '#fff',
-              cursor: 'pointer',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.18)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 10,
-            }}>
-              <Send size={20} color="#fff" />
-            </div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: '#fff' }}>
-              Enviar
-            </div>
-            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
-              Paquetes y documentos
-            </div>
-          </motion.div>
-
-          {/* Comprar */}
-          <motion.div
-            whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.1 }}
-            onClick={() => { haptic(); onNavigate('explorar'); }}
-            style={{
-              padding: 18,
-              borderRadius: 20,
-              minHeight: 100,
-              background: 'linear-gradient(135deg, var(--text), var(--info))',
-              color: '#fff',
-              cursor: 'pointer',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.18)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 10,
-            }}>
-              <ShoppingBag size={20} color="#fff" />
-            </div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: '#fff' }}>
-              Comprar
-            </div>
-            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
-              Tiendas y productos locales
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* ─────────────────────────────────────────────
-            LOYALTY POINTS CARD
-            ───────────────────────────────────────────── */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={2.5}
-          style={{ marginBottom: 28 }}
-        >
-          <div style={{
-            padding: '14px 16px',
-            background: 'var(--surface)',
-            borderRadius: 'var(--lf-card-radius, 22px)',
-            border: '1px solid var(--border)',
-            boxShadow: 'var(--lf-shadow-card)',
-          }}>
-            <div style={{
-              fontSize: 11,
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.5px',
-              color: 'var(--text-muted)',
-              fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 600,
-            }}>
-              Puntos LOGIFAST
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
-              <span style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 24,
-                fontWeight: 700,
-                color: 'var(--primario)',
-              }}>
-                {fidelizacion.puntos}
-              </span>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>puntos</span>
-            </div>
-            {/* Progress bar to next level */}
-            <div style={{ marginTop: 8, height: 6, borderRadius: 3, background: 'var(--bg-alt)', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%',
-                borderRadius: 3,
-                background: 'linear-gradient(90deg, var(--primario), var(--primario-hover))',
-                width: `${Math.min(100, (fidelizacion.puntos / nextLevelPoints) * 100)}%`,
-                transition: 'width 0.5s ease',
-              }} />
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-              {pointsToNext} puntos para tu proximo descuento
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ─────────────────────────────────────────────
-            NEGOCIOS PATROCINADOS (PUBLICIDAD - REQ 7)
-            ───────────────────────────────────────────── */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={2.8}
-          style={{ marginBottom: 28 }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <Megaphone size={18} color="#FF9500" />
-              <span>Negocios Patrocinados</span>
-            </h3>
-            <button
-              onClick={() => setAdModalOpen(true)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--primario)',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif"
-              }}
-            >
-              Anunciar mi Negocio (+C$ 350)
-            </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {sponsoredAds.map((ad) => (
-              <div
-                key={ad.id}
-                style={{
-                  padding: 14,
-                  borderRadius: 18,
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  minHeight: 120,
-                  boxShadow: 'var(--lf-shadow-card)',
-                }}
-              >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--primario)', background: 'color-mix(in srgb, var(--primario) 10%, transparent)', padding: '2px 6px', borderRadius: 6 }}>
-                      {ad.category}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-blue-400 font-mono">
+                      ORDEN EN VIVO #{activeOrders[0].id}
                     </span>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
-                      {ad.budget}
-                    </span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   </div>
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '4px 0 2px 0' }}>
-                    {ad.title}
-                  </h4>
-                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-                    {ad.description}
+                  <p className="text-sm font-bold text-slate-100 font-syne">
+                    En camino a {activeOrders[0].destino}
                   </p>
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--exito)', fontWeight: 700, marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--exito)' }} />
-                  Posición Prioritaria
-                </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* ─────────────────────────────────────────────
-            5. CATEGORIAS (90px)
-            ───────────────────────────────────────────── */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={3}
-          style={{ marginBottom: 28 }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text)' }}>
-              Explora
-            </h3>
-            <button
-              onClick={() => onNavigate('explorar')}
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 14,
-                color: 'var(--primario)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 500,
-              }}
-            >
-              Ver todas
-            </button>
-          </div>
-          <div
-            className="lf-scrollbar"
-            style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-          >
-            {CATEGORIAS.map(cat => (
-              <motion.button
-                key={cat.key}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { haptic(); onNavigate('explorar'); }}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '12px 16px',
-                  borderRadius: 16,
-                  border: '1.5px solid var(--border)',
-                  background: 'var(--surface)',
-                  cursor: 'pointer',
-                  minWidth: 80,
-                  flexShrink: 0,
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primario)' }}>
-                  <CategoryIcon name={cat.icon} size={24} />
-                </span>
-                <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap' as const, fontFamily: "'DM Sans', sans-serif" }}>
-                  {cat.label}
-                </span>
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* ─────────────────────────────────────────────
-            6. TIENDAS DESTACADAS
-            ───────────────────────────────────────────── */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={4}
-          style={{ marginBottom: 28 }}
-        >
-          <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text)', marginBottom: 12 }}>
-            Populares cerca de ti
-          </h3>
-          <div
-            className="lf-scrollbar"
-            style={{
-              display: 'flex',
-              gap: 14,
-              overflowX: 'auto',
-              scrollSnapType: 'x mandatory',
-              paddingBottom: 8,
-              msOverflowStyle: 'none',
-              scrollbarWidth: 'none',
-            }}
-          >
-            {tiendas.filter(t => t.popular).map(tienda => (
-              <motion.div
-                key={tienda.id}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onNavigate('explorar')}
-                style={{
-                  width: 220,
-                  borderRadius: 'var(--lf-card-radius, 22px)',
-                  overflow: 'hidden',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  boxShadow: 'var(--lf-shadow-card)',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  scrollSnapAlign: 'start',
-                  position: 'relative',
-                }}
-              >
-                {/* Cover */}
-                <div style={{
-                  height: 120,
-                  background: `linear-gradient(135deg, ${tienda.portadaColor}, ${tienda.logoColor})`,
-                  position: 'relative',
-                }}>
-                  {/* Subtle pattern overlay */}
-                  <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.12) 0%, transparent 60%)',
-                  }} />
-                </div>
-                {/* Logo */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: -18,
-                  left: 14,
-                  width: 44,
-                  height: 44,
-                  borderRadius: '50%',
-                  background: tienda.logoColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '3px solid var(--surface)',
-                  boxShadow: 'var(--lf-shadow-card)',
-                }}>
-                  <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: '#fff' }}>
-                    {tienda.logoIniciales}
-                  </span>
-                </div>
-                {/* Info */}
-                <div style={{ padding: '24px 14px 14px' }}>
-                  <div style={{
-                    fontFamily: "'Syne', sans-serif",
-                    fontWeight: 700,
-                    fontSize: 15,
-                    color: 'var(--text)',
-                    marginBottom: 4,
-                  }}>
-                    {tienda.nombre}
-                  </div>
-                  <div style={{
-                    fontSize: 12,
-                    color: 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    flexWrap: 'wrap' as const,
-                  }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                      <Star size={11} fill="var(--warning, var(--warning))" stroke="none" />
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 500, fontSize: 12 }}>
-                        {tienda.calificacion}
-                      </span>
-                    </span>
-                    <span style={{ color: 'var(--border)' }}>·</span>
-                    <span>{tienda.tiempoEstimado}</span>
-                    <span style={{ color: 'var(--border)' }}>·</span>
-                    <span>Envio C${tienda.costoEnvio}</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* ─────────────────────────────────────────────
-            7. PRODUCTOS POPULARES
-            ───────────────────────────────────────────── */}
-        {popularProducts.length > 0 && (
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={5}
-            style={{ marginBottom: 28 }}
-          >
-            <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text)', marginBottom: 12 }}>
-              Lo mas pedido
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {popularProducts.map(product => {
-                const tienda = tiendas.find(t => t.id === product.tiendaId);
-                return (
-                  <motion.div
-                    key={product.id}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => onNavigate('explorar')}
-                    style={{
-                      borderRadius: 20,
-                      border: '1px solid var(--border)',
-                      overflow: 'hidden',
-                      background: 'var(--surface)',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      boxShadow: 'var(--lf-shadow-card)',
-                    }}
-                  >
-                    {/* Image / Color block */}
-                    <div style={{
-                      height: 140,
-                      background: product.imagenColor,
-                      position: 'relative',
-                    }}>
-                      {/* Subtle pattern */}
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'radial-gradient(circle at 60% 40%, rgba(255,255,255,0.2) 0%, transparent 60%)',
-                      }} />
-                      {/* + button */}
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const tiendaData = tiendas.find(t => t.id === product.tiendaId);
-                          if (tiendaData) {
-                            useMarketplaceStore.getState().addToCart(product, tiendaData);
-                          }
-                        }}
-                        style={{
-                          position: 'absolute',
-                          bottom: 8,
-                          right: 8,
-                          width: 34,
-                          height: 34,
-                          borderRadius: '50%',
-                          background: 'var(--primario)',
-                          border: 'none',
-                          color: '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 8px rgba(255,87,34,0.3)',
-                        }}
-                      >
-                        <Plus size={18} />
-                      </motion.button>
-                    </div>
-                    {/* Body */}
-                    <div style={{ padding: 12 }}>
-                      <div style={{
-                        fontWeight: 700,
-                        fontSize: 14,
-                        color: 'var(--text)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap' as const,
-                      }}>
-                        {product.nombre}
-                      </div>
-                      <div style={{
-                        fontSize: 12,
-                        color: 'var(--text-muted)',
-                        fontFamily: "'DM Sans', sans-serif",
-                        marginTop: 2,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap' as const,
-                      }}>
-                        {tienda?.nombre}
-                      </div>
-                      <div style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontWeight: 700,
-                        fontSize: 16,
-                        color: 'var(--text)',
-                        marginTop: 4,
-                      }}>
-                        C${product.precio}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+              <ChevronRight size={20} className="text-blue-400" />
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* ─────────────────────────────────────────────
-            ACTIVE SHIPMENT (inline, not floating)
-            ───────────────────────────────────────────── */}
-        {activeOrder && (
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={6}
-            className="relative overflow-hidden"
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--lf-card-radius, 22px)',
-              padding: 20,
-              cursor: 'pointer',
-              boxShadow: 'var(--lf-shadow-card)',
-              marginBottom: 16,
-            }}
-            onClick={() => onOpenTracking(activeOrder.id)}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>
-                Tu envio activo
+      {/* ── Hero Banners Carousel ── */}
+      <div className="w-full px-3">
+        <div className="w-full h-44 sm:h-52 rounded-3xl overflow-hidden relative shadow-2xl border border-white/10">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeBannerIdx}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ duration: 0.4 }}
+              className="absolute inset-0 p-6 flex flex-col justify-end bg-gradient-to-t from-slate-950/90 via-slate-900/60 to-transparent"
+              style={{
+                backgroundImage: banners[activeBannerIdx]?.imagenUrl
+                  ? `linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.3)), url(${banners[activeBannerIdx].imagenUrl})`
+                  : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            >
+              <span className="px-2.5 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-400 text-[10px] font-bold font-mono w-fit mb-2">
+                PROMO DESTACADA
               </span>
-              <span
-                className="px-2.5 py-1 rounded-full text-xs font-semibold"
-                style={{ background: statusColor(activeOrder.estado) + '1A', color: statusColor(activeOrder.estado) }}
-              >
-                {statusLabel(activeOrder.estado)}
-              </span>
-            </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white font-syne drop-shadow-md">
+                {banners[activeBannerIdx]?.titulo || 'Envíos Rápidos en Managua'}
+              </h2>
+              <p className="text-xs text-slate-300 line-clamp-1">
+                {banners[activeBannerIdx]?.descripcion || 'Pide tu mensajería o comida favorita con entrega en minutos.'}
+              </p>
+            </motion.div>
+          </AnimatePresence>
 
-            {/* Order ID */}
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: 'var(--text-secondary)' }}>
-              {activeOrder.id}
-            </div>
-
-            {/* Route */}
-            <div className="flex items-center gap-2 mt-2" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--text)' }}>
-              <MapPin size={14} style={{ color: 'var(--primario, #007AFF)', flexShrink: 0 }} />
-              <span className="truncate">De: {activeOrder.origen}</span>
-              <ArrowRight size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-              <span className="truncate">A: {activeOrder.destino}</span>
-            </div>
-
-            {/* Rider */}
-            {activeOrder.repartidor && (
-              <div className="flex items-center gap-2.5 mt-3">
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  background: 'var(--primario, #007AFF)',
-                  color: '#fff',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontWeight: 700,
-                  fontSize: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  {activeOrder.repartidorInitials}
-                </div>
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--text)' }}>
-                  {activeOrder.repartidor}
-                </span>
-              </div>
-            )}
-
-            {/* ETA */}
-            <div className="mt-3">
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--primario, #007AFF)' }}>
-                Llega en ~15 min
-              </span>
-            </div>
-
-            {/* Mini map placeholder */}
-            <div className="mt-3 flex items-center justify-center" style={{
-              height: 160,
-              borderRadius: 14,
-              background: 'var(--bg-alt)',
-              border: '1px dashed var(--border)',
-            }}>
-              <div className="flex flex-col items-center gap-1.5">
-                <MapPin size={20} style={{ color: 'var(--text-muted)' }} />
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text-muted)' }}>
-                  Mapa en tiempo real
-                </span>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-3 mt-4">
+          {/* Dots */}
+          <div className="absolute bottom-3 right-4 flex gap-1.5 z-10">
+            {banners.map((_, i) => (
               <button
-                onClick={(e) => { e.stopPropagation(); onOpenTracking(activeOrder.id); }}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: 'var(--primario)',
-                  color: '#FFFFFF',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif",
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
-              >
-                <Navigation size={14} />
-                Seguimiento
-              </button>
-              {activeOrder.repartidor && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onOpenChat(activeOrder.id); }}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 8,
-                    border: '1px solid var(--border)',
-                    background: 'transparent',
-                    color: 'var(--text)',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    fontFamily: "'DM Sans', sans-serif",
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                >
-                  <MessageCircle size={14} />
-                  Mensaje
-                </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ─────────────────────────────────────────────
-            ACTIVE PURCHASE CARD
-            ───────────────────────────────────────────── */}
-        {activeCompra && (
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={6.5}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--lf-card-radius, 22px)',
-              padding: 20,
-              cursor: 'pointer',
-              boxShadow: 'var(--lf-shadow-card)',
-              marginBottom: 16,
-            }}
-            onClick={() => onNavigate('pedidos')}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <ShoppingBag size={18} style={{ color: 'var(--primario, #007AFF)' }} />
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>
-                  Tu compra activa
-                </span>
-              </div>
-              <span
-                className="px-2.5 py-1 rounded-full text-xs font-semibold"
-                style={{ background: compraStatusColor(activeCompra.estado) + '1A', color: compraStatusColor(activeCompra.estado) }}
-              >
-                {compraStatusLabel(activeCompra.estado)}
-              </span>
-            </div>
-
-            {/* Store info */}
-            <div className="flex items-center gap-3">
-              <div style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: activeCompra.tiendaColor,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontFamily: "'Syne', sans-serif",
-                fontWeight: 700,
-                fontSize: 12,
-                flexShrink: 0,
-              }}>
-                {activeCompra.tiendaLogo}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
-                  {activeCompra.tiendaNombre}
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
-                  {activeCompra.items.length} productos · C${activeCompra.total}
-                </div>
-              </div>
-            </div>
-
-            {/* Rider info */}
-            <div className="flex items-center gap-2.5 mt-3">
-              <div style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: 'var(--primario, #007AFF)',
-                color: '#fff',
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 700,
-                fontSize: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                {activeCompra.repartidorInitials}
-              </div>
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text)' }}>
-                {activeCompra.repartidorNombre}
-              </span>
-            </div>
-
-            {/* Progress bar */}
-            <div style={{ marginTop: 12, height: 4, borderRadius: 2, background: 'var(--bg-alt)', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%',
-                borderRadius: 2,
-                background: compraStatusColor(activeCompra.estado),
-                width: activeCompra.estado === 'recibido' ? '15%' : activeCompra.estado === 'preparando' ? '40%' : activeCompra.estado === 'listo' ? '65%' : activeCompra.estado === 'en_camino' ? '85%' : '100%',
-                transition: 'width 0.5s ease',
-              }} />
-            </div>
-          </motion.div>
-        )}
-
-        {/* ─────────────────────────────────────────────
-            REORDER SECTION
-            ───────────────────────────────────────────── */}
-        {ordenesCompra.filter(oc => oc.estado === 'entregado').length > 0 && (
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={7}
-            style={{ marginBottom: 28 }}
-          >
-            <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text)', marginBottom: 12 }}>
-              Volver a pedir
-            </h3>
-            <div
-              className="lf-scrollbar"
-              style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-            >
-              {ordenesCompra.filter(oc => oc.estado === 'entregado').slice(0, 3).map(oc => (
-                <motion.div
-                  key={oc.id}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    padding: 14,
-                    borderRadius: 18,
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface)',
-                    minWidth: 220,
-                    flexShrink: 0,
-                    cursor: 'pointer',
-                    boxShadow: 'var(--lf-shadow-card)',
-                  }}
-                  onClick={() => onNavigate('explorar')}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <div style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      background: oc.tiendaColor,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontFamily: "'Syne', sans-serif",
-                      fontWeight: 700,
-                      fontSize: 11,
-                    }}>
-                      {oc.tiendaLogo}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{oc.tiendaNombre}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{oc.items.length} productos · C${oc.total}</div>
-                    </div>
-                  </div>
-                  <button style={{
-                    padding: '6px 14px',
-                    borderRadius: 10,
-                    border: 'none',
-                    background: 'var(--primario)',
-                    color: '#fff',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: "'DM Sans', sans-serif",
-                  }}>
-                    Reordenar
-                  </button>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ─────────────────────────────────────────────
-            CLIENT FEED
-            ───────────────────────────────────────────── */}
-        {clientFeed.length > 0 && (
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={8}
-            style={{ marginBottom: 28 }}
-          >
-            <div className="space-y-3">
-              {clientFeed.slice(0, feedVisible).map((item) => {
-                const IconComp = feedIcon(item.tipo);
-                const badge = feedBadge(item.tipo);
-                return (
-                  <div
-                    key={item.id}
-                    className="relative overflow-hidden"
-                    style={{
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--lf-card-radius, 22px)',
-                      padding: 16,
-                      boxShadow: 'var(--lf-shadow-card)',
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Icon */}
-                      <div
-                        className="flex items-center justify-center shrink-0"
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 10,
-                          background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                        }}
-                      >
-                        <IconComp size={18} style={{ color: 'var(--primario, #FF5722)' }} />
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="font-semibold" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: 'var(--text)' }}>
-                            {item.titulo}
-                          </span>
-                          <span
-                            className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
-                            style={{ background: badge.bg, color: badge.color }}
-                          >
-                            {badge.label}
-                          </span>
-                        </div>
-                        <p className="mt-0.5" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                          {item.descripcion}
-                        </p>
-
-                        <div className="flex items-center gap-3 mt-2">
-                          {item.botonTexto && (
-                            <button
-                              onClick={() => handleFeedCTA(item)}
-                              className="flex items-center gap-1 font-semibold transition-opacity hover:opacity-80"
-                              style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--primario, #FF5722)' }}
-                            >
-                              {item.botonTexto}
-                              <ChevronRight size={14} />
-                            </button>
-                          )}
-                          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--text-muted)' }}>
-                            {relativeTime(item.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {clientFeed.length > feedVisible && (
-                <button
-                  onClick={showMoreFeed}
-                  className="w-full py-3 rounded-xl text-center font-semibold transition-opacity hover:opacity-80"
-                  style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 14,
-                    color: 'var(--primario, #FF5722)',
-                    background: isDark ? 'rgba(255,87,34,0.08)' : 'rgba(255,87,34,0.05)',
-                  }}
-                >
-                  Ver mas
-                </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ─────────────────────────────────────────────
-            RECENT SHIPMENT SHORTCUT
-            ───────────────────────────────────────────── */}
-        {!activeOrder && lastCompleted && (
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={9}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--lf-card-radius, 22px)',
-              padding: 16,
-              boxShadow: 'var(--lf-shadow-card)',
-              marginBottom: 16,
-            }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>
-                Tu ultimo envio
-              </span>
-              <span
-                className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                style={{ background: 'rgba(0,200,83,0.12)', color: 'var(--exito, var(--exito))' }}
-              >
-                Entregado
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: 'var(--text-secondary)' }}>
-                {lastCompleted.id}
-              </div>
-              <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>·</span>
-              <span className="truncate" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text-secondary)' }}>
-                {lastCompleted.destino}
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>·</span>
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text-muted)' }}>
-                {lastCompleted.fecha}
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>·</span>
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: 'var(--text)' }}>
-                C$ {lastCompleted.monto}
-              </span>
-            </div>
-
-            <button
-              onClick={handleResend}
-              className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold transition-opacity hover:opacity-80"
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 13,
-                color: 'var(--primario, #FF5722)',
-                background: isDark ? 'rgba(255,87,34,0.12)' : 'rgba(255,87,34,0.08)',
-              }}
-            >
-              <Plus size={15} />
-              Volver a enviar a la misma direccion
-            </button>
-          </motion.div>
-        )}
-
-        {/* ─────────────────────────────────────────────
-            STATS
-            ───────────────────────────────────────────── */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={10}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 10,
-            marginBottom: 16,
-          }}
-        >
-          <StatBox value={totalEnvios} label="envios totales" isDark={isDark} />
-          <StatBox value={`C$ ${totalGastado}`} label="gastados" isDark={isDark} />
-          <StatBox value={enviosEsteMes} label="envios este mes" isDark={isDark} />
-        </motion.div>
+                key={i}
+                onClick={() => setActiveBannerIdx(i)}
+                className={`h-2 rounded-full transition-all ${
+                  i === activeBannerIdx ? 'w-6 bg-blue-500' : 'w-2 bg-white/40'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* ─────────────────────────────────────────────
-          8. ENVIO ACTIVO (floating bar, glassmorphism)
-          ───────────────────────────────────────────── */}
-      {activeOrder && (
-        <motion.div
-          initial={{ y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.4, ease: 'easeOut' }}
-          onClick={() => onOpenTracking(activeOrder.id)}
+      {/* ── Quick Action Tiles (Grid 2x2) ── */}
+      <div className="w-full px-3 grid grid-cols-2 gap-3">
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={() => onNavigate('solicitar')}
+          className="p-4 rounded-3xl text-left flex flex-col justify-between h-32 relative overflow-hidden group transition-all"
           style={{
-            position: 'fixed',
-            bottom: 'calc(var(--lf-bottom-nav-height, 72px) + var(--lf-safe-bottom, 0px) + 8px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'calc(100% - 32px)',
-            maxWidth: 480,
-            zIndex: 35,
-            background: 'var(--lf-glass-bg)',
+            background: 'linear-gradient(135deg, rgba(0,122,255,0.2) 0%, rgba(0,86,179,0.3) 100%)',
             backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderRadius: '20px 20px 20px 20px',
-            padding: '14px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            cursor: 'pointer',
-            boxShadow: 'var(--lf-shadow-float)',
-            border: '1px solid var(--lf-glass-border)',
+            border: '1px solid rgba(0,122,255,0.3)',
           }}
         >
-          {/* Pulsing blue dot */}
-          <div style={{ position: 'relative', width: 8, height: 8, flexShrink: 0 }}>
-            <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: 'var(--info, #2979FF)',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-            }} />
-            <motion.div
-              animate={{ scale: [1, 2, 1], opacity: [0.6, 0, 0.6] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: 'var(--info, #2979FF)',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-              }}
-            />
+          <div className="w-10 h-10 rounded-2xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <Bike size={22} />
           </div>
+          <div>
+            <h3 className="text-base font-bold text-white font-syne">Solicitar Envío</h3>
+            <p className="text-xs text-blue-200">Mensajería exprés en moto</p>
+          </div>
+        </motion.button>
 
-          {/* Order info */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 700,
-              fontSize: 14,
-              color: 'var(--text)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap' as const,
-            }}>
-              {activeOrder.id} En camino
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={() => onNavigate('explorar')}
+          className="p-4 rounded-3xl text-left flex flex-col justify-between h-32 relative overflow-hidden group transition-all"
+          style={{
+            background: 'linear-gradient(135deg, rgba(52,199,89,0.2) 0%, rgba(40,167,69,0.3) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(52,199,89,0.3)',
+          }}
+        >
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <Store size={22} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white font-syne">Comprar Tiendas</h3>
+            <p className="text-xs text-emerald-200">Restaurantes y supermercados</p>
+          </div>
+        </motion.button>
+      </div>
+
+      {/* ── Sponsored Ads Header ── */}
+      <div className="w-full px-3 flex items-center justify-between">
+        <h3 className="text-base font-bold text-slate-100 font-syne flex items-center gap-2">
+          <Megaphone size={18} className="text-amber-400" />
+          Negocios Patrocinados
+        </h3>
+        <button
+          onClick={() => setAdModalOpen(true)}
+          className="text-xs font-bold text-blue-400 hover:underline flex items-center gap-1"
+        >
+          Anunciar negocio <Plus size={14} />
+        </button>
+      </div>
+
+      {/* ── Featured Stores Horizontal Scroll ── */}
+      <div className="w-full overflow-x-auto no-scrollbar px-3 flex gap-3 pb-2">
+        {featuredTiendas.map((tienda) => (
+          <motion.div
+            key={tienda.id}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => {
+              setTiendaSeleccionada(tienda.id);
+              onNavigate('explorar');
+            }}
+            className="flex-shrink-0 w-44 rounded-3xl p-3.5 space-y-3 cursor-pointer"
+            style={{
+              background: 'rgba(30, 41, 59, 0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+            }}
+          >
+            <div
+              className="w-full h-24 rounded-2xl flex items-center justify-center font-bold text-xl text-white relative shadow-inner"
+              style={{ background: tienda.logoColor || 'linear-gradient(135deg, #007AFF, #0056B3)' }}
+            >
+              {tienda.logoIniciales || 'LG'}
+              {tienda.verificado && (
+                <CheckCircle size={16} className="absolute top-2 right-2 text-white fill-blue-500" />
+              )}
             </div>
-          </div>
 
-          {/* ETA */}
-          <div style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontWeight: 700,
-            fontSize: 16,
-            color: 'var(--primario)',
-            flexShrink: 0,
-          }}>
-            ~12 min
-          </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-100 font-syne truncate">{tienda.nombre}</h4>
+              <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                <span className="flex items-center gap-1 text-amber-400 font-bold">
+                  <Star size={12} fill="currentColor" /> {tienda.calificacion}
+                </span>
+                <span>•</span>
+                <span>{tienda.tiempoEntrega}</span>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
 
-          {/* Arrow */}
-          <ChevronRight size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-        </motion.div>
-      )}
-
-      {/* ─── MODAL ANUNCIAR NEGOCIO (REQ 7) ─── */}
+      {/* ── Sponsor Modal ── */}
       <AnimatePresence>
         {adModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(8px)',
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 24,
-            }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
           >
-            <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              style={{
-                width: '100%',
-                maxWidth: 400,
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 24,
-                padding: 24,
-                boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-              }}
-            >
-              <h3 className="font-syne" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Megaphone size={20} color="#FF9500" />
-                <span>Anunciar mi Negocio en Logifast</span>
+            <div className="w-full max-w-md bg-slate-900 border border-white/15 rounded-3xl p-6 space-y-4 text-slate-100 shadow-2xl">
+              <h3 className="text-lg font-bold font-syne flex items-center gap-2 text-amber-400">
+                <Megaphone size={20} /> Anunciar mi Negocio en Logifast
               </h3>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: 16 }}>
-                Aparece en las primeras posiciones y atrae a miles de clientes activos. Plan publicitario mensual por solo <strong>C$ 350 ($10 USD)</strong>.
+              <p className="text-xs text-slate-400">
+                Aparece en las primeras posiciones y atrae a miles de clientes activos por solo <strong>C$ 350/mes</strong>.
               </p>
 
               {adSuccessMsg ? (
-                <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(0, 200, 83, 0.12)', color: 'var(--exito)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
-                    ✓
-                  </div>
-                  <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>¡Pago Confirmado Exitosamente!</h4>
-                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
-                    Tu anuncio ya se encuentra en rotación prioritaria.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setAdSuccessMsg(false);
-                      setAdModalOpen(false);
-                    }}
-                    style={{
-                      marginTop: 16,
-                      padding: '8px 16px',
-                      borderRadius: 12,
-                      background: 'var(--primario)',
-                      color: '#fff',
-                      border: 'none',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Entendido
-                  </button>
+                <div className="p-4 rounded-2xl bg-emerald-500/20 text-emerald-400 font-bold text-sm text-center">
+                  {adSuccessMsg}
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
-                      Nombre del Negocio
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Delicias Express"
-                      value={newAdName}
-                      onChange={(e) => setNewAdName(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 12,
-                        background: 'var(--bg-alt)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                        fontSize: 13,
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
-                      Descripción
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Repostería fina y pasteles personalizados."
-                      value={newAdDesc}
-                      onChange={(e) => setNewAdDesc(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 12,
-                        background: 'var(--bg-alt)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                        fontSize: 13,
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
-                      Categoría
-                    </label>
-                    <select
-                      value={newAdCat}
-                      onChange={(e) => setNewAdCat(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 12,
-                        background: 'var(--bg-alt)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                        fontSize: 13,
-                      }}
-                    >
-                      <option value="Alimentos">Alimentos & Bebidas</option>
-                      <option value="Farmacia">Farmacia</option>
-                      <option value="Supermercado">Supermercado</option>
-                      <option value="Tienda">Tienda Comercial</option>
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <form onSubmit={handleAdSubmit} className="space-y-3">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nombre del negocio"
+                    className="w-full p-3 rounded-xl bg-slate-800 border border-white/10 text-xs text-slate-100 outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Teléfono WhatsApp"
+                    className="w-full p-3 rounded-xl bg-slate-800 border border-white/10 text-xs text-slate-100 outline-none focus:border-blue-500"
+                  />
+                  <div className="flex gap-3 pt-2">
                     <button
+                      type="button"
                       onClick={() => setAdModalOpen(false)}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        borderRadius: 12,
-                        background: 'transparent',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                        fontWeight: 600,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                      }}
+                      className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
                     >
                       Cancelar
                     </button>
                     <button
-                      onClick={() => {
-                        if (!newAdName || !newAdDesc) return;
-                        setSponsoredAds((prev) => [
-                          ...prev,
-                          {
-                            id: `ad-${Date.now()}`,
-                            title: newAdName,
-                            description: newAdDesc,
-                            category: newAdCat,
-                            budget: 'C$ 350 / $10 mes',
-                            image: '/logo.png',
-                          },
-                        ]);
-                        setNewAdName('');
-                        setNewAdDesc('');
-                        setAdSuccessMsg(true);
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        borderRadius: 12,
-                        background: 'var(--primario)',
-                        color: '#fff',
-                        border: 'none',
-                        fontWeight: 700,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                      }}
+                      type="submit"
+                      className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold text-xs"
                     >
-                      Pagar y Activar
+                      Enviar Solicitud
                     </button>
                   </div>
-                </div>
+                </form>
               )}
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   SUB-COMPONENTS
-   ═══════════════════════════════════════════════ */
-
-/* ─── Banner Slide Card (for horizontal carousel) ─── */
-function BannerSlideCard({
-  banner,
-  isDark,
-  onCTA,
-  isActive,
-}: {
-  banner: Banner;
-  isDark: boolean;
-  onCTA: (b: Banner) => void;
-  isActive: boolean;
-}) {
-  const bgStyle: React.CSSProperties = banner.gradiente
-    ? {
-        background: `linear-gradient(${banner.gradiente.direction}, ${banner.gradiente.from}, ${banner.gradiente.to})`,
-      }
-    : {
-        background: banner.colorFondo,
-      };
-
-  if (banner.tipo === 'notificacion') {
-    return (
-      <div
-        className="flex items-center gap-3 px-5 py-4"
-        style={{ ...bgStyle, borderRadius: 24, color: banner.colorTexto, minHeight: 100 }}
-      >
-        <Bell size={20} style={{ flexShrink: 0 }} />
-        <div className="flex-1">
-          <h4 className="font-bold text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            {banner.titulo}
-          </h4>
-          {banner.descripcion && (
-            <p className="text-xs opacity-90 font-medium mt-0.5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-              {banner.descripcion}
-            </p>
-          )}
-        </div>
-        {banner.botonTexto && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onCTA(banner); }}
-            className="shrink-0 px-3.5 py-2 rounded-xl font-bold text-xs transition-transform active:scale-95 shadow-sm"
-            style={{ background: 'rgba(255,255,255,0.25)', color: banner.colorTexto, backdropFilter: 'blur(8px)' }}
-          >
-            {banner.botonTexto}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  /* promo_grande / tarjeta_compacta / slider — unified carousel style */
-  return (
-    <div
-      className="relative overflow-hidden"
-      style={{ ...bgStyle, borderRadius: 24, padding: 28, color: banner.colorTexto, minHeight: 170 }}
-    >
-      <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 24, color: '#fff' }}>
-        {banner.titulo}
-      </div>
-      {banner.subtitulo && (
-        <div className="mt-1.5" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: 'rgba(255,255,255,0.75)' }}>
-          {banner.subtitulo}
-        </div>
-      )}
-      {banner.botonTexto && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onCTA(banner); }}
-          className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full font-bold text-sm transition-transform hover:scale-105"
-          style={{
-            fontFamily: "'DM Sans', sans-serif",
-            background: '#fff',
-            color: 'var(--primario, #007AFF)',
-          }}
-        >
-          {banner.botonTexto}
-          <ArrowRight size={15} />
-        </button>
-      )}
-      {/* Decorative elements */}
-      <div
-        className="absolute -right-10 -bottom-10 rounded-full pointer-events-none"
-        style={{ width: 140, height: 140, background: 'rgba(255,255,255,0.06)' }}
-      />
-      <div
-        className="absolute right-16 -top-8 rounded-full pointer-events-none"
-        style={{ width: 100, height: 100, background: 'rgba(255,255,255,0.04)' }}
-      />
-    </div>
-  );
-}
-
-/* ─── Stat Box ─── */
-function StatBox({
-  value,
-  label,
-  isDark,
-}: {
-  value: string | number;
-  label: string;
-  isDark: boolean;
-}) {
-  return (
-    <div
-      className="text-center py-3 px-2"
-      style={{
-        borderRadius: 16,
-        background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-      }}
-    >
-      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-        {value}
-      </div>
-      <div className="mt-0.5" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--text-muted)' }}>
-        {label}
-      </div>
     </div>
   );
 }
