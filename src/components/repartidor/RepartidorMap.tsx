@@ -410,6 +410,26 @@ export default function RepartidorMap({
 
       {mapReady && (
         <>
+          {/* Leyenda flotante para identificación inmediata */}
+          <div className="map-legend-box">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#16A34A', display: 'inline-block', boxShadow: '0 0 6px #16A34A' }} />
+              <span>TÚ</span>
+            </div>
+            {origen && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: pickupColor, display: 'inline-block' }} />
+                <span>{pickupLabel}</span>
+              </div>
+            )}
+            {destino && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#DC2626', display: 'inline-block' }} />
+                <span>{isCompra ? 'CLIENTE' : 'ENTREGAR'}</span>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => {
               setIs3DMode(prev => !prev);
