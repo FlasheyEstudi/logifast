@@ -89,7 +89,19 @@ export default function ClientMiTienda() {
       const res = await fetch('/api/cliente/tienda');
       if (!res.ok) return;
       const data = await res.json();
-      setTienda(data.tienda);
+      const t = data.tienda;
+      if (t) {
+        // Garantizar que stats siempre exista aunque el API no lo devuelva
+        if (!t.stats) {
+          t.stats = {
+            totalProductos: (t.productos ?? []).length,
+            ordenesActivas: 0,
+            totalPedidos: t.totalPedidos ?? 0,
+            ingresos: 0,
+          };
+        }
+      }
+      setTienda(t);
     } catch (err) {
       console.error(err);
     } finally {

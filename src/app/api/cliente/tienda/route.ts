@@ -23,7 +23,26 @@ export async function GET(req: NextRequest) {
       });
 
       if (tienda) {
-        return ok({ ok: true, tienda });
+        // Construir stats que el frontend espera
+        const ordenesActivas = (tienda.ordenes ?? []).filter(
+          (o: any) => !['entregado', 'cancelado'].includes(o.estado ?? '')
+        ).length;
+
+        const ingresos = (tienda.ordenes ?? [])
+          .filter((o: any) => o.estado === 'entregado')
+          .reduce((sum: number, o: any) => sum + (o.total ?? 0), 0);
+
+        const tiendaConStats = {
+          ...tienda,
+          stats: {
+            totalProductos: (tienda.productos ?? []).length,
+            ordenesActivas,
+            totalPedidos: tienda.totalPedidos ?? (tienda.ordenes ?? []).length,
+            ingresos,
+          },
+        };
+
+        return ok({ ok: true, tienda: tiendaConStats });
       }
     } catch (dbErr) {
       console.warn('[CLIENTE_TIENDA_GET_DB]', dbErr);
