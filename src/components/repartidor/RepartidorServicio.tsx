@@ -192,21 +192,34 @@ export default function RepartidorServicio() {
         </motion.div>
       )}
 
-      {/* ── CONTROLES DE MAPA — cápsula inferior derecha */}
-      <div style={{ position: 'absolute', right: 16, bottom: drawerOpen ? 280 : 120, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* ── CONTROL 3D — cápsula inferior derecha (solo mapa) */}
+      <div style={{ position: 'absolute', right: 16, bottom: drawerOpen ? 310 : 100, zIndex: 20 }}>
         <button
           onClick={() => setMapTilt(!mapTilt)}
           style={{ width: 40, height: 40, borderRadius: '50%', background: 'color-mix(in srgb, var(--surface) 92%, transparent)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--border)', color: mapTilt ? 'var(--primario)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
           title="Modo 3D"
         ><Layers size={16} /></button>
-        <button
-          onClick={() => setDrawerOpen(v => !v)}
-          style={{ width: 40, height: 40, borderRadius: '50%', background: 'color-mix(in srgb, var(--surface) 92%, transparent)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--border)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
-          title={drawerOpen ? 'Ocultar panel' : 'Mostrar panel'}
-        >
-          {drawerOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-        </button>
       </div>
+
+      {/* ── HANDLE visible cuando drawer está cerrado */}
+      {!drawerOpen && (
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => setDrawerOpen(true)}
+          style={{
+            position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 30,
+            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 100,
+            background: 'color-mix(in srgb, var(--surface) 96%, transparent)',
+            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+            color: 'var(--text)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", cursor: 'pointer',
+          }}
+        >
+          <ChevronUp size={16} style={{ color: 'var(--primario)' }} />
+          {ordenActiva ? `${ordenActiva.cliente} • Ver detalles` : 'Ver panel'}
+        </motion.button>
+      )}
 
       {/* ── CARD DRAWER INFERIOR */}
       <AnimatePresence>
@@ -260,9 +273,17 @@ export default function RepartidorServicio() {
             {/* CON ORDEN */}
             {ordenActiva && (
               <div style={{ ...sectionCard, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {/* Header */}
+                {/* Header: nombre + código + ganancia + botón colapsar */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {/* Botón colapsar — visible aquí */}
+                    <button
+                      onClick={() => setDrawerOpen(false)}
+                      style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-alt)', border: '1px solid var(--border)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                      title="Colapsar panel"
+                    >
+                      <ChevronDown size={16} />
+                    </button>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primario-soft)', color: 'var(--primario)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Package size={20} />
                     </div>
