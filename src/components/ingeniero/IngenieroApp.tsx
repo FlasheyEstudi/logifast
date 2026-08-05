@@ -306,7 +306,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
       <Inventario />
 
       {/* Responsive Styles (Same rules as admin dashboard) */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 1024px) {
           .lf-nav-label { display: none; }
         }
@@ -315,7 +315,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
           .lf-dash-bottom-nav { display: flex !important; }
           .ingeniero-content-wrapper { padding-bottom: 64px !important; }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }
