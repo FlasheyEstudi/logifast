@@ -13,10 +13,11 @@ import { obtenerRuta } from '@/lib/osrm';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
-const MOTO_SVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+const MOTO_SVG = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
   <circle cx="5.5" cy="17.5" r="3.5"/>
   <circle cx="18.5" cy="17.5" r="3.5"/>
   <path d="M15 6h2l3 6M5.5 14L10 6h4M9 6L7 14"/>
+  <path d="M10 14h5.5"/>
 </svg>`;
 
 const STORE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
@@ -264,15 +265,23 @@ export default function RepartidorMap({
       <style>{`
         .marker-pulse-ring {
           position: absolute;
-          width: 44px; height: 44px;
+          width: 56px; height: 56px;
           border-radius: 50%;
-          background: rgba(22, 163, 74, 0.4);
-          top: -2px; left: -2px;
-          animation: marker-pulse 1.8s ease-out infinite;
+          background: rgba(22, 163, 74, 0.35);
+          top: -4px; left: -4px;
+          animation: marker-pulse 2s ease-out infinite;
+        }
+        .marker-pulse-ring-2 {
+          position: absolute;
+          width: 56px; height: 56px;
+          border-radius: 50%;
+          background: rgba(22, 163, 74, 0.18);
+          top: -4px; left: -4px;
+          animation: marker-pulse 2s ease-out infinite 0.7s;
         }
         @keyframes marker-pulse {
-          0% { transform: scale(0.6); opacity: 1; }
-          100% { transform: scale(2.4); opacity: 0; }
+          0% { transform: scale(0.7); opacity: 1; }
+          100% { transform: scale(2.2); opacity: 0; }
         }
         .marker-pill {
           position: absolute;
@@ -439,12 +448,36 @@ export default function RepartidorMap({
           </MapMarker>
         )}
 
-        {/* Marcador de Repartidor (Yo - Verde) */}
+        {/* Marcador de Repartidor — Moto con aro pulsante y dirección */}
         <MapMarker longitude={driverPos[1]} latitude={driverPos[0]}>
-          <div style={{ position: 'relative', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span className="marker-pill" style={{ background: '#16A34A' }}>TÚ</span>
-            <span className="marker-pulse-ring"></span>
-            <div style={{ position: 'relative', width: 40, height: 40, borderRadius: '50%', background: '#16A34A', border: '3px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }} dangerouslySetInnerHTML={{ __html: MOTO_SVG }} />
+          <div style={{ position: 'relative', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Etiqueta TU */}
+            <span className="marker-pill" style={{ background: '#16A34A', top: -26, fontSize: 9, letterSpacing: 0.5 }}>MOTO</span>
+            {/* Aros pulsantes */}
+            <span className="marker-pulse-ring" />
+            <span className="marker-pulse-ring-2" />
+            {/* Flecha de dirección */}
+            <div style={{
+              position: 'absolute', top: -10, left: '50%',
+              transform: `translateX(-50%) rotate(${activeBearing}deg)`,
+              transformOrigin: 'center 28px',
+              pointerEvents: 'none', zIndex: 3,
+            }}>
+              <svg width="10" height="14" viewBox="0 0 10 14" fill="none">
+                <path d="M5 0L10 14H0L5 0Z" fill="#16A34A" opacity="0.9"/>
+              </svg>
+            </div>
+            {/* Círculo con icono moto */}
+            <div
+              style={{
+                position: 'relative', width: 48, height: 48, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
+                border: '3.5px solid #FFFFFF',
+                boxShadow: '0 6px 20px rgba(22,163,74,0.6), 0 2px 8px rgba(0,0,0,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2,
+              }}
+              dangerouslySetInnerHTML={{ __html: MOTO_SVG }}
+            />
           </div>
           <MarkerPopup>
             <div className="maplibre-popup-content">
