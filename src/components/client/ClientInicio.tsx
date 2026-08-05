@@ -17,7 +17,10 @@ import {
   MapPin,
   X,
   Wallet,
-  ArrowRight,
+  Utensils,
+  ShoppingBag,
+  Pill,
+  Zap,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
@@ -88,7 +91,7 @@ export default function ClientInicio({
   onOpenTracking,
 }: ClientInicioProps) {
   const { orders, banners = [], fidelizacion } = useStore();
-  const { tiendas = [], setTiendaSeleccionada } = useMarketplaceStore();
+  const { tiendas = [], setExplorarCategoria, setTiendaSeleccionada } = useMarketplaceStore();
 
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [adModalOpen, setAdModalOpen] = useState(false);
@@ -120,6 +123,11 @@ export default function ClientInicio({
       setAdSuccessMsg('');
       setAdModalOpen(false);
     }, 2500);
+  };
+
+  const handleSelectCategoria = (catKey: string) => {
+    setExplorarCategoria(catKey as any);
+    onNavigate('explorar');
   };
 
   const puntos = fidelizacion?.puntos ?? 2450;
@@ -416,7 +424,7 @@ export default function ClientInicio({
         </div>
       </div>
 
-      {/* ── SERVICIOS RÁPIDOS ── */}
+      {/* ── CATEGORÍAS POPULARES ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h3
           style={{
@@ -429,13 +437,13 @@ export default function ClientInicio({
             margin: 0,
           }}
         >
-          Servicios Rápidos
+          Categorías Populares
         </h3>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-          {/* Action 1: Solicitar */}
+          {/* Cat 1: Comida */}
           <button
-            onClick={() => onNavigate('solicitar')}
+            onClick={() => handleSelectCategoria('restaurantes')}
             style={{
               padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
@@ -455,14 +463,14 @@ export default function ClientInicio({
                 width: 44,
                 height: 44,
                 borderRadius: 14,
-                background: 'var(--primario-soft)',
+                background: 'rgba(255, 87, 34, 0.12)',
                 color: 'var(--primario)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Bike size={22} />
+              <Utensils size={22} />
             </div>
             <span
               style={{
@@ -473,13 +481,13 @@ export default function ClientInicio({
                 lineHeight: 1.2,
               }}
             >
-              Solicitar
+              Comida
             </span>
           </button>
 
-          {/* Action 2: Tiendas */}
+          {/* Cat 2: Mercado */}
           <button
-            onClick={() => onNavigate('explorar')}
+            onClick={() => handleSelectCategoria('supermercados')}
             style={{
               padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
@@ -506,7 +514,7 @@ export default function ClientInicio({
                 justifyContent: 'center',
               }}
             >
-              <Store size={22} />
+              <ShoppingBag size={22} />
             </div>
             <span
               style={{
@@ -517,13 +525,13 @@ export default function ClientInicio({
                 lineHeight: 1.2,
               }}
             >
-              Tiendas
+              Mercado
             </span>
           </button>
 
-          {/* Action 3: Envíos */}
+          {/* Cat 3: Farmacia */}
           <button
-            onClick={() => onNavigate('envios')}
+            onClick={() => handleSelectCategoria('farmacias')}
             style={{
               padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
@@ -550,7 +558,7 @@ export default function ClientInicio({
                 justifyContent: 'center',
               }}
             >
-              <Package size={22} />
+              <Pill size={22} />
             </div>
             <span
               style={{
@@ -561,13 +569,13 @@ export default function ClientInicio({
                 lineHeight: 1.2,
               }}
             >
-              Mis Envíos
+              Farmacia
             </span>
           </button>
 
-          {/* Action 4: Billetera */}
+          {/* Cat 4: Mandaditos / Express */}
           <button
-            onClick={() => onNavigate('puntos')}
+            onClick={() => onNavigate('solicitar')}
             style={{
               padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
@@ -594,7 +602,7 @@ export default function ClientInicio({
                 justifyContent: 'center',
               }}
             >
-              <Wallet size={22} />
+              <Zap size={22} />
             </div>
             <span
               style={{
@@ -605,7 +613,7 @@ export default function ClientInicio({
                 lineHeight: 1.2,
               }}
             >
-              Billetera
+              Express
             </span>
           </button>
         </div>
