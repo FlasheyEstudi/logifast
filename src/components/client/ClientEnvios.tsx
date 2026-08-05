@@ -6,17 +6,14 @@ import {
   Package,
   MapPin,
   Clock,
-  User,
   AlertTriangle,
   Search,
   ArrowRight,
-  CheckCircle,
   Bike,
   Navigation,
   MessageCircle,
-  Phone,
-  Zap,
   X,
+  Plus,
 } from '@/components/icons';
 import dynamic from 'next/dynamic';
 import { useStore, type Order } from '@/lib/store';
@@ -24,18 +21,31 @@ import { useStore, type Order } from '@/lib/store';
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-60 rounded-2xl bg-slate-900/80 animate-pulse flex items-center justify-center text-slate-400 text-xs font-mono">
+    <div
+      style={{
+        width: '100%',
+        height: 220,
+        borderRadius: 18,
+        background: 'var(--bg-alt)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'var(--text-muted)',
+        fontSize: 12,
+        fontFamily: "'JetBrains Mono', monospace",
+      }}
+    >
       Cargando mapa GPS en vivo...
     </div>
   ),
 });
 
 const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  pendiente: { bg: 'rgba(255, 149, 0, 0.18)', text: '#FF9500', label: 'Buscando repartidor' },
-  encamino: { bg: 'rgba(0, 122, 255, 0.18)', text: '#007AFF', label: 'En camino' },
-  recogido: { bg: 'rgba(175, 82, 222, 0.18)', text: '#AF52DE', label: 'Paquete recogido' },
-  entregado: { bg: 'rgba(52, 199, 89, 0.18)', text: '#34C759', label: 'Entregado' },
-  incidencia: { bg: 'rgba(255, 59, 48, 0.18)', text: '#FF3B30', label: 'Incidencia' },
+  pendiente: { bg: 'rgba(255, 149, 0, 0.15)', text: '#FF9500', label: 'Buscando repartidor' },
+  encamino: { bg: 'var(--primario-soft)', text: 'var(--primario)', label: 'En camino' },
+  recogido: { bg: 'rgba(175, 82, 222, 0.15)', text: '#AF52DE', label: 'Paquete recogido' },
+  entregado: { bg: 'rgba(52, 199, 89, 0.15)', text: '#34C759', label: 'Entregado' },
+  incidencia: { bg: 'rgba(255, 59, 48, 0.15)', text: '#FF3B30', label: 'Incidencia' },
 };
 
 interface ClientEnviosProps {
@@ -53,6 +63,58 @@ interface ReportModalState {
   description: string;
 }
 
+const sectionCard: React.CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 'var(--lf-card-radius, 22px)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 20,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px 16px',
+  borderRadius: 'var(--lf-input-radius, 16px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  outline: 'none',
+};
+
+const btnPrimary: React.CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 'var(--lf-button-radius, 16px)',
+  border: 'none',
+  background: 'var(--primario)',
+  color: '#fff',
+  fontWeight: 600,
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+};
+
+const btnGhost: React.CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 'var(--lf-button-radius, 16px)',
+  border: '1px solid var(--border)',
+  background: 'transparent',
+  color: 'var(--text-secondary)',
+  fontWeight: 500,
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+};
+
 export default function ClientEnvios({
   userName,
   onNavigate,
@@ -65,453 +127,502 @@ export default function ClientEnvios({
   const [reportModal, setReportModal] = useState<ReportModalState>({
     open: false,
     orderId: '',
-    reason: '',
+    reason: 'retraso',
     description: '',
   });
 
-  const clientOrders = orders.filter(
-    (o) =>
-      !userName ||
-      !o.cliente ||
-      o.cliente.toLowerCase() === userName.toLowerCase() ||
-      o.cliente.includes('María') ||
-      o.cliente.includes('Jean') ||
-      true
-  );
-
-  const activeOrders = clientOrders.filter(
-    (o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'
-  );
-
-  const historicalOrders = clientOrders.filter(
-    (o) => o.estado === 'entregado' || o.estado === 'incidencia'
-  );
-
-  const filteredHistory = historicalOrders.filter((o) => {
-    if (filterState === 'entregados' && o.estado !== 'entregado') return false;
-    if (filterState === 'incidencia' && o.estado !== 'incidencia') return false;
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      o.id.toLowerCase().includes(q) ||
-      o.destino.toLowerCase().includes(q) ||
-      o.origen.toLowerCase().includes(q)
+  const activeOrders = useMemo(() => {
+    return orders.filter(
+      (o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'
     );
-  });
+  }, [orders]);
 
-  const handleReportSubmit = () => {
-    if (!reportModal.reason) return;
-    addToast(`Reporte enviado para el envío ${reportModal.orderId}`, 'info');
-    setReportModal({ open: false, orderId: '', reason: '', description: '' });
+  const historicalOrders = useMemo(() => {
+    return orders.filter(
+      (o) => o.estado === 'entregado' || o.estado === 'incidencia'
+    );
+  }, [orders]);
+
+  const filteredHistory = useMemo(() => {
+    return historicalOrders.filter((o) => {
+      if (filterState === 'entregados' && o.estado !== 'entregado') return false;
+      if (filterState === 'incidencia' && o.estado !== 'incidencia') return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        o.id.toLowerCase().includes(q) ||
+        o.destino.toLowerCase().includes(q) ||
+        o.origen.toLowerCase().includes(q)
+      );
+    });
+  }, [historicalOrders, filterState, searchQuery]);
+
+  const handleReportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    addToast('Reporte enviado a soporte. Te contactaremos pronto.', 'success');
+    setReportModal({ open: false, orderId: '', reason: 'retraso', description: '' });
   };
 
   return (
     <div
-      className="w-full px-2 sm:px-5 py-3 space-y-7 pb-32"
-      style={{ fontFamily: "var(--font-dm-sans), 'DM Sans', sans-serif" }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 18,
+        maxWidth: 600,
+        margin: '0 auto',
+        padding: '0 4px 120px 4px',
+        fontFamily: "'DM Sans', sans-serif",
+      }}
     >
-      {/* ── Luxury Glass Tab Switcher ── */}
-      <div
-        className="flex p-2 rounded-[28px] w-full"
-        style={{
-          background: 'rgba(30, 41, 59, 0.88)',
-          backdropFilter: 'blur(28px)',
-          WebkitBackdropFilter: 'blur(28px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          boxShadow: '0 16px 36px rgba(0,0,0,0.35)',
-        }}
-      >
-        <button
-          onClick={() => setClientEnvioTab('activos')}
-          className="flex-1 py-4 rounded-[22px] text-xs font-extrabold transition-all relative flex items-center justify-center gap-2"
-          style={{
-            color: clientEnvioTab === 'activos' ? '#007AFF' : '#94A3B8',
-            fontFamily: "var(--font-syne), 'Syne', sans-serif",
-          }}
-        >
-          {clientEnvioTab === 'activos' && (
-            <motion.div
-              layoutId="envio-tab-pill"
-              className="absolute inset-0 rounded-[22px]"
-              style={{ background: 'rgba(0, 122, 255, 0.22)', border: '1px solid rgba(0, 122, 255, 0.45)' }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            />
-          )}
-          <span className="relative z-10 flex items-center gap-2">
-            <Zap size={17} />
-            En vivo ({activeOrders.length})
-          </span>
-        </button>
+      {/* ── ENCABEZADO & PESTAÑAS ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1
+              style={{
+                fontSize: 24,
+                fontWeight: 700,
+                fontFamily: "'Syne', sans-serif",
+                color: 'var(--text)',
+                margin: 0,
+              }}
+            >
+              Mis Envíos
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+              Gestión de envíos express y seguimiento en vivo
+            </p>
+          </div>
 
-        <button
-          onClick={() => setClientEnvioTab('historial')}
-          className="flex-1 py-4 rounded-[22px] text-xs font-extrabold transition-all relative flex items-center justify-center gap-2"
-          style={{
-            color: clientEnvioTab === 'historial' ? '#007AFF' : '#94A3B8',
-            fontFamily: "var(--font-syne), 'Syne', sans-serif",
-          }}
-        >
-          {clientEnvioTab === 'historial' && (
-            <motion.div
-              layoutId="envio-tab-pill"
-              className="absolute inset-0 rounded-[22px]"
-              style={{ background: 'rgba(0, 122, 255, 0.22)', border: '1px solid rgba(0, 122, 255, 0.45)' }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            />
-          )}
-          <span className="relative z-10 flex items-center gap-2">
-            <Package size={17} />
-            Historial ({historicalOrders.length})
-          </span>
-        </button>
-      </div>
-
-      {/* ── Content ── */}
-      <AnimatePresence mode="wait">
-        {clientEnvioTab === 'activos' ? (
-          <motion.div
-            key="tab-activos"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
+          <button
+            onClick={() => onNavigate('solicitar')}
+            style={btnPrimary}
           >
-            {activeOrders.length === 0 ? (
-              <div
-                className="w-full text-center py-16 px-7 rounded-[36px] flex flex-col items-center justify-center space-y-4"
+            <Plus size={16} /> Nuevo Envío
+          </button>
+        </div>
+
+        {/* Pestañas Segmentadas */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 6,
+            padding: 4,
+            borderRadius: 'var(--lf-card-radius, 18px)',
+            background: 'var(--bg-alt)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <button
+            onClick={() => setClientEnvioTab('activos')}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 14,
+              border: 'none',
+              background: clientEnvioTab === 'activos' ? 'var(--surface)' : 'transparent',
+              color: clientEnvioTab === 'activos' ? 'var(--text)' : 'var(--text-muted)',
+              fontWeight: 700,
+              fontSize: 13,
+              fontFamily: "'DM Sans', sans-serif",
+              cursor: 'pointer',
+              boxShadow: clientEnvioTab === 'activos' ? 'var(--lf-shadow-card)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            <span>En Curso</span>
+            {activeOrders.length > 0 && (
+              <span
                 style={{
-                  background: 'rgba(30, 41, 59, 0.88)',
-                  backdropFilter: 'blur(28px)',
-                  WebkitBackdropFilter: 'blur(28px)',
-                  border: '1px solid rgba(255, 255, 255, 0.18)',
-                  boxShadow: '0 20px 44px rgba(0,0,0,0.4)',
+                  padding: '2px 8px',
+                  borderRadius: 100,
+                  background: 'var(--primario)',
+                  color: '#FFFFFF',
+                  fontSize: 11,
+                  fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
-                <div className="w-18 h-18 rounded-3xl bg-blue-500/20 text-blue-400 flex items-center justify-center shadow-xl shadow-blue-500/30" style={{ width: 72, height: 72 }}>
-                  <Bike size={36} />
-                </div>
-                <div>
-                  <h3
-                    className="text-xl font-extrabold text-white"
-                    style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-                  >
-                    Sin envíos en tránsito
-                  </h3>
-                  <p className="text-xs text-slate-400 font-sans max-w-sm mt-1">
-                    Solicita un mensajero exprés en tiempo real para llevar tus paquetes.
-                  </p>
-                </div>
-                <button
-                  onClick={() => onNavigate('solicitar')}
-                  className="px-7 py-4 rounded-2xl font-extrabold text-xs text-white transition-all active:scale-95 shadow-xl shadow-blue-600/40 uppercase tracking-wider"
-                  style={{
-                    background: 'linear-gradient(135deg, #007AFF 0%, #0056B3 100%)',
-                    fontFamily: "var(--font-syne), 'Syne', sans-serif",
-                  }}
-                >
-                  Solicitar Envío Ahora
-                </button>
-              </div>
-            ) : (
-              activeOrders.map((order) => {
-                const badge = STATUS_BADGE[order.estado] || STATUS_BADGE.pendiente;
-                return (
-                  <motion.div
-                    key={order.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full rounded-[36px] p-6 sm:p-7 space-y-5 transition-all duration-300"
-                    style={{
-                      background: 'rgba(30, 41, 59, 0.88)',
-                      backdropFilter: 'blur(28px)',
-                      WebkitBackdropFilter: 'blur(28px)',
-                      border: '1px solid rgba(255, 255, 255, 0.18)',
-                      boxShadow: '0 24px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2)',
-                    }}
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="px-3.5 py-1.5 rounded-full text-xs font-extrabold"
-                          style={{ background: badge.bg, color: badge.text }}
-                        >
-                          {badge.label}
-                        </span>
-                        <span
-                          className="text-xs text-slate-400 font-bold"
-                          style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
-                        >
-                          {order.id}
-                        </span>
-                      </div>
-                      <div className="text-right font-sans">
-                        <span className="text-xs text-slate-400 block">Llega en aprox.</span>
-                        <span
-                          className="text-lg text-blue-400 font-bold"
-                          style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
-                        >
-                          ~12 min
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Route Preview */}
-                    <div className="space-y-2.5 text-xs text-slate-200 font-sans">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full bg-emerald-400 flex-shrink-0 shadow-md shadow-emerald-400/40" />
-                        <span className="font-bold text-slate-400">Origen:</span>
-                        <span className="font-medium truncate">{order.origen}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0 shadow-md shadow-blue-500/40" />
-                        <span className="font-bold text-slate-400">Destino:</span>
-                        <span className="font-medium truncate">{order.destino}</span>
-                      </div>
-                    </div>
-
-                    {/* GPS Map preview */}
-                    <div className="w-full h-60 rounded-2xl overflow-hidden border border-white/14 relative shadow-inner">
-                      <RepartidorMap
-                        repartidorPos={[(order as any).repartidorLat || 12.1364, (order as any).repartidorLng || -86.2581]}
-                        origenPos={[order.origenLat || 12.1264, order.origenLng || -86.2652]}
-                        destinoPos={[order.destinoLat || 12.1402, order.destinoLng || -86.2954]}
-                        estado={order.estado === 'encamino' ? 'EN_CAMINO_RECOGER' : order.estado === 'recogido' ? 'RECOGIDO' : 'ORDEN_ASIGNADA'}
-                        altura="100%"
-                        zoom={13}
-                      />
-                    </div>
-
-                    {/* Rider details */}
-                    {order.repartidor && (
-                      <div className="flex items-center justify-between bg-slate-900/80 p-4 rounded-2xl border border-white/12 backdrop-blur-md">
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-md">
-                            {order.repartidorInitials || 'RP'}
-                          </div>
-                          <div>
-                            <span
-                              className="text-sm font-extrabold text-white block"
-                              style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-                            >
-                              {order.repartidor}
-                            </span>
-                            <span className="text-xs text-slate-400 flex items-center gap-1 font-sans">
-                              <Bike size={13} /> Moto Repartidor Logifast
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => onOpenChat(order.id)}
-                            className="p-3 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/35 hover:bg-blue-500/30 transition-all active:scale-90"
-                          >
-                            <MessageCircle size={18} />
-                          </button>
-                          <button
-                            onClick={() => (window.location.href = 'tel:22220000')}
-                            className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/35 hover:bg-emerald-500/30 transition-all active:scale-90"
-                          >
-                            <Phone size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Action buttons */}
-                    <div className="grid grid-cols-2 gap-3 pt-1">
-                      <button
-                        onClick={() => onOpenTracking(order.id)}
-                        className="py-4 px-4 rounded-2xl font-extrabold text-xs text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-600/35 active:scale-95 uppercase tracking-wider"
-                        style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-                      >
-                        <Navigation size={17} />
-                        Seguimiento GPS
-                      </button>
-                      <button
-                        onClick={() => setReportModal({ open: true, orderId: order.id, reason: '', description: '' })}
-                        className="py-4 px-4 rounded-2xl font-extrabold text-xs text-red-400 bg-red-500/10 border border-red-500/35 hover:bg-red-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-95 uppercase tracking-wider"
-                        style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-                      >
-                        <AlertTriangle size={17} />
-                        Reportar
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })
+                {activeOrders.length}
+              </span>
             )}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="tab-historial"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-4"
+          </button>
+
+          <button
+            onClick={() => setClientEnvioTab('historial')}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 14,
+              border: 'none',
+              background: clientEnvioTab === 'historial' ? 'var(--surface)' : 'transparent',
+              color: clientEnvioTab === 'historial' ? 'var(--text)' : 'var(--text-muted)',
+              fontWeight: 700,
+              fontSize: 13,
+              fontFamily: "'DM Sans', sans-serif",
+              cursor: 'pointer',
+              boxShadow: clientEnvioTab === 'historial' ? 'var(--lf-shadow-card)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
           >
-            {/* Search */}
-            <div className="relative w-full">
-              <Search className="absolute left-4.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <span>Historial ({historicalOrders.length})</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── SECCIÓN 1: ACTIVOS EN CURSO ── */}
+      {clientEnvioTab === 'activos' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {activeOrders.length === 0 ? (
+            <div style={{ ...sectionCard, padding: 36, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div
+                style={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: '50%',
+                  background: 'var(--primario-soft)',
+                  color: 'var(--primario)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto',
+                }}
+              >
+                <Bike size={28} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: '0 0 4px 0' }}>
+                  No tienes envíos activos
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  Solicita tu repartidor express en segundos y realiza tu envío rápido.
+                </p>
+              </div>
+              <button
+                onClick={() => onNavigate('solicitar')}
+                style={{ ...btnPrimary, margin: '8px auto 0 auto' }}
+              >
+                Solicitar Envío Express
+              </button>
+            </div>
+          ) : (
+            activeOrders.map((order) => {
+              const badge = STATUS_BADGE[order.estado] || STATUS_BADGE['pendiente'];
+              return (
+                <div key={order.id} style={{ ...sectionCard, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: 'var(--text)' }}>
+                        #{order.id.substring(0, 8)}
+                      </span>
+                      <span
+                        style={{
+                          padding: '3px 10px',
+                          borderRadius: 8,
+                          background: badge.bg,
+                          color: badge.text,
+                          fontSize: 11,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {badge.label}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)', marginLeft: 'auto' }}>
+                      C$ {(order.monto || 0).toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Timeline de la ruta */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#007AFF', marginTop: 4, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Origen</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text)' }}>{order.origen}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34C759', marginTop: 4, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Destino</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text)' }}>{order.destino}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mapa GPS en vivo preview */}
+                  <div style={{ width: '100%', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <RepartidorMap
+                      repartidorPos={[(order as any).repartidorLat || 12.1364, (order as any).repartidorLng || -86.2581]}
+                      origenPos={[order.origenLat || 12.1264, order.origenLng || -86.2652]}
+                      destinoPos={[order.destinoLat || 12.1402, order.destinoLng || -86.2954]}
+                      estado={order.estado === 'encamino' ? 'EN_CAMINO_RECOGER' : order.estado === 'recogido' ? 'RECOGIDO' : 'ORDEN_ASIGNADA'}
+                      altura="180px"
+                      zoom={13}
+                    />
+                  </div>
+
+                  {/* Información del repartidor asignado */}
+                  {order.repartidor && (
+                    <div
+                      style={{
+                        padding: 12,
+                        borderRadius: 14,
+                        background: 'var(--bg-alt)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div
+                          style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: '50%',
+                            background: 'var(--primario)',
+                            color: '#FFFFFF',
+                            fontFamily: "'Syne', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 13,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {order.repartidor.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+                            {order.repartidor}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+                            Repartidor LogiFast • ★ 4.9
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => onOpenChat(order.id)}
+                        style={{
+                          padding: 8,
+                          borderRadius: 10,
+                          background: 'var(--primario-soft)',
+                          color: 'var(--primario)',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                        title="Chat"
+                      >
+                        <MessageCircle size={18} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Acciones */}
+                  <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+                    <button
+                      onClick={() => onOpenTracking(order.id)}
+                      style={{ ...btnPrimary, flex: 1 }}
+                    >
+                      <Navigation size={16} /> Rastrear en Tiempo Real
+                    </button>
+                    <button
+                      onClick={() => setReportModal({ open: true, orderId: order.id, reason: 'retraso', description: '' })}
+                      style={{ ...btnGhost, padding: '10px' }}
+                      title="Reportar problema"
+                    >
+                      <AlertTriangle size={18} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ── SECCIÓN 2: HISTORIAL DE ENVÍOS ── */}
+      {clientEnvioTab === 'historial' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Filtro y Búsqueda */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="Buscar por ID, origen o destino..."
+                placeholder="Buscar en el historial..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-[28px] text-sm text-white placeholder-slate-400 outline-none transition-all font-sans"
-                style={{
-                  background: 'rgba(30, 41, 59, 0.88)',
-                  backdropFilter: 'blur(28px)',
-                  WebkitBackdropFilter: 'blur(28px)',
-                  border: '1px solid rgba(255, 255, 255, 0.18)',
-                }}
+                style={{ ...inputStyle, paddingLeft: 38 }}
               />
             </div>
 
-            {/* List */}
-            {filteredHistory.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs font-sans">
-                No se encontraron envíos en el historial.
+            <button
+              onClick={() => setFilterState(filterState === 'entregados' ? 'todos' : 'entregados')}
+              style={{
+                padding: '10px 14px',
+                borderRadius: 14,
+                background: filterState === 'entregados' ? '#34C759' : 'var(--bg-alt)',
+                color: filterState === 'entregados' ? '#FFFFFF' : 'var(--text)',
+                border: '1px solid var(--border)',
+                fontWeight: 700,
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              Entregados
+            </button>
+          </div>
+
+          {filteredHistory.length === 0 ? (
+            <div style={{ ...sectionCard, padding: 36, textAlign: 'center' }}>
+              <Package size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 8px auto' }} />
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
+                No hay envíos registrados en el historial
               </div>
-            ) : (
-              filteredHistory.map((order) => {
-                const isEntregado = order.estado === 'entregado';
-                return (
-                  <div
-                    key={order.id}
-                    className="w-full rounded-[28px] p-5 space-y-3 font-sans"
-                    style={{
-                      background: 'rgba(30, 41, 59, 0.88)',
-                      backdropFilter: 'blur(28px)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                    }}
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${
-                            isEntregado ? 'bg-emerald-400' : 'bg-red-500'
-                          }`}
-                        />
-                        <span
-                          className="font-bold text-slate-300"
-                          style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
-                        >
-                          {order.id}
-                        </span>
-                      </div>
-                      <span className="text-slate-400">{order.fecha}</span>
-                    </div>
-
-                    <div className="text-xs text-slate-300 space-y-1">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="text-slate-400 font-bold">De:</span> {order.origen}
-                      </div>
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="text-slate-400 font-bold">A:</span> {order.destino}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
-                      <span
-                        className="font-bold text-white text-sm"
-                        style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
-                      >
-                        C$ {order.monto.toFixed(2)}
+            </div>
+          ) : (
+            filteredHistory.map((order) => {
+              const badge = STATUS_BADGE[order.estado] || STATUS_BADGE['entregado'];
+              return (
+                <div key={order.id} style={{ ...sectionCard, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: 'var(--text)' }}>
+                        #{order.id.substring(0, 8)}
                       </span>
-                      <button
-                        onClick={() => onNavigate('solicitar')}
-                        className="text-blue-400 font-extrabold hover:underline flex items-center gap-1"
-                        style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-                      >
-                        Repetir envío <ArrowRight size={14} />
-                      </button>
+                      <span style={{ padding: '2px 8px', borderRadius: 6, background: badge.bg, color: badge.text, fontSize: 10, fontWeight: 700 }}>
+                        {badge.label}
+                      </span>
                     </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+                      C$ {(order.monto || 0).toFixed(2)}
+                    </span>
                   </div>
-                );
-              })
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* ── Report Modal ── */}
+                  <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>
+                    {order.origen} → {order.destino}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', paddingTop: 4 }}>
+                    <span>{order.fecha || 'Hoy'}</span>
+                    <button
+                      onClick={() => onNavigate('solicitar')}
+                      style={{ background: 'none', border: 'none', color: 'var(--primario)', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Volver a pedir
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ── MODAL REPORTAR PROBLEMA ── */}
       <AnimatePresence>
         {reportModal.open && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+            }}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="w-full max-w-md bg-slate-900/95 border border-white/20 rounded-[34px] p-7 space-y-4 text-slate-100 shadow-2xl"
-              style={{ backdropFilter: 'blur(32px)' }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              style={{
+                width: '100%',
+                maxWidth: 400,
+                borderRadius: 'var(--lf-card-radius, 22px)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+                padding: 24,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
             >
-              <h3
-                className="text-lg font-extrabold flex items-center gap-2 text-red-400"
-                style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-              >
-                <AlertTriangle size={22} /> Reportar Problema
-              </h3>
-              <p className="text-xs text-slate-400 font-sans">
-                Selecciona la causa de la incidencia para el envío{' '}
-                <span
-                  className="text-white font-bold"
-                  style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+                  Reportar Problema
+                </h3>
+                <button
+                  onClick={() => setReportModal({ open: false, orderId: '', reason: 'retraso', description: '' })}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                 >
-                  {reportModal.orderId}
-                </span>.
-              </p>
+                  <X size={20} />
+                </button>
+              </div>
 
-              <div className="space-y-2.5 font-sans">
-                {[
-                  { value: 'repartidor_demorado', label: 'Repartidor demorado' },
-                  { value: 'paquete_danado', label: 'Paquete dañado' },
-                  { value: 'direccion_incorrecta', label: 'Dirección incorrecta' },
-                  { value: 'otro', label: 'Otro motivo' },
-                ].map((r) => (
-                  <button
-                    key={r.value}
-                    onClick={() => setReportModal((s) => ({ ...s, reason: r.value }))}
-                    className={`w-full text-left p-4 rounded-2xl text-xs font-bold border transition-all ${
-                      reportModal.reason === r.value
-                        ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                        : 'bg-slate-800/80 border-white/10 text-slate-300 hover:bg-slate-700'
-                    }`}
+              <form onSubmit={handleReportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+                    Motivo
+                  </label>
+                  <select
+                    value={reportModal.reason}
+                    onChange={(e) => setReportModal({ ...reportModal, reason: e.target.value })}
+                    style={inputStyle}
                   >
-                    {r.label}
+                    <option value="retraso">Retraso en la entrega</option>
+                    <option value="paquete_dañado">Paquete dañado</option>
+                    <option value="cobro_incorrecto">Cobro o tarifa incorrecta</option>
+                    <option value="conductor">Problema con el repartidor</option>
+                    <option value="otro">Otro problema</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+                    Comentarios adicionales
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Escribe detalles del inconveniente..."
+                    value={reportModal.description}
+                    onChange={(e) => setReportModal({ ...reportModal, description: e.target.value })}
+                    style={{ ...inputStyle, resize: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setReportModal({ open: false, orderId: '', reason: 'retraso', description: '' })}
+                    style={btnGhost}
+                  >
+                    Cancelar
                   </button>
-                ))}
-              </div>
-
-              <textarea
-                placeholder="Detalles adicionales (opcional)..."
-                value={reportModal.description}
-                onChange={(e) => setReportModal((s) => ({ ...s, description: e.target.value }))}
-                className="w-full h-26 p-4 rounded-2xl bg-slate-800/80 border border-white/12 text-xs text-slate-100 outline-none focus:border-blue-500 font-sans"
-              />
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setReportModal({ open: false, orderId: '', reason: '', description: '' })}
-                  className="flex-1 py-4 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition-all font-sans"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleReportSubmit}
-                  disabled={!reportModal.reason}
-                  className="flex-1 py-4 rounded-2xl bg-red-600 disabled:opacity-40 text-white font-extrabold text-xs hover:bg-red-500 transition-all shadow-lg shadow-red-600/35 uppercase tracking-wider"
-                  style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-                >
-                  Enviar Reporte
-                </button>
-              </div>
+                  <button
+                    type="submit"
+                    style={{ ...btnPrimary, background: '#FF3B30' }}
+                  >
+                    Enviar Reporte
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}
