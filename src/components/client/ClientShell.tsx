@@ -178,10 +178,10 @@ function getNotifIcon(tipo: ClientNotificacion['tipo']): { icon: React.ReactNode
 interface NavItem {
   key: ClientModuleKey;
   label: string;
-  icon: React.ReactNode;
+  Icon: () => React.ReactElement;
 }
 
-/* ─── SVG inline icons para el nav (stroke="currentColor" garantiza herencia en móvil) ─── */
+/* ─── SVG inline icons — funciones (no JSX estático) para heredar color en móvil ─── */
 function IcoInicio()    { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>; }
 function IcoExplorar()  { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M9 12h1.5M9 8h6M9 16h4"/><circle cx="15" cy="14" r="2"/></svg>; }
 function IcoEnvios()    { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h11v9H3z"/><path d="M14 9h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>; }
@@ -190,12 +190,12 @@ function IcoBilletera() { return <svg width="22" height="22" viewBox="0 0 24 24"
 function IcoPerfil()    { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>; }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'inicio',   label: 'Inicio',    icon: <IcoInicio /> },
-  { key: 'explorar', label: 'Explorar',  icon: <IcoExplorar /> },
-  { key: 'envios',   label: 'Envíos',    icon: <IcoEnvios /> },
-  { key: 'pedidos',  label: 'Pedidos',   icon: <IcoPedidos /> },
-  { key: 'puntos',   label: 'Billetera', icon: <IcoBilletera /> },
-  { key: 'perfil',   label: 'Perfil',    icon: <IcoPerfil /> },
+  { key: 'inicio',   label: 'Inicio',    Icon: IcoInicio },
+  { key: 'explorar', label: 'Explorar',  Icon: IcoExplorar },
+  { key: 'envios',   label: 'Envíos',    Icon: IcoEnvios },
+  { key: 'pedidos',  label: 'Pedidos',   Icon: IcoPedidos },
+  { key: 'puntos',   label: 'Billetera', Icon: IcoBilletera },
+  { key: 'perfil',   label: 'Perfil',    Icon: IcoPerfil },
 ];
 
 /* ─── iOS Large Title map (header) ─── */
@@ -696,7 +696,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: 700,
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontFamily: 'var(--ios-font, sans-serif)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   WebkitTapHighlightColor: 'transparent',
                 }}
@@ -709,15 +709,15 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                       position: 'absolute',
                       inset: 0,
                       borderRadius: 100,
-                      background: 'var(--primario, var(--primario))',
+                      background: 'var(--primario)',
                       boxShadow: '0 4px 14px color-mix(in srgb, var(--primario) 50%, transparent)',
-                      zIndex: -1,
+                      zIndex: 0,
                     }}
                   />
                 )}
 
                 <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', zIndex: 1, color: isActive ? '#FFFFFF' : isDark ? '#CBD5E1' : '#334155' }}>
-                  {item.icon}
+                  <item.Icon />
                   {showPedidosBadge && (
                     <span
                       style={{
