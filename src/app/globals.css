@@ -9048,15 +9048,32 @@ body {
 /* El viewport debe estar por encima de todo */
 [data-sileo-viewport] {
   z-index: 99999 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* El toast nativo de sileo es transparente con canvas SVG.
    NO forzar background ni border — eso causa el "cuadrado blanco". */
-[data-sileo-toast] {
+[data-sileo-toast],
+[data-sileo-card],
+[data-sileo-toast] > div,
+[data-sileo-viewport] > div {
   font-family: var(--font-dm-sans, system-ui, sans-serif) !important;
   background: transparent !important;
   border: none !important;
   outline: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-sileo-toast]::before,
+[data-sileo-toast]::after,
+[data-sileo-card]::before,
+[data-sileo-card]::after {
+  display: none !important;
+  background: transparent !important;
+  border: none !important;
   box-shadow: none !important;
 }
 

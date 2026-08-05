@@ -27,7 +27,9 @@ export async function emitirEventoRealtime(payload: { room?: string; event: stri
 
 export function emitOrdenCreada(orden: any) {
   emitirEventoRealtime({ room: 'admin', event: 'admin:orden:nueva', data: orden });
+  emitirEventoRealtime({ room: 'repartidores', event: 'repartidor:orden:nueva', data: orden });
   emitirEventoRealtime({ room: 'repartidores', event: 'repartidor:orden:disponible', data: orden });
+  emitirEventoRealtime({ event: 'repartidor:orden:nueva', data: orden });
 }
 
 export function emitOrdenAsignada(repartidorId: string, orden: any) {
