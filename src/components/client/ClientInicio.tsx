@@ -10,19 +10,15 @@ import {
   Package,
   Star,
   ChevronRight,
-  TrendingUp,
   Megaphone,
   CheckCircle,
   Clock,
-  Zap,
   Gift,
   Plus,
-  Compass,
-  Flame,
-  ShieldCheck,
   MapPin,
   X,
   Wallet,
+  ArrowRight,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
@@ -40,8 +36,8 @@ export default function ClientInicio({
   onNavigate,
   onOpenTracking,
 }: ClientInicioProps) {
-  const { orders, banners = [] } = useStore();
-  const { tiendas = [], setExplorarCategoria, setTiendaSeleccionada } = useMarketplaceStore();
+  const { orders, banners = [], fidelizacion } = useStore();
+  const { tiendas = [], setTiendaSeleccionada } = useMarketplaceStore();
 
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [adModalOpen, setAdModalOpen] = useState(false);
@@ -75,220 +71,644 @@ export default function ClientInicio({
     }, 2500);
   };
 
+  const puntos = fidelizacion?.puntos ?? 2450;
+
   return (
     <div
-      className="w-full max-w-md mx-auto px-3.5 sm:px-4 py-3 space-y-4 pb-28 font-sans"
-      style={{ fontFamily: "var(--font-dm-sans), 'DM Sans', system-ui, sans-serif" }}
+      style={{
+        width: '100%',
+        maxWidth: 520,
+        margin: '0 auto',
+        padding: '16px 16px 120px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 20,
+        fontFamily: "'DM Sans', sans-serif",
+      }}
     >
-      {/* ── TOP NATIVE HEADER ── */}
-      <div className="flex items-center justify-between pt-1">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-bold tracking-tight">
-            <MapPin size={13} className="text-blue-500" />
+      {/* ── HEADER NATIVO DE BIENVENIDA ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: 4,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--primario)',
+              fontFamily: "'DM Sans', sans-serif",
+              marginBottom: 2,
+            }}
+          >
+            <MapPin size={14} style={{ color: 'var(--primario)' }} />
             <span>Managua, Nicaragua</span>
           </div>
-          <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">
+          <h1
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              fontFamily: "'Syne', sans-serif",
+              color: 'var(--text)',
+              lineHeight: 1.2,
+              margin: 0,
+            }}
+          >
             ¡Hola, {userName.split(' ')[0]}! 👋
           </h1>
         </div>
 
         <button
           onClick={() => onNavigate('puntos')}
-          className="px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+          style={{
+            padding: '8px 14px',
+            borderRadius: 'var(--lf-pill-radius, 100px)',
+            background: 'var(--primario-soft)',
+            border: '1px solid var(--border)',
+            color: 'var(--primario)',
+            fontWeight: 700,
+            fontSize: 12,
+            fontFamily: "'JetBrains Mono', monospace",
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            cursor: 'pointer',
+            boxShadow: 'var(--lf-shadow-card)',
+          }}
         >
-          <Gift size={15} className="text-amber-500" />
-          <span>Puntos LogiFast</span>
+          <Gift size={15} />
+          <span>{puntos} pts</span>
         </button>
       </div>
 
-      {/* ── SEARCH TRIGGER BAR ── */}
+      {/* ── BARRA DE BÚSQUEDA ── */}
       <div
         onClick={() => onNavigate('explorar')}
-        className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 flex items-center gap-2.5 text-slate-400 dark:text-slate-500 text-xs sm:text-sm cursor-pointer shadow-sm hover:border-blue-400 transition-all"
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          borderRadius: 'var(--lf-card-radius, 18px)',
+          background: 'var(--bg-alt)',
+          border: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          color: 'var(--text-muted)',
+          fontSize: 13,
+          fontFamily: "'DM Sans', sans-serif",
+          cursor: 'pointer',
+          boxShadow: 'var(--lf-shadow-card)',
+        }}
       >
-        <Search size={17} className="text-slate-400" />
-        <span className="flex-1 font-medium text-slate-500 dark:text-slate-400">
+        <Search size={18} style={{ color: 'var(--text-muted)' }} />
+        <span style={{ flex: 1, color: 'var(--text-muted)' }}>
           ¿Qué deseas pedir o enviar hoy?
         </span>
-        <span className="px-2 py-0.5 rounded-lg bg-blue-600/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+        <span
+          style={{
+            padding: '4px 10px',
+            borderRadius: 10,
+            background: 'var(--primario-soft)',
+            color: 'var(--primario)',
+            fontSize: 11,
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
           Buscar
         </span>
       </div>
 
-      {/* ── ACTIVE ORDER WIDGET ── */}
+      {/* ── WIDGET DE ENVÍO ACTIVO ── */}
       <AnimatePresence>
         {activeOrders.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -12 }}
             onClick={() => onOpenTracking(activeOrders[0].id)}
-            className="w-full p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-lg shadow-blue-500/20 cursor-pointer flex items-center justify-between active:scale-[0.98] transition-all"
+            style={{
+              width: '100%',
+              padding: '16px 18px',
+              borderRadius: 'var(--lf-card-radius, 22px)',
+              background: 'linear-gradient(135deg, var(--primario) 0%, #D84315 100%)',
+              color: '#FFFFFF',
+              boxShadow: '0 12px 28px rgba(255, 87, 34, 0.35)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white flex-shrink-0">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(8px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  flexShrink: 0,
+                }}
+              >
                 <Bike size={22} />
               </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-blue-100">
-                    Envío en curso • #{activeOrders[0].id.substring(0, 8)}
-                  </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: '#4CAF50',
+                      boxShadow: '0 0 8px #4CAF50',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: 'rgba(255, 255, 255, 0.9)',
+                    }}
+                  >
+                    Envío Activo • #{activeOrders[0].id.substring(0, 8)}
+                  </span>
                 </div>
-                <h4 className="text-xs sm:text-sm font-bold text-white line-clamp-1">
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    fontFamily: "'DM Sans', sans-serif",
+                    color: '#FFFFFF',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: 220,
+                  }}
+                >
                   {activeOrders[0].destino}
-                </h4>
-                <p className="text-[11px] text-blue-100">
-                  {activeOrders[0].repartidor ? `Repartidor: ${activeOrders[0].repartidor}` : 'Buscando repartidor cercano...'}
-                </p>
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.85)' }}>
+                  {activeOrders[0].repartidor ? `Repartidor: ${activeOrders[0].repartidor}` : 'Buscando repartidor...'}
+                </div>
               </div>
             </div>
 
-            <div className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
-              <ChevronRight size={18} className="text-white" />
+            <div
+              style={{
+                padding: 8,
+                borderRadius: 12,
+                background: 'rgba(255, 255, 255, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ChevronRight size={18} style={{ color: '#FFFFFF' }} />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── HERO BANNER CAROUSEL ── */}
-      <div className="w-full rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-800 shadow-md p-4 text-white relative overflow-hidden space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-            <Sparkles size={11} /> Promoción Especial
+      {/* ── CARRUSEL BANNER PROMOCIONAL ── */}
+      <div
+        style={{
+          width: '100%',
+          borderRadius: 'var(--lf-card-radius, 22px)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--lf-shadow-card)',
+          padding: '18px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span
+            style={{
+              padding: '4px 10px',
+              borderRadius: 'var(--lf-pill-radius, 100px)',
+              background: 'var(--primario-soft)',
+              color: 'var(--primario)',
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+              fontFamily: "'DM Sans', sans-serif",
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <Sparkles size={12} /> Promoción
           </span>
-          <div className="flex gap-1.5">
+          <div style={{ display: 'flex', gap: 6 }}>
             {banners.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveBannerIdx(idx)}
-                className={`h-1.5 rounded-full transition-all ${
-                  activeBannerIdx === idx ? 'w-5 bg-blue-500' : 'w-1.5 bg-slate-700'
-                }`}
+                style={{
+                  height: 6,
+                  borderRadius: 100,
+                  width: activeBannerIdx === idx ? 20 : 6,
+                  background: activeBannerIdx === idx ? 'var(--primario)' : 'var(--border)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                }}
               />
             ))}
           </div>
         </div>
 
-        <div className="space-y-1 pt-1">
-          <h2 className="text-base sm:text-lg font-bold text-white leading-snug">
+        <div>
+          <h2
+            style={{
+              fontSize: 17,
+              fontWeight: 700,
+              fontFamily: "'Syne', sans-serif",
+              color: 'var(--text)',
+              margin: '0 0 4px 0',
+              lineHeight: 1.3,
+            }}
+          >
             {banners[activeBannerIdx]?.titulo || 'Envíos Express & Compras Rápidas'}
           </h2>
-          <p className="text-xs text-slate-300 line-clamp-2">
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--text-muted)',
+              fontFamily: "'DM Sans', sans-serif",
+              margin: 0,
+              lineHeight: 1.4,
+            }}
+          >
             {(banners[activeBannerIdx] as any)?.descripcion || 'Tu mensajería y delivery de confianza en toda Managua con cobertura total.'}
           </p>
         </div>
 
-        <div className="pt-2 flex items-center justify-between">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 }}>
           <button
             onClick={() => onNavigate('solicitar')}
-            className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-sm flex items-center gap-1 active:scale-95 transition-all"
+            style={{
+              padding: '10px 18px',
+              borderRadius: 14,
+              background: 'var(--primario)',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              fontSize: 13,
+              fontFamily: "'DM Sans', sans-serif",
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 4px 14px rgba(255, 87, 34, 0.3)',
+            }}
           >
             <span>Pedir Ahora</span>
             <ChevronRight size={14} />
           </button>
-          <span className="text-[11px] text-slate-400 font-semibold">LogiFast Nicaragua</span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+            LogiFast Nicaragua
+          </span>
         </div>
       </div>
 
-      {/* ── QUICK ACTIONS GRID (4 COLUMNS) ── */}
-      <div className="space-y-2">
-        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-0.5">
+      {/* ── SERVICIOS RÁPIDOS (ACCIONES PRINCIPALES) ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <h3
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: 0.8,
+            color: 'var(--text-muted)',
+            fontFamily: "'DM Sans', sans-serif",
+            margin: 0,
+          }}
+        >
           Servicios Rápidos
         </h3>
 
-        <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {/* Action 1: Solicitar */}
           <button
             onClick={() => onNavigate('solicitar')}
-            className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 flex flex-col items-center justify-center text-center space-y-1.5 active:scale-95 transition-all group"
+            style={{
+              padding: '14px 8px',
+              borderRadius: 'var(--lf-card-radius, 18px)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--lf-shadow-card)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              textAlign: 'center',
+            }}
           >
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 14,
+                background: 'var(--primario-soft)',
+                color: 'var(--primario)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Bike size={20} />
             </div>
-            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
-              Solicitar Envío
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--text)',
+                fontFamily: "'DM Sans', sans-serif",
+                lineHeight: 1.2,
+              }}
+            >
+              Solicitar
             </span>
           </button>
 
+          {/* Action 2: Tiendas */}
           <button
             onClick={() => onNavigate('explorar')}
-            className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 flex flex-col items-center justify-center text-center space-y-1.5 active:scale-95 transition-all group"
+            style={{
+              padding: '14px 8px',
+              borderRadius: 'var(--lf-card-radius, 18px)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--lf-shadow-card)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              textAlign: 'center',
+            }}
           >
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 14,
+                background: 'rgba(52, 199, 89, 0.12)',
+                color: '#34C759',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Store size={20} />
             </div>
-            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--text)',
+                fontFamily: "'DM Sans', sans-serif",
+                lineHeight: 1.2,
+              }}
+            >
               Tiendas
             </span>
           </button>
 
+          {/* Action 3: Envíos */}
           <button
             onClick={() => onNavigate('envios')}
-            className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 flex flex-col items-center justify-center text-center space-y-1.5 active:scale-95 transition-all group"
+            style={{
+              padding: '14px 8px',
+              borderRadius: 'var(--lf-card-radius, 18px)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--lf-shadow-card)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              textAlign: 'center',
+            }}
           >
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 14,
+                background: 'rgba(175, 82, 222, 0.12)',
+                color: '#AF52DE',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Package size={20} />
             </div>
-            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--text)',
+                fontFamily: "'DM Sans', sans-serif",
+                lineHeight: 1.2,
+              }}
+            >
               Mis Envíos
             </span>
           </button>
 
+          {/* Action 4: Billetera */}
           <button
             onClick={() => onNavigate('puntos')}
-            className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 flex flex-col items-center justify-center text-center space-y-1.5 active:scale-95 transition-all group"
+            style={{
+              padding: '14px 8px',
+              borderRadius: 'var(--lf-card-radius, 18px)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--lf-shadow-card)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              textAlign: 'center',
+            }}
           >
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 14,
+                background: 'rgba(255, 149, 0, 0.12)',
+                color: '#FF9500',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Wallet size={20} />
             </div>
-            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--text)',
+                fontFamily: "'DM Sans', sans-serif",
+                lineHeight: 1.2,
+              }}
+            >
               Billetera
             </span>
           </button>
         </div>
       </div>
 
-      {/* ── FEATURED STORES SECTION ── */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between px-0.5">
-          <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+      {/* ── TIENDAS DESTACADAS ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: 0.8,
+              color: 'var(--text-muted)',
+              fontFamily: "'DM Sans', sans-serif",
+              margin: 0,
+            }}
+          >
             Tiendas Destacadas
           </h3>
           <button
             onClick={() => onNavigate('explorar')}
-            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 12,
+              fontWeight: 700,
+              color: 'var(--primario)',
+              fontFamily: "'DM Sans', sans-serif",
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+            }}
           >
-            Ver todas <ChevronRight size={14} />
+            <span>Ver todas</span>
+            <ChevronRight size={14} />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
           {featuredTiendas.map((tienda) => (
             <div
               key={tienda.id}
               onClick={() => setTiendaSeleccionada(tienda.id)}
-              className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer flex items-center gap-3 group"
+              style={{
+                padding: 14,
+                borderRadius: 'var(--lf-card-radius, 18px)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--lf-shadow-card)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-base flex items-center justify-center shadow-md flex-shrink-0">
+              <div
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 14,
+                  background: 'var(--primario-soft)',
+                  color: 'var(--primario)',
+                  fontFamily: "'Syne', sans-serif",
+                  fontWeight: 800,
+                  fontSize: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
                 {tienda.nombre.substring(0, 2).toUpperCase()}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    fontFamily: "'Syne', sans-serif",
+                    color: 'var(--text)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   {tienda.nombre}
-                </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate capitalize">
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-muted)',
+                    fontFamily: "'DM Sans', sans-serif",
+                    textTransform: 'capitalize',
+                  }}
+                >
                   {tienda.categoria} • C$ {tienda.costoEnvio} envío
-                </p>
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 pt-0.5 font-medium">
-                  <span className="text-amber-500 font-bold flex items-center gap-0.5">
-                    <Star size={11} className="fill-amber-400 text-amber-400" />
-                    {(tienda.calificacion || 4.8).toFixed(1)}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 11,
+                    marginTop: 4,
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      color: '#FF9500',
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    <Star size={11} fill="currentColor" /> {(tienda.calificacion || 4.8).toFixed(1)}
                   </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-0.5">
-                    <Clock size={11} /> {(tienda as any).tiempoEntrega || tienda.tiempoEstimado || '20-30 min'}
+                  <span style={{ color: 'var(--border)' }}>•</span>
+                  <span style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+                    <Clock size={11} style={{ display: 'inline', marginRight: 3 }} />
+                    {(tienda as any).tiempoEntrega || tienda.tiempoEstimado || '20 min'}
                   </span>
                 </div>
               </div>
@@ -297,23 +717,68 @@ export default function ClientInicio({
         </div>
       </div>
 
-      {/* ── SPONSOR / BUSINESS AD BANNER ── */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white shadow-md flex items-center justify-between">
-        <div className="space-y-1">
-          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-wider">
+      {/* ── BANNER PARA NEGOCIOS ── */}
+      <div
+        style={{
+          width: '100%',
+          padding: '16px 18px',
+          borderRadius: 'var(--lf-card-radius, 22px)',
+          background: 'var(--bg-alt)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--lf-shadow-card)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span
+            style={{
+              padding: '3px 8px',
+              borderRadius: 6,
+              background: 'var(--primario-soft)',
+              color: 'var(--primario)',
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              width: 'fit-content',
+            }}
+          >
             Para Negocios
           </span>
-          <h4 className="text-xs sm:text-sm font-bold text-white">
+          <h4
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              fontFamily: "'Syne', sans-serif",
+              color: 'var(--text)',
+              margin: 0,
+            }}
+          >
             ¿Tienes una tienda o restaurante?
           </h4>
-          <p className="text-[11px] text-slate-300">
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
             Regístrate en LogiFast y vende a miles de clientes.
           </p>
         </div>
 
         <button
           onClick={() => setAdModalOpen(true)}
-          className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm flex items-center gap-1 active:scale-95 transition-all flex-shrink-0"
+          style={{
+            padding: '10px 14px',
+            borderRadius: 14,
+            background: 'var(--primario)',
+            color: '#FFFFFF',
+            fontWeight: 700,
+            fontSize: 12,
+            fontFamily: "'DM Sans', sans-serif",
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            flexShrink: 0,
+          }}
         >
           <Megaphone size={14} /> Anunciarme
         </button>
@@ -326,64 +791,135 @@ export default function ClientInicio({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+            }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-xl space-y-4"
+              style={{
+                width: '100%',
+                maxWidth: 400,
+                borderRadius: 'var(--lf-card-radius, 22px)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+                padding: 24,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
             >
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottom: '1px solid var(--border)',
+                  paddingBottom: 12,
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    fontFamily: "'Syne', sans-serif",
+                    color: 'var(--text)',
+                    margin: 0,
+                  }}
+                >
                   Anuncia tu Negocio en LogiFast
                 </h3>
                 <button
                   onClick={() => setAdModalOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                  }}
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
 
               {adSuccessMsg ? (
-                <div className="py-6 text-center space-y-2">
-                  <CheckCircle size={36} className="mx-auto text-emerald-500" />
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <div style={{ padding: '24px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <CheckCircle size={40} style={{ color: '#34C759', margin: '0 auto' }} />
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                     {adSuccessMsg}
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleAdSubmit} className="space-y-3">
+                <form onSubmit={handleAdSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
                       Nombre del Negocio
                     </label>
                     <input
                       type="text"
                       required
                       placeholder="Ej: Taquería Los Comadres"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50"
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 14,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-alt)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
                       Teléfono de Contacto
                     </label>
                     <input
                       type="tel"
                       required
                       placeholder="+505 8888-8888"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50"
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 14,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-alt)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
                       Categoría
                     </label>
-                    <select className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none">
+                    <select
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 14,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-alt)',
+                        color: 'var(--text)',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    >
                       <option value="restaurante">Restaurante / Comida</option>
                       <option value="supermercado">Mercado / Licorería</option>
                       <option value="farmacia">Farmacia / Salud</option>
@@ -391,17 +927,35 @@ export default function ClientInicio({
                     </select>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-end gap-2">
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8 }}>
                     <button
                       type="button"
                       onClick={() => setAdModalOpen(false)}
-                      className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold"
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: 14,
+                        background: 'var(--bg-alt)',
+                        color: 'var(--text)',
+                        border: '1px solid var(--border)',
+                        fontWeight: 600,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm"
+                      style={{
+                        padding: '10px 18px',
+                        borderRadius: 14,
+                        background: 'var(--primario)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
                     >
                       Enviar Solicitud
                     </button>
