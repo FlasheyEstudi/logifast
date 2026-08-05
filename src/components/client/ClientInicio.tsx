@@ -20,6 +20,9 @@ import {
   Compass,
   Flame,
   ShieldCheck,
+  MapPin,
+  X,
+  Wallet,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
@@ -33,11 +36,11 @@ interface ClientInicioProps {
 }
 
 export default function ClientInicio({
-  userName,
+  userName = 'Cliente',
   onNavigate,
   onOpenTracking,
 }: ClientInicioProps) {
-  const { orders, banners = [], addToast } = useStore();
+  const { orders, banners = [] } = useStore();
   const { tiendas = [], setExplorarCategoria, setTiendaSeleccionada } = useMarketplaceStore();
 
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
@@ -54,7 +57,9 @@ export default function ClientInicio({
   }, [banners.length]);
 
   const activeOrders = useMemo(() => {
-    return orders.filter((o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido');
+    return orders.filter(
+      (o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'
+    );
   }, [orders]);
 
   const featuredTiendas = useMemo(() => {
@@ -63,7 +68,7 @@ export default function ClientInicio({
 
   const handleAdSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setAdSuccessMsg('¡Solicitud enviada! Nuestro equipo se pondrá en contacto.');
+    setAdSuccessMsg('¡Solicitud enviada! Nuestro equipo comercial te contactará en breve.');
     setTimeout(() => {
       setAdSuccessMsg('');
       setAdModalOpen(false);
@@ -72,301 +77,331 @@ export default function ClientInicio({
 
   return (
     <div
-      className="w-full min-h-screen pb-32 space-y-7 px-2 sm:px-5 pt-3"
-      style={{ fontFamily: "var(--font-dm-sans), 'DM Sans', sans-serif" }}
+      className="w-full max-w-md mx-auto px-3.5 sm:px-4 py-3 space-y-4 pb-28 font-sans"
+      style={{ fontFamily: "var(--font-dm-sans), 'DM Sans', system-ui, sans-serif" }}
     >
-      {/* ── Active Order Tracker Widget (Generous Spacing & High Glass) ── */}
+      {/* ── TOP NATIVE HEADER ── */}
+      <div className="flex items-center justify-between pt-1">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-bold tracking-tight">
+            <MapPin size={13} className="text-blue-500" />
+            <span>Managua, Nicaragua</span>
+          </div>
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">
+            ¡Hola, {userName.split(' ')[0]}! 👋
+          </h1>
+        </div>
+
+        <button
+          onClick={() => onNavigate('puntos')}
+          className="px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+        >
+          <Gift size={15} className="text-amber-500" />
+          <span>Puntos LogiFast</span>
+        </button>
+      </div>
+
+      {/* ── SEARCH TRIGGER BAR ── */}
+      <div
+        onClick={() => onNavigate('explorar')}
+        className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 flex items-center gap-2.5 text-slate-400 dark:text-slate-500 text-xs sm:text-sm cursor-pointer shadow-sm hover:border-blue-400 transition-all"
+      >
+        <Search size={17} className="text-slate-400" />
+        <span className="flex-1 font-medium text-slate-500 dark:text-slate-400">
+          ¿Qué deseas pedir o enviar hoy?
+        </span>
+        <span className="px-2 py-0.5 rounded-lg bg-blue-600/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+          Buscar
+        </span>
+      </div>
+
+      {/* ── ACTIVE ORDER WIDGET ── */}
       <AnimatePresence>
         {activeOrders.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             onClick={() => onOpenTracking(activeOrders[0].id)}
-            className="w-full p-6 sm:p-7 rounded-[32px] cursor-pointer flex items-center justify-between transition-all duration-300 active:scale-[0.98] group"
-            style={{
-              background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.28) 0%, rgba(0, 86, 179, 0.38) 100%)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(0, 122, 255, 0.45)',
-              boxShadow: '0 24px 48px rgba(0, 122, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
-            }}
+            className="w-full p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-lg shadow-blue-500/20 cursor-pointer flex items-center justify-between active:scale-[0.98] transition-all"
           >
-            <div className="flex items-center gap-4.5">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 text-white flex items-center justify-center font-bold shadow-xl shadow-blue-500/40">
-                <Bike size={28} />
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white flex-shrink-0">
+                <Bike size={22} />
               </div>
-              <div>
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span
-                    className="text-xs font-extrabold text-blue-400 tracking-wider"
-                    style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
-                  >
-                    PEDIDO EN VIVO #{activeOrders[0].id}
-                  </span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-blue-100">
+                    Envío en curso • #{activeOrders[0].id.substring(0, 8)}
+                  </p>
                 </div>
-                <p
-                  className="text-lg font-extrabold text-white leading-tight mt-0.5"
-                  style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-                >
-                  En camino a {activeOrders[0].destino}
+                <h4 className="text-xs sm:text-sm font-bold text-white line-clamp-1">
+                  {activeOrders[0].destino}
+                </h4>
+                <p className="text-[11px] text-blue-100">
+                  {activeOrders[0].repartidor ? `Repartidor: ${activeOrders[0].repartidor}` : 'Buscando repartidor cercano...'}
                 </p>
               </div>
             </div>
-            <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
-              <ChevronRight size={24} />
+
+            <div className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+              <ChevronRight size={18} className="text-white" />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Luxury Hero Banners Carousel ── */}
-      <div className="w-full">
-        <div
-          className="w-full h-52 sm:h-64 rounded-[36px] overflow-hidden relative shadow-2xl transition-all"
-          style={{
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: '0 28px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
-          }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeBannerIdx}
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -40 }}
-              transition={{ duration: 0.45 }}
-              className="absolute inset-0 p-7 sm:p-8 flex flex-col justify-end"
-              style={{
-                backgroundImage: banners[activeBannerIdx]?.imagenUrl
-                  ? `linear-gradient(to top, rgba(15,23,42,0.95) 15%, rgba(15,23,42,0.35) 100%), url(${banners[activeBannerIdx].imagenUrl})`
-                  : 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            >
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <span
-                  className="px-3.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-[11px] font-extrabold uppercase tracking-widest shadow-md"
-                  style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
-                >
-                  PROMO LOGIFAST
-                </span>
-                <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
-                  <Flame size={15} fill="currentColor" /> Recomendado
-                </span>
-              </div>
-              <h2
-                className="text-2xl sm:text-3xl font-extrabold text-white leading-tight drop-shadow-md"
-                style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-              >
-                {banners[activeBannerIdx]?.titulo || 'Envíos Express & Delivery Pro'}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 font-sans line-clamp-1 mt-1">
-                {(banners[activeBannerIdx] as any)?.descripcion || 'Entrega prioritaria de mensajería, comida y compras en Managua.'}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Banner Indicators */}
-          <div className="absolute bottom-5 right-6 flex gap-2 z-10">
-            {banners.map((_, i) => (
+      {/* ── HERO BANNER CAROUSEL ── */}
+      <div className="w-full rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-800 shadow-md p-4 text-white relative overflow-hidden space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+            <Sparkles size={11} /> Promoción Especial
+          </span>
+          <div className="flex gap-1.5">
+            {banners.map((_, idx) => (
               <button
-                key={i}
-                onClick={() => setActiveBannerIdx(i)}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  i === activeBannerIdx ? 'w-8 bg-blue-500 shadow-md shadow-blue-500/50' : 'w-2.5 bg-white/40'
+                key={idx}
+                onClick={() => setActiveBannerIdx(idx)}
+                className={`h-1.5 rounded-full transition-all ${
+                  activeBannerIdx === idx ? 'w-5 bg-blue-500' : 'w-1.5 bg-slate-700'
                 }`}
               />
             ))}
           </div>
         </div>
+
+        <div className="space-y-1 pt-1">
+          <h2 className="text-base sm:text-lg font-bold text-white leading-snug">
+            {banners[activeBannerIdx]?.titulo || 'Envíos Express & Compras Rápidas'}
+          </h2>
+          <p className="text-xs text-slate-300 line-clamp-2">
+            {(banners[activeBannerIdx] as any)?.descripcion || 'Tu mensajería y delivery de confianza en toda Managua con cobertura total.'}
+          </p>
+        </div>
+
+        <div className="pt-2 flex items-center justify-between">
+          <button
+            onClick={() => onNavigate('solicitar')}
+            className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-sm flex items-center gap-1 active:scale-95 transition-all"
+          >
+            <span>Pedir Ahora</span>
+            <ChevronRight size={14} />
+          </button>
+          <span className="text-[11px] text-slate-400 font-semibold">LogiFast Nicaragua</span>
+        </div>
       </div>
 
-      {/* ── Quick Action Cards (Glassmorphism 2x2 with p-6 Generous Padding) ── */}
-      <div className="w-full grid grid-cols-2 gap-4">
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onNavigate('solicitar')}
-          className="p-6 rounded-[32px] text-left flex flex-col justify-between h-40 relative overflow-hidden group transition-all duration-300 cursor-pointer"
-          style={{
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%)',
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
-            border: '1px solid rgba(0, 122, 255, 0.4)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.18)',
-          }}
-        >
-          <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-xl shadow-blue-500/40" style={{ width: 52, height: 52 }}>
-            <Bike size={28} />
-          </div>
-          <div>
-            <h3
-              className="text-base font-extrabold text-white group-hover:text-blue-400 transition-colors"
-              style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-            >
-              Solicitar Envío
-            </h3>
-            <p className="text-xs text-slate-400 font-sans mt-0.5">Mensajería en moto</p>
-          </div>
-        </motion.button>
-
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onNavigate('explorar')}
-          className="p-6 rounded-[32px] text-left flex flex-col justify-between h-40 relative overflow-hidden group transition-all duration-300 cursor-pointer"
-          style={{
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%)',
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
-            border: '1px solid rgba(52, 199, 89, 0.4)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.18)',
-          }}
-        >
-          <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-xl shadow-emerald-500/40" style={{ width: 52, height: 52 }}>
-            <Store size={28} />
-          </div>
-          <div>
-            <h3
-              className="text-base font-extrabold text-white group-hover:text-emerald-400 transition-colors"
-              style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-            >
-              Comprar Tiendas
-            </h3>
-            <p className="text-xs text-slate-400 font-sans mt-0.5">Comida y productos</p>
-          </div>
-        </motion.button>
-      </div>
-
-      {/* ── Sponsored Ads Header ── */}
-      <div className="w-full flex items-center justify-between pt-3">
-        <h3
-          className="text-base font-extrabold text-white flex items-center gap-2"
-          style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-        >
-          <Megaphone size={20} className="text-amber-400" />
-          Negocios Patrocinados
+      {/* ── QUICK ACTIONS GRID (4 COLUMNS) ── */}
+      <div className="space-y-2">
+        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-0.5">
+          Servicios Rápidos
         </h3>
+
+        <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
+          <button
+            onClick={() => onNavigate('solicitar')}
+            className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 flex flex-col items-center justify-center text-center space-y-1.5 active:scale-95 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <Bike size={20} />
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+              Solicitar Envío
+            </span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('explorar')}
+            className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 flex flex-col items-center justify-center text-center space-y-1.5 active:scale-95 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              <Store size={20} />
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+              Tiendas
+            </span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('envios')}
+            className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 flex flex-col items-center justify-center text-center space-y-1.5 active:scale-95 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <Package size={20} />
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+              Mis Envíos
+            </span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('puntos')}
+            className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 flex flex-col items-center justify-center text-center space-y-1.5 active:scale-95 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
+              <Wallet size={20} />
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+              Billetera
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── FEATURED STORES SECTION ── */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between px-0.5">
+          <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            Tiendas Destacadas
+          </h3>
+          <button
+            onClick={() => onNavigate('explorar')}
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+          >
+            Ver todas <ChevronRight size={14} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {featuredTiendas.map((tienda) => (
+            <div
+              key={tienda.id}
+              onClick={() => setTiendaSeleccionada(tienda.id)}
+              className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer flex items-center gap-3 group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-base flex items-center justify-center shadow-md flex-shrink-0">
+                {tienda.nombre.substring(0, 2).toUpperCase()}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">
+                  {tienda.nombre}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate capitalize">
+                  {tienda.categoria} • C$ {tienda.costoEnvio} envío
+                </p>
+                <div className="flex items-center gap-2 text-[10px] text-slate-400 pt-0.5 font-medium">
+                  <span className="text-amber-500 font-bold flex items-center gap-0.5">
+                    <Star size={11} className="fill-amber-400 text-amber-400" />
+                    {(tienda.calificacion || 4.8).toFixed(1)}
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-0.5">
+                    <Clock size={11} /> {(tienda as any).tiempoEntrega || tienda.tiempoEstimado || '20-30 min'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── SPONSOR / BUSINESS AD BANNER ── */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white shadow-md flex items-center justify-between">
+        <div className="space-y-1">
+          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-wider">
+            Para Negocios
+          </span>
+          <h4 className="text-xs sm:text-sm font-bold text-white">
+            ¿Tienes una tienda o restaurante?
+          </h4>
+          <p className="text-[11px] text-slate-300">
+            Regístrate en LogiFast y vende a miles de clientes.
+          </p>
+        </div>
+
         <button
           onClick={() => setAdModalOpen(true)}
-          className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors font-sans"
+          className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm flex items-center gap-1 active:scale-95 transition-all flex-shrink-0"
         >
-          Anunciar negocio <Plus size={14} />
+          <Megaphone size={14} /> Anunciarme
         </button>
       </div>
 
-      {/* ── Featured Stores Glass Carousel (p-5 generous padding) ── */}
-      <div className="w-full overflow-x-auto no-scrollbar flex gap-4 pb-2">
-        {featuredTiendas.map((tienda) => (
-          <motion.div
-            key={tienda.id}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => {
-              setTiendaSeleccionada(tienda.id);
-              onNavigate('explorar');
-            }}
-            className="flex-shrink-0 w-52 rounded-[32px] p-5 space-y-3.5 cursor-pointer group transition-all duration-300"
-            style={{
-              background: 'rgba(30, 41, 59, 0.88)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              border: '1px solid rgba(255, 255, 255, 0.16)',
-              boxShadow: '0 20px 44px rgba(0,0,0,0.4)',
-            }}
-          >
-            <div
-              className="w-full h-32 rounded-2xl flex items-center justify-center font-extrabold text-3xl text-white relative shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform"
-              style={{
-                background: tienda.logoColor || 'linear-gradient(135deg, #007AFF, #0056B3)',
-                fontFamily: "var(--font-syne), 'Syne', sans-serif",
-              }}
-            >
-              {tienda.logoIniciales || 'LG'}
-              {tienda.verificado && (
-                <div className="absolute top-2.5 right-2.5 bg-blue-500 text-white rounded-full p-1 shadow-md">
-                  <CheckCircle size={14} />
-                </div>
-              )}
-            </div>
-
-            <div>
-              <h4
-                className="text-sm font-extrabold text-white truncate group-hover:text-blue-400 transition-colors"
-                style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-              >
-                {tienda.nombre}
-              </h4>
-              <div className="flex items-center gap-2 text-xs text-slate-400 mt-1 font-sans">
-                <span
-                  className="flex items-center gap-1 text-amber-400 font-bold"
-                  style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
-                >
-                  <Star size={13} fill="currentColor" /> {tienda.calificacion}
-                </span>
-                <span>•</span>
-                <span>{(tienda as any).tiempoEntrega || tienda.tiempoEstimado || '20-30 min'}</span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* ── Sponsor Modal Glassmorphism ── */}
+      {/* ── MODAL ANUNCIAR NEGOCIO ── */}
       <AnimatePresence>
         {adModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4"
           >
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="w-full max-w-md bg-slate-900/95 border border-white/20 rounded-[32px] p-7 space-y-4 text-slate-100 shadow-2xl"
-              style={{ backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)' }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-xl space-y-4"
             >
-              <h3
-                className="text-lg font-extrabold flex items-center gap-2 text-amber-400"
-                style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
-              >
-                <Megaphone size={22} /> Anunciar mi Negocio en Logifast
-              </h3>
-              <p className="text-xs text-slate-400 font-sans">
-                Aparece en las primeras posiciones y atrae a miles de clientes activos por solo <strong style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}>C$ 350/mes</strong>.
-              </p>
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Anuncia tu Negocio en LogiFast
+                </h3>
+                <button
+                  onClick={() => setAdModalOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
               {adSuccessMsg ? (
-                <div className="p-4 rounded-2xl bg-emerald-500/20 text-emerald-400 font-bold text-sm text-center border border-emerald-500/30 font-sans">
-                  {adSuccessMsg}
+                <div className="py-6 text-center space-y-2">
+                  <CheckCircle size={36} className="mx-auto text-emerald-500" />
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {adSuccessMsg}
+                  </p>
                 </div>
               ) : (
-                <form onSubmit={handleAdSubmit} className="space-y-3.5 font-sans">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Nombre de tu negocio o restaurante"
-                    className="w-full p-4 rounded-2xl bg-slate-800/80 border border-white/15 text-xs text-slate-100 outline-none focus:border-blue-500 transition-all font-sans"
-                  />
-                  <input
-                    type="tel"
-                    required
-                    placeholder="Teléfono WhatsApp de contacto"
-                    className="w-full p-4 rounded-2xl bg-slate-800/80 border border-white/15 text-xs text-slate-100 outline-none focus:border-blue-500 transition-all font-sans"
-                  />
-                  <div className="flex gap-3 pt-2">
+                <form onSubmit={handleAdSubmit} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Nombre del Negocio
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: Taquería Los Comadres"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Teléfono de Contacto
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+505 8888-8888"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Categoría
+                    </label>
+                    <select className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none">
+                      <option value="restaurante">Restaurante / Comida</option>
+                      <option value="supermercado">Mercado / Licorería</option>
+                      <option value="farmacia">Farmacia / Salud</option>
+                      <option value="tienda">Tienda / Comercio</option>
+                    </select>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setAdModalOpen(false)}
-                      className="flex-1 py-4 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition-all"
+                      className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-4 rounded-2xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30"
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm"
                     >
                       Enviar Solicitud
                     </button>
