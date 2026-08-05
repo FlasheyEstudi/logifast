@@ -1090,7 +1090,7 @@ export default function ModuleIncidencias() {
       </div>
 
       {/* ═══ RESPONSIVE STYLES ═══ */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 768px) {
           .lf-inc-metrics-grid {
             grid-template-columns: repeat(2, 1fr) !important;
@@ -1101,7 +1101,7 @@ export default function ModuleIncidencias() {
             grid-template-columns: 1fr !important;
           }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

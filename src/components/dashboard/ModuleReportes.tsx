@@ -818,7 +818,7 @@ export default function ModuleReportes() {
       </div>
 
       {/* ─── Responsive Styles ─── */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes slideInRight {
           from { transform: translateX(100%); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
@@ -845,7 +845,7 @@ export default function ModuleReportes() {
             grid-column: 1 / -1 !important;
           }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

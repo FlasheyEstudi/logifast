@@ -749,13 +749,13 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
         )}
       </AnimatePresence>
 
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 768px) {
           .lf-kpi-strip { right: 12px !important; flex-wrap: wrap; }
           .lf-overview-panel-desktop { display: none !important; }
           .lf-mobile-fab-btn { display: flex !important; }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

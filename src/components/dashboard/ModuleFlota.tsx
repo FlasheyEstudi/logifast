@@ -314,11 +314,11 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
         ))}
       </div>
 
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 768px) {
           .lf-flota-map-desktop { display: none !important; }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

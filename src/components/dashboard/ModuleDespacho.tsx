@@ -1020,7 +1020,7 @@ export default function ModuleDespacho() {
       </div>
 
       {/* ─── Responsive styles ─── */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 768px) {
           .lf-dispatch-columns {
             flex-direction: column !important;
@@ -1030,7 +1030,7 @@ export default function ModuleDespacho() {
             max-height: 50vh;
           }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

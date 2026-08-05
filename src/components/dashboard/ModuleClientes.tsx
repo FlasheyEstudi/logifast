@@ -893,7 +893,7 @@ export default function ModuleClientes() {
       </AnimatePresence>
 
       {/* ═══ RESPONSIVE STYLES ═══ */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .lf-clientes-grid {
           grid-template-columns: repeat(3, 1fr) !important;
         }
@@ -914,7 +914,7 @@ export default function ModuleClientes() {
             font-size: 11px !important;
           }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

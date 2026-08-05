@@ -507,12 +507,12 @@ export default function ModulePedidos() {
       </div>
 
       {/* Responsive */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 768px) {
           .lf-pedidos-table { display: none !important; }
           .lf-pedidos-cards { display: flex !important; }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

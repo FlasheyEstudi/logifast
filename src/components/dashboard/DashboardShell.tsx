@@ -954,7 +954,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       </AnimatePresence>
 
       {/* Responsive styles */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 1024px) {
           .lf-nav-label { display: none; }
         }
@@ -964,7 +964,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           .lf-fab-container { bottom: 80px !important; }
           .lf-skeleton-side-panel { display: none !important; }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

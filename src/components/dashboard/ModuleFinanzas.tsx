@@ -1090,7 +1090,7 @@ export default function ModuleFinanzas() {
       </div>
 
       {/* ─── Responsive styles ─── */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 1024px) {
           .lf-finanzas-kpis {
             grid-template-columns: repeat(2, 1fr) !important;
@@ -1104,7 +1104,7 @@ export default function ModuleFinanzas() {
             grid-template-columns: 1fr !important;
           }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }
