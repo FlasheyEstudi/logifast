@@ -10,9 +10,13 @@ import {
   MoreHorizontal,
   AlertTriangle,
   Send,
-  CheckCircle,
 } from '@/components/icons';
 import { useRepartidorStore, type TipoIncidencia } from '@/lib/repartidor-store';
+import { useRepartidorSnackbar } from './RepartidorShell';
+
+/* ═══════════════════════════════════════════════
+   TIPO CONFIG
+   ═══════════════════════════════════════════════ */
 
 interface TipoOpcion {
   key: TipoIncidencia;
@@ -25,156 +29,347 @@ interface TipoOpcion {
 const TIPO_OPCIONES: TipoOpcion[] = [
   {
     key: 'mecanica',
-    label: 'Falla Mecánica',
-    desc: 'Pinchazo o avería de la moto',
-    icon: <Wrench size={18} />,
-    color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/60',
+    label: 'Falla mecánica',
+    desc: 'Problema con la moto',
+    icon: <Wrench size={20} />,
+    color: 'var(--warning, var(--warning))',
   },
   {
     key: 'cliente',
-    label: 'Problema con Cliente',
-    desc: 'No responde o dirección errónea',
-    icon: <UserX size={18} />,
-    color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/60',
+    label: 'Cliente',
+    desc: 'Problema con el cliente',
+    icon: <UserX size={20} />,
+    color: 'var(--info, #2979FF)',
   },
   {
     key: 'accidente',
-    label: 'Accidente o Emergencia',
-    desc: 'Colisión o percance en ruta',
-    icon: <AlertOctagon size={18} />,
-    color: 'text-rose-500 bg-rose-50 dark:bg-rose-950/60',
+    label: 'Accidente',
+    desc: 'Colisión o caída',
+    icon: <AlertOctagon size={20} />,
+    color: 'var(--peligro, var(--peligro))',
   },
   {
     key: 'otro',
-    label: 'Otro Inconveniente',
-    desc: 'Situación no listada',
-    icon: <MoreHorizontal size={18} />,
-    color: 'text-slate-500 bg-slate-100 dark:bg-slate-800',
+    label: 'Otro',
+    desc: 'Otra situación',
+    icon: <MoreHorizontal size={20} />,
+    color: 'var(--text-muted)',
   },
 ];
 
+/* ═══════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════ */
+
 export default function RepartidorIncidencia() {
-  const { reportarIncidencia, toggleIncidencia } = useRepartidorStore();
-
-  const [tipo, setTipo] = useState<TipoIncidencia>('mecanica');
+  const { ordenActiva, toggleIncidencia, reportarIncidencia } = useRepartidorStore();
+  const showSnackbar = useRepartidorSnackbar();
+  const [tipo, setTipo] = useState<TipoIncidencia | null>(null);
   const [descripcion, setDescripcion] = useState('');
-  const [enviado, setEnviado] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!descripcion.trim()) return;
-
-    reportarIncidencia(tipo, descripcion);
-
-    setEnviado(true);
-    setTimeout(() => {
-      toggleIncidencia();
-    }, 1500);
+  const handleSubmit = () => {
+    if (!tipo) {
+      showSnackbar({ message: 'Selecciona el tipo de incidencia.' });
+      return;
+    }
+    if (!descripcion.trim()) {
+      showSnackbar({ message: 'Agrega una descripción de la incidencia.' });
+      return;
+    }
+    reportarIncidencia(tipo, descripcion.trim());
+    showSnackbar({
+      message: 'Incidencia reportada. El administrador ha sido notificado.',
+    });
+    setTipo(null);
+    setDescripcion('');
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 font-sans"
-    >
+    <>
+      {/* Backdrop */}
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-2xl space-y-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={() => toggleIncidencia(false)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9990,
+          background: 'rgba(0,0,0,0.4)',
+        }}
+      />
+
+      {/* Sheet */}
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
+        className="lf-bottom-sheet open bottom-sheet open"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          margin: '0 auto',
+          width: '100%',
+          maxWidth: 480,
+          maxHeight: '90vh',
+          zIndex: 9991,
+          background: 'rgba(15, 23, 42, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '28px 28px 0 0',
+          boxShadow: '0 -12px 48px rgba(0,0,0,0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          display: 'flex',
+          flexDirection: 'column',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          color: '#F8FAFC',
+        }}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={18} className="text-rose-500" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              Reportar Incidencia
-            </h3>
+        {/* Drag handle */}
+        <div
+          style={{
+            paddingTop: 8,
+            paddingBottom: 4,
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            className="lf-sheet-handle bottom-sheet-handle"
+            style={{
+              width: 40,
+              height: 4,
+              borderRadius: 2,
+              background: 'rgba(255, 255, 255, 0.2)',
+            }}
+          />
+        </div>
+
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '8px 16px 12px',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              background: 'rgba(255, 59, 48, 0.15)',
+              color: '#FF3B30',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <AlertTriangle size={18} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div
+              className="font-syne"
+              style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC' }}
+            >
+              Reportar incidencia
+            </div>
+            {ordenActiva && (
+              <div style={{ fontSize: 11, color: '#94A3B8' }}>
+                Orden {ordenActiva.id}
+              </div>
+            )}
           </div>
           <button
-            onClick={() => toggleIncidencia()}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            onClick={() => toggleIncidencia(false)}
+            aria-label="Cerrar"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              border: 'none',
+              background: 'rgba(255, 255, 255, 0.08)',
+              color: '#94A3B8',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             <X size={18} />
           </button>
         </div>
 
-        {enviado ? (
-          <div className="py-6 text-center space-y-2">
-            <CheckCircle size={40} className="mx-auto text-emerald-500" />
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-              Incidencia Reportada
-            </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              El equipo de soporte y central de LogiFast responderá de inmediato.
-            </p>
+        {/* Content */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              color: '#94A3B8',
+              marginBottom: 10,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em',
+            }}
+          >
+            Tipo de problema
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase text-[10px]">
-                Selecciona la Categoría
-              </label>
 
-              <div className="grid grid-cols-2 gap-2">
-                {TIPO_OPCIONES.map((op) => {
-                  const isSelected = tipo === op.key;
-                  return (
-                    <button
-                      key={op.key}
-                      type="button"
-                      onClick={() => setTipo(op.key)}
-                      className={`p-2.5 rounded-2xl border text-left flex flex-col gap-1 transition-all ${
-                        isSelected
-                          ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 shadow-sm'
-                          : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
-                      }`}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 8,
+              marginBottom: 16,
+            }}
+          >
+            {TIPO_OPCIONES.map((op) => {
+              const isActive = tipo === op.key;
+              return (
+                <motion.button
+                  key={op.key}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setTipo(op.key)}
+                  className="lf-card"
+                  style={{
+                    padding: 14,
+                    borderRadius: 14,
+                    background: isActive
+                      ? 'rgba(0, 122, 255, 0.15)'
+                      : 'rgba(30, 41, 59, 0.8)',
+                    border: `1.5px solid ${isActive ? '#007AFF' : 'rgba(255, 255, 255, 0.1)'}`,
+                    boxShadow: isActive ? '0 4px 16px rgba(0,122,255,0.3)' : 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                    textAlign: 'left',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: isActive
+                        ? '#007AFF'
+                        : `color-mix(in srgb, ${op.color} 14%, transparent)`,
+                      color: isActive ? '#fff' : op.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {op.icon}
+                  </div>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: '#F8FAFC',
+                      }}
                     >
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${op.color}`}>
-                        {op.icon}
-                      </div>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">
-                        {op.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                      {op.label}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#94A3B8' }}>{op.desc}</div>
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">
-                Detalle del Problema
-              </label>
-              <textarea
-                required
-                rows={3}
-                placeholder="Explica brevemente lo sucedido..."
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50"
-              />
-            </div>
+          {/* Description */}
+          <div
+            style={{
+              fontSize: 12,
+              color: '#94A3B8',
+              marginBottom: 8,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em',
+            }}
+          >
+            Descripción
+          </div>
+          <textarea
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            placeholder="Describe qué ocurrió…"
+            rows={4}
+            className="lf-textarea"
+            style={{
+              width: '100%',
+              padding: 14,
+              borderRadius: 14,
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: 'rgba(30, 41, 59, 0.8)',
+              color: '#F8FAFC',
+              fontSize: 15,
+              fontFamily: "'DM Sans', sans-serif",
+              resize: 'vertical',
+              outline: 'none',
+              minHeight: 110,
+              transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+            }}
+          />
+        </div>
 
-            <div className="flex gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => toggleIncidencia()}
-                className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5"
-              >
-                <Send size={14} /> Reportar
-              </button>
-            </div>
-          </form>
-        )}
+        {/* Submit */}
+        <div
+          style={{
+            padding: 12,
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            background: 'rgba(15, 23, 42, 0.95)',
+          }}
+        >
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={handleSubmit}
+            disabled={!tipo || !descripcion.trim()}
+            className="lf-btn lf-btn-danger lf-btn-block lf-btn-lg"
+            style={{
+              width: '100%',
+              minHeight: 52,
+              borderRadius: 16,
+              border: 'none',
+              background:
+                tipo && descripcion.trim()
+                  ? '#FF3B30'
+                  : 'rgba(255, 255, 255, 0.15)',
+              color: '#fff',
+              fontSize: 15,
+              fontWeight: 700,
+              fontFamily: "'DM Sans', sans-serif",
+              cursor: tipo && descripcion.trim() ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            <Send size={18} />
+            Enviar reporte
+          </motion.button>
+        </div>
       </motion.div>
-    </motion.div>
+    </>
   );
 }

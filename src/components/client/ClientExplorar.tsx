@@ -1,17 +1,25 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
+  SlidersHorizontal,
   Star,
+  CheckCircle,
   Clock,
+  Bike,
   Store,
   Tag,
+  Utensils,
+  Pill,
+  ShoppingBag,
+  Sparkles,
   Heart,
   X,
+  Plus,
 } from '@/components/icons';
-import { useMarketplaceStore, CATEGORIAS } from '@/lib/marketplace-store';
+import { useMarketplaceStore, CATEGORIAS, type TiendaCategoria } from '@/lib/marketplace-store';
 
 interface ClientExplorarProps {
   isDark?: boolean;
@@ -24,6 +32,7 @@ interface ClientExplorarProps {
 export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
   const {
     tiendas = [],
+    productos = [],
     explorarCategoria,
     setExplorarCategoria,
     explorarSearch,
@@ -40,8 +49,8 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
     return tiendas.filter((t) => {
       if (t.estado !== 'activo') return false;
       if (explorarCategoria !== 'todos' && t.categoria !== explorarCategoria) return false;
-      if (activeFilter === 'promo' && (!t.badges || !t.badges.includes('Promo'))) return false;
-      if (activeFilter === 'favoritos' && !favoritosTiendas.some((f) => f.tiendaId === t.id)) return false;
+      if (activeFilter === 'promo' && !t.badges.includes('Promo')) return false;
+      if (activeFilter === 'favoritos' && !favoritosTiendas.some((f: any) => (f.tiendaId || f) === t.id)) return false;
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
@@ -53,226 +62,194 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
   }, [tiendas, explorarCategoria, activeFilter, favoritosTiendas, searchQuery]);
 
   return (
-    <div className="w-full max-w-md mx-auto px-3.5 sm:px-4 py-3 space-y-3.5 pb-28 font-sans">
-      {/* ── TOP HEADER & SEARCH ── */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between pt-1">
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
-              Explorar Tiendas
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Descubre restaurantes, mercados y productos locales
-            </p>
-          </div>
-        </div>
-
-        {/* Search Bar Native */}
-        <div className="w-full flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-            <input
-              type="text"
-              placeholder="Buscar por nombre, comida o categoría..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setExplorarSearch(e.target.value);
+    <div
+      className="w-full min-h-screen pb-32 space-y-6 px-2 sm:px-5 pt-3"
+      style={{ fontFamily: "var(--font-dm-sans), 'DM Sans', sans-serif" }}
+    >
+      {/* ── Search Bar & Filter (Luxury Spacing) ── */}
+      <div className="w-full flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-4.5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="Buscar tiendas, restaurantes o supermercados..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setExplorarSearch(e.target.value);
+            }}
+            className="w-full pl-12 pr-4 py-4.5 rounded-[28px] text-sm text-white placeholder-slate-400 outline-none transition-all font-sans"
+            style={{
+              background: 'rgba(30, 41, 59, 0.88)',
+              backdropFilter: 'blur(28px)',
+              WebkitBackdropFilter: 'blur(28px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              boxShadow: '0 16px 36px rgba(0,0,0,0.35)',
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setExplorarSearch('');
               }}
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setExplorarSearch('');
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
+              className="absolute right-4.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── CATEGORY PILLS HORIZONTAL SCROLL ── */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-3.5 px-3.5 sm:-mx-4 sm:px-4">
+      {/* ── Category Pill Bar ── */}
+      <div className="w-full overflow-x-auto no-scrollbar flex gap-3 pb-1">
         <button
           onClick={() => setExplorarCategoria('todos')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-sm flex-shrink-0 ${
+          className={`px-5 py-3.5 rounded-[22px] text-xs font-extrabold transition-all flex items-center gap-2 flex-shrink-0 border ${
             explorarCategoria === 'todos'
-              ? 'bg-blue-600 text-white ring-2 ring-blue-500/30'
-              : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+              ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/40'
+              : 'bg-slate-800/80 border-white/14 text-slate-400 hover:text-slate-200'
           }`}
+          style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
         >
-          <span>Todos</span>
-        </button>
-        {CATEGORIAS.map((cat) => {
-          const isSelected = explorarCategoria === cat.key;
-          return (
-            <button
-              key={cat.key}
-              onClick={() => setExplorarCategoria(cat.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-sm flex-shrink-0 ${
-                isSelected
-                  ? 'bg-blue-600 text-white ring-2 ring-blue-500/30'
-                  : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-              }`}
-            >
-              <span>{cat.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── QUICK FILTER CHIPS ── */}
-      <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-        <button
-          onClick={() => setActiveFilter('todos')}
-          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-            activeFilter === 'todos'
-              ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-          }`}
-        >
-          Todos ({filteredTiendas.length})
+          <Sparkles size={16} />
+          Todos
         </button>
 
-        <button
-          onClick={() => setActiveFilter(activeFilter === 'promo' ? 'todos' : 'promo')}
-          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
-            activeFilter === 'promo'
-              ? 'bg-amber-500 text-white'
-              : 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40'
-          }`}
-        >
-          <Tag size={12} /> Promociones
-        </button>
-
-        <button
-          onClick={() => setActiveFilter(activeFilter === 'favoritos' ? 'todos' : 'favoritos')}
-          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
-            activeFilter === 'favoritos'
-              ? 'bg-rose-500 text-white'
-              : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/40'
-          }`}
-        >
-          <Heart size={12} fill={activeFilter === 'favoritos' ? 'currentColor' : 'none'} /> Favoritos
-        </button>
-      </div>
-
-      {/* ── STORE LIST (NATIVE CARDS) ── */}
-      {filteredTiendas.length === 0 ? (
-        <div className="py-12 text-center space-y-3">
-          <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-            <Store size={28} />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              No se encontraron resultados
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-              Intenta cambiar la categoría o limpiar los filtros de búsqueda.
-            </p>
-          </div>
+        {CATEGORIAS.map((cat) => (
           <button
-            onClick={() => {
-              setSearchQuery('');
-              setExplorarSearch('');
-              setExplorarCategoria('todos');
-              setActiveFilter('todos');
-            }}
-            className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold text-xs shadow-sm hover:bg-blue-700 transition-colors"
+            key={cat.key}
+            onClick={() => setExplorarCategoria(cat.key)}
+            className={`px-5 py-3.5 rounded-[22px] text-xs font-extrabold transition-all flex items-center gap-2 flex-shrink-0 border ${
+              explorarCategoria === cat.key
+                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/40'
+                : 'bg-slate-800/80 border-white/14 text-slate-400 hover:text-slate-200'
+            }`}
+            style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
           >
-            Ver todas las tiendas
+            {cat.label}
           </button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredTiendas.map((tienda) => {
-            const isFav = favoritosTiendas.some((f) => f.tiendaId === tienda.id);
+        ))}
+      </div>
+
+      {/* ── Filter Pills ── */}
+      <div className="flex gap-2.5">
+        {[
+          { key: 'todos', label: 'Todas las tiendas' },
+          { key: 'promo', label: 'En Promoción' },
+          { key: 'favoritos', label: 'Mis Favoritos' },
+        ].map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setActiveFilter(f.key as any)}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+              activeFilter === f.key
+                ? 'bg-blue-500/20 border-blue-400 text-blue-400'
+                : 'bg-slate-800/60 border-white/10 text-slate-400'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── High-End Stores Cards Grid (Generous p-6 Spacing) ── */}
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {filteredTiendas.length === 0 ? (
+          <div className="col-span-full py-16 text-center text-slate-400 text-xs font-sans">
+            No se encontraron tiendas disponibles con el filtro seleccionado.
+          </div>
+        ) : (
+          filteredTiendas.map((tienda) => {
+            const isFav = favoritosTiendas.some((f: any) => (f.tiendaId || f) === tienda.id);
             return (
               <motion.div
                 key={tienda.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer group"
+                whileTap={{ scale: 0.97 }}
                 onClick={() => {
                   setTiendaSeleccionada(tienda.id);
                 }}
+                className="w-full rounded-[34px] p-5 sm:p-6 space-y-4 cursor-pointer transition-all duration-300 relative overflow-hidden group"
+                style={{
+                  background: 'rgba(30, 41, 59, 0.88)',
+                  backdropFilter: 'blur(28px)',
+                  WebkitBackdropFilter: 'blur(28px)',
+                  border: '1px solid rgba(255, 255, 255, 0.16)',
+                  boxShadow: '0 20px 44px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
+                }}
               >
-                {/* Banner Image or Header Strip */}
-                <div className="h-24 bg-gradient-to-r from-slate-800 to-slate-900 relative flex items-end p-3 justify-between">
-                  <div className="absolute inset-0 bg-black/20" />
-                  <div className="relative z-10 flex items-center gap-2.5">
-                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-md flex items-center justify-center font-bold text-blue-600 dark:text-blue-400 text-base border border-slate-200/60 dark:border-slate-700">
-                      {tienda.nombre.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white drop-shadow-sm">
-                        {tienda.nombre}
-                      </h3>
-                      <p className="text-[11px] text-slate-200 drop-shadow-sm capitalize">
-                        {tienda.categoria}
-                      </p>
-                    </div>
-                  </div>
+                {/* Store Banner */}
+                <div
+                  className="w-full h-40 rounded-2xl flex items-center justify-center font-extrabold text-3xl text-white relative shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform"
+                  style={{
+                    background: tienda.logoColor || 'linear-gradient(135deg, #007AFF, #0056B3)',
+                    fontFamily: "var(--font-syne), 'Syne', sans-serif",
+                  }}
+                >
+                  {tienda.logoIniciales || 'LG'}
 
+                  {/* Favorite Button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleFavoritoTienda(tienda.id);
                     }}
-                    className="relative z-10 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/30 transition-colors"
-                    aria-label="Favorito"
+                    className="absolute top-3.5 right-3.5 p-2.5 rounded-full bg-slate-900/70 text-white backdrop-blur-md border border-white/20 shadow-md active:scale-90 transition-transform"
                   >
-                    <Heart size={16} fill={isFav ? '#FF3B30' : 'none'} color={isFav ? '#FF3B30' : '#FFFFFF'} />
+                    <Heart size={18} fill={isFav ? '#FF3B30' : 'none'} color={isFav ? '#FF3B30' : '#FFFFFF'} />
                   </button>
-                </div>
-
-                {/* Card Content */}
-                <div className="p-3 space-y-2">
-                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
-                    {tienda.descripcion}
-                  </p>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2">
-                    <div className="flex items-center gap-2 font-medium">
-                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
-                        <Star size={12} className="fill-amber-400 text-amber-400" />
-                        {(tienda.calificacion || 4.8).toFixed(1)}
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} /> {tienda.tiempoEstimado || '20-30 min'}
-                      </span>
-                    </div>
-
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      C$ {tienda.costoEnvio} envío
-                    </span>
-                  </div>
 
                   {/* Badges */}
-                  {tienda.badges && tienda.badges.length > 0 && (
-                    <div className="flex items-center gap-1.5 pt-1">
-                      {tienda.badges.map((b, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold"
-                        >
-                          {b}
-                        </span>
-                      ))}
+                  <div className="absolute bottom-3.5 left-3.5 flex gap-2">
+                    {tienda.badges.map((b) => (
+                      <span
+                        key={b}
+                        className="px-3 py-1 rounded-xl bg-emerald-500/90 text-white font-extrabold text-[10px] uppercase shadow-md"
+                        style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
+                      >
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3
+                      className="text-lg font-extrabold text-white flex items-center gap-1.5 group-hover:text-blue-400 transition-colors"
+                      style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                    >
+                      {tienda.nombre}
+                      {tienda.verificado && <CheckCircle size={17} className="text-blue-400 fill-blue-400/20" />}
+                    </h3>
+                    <div
+                      className="flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-400/10 px-3 py-1 rounded-xl border border-amber-400/25"
+                      style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
+                    >
+                      <Star size={13} fill="currentColor" /> {tienda.calificacion}
                     </div>
-                  )}
+                  </div>
+
+                  <p className="text-xs text-slate-400 font-sans line-clamp-1">{tienda.descripcion}</p>
+
+                  <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-white/10 font-sans">
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={15} /> {(tienda as any).tiempoEntrega || tienda.tiempoEstimado || '20 min'}
+                    </span>
+                    <span
+                      className="flex items-center gap-1 text-emerald-400 font-bold"
+                      style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
+                    >
+                      <Bike size={15} /> Envío C$ {tienda.costoEnvio}
+                    </span>
+                  </div>
                 </div>
               </motion.div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
     </div>
   );
 }

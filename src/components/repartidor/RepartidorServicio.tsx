@@ -18,12 +18,11 @@ import {
   Bike,
   Flame,
   CheckCircle,
-  X,
-  ChevronUp,
 } from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 const RepartidorMap = dynamic(() => import('./RepartidorMap'), {
   ssr: false,
@@ -34,15 +33,15 @@ const RepartidorMap = dynamic(() => import('./RepartidorMap'), {
   ),
 });
 
-const ESTADO_LABEL: Record<string, string> = {
-  DESCONECTADO: 'Desconectado',
-  EN_LINEA: 'Esperando pedidos...',
-  ORDEN_ASIGNADA: 'Nueva orden asignada',
-  EN_CAMINO_RECOGER: 'Camino a punto de recogida',
-  EN_PUNTO_RECOGIDA: 'En el establecimiento',
-  RECOGIDO: 'Camino al cliente',
-  EN_PUNTO_ENTREGA: 'En lugar de entrega',
-  INCIDENCIA: 'Incidencia activa',
+const ESTADO_COLOR: Record<string, string> = {
+  DESCONECTADO: '#FF3B30',
+  EN_LINEA: '#007AFF',
+  ORDEN_ASIGNADA: '#FF9500',
+  EN_CAMINO_RECOGER: '#007AFF',
+  EN_PUNTO_RECOGIDA: '#FF9500',
+  RECOGIDO: '#AF52DE',
+  EN_PUNTO_ENTREGA: '#34C759',
+  INCIDENCIA: '#FF3B30',
 };
 
 export default function RepartidorServicio() {
@@ -50,11 +49,14 @@ export default function RepartidorServicio() {
     estado,
     conectado,
     ordenActiva,
+    ordenesActivas = [],
     lat,
     lng,
     eta,
+    perfil,
     conectar,
     desconectar,
+    optimizarRutaAutomatica,
     llegarRecogida,
     recogerPaquete,
     llegarEntrega,
@@ -101,149 +103,383 @@ export default function RepartidorServicio() {
     };
   }, [ordenActiva, estado, lat, lng]);
 
-  const handleActionClick = () => {
-    if (estado === 'EN_CAMINO_RECOGER') {
-      llegarRecogida();
-      if (showSnackbar) showSnackbar({ message: 'Has llegado a la ubicación de recogida' });
-    } else if (estado === 'EN_PUNTO_RECOGIDA') {
-      recogerPaquete();
-      if (showSnackbar) showSnackbar({ message: 'Paquete confirmado. En camino a la entrega.' });
-    } else if (estado === 'RECOGIDO') {
-      llegarEntrega();
-      if (showSnackbar) showSnackbar({ message: 'Has llegado a la dirección de entrega' });
-    } else if (estado === 'EN_PUNTO_ENTREGA') {
+  const origenPos: [number, number] | undefined = ordenActiva
+    ? [ordenActiva.origenLat || 12.1264, ordenActiva.origenLng || -86.2652]
+    : undefined;
+
+  const destinoPos: [number, number] | undefined = ordenActiva
+    ? [ordenActiva.destinoLat || 12.1402, ordenActiva.destinoLng || -86.2954]
+    : undefined;
+
+  const handleToggleConnection = () => {
+    if (conectado) {
+      desconectar();
+      HAPTIC_PATTERNS.medium();
+      showSnackbar({ message: 'Te has desconectado.' });
+    } else {
+      if (!perfil.contratoAceptado) {
+        showSnackbar({ message: 'Debes firmar el contrato en tu Perfil antes de conectarte.' });
+        HAPTIC_PATTERNS.error();
+        return;
+      }
+      conectar();
+      HAPTIC_PATTERNS.medium();
+      showSnackbar({ message: 'Te has conectado en línea.' });
+    }
+  };
+
+  const handleEmpezarViaje = () => {
+    optimizarRutaAutomatica();
+    useRepartidorStore.setState({ estado: 'EN_CAMINO_RECOGER', enServicio: true });
+    HAPTIC_PATTERNS.success();
+    showSnackbar({ message: 'Viaje iniciado hacia la recogida.' });
+  };
+
+  const handleConfirmarPin = () => {
+    if (pinInput.trim() === ((ordenActiva as any)?.codigoEntrega || '1234') || pinInput.trim() === '1234') {
       confirmarEntrega();
-      if (showSnackbar) showSnackbar({ message: '¡Entrega finalizada con éxito!' });
+      setShowPinModal(false);
+      setPinInput('');
+      HAPTIC_PATTERNS.success();
+      showSnackbar({ message: 'Entrega confirmada con éxito.' });
+    } else {
+      setPinError(true);
+      HAPTIC_PATTERNS.error();
     }
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-115px)] overflow-hidden font-sans">
-      {/* Interactive Map View */}
-      <RepartidorMap
-        repartidorPos={[lat, lng]}
-        origenPos={
-          ordenActiva ? [ordenActiva.origenLat || 12.1264, ordenActiva.origenLng || -86.2652] : undefined
-        }
-        destinoPos={
-          ordenActiva ? [ordenActiva.destinoLat || 12.1402, ordenActiva.destinoLng || -86.2954] : undefined
-        }
-        rutaCoordenadas={rutaCoordenadas}
-        estado={estado}
-        seguirRepartidor
-      />
-
-      {/* Floating Status Pill Top */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-sm">
-        <div className="p-2.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-md flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${conectado ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-            <span className="text-xs font-bold text-slate-900 dark:text-white">
-              {ESTADO_LABEL[estado] || 'Servicio'}
-            </span>
-          </div>
-
-          {eta > 0 && ordenActiva && (
-            <div className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center gap-1">
-              <Clock size={13} /> {eta} min
-            </div>
-          )}
-        </div>
+    <div
+      className="relative w-full h-screen overflow-hidden bg-slate-950"
+      style={{ fontFamily: "var(--font-dm-sans), 'DM Sans', sans-serif" }}
+    >
+      {/* ── FULLSCREEN GPS MAP ── */}
+      <div className="absolute inset-0 z-0">
+        <RepartidorMap
+          repartidorPos={[lat, lng]}
+          origenPos={origenPos}
+          destinoPos={destinoPos}
+          rutaCoordenadas={rutaCoordenadas.length > 1 ? rutaCoordenadas : undefined}
+          estado={estado}
+          altura="100%"
+          seguirRepartidor
+        />
       </div>
 
-      {/* Floating iOS Native Bottom Sheet Drawer */}
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-md">
-        {!conectado ? (
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-              <Power size={24} />
-            </div>
-            <div className="space-y-0.5">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Estás desconectado</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Conéctate para recibir solicitudes de entrega en tiempo real.
-              </p>
-            </div>
-            <button
-              onClick={() => conectar()}
-              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all active:scale-95"
-            >
-              Conectarse Ahora
-            </button>
-          </div>
-        ) : !ordenActiva ? (
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-2">
-            <div className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-              </span>
-              <span className="text-xs font-bold uppercase tracking-wider">Esperando nuevas órdenes</span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Mantén la app abierta. Las alertas sonoras y de pantalla te avisarán.
-            </p>
-          </div>
-        ) : (
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-              <div>
-                <span className="text-[10px] font-bold uppercase text-blue-600 dark:text-blue-400">
-                  Orden Activa #{ordenActiva.id.substring(0, 8)}
-                </span>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  {ordenActiva.origen}
-                </h3>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  +C$ {ordenActiva.ganancia.toFixed(2)}
-                </span>
-                <p className="text-[10px] text-slate-400">Ganancia Neta</p>
-              </div>
-            </div>
-
-            {/* Address Details */}
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-start gap-2">
-                <MapPin size={14} className="text-blue-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold">Entrega en</span>
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">{ordenActiva.destino}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions Bar */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => toggleChat(ordenActiva.id)}
-                className="flex-1 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
-              >
-                <MessageSquare size={14} /> Chat Cliente
-              </button>
-              <button
-                onClick={() => toggleIncidencia()}
-                className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-colors"
-                title="Reportar Incidencia"
-              >
-                <AlertTriangle size={16} />
-              </button>
-            </div>
-
-            {/* Primary Action Button */}
-            <button
-              onClick={handleActionClick}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs shadow-md transition-all"
-            >
-              {estado === 'EN_CAMINO_RECOGER' && 'Llegué a Punto de Recogida'}
-              {estado === 'EN_PUNTO_RECOGIDA' && 'Confirmar Paquete Recogido'}
-              {estado === 'RECOGIDO' && 'Llegué a Dirección de Entrega'}
-              {estado === 'EN_PUNTO_ENTREGA' && 'Confirmar Entrega Final'}
-            </button>
-          </div>
+      {/* ── TOP LUXURY GLASS STATUS CAPSULE ── */}
+      <div
+        className="absolute top-4 left-4 z-20 flex items-center gap-3 px-5 py-3 rounded-full shadow-2xl transition-all"
+        style={{
+          background: 'rgba(15, 23, 42, 0.92)',
+          backdropFilter: 'blur(30px)',
+          WebkitBackdropFilter: 'blur(30px)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          boxShadow: '0 16px 36px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22)',
+        }}
+      >
+        <span
+          className="w-3.5 h-3.5 rounded-full animate-pulse shadow-md"
+          style={{
+            background: ESTADO_COLOR[estado] || '#007AFF',
+            boxShadow: `0 0 14px ${ESTADO_COLOR[estado] || '#007AFF'}`,
+          }}
+        />
+        <span
+          className="text-xs font-extrabold text-white uppercase tracking-wider"
+          style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+        >
+          {estado.replace(/_/g, ' ')}
+        </span>
+        {ordenActiva && (
+          <span
+            className="text-xs text-blue-400 font-bold border-l border-white/20 pl-3"
+            style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
+          >
+            ETA ~{eta} min
+          </span>
         )}
       </div>
+
+      {/* ── LUXURY FLOATING FAB ACTION STACK (RIGHT) ── */}
+      {ordenActiva && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-4">
+          <button
+            onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${ordenActiva.destinoLat || 12.14},${ordenActiva.destinoLng || -86.29}`, '_blank')}
+            className="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 text-white flex items-center justify-center shadow-xl shadow-blue-500/45 border border-white/30 active:scale-90 transition-transform"
+            style={{ width: 56, height: 56 }}
+            title="Navegación GPS"
+          >
+            <Compass size={26} />
+          </button>
+          <button
+            onClick={() => window.open(`tel:${ordenActiva.clienteTelefono || '88888888'}`, '_self')}
+            className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center shadow-xl shadow-emerald-500/45 border border-white/30 active:scale-90 transition-transform"
+            style={{ width: 56, height: 56 }}
+            title="Llamar"
+          >
+            <Phone size={24} />
+          </button>
+          <button
+            onClick={() => toggleChat(ordenActiva.id)}
+            className="w-14 h-14 rounded-full bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-xl shadow-purple-500/45 border border-white/30 active:scale-90 transition-transform"
+            style={{ width: 56, height: 56 }}
+            title="Chat"
+          >
+            <MessageSquare size={24} />
+          </button>
+          <button
+            onClick={() => toggleIncidencia(true)}
+            className="w-14 h-14 rounded-full bg-gradient-to-tr from-red-600 to-rose-500 text-white flex items-center justify-center shadow-xl shadow-red-500/45 border border-white/30 active:scale-90 transition-transform"
+            style={{ width: 56, height: 56 }}
+            title="Reportar Incidencia"
+          >
+            <AlertTriangle size={24} />
+          </button>
+        </div>
+      )}
+
+      {/* ── LUXURY BOTTOM GLASS CONTAINER (p-7 Generous Spacing & 34px Radius) ── */}
+      <div className="absolute bottom-20 left-3 right-3 z-30 max-w-lg mx-auto">
+        {estado === 'DESCONECTADO' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-7 rounded-[34px] text-slate-100 flex items-center justify-between gap-5"
+            style={{
+              background: 'rgba(15, 23, 42, 0.92)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              boxShadow: '0 28px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.22)',
+            }}
+          >
+            <div>
+              <h4
+                className="text-lg font-extrabold text-white"
+                style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+              >
+                Estás Desconectado
+              </h4>
+              <p className="text-xs text-slate-400 font-sans mt-1">Conéctate para recibir pedidos en vivo en Managua.</p>
+            </div>
+            <button
+              onClick={handleToggleConnection}
+              className="px-6 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-extrabold text-xs shadow-xl shadow-blue-600/45 active:scale-95 transition-all uppercase tracking-wider"
+              style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+            >
+              Conectarme
+            </button>
+          </motion.div>
+        )}
+
+        {estado === 'EN_LINEA' && !ordenActiva && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-7 rounded-[34px] text-slate-100 space-y-4"
+            style={{
+              background: 'rgba(15, 23, 42, 0.92)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              boxShadow: '0 28px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.22)',
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-13 h-13 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold shadow-md" style={{ width: 52, height: 52 }}>
+                <Zap size={26} className="animate-pulse" />
+              </div>
+              <div>
+                <h4
+                  className="text-base font-extrabold text-white"
+                  style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                >
+                  En línea — Buscando pedidos
+                </h4>
+                <p className="text-xs text-slate-400 font-sans mt-0.5">Tu posición GPS transmite en vivo a clientes de la zona.</p>
+              </div>
+            </div>
+            {ordenesActivas.length > 0 && (
+              <button
+                onClick={handleEmpezarViaje}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-extrabold text-sm shadow-xl shadow-blue-600/45 flex items-center justify-center gap-2 uppercase tracking-wider active:scale-95 transition-transform"
+                style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+              >
+                <Navigation size={20} /> Iniciar Viaje ({ordenesActivas.length} asignados)
+              </button>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── ACTIVE TRIP GLASS LIFECYCLE ── */}
+        {ordenActiva && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-7 rounded-[34px] text-slate-100 space-y-5"
+            style={{
+              background: 'rgba(15, 23, 42, 0.92)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              boxShadow: '0 28px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.22)',
+            }}
+          >
+            {/* Step 1: EN_CAMINO_RECOGER */}
+            {estado === 'EN_CAMINO_RECOGER' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs border-b border-white/10 pb-3 font-mono font-bold">
+                  <span className="text-blue-400">PASO 1: RECOGIDA EN COMERCIO</span>
+                  <span className="text-slate-400">#{ordenActiva.id}</span>
+                </div>
+                <div>
+                  <h4
+                    className="text-lg font-extrabold text-white"
+                    style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                  >
+                    {ordenActiva.origen}
+                  </h4>
+                  <p className="text-xs text-slate-400 font-sans mt-1">{(ordenActiva as any)?.notasComercio || 'Retirar paquetes preparados'}</p>
+                </div>
+                <button
+                  onClick={llegarRecogida}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-extrabold text-xs uppercase tracking-wider shadow-xl shadow-amber-500/45 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                  style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                >
+                  <MapPin size={20} /> LLEGUÉ AL SITIO DE RECOGIDA
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: EN_PUNTO_RECOGIDA */}
+            {estado === 'EN_PUNTO_RECOGIDA' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs border-b border-white/10 pb-3 font-mono font-bold">
+                  <span className="text-amber-400">PASO 2: VERIFICACIÓN DE PAQUETE</span>
+                  <span className="text-slate-400">#{ordenActiva.id}</span>
+                </div>
+                <p className="text-xs text-slate-300 font-sans">
+                  Verifica que los paquetes coincidan con la factura de la orden.
+                </p>
+                <button
+                  onClick={recogerPaquete}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-xl shadow-purple-600/45 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                  style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                >
+                  <Package size={20} /> CONFIRMAR PAQUETE RECOGIDO
+                </button>
+              </div>
+            )}
+
+            {/* Step 3: RECOGIDO / EN_PUNTO_ENTREGA */}
+            {(estado === 'RECOGIDO' || estado === 'EN_PUNTO_ENTREGA') && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs border-b border-white/10 pb-3 font-mono font-bold">
+                  <span className="text-emerald-400">PASO 3: ENTREGA AL CLIENTE</span>
+                  <span className="text-slate-400">#{ordenActiva.id}</span>
+                </div>
+                <div>
+                  <h4
+                    className="text-lg font-extrabold text-white"
+                    style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                  >
+                    {ordenActiva.destino}
+                  </h4>
+                  <p className="text-xs text-slate-400 font-sans mt-1">Cliente: {ordenActiva.cliente || 'Cliente registrado'}</p>
+                </div>
+
+                {estado === 'RECOGIDO' ? (
+                  <button
+                    onClick={llegarEntrega}
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-xl shadow-blue-600/45 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                    style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                  >
+                    <MapPin size={20} /> LLEGUÉ AL DOMICILIO DEL CLIENTE
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowPinModal(true)}
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider shadow-xl shadow-emerald-500/45 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                    style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                  >
+                    <Key size={20} /> CONFIRMAR ENTREGA (CON PIN)
+                  </button>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
+
+      {/* ── PIN MODAL ── */}
+      <AnimatePresence>
+        {showPinModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="w-full max-w-sm bg-slate-900/95 border border-white/20 rounded-[34px] p-7 text-center space-y-4 text-slate-100 shadow-2xl"
+              style={{ backdropFilter: 'blur(32px)' }}
+            >
+              <div className="w-13 h-13 rounded-2xl bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/30" style={{ width: 52, height: 52 }}>
+                <Key size={26} />
+              </div>
+              <h3
+                className="text-lg font-extrabold"
+                style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+              >
+                Ingresar PIN de Entrega
+              </h3>
+              <p className="text-xs text-slate-400 font-sans">
+                Pídele al cliente su PIN de 4 dígitos para completar la entrega. (PIN Demo:{' '}
+                <span
+                  className="text-emerald-400 font-bold"
+                  style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
+                >
+                  1234
+                </span>)
+              </p>
+
+              <input
+                type="password"
+                maxLength={4}
+                value={pinInput}
+                onChange={(e) => {
+                  setPinInput(e.target.value);
+                  setPinError(false);
+                }}
+                placeholder="1234"
+                className="w-full py-4 text-center text-2xl tracking-widest rounded-2xl bg-slate-800/80 border border-white/15 outline-none focus:border-emerald-500 text-white font-bold"
+                style={{ fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace" }}
+              />
+
+              {pinError && <p className="text-xs text-red-400 font-bold font-sans">PIN incorrecto. Intenta con 1234.</p>}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowPinModal(false)}
+                  className="flex-1 py-4 rounded-2xl bg-slate-800 text-slate-300 font-bold text-xs font-sans"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmarPin}
+                  className="flex-1 py-4 rounded-2xl bg-emerald-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/40 uppercase tracking-wider"
+                  style={{ fontFamily: "var(--font-syne), 'Syne', sans-serif" }}
+                >
+                  Confirmar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
