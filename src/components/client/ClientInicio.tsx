@@ -14,7 +14,6 @@ import {
   CheckCircle,
   Clock,
   Gift,
-  Plus,
   MapPin,
   X,
   Wallet,
@@ -30,6 +29,58 @@ interface ClientInicioProps {
   onOpenTracking: (orderId: string) => void;
   onOpenChat: (orderId: string) => void;
 }
+
+const sectionCard: React.CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 'var(--lf-card-radius, 22px)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 24,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px 16px',
+  borderRadius: 'var(--lf-input-radius, 16px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  outline: 'none',
+};
+
+const btnPrimary: React.CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 'var(--lf-button-radius, 16px)',
+  border: 'none',
+  background: 'var(--primario)',
+  color: '#fff',
+  fontWeight: 600,
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+};
+
+const btnGhost: React.CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 'var(--lf-button-radius, 16px)',
+  border: '1px solid var(--border)',
+  background: 'transparent',
+  color: 'var(--text-secondary)',
+  fontWeight: 500,
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+};
 
 export default function ClientInicio({
   userName = 'Cliente',
@@ -76,13 +127,12 @@ export default function ClientInicio({
   return (
     <div
       style={{
-        width: '100%',
-        maxWidth: 520,
-        margin: '0 auto',
-        padding: '16px 16px 120px 16px',
         display: 'flex',
         flexDirection: 'column',
         gap: 20,
+        maxWidth: 600,
+        margin: '0 auto',
+        padding: '0 4px 120px 4px',
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
@@ -92,7 +142,7 @@ export default function ClientInicio({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: 4,
+          paddingTop: 8,
         }}
       >
         <div>
@@ -105,7 +155,7 @@ export default function ClientInicio({
               fontWeight: 600,
               color: 'var(--primario)',
               fontFamily: "'DM Sans', sans-serif",
-              marginBottom: 2,
+              marginBottom: 4,
             }}
           >
             <MapPin size={14} style={{ color: 'var(--primario)' }} />
@@ -113,8 +163,8 @@ export default function ClientInicio({
           </div>
           <h1
             style={{
-              fontSize: 22,
-              fontWeight: 800,
+              fontSize: 24,
+              fontWeight: 700,
               fontFamily: "'Syne', sans-serif",
               color: 'var(--text)',
               lineHeight: 1.2,
@@ -134,7 +184,7 @@ export default function ClientInicio({
             border: '1px solid var(--border)',
             color: 'var(--primario)',
             fontWeight: 700,
-            fontSize: 12,
+            fontSize: 13,
             fontFamily: "'JetBrains Mono', monospace",
             display: 'flex',
             alignItems: 'center',
@@ -143,7 +193,7 @@ export default function ClientInicio({
             boxShadow: 'var(--lf-shadow-card)',
           }}
         >
-          <Gift size={15} />
+          <Gift size={16} />
           <span>{puntos} pts</span>
         </button>
       </div>
@@ -152,17 +202,11 @@ export default function ClientInicio({
       <div
         onClick={() => onNavigate('explorar')}
         style={{
-          width: '100%',
-          padding: '12px 16px',
-          borderRadius: 'var(--lf-card-radius, 18px)',
-          background: 'var(--bg-alt)',
-          border: '1px solid var(--border)',
+          ...inputStyle,
           display: 'flex',
           alignItems: 'center',
           gap: 12,
           color: 'var(--text-muted)',
-          fontSize: 13,
-          fontFamily: "'DM Sans', sans-serif",
           cursor: 'pointer',
           boxShadow: 'var(--lf-shadow-card)',
         }}
@@ -173,11 +217,11 @@ export default function ClientInicio({
         </span>
         <span
           style={{
-            padding: '4px 10px',
-            borderRadius: 10,
+            padding: '4px 12px',
+            borderRadius: 12,
             background: 'var(--primario-soft)',
             color: 'var(--primario)',
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: 700,
             fontFamily: "'DM Sans', sans-serif",
           }}
@@ -195,9 +239,7 @@ export default function ClientInicio({
             exit={{ opacity: 0, y: -12 }}
             onClick={() => onOpenTracking(activeOrders[0].id)}
             style={{
-              width: '100%',
-              padding: '16px 18px',
-              borderRadius: 'var(--lf-card-radius, 22px)',
+              ...sectionCard,
               background: 'linear-gradient(135deg, var(--primario) 0%, #D84315 100%)',
               color: '#FFFFFF',
               boxShadow: '0 12px 28px rgba(255, 87, 34, 0.35)',
@@ -205,13 +247,14 @@ export default function ClientInicio({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              padding: 20,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div
                 style={{
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   borderRadius: 14,
                   background: 'rgba(255, 255, 255, 0.2)',
                   backdropFilter: 'blur(8px)',
@@ -222,7 +265,7 @@ export default function ClientInicio({
                   flexShrink: 0,
                 }}
               >
-                <Bike size={22} />
+                <Bike size={24} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -250,14 +293,14 @@ export default function ClientInicio({
                 </div>
                 <div
                   style={{
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: 700,
                     fontFamily: "'DM Sans', sans-serif",
                     color: '#FFFFFF',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: 220,
+                    maxWidth: 240,
                   }}
                 >
                   {activeOrders[0].destino}
@@ -287,12 +330,7 @@ export default function ClientInicio({
       {/* ── CARRUSEL BANNER PROMOCIONAL ── */}
       <div
         style={{
-          width: '100%',
-          borderRadius: 'var(--lf-card-radius, 22px)',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          boxShadow: 'var(--lf-shadow-card)',
-          padding: '18px 20px',
+          ...sectionCard,
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
@@ -303,7 +341,7 @@ export default function ClientInicio({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span
             style={{
-              padding: '4px 10px',
+              padding: '4px 12px',
               borderRadius: 'var(--lf-pill-radius, 100px)',
               background: 'var(--primario-soft)',
               color: 'var(--primario)',
@@ -317,7 +355,7 @@ export default function ClientInicio({
               gap: 4,
             }}
           >
-            <Sparkles size={12} /> Promoción
+            <Sparkles size={13} /> Promoción
           </span>
           <div style={{ display: 'flex', gap: 6 }}>
             {banners.map((_, idx) => (
@@ -327,7 +365,7 @@ export default function ClientInicio({
                 style={{
                   height: 6,
                   borderRadius: 100,
-                  width: activeBannerIdx === idx ? 20 : 6,
+                  width: activeBannerIdx === idx ? 22 : 6,
                   background: activeBannerIdx === idx ? 'var(--primario)' : 'var(--border)',
                   border: 'none',
                   cursor: 'pointer',
@@ -341,11 +379,11 @@ export default function ClientInicio({
         <div>
           <h2
             style={{
-              fontSize: 17,
+              fontSize: 18,
               fontWeight: 700,
               fontFamily: "'Syne', sans-serif",
               color: 'var(--text)',
-              margin: '0 0 4px 0',
+              margin: '0 0 6px 0',
               lineHeight: 1.3,
             }}
           >
@@ -364,36 +402,22 @@ export default function ClientInicio({
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6 }}>
           <button
             onClick={() => onNavigate('solicitar')}
-            style={{
-              padding: '10px 18px',
-              borderRadius: 14,
-              background: 'var(--primario)',
-              color: '#FFFFFF',
-              fontWeight: 600,
-              fontSize: 13,
-              fontFamily: "'DM Sans', sans-serif",
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: '0 4px 14px rgba(255, 87, 34, 0.3)',
-            }}
+            style={btnPrimary}
           >
             <span>Pedir Ahora</span>
             <ChevronRight size={14} />
           </button>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
             LogiFast Nicaragua
           </span>
         </div>
       </div>
 
-      {/* ── SERVICIOS RÁPIDOS (ACCIONES PRINCIPALES) ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* ── SERVICIOS RÁPIDOS ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h3
           style={{
             fontSize: 13,
@@ -408,12 +432,12 @@ export default function ClientInicio({
           Servicios Rápidos
         </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {/* Action 1: Solicitar */}
           <button
             onClick={() => onNavigate('solicitar')}
             style={{
-              padding: '14px 8px',
+              padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -428,8 +452,8 @@ export default function ClientInicio({
           >
             <div
               style={{
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 borderRadius: 14,
                 background: 'var(--primario-soft)',
                 color: 'var(--primario)',
@@ -438,7 +462,7 @@ export default function ClientInicio({
                 justifyContent: 'center',
               }}
             >
-              <Bike size={20} />
+              <Bike size={22} />
             </div>
             <span
               style={{
@@ -457,7 +481,7 @@ export default function ClientInicio({
           <button
             onClick={() => onNavigate('explorar')}
             style={{
-              padding: '14px 8px',
+              padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -472,8 +496,8 @@ export default function ClientInicio({
           >
             <div
               style={{
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 borderRadius: 14,
                 background: 'rgba(52, 199, 89, 0.12)',
                 color: '#34C759',
@@ -482,7 +506,7 @@ export default function ClientInicio({
                 justifyContent: 'center',
               }}
             >
-              <Store size={20} />
+              <Store size={22} />
             </div>
             <span
               style={{
@@ -501,7 +525,7 @@ export default function ClientInicio({
           <button
             onClick={() => onNavigate('envios')}
             style={{
-              padding: '14px 8px',
+              padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -516,8 +540,8 @@ export default function ClientInicio({
           >
             <div
               style={{
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 borderRadius: 14,
                 background: 'rgba(175, 82, 222, 0.12)',
                 color: '#AF52DE',
@@ -526,7 +550,7 @@ export default function ClientInicio({
                 justifyContent: 'center',
               }}
             >
-              <Package size={20} />
+              <Package size={22} />
             </div>
             <span
               style={{
@@ -545,7 +569,7 @@ export default function ClientInicio({
           <button
             onClick={() => onNavigate('puntos')}
             style={{
-              padding: '14px 8px',
+              padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -560,8 +584,8 @@ export default function ClientInicio({
           >
             <div
               style={{
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 borderRadius: 14,
                 background: 'rgba(255, 149, 0, 0.12)',
                 color: '#FF9500',
@@ -570,7 +594,7 @@ export default function ClientInicio({
                 justifyContent: 'center',
               }}
             >
-              <Wallet size={20} />
+              <Wallet size={22} />
             </div>
             <span
               style={{
@@ -623,34 +647,34 @@ export default function ClientInicio({
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
           {featuredTiendas.map((tienda) => (
             <div
               key={tienda.id}
               onClick={() => setTiendaSeleccionada(tienda.id)}
               style={{
-                padding: 14,
+                padding: 16,
                 borderRadius: 'var(--lf-card-radius, 18px)',
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
                 boxShadow: 'var(--lf-shadow-card)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                gap: 14,
                 cursor: 'pointer',
                 transition: 'transform 0.2s',
               }}
             >
               <div
                 style={{
-                  width: 46,
-                  height: 46,
+                  width: 48,
+                  height: 48,
                   borderRadius: 14,
                   background: 'var(--primario-soft)',
                   color: 'var(--primario)',
                   fontFamily: "'Syne', sans-serif",
                   fontWeight: 800,
-                  fontSize: 16,
+                  fontSize: 17,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -676,7 +700,7 @@ export default function ClientInicio({
                 </div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     color: 'var(--text-muted)',
                     fontFamily: "'DM Sans', sans-serif",
                     textTransform: 'capitalize',
@@ -703,11 +727,11 @@ export default function ClientInicio({
                       fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
-                    <Star size={11} fill="currentColor" /> {(tienda.calificacion || 4.8).toFixed(1)}
+                    <Star size={12} fill="currentColor" /> {(tienda.calificacion || 4.8).toFixed(1)}
                   </span>
                   <span style={{ color: 'var(--border)' }}>•</span>
                   <span style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
-                    <Clock size={11} style={{ display: 'inline', marginRight: 3 }} />
+                    <Clock size={12} style={{ display: 'inline', marginRight: 3 }} />
                     {(tienda as any).tiempoEntrega || tienda.tiempoEstimado || '20 min'}
                   </span>
                 </div>
@@ -720,12 +744,7 @@ export default function ClientInicio({
       {/* ── BANNER PARA NEGOCIOS ── */}
       <div
         style={{
-          width: '100%',
-          padding: '16px 18px',
-          borderRadius: 'var(--lf-card-radius, 22px)',
-          background: 'var(--bg-alt)',
-          border: '1px solid var(--border)',
-          boxShadow: 'var(--lf-shadow-card)',
+          ...sectionCard,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -748,7 +767,7 @@ export default function ClientInicio({
           </span>
           <h4
             style={{
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 700,
               fontFamily: "'Syne', sans-serif",
               color: 'var(--text)',
@@ -765,18 +784,9 @@ export default function ClientInicio({
         <button
           onClick={() => setAdModalOpen(true)}
           style={{
-            padding: '10px 14px',
-            borderRadius: 14,
-            background: 'var(--primario)',
-            color: '#FFFFFF',
-            fontWeight: 700,
-            fontSize: 12,
-            fontFamily: "'DM Sans', sans-serif",
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
+            ...btnPrimary,
+            padding: '10px 16px',
+            fontSize: 13,
             flexShrink: 0,
           }}
         >
@@ -870,16 +880,7 @@ export default function ClientInicio({
                       type="text"
                       required
                       placeholder="Ej: Taquería Los Comadres"
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 14,
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg-alt)',
-                        color: 'var(--text)',
-                        fontSize: 13,
-                        outline: 'none',
-                      }}
+                      style={inputStyle}
                     />
                   </div>
 
@@ -891,16 +892,7 @@ export default function ClientInicio({
                       type="tel"
                       required
                       placeholder="+505 8888-8888"
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 14,
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg-alt)',
-                        color: 'var(--text)',
-                        fontSize: 13,
-                        outline: 'none',
-                      }}
+                      style={inputStyle}
                     />
                   </div>
 
@@ -908,18 +900,7 @@ export default function ClientInicio({
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
                       Categoría
                     </label>
-                    <select
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 14,
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg-alt)',
-                        color: 'var(--text)',
-                        fontSize: 13,
-                        outline: 'none',
-                      }}
-                    >
+                    <select style={inputStyle}>
                       <option value="restaurante">Restaurante / Comida</option>
                       <option value="supermercado">Mercado / Licorería</option>
                       <option value="farmacia">Farmacia / Salud</option>
@@ -931,31 +912,13 @@ export default function ClientInicio({
                     <button
                       type="button"
                       onClick={() => setAdModalOpen(false)}
-                      style={{
-                        padding: '10px 16px',
-                        borderRadius: 14,
-                        background: 'var(--bg-alt)',
-                        color: 'var(--text)',
-                        border: '1px solid var(--border)',
-                        fontWeight: 600,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                      }}
+                      style={btnGhost}
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      style={{
-                        padding: '10px 18px',
-                        borderRadius: 14,
-                        background: 'var(--primario)',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        fontWeight: 700,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                      }}
+                      style={btnPrimary}
                     >
                       Enviar Solicitud
                     </button>
