@@ -181,13 +181,21 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
+/* ─── SVG inline icons para el nav (stroke="currentColor" garantiza herencia en móvil) ─── */
+function IcoInicio()    { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>; }
+function IcoExplorar()  { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M9 12h1.5M9 8h6M9 16h4"/><circle cx="15" cy="14" r="2"/></svg>; }
+function IcoEnvios()    { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h11v9H3z"/><path d="M14 9h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>; }
+function IcoPedidos()   { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>; }
+function IcoBilletera() { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.2" fill="currentColor" stroke="none"/></svg>; }
+function IcoPerfil()    { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>; }
+
 const NAV_ITEMS: NavItem[] = [
-  { key: 'inicio',   label: 'Inicio',    icon: <Home         size={20} strokeWidth={2} color="currentColor" /> },
-  { key: 'explorar', label: 'Explorar',  icon: <ShoppingBag  size={20} strokeWidth={2} color="currentColor" /> },
-  { key: 'envios',   label: 'Envíos',    icon: <Package      size={20} strokeWidth={2} color="currentColor" /> },
-  { key: 'pedidos',  label: 'Pedidos',   icon: <ShoppingCart size={20} strokeWidth={2} color="currentColor" /> },
-  { key: 'puntos',   label: 'Billetera', icon: <Wallet       size={20} strokeWidth={2} color="currentColor" /> },
-  { key: 'perfil',   label: 'Perfil',    icon: <User         size={20} strokeWidth={2} color="currentColor" /> },
+  { key: 'inicio',   label: 'Inicio',    icon: <IcoInicio /> },
+  { key: 'explorar', label: 'Explorar',  icon: <IcoExplorar /> },
+  { key: 'envios',   label: 'Envíos',    icon: <IcoEnvios /> },
+  { key: 'pedidos',  label: 'Pedidos',   icon: <IcoPedidos /> },
+  { key: 'puntos',   label: 'Billetera', icon: <IcoBilletera /> },
+  { key: 'perfil',   label: 'Perfil',    icon: <IcoPerfil /> },
 ];
 
 /* ─── iOS Large Title map (header) ─── */
