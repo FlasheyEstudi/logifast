@@ -182,12 +182,12 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'inicio', label: 'Inicio', icon: <Home size={20} strokeWidth={2} /> },
-  { key: 'explorar', label: 'Explorar', icon: <ShoppingBag size={20} strokeWidth={2} /> },
-  { key: 'envios', label: 'Envíos', icon: <Package size={20} strokeWidth={2} /> },
-  { key: 'pedidos', label: 'Pedidos', icon: <ShoppingCart size={20} strokeWidth={2} /> },
-  { key: 'puntos', label: 'Billetera', icon: <Wallet size={20} strokeWidth={2} /> },
-  { key: 'perfil', label: 'Perfil', icon: <User size={20} strokeWidth={2} /> },
+  { key: 'inicio',   label: 'Inicio',    icon: <Home         size={20} strokeWidth={2} color="currentColor" /> },
+  { key: 'explorar', label: 'Explorar',  icon: <ShoppingBag  size={20} strokeWidth={2} color="currentColor" /> },
+  { key: 'envios',   label: 'Envíos',    icon: <Package      size={20} strokeWidth={2} color="currentColor" /> },
+  { key: 'pedidos',  label: 'Pedidos',   icon: <ShoppingCart size={20} strokeWidth={2} color="currentColor" /> },
+  { key: 'puntos',   label: 'Billetera', icon: <Wallet       size={20} strokeWidth={2} color="currentColor" /> },
+  { key: 'perfil',   label: 'Perfil',    icon: <User         size={20} strokeWidth={2} color="currentColor" /> },
 ];
 
 /* ─── iOS Large Title map (header) ─── */
