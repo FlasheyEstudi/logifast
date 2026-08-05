@@ -1,516 +1,114 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import {
   Bell,
-  Package,
-  ShoppingBag,
-  Store,
-  Navigation,
   Clock,
-  DollarSign,
-  Box,
-  User,
   Check,
-  X,
-  Vibrate,
-  Volume2,
 } from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
-import { useRepartidorSnackbar } from './RepartidorShell';
-
-/* ═══════════════════════════════════════════════
-   CIRCULAR COUNTDOWN
-   ═══════════════════════════════════════════════ */
-
-function CountdownRing({ seconds, total }: { seconds: number; total: number }) {
-  const pct = seconds / total;
-  const radius = 28;
-  const circ = 2 * Math.PI * radius;
-  const offset = circ * (1 - pct);
-
-  return (
-    <div
-      style={{
-        position: 'relative',
-        width: 72,
-        height: 72,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <svg width="72" height="72" viewBox="0 0 72 72" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-        <circle
-          cx="36"
-          cy="36"
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.18)"
-          strokeWidth="5"
-        />
-        <motion.circle
-          cx="36"
-          cy="36"
-          r={radius}
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeDasharray={circ}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.5, ease: 'linear' }}
-        />
-      </svg>
-      <div
-        style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 22,
-          fontWeight: 700,
-          color: '#fff',
-          lineHeight: 1,
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        {seconds}
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   ROUTE VISUALIZATION
-   ═══════════════════════════════════════════════ */
-
-function RouteVisualization({ origen, destino }: { origen: string; destino: string }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0,
-        padding: 14,
-        borderRadius: 16,
-        background: 'rgba(255,255,255,0.12)',
-        border: '1px solid rgba(255,255,255,0.18)',
-        marginBottom: 16,
-      }}
-    >
-      {/* Pickup */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, paddingTop: 2 }}>
-          <div
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: '50%',
-              background: 'var(--exito, var(--exito))',
-              border: '2px solid #fff',
-              boxShadow: '0 0 0 2px var(--exito, var(--exito))',
-            }}
-          />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: 600, textTransform: 'uppercase' }}>
-            Recogida
-          </div>
-          <div style={{ fontSize: 13, color: '#fff', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {origen}
-          </div>
-        </div>
-      </div>
-      {/* Dashed connector */}
-      <div style={{ display: 'flex', paddingLeft: 5, height: 18 }}>
-        <div
-          style={{
-            width: 2,
-            backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.5) 50%, transparent 50%)',
-            backgroundSize: '2px 8px',
-            backgroundRepeat: 'repeat-y',
-          }}
-        />
-      </div>
-      {/* Delivery */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, paddingTop: 2 }}>
-          <div
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: '50%',
-              background: 'var(--warning, var(--warning))',
-              border: '2px solid #fff',
-              boxShadow: '0 0 0 2px var(--warning, var(--warning))',
-            }}
-          />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: 600, textTransform: 'uppercase' }}>
-            Entrega
-          </div>
-          <div style={{ fontSize: 13, color: '#fff', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {destino}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   DETAIL ROW
-   ═══════════════════════════════════════════════ */
-
-function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '8px 0',
-        borderBottom: '1px solid rgba(255,255,255,0.1)',
-      }}
-    >
-      <span
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          background: 'rgba(255,255,255,0.12)',
-          color: '#fff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </span>
-      <span style={{ flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{label}</span>
-      <span
-        className="font-mono"
-        style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════ */
 
 export default function RepartidorNotificacionOrden() {
-  const { ordenAsignadaPendiente, tiempoAceptacion, aceptarOrden, rechazarOrden, timeoutOrden } =
-    useRepartidorStore();
-  const showSnackbar = useRepartidorSnackbar();
-  // Initialize local countdown from store value (store resets to 30 on each new assignment).
-  const [segundos, setSegundos] = useState(tiempoAceptacion);
-
-  /* Countdown */
-  useEffect(() => {
-    const i = setInterval(() => {
-      setSegundos((s) => {
-        if (s <= 1) {
-          clearInterval(i);
-          timeoutOrden();
-          showSnackbar({ message: 'La orden expiró por timeout.' });
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(i);
-  }, [timeoutOrden, showSnackbar]);
-
-  /* Vibrate on mount (new order) */
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate([100, 50, 100]);
-      } catch {
-        /* ignore */
-      }
-    }
-  }, []);
+  const {
+    ordenAsignadaPendiente,
+    tiempoAceptacion = 30,
+    aceptarOrden,
+    rechazarOrden,
+  } = useRepartidorStore();
 
   if (!ordenAsignadaPendiente) return null;
-  const orden = ordenAsignadaPendiente;
-  const TipoIcon = orden.tipo === 'compra' ? ShoppingBag : Package;
 
-  const handleAceptar = () => {
-    aceptarOrden();
-    showSnackbar({ message: `Orden ${orden.id} aceptada. Dirígete al punto de recogida.` });
-  };
-
-  const handleRechazar = () => {
-    rechazarOrden();
-    showSnackbar({ message: 'Orden rechazada.' });
-  };
+  const pct = Math.max(0, tiempoAceptacion / 30);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
-      className="order-notification visible lf-order-notification visible"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        background: 'rgba(0, 0, 0, 0.78)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        justifyContent: 'flex-start',
-        overflowY: 'auto',
-      }}
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-3 sm:p-4 font-sans"
     >
-      <div
-        style={{
-          maxWidth: 480,
-          width: '100%',
-          margin: '0 auto',
-          padding: 'calc(env(safe-area-inset-top, 24px) + 16px) 20px calc(env(safe-area-inset-bottom, 24px) + 20px)',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100%',
-        }}
+      <motion.div
+        initial={{ y: 50, scale: 0.95 }}
+        animate={{ y: 0, scale: 1 }}
+        exit={{ y: 50, scale: 0.95 }}
+        className="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-2xl space-y-4 text-slate-900 dark:text-white"
       >
-        {/* Top: Bell + "Nueva orden" + Countdown */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 24,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <motion.div
-              animate={{ rotate: [0, -15, 15, -10, 10, 0], scale: [1, 1.1, 1] }}
-              transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1 }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                background: 'rgba(255,255,255,0.18)',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Bell size={20} />
-            </motion.div>
+        {/* Top Header with Timer Pill */}
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center animate-bounce">
+              <Bell size={18} />
+            </div>
             <div>
-              <div
-                className="font-syne"
-                style={{ fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}
-              >
-                Nueva orden
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  fontSize: 11,
-                  color: 'rgba(255,255,255,0.7)',
-                }}
-              >
-                <Volume2 size={11} />
-                <Vibrate size={11} />
-                Sonido y vibración activados
-              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                Nueva Solicitud de Entrega
+              </span>
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                #{ordenAsignadaPendiente.id.substring(0, 8)}
+              </h3>
             </div>
           </div>
-          <CountdownRing seconds={segundos} total={30} />
+
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 text-xs font-bold">
+            <Clock size={13} /> {tiempoAceptacion}s
+          </div>
         </div>
 
-        {/* Pulsing card */}
-        <motion.div
-          animate={{ scale: [1, 1.015, 1] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-          className="order-notification-card lf-order-notification-card"
-          style={{
-            background: 'rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 24,
-            padding: 20,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.45)',
-          }}
-        >
-          {/* Order ID + Tipo badge */}
+        {/* Timer Bar */}
+        <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 14,
-            }}
-          >
-            <span
-              className="font-mono"
-              style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}
-            >
-              {orden.id}
-            </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '4px 10px',
-                borderRadius: 100,
-                background: 'rgba(255,255,255,0.18)',
-                color: '#fff',
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: 'capitalize',
-              }}
-            >
-              <TipoIcon size={12} />
-              {orden.tipo}
-            </span>
-          </div>
-
-          {/* Route visualization */}
-          <RouteVisualization origen={orden.origen} destino={orden.destino} />
-
-          {/* Order details */}
-          <div style={{ marginBottom: 8 }}>
-            <DetailRow
-              icon={<Navigation size={14} />}
-              label="Distancia"
-              value={`${orden.kmEstimados.toFixed(1)} km`}
-            />
-            <DetailRow
-              icon={<Clock size={14} />}
-              label="Tiempo estimado"
-              value={`${orden.tiempoEstimado} min`}
-            />
-            <DetailRow
-              icon={<DollarSign size={14} />}
-              label="Ganancia"
-              value={`C$${orden.ganancia}`}
-            />
-            <DetailRow
-              icon={<Box size={14} />}
-              label="Tamaño paquete"
-              value={orden.tamano || '—'}
-            />
-            <DetailRow
-              icon={<User size={14} />}
-              label="Cliente"
-              value={orden.cliente}
-            />
-            {orden.tiendaNombre && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '8px 0',
-                }}
-              >
-                <span
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 8,
-                    background: 'rgba(255,255,255,0.12)',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Store size={14} />
-                </span>
-                <span style={{ flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Tienda</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>
-                  {orden.tiendaNombre}
-                </span>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Spacer */}
-        <div style={{ flex: 1, minHeight: 20 }} />
-
-        {/* Action buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleAceptar}
-            style={{
-              width: '100%',
-              minHeight: 56,
-              borderRadius: 16,
-              border: 'none',
-              background: '#FFFFFF',
-              color: 'var(--primario)',
-              fontSize: 16,
-              fontWeight: 700,
-              fontFamily: "'DM Sans', sans-serif",
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-            }}
-          >
-            <Check size={20} />
-            Aceptar orden
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleRechazar}
-            style={{
-              width: '100%',
-              minHeight: 52,
-              borderRadius: 16,
-              border: '1.5px solid rgba(255,255,255,0.4)',
-              background: 'transparent',
-              color: '#fff',
-              fontSize: 15,
-              fontWeight: 600,
-              fontFamily: "'DM Sans', sans-serif",
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-            }}
-          >
-            <X size={18} />
-            Rechazar
-          </motion.button>
+            className="h-full bg-blue-600 transition-all duration-1000 ease-linear"
+            style={{ width: `${pct * 100}%` }}
+          />
         </div>
 
-        <p
-          style={{
-            fontSize: 11,
-            color: 'rgba(255,255,255,0.6)',
-            textAlign: 'center',
-            marginTop: 12,
-          }}
-        >
-          Si no respondes, la orden se reasignará automáticamente.
-        </p>
-      </div>
+        {/* Payout Hero Card */}
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md text-center space-y-0.5">
+          <p className="text-[11px] font-semibold text-blue-100 uppercase tracking-wider">
+            Ganancia Estimada del Envío
+          </p>
+          <p className="text-2xl font-black">
+            C$ {ordenAsignadaPendiente.ganancia.toFixed(2)}
+          </p>
+        </div>
+
+        {/* Route Details */}
+        <div className="space-y-2 text-xs">
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Punto de Recogida</p>
+            <p className="font-bold text-slate-900 dark:text-white">
+              {ordenAsignadaPendiente.origen}
+            </p>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Punto de Entrega</p>
+            <p className="font-bold text-slate-900 dark:text-white">
+              {ordenAsignadaPendiente.destino}
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Distancia estimada: {ordenAsignadaPendiente.kmEstimados} km • Tiempo: {ordenAsignadaPendiente.tiempoEstimado} min
+            </p>
+          </div>
+        </div>
+
+        {/* Primary Action Buttons */}
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            onClick={() => rechazarOrden()}
+            className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs active:scale-95 transition-all"
+          >
+            Rechazar
+          </button>
+          <button
+            onClick={() => aceptarOrden()}
+            className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+          >
+            <Check size={16} /> Aceptar Oferta
+          </button>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }

@@ -43,7 +43,8 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
     getCartTotal,
   } = useMarketplaceStore();
 
-  const { crearOrden } = useStore();
+  const { setCartDescuento } = useMarketplaceStore();
+  const { addOrder } = useStore();
 
   const [codigoPromoInput, setCodigoPromoInput] = useState('');
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
@@ -58,14 +59,15 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
 
   // Group items by store
   const grupos = cartItems.reduce((acc, item) => {
+    const tiendaNom = (item as any).tiendaNombre || 'Tienda LogiFast';
     const existing = acc.find((g) => g.tiendaId === item.tiendaId);
     if (existing) {
       existing.items.push(item);
     } else {
       acc.push({
         tiendaId: item.tiendaId || 'default',
-        tiendaNombre: item.tiendaNombre || 'Tienda',
-        tiendaLogoIniciales: (item.tiendaNombre || 'TL').substring(0, 2).toUpperCase(),
+        tiendaNombre: tiendaNom,
+        tiendaLogoIniciales: tiendaNom.substring(0, 2).toUpperCase(),
         items: [item],
       });
     }
@@ -75,10 +77,12 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
   const handleAplicarCodigo = () => {
     if (!codigoPromoInput.trim()) return;
     if (codigoPromoInput.trim().toUpperCase() === 'LOGIFAST20') {
-      setCartCodigoPromo('LOGIFAST20', 20);
+      setCartCodigoPromo('LOGIFAST20');
+      setCartDescuento(20);
       notify.success('¡Cupón LOGIFAST20 aplicado (-C$ 20)!');
     } else if (codigoPromoInput.trim().toUpperCase() === 'PROMO50') {
-      setCartCodigoPromo('PROMO50', 50);
+      setCartCodigoPromo('PROMO50');
+      setCartDescuento(50);
       notify.success('¡Cupón PROMO50 aplicado (-C$ 50)!');
     } else {
       notify.error('Código promocional no válido');
@@ -94,12 +98,26 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       await new Promise((res) => setTimeout(res, 1200));
 
       const tiendaPrincipal = grupos[0]?.tiendaNombre || 'Tienda Logifast';
-      crearOrden({
+      addOrder({
+        id: `ORD-${Date.now()}`,
+        cliente: 'Cliente',
+        clienteTelefono: '+505 8888 8888',
         origen: tiendaPrincipal,
         destino: 'Mi Ubicación Actual',
-        montoTotal: total,
+        origenLat: 12.1264,
+        origenLng: -86.2652,
+        destinoLat: 12.1402,
+        destinoLng: -86.2954,
+        repartidor: null,
+        repartidorInitials: 'RL',
+        descripcion: cartInstrucciones || 'Pedido en línea',
+        monto: total,
+        estado: 'pendiente',
         metodoPago: cartMetodoPago,
-        notas: cartInstrucciones,
+        estadoPago: 'pendiente',
+        fecha: 'Hoy',
+        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timeline: [],
       });
 
       clearCart();

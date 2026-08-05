@@ -1,556 +1,118 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import {
   ChevronLeft,
-  Package,
-  ShoppingBag,
-  MapPin,
-  Store,
-  Navigation,
-  Clock,
-  DollarSign,
-  Route as RouteIcon,
-  User,
-  Check,
-  AlertTriangle,
-  Box,
-  Bike,
-  Hand,
-  Flag,
   Star,
-  Bell,
 } from '@/components/icons';
-import { useRepartidorStore, type ServicioHistorial } from '@/lib/repartidor-store';
+import { useRepartidorStore } from '@/lib/repartidor-store';
 import { StarRating } from './RepartidorPerfil';
 import RepartidorMiniMap from './RepartidorMiniMap';
-import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
-
-/* ═══════════════════════════════════════════════
-   TIMELINE STEPS
-   ═══════════════════════════════════════════════ */
-
-interface Step {
-  label: string;
-  icon: React.ReactNode;
-}
-
-const STEPS: Step[] = [
-  { label: 'Orden asignada', icon: <Bell size={14} /> },
-  { label: 'Orden aceptada', icon: <Check size={14} /> },
-  { label: 'Camino a recogida', icon: <Navigation size={14} /> },
-  { label: 'Paquete recogido', icon: <Hand size={14} /> },
-  { label: 'Camino a entrega', icon: <Bike size={14} /> },
-  { label: 'En punto de entrega', icon: <MapPin size={14} /> },
-  { label: 'Entrega confirmada', icon: <Flag size={14} /> },
-  { label: 'Servicio calificado', icon: <Star size={14} /> },
-];
-
-function getCoordsForLocation(locName: string, isDest: boolean): [number, number] {
-  const name = (locName || '').toLowerCase();
-  if (name.includes('robles')) return [12.1289, -86.2451];
-  if (name.includes('lezcano')) return [12.1421, -86.2287];
-  if (name.includes('fontana')) return [12.0980, -86.2310];
-  if (name.includes('centro')) return [12.1120, -86.2400];
-  if (name.includes('horizonte')) return [12.1320, -86.2220];
-  if (name.includes('pizza')) return [12.1245, -86.2520];
-  if (name.includes('farmacia')) return [12.0980, -86.2310];
-  return isDest ? [12.1421, -86.2287] : [12.1289, -86.2451];
-}
-
-function MiniMap({
-  origenPos,
-  destinoPos,
-  rutaCoords,
-  estado,
-}: {
-  origenPos: [number, number];
-  destinoPos: [number, number];
-  rutaCoords?: [number, number][];
-  estado: string;
-}) {
-  return (
-    <div
-      style={{
-        height: 180,
-        borderRadius: 16,
-        overflow: 'hidden',
-        position: 'relative',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-      }}
-    >
-      <RepartidorMiniMap
-        repartidorPos={destinoPos}
-        origenPos={origenPos}
-        destinoPos={destinoPos}
-        rutaCoordenadas={rutaCoords}
-        estado={estado}
-        altura={180}
-      />
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   INFO ROW
-   ═══════════════════════════════════════════════ */
-
-function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '10px 0',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-      }}
-    >
-      <span
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          background: 'rgba(255, 255, 255, 0.08)',
-          color: '#CBD5E1',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </span>
-      <span style={{ flex: 1, fontSize: 13, color: '#94A3B8' }}>{label}</span>
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 700,
-          color: '#F8FAFC',
-          textAlign: 'right',
-          maxWidth: '60%',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════ */
 
 export default function RepartidorDetalleServicio() {
   const { servicioDetalle, cerrarDetalle } = useRepartidorStore();
 
-  const [rutaCoords, setRutaCoords] = useState<[number, number][] | undefined>(undefined);
-
-  const s = servicioDetalle;
-
-  const origenPos = useMemo<[number, number]>(() => s ? getCoordsForLocation(s.origen, false) : [12.1289, -86.2451], [s]);
-  const destinoPos = useMemo<[number, number]>(() => s ? getCoordsForLocation(s.destino, true) : [12.1421, -86.2287], [s]);
-
-  useEffect(() => {
-    if (!origenPos || !destinoPos) return;
-    const orig = { lat: origenPos[0], lng: origenPos[1] };
-    const dest = { lat: destinoPos[0], lng: destinoPos[1] };
-    obtenerRuta(orig, dest).then((res) => {
-      if (res.exito && res.coordenadas) {
-        setRutaCoords(res.coordenadas);
-      } else {
-        setRutaCoords(rutaLineaRecta(orig, dest));
-      }
-    });
-  }, [origenPos, destinoPos]);
-
-  if (!s) return null;
-  const TipoIcon = s.tipo === 'compra' ? ShoppingBag : Package;
-  const isEntregado = s.estado === 'entregado';
-
-  const completedCount = isEntregado ? 8 : 4;
+  if (!servicioDetalle) return null;
 
   return (
     <motion.div
-      initial={{ x: '100%' }}
-      animate={{ x: 0 }}
-      exit={{ x: '100%' }}
-      transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9995,
-        background: '#0B0E14',
-        overflowY: 'auto',
-        color: '#F8FAFC',
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-sans"
     >
-      <div
-        style={{
-          maxWidth: 480,
-          margin: '0 auto',
-          padding:
-            'calc(env(safe-area-inset-top, 24px) + 16px) 16px calc(env(safe-area-inset-bottom, 24px) + 16px)',
-        }}
+      <motion.div
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 20 }}
+        className="w-full max-w-sm max-h-[90vh] rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-2xl space-y-4 overflow-y-auto"
       >
         {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 16,
-          }}
-        >
-          <button
-            onClick={cerrarDetalle}
-            aria-label="Volver"
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              border: 'none',
-              background: 'var(--md-surface)',
-              color: 'var(--text)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--md-elevation-1)',
-            }}
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <div style={{ flex: 1 }}>
-            <div
-              className="font-syne"
-              style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={cerrarDetalle}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >
-              Detalle de servicio
-            </div>
-            <div
-              className="font-mono"
-              style={{ fontSize: 12, color: 'var(--text-muted)' }}
-            >
-              {s.ordenId}
+              <ChevronLeft size={20} />
+            </button>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Detalle del Servicio
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                #{servicioDetalle.id.substring(0, 8)}
+              </p>
             </div>
           </div>
-          <span
-            className={`lf-badge ${isEntregado ? 'lf-badge-entregado' : 'lf-badge-incidencia'}`}
-            style={{
-              padding: '4px 10px',
-              borderRadius: 100,
-              background: isEntregado
-                ? 'color-mix(in srgb, var(--exito, var(--exito)) 14%, transparent)'
-                : 'color-mix(in srgb, var(--peligro, var(--peligro)) 14%, transparent)',
-              color: isEntregado ? 'var(--exito, var(--exito))' : 'var(--peligro, var(--peligro))',
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-            }}
-          >
-            {s.estado}
+
+          <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 text-xs font-bold capitalize">
+            {servicioDetalle.estado}
           </span>
         </div>
 
-        {/* Mini map */}
-        <div style={{ marginBottom: 12 }}>
-          <MiniMap origenPos={origenPos} destinoPos={destinoPos} rutaCoords={rutaCoords} estado={s.estado === 'entregado' ? 'RECOGIDO' : 'INCIDENCIA'} />
+        {/* Route Mini-Map */}
+        <div className="h-36 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative">
+          <RepartidorMiniMap
+            repartidorPos={[12.1300, -86.2500]}
+            origenPos={[12.1264, -86.2652]}
+            destinoPos={[12.1402, -86.2954]}
+            estado="ENTREGADO"
+          />
         </div>
 
-        {/* Info card */}
-        <div
-          style={{
-            padding: 16,
-            borderRadius: 20,
-            background: 'rgba(30, 41, 59, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            marginBottom: 12,
-          }}
-        >
-          {/* ID + Tipo */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 8,
-              paddingBottom: 12,
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                className={`lf-badge ${s.tipo === 'compra' ? 'lf-badge-en-camino' : 'lf-badge-preparando'}`}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '3px 8px',
-                  borderRadius: 100,
-                  background:
-                    s.tipo === 'compra'
-                      ? 'rgba(0, 122, 255, 0.15)'
-                      : 'rgba(52, 199, 89, 0.15)',
-                  color:
-                    s.tipo === 'compra'
-                      ? '#007AFF'
-                      : '#34C759',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'capitalize',
-                }}
-              >
-                <TipoIcon size={11} />
-                {s.tipo}
-              </span>
-            </div>
-            <span
-              className="font-mono"
-              style={{ fontSize: 13, color: '#94A3B8', fontWeight: 600 }}
-            >
-              {s.id}
-            </span>
+        {/* Payout Breakdown */}
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-blue-100 font-semibold">Ganancia del Servicio</span>
+            <span className="text-xl font-black">C$ {servicioDetalle.ganancia.toFixed(2)}</span>
           </div>
 
-          <InfoRow icon={<User size={14} />} label="Cliente" value={s.cliente} />
-          {s.tiendaNombre && (
-            <InfoRow icon={<Store size={14} />} label="Tienda" value={s.tiendaNombre} />
-          )}
-          <InfoRow icon={<MapPin size={14} />} label="Origen" value={s.origen} />
-          <InfoRow icon={<Flag size={14} />} label="Destino" value={s.destino} />
-          <InfoRow icon={<Box size={14} />} label="Paquete" value={s.tipo === 'compra' ? 'Compra' : 'Envío'} />
-          <InfoRow
-            icon={<RouteIcon size={14} />}
-            label="Km recorridos"
-            value={`${s.kmRecorridos.toFixed(1)} km`}
-          />
-          <InfoRow
-            icon={<DollarSign size={14} />}
-            label="Ganancia"
-            value={`C$${s.ganancia}`}
-          />
-          <InfoRow
-            icon={<Clock size={14} />}
-            label="Tiempo total"
-            value={`${s.tiempoTotal} min`}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-            <span
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                background: 'rgba(255, 255, 255, 0.08)',
-                color: '#CBD5E1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Clock size={14} />
-            </span>
-            <span style={{ flex: 1, fontSize: 13, color: '#94A3B8' }}>Hora</span>
-            <span
-              className="font-mono"
-              style={{ fontSize: 13, fontWeight: 600, color: '#F8FAFC' }}
-            >
-              {s.hora}
-            </span>
+          <div className="flex items-center justify-between text-[11px] text-blue-100 border-t border-white/20 pt-1.5">
+            <span>Distancia: {servicioDetalle.kmRecorridos} km</span>
+            <span>Tiempo: {servicioDetalle.tiempoTotal} min</span>
           </div>
         </div>
 
-        {/* Incidencia info */}
-        {s.estado === 'incidencia' && (
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 20,
-              background: 'rgba(255, 59, 48, 0.1)',
-              border: '1px solid rgba(255, 59, 48, 0.3)',
-              marginBottom: 12,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 8,
-              }}
-            >
-              <AlertTriangle size={16} color="#FF3B30" />
-              <span
-                className="font-syne"
-                style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC' }}
-              >
-                Incidencia reportada
+        {/* Route Info */}
+        <div className="space-y-2 text-xs">
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-0.5">
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Punto de Recogida</p>
+            <p className="font-bold text-slate-900 dark:text-white">{servicioDetalle.origen}</p>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-0.5">
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Punto de Entrega</p>
+            <p className="font-bold text-slate-900 dark:text-white">{servicioDetalle.destino}</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+              Cliente: {servicioDetalle.cliente || 'Cliente LogiFast'}
+            </p>
+          </div>
+        </div>
+
+        {/* Rating if evaluated */}
+        {servicioDetalle.calificacion && (
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between">
+            <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+              Calificación del Cliente
+            </span>
+            <div className="flex items-center gap-1">
+              <StarRating value={servicioDetalle.calificacion} />
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                {servicioDetalle.calificacion.toFixed(1)}
               </span>
-            </div>
-            <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 4 }}>
-              <strong style={{ color: '#F8FAFC' }}>Tipo:</strong> {s.incidenciaTipo || '—'}
-            </div>
-            <div style={{ fontSize: 13, color: '#94A3B8' }}>
-              El servicio fue marcado como incidencia y notificado al administrador.
             </div>
           </div>
         )}
 
-        {/* Rating */}
-        {s.calificacion && (
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 20,
-              background: 'rgba(30, 41, 59, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              backdropFilter: 'blur(16px)',
-              marginBottom: 12,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                marginBottom: 8,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 32,
-                  fontWeight: 700,
-                  color: '#F8FAFC',
-                  fontFamily: "'Syne', sans-serif",
-                  lineHeight: 1,
-                }}
-              >
-                {s.calificacion}.0
-              </div>
-              <div>
-                <StarRating value={s.calificacion} size={18} />
-                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
-                  Calificación del cliente
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Timeline */}
-        <div
-          style={{
-            padding: 16,
-            borderRadius: 20,
-            background: 'rgba(30, 41, 59, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            marginBottom: 12,
-          }}
+        <button
+          onClick={cerrarDetalle}
+          className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-bold text-xs shadow-sm transition-all"
         >
-          <div
-            className="font-syne"
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: '#F8FAFC',
-              marginBottom: 12,
-            }}
-          >
-            Línea de tiempo
-          </div>
-          <div>
-            {STEPS.map((step, i) => {
-              const isCompleted = i < completedCount;
-              const isLast = i === STEPS.length - 1;
-              const isCurrentIncidencia = !isEntregado && i === completedCount;
-              return (
-                <div
-                  key={i}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '28px 1fr',
-                    gap: 10,
-                    paddingBottom: isLast ? 0 : 14,
-                    position: 'relative',
-                  }}
-                >
-                  {/* Dot + connector */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      position: 'relative',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: isCompleted
-                          ? '#34C759'
-                          : isCurrentIncidencia
-                            ? '#FF3B30'
-                            : 'rgba(255, 255, 255, 0.15)',
-                        color: '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        zIndex: 1,
-                      }}
-                    >
-                      {isCompleted ? (
-                        <Check size={12} />
-                      ) : isCurrentIncidencia ? (
-                        <AlertTriangle size={12} />
-                      ) : (
-                        step.icon
-                      )}
-                    </div>
-                    {!isLast && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 22,
-                          bottom: -14,
-                          width: 2,
-                          background: isCompleted
-                            ? '#34C759'
-                            : 'rgba(255, 255, 255, 0.15)',
-                        }}
-                      />
-                    )}
-                  </div>
-                  {/* Label */}
-                  <div
-                    style={{
-                      paddingTop: 2,
-                      fontSize: 13,
-                      fontWeight: isCompleted ? 600 : 500,
-                      color: isCompleted ? '#F8FAFC' : '#94A3B8',
-                    }}
-                  >
-                    {step.label}
-                    {isCurrentIncidencia && (
-                      <div style={{ fontSize: 11, color: '#FF3B30', marginTop: 2 }}>
-                        Detenido por incidencia
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+          Cerrar Detalle
+        </button>
+      </motion.div>
     </motion.div>
   );
 }

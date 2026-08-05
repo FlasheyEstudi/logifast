@@ -889,7 +889,7 @@ function EmptyHistory() {
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
-export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTracking, onOpenChat }: ClientPedidosProps) {
+export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTracking, onOpenChat, onOpenRating }: ClientPedidosProps) {
   /* ── Store ── */
   const { orders } = useStore();
   const { ordenesCompra } = useMarketplaceStore();
