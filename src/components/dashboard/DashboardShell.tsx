@@ -12,57 +12,119 @@ import {
 import { useStore, type ModuleKey } from '@/lib/store';
 import dynamic from 'next/dynamic';
 
-const ModuleOverview = dynamic(() => import('./ModuleOverview'), { ssr: false });
-const ModulePedidos = dynamic(() => import('./ModulePedidos'), { ssr: false });
-const ModuleFlota = dynamic(() => import('./ModuleFlota'), { ssr: false });
-const ModuleRepartidores = dynamic(() => import('./ModuleRepartidores'), { ssr: false });
-const ModuleReportes = dynamic(() => import('./ModuleReportes'), { ssr: false });
-const ModuleConfig = dynamic(() => import('./ModuleConfig'), { ssr: false });
-const ModuleDespacho = dynamic(() => import('./ModuleDespacho'), { ssr: false });
-const ModuleFinanzas = dynamic(() => import('./ModuleFinanzas'), { ssr: false });
-const ModuleClientes = dynamic(() => import('./ModuleClientes'), { ssr: false });
-const ModuleIncidencias = dynamic(() => import('./ModuleIncidencias'), { ssr: false });
-const ModuleMarketing = dynamic(() => import('./ModuleMarketing'), { ssr: false });
-const ModuleComunicaciones = dynamic(() => import('./ModuleComunicaciones'), { ssr: false });
-const ModuleSuperAdmin = dynamic(() => import('./ModuleSuperAdmin'), { ssr: false });
+/* ─── Skeleton loading para módulos dinámicos ─── */
+const ModuleSkeleton = () => (
+  <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+    {[1,2,3].map(i => (
+      <div key={i} style={{ height: 80, borderRadius: 14, background: 'var(--lf-surface, #1E293B)',
+        animation: 'lf-pulse 1.4s ease-in-out infinite', opacity: 0.7 - i * 0.15 }} />
+    ))}
+    <style dangerouslySetInnerHTML={{ __html: `@keyframes lf-pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }` }} />
+  </div>
+);
+
+const dynOpts = { ssr: false, loading: () => <ModuleSkeleton /> };
+
+const ModuleOverview       = dynamic(() => import('./ModuleOverview'),       dynOpts);
+const ModulePedidos        = dynamic(() => import('./ModulePedidos'),        dynOpts);
+const ModuleFlota          = dynamic(() => import('./ModuleFlota'),          dynOpts);
+const ModuleRepartidores   = dynamic(() => import('./ModuleRepartidores'),   dynOpts);
+const ModuleReportes       = dynamic(() => import('./ModuleReportes'),       dynOpts);
+const ModuleConfig         = dynamic(() => import('./ModuleConfig'),         dynOpts);
+const ModuleDespacho       = dynamic(() => import('./ModuleDespacho'),       dynOpts);
+const ModuleFinanzas       = dynamic(() => import('./ModuleFinanzas'),       dynOpts);
+const ModuleClientes       = dynamic(() => import('./ModuleClientes'),       dynOpts);
+const ModuleIncidencias    = dynamic(() => import('./ModuleIncidencias'),    dynOpts);
+const ModuleMarketing      = dynamic(() => import('./ModuleMarketing'),      dynOpts);
+const ModuleComunicaciones = dynamic(() => import('./ModuleComunicaciones'), dynOpts);
+const ModuleSuperAdmin     = dynamic(() => import('./ModuleSuperAdmin'),     dynOpts);
 
 import CommandPalette from './CommandPalette';
 import NotificationCenter from './NotificationCenter';
 import { SkeletonLoader, getSkeletonVariant, type SkeletonVariant } from './SkeletonLoader';
 
-class ModuleErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+class ModuleErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; isChunkError: boolean; countdown: number }
+> {
+  private timer: ReturnType<typeof setInterval> | null = null;
+
   constructor(props: any) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, isChunkError: false, countdown: 3 };
   }
-  static getDerivedStateFromError() {
-    return { hasError: true };
+
+  static getDerivedStateFromError(error: any) {
+    // Detectar error de chunk (nuevo deploy)
+    const msg = error?.message ?? '';
+    const isChunk = msg.includes('ChunkLoadError') || msg.includes('Loading chunk') ||
+                    msg.includes('Failed to fetch') || msg.includes('dynamically imported');
+    return { hasError: true, isChunkError: isChunk, countdown: 3 };
   }
+
   componentDidCatch(error: any) {
     console.error('[ModuleErrorBoundary]', error);
+    // Si es error de chunk, auto-reload con cuenta regresiva
+    if (this.state.isChunkError) {
+      this.timer = setInterval(() => {
+        this.setState(prev => {
+          if (prev.countdown <= 1) {
+            clearInterval(this.timer!);
+            window.location.reload();
+            return prev;
+          }
+          return { ...prev, countdown: prev.countdown - 1 };
+        });
+      }, 1000);
+    }
   }
+
+  componentWillUnmount() {
+    if (this.timer) clearInterval(this.timer);
+  }
+
   render() {
     if ((this.state as any).hasError) {
+      const { isChunkError, countdown } = this.state as any;
       return (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--lf-text-main, #F8FAFC)' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Actualizando módulo...</h3>
-          <p style={{ fontSize: 13, opacity: 0.7, marginBottom: 16 }}>Se ha desplegado una actualización de la vista.</p>
+        <div style={{
+          padding: 48, textAlign: 'center', color: 'var(--lf-text-main, #F8FAFC)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%',
+            background: isChunkError ? 'rgba(0,122,255,0.15)' : 'rgba(255,59,48,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+          }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={isChunkError ? '#007AFF' : '#FF3B30'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {isChunkError
+                ? <><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></>
+                : <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>
+              }
+            </svg>
+          </div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>
+            {isChunkError ? 'Nueva versión disponible' : 'Error al cargar módulo'}
+          </h3>
+          <p style={{ fontSize: 13, opacity: 0.65, margin: 0, maxWidth: 280 }}>
+            {isChunkError
+              ? `Se actualizó la app. Recargando en ${countdown}s...`
+              : 'Ocurrió un error inesperado en este módulo.'}
+          </p>
           <button
             onClick={() => {
-              this.setState({ hasError: false });
-              window.location.reload();
+              if (this.timer) clearInterval(this.timer);
+              if (isChunkError) { window.location.reload(); }
+              else { this.setState({ hasError: false, isChunkError: false, countdown: 3 }); }
             }}
             style={{
-              padding: '10px 20px',
-              borderRadius: 12,
-              background: '#007AFF',
-              color: '#fff',
-              border: 'none',
-              fontWeight: 700,
-              cursor: 'pointer',
+              padding: '10px 22px', borderRadius: 100,
+              background: isChunkError ? '#007AFF' : 'var(--lf-accent, #FF5722)',
+              color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              boxShadow: isChunkError ? '0 4px 14px rgba(0,122,255,0.4)' : '0 4px 14px rgba(255,87,34,0.3)',
             }}
           >
-            Reintentar Cargar
+            {isChunkError ? `Recargar ahora (${countdown}s)` : 'Reintentar'}
           </button>
         </div>
       );
