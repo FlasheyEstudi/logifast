@@ -528,108 +528,55 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           />
         </div>
 
-        {/* ═══════ HEADER / LAYOUT FLOTANTE ESTILO LÍQUIDO (CLIENTE) ═══════ */}
+        {/* ═══════ HEADER FLOTANTE CÁPSULA PREMIUM ═══════ */}
         <header
           style={{
             position: 'fixed',
-            top: 'calc(env(safe-area-inset-top, 12px) + 8px)',
+            top: 'calc(env(safe-area-inset-top, 10px) + 8px)',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 9980,
-            width: 'calc(100vw - 24px)',
-            maxWidth: 960,
+            width: 'calc(100vw - 28px)',
+            maxWidth: 680,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '8px 16px',
+            padding: '7px 8px 7px 18px',
             borderRadius: 100,
-            background: 'color-mix(in srgb, var(--surface, #1E293B) 88%, transparent)',
-            backdropFilter: 'saturate(200%) blur(24px)',
-            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-            border: '1px solid color-mix(in srgb, var(--primario) 25%, transparent)',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.3), 0 0 16px color-mix(in srgb, var(--primario) 12%, transparent)',
+            background: 'color-mix(in srgb, var(--surface) 90%, transparent)',
+            backdropFilter: 'saturate(180%) blur(28px)',
+            WebkitBackdropFilter: 'saturate(180%) blur(28px)',
+            border: '1px solid color-mix(in srgb, var(--primario) 20%, transparent)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
             transition: 'all 0.3s ease',
           }}
         >
-          {/* Left: Clean Module Title (Logo removed as requested) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: 'var(--text)',
-                fontFamily: "'Syne', sans-serif",
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {iosTitle}
-            </span>
-          </div>
+          {/* Left: título del módulo */}
+          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: '-0.02em' }}>
+            {iosTitle}
+          </span>
 
-          {/* Right Actions: Theme + Bell + Cart + Avatar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {/* Right: acciones en cápsula compacta */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'color-mix(in srgb, var(--text-muted) 8%, transparent)', borderRadius: 100, padding: '4px' }}>
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                border: 'none',
-                background: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-                color: 'var(--text)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
             >
-              {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}
+              {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
             </button>
 
-            {/* Notification Bell */}
+            {/* Bell */}
             <div ref={notifRef} style={{ position: 'relative' }}>
               <button
-                onClick={() => {
-                  setClientNotifOpen(!clientNotifOpen);
-                  setAvatarOpen(false);
-                }}
+                onClick={() => { setClientNotifOpen(!clientNotifOpen); setAvatarOpen(false); }}
                 aria-label="Notificaciones"
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: clientNotifOpen ? 'var(--primario)' : 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-                  color: clientNotifOpen ? '#FFFFFF' : 'var(--text)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                }}
+                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
               >
-                <Bell size={17} strokeWidth={1.8} />
+                <Bell size={16} strokeWidth={1.8} />
                 {unreadCount > 0 && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 1,
-                      right: 1,
-                      width: 14,
-                      height: 14,
-                      borderRadius: '50%',
-                      background: 'var(--peligro)',
-                      color: '#FFFFFF',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      lineHeight: 1,
-                    }}
-                  >
+                  <span style={{ position: 'absolute', top: 1, right: 1, width: 13, height: 13, borderRadius: '50%', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -639,42 +586,12 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             {/* Cart */}
             <button
               onClick={() => setCarritoOpen(true)}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                border: 'none',
-                background: carritoOpen ? 'var(--primario)' : 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-                color: carritoOpen ? '#FFFFFF' : 'var(--text)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-              }}
               aria-label="Carrito"
+              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: carritoOpen ? 'var(--primario)' : 'transparent', color: carritoOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
             >
-              <ShoppingBag size={17} strokeWidth={1.8} />
+              <ShoppingBag size={16} strokeWidth={1.8} />
               {getCartItemCount() > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 1,
-                    right: 1,
-                    minWidth: 14,
-                    height: 14,
-                    borderRadius: 7,
-                    padding: '0 3px',
-                    background: 'var(--peligro)',
-                    color: '#fff',
-                    fontSize: 9,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    lineHeight: 1,
-                  }}
-                >
+                <span style={{ position: 'absolute', top: 0, right: 0, minWidth: 13, height: 13, borderRadius: 7, padding: '0 3px', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
                   {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
                 </span>
               )}
@@ -720,29 +637,27 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           </div>
         </main>
 
-        {/* ═══════ NAVBAR FLOTANTE ESTILO LÍQUIDO (CLIENTE) ═══════ */}
+        {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
         <nav
           style={{
             position: 'fixed',
-            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 16px)',
+            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 10px)',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 9990,
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            justifyContent: 'space-around',
+            gap: 2,
             padding: '6px 8px',
             borderRadius: 100,
-            background: isDark
-              ? 'rgba(15, 23, 42, 0.88)'
-              : 'rgba(255, 255, 255, 0.92)',
-            backdropFilter: 'saturate(200%) blur(24px)',
-            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-            border: isDark
-              ? '1px solid rgba(255, 255, 255, 0.15)'
-              : '1px solid rgba(0, 0, 0, 0.10)',
-            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.25), 0 0 20px rgba(0, 102, 255, 0.15)',
-            maxWidth: 'calc(100vw - 24px)',
+            background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--border) 80%, transparent)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
+            width: 'auto',
+            maxWidth: 480,
+            backdropFilter: 'saturate(200%) blur(28px)',
+            WebkitBackdropFilter: 'saturate(200%) blur(28px)',
           }}
           aria-label="Navegación principal flotante"
         >

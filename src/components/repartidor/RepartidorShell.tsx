@@ -694,79 +694,54 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           />
         </div>
 
-        {/* ═══════ REPARTIDOR TOP-RIGHT ELEGANT FLOATING CAPSULE ═══════ */}
+        {/* ═══════ HEADER CÁPSULA PREMIUM REPARTIDOR ═══════ */}
         <header
           style={{
             position: 'fixed',
-            top: 'calc(env(safe-area-inset-top, 12px) + 8px)',
+            top: 'calc(env(safe-area-inset-top, 10px) + 8px)',
             right: 16,
             zIndex: 9980,
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            padding: '5px 8px 5px 6px',
+            gap: 4,
+            padding: '4px 4px 4px 14px',
             borderRadius: 100,
-            background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 88%, transparent)',
-            backdropFilter: 'saturate(200%) blur(24px)',
-            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-            border: '1px solid color-mix(in srgb, var(--ios-blue, var(--primario)) 25%, transparent)',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.3), 0 0 16px color-mix(in srgb, var(--ios-blue, var(--primario)) 12%, transparent)',
+            background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 90%, transparent)',
+            backdropFilter: 'saturate(200%) blur(28px)',
+            WebkitBackdropFilter: 'saturate(200%) blur(28px)',
+            border: '1px solid color-mix(in srgb, var(--ios-blue, var(--primario)) 20%, transparent)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
             transition: 'all 0.3s ease',
           }}
         >
-          {/* Connection status pill */}
+          {/* Connection pill */}
           <button
             onClick={handleToggleConnection}
             aria-label={conectado ? 'Conectado — tocar para desconectar' : 'Desconectado — tocar para conectar'}
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 12px',
-              borderRadius: 100,
-              border: 'none',
-              background: conectado ? 'rgba(52, 199, 89, 0.18)' : 'rgba(255, 59, 48, 0.18)',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 100, border: 'none',
+              background: conectado ? 'rgba(52,199,89,0.18)' : 'rgba(255,59,48,0.18)',
               color: conectado ? '#34C759' : '#FF3B30',
-              fontFamily: 'var(--ios-font)',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
+              fontFamily: 'var(--ios-font)', fontSize: 12, fontWeight: 700,
+              cursor: 'pointer', transition: 'all 0.2s ease',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: conectado ? '#34C759' : '#FF3B30',
-                boxShadow: conectado ? '0 0 8px #34C759' : 'none',
-              }}
-            />
-            {conectado ? 'En línea' : 'Desconectado'}
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: conectado ? '#34C759' : '#FF3B30', boxShadow: conectado ? '0 0 8px #34C759' : 'none' }} />
+            {conectado ? 'En línea' : 'Offline'}
           </button>
 
-          {/* Theme Toggle (Sun/Moon) */}
-          <button
-            onClick={toggleTheme}
-            aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              border: 'none',
-              background: 'color-mix(in srgb, var(--ios-text-primary) 10%, transparent)',
-              color: 'var(--ios-text-primary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
-          </button>
+          {/* Acciones en sub-cápsula */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'color-mix(in srgb, var(--ios-text-primary) 7%, transparent)', borderRadius: 100, padding: '2px' }}>
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Claro' : 'Oscuro'}
+              style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'transparent', color: 'var(--ios-text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', WebkitTapHighlightColor: 'transparent' }}
+            >
+              {isDark ? <Sun size={15} strokeWidth={1.8} /> : <Moon size={15} strokeWidth={1.8} />}
+            </button>
+          </div>
         </header>
 
         {/* ═══════ CONTENT AREA ═══════ */}
@@ -816,29 +791,27 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           </AnimatePresence>
         </main>
 
-        {/* ═══════ NAVBAR FLOTANTE ESTILO LÍQUIDO (REPARTIDOR) ═══════ */}
+        {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (REPARTIDOR) ═══════ */}
         <nav
           style={{
             position: 'fixed',
-            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 16px)',
+            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 10px)',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 9990,
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            justifyContent: 'space-around',
+            gap: 2,
             padding: '6px 8px',
             borderRadius: 100,
-            background: isDark
-              ? 'rgba(15, 23, 42, 0.88)'
-              : 'rgba(255, 255, 255, 0.92)',
-            backdropFilter: 'saturate(200%) blur(24px)',
-            WebkitBackdropFilter: 'saturate(200%) blur(24px)',
-            border: isDark
-              ? '1px solid rgba(255, 255, 255, 0.15)'
-              : '1px solid rgba(0, 0, 0, 0.10)',
-            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.25), 0 0 20px rgba(0, 102, 255, 0.15)',
-            maxWidth: 'calc(100vw - 24px)',
+            background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--border) 80%, transparent)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
+            width: 'auto',
+            maxWidth: 440,
+            backdropFilter: 'saturate(200%) blur(28px)',
+            WebkitBackdropFilter: 'saturate(200%) blur(28px)',
           }}
           aria-label="Navegación repartidor flotante"
         >
