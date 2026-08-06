@@ -47,10 +47,13 @@ export async function GET(req: NextRequest) {
       orderBy: { nombre: 'asc' }
     });
 
-    const motosFormatted = motos.map(moto => ({
+    const motosFormatted = motos.map(({ mantenimientos, _count, ...moto }) => ({
       ...moto,
-      alertas: moto._count.alertas,
-      ultimoMantenimiento: moto.mantenimientos[0] || null
+      alertas: _count.alertas,
+      ultimoMantenimiento: mantenimientos[0]
+        ? mantenimientos[0].createdAt.toISOString()
+        : null,
+      costoTotalMantenimiento: mantenimientos.reduce((sum: number, m: any) => sum + (m.costoTotal || 0), 0),
     }));
 
     return NextResponse.json(motosFormatted);
