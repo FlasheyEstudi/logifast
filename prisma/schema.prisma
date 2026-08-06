@@ -25,6 +25,8 @@ model User {
   color            String?
   fotoUrl          String?
   bio              String?
+  cedula           String?   // Cédula nicaragüense (14 dígitos: 001-123456-0000X)
+  municipio        String?   // Managua, Masaya, León, etc.
   emailVerified    Boolean  @default(false)
   twoFactorEnabled Boolean  @default(false)
   twoFactorSecret  String?
@@ -310,6 +312,8 @@ model Tienda {
   popular        Boolean  @default(false)
   estado         String   @default("activo")
   propietarioId  String?
+  ruc            String?   // RUC del negocio o cédula del propietario
+  whatsapp       String?   // Número WhatsApp del negocio
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -462,6 +466,14 @@ model RepartidorProfile {
   rechazosHora     Int       @default(0)
   saldo            Float     @default(0)
   contratoAceptado Boolean   @default(false)
+  // Vehículo propio del repartidor
+  vehiculoTipo     String?   // moto, bicicleta, auto
+  vehiculoMarca    String?   // Honda, Yamaha, Suzuki, TVS, Bajaj
+  vehiculoModelo   String?   // Wave 110, Nmax, Pulsar 135, Apache
+  vehiculoAnio     Int?      // Año del vehículo
+  vehiculoColor    String?   // Color del vehículo
+  vehiculoPlaca    String?   // Placa: M-12345 (formato NI)
+  cedulaRepartidor String?   // Cédula del repartidor
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

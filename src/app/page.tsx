@@ -268,6 +268,15 @@ export default function Home() {
   const [regLoading, setRegLoading] = useState(false);
   const [regSuccess, setRegSuccess] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
+  // New Nicaragua-specific fields
+  const [regTelefono, setRegTelefono] = useState('');
+  const [regMunicipio, setRegMunicipio] = useState('Managua');
+  const [regVehiculoTipo, setRegVehiculoTipo] = useState('moto');
+  const [regVehiculoMarca, setRegVehiculoMarca] = useState('');
+  const [regVehiculoModelo, setRegVehiculoModelo] = useState('');
+  const [regVehiculoAnio, setRegVehiculoAnio] = useState('');
+  const [regVehiculoColor, setRegVehiculoColor] = useState('');
+  const [regVehiculoPlaca, setRegVehiculoPlaca] = useState('');
 
   /* ─── Price Calculator State ─── */
   const [distance, setDistance] = useState(5);
@@ -648,6 +657,16 @@ export default function Home() {
           email: regEmail,
           password: regPassword,
           role: regRole === 'cliente' || regRole === 'repartidor' ? regRole : 'cliente',
+          telefono: regTelefono || undefined,
+          municipio: regMunicipio || undefined,
+          ...(regRole === 'repartidor' ? {
+            vehiculoTipo: regVehiculoTipo || undefined,
+            vehiculoMarca: regVehiculoMarca || undefined,
+            vehiculoModelo: regVehiculoModelo || undefined,
+            vehiculoAnio: regVehiculoAnio ? Number(regVehiculoAnio) : undefined,
+            vehiculoColor: regVehiculoColor || undefined,
+            vehiculoPlaca: regVehiculoPlaca || undefined,
+          } : {}),
         }),
       });
       const data = await res.json();
@@ -674,7 +693,7 @@ export default function Home() {
       setRegLoading(false);
       addToast('Error', 'No se pudo conectar con el servidor', 'error');
     }
-  }, [regName, regEmail, regPassword, regRole, regTerms, addToast]);
+  }, [regName, regEmail, regPassword, regRole, regTerms, regTelefono, regMunicipio, regVehiculoTipo, regVehiculoMarca, regVehiculoModelo, regVehiculoAnio, regVehiculoColor, regVehiculoPlaca, addToast]);
 
   /* ─── Logout ─── */
   const handleLogout = useCallback(async () => {
@@ -1141,6 +1160,32 @@ export default function Home() {
                         {displayRegErrors.email && <span className="text-[10px] text-error font-medium">{displayRegErrors.email}</span>}
                       </div>
 
+                      {/* Teléfono + Municipio */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="obsidian-label">Teléfono</label>
+                          <input
+                            type="tel"
+                            className="obsidian-input w-full"
+                            placeholder="8888-1234"
+                            value={regTelefono}
+                            onChange={(e) => setRegTelefono(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="obsidian-label">Municipio</label>
+                          <select
+                            className="obsidian-input w-full"
+                            value={regMunicipio}
+                            onChange={(e) => setRegMunicipio(e.target.value)}
+                          >
+                            {['Managua','Masaya','Granada','León','Chinandega','Matagalpa','Estelí','Jinotega','Rivas','Juigalpa','Bluefields','Puerto Cabezas'].map(m => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
                       {/* Password */}
                       <div className="flex flex-col gap-1.5">
                         <label className="obsidian-label">Contraseña</label>
@@ -1267,6 +1312,57 @@ export default function Home() {
                           ¿Administrador o Mecánico? Estos roles requieren invitación del equipo LOGIFAST.
                         </p>
                       </div>
+
+                      {/* Vehicle info for repartidores */}
+                      {regRole === 'repartidor' && (
+                        <div className="flex flex-col gap-3 border border-[var(--border)] rounded-2xl p-4">
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Tu vehículo</p>
+                          {/* Tipo */}
+                          <div className="grid grid-cols-3 gap-2">
+                            {['moto','bicicleta','auto'].map(tipo => (
+                              <button key={tipo} type="button"
+                                className={`py-2 px-3 rounded-xl border text-[11px] font-bold capitalize transition-all ${
+                                  regVehiculoTipo === tipo
+                                    ? 'border-[#4CAF50] bg-[#4CAF50]/10 text-[#4CAF50]'
+                                    : 'border-[var(--border)] text-gray-500 hover:border-white/20'
+                                }`}
+                                onClick={() => setRegVehiculoTipo(tipo)}
+                              >{tipo}</button>
+                            ))}
+                          </div>
+                          {regVehiculoTipo === 'moto' && (
+                            <>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="flex flex-col gap-1">
+                                  <label className="obsidian-label">Marca</label>
+                                  <select className="obsidian-input w-full" value={regVehiculoMarca} onChange={e => setRegVehiculoMarca(e.target.value)}>
+                                    <option value="">Selecciona</option>
+                                    {['Honda','Yamaha','Suzuki','TVS','Bajaj','KTM','Italika','Royal Enfield'].map(m => <option key={m} value={m}>{m}</option>)}
+                                  </select>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <label className="obsidian-label">Modelo</label>
+                                  <input className="obsidian-input w-full" placeholder="Wave 110, Nmax..." value={regVehiculoModelo} onChange={e => setRegVehiculoModelo(e.target.value)} />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3">
+                                <div className="flex flex-col gap-1">
+                                  <label className="obsidian-label">Año</label>
+                                  <input type="number" className="obsidian-input w-full" placeholder="2022" min="2000" max="2030" value={regVehiculoAnio} onChange={e => setRegVehiculoAnio(e.target.value)} />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <label className="obsidian-label">Color</label>
+                                  <input className="obsidian-input w-full" placeholder="Rojo" value={regVehiculoColor} onChange={e => setRegVehiculoColor(e.target.value)} />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <label className="obsidian-label">Placa</label>
+                                  <input className="obsidian-input w-full" placeholder="M-12345" value={regVehiculoPlaca} onChange={e => setRegVehiculoPlaca(e.target.value.toUpperCase())} />
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
 
                       {/* Terms */}
                       <div className="flex items-start gap-3 bg-transparent border border-[var(--border)] p-4 rounded-2xl">

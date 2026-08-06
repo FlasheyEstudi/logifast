@@ -13,6 +13,15 @@ interface RegisterBody {
   password: string;
   role?: 'cliente' | 'repartidor';
   telefono?: string;
+  cedula?: string;
+  municipio?: string;
+  // Repartidor vehicle fields
+  vehiculoTipo?: string;
+  vehiculoMarca?: string;
+  vehiculoModelo?: string;
+  vehiculoAnio?: number;
+  vehiculoColor?: string;
+  vehiculoPlaca?: string;
 }
 
 function computeInitials(name: string): string {
@@ -42,6 +51,14 @@ export async function POST(req: NextRequest) {
     const password = (body.password ?? '').trim();
     const role = body.role === 'repartidor' ? 'repartidor' : 'cliente';
     const telefono = body.telefono?.trim() || null;
+    const cedula = body.cedula?.trim() || null;
+    const municipio = body.municipio?.trim() || null;
+    const vehiculoTipo = body.vehiculoTipo?.trim() || null;
+    const vehiculoMarca = body.vehiculoMarca?.trim() || null;
+    const vehiculoModelo = body.vehiculoModelo?.trim() || null;
+    const vehiculoAnio = body.vehiculoAnio ? Number(body.vehiculoAnio) : null;
+    const vehiculoColor = body.vehiculoColor?.trim() || null;
+    const vehiculoPlaca = body.vehiculoPlaca?.trim().toUpperCase() || null;
 
     // Validación flexible
     const nameErr = validateLength(name, 2, 100, 'Nombre');
@@ -79,6 +96,8 @@ export async function POST(req: NextRequest) {
           password: hashed,
           role,
           telefono,
+          cedula,
+          municipio,
           initials: userRecord.initials,
           color: userRecord.color,
         },
@@ -95,6 +114,13 @@ export async function POST(req: NextRequest) {
               saldo: 100,
               conectado: true,
               contratoAceptado: true,
+              cedulaRepartidor: cedula,
+              vehiculoTipo,
+              vehiculoMarca,
+              vehiculoModelo,
+              vehiculoAnio,
+              vehiculoColor,
+              vehiculoPlaca,
             },
           });
         } catch (e) {
