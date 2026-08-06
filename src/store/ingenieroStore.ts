@@ -357,9 +357,23 @@ export const useIngenieroStore = create<IngenieroState>()(
           const statsData = statsRes && statsRes.ok ? await statsRes.json().catch(() => null) : null;
 
           const safeMotos = Array.isArray(motosData) ? motosData : (Array.isArray(motosData?.motos) ? motosData.motos : []);
-          const safeMantenimientos = Array.isArray(mantenimientosData) ? mantenimientosData : (Array.isArray(mantenimientosData?.mantenimientos) ? mantenimientosData.mantenimientos : []);
+          const rawMantenimientos = Array.isArray(mantenimientosData) ? mantenimientosData : (Array.isArray(mantenimientosData?.mantenimientos) ? mantenimientosData.mantenimientos : []);
           const safeRepuestos = Array.isArray(repuestosData) ? repuestosData : (Array.isArray(repuestosData?.repuestos) ? repuestosData.repuestos : []);
           const safeAlertas = Array.isArray(alertasData) ? alertasData : (Array.isArray(alertasData?.alertas) ? alertasData.alertas : []);
+
+          // Flatten Prisma relations into the shape the store/components expect
+          const safeMantenimientos = rawMantenimientos.map((m: any) => ({
+            ...m,
+            motoNombre: m.motoNombre ?? m.moto?.nombre ?? '',
+            motoModelo: m.motoModelo ?? m.moto?.modelo ?? '',
+            repuestosUsados: Array.isArray(m.repuestosUsados)
+              ? m.repuestosUsados.map((r: any) => ({
+                  nombre: r.nombre ?? r.repuesto?.nombre ?? '',
+                  cantidad: r.cantidad ?? 0,
+                  subtotal: r.subtotal ?? 0,
+                }))
+              : [],
+          }));
 
           set((state) => ({
             motos: safeMotos,
