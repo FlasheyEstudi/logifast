@@ -23,21 +23,19 @@ const ModuleSkeleton = () => (
   </div>
 );
 
-const dynOpts = { ssr: false, loading: () => <ModuleSkeleton /> };
-
-const ModuleOverview       = dynamic(() => import('./ModuleOverview'),       dynOpts);
-const ModulePedidos        = dynamic(() => import('./ModulePedidos'),        dynOpts);
-const ModuleFlota          = dynamic(() => import('./ModuleFlota'),          dynOpts);
-const ModuleRepartidores   = dynamic(() => import('./ModuleRepartidores'),   dynOpts);
-const ModuleReportes       = dynamic(() => import('./ModuleReportes'),       dynOpts);
-const ModuleConfig         = dynamic(() => import('./ModuleConfig'),         dynOpts);
-const ModuleDespacho       = dynamic(() => import('./ModuleDespacho'),       dynOpts);
-const ModuleFinanzas       = dynamic(() => import('./ModuleFinanzas'),       dynOpts);
-const ModuleClientes       = dynamic(() => import('./ModuleClientes'),       dynOpts);
-const ModuleIncidencias    = dynamic(() => import('./ModuleIncidencias'),    dynOpts);
-const ModuleMarketing      = dynamic(() => import('./ModuleMarketing'),      dynOpts);
-const ModuleComunicaciones = dynamic(() => import('./ModuleComunicaciones'), dynOpts);
-const ModuleSuperAdmin     = dynamic(() => import('./ModuleSuperAdmin'),     dynOpts);
+const ModuleOverview       = dynamic(() => import('./ModuleOverview'),       { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModulePedidos        = dynamic(() => import('./ModulePedidos'),        { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleFlota          = dynamic(() => import('./ModuleFlota'),          { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleRepartidores   = dynamic(() => import('./ModuleRepartidores'),   { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleReportes       = dynamic(() => import('./ModuleReportes'),       { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleConfig         = dynamic(() => import('./ModuleConfig'),         { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleDespacho       = dynamic(() => import('./ModuleDespacho'),       { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleFinanzas       = dynamic(() => import('./ModuleFinanzas'),       { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleClientes       = dynamic(() => import('./ModuleClientes'),       { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleIncidencias    = dynamic(() => import('./ModuleIncidencias'),    { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleMarketing      = dynamic(() => import('./ModuleMarketing'),      { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleComunicaciones = dynamic(() => import('./ModuleComunicaciones'), { ssr: false, loading: () => <ModuleSkeleton /> });
+const ModuleSuperAdmin     = dynamic(() => import('./ModuleSuperAdmin'),     { ssr: false, loading: () => <ModuleSkeleton /> });
 
 import CommandPalette from './CommandPalette';
 import NotificationCenter from './NotificationCenter';
