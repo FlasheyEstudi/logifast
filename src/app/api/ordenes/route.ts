@@ -156,6 +156,8 @@ export async function POST(req: NextRequest) {
       ? [rawDestLat, rawDestLng]
       : geocodeAddress(destino, [12.1402, -86.2954]);
 
+    const pinGenerado = String(Math.floor(1000 + Math.random() * 9000));
+
     const orden = await db.ordenServicio.create({
       data: {
         clienteId: user.id,
@@ -179,6 +181,7 @@ export async function POST(req: NextRequest) {
         tiempoEstimado: Number(tiempoEstimado) || 0,
         clienteNombre: user.name,
         clienteTelefono: user.telefono ?? null,
+        codigoPin: pinGenerado,
       },
     });
 

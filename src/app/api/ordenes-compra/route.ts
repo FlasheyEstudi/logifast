@@ -217,6 +217,8 @@ export async function POST(req: NextRequest) {
     const costoEnvio = tienda.costoEnvio;
     const total = Math.max(0, subtotal + costoEnvio - descuentoValidado);
 
+    const pinGenerado = String(Math.floor(1000 + Math.random() * 9000));
+
     // Transacción: crear orden + items + decrementar stock + usar código + crear OrdenServicio
     const result = await db.$transaction(async (tx) => {
       // 1. Crear orden de compra
@@ -235,6 +237,7 @@ export async function POST(req: NextRequest) {
           descuento: descuentoValidado,
           codigoUsado,
           total,
+          codigoPin: pinGenerado,
           items: {
             create: itemsData,
           },
