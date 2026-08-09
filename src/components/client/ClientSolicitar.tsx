@@ -927,11 +927,17 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   /* ─── Cost calculation ─── */
   const costBreakdown = useMemo<CostBreakdown>(() => {
     let PER_KM = 15;
+    let BASE = 0;
+    let MIN_PRICE = 0;
     try {
       const savedTarifas = typeof window !== 'undefined' ? localStorage.getItem('logifast_tarifas') : null;
       if (savedTarifas) {
         const parsed = JSON.parse(savedTarifas);
-        if (parsed && parsed.tarifaKm) PER_KM = Number(parsed.tarifaKm);
+        if (parsed) {
+          if (parsed.tarifaKm) PER_KM = Number(parsed.tarifaKm) || 15;
+          if (parsed.tarifaBase) BASE = Number(parsed.tarifaBase) || 0;
+          if (parsed.tarifaMin) MIN_PRICE = Number(parsed.tarifaMin) || 0;
+        }
       }
     } catch {}
 
@@ -949,7 +955,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     const distanceCost = Math.round(totalDist * PER_KM);
     const sizeSurcharge = SIZE_OPTIONS.find((s) => s.key === solicitudEnvio.tamano)?.surcharge ?? 0;
     const fragileSurcharge = solicitudEnvio.fragil ? 10 : 0;
-    const subtotal = distanceCost + sizeSurcharge + fragileSurcharge;
+    const subtotal = BASE + distanceCost + sizeSurcharge + fragileSurcharge;
 
     let discount = 0;
     if (promoDiscount > 0) {
@@ -960,7 +966,10 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       }
     }
 
-    const total = Math.max(0, subtotal - discount);
+    let total = Math.max(0, subtotal - discount);
+    if (MIN_PRICE > 0 && total < MIN_PRICE && (solicitudEnvio.origen || solicitudEnvio.destino)) {
+      total = MIN_PRICE;
+    }
     const estimatedMinutes = Math.max(8, Math.round(totalDist * 4));
 
     return {
