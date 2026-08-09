@@ -69,6 +69,31 @@ const PRESET_COLORS = [
   '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#EF4444',
 ];
 
+const DEFAULT_HORARIOS: ConfiguracionHorario[] = [
+  { id: 'H-1', dia: 1, horaInicio: '07:00', horaFin: '21:00', activo: true, recargoNocturno: 15 },
+  { id: 'H-2', dia: 2, horaInicio: '07:00', horaFin: '21:00', activo: true, recargoNocturno: 15 },
+  { id: 'H-3', dia: 3, horaInicio: '07:00', horaFin: '21:00', activo: true, recargoNocturno: 15 },
+  { id: 'H-4', dia: 4, horaInicio: '07:00', horaFin: '21:00', activo: true, recargoNocturno: 15 },
+  { id: 'H-5', dia: 5, horaInicio: '07:00', horaFin: '22:00', activo: true, recargoNocturno: 20 },
+  { id: 'H-6', dia: 6, horaInicio: '08:00', horaFin: '22:00', activo: true, recargoNocturno: 20 },
+  { id: 'H-0', dia: 0, horaInicio: '08:00', horaFin: '20:00', activo: true, recargoNocturno: 25 },
+];
+
+const DEFAULT_ZONAS: Zone[] = [
+  { id: 'Z-1', nombre: 'Managua Centro / Carretera Masaya', tarifa: 40, activa: true },
+  { id: 'Z-2', nombre: 'Linda Vista / Brisas / Monseñor Lezcano', tarifa: 45, activa: true },
+  { id: 'Z-3', nombre: 'Carretera Norte / Suburbana / Villa Fontana', tarifa: 50, activa: true },
+  { id: 'Z-4', nombre: 'Masaya / Ticuantepe / Nindirí', tarifa: 70, activa: true },
+  { id: 'Z-5', nombre: 'León / Chinandega', tarifa: 120, activa: true },
+];
+
+const DEFAULT_RULES: MaintenanceRule[] = [
+  { id: 'MR-1', tipo: 'Cambio de Aceite de Motor', umbralKm: 2500, descripcion: 'Reemplazo de aceite sintético 10W-40 y filtro' },
+  { id: 'MR-2', tipo: 'Revisión y Ajuste de Frenos', umbralKm: 5000, descripcion: 'Inspección de zapatas, pastillas y líquido de frenos' },
+  { id: 'MR-3', tipo: 'Inspección de Llantas y Cadena', umbralKm: 3000, descripcion: 'Calibración de presión, tensión de cadena y lubricación' },
+  { id: 'MR-4', tipo: 'Mantenimiento General / Afinado', umbralKm: 10000, descripcion: 'Ajuste de válvulas, bujía, filtro de aire y carburador' },
+];
+
 export default function ModuleConfig() {
   const {
     maintenanceRules, zones, companyData, users,
@@ -85,8 +110,7 @@ export default function ModuleConfig() {
     setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3000);
   };
 
-  // Helper: persistir ajustes locales con prefijo `logifast-` para que
-  // puedan limpiarse luego con el botón "Limpiar datos de prueba".
+  // Helper: persistir ajustes locales
   const persistLocal = (key: string, data: unknown): boolean => {
     try {
       window.localStorage.setItem(
@@ -100,9 +124,13 @@ export default function ModuleConfig() {
     }
   };
 
-  // Local editable state (existing)
-  const [editRules, setEditRules] = useState<MaintenanceRule[]>(maintenanceRules);
-  const [editZones, setEditZones] = useState<Zone[]>(zones);
+  // Local editable state
+  const [editRules, setEditRules] = useState<MaintenanceRule[]>(
+    maintenanceRules.length > 0 ? maintenanceRules : DEFAULT_RULES
+  );
+  const [editZones, setEditZones] = useState<Zone[]>(
+    zones.length > 0 ? zones : DEFAULT_ZONAS
+  );
   const [editCompany, setEditCompany] = useState<CompanyData>(companyData);
   const [editUsers, setEditUsers] = useState<SystemUser[]>(users);
 
@@ -131,7 +159,45 @@ export default function ModuleConfig() {
   const [appOffers, setAppOffers] = useState(['Envío gratis en tu primera orden', '20% descuento zonas lejanas', 'Paquete doble sin recargo']);
 
   // ─── 9C: Horarios State ───
-  const [localHorarios, setLocalHorarios] = useState<ConfiguracionHorario[]>(horarios);
+  const [localHorarios, setLocalHorarios] = useState<ConfiguracionHorario[]>(
+    horarios.length > 0 ? horarios : DEFAULT_HORARIOS
+  );
+
+  useEffect(() => {
+    fetch('/api/admin/config')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          if (data.horarios && Array.isArray(data.horarios) && data.horarios.length > 0) {
+            setLocalHorarios(data.horarios);
+          }
+          if (data.zonas && Array.isArray(data.zonas) && data.zonas.length > 0) {
+            setEditZones(data.zonas.map((z: any) => ({
+              id: z.id,
+              nombre: z.nombre,
+              tarifa: z.tarifa || 40,
+              activa: z.activa ?? true,
+            })));
+          }
+        }
+      })
+      .catch(() => null);
+
+    fetch('/api/admin/users')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.users) && data.users.length > 0) {
+          setEditUsers(data.users.map((u: any) => ({
+            id: u.id,
+            nombre: u.name || u.email.split('@')[0],
+            email: u.email,
+            rol: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'Cliente',
+            activo: true,
+          })));
+        }
+      })
+      .catch(() => null);
+  }, []);
   const [feriadoModalOpen, setFeriadoModalOpen] = useState(false);
   const [newFeriadoFecha, setNewFeriadoFecha] = useState('');
   const [newFeriadoNombre, setNewFeriadoNombre] = useState('');

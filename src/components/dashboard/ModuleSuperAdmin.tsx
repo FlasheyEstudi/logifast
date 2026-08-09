@@ -186,10 +186,58 @@ export default function ModuleSuperAdmin() {
   const [auditAccionFilter, setAuditAccionFilter] = useState('all');
   const [auditModuloFilter, setAuditModuloFilter] = useState('all');
 
+  const [localAudit, setLocalAudit] = useState<AuditLogEntry[]>(
+    auditLog.length > 0 ? auditLog : [
+      { id: 'AUD-101', userId: 'usr-1', usuario: 'Super Admin', accion: 'LOGIN', recurso: 'Autenticación', detalles: 'Inicio de sesión exitoso', createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16) },
+      { id: 'AUD-102', userId: 'usr-1', usuario: 'Super Admin', accion: 'UPDATE', recurso: 'Tarifas', detalles: 'Ajuste de tarifa base por km', createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16) },
+      { id: 'AUD-103', userId: 'usr-2', usuario: 'Despachador', accion: 'REASIGNAR', recurso: 'Despacho', detalles: 'Reasignación de orden a repartidor activo', createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16) },
+    ]
+  );
+
   /* ─── Feature Flags state ─── */
   const [newFlagModal, setNewFlagModal] = useState(false);
   const [newFlagNombre, setNewFlagNombre] = useState('');
   const [newFlagDesc, setNewFlagDesc] = useState('');
+
+  const [localFeatureFlags, setLocalFeatureFlags] = useState<FeatureFlag[]>(
+    featureFlags.length > 0 ? featureFlags : [
+      { id: 'FF-01', nombre: 'Pagos con Tarjeta de Crédito/Débito', descripcion: 'Habilita pasarela de pagos Visa/Mastercard', habilitado: true },
+      { id: 'FF-02', nombre: 'Geolocalización GPS en Vivo de Repartidores', descripcion: 'Transmisión de coordenadas en tiempo real al cliente', habilitado: true },
+      { id: 'FF-03', nombre: 'Autodespacho de Órdenes Comercial', descripcion: 'Asignación automática basada en distancia Haversine', habilitado: true },
+      { id: 'FF-04', nombre: 'Sistema de Puntos y Fidelización', descripcion: 'Recompensas por compras y envíos completados', habilitado: true },
+      { id: 'FF-05', nombre: 'Chat de Soporte Directo Cliente-Repartidor', descripcion: 'Mensajería interna durante la entrega activa', habilitado: true },
+      { id: 'FF-06', nombre: 'Modo Mantenimiento de la Plataforma', descripcion: 'Restringe la creación de nuevos envíos', habilitado: false },
+    ]
+  );
+
+  useEffect(() => {
+    fetch('/api/admin/audit')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.auditLogs) && data.auditLogs.length > 0) {
+          const apiAudit: AuditLogEntry[] = data.auditLogs.map((a: any) => ({
+            id: a.id,
+            userId: a.userId,
+            usuario: a.user?.name || a.userId,
+            accion: a.accion,
+            recurso: a.recurso,
+            detalles: a.detalles || 'Acción realizada en el sistema',
+            createdAt: new Date(a.createdAt).toISOString().replace('T', ' ').slice(0, 16),
+          }));
+          setLocalAudit(apiAudit);
+        }
+      })
+      .catch(() => null);
+
+    fetch('/api/admin/config')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.featureFlags) && data.featureFlags.length > 0) {
+          setLocalFeatureFlags(data.featureFlags);
+        }
+      })
+      .catch(() => null);
+  }, []);
 
   /* ═══ FILTERED USERS ═══ */
   const filteredUsers = useMemo(() => {
@@ -209,14 +257,14 @@ export default function ModuleSuperAdmin() {
 
   /* ═══ FILTERED AUDIT LOG ═══ */
   const filteredAudit = useMemo(() => {
-    return auditLog.filter((entry) => {
+    return localAudit.filter((entry) => {
       const matchUser = auditUserFilter === 'all' || entry.usuario === auditUserFilter;
       const matchAccion = auditAccionFilter === 'all' || entry.accion === auditAccionFilter;
       const matchModulo =
         auditModuloFilter === 'all' || entry.recurso === auditModuloFilter;
       return matchUser && matchAccion && matchModulo;
     });
-  }, [auditLog, auditUserFilter, auditAccionFilter, auditModuloFilter]);
+  }, [localAudit, auditUserFilter, auditAccionFilter, auditModuloFilter]);
 
   /* ─── Check high-activity alert ─── */
   const highActivityUsers = useMemo(() => {
@@ -1488,7 +1536,7 @@ export default function ModuleSuperAdmin() {
                   gap: 8,
                 }}
               >
-                {featureFlags.map((flag) => {
+                {localFeatureFlags.map((flag) => {
                   const isMaintenance = flag.id === 'FF-06';
                   return (
                     <motion.div
