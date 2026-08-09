@@ -318,6 +318,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const [storeDescInput, setStoreDescInput] = useState('');
   const [storeCatInput, setStoreCatInput] = useState('tienda');
   const [storeAddrInput, setStoreAddrInput] = useState('Managua, Nicaragua');
+  const [storeRucInput, setStoreRucInput] = useState('');
+  const [storeWhatsappInput, setStoreWhatsappInput] = useState('');
+  const [storeTelefonoInput, setStoreTelefonoInput] = useState('');
   const [creatingStore, setCreatingStore] = useState(false);
 
   // Cargar foto, direcciones, métodos de pago y tienda afiliada del cliente al montar
@@ -371,6 +374,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
           descripcion: storeDescInput,
           categoria: storeCatInput,
           direccion: storeAddrInput,
+          ruc: storeRucInput || undefined,
+          whatsapp: storeWhatsappInput || undefined,
+          telefono: storeTelefonoInput || undefined,
         }),
       });
       const data = await res.json();
@@ -731,7 +737,17 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Phone size={12} /> Telefono
                   </label>
-                  <input className="lf-input" style={inputStyle} value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+                  <input className="lf-input" style={inputStyle} value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+505 8888-1234" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <MapPin size={12} /> Municipio
+                  </label>
+                  <select className="lf-input" style={inputStyle}>
+                    {['Managua','Masaya','Granada','León','Chinandega','Matagalpa','Estelí','Jinotega','Rivas','Juigalpa','Bluefields','Puerto Cabezas'].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
                 </div>
                 <div style={{ position: 'relative' }}>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -939,6 +955,41 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                     value={storeAddrInput}
                     onChange={(e) => setStoreAddrInput(e.target.value)}
                     placeholder="Ej. Col. Los Robles, de la Plaza 2c al sur"
+                    style={inputStyle}
+                  />
+                </div>
+
+                {/* Grid: RUC + WhatsApp */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>RUC / Cédula del negocio</label>
+                    <input
+                      type="text"
+                      value={storeRucInput}
+                      onChange={(e) => setStoreRucInput(e.target.value)}
+                      placeholder="J0310000000000"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>WhatsApp del negocio</label>
+                    <input
+                      type="tel"
+                      value={storeWhatsappInput}
+                      onChange={(e) => setStoreWhatsappInput(e.target.value)}
+                      placeholder="+505 8888-1234"
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Teléfono del negocio</label>
+                  <input
+                    type="tel"
+                    value={storeTelefonoInput}
+                    onChange={(e) => setStoreTelefonoInput(e.target.value)}
+                    placeholder="+505 2222-3333"
                     style={inputStyle}
                   />
                 </div>

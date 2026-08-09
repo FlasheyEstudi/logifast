@@ -1,62 +1,60 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  // PostgreSQL para producción (configura DATABASE_URL en .env).
-  // Para desarrollo local sin Docker: ver README_CORREGIDO.md
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-// ─── Usuario Principal ───
 model User {
-  id               String   @id @default(cuid())
-  email            String   @unique
-  name             String
-  password         String
-  role             String   @default("cliente") // cliente, repartidor, admin, ingeniero
-  telefono         String?
-  initials         String?
-  color            String?
-  fotoUrl          String?
-  bio              String?
-  cedula           String?   // Cédula nicaragüense (14 dígitos: 001-123456-0000X)
-  municipio        String?   // Managua, Masaya, León, etc.
-  emailVerified    Boolean  @default(false)
-  twoFactorEnabled Boolean  @default(false)
-  twoFactorSecret  String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                   String                   @id @default(cuid())
+  email                String                   @unique
+  name                 String
+  password             String
+  role                 String                   @default("cliente")
+  telefono             String?
+  initials             String?
+  color                String?
+  fotoUrl              String?
+  bio                  String?
+  emailVerified        Boolean                  @default(false)
+  twoFactorEnabled     Boolean                  @default(false)
+  twoFactorSecret      String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  cedula               String?
+  municipio            String?
+  departamento         String?
+  direccion            String?
+  lat                  Float?                   @default(0)
+  lng                  Float?                   @default(0)
+  actividades          ActividadUsuario[]
 
-  repartidorProfile    RepartidorProfile?
-  ordenes              OrdenServicio[]          @relation("OrdenCliente")
-  ordenesCompra        OrdenCompra[]            @relation("OrdenCompraCliente")
-  passwordResets       PasswordReset[]
-  direcciones          DireccionCliente[]
-  metodosPago          MetodoPago[]
-  favoritosTiendas     FavoritoTienda[]
-  favoritosProductos   FavoritoProducto[]
-  resenasTiendas       ResenaTienda[]
-  solicitudesEnvio     SolicitudEnvio[]
-  notificacionesPush   NotificacionPush[]
   auditLogs            AuditLog[]
-  comentarios          Comentario[]
-  tiendasSeguidas      TiendaFollow[]
-  productosLiked       ProductoLike[]
+  calificacionesDadas  CalificacionRepartidor[]
   carritos             CarritoItem[]
-  usosCodigos          UsoCodigo[]
+  chatsRepartidor      ChatRepartidor[]
+  comentarios          Comentario[]
+  direcciones          DireccionCliente[]
+  favoritosProductos   FavoritoProducto[]
+  favoritosTiendas     FavoritoTienda[]
   mensajesEnviados     MensajeDirecto[]         @relation("MensajeEmisor")
   mensajesRecibidos    MensajeDirecto[]         @relation("MensajeReceptor")
-  chatsRepartidor      ChatRepartidor[]
+  metodosPago          MetodoPago[]
+  notificacionesPush   NotificacionPush[]
+  ordenesCompra        OrdenCompra[]            @relation("OrdenCompraCliente")
+  ordenes              OrdenServicio[]          @relation("OrdenCliente")
+  passwordResets       PasswordReset[]
+  productosLiked       ProductoLike[]
+  repartidorProfile    RepartidorProfile?
+  resenasTiendas       ResenaTienda[]
+  solicitudesEnvio     SolicitudEnvio[]
   vistasStories        StoryVista[]
-  actividades          ActividadUsuario[]
+  tiendasSeguidas      TiendaFollow[]
+  usosCodigos          UsoCodigo[]
   valoracionesProducto ValoracionProducto[]
-  calificacionesDadas  CalificacionRepartidor[]
 }
 
 model Post {
@@ -69,31 +67,30 @@ model Post {
   updatedAt DateTime @updatedAt
 }
 
-// ─── Envíos / Servicios de Repartidor ───
 model OrdenServicio {
-  id              String    @id @default(cuid())
+  id              String                   @id @default(cuid())
   clienteId       String
   repartidorId    String?
-  tipo            String    @default("envio") // envio, compra
-  estado          String    @default("pendiente") // pendiente, asignado, aceptado, recogido, entregado, incidencia, cancelado
+  tipo            String                   @default("envio")
+  estado          String                   @default("pendiente")
   origen          String
   destino         String
-  origenLat       Float     @default(0)
-  origenLng       Float     @default(0)
-  destinoLat      Float     @default(0)
-  destinoLng      Float     @default(0)
+  origenLat       Float                    @default(0)
+  origenLng       Float                    @default(0)
+  destinoLat      Float                    @default(0)
+  destinoLng      Float                    @default(0)
   paquete         String?
   tamano          String?
-  fragil          Boolean   @default(false)
+  fragil          Boolean                  @default(false)
   tiendaId        String?
   tiendaNombre    String?
-  metodoPago      String    @default("efectivo")
-  monto           Float     @default(0)
-  ganancia        Float     @default(0)
-  kmEstimados     Float     @default(0)
-  tiempoEstimado  Int       @default(0)
-  kmRecorridos    Float     @default(0)
-  tiempoTotal     Int       @default(0)
+  metodoPago      String                   @default("efectivo")
+  monto           Float                    @default(0)
+  ganancia        Float                    @default(0)
+  kmEstimados     Float                    @default(0)
+  tiempoEstimado  Int                      @default(0)
+  kmRecorridos    Float                    @default(0)
+  tiempoTotal     Int                      @default(0)
   incidenciaTipo  String?
   incidenciaDesc  String?
   clienteNombre   String
@@ -101,28 +98,26 @@ model OrdenServicio {
   aceptadoEn      DateTime?
   recogidoEn      DateTime?
   entregadoEn     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  cliente        User                     @relation("OrdenCliente", fields: [clienteId], references: [id], onDelete: Cascade)
-  repartidor     RepartidorProfile?       @relation("OrdenRepartidor", fields: [repartidorId], references: [id], onDelete: SetNull)
-  calificaciones CalificacionRepartidor[]
-  chats          ChatRepartidor[]
-  servicios      ServicioRepartidor[]
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  calificaciones  CalificacionRepartidor[]
+  chats           ChatRepartidor[]
+  cliente         User                     @relation("OrdenCliente", fields: [clienteId], references: [id], onDelete: Cascade)
+  repartidor      RepartidorProfile?       @relation("OrdenRepartidor", fields: [repartidorId], references: [id])
+  servicios       ServicioRepartidor[]
 
   @@index([repartidorId, createdAt])
   @@index([estado])
   @@index([clienteId])
 }
 
-// ─── Marketing Models ───
 model Campana {
   id             String    @id @default(cuid())
   titulo         String
-  tipo           String // push, email, sms
-  segmento       String // todos, frecuentes, inactivos, nuevos, vip, personalizado
-  contenido      String // JSON con titulo, cuerpo, boton, etc.
-  estado         String    @default("borrador") // borrador, programada, enviada, fallida
+  tipo           String
+  segmento       String
+  contenido      String
+  estado         String    @default("borrador")
   programadaPara DateTime?
   enviadaEn      DateTime?
   destinatarios  Int       @default(0)
@@ -136,11 +131,11 @@ model Campana {
 model CodigoPromocional {
   id             String      @id @default(cuid())
   codigo         String      @unique
-  tipoDescuento  String // porcentaje, monto
+  tipoDescuento  String
   valor          Float
-  aplicableA     String // todos, primer_envio, envio_minimo
+  aplicableA     String
   montoMinimo    Float?
-  maxUsos        Int         @default(0) // 0 = ilimitado
+  maxUsos        Int         @default(0)
   usosActuales   Int         @default(0)
   segmento       String      @default("todos")
   vigenciaInicio DateTime
@@ -152,15 +147,14 @@ model CodigoPromocional {
 }
 
 model UsoCodigo {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   codigoId  String
   clienteId String
   ordenId   String?
   descuento Float
-  usadoEn   DateTime @default(now())
-
-  codigo  CodigoPromocional @relation(fields: [codigoId], references: [id], onDelete: Cascade)
-  cliente User              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  usadoEn   DateTime          @default(now())
+  cliente   User              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  codigo    CodigoPromocional @relation(fields: [codigoId], references: [id], onDelete: Cascade)
 
   @@index([codigoId])
   @@index([clienteId])
@@ -170,9 +164,9 @@ model Banner {
   id              String    @id @default(cuid())
   titulo          String
   subtitulo       String?
-  tipo            String // promo_grande, tarjeta_compacta, slider, notificacion
+  tipo            String
   colorFondo      String    @default("#FF5722")
-  gradiente       String? // JSON {from, to, direction}
+  gradiente       String?
   colorTexto      String    @default("#FFFFFF")
   imagenUrl       String?
   botonTexto      String?
@@ -180,7 +174,7 @@ model Banner {
   botonLink       String?
   icono           String?
   segmento        String    @default("todos")
-  mostrarEn       String    @default("app") // app, dashboard, ambos
+  mostrarEn       String    @default("app")
   posicion        Int       @default(0)
   estado          String    @default("activo")
   impresiones     Int       @default(0)
@@ -193,7 +187,7 @@ model Banner {
 
 model FeedItem {
   id          String   @id @default(cuid())
-  tipo        String // anuncio, promocion, novedad, encuesta, recordatorio
+  tipo        String
   titulo      String
   descripcion String
   icono       String?
@@ -212,9 +206,9 @@ model FeedItem {
 model PlantillaMensaje {
   id        String   @id @default(cuid())
   nombre    String
-  categoria String // orden, incidencia, promocion, general
+  categoria String
   contenido String
-  variables String // JSON array string
+  variables String
   esDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 }
@@ -226,9 +220,8 @@ model MensajeDirecto {
   contenido  String
   leido      Boolean  @default(false)
   enviadoEn  DateTime @default(now())
-
-  emisor   User @relation("MensajeEmisor", fields: [emisorId], references: [id], onDelete: Cascade)
-  receptor User @relation("MensajeReceptor", fields: [receptorId], references: [id], onDelete: Cascade)
+  emisor     User     @relation("MensajeEmisor", fields: [emisorId], references: [id], onDelete: Cascade)
+  receptor   User     @relation("MensajeReceptor", fields: [receptorId], references: [id], onDelete: Cascade)
 
   @@index([emisorId])
   @@index([receptorId])
@@ -236,20 +229,19 @@ model MensajeDirecto {
 
 model NotificacionAutomatica {
   id           String  @id @default(cuid())
-  evento       String // orden_creada, orden_entregada, etc
+  evento       String
   etiqueta     String
   activa       Boolean @default(true)
-  canal        String // push, email, sms, todos
+  canal        String
   plantilla    String
-  destinatario String // cliente, repartidor, admin, ingeniero
+  destinatario String
 }
 
-// ─── Config Models ───
 model ConfiguracionHorario {
   id              String  @id @default(cuid())
-  dia             Int // 0-6 (domingo a sabado)
-  horaInicio      String // "07:00"
-  horaFin         String // "20:00"
+  dia             Int
+  horaInicio      String
+  horaFin         String
   activo          Boolean @default(true)
   recargoNocturno Float   @default(0)
 }
@@ -261,7 +253,6 @@ model Feriado {
   recargo Float    @default(0)
 }
 
-// ─── SuperAdmin Models ───
 model AuditLog {
   id          String   @id @default(cuid())
   userId      String
@@ -272,8 +263,7 @@ model AuditLog {
   ip          String?
   dispositivo String?
   createdAt   DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -285,105 +275,101 @@ model FeatureFlag {
   habilitado  Boolean @default(false)
 }
 
-// ─── Marketplace Models ───
 model Tienda {
-  id             String   @id @default(cuid())
+  id             String           @id @default(cuid())
   nombre         String
   descripcion    String?
-  categoria      String // comida, tienda, farmacia, regalos, supermercado, tecnologia, deportes
-  logoColor      String   @default("#FF5722")
+  categoria      String
+  logoColor      String           @default("#FF5722")
   logoIniciales  String
-  portadaColor   String   @default("#1B1B2F")
-  imagenUrl      String? // logo o foto de la tienda
-  bannerUrl      String? // imagen de portada
+  portadaColor   String           @default("#1B1B2F")
+  imagenUrl      String?
+  bannerUrl      String?
   direccion      String
   lat            Float
   lng            Float
   telefono       String?
   email          String?
-  calificacion   Float    @default(0)
-  totalPedidos   Int      @default(0)
-  tiempoEstimado String   @default("25-35 min")
-  costoEnvio     Float    @default(20)
-  pedidoMinimo   Float    @default(50)
-  horario        String // JSON
-  zonaCobertura  String   @default("[]") // JSON array
-  verificado     Boolean  @default(false)
-  popular        Boolean  @default(false)
-  estado         String   @default("activo")
+  calificacion   Float            @default(0)
+  totalPedidos   Int              @default(0)
+  tiempoEstimado String           @default("25-35 min")
+  costoEnvio     Float            @default(20)
+  pedidoMinimo   Float            @default(50)
+  horario        String
+  zonaCobertura  String           @default("[]")
+  verificado     Boolean          @default(false)
+  popular        Boolean          @default(false)
+  estado         String           @default("activo")
   propietarioId  String?
-  ruc            String?   // RUC del negocio o cédula del propietario
-  whatsapp       String?   // Número WhatsApp del negocio
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  productos    Producto[]
-  resenas      ResenaTienda[]
-  favoritos    FavoritoTienda[]
-  ordenes      OrdenCompra[]
-  seguidores   TiendaFollow[]
-  stories      Story[]
-  carritosItem CarritoItem[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  ruc            String?
+  whatsapp       String?
+  carritosItem   CarritoItem[]
+  favoritos      FavoritoTienda[]
+  ordenes        OrdenCompra[]
+  productos      Producto[]
+  resenas        ResenaTienda[]
+  stories        Story[]
+  seguidores     TiendaFollow[]
 }
 
 model Producto {
-  id              String   @id @default(cuid())
+  id              String               @id @default(cuid())
   tiendaId        String
-  categoriaNombre String? // "Entradas", "Platos fuertes", etc.
+  categoriaNombre String?
   nombre          String
   descripcion     String?
   precio          Float
   precioOriginal  Float?
-  imagenColor     String   @default("#E8E4DE")
-  imagenUrl       String? // foto real del producto
-  disponible      Boolean  @default(true)
-  esNuevo         Boolean  @default(false)
-  esPopular       Boolean  @default(false)
+  imagenColor     String               @default("#E8E4DE")
+  imagenUrl       String?
+  disponible      Boolean              @default(true)
+  esNuevo         Boolean              @default(false)
+  esPopular       Boolean              @default(false)
   stock           Int?
-  posicion        Int      @default(0)
-  createdAt       DateTime @default(now())
-
-  tienda       Tienda               @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
-  favoritos    FavoritoProducto[]
-  itemsOrden   ItemOrdenCompra[]
-  carritoItems CarritoItem[]
-  likes        ProductoLike[]
-  valoraciones ValoracionProducto[]
+  posicion        Int                  @default(0)
+  createdAt       DateTime             @default(now())
+  carritoItems    CarritoItem[]
+  favoritos       FavoritoProducto[]
+  itemsOrden      ItemOrdenCompra[]
+  tienda          Tienda               @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  likes           ProductoLike[]
+  valoraciones    ValoracionProducto[]
 
   @@index([tiendaId])
 }
 
 model OrdenCompra {
-  id               String    @id @default(cuid())
+  id               String            @id @default(cuid())
   clienteId        String
   tiendaId         String
   repartidorId     String?
-  estado           String    @default("recibido") // recibido, preparando, listo, en_camino, entregado, cancelado
+  estado           String            @default("recibido")
   direccionEntrega String
-  lat              Float     @default(0)
-  lng              Float     @default(0)
+  lat              Float             @default(0)
+  lng              Float             @default(0)
   instrucciones    String?
-  metodoPago       String    @default("efectivo")
+  metodoPago       String            @default("efectivo")
   subtotal         Float
   costoEnvio       Float
-  descuento        Float     @default(0)
+  descuento        Float             @default(0)
   codigoUsado      String?
   total            Float
   programadoPara   DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  cliente User              @relation("OrdenCompraCliente", fields: [clienteId], references: [id], onDelete: Cascade)
-  tienda  Tienda            @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
-  items   ItemOrdenCompra[]
-  resenas ResenaTienda[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  items            ItemOrdenCompra[]
+  cliente          User              @relation("OrdenCompraCliente", fields: [clienteId], references: [id], onDelete: Cascade)
+  tienda           Tienda            @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  resenas          ResenaTienda[]
 
   @@index([clienteId])
   @@index([tiendaId])
 }
 
 model ItemOrdenCompra {
-  id             String @id @default(cuid())
+  id             String      @id @default(cuid())
   ordenId        String
   productoId     String
   nombreProducto String
@@ -391,9 +377,8 @@ model ItemOrdenCompra {
   precioUnitario Float
   variante       String?
   notas          String?
-
-  orden    OrdenCompra @relation(fields: [ordenId], references: [id], onDelete: Cascade)
-  producto Producto    @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  orden          OrdenCompra @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  producto       Producto    @relation(fields: [productoId], references: [id], onDelete: Cascade)
 
   @@index([ordenId])
   @@index([productoId])
@@ -404,9 +389,8 @@ model FavoritoTienda {
   clienteId String
   tiendaId  String
   createdAt DateTime @default(now())
-
-  cliente User   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  tienda  Tienda @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  cliente   User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tienda    Tienda   @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
 
   @@unique([clienteId, tiendaId])
 }
@@ -416,129 +400,121 @@ model FavoritoProducto {
   clienteId  String
   productoId String
   createdAt  DateTime @default(now())
-
-  cliente  User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  cliente    User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
 
   @@unique([clienteId, productoId])
 }
 
 model ResenaTienda {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   tiendaId   String
   clienteId  String
   ordenId    String?
   estrellas  Int
   comentario String?
-  createdAt  DateTime @default(now())
-
-  cliente User         @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  tienda  Tienda       @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
-  orden   OrdenCompra? @relation(fields: [ordenId], references: [id], onDelete: SetNull)
+  createdAt  DateTime     @default(now())
+  cliente    User         @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  orden      OrdenCompra? @relation(fields: [ordenId], references: [id])
+  tienda     Tienda       @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
 
   @@index([tiendaId])
   @@index([clienteId])
 }
 
-// ─── Repartidor Models ───
 model RepartidorProfile {
-  id               String    @id @default(cuid())
-  userId           String    @unique
+  id               String                   @id @default(cuid())
+  userId           String                   @unique
   nombre           String
   email            String
   telefono         String?
   motoId           String?
-  conectado        Boolean   @default(false)
-  enServicio       Boolean   @default(false)
-  pausado          Boolean   @default(false)
+  conectado        Boolean                  @default(false)
+  enServicio       Boolean                  @default(false)
+  pausado          Boolean                  @default(false)
   pausaHasta       DateTime?
   lat              Float?
   lng              Float?
   zonaPreferida    String?
-  calificacion     Float     @default(0)
-  totalEntregas    Int       @default(0)
-  totalKm          Float     @default(0)
-  totalGanancias   Float     @default(0)
-  tiempoPromedio   Int       @default(0)
-  sonidoActivo     Boolean   @default(true)
-  vibracionActiva  Boolean   @default(true)
-  ubicacionActiva  Boolean   @default(true)
-  rechazosHora     Int       @default(0)
-  saldo            Float     @default(0)
-  contratoAceptado Boolean   @default(false)
-  // Vehículo propio del repartidor
-  vehiculoTipo     String?   // moto, bicicleta, auto
-  vehiculoMarca    String?   // Honda, Yamaha, Suzuki, TVS, Bajaj
-  vehiculoModelo   String?   // Wave 110, Nmax, Pulsar 135, Apache
-  vehiculoAnio     Int?      // Año del vehículo
-  vehiculoColor    String?   // Color del vehículo
-  vehiculoPlaca    String?   // Placa: M-12345 (formato NI)
-  cedulaRepartidor String?   // Cédula del repartidor
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  moto             Moto?                    @relation(fields: [motoId], references: [id], onDelete: SetNull)
+  calificacion     Float                    @default(0)
+  totalEntregas    Int                      @default(0)
+  totalKm          Float                    @default(0)
+  totalGanancias   Float                    @default(0)
+  tiempoPromedio   Int                      @default(0)
+  sonidoActivo     Boolean                  @default(true)
+  vibracionActiva  Boolean                  @default(true)
+  ubicacionActiva  Boolean                  @default(true)
+  rechazosHora     Int                      @default(0)
+  saldo            Float                    @default(0)
+  contratoAceptado Boolean                  @default(false)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  vehiculoTipo     String?
+  vehiculoMarca    String?
+  vehiculoModelo   String?
+  vehiculoAnio     Int?
+  vehiculoColor    String?
+  vehiculoPlaca    String?
+  cedulaRepartidor String?
+  chats            ChatRepartidor[]
+  notificaciones   NotificacionRepartidor[]
   ordenes          OrdenServicio[]          @relation("OrdenRepartidor")
   posiciones       PosicionRepartidor[]
-  servicios        ServicioRepartidor[]
-  notificaciones   NotificacionRepartidor[]
-  chats            ChatRepartidor[]
   recargas         RecargaSaldo[]
+  moto             Moto?                    @relation(fields: [motoId], references: [id])
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  servicios        ServicioRepartidor[]
   solicitudesEnvio SolicitudEnvio[]
 }
 
 model PosicionRepartidor {
-  id           String   @id @default(cuid())
+  id           String            @id @default(cuid())
   repartidorId String
   lat          Float
   lng          Float
-  velocidad    Float    @default(0)
-  heading      Float    @default(0)
-  timestamp    DateTime @default(now())
-
-  repartidor RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
+  velocidad    Float             @default(0)
+  heading      Float             @default(0)
+  timestamp    DateTime          @default(now())
+  repartidor   RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
 
   @@index([repartidorId, timestamp])
 }
 
 model ServicioRepartidor {
-  id             String    @id @default(cuid())
+  id             String            @id @default(cuid())
   repartidorId   String
   ordenId        String
-  tipo           String // envio, compra
-  estado         String // asignado, aceptado, recogido, entregado, incidencia, cancelado
-  kmRecorridos   Float     @default(0)
-  kmEstimados    Float     @default(0)
-  tiempoTotal    Int       @default(0)
-  ganancia       Float     @default(0)
+  tipo           String
+  estado         String
+  kmRecorridos   Float             @default(0)
+  kmEstimados    Float             @default(0)
+  tiempoTotal    Int               @default(0)
+  ganancia       Float             @default(0)
   incidenciaTipo String?
   incidenciaDesc String?
   aceptadoEn     DateTime?
   recogidoEn     DateTime?
   entregadoEn    DateTime?
-  createdAt      DateTime  @default(now())
-
-  repartidor RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
-  orden      OrdenServicio     @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  createdAt      DateTime          @default(now())
+  orden          OrdenServicio     @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  repartidor     RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
 
   @@index([repartidorId, createdAt])
   @@index([estado])
 }
 
 model CalificacionRepartidor {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   repartidorId String
   clienteId    String
   servicioId   String?
   ordenId      String
   estrellas    Int
-  etiquetas    String   @default("[]") // JSON array string
+  etiquetas    String        @default("[]")
   comentario   String?
-  createdAt    DateTime @default(now())
-
-  orden   OrdenServicio? @relation(fields: [ordenId], references: [id], onDelete: Cascade)
-  cliente User           @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  cliente      User          @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  orden        OrdenServicio @relation(fields: [ordenId], references: [id], onDelete: Cascade)
 
   @@index([repartidorId, createdAt])
   @@index([clienteId])
@@ -551,7 +527,7 @@ model MotoAsignada {
   modelo                  String
   placa                   String
   kmAcumulados            Float     @default(0)
-  estado                  String    @default("DISPONIBLE") // DISPONIBLE, EN_SERVICIO, MANTENIMIENTO
+  estado                  String    @default("DISPONIBLE")
   ultimoMantenimiento     DateTime?
   tipoUltimoMantenimiento String?
   proximoMantenimientoKm  Float?
@@ -561,33 +537,31 @@ model MotoAsignada {
 }
 
 model NotificacionRepartidor {
-  id           String   @id @default(cuid())
+  id           String            @id @default(cuid())
   repartidorId String
-  tipo         String // orden_asignada, mensaje, entrega_calificada, incidencia, cancelacion, reasignacion
+  tipo         String
   titulo       String
   contenido    String
-  leido        Boolean  @default(false)
+  leido        Boolean           @default(false)
   ordenId      String?
-  createdAt    DateTime @default(now())
-
-  repartidor RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+  repartidor   RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
 
   @@index([repartidorId, createdAt])
 }
 
 model ChatRepartidor {
-  id           String   @id @default(cuid())
+  id           String            @id @default(cuid())
   ordenId      String
   repartidorId String
   clienteId    String
-  emisor       String // repartidor, cliente
+  emisor       String
   contenido    String
-  leido        Boolean  @default(false)
-  enviadoEn    DateTime @default(now())
-
-  orden      OrdenServicio?    @relation(fields: [ordenId], references: [id], onDelete: Cascade)
-  repartidor RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
-  cliente    User              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  leido        Boolean           @default(false)
+  enviadoEn    DateTime          @default(now())
+  cliente      User              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  orden        OrdenServicio     @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  repartidor   RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
 
   @@index([ordenId, enviadoEn])
   @@index([repartidorId])
@@ -595,46 +569,44 @@ model ChatRepartidor {
 }
 
 model Moto {
-  id               String    @id @default(cuid())
-  nombre           String // "Moto-01", "Moto-02", etc.
-  modelo           String // "Honda Wave 110", "Yamaha YBR 125"
-  placa            String?   @unique
+  id               String                @id @default(cuid())
+  nombre           String
+  modelo           String
+  placa            String?               @unique
   anio             Int?
   color            String?
-  vin              String? // Numero de serie
-  kmAcumulados     Float     @default(0)
-  estado           String    @default("DISPONIBLE") // DISPONIBLE, EN_SERVICIO, EN_MANTENIMIENTO, FUERA_SERVICIO
-  asignadaA        String? // repartidorId si esta asignada
+  vin              String?
+  kmAcumulados     Float                 @default(0)
+  estado           String                @default("DISPONIBLE")
+  asignadaA        String?
   imagenUrl        String?
   fechaAdquisicion DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  mantenimientos Mantenimiento[]
-  alertas        AlertaMantenimiento[]
-  repartidores   RepartidorProfile[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  alertas          AlertaMantenimiento[]
+  mantenimientos   Mantenimiento[]
+  repartidores     RepartidorProfile[]
 }
 
 model Mantenimiento {
-  id             String    @id @default(cuid())
-  motoId         String
-  tipo           String // PREVENTIVO, CORRECTIVO, EMERGENCIA
-  categoria      String // CAMBIO_ACEITE, FRENO, LLANTA, CADENA, ELECTRICO, MOTOR, SUSPENSION, GENERAL
-  descripcion    String
-  observaciones  String?
-  kmAlMomento    Float
-  costoManoObra  Float     @default(0)
-  costoRepuestos Float     @default(0)
-  costoTotal     Float     @default(0)
-  estado         String    @default("PROGRAMADO") // PROGRAMADO, EN_PROCESO, COMPLETADO, CANCELADO
-  prioridad      String    @default("NORMAL") // BAJA, NORMAL, ALTA, URGENTE
-  programadoPara DateTime?
-  iniciadoEn     DateTime?
-  completadoEn   DateTime?
-  tecnicoId      String? // quien lo hizo
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
+  id              String          @id @default(cuid())
+  motoId          String
+  tipo            String
+  categoria       String
+  descripcion     String
+  observaciones   String?
+  kmAlMomento     Float
+  costoManoObra   Float           @default(0)
+  costoRepuestos  Float           @default(0)
+  costoTotal      Float           @default(0)
+  estado          String          @default("PROGRAMADO")
+  prioridad       String          @default("NORMAL")
+  programadoPara  DateTime?
+  iniciadoEn      DateTime?
+  completadoEn    DateTime?
+  tecnicoId       String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   moto            Moto            @relation(fields: [motoId], references: [id], onDelete: Cascade)
   repuestosUsados RepuestoUsado[]
 
@@ -642,35 +614,33 @@ model Mantenimiento {
 }
 
 model Repuesto {
-  id             String   @id @default(cuid())
-  nombre         String // "Filtro de aceite Honda Wave"
-  categoria      String // ACEITE, FRENO, LLANTA, CADENA, ELECTRICO, MOTOR, OTRO
-  sku            String?  @unique
+  id             String          @id @default(cuid())
+  nombre         String
+  categoria      String
+  sku            String?         @unique
   descripcion    String?
   precioUnitario Float
-  stock          Int      @default(0)
-  stockMinimo    Int      @default(5)
-  unidad         String   @default("pza") // pza, litro, metro, juego
-  compatibleCon  String   @default("[]") // JSON string of ["Honda Wave 110", "Yamaha YBR 125"]
+  stock          Int             @default(0)
+  stockMinimo    Int             @default(5)
+  unidad         String          @default("pza")
+  compatibleCon  String          @default("[]")
   proveedor      String?
-  ubicacion      String? // "Estante A-3", "Bodega 1"
+  ubicacion      String?
   imagenUrl      String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  usadosEn RepuestoUsado[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  usadosEn       RepuestoUsado[]
 }
 
 model RepuestoUsado {
-  id              String @id @default(cuid())
+  id              String        @id @default(cuid())
   mantenimientoId String
   repuestoId      String
   cantidad        Int
   precioUnitario  Float
   subtotal        Float
-
-  mantenimiento Mantenimiento @relation(fields: [mantenimientoId], references: [id], onDelete: Cascade)
-  repuesto      Repuesto      @relation(fields: [repuestoId], references: [id], onDelete: Cascade)
+  mantenimiento   Mantenimiento @relation(fields: [mantenimientoId], references: [id], onDelete: Cascade)
+  repuesto        Repuesto      @relation(fields: [repuestoId], references: [id], onDelete: Cascade)
 
   @@index([mantenimientoId])
   @@index([repuestoId])
@@ -679,32 +649,31 @@ model RepuestoUsado {
 model AlertaMantenimiento {
   id           String    @id @default(cuid())
   motoId       String
-  tipo         String // KM, FECHA, AMBOS
+  tipo         String
   descripcion  String
-  kmTrigger    Float? // alertar cuando la moto llegue a X km
-  fechaTrigger DateTime? // alertar en esta fecha
+  kmTrigger    Float?
+  fechaTrigger DateTime?
   activa       Boolean   @default(true)
   resuelta     Boolean   @default(false)
   resueltaEn   DateTime?
   createdAt    DateTime  @default(now())
-
-  moto Moto @relation(fields: [motoId], references: [id], onDelete: Cascade)
+  moto         Moto      @relation(fields: [motoId], references: [id], onDelete: Cascade)
 
   @@index([motoId])
 }
 
 model MediaAsset {
   id           String   @id @default(cuid())
-  filename     String // nombre final en disco
+  filename     String
   originalName String
   mimeType     String
   size         Int
   width        Int?
   height       Int?
-  url          String // ruta pública /uploads/xxx.jpg
+  url          String
   uploaderId   String?
-  categoria    String   @default("general") // perfil, producto, tienda, mantenimiento, banner, repuesto
-  entidadId    String? // ID de la entidad relacionada (productoId, tiendaId, etc.)
+  categoria    String   @default("general")
+  entidadId    String?
   createdAt    DateTime @default(now())
 
   @@index([categoria, entidadId])
@@ -716,9 +685,8 @@ model TiendaFollow {
   clienteId String
   tiendaId  String
   createdAt DateTime @default(now())
-
-  cliente User   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  tienda  Tienda @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  cliente   User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tienda    Tienda   @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
 
   @@unique([clienteId, tiendaId])
   @@index([tiendaId])
@@ -730,9 +698,8 @@ model ProductoLike {
   clienteId  String
   productoId String
   createdAt  DateTime @default(now())
-
-  cliente  User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  cliente    User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
 
   @@unique([clienteId, productoId])
   @@index([productoId])
@@ -741,19 +708,18 @@ model ProductoLike {
 
 model Comentario {
   id            String   @id @default(cuid())
-  entidad       String // producto, tienda, orden
+  entidad       String
   entidadId     String
   autorId       String
   autorNombre   String
   autorInitials String
   autorColor    String   @default("#FF5722")
   contenido     String
-  padreId       String? // para respuestas
+  padreId       String?
   likes         Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
-  autor User @relation(fields: [autorId], references: [id], onDelete: Cascade)
+  autor         User     @relation(fields: [autorId], references: [id], onDelete: Cascade)
 
   @@index([entidad, entidadId, createdAt])
   @@index([autorId])
@@ -762,16 +728,15 @@ model Comentario {
 model DireccionCliente {
   id             String   @id @default(cuid())
   clienteId      String
-  etiqueta       String   @default("Casa") // Casa, Trabajo, Otro
+  etiqueta       String   @default("Casa")
   direccion      String
   lat            Float    @default(0)
   lng            Float    @default(0)
-  referencia     String? // "Portón negro, casa esquinera"
+  referencia     String?
   predeterminada Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  cliente User @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cliente        User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@index([clienteId])
 }
@@ -779,52 +744,49 @@ model DireccionCliente {
 model MetodoPago {
   id             String   @id @default(cuid())
   clienteId      String
-  tipo           String // tarjeta, efectivo, transferencia
+  tipo           String
   titular        String?
-  ultimos4       String? // "4242"
-  marca          String? // Visa, Mastercard
-  vencimiento    String? // "12/26"
+  ultimos4       String?
+  marca          String?
+  vencimiento    String?
   predeterminado Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  cliente User @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cliente        User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@index([clienteId])
 }
 
 model RecargaSaldo {
-  id           String   @id @default(cuid())
+  id           String            @id @default(cuid())
   repartidorId String
   monto        Float
-  metodo       String // codigo, transferencia, efectivo
+  metodo       String
   codigo       String?
-  estado       String @default("completada") // pendiente, completada, fallida
+  estado       String            @default("completada")
   referencia   String?
-  createdAt    DateTime @default(now())
-
-  repartidor RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+  repartidor   RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
 
   @@index([repartidorId, createdAt])
 }
 
 model Story {
-  id          String   @id @default(cuid())
-  tipo        String // promo, novedad, tienda
+  id          String       @id @default(cuid())
+  tipo        String
   titulo      String
   descripcion String?
   imagenUrl   String?
-  colorFondo  String   @default("#FF5722")
+  colorFondo  String       @default("#FF5722")
   link        String?
   tiendaId    String?
-  segmento    String   @default("todos")
-  activo      Boolean  @default(true)
-  vistas      Int      @default(0)
-  createdAt   DateTime @default(now())
-  expiraEn    DateTime // 24h por defecto
-
-  tienda Tienda?      @relation(fields: [tiendaId], references: [id], onDelete: SetNull)
-  vistasRel StoryVista[]
+  segmento    String       @default("todos")
+  activo      Boolean      @default(true)
+  vistas      Int          @default(0)
+  createdAt   DateTime     @default(now())
+  expiraEn    DateTime
+  tienda      Tienda?      @relation(fields: [tiendaId], references: [id])
+  vistasRel   StoryVista[]
 
   @@index([activo, expiraEn])
   @@index([tiendaId])
@@ -835,18 +797,17 @@ model StoryVista {
   storyId   String
   clienteId String
   createdAt DateTime @default(now())
-
-  story   Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  cliente User  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cliente   User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
 
   @@unique([storyId, clienteId])
 }
 
 model DireccionBusqueda {
-  id        String   @id @default(cuid())
-  query     String
-  resultados String // JSON
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  query      String
+  resultados String
+  createdAt  DateTime @default(now())
 
   @@index([query])
 }
@@ -854,14 +815,13 @@ model DireccionBusqueda {
 model ActividadUsuario {
   id          String   @id @default(cuid())
   userId      String
-  tipo        String // orden_creada, orden_entregada, producto_like, comentario, follow
+  tipo        String
   descripcion String
   entidadTipo String?
   entidadId   String?
-  metadata    String? // JSON
+  metadata    String?
   createdAt   DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([tipo])
@@ -876,9 +836,8 @@ model ValoracionProducto {
   comentario String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  cliente  User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cliente    User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
 
   @@unique([productoId, clienteId])
   @@index([productoId])
@@ -886,27 +845,26 @@ model ValoracionProducto {
 }
 
 model SolicitudEnvio {
-  id           String   @id @default(cuid())
+  id           String             @id @default(cuid())
   clienteId    String
-  estado       String   @default("pendiente") // pendiente, aceptada, en_camino, entregado, cancelado
+  estado       String             @default("pendiente")
   origen       String
   destino      String
-  origenLat    Float    @default(0)
-  origenLng    Float    @default(0)
-  destinoLat   Float    @default(0)
-  destinoLng   Float    @default(0)
+  origenLat    Float              @default(0)
+  origenLng    Float              @default(0)
+  destinoLat   Float              @default(0)
+  destinoLng   Float              @default(0)
   paquete      String?
-  tamano       String? // pequeño, mediano, grande
-  fragil       Boolean  @default(false)
-  metodoPago   String   @default("efectivo")
-  monto        Float    @default(0)
+  tamano       String?
+  fragil       Boolean            @default(false)
+  metodoPago   String             @default("efectivo")
+  monto        Float              @default(0)
   notas        String?
   repartidorId String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  cliente    User               @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  repartidor RepartidorProfile? @relation(fields: [repartidorId], references: [id], onDelete: SetNull)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  cliente      User               @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  repartidor   RepartidorProfile? @relation(fields: [repartidorId], references: [id])
 
   @@index([clienteId])
   @@index([repartidorId])
@@ -919,7 +877,7 @@ model ZonaCobertura {
   descripcion String?
   lat         Float    @default(0)
   lng         Float    @default(0)
-  radio       Float    @default(5) // km
+  radio       Float    @default(5)
   activa      Boolean  @default(true)
   createdAt   DateTime @default(now())
 }
@@ -929,12 +887,11 @@ model NotificacionPush {
   userId    String
   titulo    String
   contenido String
-  tipo      String // orden, promo, sistema, chat
+  tipo      String
   entidadId String?
   leida     Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, leida, createdAt])
 }
@@ -948,10 +905,9 @@ model CarritoItem {
   notas      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  cliente  User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  tienda   Tienda   @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  cliente    User     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  tienda     Tienda   @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
 
   @@unique([clienteId, productoId])
   @@index([clienteId])
@@ -965,8 +921,7 @@ model PasswordReset {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])

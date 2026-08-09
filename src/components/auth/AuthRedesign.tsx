@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { sileo } from 'sileo';
 import { useConfigStore } from '@/store/configStore';
 import { MiniSpinner } from '@/components/ui/loaders';
+import { ImageUploader } from '@/components/ui/ImageUploader';
+
 
 type View = 'landing' | 'login' | 'register';
 
@@ -874,32 +876,125 @@ function RegisterView({
   isDark: boolean;
   toggleTheme: () => void;
 }) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState({
     name: '',
     email: '',
-    phone: '',
     password: '',
     confirm: '',
+    phone: '',
+    cedula: '',
+    departamento: 'Managua',
+    municipio: 'Managua',
+    direccion: '',
+    lat: 12.1365,
+    lng: -86.2514,
+    fotoUrl: '',
     role: 'cliente' as 'cliente' | 'repartidor',
+    // Vehículo para repartidores
+    vehiculoTipo: 'moto',
+    vehiculoMarca: '',
+    vehiculoModelo: '',
+    vehiculoAnio: 2024,
+    vehiculoColor: '',
+    vehiculoPlaca: '',
+    zonaPreferida: 'Managua Centro',
     terms: false,
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [gettingGps, setGettingGps] = useState(false);
+  const [gpsCaptured, setGpsCaptured] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const textColor = isDark ? '#FFFFFF' : 'var(--text)';
   const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
 
+  const DEPARTAMENTOS = [
+    'Managua', 'Masaya', 'León', 'Granada', 'Estelí', 'Chinandega',
+    'Matagalpa', 'Carazo', 'Rivas', 'Chontales', 'Jinotega', 'Nueva Segovia',
+  ];
+
+  const MUNICIPIOS: Record<string, string[]> = {
+    Managua: ['Managua', 'Ciudad Sandino', 'Tipitapa', 'Ticuantepe', 'Mateare', 'San Rafael del Sur'],
+    Masaya: ['Masaya', 'Monimbó', 'Nindirí', 'Tisma', 'La Concepción', 'Catarina', 'Niquinohomo'],
+    León: ['León', 'Nagarote', 'La Paz Centro', 'El Jícaral', 'Telica', 'Sutiaba'],
+    Granada: ['Granada', 'Diriomo', 'Diriá', 'Nandaime'],
+    Estelí: ['Estelí', 'Condega', 'Pueblo Nuevo', 'San Juan de Limay'],
+    Chinandega: ['Chinandega', 'El Viejo', 'Corinto', 'Chichigalpa', 'Somotillo'],
+    Matagalpa: ['Matagalpa', 'Sebaco', 'Sébaco', 'San Ramón', 'Matiguás'],
+    Carazo: ['Jinotepe', 'Diriamba', 'San Marcos', 'Santa Teresa'],
+    Rivas: ['Rivas', 'San Juan del Sur', 'Tola', 'Moyogalpa'],
+    Chontales: ['Juigalpa', 'Acoyapa', 'Santo Tomás'],
+    Jinotega: ['Jinotega', 'San Rafael del Norte', 'La Concordia'],
+    'Nueva Segovia': ['Ocotal', 'Jalapa', 'Jícaro'],
+  };
+
+  const handleGetGps = () => {
+    if (!navigator.geolocation) {
+      sileo.error({ title: 'Tu navegador no soporta geolocalización GPS' });
+      return;
+    }
+    setGettingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((prev) => ({
+          ...prev,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        }));
+        setGpsCaptured(true);
+        setGettingGps(false);
+        sileo.success({
+          title: '📍 GPS Capturado',
+          description: `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`,
+        });
+      },
+      () => {
+        setGettingGps(false);
+        sileo.error({ title: 'Error al obtener la ubicación GPS' });
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const validateStep1 = () => {
     const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = 'El nombre es obligatorio';
+    if (!form.name.trim() || form.name.trim().length < 3) {
+      errs.name = 'Escribe tu nombre completo (mínimo 3 letras)';
+    }
     if (!form.email) errs.email = 'El correo es obligatorio';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Correo inválido';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Correo electrónico inválido';
+
     if (!form.password) errs.password = 'La contraseña es obligatoria';
     else if (form.password.length < 6) errs.password = 'Mínimo 6 caracteres';
     if (form.password !== form.confirm) errs.confirm = 'Las contraseñas no coinciden';
+
+    const cleanPhone = form.phone.replace(/\D/g, '');
+    if (!form.phone || cleanPhone.length < 8) {
+      errs.phone = 'Teléfono nicaragüense obligatorio (8 dígitos)';
+    }
+
+    const cedulaRegex = /^\d{3}-?\d{6}-?\d{4}[A-Za-z]$/;
+    if (!form.cedula || !cedulaRegex.test(form.cedula.trim())) {
+      errs.cedula = 'Formato inválido (ej: 001-120495-0002E)';
+    }
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const errs: Record<string, string> = {};
+    if (!form.fotoUrl) {
+      errs.fotoUrl = '🔴 La foto de perfil es obligatoria para verificar tu identidad';
+    }
+    if (!form.municipio) errs.municipio = 'Selecciona tu Municipio';
+    if (!form.direccion.trim() || form.direccion.trim().length < 6) {
+      errs.direccion = 'Escribe tu dirección física exacta y referencia';
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -907,8 +1002,16 @@ function RegisterView({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (!form.role) errs.role = 'Selecciona un rol';
-    if (!form.terms) errs.terms = 'Debes aceptar los términos';
+    if (!form.terms) errs.terms = 'Debes aceptar los Términos y Condiciones';
+
+    if (form.role === 'repartidor') {
+      if (['moto', 'auto'].includes(form.vehiculoTipo)) {
+        if (!form.vehiculoMarca.trim()) errs.vehiculoMarca = 'Marca obligatoria';
+        if (!form.vehiculoModelo.trim()) errs.vehiculoModelo = 'Modelo obligatorio';
+        if (!form.vehiculoPlaca.trim()) errs.vehiculoPlaca = 'Placa oficial obligatoria (ej: M-123456)';
+      }
+    }
+
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -922,7 +1025,21 @@ function RegisterView({
           email: form.email,
           password: form.password,
           telefono: form.phone,
+          cedula: form.cedula,
+          departamento: form.departamento,
+          municipio: form.municipio,
+          direccion: form.direccion,
+          lat: form.lat,
+          lng: form.lng,
+          fotoUrl: form.fotoUrl,
           role: form.role,
+          vehiculoTipo: form.vehiculoTipo,
+          vehiculoMarca: form.vehiculoMarca,
+          vehiculoModelo: form.vehiculoModelo,
+          vehiculoAnio: form.vehiculoAnio,
+          vehiculoColor: form.vehiculoColor,
+          vehiculoPlaca: form.vehiculoPlaca,
+          zonaPreferida: form.zonaPreferida,
         }),
       });
       const data = await res.json();
@@ -933,7 +1050,7 @@ function RegisterView({
         return;
       }
 
-      sileo.success({ title: `¡Cuenta creada, ${data.user.name}!`, description: 'Bienvenido a LOGIFAST' });
+      sileo.success({ title: `¡Cuenta verificada, ${data.user.name}!`, description: 'Bienvenido a LOGIFAST' });
       onLoginSuccess(data.user.role, data.user.name);
     } catch {
       setLoading(false);
@@ -962,83 +1079,245 @@ function RegisterView({
 
       <div style={{
         width: '100%',
-        maxWidth: 420,
+        maxWidth: 480,
         background: isDark ? 'rgba(22, 22, 29, 0.9)' : 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(40px)',
         WebkitBackdropFilter: 'blur(40px)',
         border: border,
         borderRadius: 32,
-        padding: '40px 28px',
+        padding: '36px 28px',
         boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.7)' : '0 20px 60px rgba(0,0,0,0.1)',
         textAlign: 'center',
         marginTop: 40,
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <Icon.Logo size={46} />
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: textColor, margin: '12px 0 4px' }}>{step === 1 ? 'Crear mi Cuenta' : 'Tipo de Cuenta'}</h2>
-          <p style={{ fontSize: 13, color: subColor, margin: 0 }}>{step === 1 ? 'Completa tus datos personales' : 'Selecciona tu perfil en LOGIFAST'}</p>
+        {/* Step Header */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
+          <Icon.Logo size={42} />
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: textColor, margin: '10px 0 4px' }}>
+            {step === 1 ? 'Paso 1: Identificación Legal' : step === 2 ? 'Paso 2: Foto de Perfil & GPS' : 'Paso 3: Perfil & Vehículo'}
+          </h2>
+          <p style={{ fontSize: 13, color: subColor, margin: 0 }}>
+            {step === 1 ? 'Datos personales y cédula de Nicaragua' : step === 2 ? 'Fotografía verificada y ubicación GPS' : 'Selecciona tu rol y vehículo'}
+          </p>
+
+
+          {/* Stepper Dots */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                style={{
+                  width: s === step ? 28 : 10,
+                  height: 6,
+                  borderRadius: 100,
+                  background: s <= step ? '#0066FF' : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'),
+                  transition: 'all 0.3s ease',
+                }}
+              />
+            ))}
+          </div>
         </div>
 
-        {step === 1 ? (
-          <form onSubmit={(e) => { e.preventDefault(); if (validateStep1()) setStep(2); }} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
+        {/* PASO 1 */}
+        {step === 1 && (
+          <form onSubmit={(e) => { e.preventDefault(); if (validateStep1()) setStep(2); }} style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Nombre Completo</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Nombre Completo *</label>
               <input
                 type="text"
-                placeholder="María López"
+                placeholder="María López Vanegas"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                style={{ width: '100%', height: 46, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4 }}
+                style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
               />
               {errors.name && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.name}</span>}
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Correo Electrónico</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Correo Electrónico *</label>
               <input
                 type="email"
-                placeholder="nombre@empresa.com"
+                placeholder="maria@empresa.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                style={{ width: '100%', height: 46, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4 }}
+                style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
               />
               {errors.email && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.email}</span>}
             </div>
 
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Contraseña</label>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                style={{ width: '100%', height: 46, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4 }}
-              />
-              {errors.password && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.password}</span>}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Teléfono Móvil *</label>
+                <input
+                  type="tel"
+                  placeholder="8888-8888"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                />
+                {errors.phone && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.phone}</span>}
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Cédula NI *</label>
+                <input
+                  type="text"
+                  placeholder="001-120495-0002E"
+                  value={form.cedula}
+                  onChange={(e) => setForm({ ...form, cedula: e.target.value.toUpperCase() })}
+                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                />
+                {errors.cedula && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.cedula}</span>}
+              </div>
             </div>
 
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Confirmar Contraseña</label>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={form.confirm}
-                onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                style={{ width: '100%', height: 46, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4 }}
-              />
-              {errors.confirm && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.confirm}</span>}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Contraseña *</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                />
+                {errors.password && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.password}</span>}
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Confirmar Contraseña *</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={form.confirm}
+                  onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                />
+                {errors.confirm && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.confirm}</span>}
+              </div>
             </div>
 
-            <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}>
-              Siguiente paso <Icon.ArrowRight />
+            <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 10, boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}>
+              Siguiente: Foto & Ubicación <Icon.ArrowRight />
             </button>
           </form>
-        ) : (
+        )}
+
+        {/* PASO 2 */}
+        {step === 2 && (
+          <form onSubmit={(e) => { e.preventDefault(); if (validateStep2()) setStep(3); }} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
+            {/* Subir Foto de Perfil */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: textColor, display: 'block', marginBottom: 6 }}>
+                Foto de Perfil Verificada * (Requerida)
+              </label>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <ImageUploader
+                  categoria="perfil"
+                  onUploaded={(url) => {
+                    setForm((prev) => ({ ...prev, fotoUrl: url }));
+                    setErrors((errs) => ({ ...errs, fotoUrl: '' }));
+                  }}
+                  label="Subir Foto de Perfil"
+                  aspectRatio="square"
+                  rounded="full"
+                  previewUrl={form.fotoUrl || null}
+                  className="w-24 h-24"
+                />
+              </div>
+              {errors.fotoUrl && <span style={{ fontSize: 11, color: '#FF453A', textAlign: 'center', display: 'block', marginTop: 4 }}>{errors.fotoUrl}</span>}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Departamento *</label>
+                <select
+                  value={form.departamento}
+                  onChange={(e) => {
+                    const dep = e.target.value;
+                    const muns = MUNICIPIOS[dep] || [dep];
+                    setForm({ ...form, departamento: dep, municipio: muns[0] });
+                  }}
+                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? '#1C1C24' : '#F5F5F7', border: border, padding: '0 12px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                >
+                  {DEPARTAMENTOS.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Municipio *</label>
+                <select
+                  value={form.municipio}
+                  onChange={(e) => setForm({ ...form, municipio: e.target.value })}
+                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? '#1C1C24' : '#F5F5F7', border: border, padding: '0 12px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                >
+                  {(MUNICIPIOS[form.departamento] || [form.departamento]).map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Captura de Ubicación GPS */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Dirección y Referencia Residencial *</label>
+                <button
+                  type="button"
+                  onClick={handleGetGps}
+                  disabled={gettingGps}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: gpsCaptured ? 'rgba(76,175,80,0.15)' : 'rgba(0,102,255,0.12)',
+                    border: gpsCaptured ? '1px solid #4CAF50' : '1px solid rgba(0,102,255,0.3)',
+                    color: gpsCaptured ? '#4CAF50' : '#0066FF',
+                    padding: '4px 10px',
+                    borderRadius: 100,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>📍</span>
+                  <span>{gettingGps ? 'Capturando GPS...' : gpsCaptured ? 'GPS Ok ✓' : 'Capturar GPS'}</span>
+                </button>
+              </div>
+              <textarea
+                placeholder="De la Estatua de Montoya 1c abajo, 2c al sur, casa portón negro"
+                value={form.direccion}
+                onChange={(e) => setForm({ ...form, direccion: e.target.value })}
+                rows={2}
+                style={{ width: '100%', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '10px 14px', color: textColor, fontSize: 14, outline: 'none' }}
+              />
+              {errors.direccion && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.direccion}</span>}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px', height: 46, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                <Icon.ArrowLeft /> Atrás
+              </button>
+              <button type="submit" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}>
+                Siguiente: Seleccionar Perfil <Icon.ArrowRight />
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* PASO 3 */}
+        {step === 3 && (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[
                 { value: 'cliente' as const, label: 'Cliente', desc: 'Pido envíos y productos', icon: <Icon.User /> },
-                { value: 'repartidor' as const, label: 'Repartidor', icon: <Icon.Bike />, desc: 'Quiero realizar entregas' },
+                { value: 'repartidor' as const, label: 'Repartidor', icon: <Icon.Bike />, desc: 'Realizo entregas con mi vehículo' },
               ].map((r) => (
                 <button
                   key={r.value}
@@ -1048,7 +1327,7 @@ function RegisterView({
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    padding: '16px 12px',
+                    padding: '14px 10px',
                     borderRadius: 16,
                     background: form.role === r.value ? 'rgba(0,102,255,0.15)' : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
                     border: form.role === r.value ? '1.5px solid #0066FF' : border,
@@ -1064,24 +1343,93 @@ function RegisterView({
               ))}
             </div>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginTop: 8 }}>
+            {/* SECCIÓN REPARTIDOR */}
+            {form.role === 'repartidor' && (
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', padding: 14, borderRadius: 16, border: border, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0066FF' }}>🛵 Registro Técnico del Vehículo</div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Tipo de Vehículo *</label>
+                    <select
+                      value={form.vehiculoTipo}
+                      onChange={(e) => setForm({ ...form, vehiculoTipo: e.target.value })}
+                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? '#1C1C24' : '#FFFFFF', border: border, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none' }}
+                    >
+                      <option value="moto">Moto</option>
+                      <option value="bicicleta">Bicicleta</option>
+                      <option value="auto">Auto / Camioneta</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Placa Oficial *</label>
+                    <input
+                      type="text"
+                      placeholder="M-123456"
+                      value={form.vehiculoPlaca}
+                      onChange={(e) => setForm({ ...form, vehiculoPlaca: e.target.value.toUpperCase() })}
+                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
+                    />
+                    {errors.vehiculoPlaca && <span style={{ fontSize: 10, color: '#FF453A' }}>{errors.vehiculoPlaca}</span>}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Marca *</label>
+                    <input
+                      type="text"
+                      placeholder="Honda/TVS"
+                      value={form.vehiculoMarca}
+                      onChange={(e) => setForm({ ...form, vehiculoMarca: e.target.value })}
+                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Modelo *</label>
+                    <input
+                      type="text"
+                      placeholder="Wave 110"
+                      value={form.vehiculoModelo}
+                      onChange={(e) => setForm({ ...form, vehiculoModelo: e.target.value })}
+                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Año</label>
+                    <input
+                      type="number"
+                      placeholder="2023"
+                      value={form.vehiculoAnio}
+                      onChange={(e) => setForm({ ...form, vehiculoAnio: Number(e.target.value) })}
+                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginTop: 4 }}>
               <input type="checkbox" checked={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.checked })} style={{ accentColor: '#0066FF' }} />
-              <span style={{ fontSize: 12, color: subColor }}>Acepto los <a href="#" style={{ color: '#0066FF' }}>Términos</a> y la <a href="#" style={{ color: '#0066FF' }}>Privacidad</a>.</span>
+              <span style={{ fontSize: 12, color: subColor }}>Acepto el <a href="#" style={{ color: '#0066FF' }}>Contrato de Servicio</a> y la <a href="#" style={{ color: '#0066FF' }}>Privacidad</a>.</span>
             </label>
             {errors.terms && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.terms}</span>}
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              <button type="button" onClick={() => setStep(1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 20px', height: 48, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <button type="button" onClick={() => setStep(2)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px', height: 46, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 <Icon.ArrowLeft /> Atrás
               </button>
-              <button type="submit" disabled={loading} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}>
-                {loading ? <MiniSpinner size={18} color="white" /> : 'Finalizar registro'} {!loading && <Icon.ArrowRight />}
+              <button type="submit" disabled={loading} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}>
+                {loading ? <MiniSpinner size={18} color="white" /> : 'Finalizar Registro'} {!loading && <Icon.ArrowRight />}
               </button>
             </div>
           </form>
         )}
 
-        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 24 }}>
+        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 20 }}>
           ¿Ya tienes cuenta?{' '}
           <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#0066FF', fontWeight: 600, cursor: 'pointer' }}>Inicia sesión</button>
         </p>
@@ -1089,3 +1437,4 @@ function RegisterView({
     </div>
   );
 }
+

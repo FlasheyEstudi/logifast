@@ -284,23 +284,72 @@ function CrearTiendaForm({ onCreated }: { onCreated: () => void }) {
     descripcion: '',
     categoria: 'comida',
     direccion: '',
+    lat: 12.1365,
+    lng: -86.2514,
     telefono: '',
     email: '',
-    costoEnvio: 20,
+    ruc: '',
+    whatsapp: '',
+    costoEnvio: 25,
     pedidoMinimo: 50,
-    tiempoEstimado: '20-30 min',
+    tiempoEstimado: '20-35 min',
     logoColor: '#FF5722',
-    portadaColor: 'var(--text)',
+    portadaColor: '#1B1B2F',
     imagenUrl: '',
   });
   const [loading, setLoading] = useState(false);
+  const [gettingGps, setGettingGps] = useState(false);
+  const [gpsCaptured, setGpsCaptured] = useState(false);
+
+  const handleGetGps = () => {
+    if (!navigator.geolocation) {
+      notify.error('La geolocalización no está soportada por tu navegador');
+      return;
+    }
+    setGettingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((prev) => ({
+          ...prev,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        }));
+        setGpsCaptured(true);
+        setGettingGps(false);
+        notify.success(`GPS Capturado: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+      },
+      (err) => {
+        setGettingGps(false);
+        notify.error('No se pudo obtener la ubicación GPS. Verifica los permisos.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nombre || !form.direccion) {
-      notify.error('Nombre y dirección son obligatorios');
+
+    if (!form.imagenUrl) {
+      notify.error('La fotografía o logo de la tienda es obligatorio');
       return;
     }
+    if (!form.nombre.trim()) {
+      notify.error('El nombre de la tienda es obligatorio');
+      return;
+    }
+    if (!form.ruc.trim()) {
+      notify.error('El número RUC o Cédula del propietario es obligatorio');
+      return;
+    }
+    if (!form.whatsapp.trim()) {
+      notify.error('El número de WhatsApp comercial es obligatorio');
+      return;
+    }
+    if (!form.direccion.trim()) {
+      notify.error('La dirección física del negocio es obligatoria');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/cliente/tienda', {
@@ -314,14 +363,14 @@ function CrearTiendaForm({ onCreated }: { onCreated: () => void }) {
       const data = await res.json();
       setLoading(false);
       if (res.ok && data.ok) {
-        notify.success('¡Tienda creada exitosamente!');
+        notify.success('¡Tienda registrada y verificada con éxito!');
         onCreated();
       } else {
-        notify.error(data.error || 'Error al crear tienda');
+        notify.error(data.error || 'Error al registrar la tienda');
       }
     } catch {
       setLoading(false);
-      notify.error('Error de conexión');
+      notify.error('Error de conexión con el servidor');
     }
   };
 
@@ -338,48 +387,78 @@ function CrearTiendaForm({ onCreated }: { onCreated: () => void }) {
               <path d="M3 9l2-5h14l2 5M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M3 9h18M9 13h6" />
             </svg>
           </div>
-          <h2>Crea tu tienda</h2>
-          <p>Vende tus productos a miles de clientes en Managua</p>
+          <h2>Registra tu Negocio en LOGIFAST</h2>
+          <p>Afiliación comercial con verificación de RUC, WhatsApp y Ubicación GPS</p>
         </div>
 
         <form onSubmit={handleSubmit} className="lf-crear-tienda-form">
-          {/* Logo */}
+          {/* Logo Obligatorio */}
           <div className="lf-crear-tienda-logo-row">
             <ImageUploader
               categoria="tienda"
               onUploaded={(url) => setForm({ ...form, imagenUrl: url })}
-              label="Logo de la tienda"
+              label="Logo o Foto de Fachada * (Obligatorio)"
               aspectRatio="square"
               rounded="full"
               previewUrl={form.imagenUrl || null}
             />
+            {!form.imagenUrl && (
+              <span style={{ fontSize: 11, color: '#FF453A', fontWeight: 600, display: 'block', textAlign: 'center', marginTop: 4 }}>
+                * La imagen comercial es obligatoria
+              </span>
+            )}
           </div>
 
           <div className="lf-form-row">
-            <label>Nombre de la tienda *</label>
+            <label>Nombre Comercial de la Tienda *</label>
             <input
               type="text"
               value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              placeholder="Ej: Pizza Express"
+              placeholder="Ej: Restaurant El Madroño"
               className="lf-form-input"
               required
             />
           </div>
 
+          <div className="lf-form-grid-2">
+            <div className="lf-form-row">
+              <label>RUC del Negocio o Cédula Propietario *</label>
+              <input
+                type="text"
+                value={form.ruc}
+                onChange={(e) => setForm({ ...form, ruc: e.target.value })}
+                placeholder="J0310000012345 o 001-120495-0002E"
+                className="lf-form-input"
+                required
+              />
+            </div>
+            <div className="lf-form-row">
+              <label>WhatsApp de Pedidos *</label>
+              <input
+                type="tel"
+                value={form.whatsapp}
+                onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                placeholder="+505 8888-8888"
+                className="lf-form-input"
+                required
+              />
+            </div>
+          </div>
+
           <div className="lf-form-row">
-            <label>Descripción</label>
+            <label>Descripción del Comercio</label>
             <textarea
               value={form.descripcion}
               onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-              placeholder="La mejor pizza de Managua, hecha al momento..."
+              placeholder="Comida típica nicaragüense, batidos y repostería artesanal..."
               className="lf-form-input"
               rows={3}
             />
           </div>
 
           <div className="lf-form-row">
-            <label>Categoría *</label>
+            <label>Categoría Comercial *</label>
             <div className="lf-cat-grid">
               {CATEGORIAS.map((c) => (
                 <button
@@ -395,13 +474,37 @@ function CrearTiendaForm({ onCreated }: { onCreated: () => void }) {
             </div>
           </div>
 
+          {/* Dirección y Ubicación GPS */}
           <div className="lf-form-row">
-            <label>Dirección *</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <label style={{ margin: 0 }}>Dirección Física Exacta *</label>
+              <button
+                type="button"
+                onClick={handleGetGps}
+                disabled={gettingGps}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: gpsCaptured ? 'rgba(76,175,80,0.15)' : 'rgba(0,102,255,0.12)',
+                  border: gpsCaptured ? '1px solid #4CAF50' : '1px solid rgba(0,102,255,0.3)',
+                  color: gpsCaptured ? '#4CAF50' : '#0066FF',
+                  padding: '4px 12px',
+                  borderRadius: 100,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <span>📍</span>
+                <span>{gettingGps ? 'Capturando GPS...' : gpsCaptured ? 'GPS Confirmado ✓' : 'Capturar GPS con mi celular'}</span>
+              </button>
+            </div>
             <input
               type="text"
               value={form.direccion}
               onChange={(e) => setForm({ ...form, direccion: e.target.value })}
-              placeholder="Centro Comercial Managua, Local 12"
+              placeholder="De la Rotonda El Guegüense 2c al sur, Managua"
               className="lf-form-input"
               required
             />
@@ -409,22 +512,22 @@ function CrearTiendaForm({ onCreated }: { onCreated: () => void }) {
 
           <div className="lf-form-grid-2">
             <div className="lf-form-row">
-              <label>Teléfono</label>
+              <label>Teléfono Convencional/Contacto</label>
               <input
                 type="tel"
                 value={form.telefono}
                 onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                placeholder="+505 2222-1111"
+                placeholder="+505 2270-1111"
                 className="lf-form-input"
               />
             </div>
             <div className="lf-form-row">
-              <label>Email</label>
+              <label>Correo del Negocio</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="pedidos@mitienda.com"
+                placeholder="contacto@minogocio.com"
                 className="lf-form-input"
               />
             </div>
@@ -460,36 +563,15 @@ function CrearTiendaForm({ onCreated }: { onCreated: () => void }) {
             </div>
           </div>
 
-          {/* Colores */}
-          <div className="lf-form-grid-2">
-            <div className="lf-form-row">
-              <label>Color del logo</label>
-              <input
-                type="color"
-                value={form.logoColor}
-                onChange={(e) => setForm({ ...form, logoColor: e.target.value })}
-                className="lf-form-color"
-              />
-            </div>
-            <div className="lf-form-row">
-              <label>Color de portada</label>
-              <input
-                type="color"
-                value={form.portadaColor}
-                onChange={(e) => setForm({ ...form, portadaColor: e.target.value })}
-                className="lf-form-color"
-              />
-            </div>
-          </div>
-
           <button type="submit" className="lf-form-submit" disabled={loading}>
-            {loading ? <MiniSpinner size={18} color="white" /> : 'Crear mi tienda'}
+            {loading ? <MiniSpinner size={18} color="white" /> : 'Finalizar y Afiliar mi Tienda'}
           </button>
         </form>
       </motion.div>
     </div>
   );
 }
+
 
 /* ═══════════════════════════════════════════════════════
    OVERVIEW TAB

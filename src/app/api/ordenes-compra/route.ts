@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { emitOrdenCreada, emitOrdenAsignada, emitirEventoRealtime } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -304,27 +305,64 @@ export async function POST(req: NextRequest) {
       return { orden, ordenServicio };
     });
 
-    // Notificar a repartidores conectados con contrato aceptado (fuera de transacción)
-    const repartidoresConectados = await db.repartidorProfile
-      .findMany({
-        where: { conectado: true, pausado: false, contratoAceptado: true },
-        take: 15,
-      })
-      .catch(() => []);
+    // 1. Emitir eventos en tiempo real al instante (Socket.io WebSocket + Push)
+    emitOrdenCreada(result.ordenServicio);
+    emitirEventoRealtime({ room: 'admin', event: 'admin:orden:nueva', data: result.orden });
+    emitirEventoRealtime({ room: `tienda:${tiendaId}`, event: 'tienda:orden:nueva', data: result.orden });
 
-    for (const rep of repartidoresConectados) {
+    // 2. Auto-asignar a repartidor disponible conectado (si existe)
+    const repartidorDisponible = await db.repartidorProfile
+      .findFirst({
+        where: { conectado: true, enServicio: false, pausado: false, contratoAceptado: true },
+        orderBy: { totalEntregas: 'asc' },
+      })
+      .catch(() => null);
+
+    if (repartidorDisponible) {
+      await db.ordenServicio
+        .update({
+          where: { id: result.ordenServicio.id },
+          data: { repartidorId: repartidorDisponible.id, estado: 'aceptado' },
+        })
+        .catch(() => null);
+
+      emitOrdenAsignada(repartidorDisponible.id, result.ordenServicio);
+
       await db.notificacionRepartidor
         .create({
           data: {
-            repartidorId: rep.id,
-            tipo: 'nueva_orden_disponible',
-            titulo: 'Nueva compra disponible',
-            contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre} — Total: C$${total}`,
+            repartidorId: repartidorDisponible.id,
+            tipo: 'orden_asignada',
+            titulo: '⚡ Nueva compra asignada al instante',
+            contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre} — C$${total}`,
             leido: false,
             ordenId: result.ordenServicio.id,
           },
         })
         .catch(() => null);
+    } else {
+      // Si no hay repartidor libre inmediatamente, notificar a todos los conectados
+      const repartidoresConectados = await db.repartidorProfile
+        .findMany({
+          where: { conectado: true, pausado: false, contratoAceptado: true },
+          take: 15,
+        })
+        .catch(() => []);
+
+      for (const rep of repartidoresConectados) {
+        await db.notificacionRepartidor
+          .create({
+            data: {
+              repartidorId: rep.id,
+              tipo: 'nueva_orden_disponible',
+              titulo: 'Nueva compra disponible',
+              contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre} — Total: C$${total}`,
+              leido: false,
+              ordenId: result.ordenServicio.id,
+            },
+          })
+          .catch(() => null);
+      }
     }
 
     return NextResponse.json(
