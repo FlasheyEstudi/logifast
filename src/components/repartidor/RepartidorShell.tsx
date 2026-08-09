@@ -52,7 +52,7 @@ interface RepartidorShellProps {
 
 /* ═══════════════════════════════════════════════
    NAV CONFIG — iOS native 4-item tab bar
-   🚚 En Servicio | 📋 Historial | 💰 Ganancias | 👤 Perfil
+   En Servicio | Historial | Ganancias | Perfil
    ═══════════════════════════════════════════════ */
 
 type RepartidorTabKey = 'servicio' | 'historial' | 'ganancias' | 'perfil';

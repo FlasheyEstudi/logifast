@@ -141,7 +141,7 @@ export default function ModuleDespacho() {
       timestamp: new Date().toISOString(),
       leido: false,
     });
-    showToast(`✓ ${orderId} asignada a ${rider.nombre}`);
+    showToast(`${orderId} asignada a ${rider.nombre}`);
     setSelectedOrderId(null);
     setConfirmRiderId(null);
   };

@@ -453,6 +453,23 @@ function SubCodigos() {
         estado: 'activo', creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
       });
       addToast('Código creado', 'success');
+
+      fetch('/api/codigos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigo,
+          tipoDescuento,
+          valor: valorNum,
+          aplicableA,
+          montoMinimo: montoMinNum ?? 0,
+          maxUsos: maxUsosNum,
+          segmento,
+          vigenciaInicio: vigenciaInicio || new Date().toISOString().split('T')[0],
+          vigenciaFin: vigenciaFin || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+          creadoPor: 'admin',
+        }),
+      }).catch(() => null);
     }
     setModalOpen(false);
   };
@@ -728,6 +745,23 @@ function SubBanners() {
         creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
       });
       addToast('Banner creado', 'success');
+
+      fetch('/api/banners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo,
+          subtitulo: subtitulo || null,
+          tipo,
+          colorFondo,
+          colorTexto,
+          botonTexto: botonTexto || null,
+          segmento,
+          mostrarEn,
+          posicion: parseInt(posicion) || 1,
+          creadoPor: 'admin',
+        }),
+      }).catch(() => null);
     }
     setModalOpen(false);
   };
@@ -1091,6 +1125,21 @@ function SubFeed() {
         impresiones: 0, clicks: 0, creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
       });
       addToast('Feed item creado', 'success');
+
+      fetch('/api/feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo,
+          titulo,
+          descripcion,
+          botonTexto: botonTexto || null,
+          codigoPromo: codigoPromo || null,
+          segmento,
+          posicion: parseInt(posicion) || 1,
+          creadoPor: 'admin',
+        }),
+      }).catch(() => null);
     }
     setModalOpen(false);
   };

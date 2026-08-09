@@ -84,32 +84,32 @@ export async function POST(req: NextRequest) {
     const pedidoMinimo = Number(body.pedidoMinimo) || 50;
     const tiempoEstimado = body.tiempoEstimado || '20-35 min';
 
-    // 🔴 Exigencia 1: Logo o foto de la tienda obligatoria
+    // Exigencia 1: Logo o foto de la tienda obligatoria
     if (!imagenUrl) {
       return fail('El logo o fotografía de la fachada de tu tienda es obligatorio');
     }
 
-    // 🔴 Exigencia 2: Nombre del Negocio obligatorio
+    // Exigencia 2: Nombre del Negocio obligatorio
     if (!nombre) {
       return fail('El nombre comercial de la tienda es obligatorio');
     }
 
-    // 🔴 Exigencia 3: Categoría comercial obligatoria
+    // Exigencia 3: Categoría comercial obligatoria
     if (!categoria) {
       return fail('Debes seleccionar una categoría para tu negocio');
     }
 
-    // 🔴 Exigencia 4: RUC del negocio o Cédula del Propietario obligatorios
+    // Exigencia 4: RUC del negocio o Cédula del Propietario obligatorios
     if (!ruc) {
       return fail('El número RUC o Cédula del propietario es obligatorio para verificación comercial');
     }
 
-    // 🔴 Exigencia 5: WhatsApp Comercial obligatorio
+    // Exigencia 5: WhatsApp Comercial obligatorio
     if (!whatsapp) {
       return fail('El número de WhatsApp comercial de pedidos es obligatorio');
     }
 
-    // 🔴 Exigencia 6: Dirección Física Completa y GPS
+    // Exigencia 6: Dirección Física Completa y GPS
     if (!direccion) {
       return fail('La dirección física completa de tu local es obligatoria');
     }

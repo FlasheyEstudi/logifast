@@ -66,13 +66,13 @@ interface TiendaData {
 }
 
 const CATEGORIAS = [
-  { value: 'comida', label: 'Comida rápida', icon: '🍔' },
-  { value: 'tienda', label: 'Tienda', icon: '🏪' },
-  { value: 'farmacia', label: 'Farmacia', icon: '💊' },
-  { value: 'regalos', label: 'Regalos / Flores', icon: '🎁' },
-  { value: 'supermercado', label: 'Supermercado', icon: '🛒' },
-  { value: 'tecnologia', label: 'Tecnología', icon: '📱' },
-  { value: 'deportes', label: 'Deportes', icon: '⚽' },
+  { value: 'comida', label: 'Comida rápida' },
+  { value: 'tienda', label: 'Tienda' },
+  { value: 'farmacia', label: 'Farmacia' },
+  { value: 'regalos', label: 'Regalos / Flores' },
+  { value: 'supermercado', label: 'Supermercado' },
+  { value: 'tecnologia', label: 'Tecnología' },
+  { value: 'deportes', label: 'Deportes' },
 ];
 
 export default function ClientMiTienda() {
@@ -216,10 +216,10 @@ export default function ClientMiTienda() {
       {/* Tabs */}
       <div className="lf-mt-tabs">
         {[
-          { value: 'overview', label: 'Resumen', icon: '📊' },
-          { value: 'productos', label: 'Productos', icon: '📦' },
-          { value: 'pedidos', label: 'Pedidos', icon: '🛒' },
-          { value: 'config', label: 'Configuración', icon: '⚙️' },
+          { value: 'overview', label: 'Resumen' },
+          { value: 'productos', label: 'Productos' },
+          { value: 'pedidos', label: 'Pedidos' },
+          { value: 'config', label: 'Configuración' },
         ].map((tab) => (
           <button
             key={tab.value}
@@ -496,8 +496,7 @@ function CrearTiendaForm({ onCreated }: { onCreated: () => void }) {
                   cursor: 'pointer',
                 }}
               >
-                <span>📍</span>
-                <span>{gettingGps ? 'Capturando GPS...' : gpsCaptured ? 'GPS Confirmado ✓' : 'Capturar GPS con mi celular'}</span>
+                <span>{gettingGps ? 'Capturando GPS...' : gpsCaptured ? 'GPS Confirmado' : 'Capturar GPS con mi celular'}</span>
               </button>
             </div>
             <input

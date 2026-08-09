@@ -173,7 +173,7 @@ function getNotifIcon(tipo: ClientNotificacion['tipo']): { icon: React.ReactNode
 
 /* ═══════════════════════════════════════════════
    NAV CONFIG — iOS native tab bar (5 items)
-   🏠 Inicio | 📦 Envíos | 🛒 Pedidos | 💳 Billetera | 👤 Perfil
+   Inicio | Envíos | Pedidos | Billetera | Perfil
    ═══════════════════════════════════════════════ */
 interface NavItem {
   key: ClientModuleKey;

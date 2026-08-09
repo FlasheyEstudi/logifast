@@ -333,7 +333,7 @@ export async function POST(req: NextRequest) {
           data: {
             repartidorId: repartidorDisponible.id,
             tipo: 'orden_asignada',
-            titulo: '⚡ Nueva compra asignada al instante',
+            titulo: 'Nueva compra asignada al instante',
             contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre} — C$${total}`,
             leido: false,
             ordenId: result.ordenServicio.id,

@@ -204,7 +204,7 @@ export default function ModuleIncidencias() {
 
     setResolutionText('');
     setResolvingId(null);
-    showToast(`✓ Incidencia ${id} resuelta`);
+    showToast(`Incidencia ${id} resuelta`);
   };
 
   const handleReassign = async (inc: Incident) => {
@@ -233,7 +233,7 @@ export default function ModuleIncidencias() {
       console.warn('[ModuleIncidencias reassign API error]:', e);
     }
 
-    showToast(`✓ ${inc.orderId} reasignada a ${newRider.nombre}`);
+    showToast(`${inc.orderId} reasignada a ${newRider.nombre}`);
   };
 
   const handleViewMap = () => {
@@ -248,7 +248,7 @@ export default function ModuleIncidencias() {
       timestamp: new Date().toISOString(),
       leido: false,
     });
-    showToast(`📝 Reporte creado para ${inc.id}`, 'info');
+    showToast(`Reporte creado para ${inc.id}`, 'info');
   };
 
   const toggleSort = (col: SortCol) => {

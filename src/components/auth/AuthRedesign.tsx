@@ -948,7 +948,7 @@ function RegisterView({
         setGpsCaptured(true);
         setGettingGps(false);
         sileo.success({
-          title: '📍 GPS Capturado',
+          title: 'GPS Capturado',
           description: `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`,
         });
       },
@@ -989,7 +989,7 @@ function RegisterView({
   const validateStep2 = () => {
     const errs: Record<string, string> = {};
     if (!form.fotoUrl) {
-      errs.fotoUrl = '🔴 La foto de perfil es obligatoria para verificar tu identidad';
+      errs.fotoUrl = 'La foto de perfil es obligatoria para verificar tu identidad';
     }
     if (!form.municipio) errs.municipio = 'Selecciona tu Municipio';
     if (!form.direccion.trim() || form.direccion.trim().length < 6) {
@@ -1282,8 +1282,7 @@ function RegisterView({
                     cursor: 'pointer',
                   }}
                 >
-                  <span>📍</span>
-                  <span>{gettingGps ? 'Capturando GPS...' : gpsCaptured ? 'GPS Ok ✓' : 'Capturar GPS'}</span>
+                  <span>{gettingGps ? 'Capturando GPS...' : gpsCaptured ? 'GPS Confirmado' : 'Capturar GPS'}</span>
                 </button>
               </div>
               <textarea
@@ -1346,7 +1345,7 @@ function RegisterView({
             {/* SECCIÓN REPARTIDOR */}
             {form.role === 'repartidor' && (
               <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', padding: 14, borderRadius: 16, border: border, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0066FF' }}>🛵 Registro Técnico del Vehículo</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0066FF' }}>Registro Técnico del Vehículo</div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>

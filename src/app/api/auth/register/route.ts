@@ -64,41 +64,41 @@ export async function POST(req: NextRequest) {
     const lng = Number(body.lng) || -86.2514;
     const fotoUrl = (body.fotoUrl ?? '').trim();
 
-    // 🔴 Exigencia 1: Foto de Perfil Obligatoria
+    // Exigencia 1: Foto de Perfil Obligatoria
     if (!fotoUrl) {
       return fail('La foto de perfil es obligatoria para completar tu registro');
     }
 
-    // 🔴 Exigencia 2: Nombre Completo
+    // Exigencia 2: Nombre Completo
     const nameErr = validateLength(name, 3, 100, 'Nombre Completo');
     if (nameErr) return fail(nameErr);
 
-    // 🔴 Exigencia 3: Email Válido
+    // Exigencia 3: Email Válido
     if (!email) return fail('El correo electrónico es obligatorio');
     if (!isValidEmail(email)) return fail('Correo electrónico con formato inválido');
 
-    // 🔴 Exigencia 4: Contraseña Segura
+    // Exigencia 4: Contraseña Segura
     const pwErr = validateLength(password, 6, 200, 'Contraseña');
     if (pwErr) return fail('La contraseña debe tener al menos 6 caracteres');
 
-    // 🔴 Exigencia 5: Teléfono Nicaragüense Obligatorio
+    // Exigencia 5: Teléfono Nicaragüense Obligatorio
     if (!telefono) return fail('El número de teléfono móvil es obligatorio');
     const cleanPhone = telefono.replace(/\D/g, '');
     if (cleanPhone.length < 8) {
       return fail('El número de teléfono debe incluir al menos 8 dígitos (ej: 8888-8888)');
     }
 
-    // 🔴 Exigencia 6: Cédula de Identidad Nicaragüense Obligatoria
+    // Exigencia 6: Cédula de Identidad Nicaragüense Obligatoria
     if (!cedula) return fail('La Cédula de Identidad es obligatoria');
     const cedulaRegex = /^\d{3}-?\d{6}-?\d{4}[A-Za-z]$/;
     if (!cedulaRegex.test(cedula)) {
       return fail('Formato de cédula nicaragüense inválido (ej: 001-120495-0002E)');
     }
 
-    // 🔴 Exigencia 7: Municipio y Departamento Obligatorios
+    // Exigencia 7: Municipio y Departamento Obligatorios
     if (!municipio) return fail('Debes seleccionar tu Municipio');
 
-    // 🔴 Exigencias adicionales si se registra como REPARTIDOR
+    // Exigencias adicionales si se registra como REPARTIDOR
     const vehiculoTipo = (body.vehiculoTipo ?? '').trim();
     const vehiculoMarca = (body.vehiculoMarca ?? '').trim();
     const vehiculoModelo = (body.vehiculoModelo ?? '').trim();
