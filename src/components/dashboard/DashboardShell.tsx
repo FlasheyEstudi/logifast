@@ -258,7 +258,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               repartidorInitials: 'RP',
               descripcion: `Compra Tienda (${o.items?.length || 1} productos)`,
               monto: o.total || 0,
-              estado: o.estado === 'recibido' ? 'pendiente' : o.estado === 'en_camino' ? 'encamino' : o.estado === 'entregado' ? 'entregado' : 'pendiente',
+              estado: (o.estado === 'entregado' ? 'entregado' : (o.estado === 'en_camino' || o.estado === 'preparando' || o.estado === 'listo' || o.repartidorId) ? 'encamino' : 'pendiente'),
               metodoPago: o.metodoPago || 'efectivo',
               estadoPago: 'pagado',
               codigoPin: o.codigoPin || o.pin || undefined,

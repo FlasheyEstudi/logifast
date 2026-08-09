@@ -101,9 +101,20 @@ export async function PATCH(
 
     let ordenActualizada;
     if (isCompra) {
+      const compraData: Record<string, unknown> = {};
+      if (dataToUpdate.repartidorId !== undefined) compraData.repartidorId = dataToUpdate.repartidorId;
+      if (dataToUpdate.estado !== undefined) {
+        const est = String(dataToUpdate.estado);
+        compraData.estado = (est === 'asignado' || est === 'encamino' || est === 'aceptado' || est === 'en_camino')
+          ? 'en_camino'
+          : (est === 'entregado' ? 'entregado' : (est === 'cancelado' ? 'cancelado' : 'recibido'));
+      } else if (dataToUpdate.repartidorId !== undefined) {
+        compraData.estado = 'en_camino';
+      }
+
       ordenActualizada = await db.ordenCompra.update({
         where: { id },
-        data: dataToUpdate,
+        data: compraData,
       });
     } else {
       ordenActualizada = await db.ordenServicio.update({
