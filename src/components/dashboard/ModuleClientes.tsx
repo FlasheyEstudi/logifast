@@ -148,7 +148,7 @@ export default function ModuleClientes() {
   const activeThisMonth = useMemo(() => {
     const now = new Date();
     const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    return clients.filter((c) => c.ultimoEnvio.startsWith(ym)).length;
+    return clients.filter((c) => (c.ultimoEnvio || '').startsWith(ym)).length;
   }, [clients]);
 
   // Filtered & sorted
@@ -162,7 +162,7 @@ export default function ModuleClientes() {
     }
     if (sortBy === 'envios') list.sort((a, b) => b.totalEnvios - a.totalEnvios);
     else if (sortBy === 'monto') list.sort((a, b) => b.montoTotal - a.montoTotal);
-    else list.sort((a, b) => b.ultimoEnvio.localeCompare(a.ultimoEnvio));
+    else list.sort((a, b) => (b.ultimoEnvio || '').localeCompare(a.ultimoEnvio || ''));
     return list;
   }, [clients, search, sortBy]);
 

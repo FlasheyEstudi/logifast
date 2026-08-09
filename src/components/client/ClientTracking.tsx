@@ -1354,6 +1354,46 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             </motion.div>
           )}
 
+          {/* ═══════ PIN DE CONFIRMACIÓN DE ENTREGA ═══════ */}
+          {sheetSnap !== 'minimized' && order && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 87, 34, 0.12), rgba(0, 102, 255, 0.08))',
+                border: '1px solid var(--primario)',
+                borderRadius: 18,
+                padding: '14px 18px',
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--primario)', letterSpacing: 0.5 }}>
+                  PIN de Confirmación de Entrega
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                  Dáselo a tu repartidor al recibir el paquete.
+                </div>
+              </div>
+              <div style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 22,
+                fontWeight: 800,
+                color: 'var(--text)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '6px 14px',
+                letterSpacing: 4,
+              }}>
+                {(order as any).codigoPin || '1234'}
+              </div>
+            </motion.div>
+          )}
+
           {/* ═══════ REPARTIDOR INFO CARD (SI YA FUE ASIGNADO) ═══════ */}
           {sheetSnap !== 'minimized' && repartidor && (
             <motion.div
