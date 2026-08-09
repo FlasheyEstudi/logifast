@@ -31,6 +31,7 @@ export interface Order {
   fecha: string;
   hora: string;
   calificacion?: number;
+  codigoPin?: string;
   timeline: { step: string; hora: string; completado: boolean }[];
 }
 
@@ -960,7 +961,10 @@ export const useStore = create<AppState>((set, get) => ({
     }).catch((err) => console.error('[reassignRider API error]', err));
   },
 
-  addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
+  addOrder: (order) => set((state) => {
+    const pin = order.codigoPin || String(Math.floor(1000 + Math.random() * 9000));
+    return { orders: [{ ...order, codigoPin: pin }, ...state.orders] };
+  }),
 
   // P1: fetchOrders carga las órdenes reales del cliente desde la BD.
   // Se llama al montar ClientShell para que sobrevivan F5.
@@ -988,6 +992,7 @@ export const useStore = create<AppState>((set, get) => ({
           estado: o.estado || 'pendiente',
           metodoPago: o.metodoPago || 'efectivo',
           estadoPago: 'pendiente',
+          codigoPin: o.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
           fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
           hora: new Date(o.createdAt || Date.now()).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
           timeline: [

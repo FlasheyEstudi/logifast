@@ -107,8 +107,8 @@ export default function RepartidorServicio() {
   };
 
   const handleConfirmarPin = () => {
-    const targetPin = (ordenActiva as any)?.codigoPin || (ordenActiva as any)?.codigoEntrega || '1234';
-    if (pinInput.trim() === String(targetPin) || pinInput.trim() === '1234') {
+    const targetPin = (ordenActiva as any)?.codigoPin || (ordenActiva as any)?.codigoEntrega;
+    if (targetPin && pinInput.trim() === String(targetPin)) {
       confirmarEntrega(); setShowPinModal(false); setPinInput('');
       HAPTIC_PATTERNS.success(); showSnackbar({ message: 'Entrega confirmada con éxito.' });
     } else { setPinError(true); HAPTIC_PATTERNS.error(); }
@@ -342,7 +342,7 @@ export default function RepartidorServicio() {
                 onChange={e => { setPinInput(e.target.value); setPinError(false); }}
                 style={{ ...inputStyle, textAlign: 'center', fontSize: 28, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 10, padding: '16px' }}
               />
-              {pinError && <div style={{ fontSize: 12, color: '#FF3B30', fontWeight: 600, textAlign: 'center' }}>PIN incorrecto. Intenta con 1234.</div>}
+              {pinError && <div style={{ fontSize: 12, color: '#FF3B30', fontWeight: 600, textAlign: 'center' }}>PIN incorrecto. Solicita al cliente su código de 4 dígitos.</div>}
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setShowPinModal(false)} style={{ ...btnGhost, flex: 1 }}>Cancelar</button>
                 <button onClick={handleConfirmarPin} style={{ ...btnPrimary, flex: 1, background: '#34C759', boxShadow: '0 4px 14px rgba(52,199,89,0.3)' }}>Confirmar</button>

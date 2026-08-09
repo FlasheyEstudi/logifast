@@ -229,6 +229,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               estado: o.estado as any,
               metodoPago: o.metodoPago as any,
               estadoPago: 'pagado',
+              codigoPin: o.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
               fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
               hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               timeline: [
@@ -258,8 +259,9 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               descripcion: `Compra Tienda (${o.items?.length || 1} productos)`,
               monto: o.total || 0,
               estado: o.estado === 'recibido' ? 'pendiente' : o.estado === 'en_camino' ? 'encamino' : o.estado === 'entregado' ? 'entregado' : 'pendiente',
-              metodoPago: o.metodoPago as any,
+              metodoPago: o.metodoPago || 'efectivo',
               estadoPago: 'pagado',
+              codigoPin: o.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
               fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
               hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               timeline: [

@@ -653,6 +653,14 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     return null;
   }, [trackingOrderId, orders, currentOrdenCompra]);
 
+  const orderPin = useMemo(() => {
+    if (!order) return '';
+    if ((order as any).codigoPin) return (order as any).codigoPin;
+    const gen = String(Math.floor(1000 + Math.random() * 9000));
+    (order as any).codigoPin = gen;
+    return gen;
+  }, [order]);
+
   // Get repartidor info (null if not assigned yet)
   const repartidor = order ? getRepartidorInfo(order.repartidor, order.repartidorInitials) : null;
 
@@ -1389,7 +1397,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                 padding: '6px 14px',
                 letterSpacing: 4,
               }}>
-                {(order as any).codigoPin || '1234'}
+                {orderPin}
               </div>
             </motion.div>
           )}
