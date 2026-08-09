@@ -21,13 +21,23 @@ export async function PATCH(
 
     const { id } = await params;
 
-    // Ownership check: cargar la orden y validar que el user sea dueño, repartidor asignado o admin
-    const orden = await db.ordenServicio.findUnique({
+    // Ownership check: cargar la orden (ordenServicio u ordenCompra)
+    let isCompra = false;
+    let orden = await db.ordenServicio.findUnique({
       where: { id },
       select: { clienteId: true, repartidorId: true },
     });
+
     if (!orden) {
-      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+      const ordenCompra = await db.ordenCompra.findUnique({
+        where: { id },
+        select: { clienteId: true, repartidorId: true },
+      });
+      if (!ordenCompra) {
+        return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+      }
+      isCompra = true;
+      orden = ordenCompra;
     }
 
     // Si es repartidor, validar que sea el asignado a esta orden
@@ -89,10 +99,18 @@ export async function PATCH(
       }
     }
 
-    const ordenActualizada = await db.ordenServicio.update({
-      where: { id },
-      data: dataToUpdate,
-    });
+    let ordenActualizada;
+    if (isCompra) {
+      ordenActualizada = await db.ordenCompra.update({
+        where: { id },
+        data: dataToUpdate,
+      });
+    } else {
+      ordenActualizada = await db.ordenServicio.update({
+        where: { id },
+        data: dataToUpdate,
+      });
+    }
 
     return NextResponse.json({ ok: true, orden: ordenActualizada });
   } catch (error) {

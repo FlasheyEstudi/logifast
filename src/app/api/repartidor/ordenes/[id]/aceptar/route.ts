@@ -22,40 +22,49 @@ export async function PATCH(
     }
     const { profile } = rp;
 
-    const orden = await db.ordenServicio.findUnique({ where: { id } });
+    let orden = await db.ordenServicio.findUnique({ where: { id } });
     if (!orden) {
-      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
-    }
-
-    // Caso 1: la orden ya está asignada a este repartidor — solo cambiar estado a aceptado
-    if (orden.repartidorId === profile.id) {
-      if (orden.estado !== 'asignado' && orden.estado !== 'pendiente') {
-        return NextResponse.json(
-          { error: `La orden no se puede aceptar en estado ${orden.estado}` },
-          { status: 400 }
-        );
+      // Intentar buscar en ordenCompra (Marketplace)
+      const ordenCompra = await db.ordenCompra.findUnique({ where: { id } });
+      if (!ordenCompra) {
+        return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
       }
-      await db.ordenServicio.update({
+
+      await db.ordenCompra.update({
         where: { id },
-        data: { estado: 'aceptado', aceptadoEn: new Date() },
+        data: { repartidorId: profile.id, estado: 'en_camino' },
       });
-    } else if (orden.repartidorId && orden.repartidorId !== profile.id) {
-      // Ya asignada a otro repartidor
-      return NextResponse.json(
-        { error: 'La orden ya está asignada a otro repartidor' },
-        { status: 403 }
-      );
     } else {
-      // Caso 2: orden sin repartidor — asignación atómica con updateMany (P0-19)
-      const result = await db.ordenServicio.updateMany({
-        where: { id, repartidorId: null, estado: 'pendiente' },
-        data: { repartidorId: profile.id, estado: 'aceptado', aceptadoEn: new Date() },
-      });
-      if (result.count === 0) {
+      // Caso 1: la orden ya está asignada a este repartidor — solo cambiar estado a aceptado
+      if (orden.repartidorId === profile.id) {
+        if (orden.estado !== 'asignado' && orden.estado !== 'pendiente') {
+          return NextResponse.json(
+            { error: `La orden no se puede aceptar en estado ${orden.estado}` },
+            { status: 400 }
+          );
+        }
+        await db.ordenServicio.update({
+          where: { id },
+          data: { estado: 'aceptado', aceptadoEn: new Date() },
+        });
+      } else if (orden.repartidorId && orden.repartidorId !== profile.id) {
+        // Ya asignada a otro repartidor
         return NextResponse.json(
-          { error: 'La orden ya fue aceptada por otro repartidor o no está disponible' },
-          { status: 409 }
+          { error: 'La orden ya está asignada a otro repartidor' },
+          { status: 403 }
         );
+      } else {
+        // Caso 2: orden sin repartidor — asignación atómica con updateMany (P0-19)
+        const result = await db.ordenServicio.updateMany({
+          where: { id, repartidorId: null, estado: 'pendiente' },
+          data: { repartidorId: profile.id, estado: 'aceptado', aceptadoEn: new Date() },
+        });
+        if (result.count === 0) {
+          return NextResponse.json(
+            { error: 'La orden ya fue aceptada por otro repartidor o no está disponible' },
+            { status: 409 }
+          );
+        }
       }
     }
 

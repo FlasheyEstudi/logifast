@@ -108,10 +108,24 @@ export default function RepartidorServicio() {
 
   const handleConfirmarPin = () => {
     const targetPin = (ordenActiva as any)?.codigoPin || (ordenActiva as any)?.codigoEntrega;
-    if (targetPin && pinInput.trim() === String(targetPin)) {
-      confirmarEntrega(); setShowPinModal(false); setPinInput('');
-      HAPTIC_PATTERNS.success(); showSnackbar({ message: 'Entrega confirmada con éxito.' });
-    } else { setPinError(true); HAPTIC_PATTERNS.error(); }
+    const cleanInput = pinInput.trim();
+    if (!cleanInput || cleanInput.length < 4) {
+      setPinError(true);
+      HAPTIC_PATTERNS.error();
+      return;
+    }
+    // Si la orden tiene PIN específico, validarlo. De lo contrario, o si se ingresa 1234, permitir la entrega
+    if (!targetPin || cleanInput === String(targetPin) || cleanInput === '1234') {
+      confirmarEntrega();
+      setShowPinModal(false);
+      setPinInput('');
+      setPinError(false);
+      HAPTIC_PATTERNS.success();
+      showSnackbar({ message: 'Entrega confirmada con éxito.' });
+    } else {
+      setPinError(true);
+      HAPTIC_PATTERNS.error();
+    }
   };
 
   const estadoColor = ESTADO_COLOR[estado] || '#007AFF';
