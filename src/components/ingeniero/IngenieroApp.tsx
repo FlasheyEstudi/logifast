@@ -9,6 +9,8 @@ import { useDeviceInfo } from '@/hooks/useDeviceInfo';
 import { DashboardSkeleton, FlotaSkeleton, MantenimientosSkeleton, PerfilSkeleton } from './Skeletons';
 import CrearMantenimiento from './CrearMantenimiento';
 import Inventario from './Inventario';
+import CrearMotoModal from './CrearMotoModal';
+import DetalleMotoModal from './DetalleMotoModal';
 
 const Dashboard = lazy(() => import('./Dashboard'));
 const Flota = lazy(() => import('./Flota'));
@@ -304,6 +306,8 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
       {/* Auxiliar Modals / Screens */}
       <CrearMantenimiento />
       <Inventario />
+      <CrearMotoModal />
+      <DetalleMotoModal />
 
       {/* Responsive Styles (Same rules as admin dashboard) */}
       <style dangerouslySetInnerHTML={{ __html: `

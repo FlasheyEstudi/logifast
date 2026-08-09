@@ -111,10 +111,20 @@ export async function PATCH(req: NextRequest) {
 
     const dataToUpdate: Record<string, unknown> = {};
     if (estado || status) dataToUpdate.estado = estado || status;
-    if (asignadaA !== undefined) dataToUpdate.asignadaA = asignadaA;
-    if (kmAcumulados !== undefined) dataToUpdate.kmAcumulados = Number(kmAcumulados);
-    if (modelo) dataToUpdate.modelo = modelo;
-    if (placa) dataToUpdate.placa = placa;
+    if (asignadaA !== undefined) {
+      dataToUpdate.asignadaA = asignadaA;
+      if (asignadaA) {
+        await prisma.repartidorProfile.updateMany({
+          where: { OR: [{ id: asignadaA }, { user: { name: asignadaA } }] },
+          data: { motoId: id },
+        }).catch(() => null);
+      } else {
+        await prisma.repartidorProfile.updateMany({
+          where: { motoId: id },
+          data: { motoId: null },
+        }).catch(() => null);
+      }
+    }
 
     const moto = await prisma.moto.update({
       where: { id },

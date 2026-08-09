@@ -123,6 +123,7 @@ export interface IngenieroState {
   // UI
   tabActiva: 'dashboard' | 'flota' | 'mantenimientos' | 'perfil'
   showCrearMantenimiento: boolean
+  showCrearMoto: boolean
   showDetalleMoto: boolean
   showDetalleMantenimiento: boolean
   showInventario: boolean
@@ -139,10 +140,15 @@ export interface IngenieroState {
   seleccionarMoto: (moto: Moto | null) => void
   seleccionarMantenimiento: (m: Mantenimiento | null) => void
   toggleCrearMantenimiento: () => void
+  toggleCrearMoto: () => void
   toggleDetalleMoto: () => void
   toggleDetalleMantenimiento: () => void
   toggleInventario: () => void
   toggleAgregarRepuesto: () => void
+
+  // CRUD Motos
+  crearMoto: (data: Partial<Moto>) => Promise<void> | void
+  actualizarMoto: (id: string, data: Partial<Moto>) => Promise<void> | void
 
   // CRUD Mantenimientos
   crearMantenimiento: (data: Partial<Mantenimiento>) => Promise<void> | void
@@ -230,10 +236,42 @@ export const useIngenieroStore = create<IngenieroState>()(
       }),
 
       toggleCrearMantenimiento: () => set(s => ({ showCrearMantenimiento: !s.showCrearMantenimiento })),
+      toggleCrearMoto: () => set(s => ({ showCrearMoto: !s.showCrearMoto })),
       toggleDetalleMoto: () => set(s => ({ showDetalleMoto: !s.showDetalleMoto })),
       toggleDetalleMantenimiento: () => set(s => ({ showDetalleMantenimiento: !s.showDetalleMantenimiento })),
       toggleInventario: () => set(s => ({ showInventario: !s.showInventario })),
       toggleAgregarRepuesto: () => set(s => ({ showAgregarRepuesto: !s.showAgregarRepuesto })),
+
+      crearMoto: async (data) => {
+        try {
+          const res = await fetch('/api/ingeniero/motos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+          if (res.ok) {
+            set({ showCrearMoto: false });
+            await get().cargarDatos();
+          }
+        } catch (error) {
+          console.error('Error al crear moto:', error);
+        }
+      },
+
+      actualizarMoto: async (id, data) => {
+        try {
+          const res = await fetch('/api/ingeniero/motos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, ...data }),
+          });
+          if (res.ok) {
+            await get().cargarDatos();
+          }
+        } catch (error) {
+          console.error('Error al actualizar moto:', error);
+        }
+      },
 
       crearMantenimiento: async (data) => {
         try {

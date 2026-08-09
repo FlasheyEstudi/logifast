@@ -41,9 +41,26 @@ export default function Flota() {
     <PullToRefresh onRefresh={async () => { await store.cargarDatos(); }}>
       <div className="flota-pantalla">
         {/* Header */}
-        <div className="flota-header">
-          <h1 className="pantalla-title">Flota</h1>
-          <div className="flota-header-count mono">{store.motos.length} motos</div>
+        <div className="flota-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 className="pantalla-title" style={{ margin: 0 }}>Flota</h1>
+            <div className="flota-header-count mono">{store.motos.length} motos</div>
+          </div>
+          <button
+            onClick={() => store.toggleCrearMoto()}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 10,
+              border: 'none',
+              background: 'var(--lf-accent, #FF5722)',
+              color: '#ffffff',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            + Registrar Moto
+          </button>
         </div>
 
         {/* Buscador */}
