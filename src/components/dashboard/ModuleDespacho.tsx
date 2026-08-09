@@ -89,7 +89,7 @@ export default function ModuleDespacho() {
 
   const getRiderStatus = useCallback(
     (rider: Rider): { label: string; color: string; bg: string } => {
-      if (!rider.conectado) return { label: 'Inactivo', color: '#6B7280', bg: 'rgba(107,114,128,0.1)' };
+      if (!rider || !rider.conectado) return { label: 'Inactivo', color: '#6B7280', bg: 'rgba(107,114,128,0.1)' };
       if (rider.status === 'in-service') return { label: 'En entrega', color: '#FF6600', bg: 'rgba(255,102,0,0.1)' };
       return { label: 'Libre', color: '#16A34A', bg: 'rgba(22,163,74,0.1)' };
     },

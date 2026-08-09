@@ -229,7 +229,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               estado: o.estado as any,
               metodoPago: o.metodoPago as any,
               estadoPago: 'pagado',
-              codigoPin: o.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
+              codigoPin: o.codigoPin || '1234',
               fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
               hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               timeline: [
@@ -261,7 +261,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               estado: o.estado === 'recibido' ? 'pendiente' : o.estado === 'en_camino' ? 'encamino' : o.estado === 'entregado' ? 'entregado' : 'pendiente',
               metodoPago: o.metodoPago || 'efectivo',
               estadoPago: 'pagado',
-              codigoPin: o.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
+              codigoPin: o.codigoPin || o.pin || undefined,
               fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
               hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               timeline: [
@@ -272,13 +272,32 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           }
         }
 
-        // Solo actualizar si hubo cambios reales (evita parpadeo, P0-18)
+        // Smart merge: Preservar PINs reales y pedidos locales sin sobrescribir o parpadear
         const currentOrders = useStore.getState().orders;
+        const finalOrdersMap = new Map<string, any>();
+
+        // 1. Agregar órdenes provenientes del backend preservando el PIN exacto
+        mergedOrders.forEach((o) => {
+          const existing = currentOrders.find((c: any) => c.id === o.id);
+          const stablePin = o.codigoPin || existing?.codigoPin || String(1000 + (Math.abs(o.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)) % 9000));
+          finalOrdersMap.set(o.id, { ...o, codigoPin: stablePin });
+        });
+
+        // 2. Preservar órdenes locales que aún se están procesando
+        currentOrders.forEach((c: any) => {
+          if (!finalOrdersMap.has(c.id)) {
+            finalOrdersMap.set(c.id, c);
+          }
+        });
+
+        const updatedOrders = Array.from(finalOrdersMap.values());
+
         const mergedKey = JSON.stringify(
-          mergedOrders.map((o) => ({
+          updatedOrders.map((o) => ({
             id: o.id,
             estado: o.estado,
             repartidor: o.repartidor,
+            codigoPin: o.codigoPin,
           }))
         );
         const currentKey = JSON.stringify(
@@ -286,10 +305,12 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
             id: o.id,
             estado: o.estado,
             repartidor: o.repartidor,
+            codigoPin: o.codigoPin,
           }))
         );
+
         if (mergedKey !== currentKey) {
-          useStore.setState({ orders: mergedOrders });
+          useStore.setState({ orders: updatedOrders });
         }
       } catch (err) {
         console.error('[DashboardShell syncOrders]', err);

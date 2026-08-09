@@ -250,8 +250,56 @@ export default function RepartidorServicio() {
               </div>
             )}
 
-            {/* EN LÍNEA */}
-            {estado === 'EN_LINEA' && !ordenActiva && (
+            {/* EN LÍNEA - CON OFERTA DIRECTA */}
+            {estado === 'EN_LINEA' && !ordenActiva && (ordenAsignadaPendiente || ofertasDisponibles.length > 0) && (
+              <div style={{ ...sectionCard, display: 'flex', flexDirection: 'column', gap: 12, border: '2px solid #34C759', background: 'rgba(52, 199, 89, 0.08)' }}>
+                {(() => {
+                  const oferta = ordenAsignadaPendiente || ofertasDisponibles[0];
+                  return (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 10px #34C759' }} />
+                          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>¡Oferta de Pedido Disponible!</span>
+                        </div>
+                        <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>
+                          +C$ {(oferta.ganancia || oferta.monto || 0).toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                        {oferta.tipo === 'compra' ? `Tienda: ${oferta.tiendaNombre || oferta.origen}` : `Cliente: ${oferta.cliente}`}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: 'var(--text-secondary)' }}>
+                        <div><strong>Recoger:</strong> {oferta.origen}</div>
+                        <div><strong>Entregar:</strong> {oferta.destino}</div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                        <button
+                          type="button"
+                          onClick={() => rechazarOfertaDirecta(oferta.id)}
+                          style={{ ...btnGhost, flex: 1, color: '#FF3B30', borderColor: 'rgba(255,59,48,0.3)' }}
+                        >
+                          Rechazar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => aceptarOfertaDirecta(oferta)}
+                          style={{ ...btnPrimary, flex: 2, background: '#34C759', boxShadow: '0 4px 16px rgba(52,199,89,0.4)' }}
+                        >
+                          ACEPTAR PEDIDO AHORA
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* EN LÍNEA - SIN OFERTAS */}
+            {estado === 'EN_LINEA' && !ordenActiva && !ordenAsignadaPendiente && ofertasDisponibles.length === 0 && (
               <div style={{ ...sectionCard, display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

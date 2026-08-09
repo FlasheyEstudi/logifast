@@ -44,10 +44,10 @@ function useToast() {
 
 /* ─── Status Badge ─── */
 function StatusBadge({ status }: { status: OrderStatus }) {
-  const cfg = STATUS_CONFIG[status];
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG['pendiente'] || { label: 'Pendiente', color: '#FF9500', bg: 'rgba(255,149,0,0.15)', icon: Clock };
   return (
     <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-      <cfg.icon size={11} /> {cfg.label}
+      {cfg.icon && <cfg.icon size={11} />} {cfg.label}
     </span>
   );
 }
