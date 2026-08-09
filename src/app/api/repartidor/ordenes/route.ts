@@ -24,6 +24,7 @@ function mapOrdenToActiva(o: Awaited<ReturnType<typeof db.ordenServicio.findFirs
     destinoLat: o.destinoLat,
     destinoLng: o.destinoLng,
     paquete: o.paquete ?? undefined,
+    paqueteFotoUrl: o.incidenciaDesc ?? undefined,
     tamano: o.tamano ?? undefined,
     fragil: o.fragil,
     metodoPago: o.metodoPago as 'efectivo' | 'transferencia',
@@ -85,6 +86,7 @@ export async function GET(req: NextRequest) {
         estado: (s.estado === 'incidencia' ? 'incidencia' : 'entregado') as 'entregado' | 'incidencia',
         incidenciaTipo: s.incidenciaTipo ?? undefined,
         calificacion: calMap.get(s.id) ?? undefined,
+        paqueteFotoUrl: s.incidenciaDesc ?? undefined,
       }));
 
       return NextResponse.json({

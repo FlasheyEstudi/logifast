@@ -172,6 +172,7 @@ export async function POST(req: NextRequest) {
         paquete: paquete ?? null,
         tamano: tamano ?? null,
         fragil: Boolean(fragil),
+        incidenciaDesc: body.paqueteFotoUrl ?? null,
         tiendaId: tiendaId ?? null,
         tiendaNombre: tiendaNombre ?? null,
         metodoPago,

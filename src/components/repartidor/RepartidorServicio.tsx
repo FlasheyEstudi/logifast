@@ -299,6 +299,17 @@ export default function RepartidorServicio() {
                   </div>
                 </div>
 
+                {/* Foto del paquete a llevar */}
+                {ordenActiva.paqueteFotoUrl && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, borderRadius: 14, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
+                    <img src={ordenActiva.paqueteFotoUrl} alt="Foto del Paquete" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primario)', textTransform: 'uppercase' }}>Foto del Paquete a Entregar</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>{ordenActiva.paquete || 'Objeto a transportar'}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Ruta */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {[{ color: '#007AFF', label: 'Recogida', val: ordenActiva.origen }, { color: '#34C759', label: 'Entrega', val: ordenActiva.destino }].map(r => (

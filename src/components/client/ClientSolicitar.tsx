@@ -1101,6 +1101,45 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     [setSolicitudEnvio]
   );
 
+  /* ─── Package Photo Upload + Client Compression ─── */
+  const handlePackagePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 300;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
+          setSolicitudEnvio({ paqueteFotoUrl: compressedBase64 });
+          showToast('¡Foto del paquete adjuntada y optimizada!', 'success');
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   /* ─── Apply promo code ─── */
   const handleApplyPromo = useCallback(async () => {
     if (!promoInput.trim()) return;
@@ -1193,6 +1232,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         estadoPago: solicitudEnvio.metodoPago === 'transferencia' ? ('pendiente' as PaymentStatus) : ('pendiente' as PaymentStatus),
         fecha: isScheduled ? scheduleDate! : fecha,
         hora: isScheduled ? scheduleTime! : hora,
+        paqueteFotoUrl: solicitudEnvio.paqueteFotoUrl,
         timeline: [
           { step: isScheduled ? 'Programada' : 'Orden creada', hora: isScheduled ? scheduleTime! : hora, completado: true },
           { step: 'En camino', hora: '—', completado: false },
@@ -1215,6 +1255,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
           destinoLat: solicitudEnvio.destinoLat,
           destinoLng: solicitudEnvio.destinoLng,
           paquete: solicitudEnvio.descripcion + scheduleNote,
+          paqueteFotoUrl: solicitudEnvio.paqueteFotoUrl,
           tamano: solicitudEnvio.tamano || 'Mediano',
           fragil: solicitudEnvio.fragil || false,
           metodoPago: solicitudEnvio.metodoPago,
@@ -1698,6 +1739,37 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                   {solicitudEnvio.descripcion.length}/100
                 </span>
               </div>
+            </div>
+
+            {/* Foto del Paquete / Lo que vas a enviar (Opcional, auto-comprimido) */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: "'DM Sans', sans-serif" }}>
+                <span>Foto del paquete / Lo que vas a enviar</span>
+                <span style={{ fontSize: 11, color: 'var(--primario)', fontWeight: 600 }}>Opcional (Optimizado)</span>
+              </label>
+
+              {solicitudEnvio.paqueteFotoUrl ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, borderRadius: 14, background: 'var(--surface)', border: '2px solid var(--primario)' }}>
+                  <img src={solicitudEnvio.paqueteFotoUrl} alt="Foto paquete" style={{ width: 60, height: 60, borderRadius: 10, objectFit: 'cover' }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Foto del objeto cargada</span>
+                    <span style={{ fontSize: 11, color: 'var(--exito)', fontWeight: 600 }}>Comprimida para el repartidor</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSolicitudEnvio({ paqueteFotoUrl: undefined })}
+                    style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ) : (
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '14px', borderRadius: 14, border: '2px dashed var(--border)', background: 'var(--surface)', cursor: 'pointer', transition: 'all 0.2s' }}>
+                  <Camera size={20} style={{ color: 'var(--primario)' }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>Tomar foto o elegir imagen de la galería</span>
+                  <input type="file" accept="image/*" capture="environment" onChange={handlePackagePhotoUpload} style={{ display: 'none' }} />
+                </label>
+              )}
             </div>
 
             {/* Tamaño */}

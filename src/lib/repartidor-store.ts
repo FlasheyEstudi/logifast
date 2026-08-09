@@ -116,6 +116,7 @@ export interface OrdenActiva {
   destinoLat: number;
   destinoLng: number;
   paquete?: string;
+  paqueteFotoUrl?: string;
   tamano?: string;
   fragil?: boolean;
   metodoPago: 'efectivo' | 'transferencia';
@@ -142,6 +143,7 @@ export interface ServicioHistorial {
   estado: 'entregado' | 'incidencia';
   incidenciaTipo?: string;
   calificacion?: number;
+  paqueteFotoUrl?: string;
 }
 
 export interface StatsRepartidor {

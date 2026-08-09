@@ -32,6 +32,7 @@ export interface Order {
   hora: string;
   calificacion?: number;
   codigoPin?: string;
+  paqueteFotoUrl?: string;
   timeline: { step: string; hora: string; completado: boolean }[];
 }
 
@@ -401,6 +402,7 @@ export interface SolicitudEnvio {
   tamano: 'pequeno' | 'mediano' | 'grande';
   fragil: boolean;
   instrucciones: string;
+  paqueteFotoUrl?: string;
   metodoPago: 'efectivo' | 'transferencia';
   montoPago?: number;
   codigoPromo?: string;
