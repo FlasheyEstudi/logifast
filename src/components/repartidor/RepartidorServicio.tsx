@@ -13,13 +13,11 @@ import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 
+import { RepartidorRadarLoader } from '@/components/ui/loaders';
+
 const RepartidorMap = dynamic(() => import('./RepartidorMap'), {
   ssr: false,
-  loading: () => (
-    <div style={{ position: 'absolute', inset: 0, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
-      Cargando mapa GPS en vivo...
-    </div>
-  ),
+  loading: () => <RepartidorRadarLoader message="Iniciando Mapa GPS en Vivo..." />,
 });
 
 const ESTADO_COLOR: Record<string, string> = {

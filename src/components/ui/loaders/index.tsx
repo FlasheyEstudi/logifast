@@ -157,10 +157,60 @@ export function ShimmerCard({ lines = 3 }: { lines?: number }) {
 }
 
 /**
+ * Loader de Radar GPS animado para Repartidor.
+ */
+export function RepartidorRadarLoader({ message = 'Iniciando GPS y Órdenes en Vivo...' }: { message?: string }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'var(--bg)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 16,
+        padding: 24,
+        zIndex: 50,
+      }}
+    >
+      <div style={{ position: 'relative', width: 96, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid #FF5722', opacity: 0.3, animation: 'ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+        <div style={{ position: 'absolute', inset: 12, borderRadius: '50%', border: '2px solid #34C759', opacity: 0.4, animation: 'ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite 0.4s' }} />
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,87,34,0.14)', border: '1.5px solid rgba(255,87,34,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(255,87,34,0.35)' }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h2l3 3M5.5 14L9 6h4l-2 8"/>
+          </svg>
+        </div>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: 0.3 }}>
+          LOGIFAST REPARTIDOR
+        </h4>
+        <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 700, color: '#34C759', fontFamily: "'JetBrains Mono', monospace" }}>
+          {message}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Pantalla de carga completa para transición entre roles.
  * Muestra logo + spinner + mensaje + barra de progreso.
  */
 export function RoleLoader({ role, message }: { role: 'cliente' | 'repartidor' | 'admin' | 'ingeniero'; message?: string }) {
+  if (role === 'repartidor') {
+    return (
+      <div className="lf-role-loader" style={{ '--role-color': '#34C759' } as React.CSSProperties}>
+        <div className="lf-role-loader-content">
+          <RepartidorRadarLoader message={message || 'Conectando Panel de Repartidor LogiFast...'} />
+        </div>
+      </div>
+    );
+  }
+
   const roleConfig = {
     cliente: {
       icon: (
@@ -178,7 +228,7 @@ export function RoleLoader({ role, message }: { role: 'cliente' | 'repartidor' |
         </svg>
       ),
       label: 'Repartidor',
-      color: '#00C853'
+      color: '#34C759'
     },
     admin: {
       icon: (
