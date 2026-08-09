@@ -1255,6 +1255,34 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             </p>
           </div>
 
+          {/* PIN DE ENTREGA BANNER */}
+          {orderPin && (
+            <div
+              style={{
+                margin: '14px 0',
+                padding: '12px 16px',
+                borderRadius: 14,
+                background: 'rgba(52,199,89,0.12)',
+                border: '1.5px solid rgba(52,199,89,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+                  Código PIN de entrega
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+                  Entrégalo al repartidor al recibir
+                </div>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", color: '#34C759', letterSpacing: 3 }}>
+                {orderPin}
+              </div>
+            </div>
+          )}
+
           {/* ─── Order ID + Status (when medium/full) ─── */}
           {sheetSnap !== 'minimized' && (
             <div

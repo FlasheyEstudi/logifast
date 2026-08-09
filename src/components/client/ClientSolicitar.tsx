@@ -524,7 +524,7 @@ function AddressInput({
       try {
         const results = await buscarUbicacionDinamica(value);
         if (results && results.length > 0) {
-          const mapped: DireccionSugerencia[] = results.map((item, idx) => {
+          const mapped: DireccionSugerencia[] = results.slice(0, 3).map((item, idx) => {
             const parts = item.display_name.split(',');
             const mainName = parts[0] ? parts[0].trim() : item.display_name;
             const subName = parts.slice(1, 3).join(', ').trim() || 'Nicaragua';
@@ -540,13 +540,13 @@ function AddressInput({
           setShowDropdown(true);
         }
       } catch (e) {}
-    }, 250);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [value]);
 
   const filteredStore = useMemo(() => {
-    if (value.length < 2) return suggestions;
+    if (!value || value.trim().length < 2) return [];
     const q = value.toLowerCase();
     return suggestions.filter(
       (s) =>
@@ -556,14 +556,15 @@ function AddressInput({
   }, [value, suggestions]);
 
   const combinedResults = useMemo(() => {
-    const list = [...filteredStore, ...apiResults];
+    const list = [...apiResults, ...filteredStore];
     const seen = new Set();
-    return list.filter((item) => {
+    const filtered = list.filter((item) => {
       const key = item.direccion.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
+    return filtered.slice(0, 4);
   }, [filteredStore, apiResults]);
 
   // Close dropdown when clicking outside
@@ -923,27 +924,16 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  useEffect(() => {
-    if (!solicitudEnvio.origen || solicitudEnvio.origenLat === 0) {
-      setSolicitudEnvio({
-        origen: solicitudEnvio.origen || 'Metrocentro, Managua',
-        origenLat: solicitudEnvio.origenLat || 12.1264,
-        origenLng: solicitudEnvio.origenLng || -86.2652,
-      });
-    }
-    if (!solicitudEnvio.destino || solicitudEnvio.destinoLat === 0) {
-      setSolicitudEnvio({
-        destino: solicitudEnvio.destino || 'Colonia Los Robles, Managua',
-        destinoLat: solicitudEnvio.destinoLat || 12.1402,
-        destinoLng: solicitudEnvio.destinoLng || -86.2954,
-      });
-    }
-  }, []);
-
   /* ─── Cost calculation ─── */
   const costBreakdown = useMemo<CostBreakdown>(() => {
-    const BASE = 0;
-    const PER_KM = 15;
+    let PER_KM = 15;
+    try {
+      const savedTarifas = typeof window !== 'undefined' ? localStorage.getItem('logifast_tarifas') : null;
+      if (savedTarifas) {
+        const parsed = JSON.parse(savedTarifas);
+        if (parsed && parsed.tarifaKm) PER_KM = Number(parsed.tarifaKm);
+      }
+    } catch {}
 
     const pickupDist =
       solicitudEnvio.origenLat
@@ -1162,6 +1152,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     // Generate new order ID
     const lastId = orders.length > 0 ? parseInt(orders[0].id.replace('LF-', ''), 10) : 2860;
     const newId = `LF-${lastId + 1}`;
+    const randomPin = String(Math.floor(1000 + Math.random() * 9000));
 
     setTimeout(() => {
       const now = new Date();
@@ -1175,6 +1166,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
 
       const newOrder: Order = {
         id: newId,
+        codigoPin: randomPin,
         cliente: userName,
         clienteTelefono: '+505 8888-0000',
         origen: solicitudEnvio.origen,
@@ -1206,6 +1198,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo: 'envio',
+          codigoPin: randomPin,
           origen: solicitudEnvio.origen,
           destino: solicitudEnvio.destino,
           origenLat: solicitudEnvio.origenLat,
@@ -1274,8 +1267,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 label="Dirección de recogida"
                 value={solicitudEnvio.origen}
                 onChange={(v) => {
-                  const [lat, lng] = geocodeAddress(v);
-                  setSolicitudEnvio({ origen: v, origenLat: lat, origenLng: lng });
+                  setSolicitudEnvio({ origen: v });
                 }}
                 onSelect={(s) =>
                   setSolicitudEnvio({ origen: s.direccion, origenLat: s.lat, origenLng: s.lng })
@@ -1317,8 +1309,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 label="Dirección de entrega"
                 value={solicitudEnvio.destino}
                 onChange={(v) => {
-                  const [lat, lng] = geocodeAddress(v);
-                  setSolicitudEnvio({ destino: v, destinoLat: lat, destinoLng: lng });
+                  setSolicitudEnvio({ destino: v });
                 }}
                 onSelect={(s) =>
                   setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng })

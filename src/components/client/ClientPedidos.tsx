@@ -185,6 +185,13 @@ function ActiveEnvioCard({ order, onOpenTracking, onOpenChat }: { order: Order; 
           </div>
         </div>
 
+        {order.codigoPin && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 10, background: 'rgba(52,199,89,0.12)', border: '1px solid rgba(52,199,89,0.3)' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>PIN de confirmación:</span>
+            <span style={{ fontSize: 18, fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", color: '#34C759', letterSpacing: 2 }}>{order.codigoPin}</span>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => onOpenTracking(order.id)} style={{ ...btnPrimary(), flex: 1 }}>
             <Navigation size={15} /> Rastrear
