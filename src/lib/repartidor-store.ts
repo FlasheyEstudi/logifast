@@ -123,6 +123,7 @@ export interface OrdenActiva {
   ganancia: number;
   kmEstimados: number;
   tiempoEstimado: number;
+  codigoPin?: string;
   productos?: ProductoChecklist[];
 }
 

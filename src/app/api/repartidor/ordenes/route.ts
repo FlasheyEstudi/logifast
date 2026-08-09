@@ -31,6 +31,7 @@ function mapOrdenToActiva(o: Awaited<ReturnType<typeof db.ordenServicio.findFirs
     ganancia: o.ganancia,
     kmEstimados: o.kmEstimados,
     tiempoEstimado: o.tiempoEstimado,
+    codigoPin: o.codigoPin ?? undefined,
   };
 }
 
