@@ -93,7 +93,15 @@ const FlotaMapDynamic = dynamic(() => Promise.resolve(FlotaMap), { ssr: false })
 
 export default function ModuleFlota({ isDark }: { isDark: boolean }) {
   const { motos, riders, flotaFilter, setFlotaFilter, expandedMoto, setExpandedMoto,
-    addMotoOpen, setAddMotoOpen, editMoto, setEditMoto, addMoto, updateMoto } = useStore();
+    addMotoOpen, setAddMotoOpen, editMoto, setEditMoto, addMoto, updateMoto, updateMotoPositions } = useStore();
+
+  useEffect(() => {
+    updateMotoPositions();
+    const interval = setInterval(() => {
+      updateMotoPositions();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [updateMotoPositions]);
 
   const [formNombre, setFormNombre] = useState('');
   const [formModelo, setFormModelo] = useState('');

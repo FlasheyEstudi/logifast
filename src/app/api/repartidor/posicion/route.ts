@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import { emitirEventoRealtime } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,13 @@ export async function POST(req: NextRequest) {
     await db.repartidorProfile.update({
       where: { id: profile.id },
       data: { lat, lng },
+    });
+
+    // Emitir posición GPS en tiempo real al panel de administración y mapa de flota
+    emitirEventoRealtime({
+      room: 'admin',
+      event: 'repartidor:posicion',
+      data: { repartidorId: profile.id, lat, lng, velocidad, heading, nombre: profile.nombre },
     });
 
     return NextResponse.json({ ok: true });

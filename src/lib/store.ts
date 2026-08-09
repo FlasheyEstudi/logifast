@@ -65,6 +65,8 @@ export interface Rider {
   kmTotal: number;
   calificacion: number;
   conectado: boolean;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Alert {
@@ -1081,12 +1083,86 @@ export const useStore = create<AppState>((set, get) => ({
     }).catch((err) => console.error('[toggleRiderConnection API error]', err));
   },
 
-  updateMotoPositions: () => {
-    // P0: Simulación de movimiento de motos ELIMINADA.
-    // Las posiciones reales de las motos vienen de /api/admin/repartidores
-    // (que lee RepartidorProfile.lat/lng actualizado por el GPS del repartidor).
-    // Esta función se mantiene como no-op por compatibilidad.
-    return;
+  updateMotoPositions: async () => {
+    try {
+      const res = await fetch('/api/admin/repartidores');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.profiles || !Array.isArray(data.profiles)) return;
+
+      set((state) => {
+        const updatedMotos = [...state.motos];
+        const updatedRiders = [...state.riders];
+
+        for (const p of data.profiles) {
+          const pLat = Number(p.user?.lat ?? p.lat);
+          const pLng = Number(p.user?.lng ?? p.lng);
+          if (!Number.isFinite(pLat) || !Number.isFinite(pLng) || (pLat === 0 && pLng === 0)) continue;
+
+          // Actualizar posición GPS en motos
+          const motoIdx = updatedMotos.findIndex((m) => m.repartidorAsignado === (p.user?.name || p.nombre) || m.id === p.id || m.id === p.motoId);
+          if (motoIdx >= 0) {
+            updatedMotos[motoIdx] = {
+              ...updatedMotos[motoIdx],
+              lat: pLat,
+              lng: pLng,
+              status: p.enServicio ? 'in-service' : p.conectado ? 'available' : 'maintenance',
+            };
+          } else {
+            updatedMotos.push({
+              id: p.id,
+              nombre: `Moto - ${p.user?.name || p.nombre}`,
+              modelo: p.vehiculoModelo || 'Honda Wave 110',
+              anio: p.vehiculoAnio || 2024,
+              placa: p.vehiculoPlaca || 'M-123456',
+              status: p.enServicio ? 'in-service' : p.conectado ? 'available' : 'maintenance',
+              lat: pLat,
+              lng: pLng,
+              km: p.totalKm || 120,
+              repartidorAsignado: p.user?.name || p.nombre,
+              ultimoMantenimiento: '2026-08-01',
+              proximoMantenimiento: '2026-09-01',
+              costoTotalMantenimiento: 0,
+            });
+          }
+
+          // Actualizar posición GPS en riders
+          const riderIdx = updatedRiders.findIndex((r) => r.id === p.id || r.nombre === (p.user?.name || p.nombre));
+          if (riderIdx >= 0) {
+            updatedRiders[riderIdx] = {
+              ...updatedRiders[riderIdx],
+              lat: pLat,
+              lng: pLng,
+              conectado: p.conectado,
+              status: p.enServicio ? 'in-service' : p.conectado ? 'available' : 'offline',
+            };
+          } else {
+            updatedRiders.push({
+              id: p.id,
+              nombre: p.user?.name || p.nombre,
+              email: p.user?.email || p.email || '',
+              telefono: p.user?.telefono || p.telefono || '',
+              initials: p.user?.initials || (p.nombre || 'RP').slice(0, 2).toUpperCase(),
+              color: p.user?.color || '#0066FF',
+              status: p.enServicio ? 'in-service' : p.conectado ? 'available' : 'offline',
+              motoId: p.motoId || null,
+              entregasHoy: p.entregasHoy || 0,
+              kmHoy: p.kmHoy || 0,
+              entregasTotal: p.totalEntregas || 0,
+              kmTotal: p.totalKm || 0,
+              calificacion: p.calificacion || 5.0,
+              conectado: p.conectado,
+              lat: pLat,
+              lng: pLng,
+            });
+          }
+        }
+
+        return { motos: updatedMotos, riders: updatedRiders };
+      });
+    } catch {
+      // Ignorar errores de red temporales durante polling
+    }
   },
 
   /* New Actions */
