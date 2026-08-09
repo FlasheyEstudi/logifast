@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Clock, MapPin, User, Bike, Check, X, ChevronRight,
