@@ -304,26 +304,42 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
 
   // Profile edit states
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editNombre, setEditNombre] = useState(perfil.nombre || userName || '');
-  const [editTelefono, setEditTelefono] = useState(perfil.telefono || '');
+  const [editNombre, setEditNombre] = useState('');
+  const [editTelefono, setEditTelefono] = useState('');
+  const [editFotoUrl, setEditFotoUrl] = useState('');
   const [editCedula, setEditCedula] = useState('');
+  const [editLicenciaConducir, setEditLicenciaConducir] = useState('');
+  const [editVehiculoMarca, setEditVehiculoMarca] = useState('Honda');
+  const [editVehiculoModelo, setEditVehiculoModelo] = useState('Wave 110');
+  const [editVehiculoPlaca, setEditVehiculoPlaca] = useState('');
   const [editMunicipio, setEditMunicipio] = useState('Managua');
-  const [editZona, setEditZona] = useState(perfil.zonaPreferida || 'Todas las Zonas');
+  const [editZona, setEditZona] = useState('Todas las Zonas');
   const [isSavingPerfil, setIsSavingPerfil] = useState(false);
 
   useEffect(() => {
     if (perfil) {
       setEditNombre(perfil.nombre || userName || '');
       setEditTelefono(perfil.telefono || '');
+      setEditFotoUrl((perfil as any).fotoUrl || '');
+      setEditCedula((perfil as any).cedulaRepartidor || '');
+      setEditLicenciaConducir((perfil as any).licenciaConducir || '');
+      setEditVehiculoMarca((perfil as any).vehiculoMarca || 'Honda');
+      setEditVehiculoModelo((perfil as any).vehiculoModelo || moto?.modelo || 'Wave 110');
+      setEditVehiculoPlaca((perfil as any).vehiculoPlaca || moto?.placa || '');
       setEditZona(perfil.zonaPreferida || 'Todas las Zonas');
     }
-  }, [perfil, userName]);
+  }, [perfil, userName, moto]);
 
   const handleSavePerfil = async () => {
     if (!editNombre.trim()) {
       notify.error('El nombre completo es obligatorio.');
       return;
     }
+    if (!editTelefono.trim()) {
+      notify.error('El número de teléfono móvil es obligatorio.');
+      return;
+    }
+
     setIsSavingPerfil(true);
     try {
       const res = await fetch('/api/repartidor/perfil', {
@@ -332,14 +348,19 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
         body: JSON.stringify({
           nombre: editNombre.trim(),
           telefono: editTelefono.trim(),
+          fotoUrl: editFotoUrl.trim() || undefined,
           cedula: editCedula.trim(),
+          licenciaConducir: editLicenciaConducir.trim(),
+          vehiculoMarca: editVehiculoMarca.trim(),
+          vehiculoModelo: editVehiculoModelo.trim(),
+          vehiculoPlaca: editVehiculoPlaca.trim(),
           municipio: editMunicipio.trim(),
           zonaPreferida: editZona,
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        notify.success('Perfil de repartidor actualizado correctamente.');
+        notify.success('¡Perfil de repartidor actualizado con éxito!');
         setShowEditModal(false);
         await syncFromBackend();
       } else {
@@ -1299,7 +1320,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
         LOGIFAST Repartidor v2.0
       </div>
 
-      {/* ─── MODAL EDITAR PERFIL ─── */}
+      {/* ─── MODAL EDITAR PERFIL COMPLETO ─── */}
       <AnimatePresence>
         {showEditModal && (
           <div
@@ -1321,113 +1342,290 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'rgba(15, 23, 42, 0.75)',
-                backdropFilter: 'blur(8px)',
+                background: 'rgba(15, 23, 42, 0.8)',
+                backdropFilter: 'blur(12px)',
               }}
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              initial={{ scale: 0.95, opacity: 0, y: 12 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              exit={{ scale: 0.95, opacity: 0, y: 12 }}
               style={{
                 position: 'relative',
                 width: '100%',
-                maxWidth: 480,
+                maxWidth: 500,
+                maxHeight: '90vh',
+                overflowY: 'auto',
                 background: 'rgba(19, 24, 34, 0.96)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: 24,
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 28,
                 padding: 24,
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
                 zIndex: 10000,
                 color: '#F8FAFC',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#F8FAFC' }}>
-                  Editar Perfil de Repartidor
-                </h2>
+              {/* Header Modal */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div>
+                  <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#F8FAFC' }}>
+                    Configuración de Perfil
+                  </h2>
+                  <span style={{ fontSize: 12, color: '#94A3B8' }}>Datos personales y vehículo asignado</span>
+                </div>
                 <button
+                  type="button"
                   onClick={() => setShowEditModal(false)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#94A3B8' }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 32,
+                    height: 32,
+                    cursor: 'pointer',
+                    fontSize: 16,
+                    color: '#94A3B8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
                   ✕
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                    Nombre Completo *
-                  </label>
-                  <input
-                    type="text"
-                    value={editNombre}
-                    onChange={(e) => setEditNombre(e.target.value)}
-                    placeholder="Tu nombre y apellido"
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Avatar Preview & Photo URL */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(30, 41, 59, 0.5)', padding: 14, borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div
                     style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: 12,
-                      background: 'rgba(15, 23, 42, 0.6)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      color: '#F8FAFC',
-                      fontSize: 13,
-                      outline: 'none',
+                      width: 56,
+                      height: 56,
+                      borderRadius: 16,
+                      background: editFotoUrl ? `url(${editFotoUrl}) center/cover` : `linear-gradient(135deg, ${perfil.color}, #000)`,
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontFamily: "'Syne', sans-serif",
+                      fontSize: 20,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                     }}
-                  />
+                  >
+                    {!editFotoUrl && perfil.initials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>
+                      URL de Foto de Perfil
+                    </label>
+                    <input
+                      type="text"
+                      value={editFotoUrl}
+                      onChange={(e) => setEditFotoUrl(e.target.value)}
+                      placeholder="https://..."
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: 10,
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#F8FAFC',
+                        fontSize: 12,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {/* Seccion 1: Datos Personales Obligatorios */}
+                <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: 14, borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#007AFF', textTransform: 'uppercase' }}>
+                    Información Personal
+                  </div>
+
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                      Teléfono Móvil
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#F8FAFC', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span>Nombre Completo</span>
+                      <span style={{ color: '#EF4444' }}>*Obligatorio</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editNombre}
+                      onChange={(e) => setEditNombre(e.target.value)}
+                      placeholder="Ej: Carlos Mendoza"
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: !editNombre.trim() ? '1.5px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#F8FAFC',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#F8FAFC', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span>Número de Teléfono Móvil</span>
+                      <span style={{ color: '#EF4444' }}>*Obligatorio</span>
                     </label>
                     <input
                       type="text"
                       value={editTelefono}
                       onChange={(e) => setEditTelefono(e.target.value)}
-                      placeholder="+505 8888 8888"
+                      placeholder="Ej: +505 8888 8888"
+                      required
                       style={{
                         width: '100%',
                         padding: '10px 14px',
                         borderRadius: 12,
                         background: 'rgba(15, 23, 42, 0.6)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        border: !editTelefono.trim() ? '1.5px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.15)',
                         color: '#F8FAFC',
                         fontSize: 13,
+                        fontWeight: 600,
                         outline: 'none',
                       }}
                     />
                   </div>
 
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                        N° de Cédula / DNI
+                      </label>
+                      <input
+                        type="text"
+                        value={editCedula}
+                        onChange={(e) => setEditCedula(e.target.value.toUpperCase())}
+                        placeholder="001-000000-0000A"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          background: 'rgba(15, 23, 42, 0.6)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          color: '#F8FAFC',
+                          fontSize: 12,
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                        N° Licencia de Conducir
+                      </label>
+                      <input
+                        type="text"
+                        value={editLicenciaConducir}
+                        onChange={(e) => setEditLicenciaConducir(e.target.value.toUpperCase())}
+                        placeholder="LIC-948102"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          background: 'rgba(15, 23, 42, 0.6)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          color: '#F8FAFC',
+                          fontSize: 12,
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seccion 2: Datos de Vehiculo / Moto */}
+                <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: 14, borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#FF9500', textTransform: 'uppercase' }}>
+                    Vehículo Operativo
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                        Marca de Moto
+                      </label>
+                      <input
+                        type="text"
+                        value={editVehiculoMarca}
+                        onChange={(e) => setEditVehiculoMarca(e.target.value)}
+                        placeholder="Honda / Yamaha"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          background: 'rgba(15, 23, 42, 0.6)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          color: '#F8FAFC',
+                          fontSize: 12,
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                        Modelo de Moto
+                      </label>
+                      <input
+                        type="text"
+                        value={editVehiculoModelo}
+                        onChange={(e) => setEditVehiculoModelo(e.target.value)}
+                        placeholder="Wave 110"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          background: 'rgba(15, 23, 42, 0.6)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          color: '#F8FAFC',
+                          fontSize: 12,
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                      N° de Cédula / DNI
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                      N° de Placa (Matrícula)
                     </label>
                     <input
                       type="text"
-                      value={editCedula}
-                      onChange={(e) => setEditCedula(e.target.value.toUpperCase())}
-                      placeholder="001-000000-0000A"
+                      value={editVehiculoPlaca}
+                      onChange={(e) => setEditVehiculoPlaca(e.target.value.toUpperCase())}
+                      placeholder="Ej: M-94812"
                       style={{
                         width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 12,
+                        padding: '10px 12px',
+                        borderRadius: 10,
                         background: 'rgba(15, 23, 42, 0.6)',
                         border: '1px solid rgba(255, 255, 255, 0.15)',
                         color: '#F8FAFC',
-                        fontSize: 13,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        fontFamily: 'monospace',
                         outline: 'none',
                       }}
                     />
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {/* Seccion 3: Zona y Ubicacion */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
                       Municipio
                     </label>
                     <input
@@ -1437,32 +1635,32 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                       placeholder="Managua"
                       style={{
                         width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 12,
+                        padding: '10px 12px',
+                        borderRadius: 10,
                         background: 'rgba(15, 23, 42, 0.6)',
                         border: '1px solid rgba(255, 255, 255, 0.15)',
                         color: '#F8FAFC',
-                        fontSize: 13,
+                        fontSize: 12,
                         outline: 'none',
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                      Zona de Cobertura
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                      Zona Cobertura
                     </label>
                     <select
                       value={editZona}
                       onChange={(e) => setEditZona(e.target.value)}
                       style={{
                         width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 12,
+                        padding: '10px 12px',
+                        borderRadius: 10,
                         background: 'rgba(15, 23, 42, 0.6)',
                         border: '1px solid rgba(255, 255, 255, 0.15)',
                         color: '#F8FAFC',
-                        fontSize: 13,
+                        fontSize: 12,
                         outline: 'none',
                       }}
                     >
@@ -1475,12 +1673,13 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                   </div>
                 </div>
 
-                <div style={{ marginTop: 12, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                {/* Footer Actions */}
+                <div style={{ marginTop: 10, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
                     style={{
-                      padding: '10px 18px',
+                      padding: '12px 20px',
                       borderRadius: 12,
                       border: '1px solid rgba(255, 255, 255, 0.15)',
                       background: 'transparent',
@@ -1497,7 +1696,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                     onClick={handleSavePerfil}
                     disabled={isSavingPerfil}
                     style={{
-                      padding: '10px 20px',
+                      padding: '12px 24px',
                       borderRadius: 12,
                       border: 'none',
                       background: '#007AFF',
@@ -1505,6 +1704,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                       cursor: 'pointer',
                       fontSize: 13,
                       fontWeight: 700,
+                      boxShadow: '0 4px 14px rgba(0, 122, 255, 0.4)',
                     }}
                   >
                     {isSavingPerfil ? 'Guardando...' : 'Guardar Cambios'}

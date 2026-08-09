@@ -19,15 +19,21 @@ export async function GET() {
     }
     const { user, profile } = rp;
 
-    const result: RepartidorProfile = {
+    const result: RepartidorProfile & Record<string, any> = {
       id: profile.id,
       nombre: profile.nombre,
       email: profile.email,
-      telefono: profile.telefono ?? '',
+      telefono: profile.telefono ?? user.telefono ?? '',
       initials: (user.initials || profile.nombre.slice(0, 2)).toUpperCase(),
       color: user.color || '#FF5722',
+      fotoUrl: user.fotoUrl ?? undefined,
       motoId: profile.motoId ?? '',
-      zonaPreferida: profile.zonaPreferida ?? 'Centro',
+      vehiculoMarca: profile.vehiculoMarca ?? 'Honda',
+      vehiculoModelo: profile.vehiculoModelo ?? 'Wave 110',
+      vehiculoPlaca: profile.vehiculoPlaca ?? '',
+      cedulaRepartidor: profile.cedulaRepartidor ?? user.cedula ?? '',
+      licenciaConducir: user.bio ?? '',
+      zonaPreferida: profile.zonaPreferida ?? 'Todas las Zonas',
       calificacion: profile.calificacion,
       totalEntregas: profile.totalEntregas,
       totalKm: profile.totalKm,
@@ -50,7 +56,6 @@ export async function GET() {
 
 /**
  * PATCH /api/repartidor/perfil
- * Body: { sonidoActivo?, vibracionActiva?, ubicacionActiva?, zonaPreferida?, contratoAceptado? }
  */
 export async function PATCH(req: NextRequest) {
   try {
@@ -64,7 +69,12 @@ export async function PATCH(req: NextRequest) {
     const {
       nombre,
       telefono,
+      fotoUrl,
       cedula,
+      licenciaConducir,
+      vehiculoMarca,
+      vehiculoModelo,
+      vehiculoPlaca,
       municipio,
       zonaPreferida,
       sonidoActivo,
@@ -82,15 +92,35 @@ export async function PATCH(req: NextRequest) {
       userData.name = nombre.trim();
       camposAplicados.push('nombre');
     }
-    if (typeof telefono === 'string') {
+    if (typeof telefono === 'string' && telefono.trim()) {
       profileData.telefono = telefono.trim();
       userData.telefono = telefono.trim();
       camposAplicados.push('telefono');
+    }
+    if (typeof fotoUrl === 'string') {
+      userData.fotoUrl = fotoUrl.trim();
+      camposAplicados.push('fotoUrl');
     }
     if (typeof cedula === 'string') {
       profileData.cedulaRepartidor = cedula.trim();
       userData.cedula = cedula.trim();
       camposAplicados.push('cedula');
+    }
+    if (typeof licenciaConducir === 'string') {
+      userData.bio = licenciaConducir.trim();
+      camposAplicados.push('licenciaConducir');
+    }
+    if (typeof vehiculoMarca === 'string') {
+      profileData.vehiculoMarca = vehiculoMarca.trim();
+      camposAplicados.push('vehiculoMarca');
+    }
+    if (typeof vehiculoModelo === 'string') {
+      profileData.vehiculoModelo = vehiculoModelo.trim();
+      camposAplicados.push('vehiculoModelo');
+    }
+    if (typeof vehiculoPlaca === 'string') {
+      profileData.vehiculoPlaca = vehiculoPlaca.trim();
+      camposAplicados.push('vehiculoPlaca');
     }
     if (typeof municipio === 'string') {
       userData.municipio = municipio.trim();
