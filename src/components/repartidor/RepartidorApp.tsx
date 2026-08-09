@@ -25,10 +25,25 @@ class RepartidorErrorBoundary extends Component<RepartidorErrorBoundaryProps, Re
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[Repartidor App Error Boundary]', error, errorInfo);
+    if (
+      error.name === 'ChunkLoadError' ||
+      error.message?.includes('Failed to load chunk') ||
+      error.message?.includes('Loading chunk') ||
+      error.message?.includes('Camera is not defined')
+    ) {
+      const hasReloaded = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chunk_retry_repartidor');
+      if (!hasReloaded) {
+        sessionStorage.setItem('chunk_retry_repartidor', 'true');
+        window.location.reload();
+      }
+    }
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: null });
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('chunk_retry_repartidor');
+    }
+    window.location.reload();
   };
 
   render() {
