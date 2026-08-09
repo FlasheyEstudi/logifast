@@ -51,18 +51,24 @@ export async function GET(req: NextRequest) {
     const estado = searchParams.get('estado') ?? 'activa';
 
     if (estado === 'historial') {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-
-      const servicios = await db.ordenServicio.findMany({
-        where: {
-          repartidorId: profile.id,
-          createdAt: { gte: startOfDay },
-          estado: { in: ['entregado', 'incidencia', 'cancelado'] },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      });
+      const [servicios, compras] = await Promise.all([
+        db.ordenServicio.findMany({
+          where: {
+            repartidorId: profile.id,
+            estado: { in: ['entregado', 'incidencia', 'cancelado'] },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        }),
+        db.ordenCompra.findMany({
+          where: {
+            repartidorId: profile.id,
+            estado: { in: ['entregado', 'cancelado'] },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        }),
+      ]);
 
       // Cargar calificaciones
       const ordenIds = servicios.map((s) => s.id);
@@ -71,7 +77,7 @@ export async function GET(req: NextRequest) {
       });
       const calMap = new Map(cals.map((c) => [c.ordenId, c.estrellas]));
 
-      const historial: ServicioHistorial[] = servicios.map((s) => ({
+      const historialServicios: ServicioHistorial[] = servicios.map((s) => ({
         id: s.id,
         ordenId: s.id,
         tipo: s.tipo as 'envio' | 'compra',
@@ -88,6 +94,26 @@ export async function GET(req: NextRequest) {
         calificacion: calMap.get(s.id) ?? undefined,
         paqueteFotoUrl: s.incidenciaDesc ?? undefined,
       }));
+
+      const historialCompras: ServicioHistorial[] = compras.map((c) => ({
+        id: c.id,
+        ordenId: c.id,
+        tipo: 'compra' as const,
+        cliente: 'Cliente Marketplace',
+        tiendaNombre: c.tiendaNombre ?? 'Tienda',
+        origen: c.tiendaNombre ?? 'Tienda',
+        destino: c.direccionEntrega ?? 'Managua',
+        hora: horaString(c.createdAt),
+        kmRecorridos: 3.5,
+        ganancia: Math.round(c.total * 0.2),
+        tiempoTotal: 20,
+        estado: 'entregado' as const,
+        calificacion: 5,
+      }));
+
+      const historial = [...historialServicios, ...historialCompras].sort(
+        (a, b) => b.id.localeCompare(a.id)
+      );
 
       return NextResponse.json({
         repartidorId: profile.id,

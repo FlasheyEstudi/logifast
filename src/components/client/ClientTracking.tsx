@@ -47,7 +47,6 @@ function getRepartidorInfo(driverName?: string | null, initials?: string | null)
   if (
     !driverName ||
     driverName === 'Sin asignar' ||
-    driverName === 'Repartidor LogiFast' ||
     driverName === 'Pendiente' ||
     driverName.trim() === ''
   ) {

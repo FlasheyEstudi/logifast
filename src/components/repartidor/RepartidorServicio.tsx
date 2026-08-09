@@ -182,7 +182,12 @@ export default function RepartidorServicio() {
         >
           {/* Navegar */}
           <button
-            onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${ordenActiva.destinoLat||12.14},${ordenActiva.destinoLng||-86.29}`, '_blank')}
+            onClick={() => {
+              const headingToPickup = estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA';
+              const targetLat = headingToPickup ? (ordenActiva.origenLat || 12.136) : (ordenActiva.destinoLat || 12.140);
+              const targetLng = headingToPickup ? (ordenActiva.origenLng || -86.258) : (ordenActiva.destinoLng || -86.250);
+              window.open(`https://www.google.com/maps/dir/?api=1&destination=${targetLat},${targetLng}`, '_blank');
+            }}
             style={{ width: 46, height: 46, borderRadius: '50%', background: '#007AFF', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(0,122,255,0.5)', cursor: 'pointer' }}
             title="Navegación GPS"
           ><Compass size={21} /></button>
@@ -372,14 +377,35 @@ export default function RepartidorServicio() {
                   </div>
                 )}
 
-                {/* Ruta */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {[{ color: '#007AFF', label: 'Recogida', val: ordenActiva.origen }, { color: '#34C759', label: 'Entrega', val: ordenActiva.destino }].map(r => (
-                    <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-                      <MapPin size={14} style={{ color: r.color, flexShrink: 0 }} />
-                      <div>
-                        <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: 4 }}>{r.label}</span>
-                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{r.val}</span>
+                {/* Ruta + Botones de Navegación GPS */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[{ color: '#007AFF', label: 'Recogida', val: ordenActiva.origen, lat: ordenActiva.origenLat || 12.136, lng: ordenActiva.origenLng || -86.258 },
+                    { color: '#34C759', label: 'Entrega', val: ordenActiva.destino, lat: ordenActiva.destinoLat || 12.140, lng: ordenActiva.destinoLng || -86.250 }].map(r => (
+                    <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, minWidth: 0, flex: 1 }}>
+                        <MapPin size={16} style={{ color: r.color, flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>{r.label}</span>
+                          <span style={{ fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{r.val}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}`, '_blank')}
+                          style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: '#007AFF', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                          title="Google Maps"
+                        >
+                          <Compass size={12} /> Maps
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.open(`https://waze.com/ul?ll=${r.lat},${r.lng}&navigate=yes`, '_blank')}
+                          style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: '#33CCFF', color: '#000', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                          title="Waze"
+                        >
+                          <Navigation size={12} /> Waze
+                        </button>
                       </div>
                     </div>
                   ))}
