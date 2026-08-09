@@ -300,6 +300,7 @@ export async function POST(req: NextRequest) {
           ganancia: Math.round(costoEnvio * 0.7),
           kmEstimados: 0,
           tiempoEstimado: 0,
+          codigoPin: pinGenerado,
           clienteNombre: user.name,
           clienteTelefono: user.telefono ?? null,
         },
