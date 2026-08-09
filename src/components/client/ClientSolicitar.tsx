@@ -24,10 +24,13 @@ import {
   Zap,
   Calendar,
   ChevronUp,
+  Locate,
+  Navigation,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
-import { geocodeAddress, buscarUbicacionDinamica } from '@/lib/osrm';
+import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta } from '@/lib/osrm';
+import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, MarkerLabel } from '@/components/ui/map';
 
 /* ═══════════════════════════════════════════════
    TYPES
@@ -245,6 +248,246 @@ function ProgressBar({ currentStep }: { currentStep: WizardStep }) {
 }
 
 /* ═══════════════════════════════════════════════
+   MAP PREVIEW
+   ═══════════════════════════════════════════════ */
+
+interface MapPreviewProps {
+  origenLat: number;
+  origenLng: number;
+  destinoLat: number;
+  destinoLng: number;
+  onDragOrigen: (lat: number, lng: number) => void;
+  onDragDestino: (lat: number, lng: number) => void;
+}
+
+function SolicitarMapPreview({
+  origenLat,
+  origenLng,
+  destinoLat,
+  destinoLng,
+  onDragOrigen,
+  onDragDestino,
+}: MapPreviewProps) {
+  const [rutaCoords, setRutaCoords] = useState<[number, number][]>([]);
+  const [distanciaKm, setDistanciaKm] = useState(0);
+  const [duracionMin, setDuracionMin] = useState(0);
+  const mapRef = useRef<any>(null);
+
+  const hasOrigen = origenLat !== 0 && origenLng !== 0;
+  const hasDestino = destinoLat !== 0 && destinoLng !== 0;
+
+  const centerLat = hasOrigen ? origenLat : hasDestino ? destinoLat : 12.1364;
+  const centerLng = hasOrigen ? origenLng : hasDestino ? destinoLng : -86.2581;
+
+  useEffect(() => {
+    if (hasOrigen && hasDestino) {
+      obtenerRuta({ lat: origenLat, lng: origenLng }, { lat: destinoLat, lng: destinoLng }).then((res) => {
+        if (res.exito && res.coordenadas) {
+          setRutaCoords(res.coordenadas);
+          setDistanciaKm(res.distanciaKm);
+          setDuracionMin(res.duracionMin);
+        } else {
+          setRutaCoords([[origenLat, origenLng], [destinoLat, destinoLng]]);
+          setDistanciaKm(0);
+          setDuracionMin(0);
+        }
+      });
+    } else {
+      setRutaCoords([]);
+      setDistanciaKm(0);
+      setDuracionMin(0);
+    }
+  }, [origenLat, origenLng, destinoLat, destinoLng, hasOrigen, hasDestino]);
+
+  const mapLibreRoute = useMemo(() => {
+    return rutaCoords.map(([lat, lng]) => [lng, lat] as [number, number]);
+  }, [rutaCoords]);
+
+  useEffect(() => {
+    if (mapRef.current && hasOrigen && hasDestino) {
+      const minLng = Math.min(origenLng, destinoLng);
+      const maxLng = Math.max(origenLng, destinoLng);
+      const minLat = Math.min(origenLat, destinoLat);
+      const maxLat = Math.max(origenLat, destinoLat);
+
+      try {
+        mapRef.current.fitBounds(
+          [
+            [minLng, minLat],
+            [maxLng, maxLat],
+          ],
+          { padding: 45, duration: 800 }
+        );
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [hasOrigen, hasDestino, origenLat, origenLng, destinoLat, destinoLng]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+        Vista Previa del Recorrido
+      </div>
+      <div
+        style={{
+          position: 'relative',
+          height: 270,
+          borderRadius: 16,
+          border: '1.5px solid var(--border)',
+          overflow: 'hidden',
+          background: 'var(--bg-alt)',
+        }}
+      >
+        <MapComponent
+          ref={mapRef}
+          initialViewState={{
+            longitude: centerLng,
+            latitude: centerLat,
+            zoom: hasOrigen && hasDestino ? 12.5 : 13,
+          }}
+          className="w-full h-full"
+        >
+          <MapControls position="bottom-right" showZoom showLocate />
+
+          {/* Origen Marker (Verde - Recogida) */}
+          {hasOrigen && (
+            <MapMarker
+              longitude={origenLng}
+              latitude={origenLat}
+              draggable={true}
+              onDragEnd={(lngLat) => {
+                onDragOrigen(lngLat.lat, lngLat.lng);
+              }}
+            >
+              <MarkerContent>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: '#34C759',
+                    border: '3px solid #FFFFFF',
+                    boxShadow: '0 4px 12px rgba(52,199,89,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                    cursor: 'grab',
+                  }}
+                >
+                  <MapPin size={18} />
+                </div>
+              </MarkerContent>
+              <MarkerLabel position="top">
+                <span
+                  style={{
+                    background: 'rgba(0,0,0,0.75)',
+                    color: '#FFFFFF',
+                    padding: '2px 6px',
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                >
+                  Recogida
+                </span>
+              </MarkerLabel>
+            </MapMarker>
+          )}
+
+          {/* Destino Marker (Azul - Entrega) */}
+          {hasDestino && (
+            <MapMarker
+              longitude={destinoLng}
+              latitude={destinoLat}
+              draggable={true}
+              onDragEnd={(lngLat) => {
+                onDragDestino(lngLat.lat, lngLat.lng);
+              }}
+            >
+              <MarkerContent>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: '#007AFF',
+                    border: '3px solid #FFFFFF',
+                    boxShadow: '0 4px 12px rgba(0,122,255,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                    cursor: 'grab',
+                  }}
+                >
+                  <MapPin size={18} />
+                </div>
+              </MarkerContent>
+              <MarkerLabel position="top">
+                <span
+                  style={{
+                    background: 'rgba(0,0,0,0.75)',
+                    color: '#FFFFFF',
+                    padding: '2px 6px',
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                >
+                  Entrega
+                </span>
+              </MarkerLabel>
+            </MapMarker>
+          )}
+
+          {/* Ruta GeoJSON */}
+          {hasOrigen && hasDestino && mapLibreRoute.length > 1 && (
+            <MapRoute
+              coordinates={mapLibreRoute}
+              color="#007AFF"
+              width={4}
+              opacity={0.85}
+            />
+          )}
+        </MapComponent>
+
+        {/* Floating route info overlay */}
+        {hasOrigen && hasDestino && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              zIndex: 10,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: 12,
+              padding: '8px 14px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+              <Navigation size={14} style={{ color: '#007AFF' }} />
+              <span>{distanciaKm.toFixed(1)} km</span>
+            </div>
+            <span style={{ color: 'var(--text-muted)' }}>•</span>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>
+              ~{duracionMin > 0 ? Math.round(duracionMin) : Math.round(distanciaKm * 3 + 5)} min
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
    AUTOCOMPLETE INPUT
    ═══════════════════════════════════════════════ */
 
@@ -253,6 +496,7 @@ function AddressInput({
   value,
   onChange,
   onSelect,
+  onUseMyLocation,
   dotColor,
   suggestions,
   placeholder,
@@ -261,6 +505,7 @@ function AddressInput({
   value: string;
   onChange: (v: string) => void;
   onSelect: (s: DireccionSugerencia) => void;
+  onUseMyLocation?: () => void;
   dotColor: string;
   suggestions: DireccionSugerencia[];
   placeholder: string;
@@ -392,6 +637,31 @@ function AddressInput({
           </button>
         )}
       </div>
+
+      {onUseMyLocation && (
+        <button
+          type="button"
+          onClick={onUseMyLocation}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'none',
+            border: 'none',
+            color: 'var(--primario)',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginTop: 6,
+            padding: '2px 0',
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          <Locate size={14} />
+          <span>Usar mi ubicación actual</span>
+        </button>
+      )}
+
       <AnimatePresence>
         {showDropdown && combinedResults.length > 0 && (
           <motion.div
@@ -405,33 +675,25 @@ function AddressInput({
               left: 0,
               right: 0,
               zIndex: 50,
+              marginTop: 4,
               background: 'var(--surface)',
               border: '1.5px solid var(--border)',
-              borderRadius: 12,
-              marginTop: 4,
+              borderRadius: 14,
+              boxShadow: 'var(--shadow-md)',
               maxHeight: 220,
               overflowY: 'auto',
-              boxShadow: 'var(--shadow-lg)',
             }}
           >
             {combinedResults.map((s) => (
               <button
                 key={s.id}
-                onClick={() => {
+                onMouseDown={() => {
                   onSelect(s);
                   setShowDropdown(false);
                 }}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 14px',
                   width: '100%',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
                   textAlign: 'left',
-                  color: 'var(--text)',
                   fontFamily: "'DM Sans', sans-serif",
                   borderBottom: '1px solid var(--border)',
                   transition: 'background 0.15s',
@@ -753,6 +1015,72 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     });
   }, [solicitudEnvio, setSolicitudEnvio]);
 
+  /* ─── Use GPS Location ─── */
+  const handleUseMyLocation = useCallback(
+    (field: 'origen' | 'destino') => {
+      if (typeof window === 'undefined' || !navigator.geolocation) {
+        showToast('La geolocalización no está disponible en este navegador.', 'error');
+        return;
+      }
+
+      showToast('Obteniendo tu posición GPS...', 'info');
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const addressName = await reverseGeocode(lat, lng);
+
+          if (field === 'origen') {
+            setSolicitudEnvio({
+              origen: addressName,
+              origenLat: lat,
+              origenLng: lng,
+            });
+          } else {
+            setSolicitudEnvio({
+              destino: addressName,
+              destinoLat: lat,
+              destinoLng: lng,
+            });
+          }
+          showToast('Ubicación actual obtenida.', 'success');
+        },
+        (err) => {
+          console.error('[geolocation error]', err);
+          showToast('No se pudo obtener la ubicación GPS.', 'error');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    },
+    [setSolicitudEnvio, showToast]
+  );
+
+  /* ─── Drag Markers on Map ─── */
+  const handleDragOrigen = useCallback(
+    async (lat: number, lng: number) => {
+      const addressName = await reverseGeocode(lat, lng);
+      setSolicitudEnvio({
+        origen: addressName,
+        origenLat: lat,
+        origenLng: lng,
+      });
+    },
+    [setSolicitudEnvio]
+  );
+
+  const handleDragDestino = useCallback(
+    async (lat: number, lng: number) => {
+      const addressName = await reverseGeocode(lat, lng);
+      setSolicitudEnvio({
+        destino: addressName,
+        destinoLat: lat,
+        destinoLng: lng,
+      });
+    },
+    [setSolicitudEnvio]
+  );
+
   /* ─── Apply promo code ─── */
   const handleApplyPromo = useCallback(async () => {
     if (!promoInput.trim()) return;
@@ -931,6 +1259,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 onSelect={(s) =>
                   setSolicitudEnvio({ origen: s.direccion, origenLat: s.lat, origenLng: s.lng })
                 }
+                onUseMyLocation={() => handleUseMyLocation('origen')}
                 dotColor="var(--exito)"
                 suggestions={direccionesSugerencias}
                 placeholder="Ej: Metrocentro, Managua"
@@ -973,53 +1302,22 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 onSelect={(s) =>
                   setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng })
                 }
+                onUseMyLocation={() => handleUseMyLocation('destino')}
                 dotColor="var(--primario)"
                 suggestions={direccionesSugerencias}
                 placeholder="Ej: Col. Los Robles, Managua"
               />
             </div>
 
-            {/* Map preview */}
-            <div
-              style={{
-                height: 240,
-                borderRadius: 16,
-                border: '1.5px solid var(--border)',
-                overflow: 'hidden',
-                background: 'var(--bg-alt)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-            >
-              {solicitudEnvio.origen && solicitudEnvio.destino ? (
-                <div style={{ textAlign: 'center', padding: '0 20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-                    <MapPin size={16} style={{ color: 'var(--exito)' }} />
-                    <span style={{ fontSize: 13, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {solicitudEnvio.origen}
-                    </span>
-                    <span style={{ color: 'var(--text-muted)' }}>→</span>
-                    <MapPin size={16} style={{ color: 'var(--primario)' }} />
-                    <span style={{ fontSize: 13, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif", maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {solicitudEnvio.destino}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
-                    {costBreakdown.distanceKm.toFixed(1)} km • {costBreakdown.estimatedTime}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <Map size={32} style={{ color: 'var(--text-muted)' }} />
-                  <span style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
-                    Vista previa del recorrido
-                  </span>
-                </>
-              )}
-            </div>
+            {/* Interactive Map preview */}
+            <SolicitarMapPreview
+              origenLat={solicitudEnvio.origenLat || 12.1264}
+              origenLng={solicitudEnvio.origenLng || -86.2652}
+              destinoLat={solicitudEnvio.destinoLat || 12.1402}
+              destinoLng={solicitudEnvio.destinoLng || -86.2954}
+              onDragOrigen={handleDragOrigen}
+              onDragDestino={handleDragDestino}
+            />
 
             {/* Schedule Toggle */}
             <div style={{ marginTop: 24, marginBottom: 16 }}>
