@@ -107,7 +107,8 @@ export default function RepartidorServicio() {
   };
 
   const handleConfirmarPin = () => {
-    if (pinInput.trim() === ((ordenActiva as any)?.codigoEntrega || '1234') || pinInput.trim() === '1234') {
+    const targetPin = (ordenActiva as any)?.codigoPin || (ordenActiva as any)?.codigoEntrega || '1234';
+    if (pinInput.trim() === String(targetPin) || pinInput.trim() === '1234') {
       confirmarEntrega(); setShowPinModal(false); setPinInput('');
       HAPTIC_PATTERNS.success(); showSnackbar({ message: 'Entrega confirmada con éxito.' });
     } else { setPinError(true); HAPTIC_PATTERNS.error(); }

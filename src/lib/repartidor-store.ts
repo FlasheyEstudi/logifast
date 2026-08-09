@@ -683,6 +683,11 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
   llegarRecogida: () => {
     set({ estado: 'EN_PUNTO_RECOGIDA' });
+    const orden = get().ordenActiva;
+    if (orden) {
+      realtime.repartidorEstadoCambio(orden.id, 'EN_PUNTO_RECOGIDA');
+      realtime.repartidorPosicion(get().lat, get().lng, 0, 'EN_PUNTO_RECOGIDA');
+    }
   },
 
   recogerPaquete: () => {
@@ -693,6 +698,8 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       ordenActiva: orden ? { ...orden } : null,
     });
     if (orden) {
+      realtime.repartidorEstadoCambio(orden.id, 'RECOGIDO');
+      realtime.repartidorPosicion(get().lat, get().lng, 0, 'RECOGIDO');
       fetch(`/api/repartidor/ordenes/${orden.id}/recoger`, {
         method: 'PATCH',
       }).catch((err) => console.error('[recogerPaquete API error]', err));
@@ -701,11 +708,18 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
   llegarEntrega: () => {
     set({ estado: 'EN_PUNTO_ENTREGA' });
+    const orden = get().ordenActiva;
+    if (orden) {
+      realtime.repartidorEstadoCambio(orden.id, 'EN_PUNTO_ENTREGA');
+      realtime.repartidorPosicion(get().lat, get().lng, 0, 'EN_PUNTO_ENTREGA');
+    }
   },
 
   confirmarEntrega: () => {
     const orden = get().ordenActiva;
     if (!orden) return;
+    realtime.repartidorEstadoCambio(orden.id, 'ENTREGADO');
+    realtime.repartidorPosicion(get().lat, get().lng, 0, 'ENTREGADO');
     const comision = Math.round(orden.monto * 0.15);
     const nuevoSaldo = Math.max(0, get().perfil.saldo - comision);
     
