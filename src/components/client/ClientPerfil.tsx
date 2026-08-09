@@ -397,7 +397,43 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setUploadingFoto(true);
+
+    // 1. Mostrar vista previa instantánea comprimida
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 250;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+          setFotoUrl(compressedBase64);
+        }
+      };
+      img.src = evt.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+
+    // 2. Guardar en backend
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -408,7 +444,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       const data = await res.json();
       if (res.ok && data.ok) {
         setFotoUrl(data.fotoUrl);
-        notify.success('Foto de perfil actualizada');
+        notify.success('¡Foto de perfil actualizada!');
       } else {
         notify.error(data.error || 'Error al subir foto');
       }

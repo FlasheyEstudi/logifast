@@ -523,9 +523,14 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             fontWeight: 700,
             flexShrink: 0,
             boxShadow: 'var(--md-elevation-2)',
+            overflow: 'hidden',
           }}
         >
-          {perfil.initials}
+          {(perfil.fotoUrl || editFotoUrl) ? (
+            <img src={perfil.fotoUrl || editFotoUrl} alt={perfil.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            perfil.initials
+          )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1

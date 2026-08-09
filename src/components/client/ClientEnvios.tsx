@@ -245,15 +245,25 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
             const badge = STATUS_BADGE[order.estado] || STATUS_BADGE['entregado'];
             return (
               <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'var(--surface)', borderRadius: 20, border: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: 'var(--text-muted)' }}>#{order.id.substring(0,8)}</span>
-                    <span style={{ ...pillStyle, padding: '3px 10px', background: badge.bg, color: badge.text, border: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {order.paqueteFotoUrl ? (
+                      <img src={order.paqueteFotoUrl} alt="Paquete" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <Package size={20} style={{ color: 'var(--primario)' }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: 'var(--text-muted)' }}>#{order.id.substring(0,8)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>C$ {(order.monto||0).toFixed(2)}</span>
+                    </div>
+                    <span style={{ ...pillStyle, padding: '2px 8px', background: badge.bg, color: badge.text, border: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <span style={{ width: 5, height: 5, borderRadius: '50%', background: badge.dot }} />{badge.label}
                     </span>
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>C$ {(order.monto||0).toFixed(2)}</span>
                 </div>
+
                 <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <MapPin size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.origen} → {order.destino}</span>
