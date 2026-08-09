@@ -1,4 +1,4 @@
-const CACHE_NAME = 'logifast-pwa-v8';
+const CACHE_NAME = 'logifast-pwa-v10';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -37,6 +37,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   if (!url.protocol.startsWith('http')) return;
+  // P0: No interceptar dominios externos (OSRM, CartoDB, Railway sockets, etc.)
+  if (url.origin !== self.location.origin) return;
 
   const esNavegacion = event.request.mode === 'navigate';
   const esNextAsset = url.pathname.startsWith('/_next/');
