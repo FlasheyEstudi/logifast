@@ -60,7 +60,7 @@ const btnGhost: React.CSSProperties = {
 
 export default function RepartidorServicio() {
   const {
-    estado, conectado, ordenActiva, ordenesActivas = [], lat, lng, eta, perfil,
+    estado, conectado, ordenActiva, ordenesActivas = [], ordenAsignadaPendiente, ofertasDisponibles = [], lat, lng, eta, perfil,
     conectar, desconectar, optimizarRutaAutomatica, llegarRecogida, recogerPaquete,
     llegarEntrega, confirmarEntrega, toggleChat, toggleIncidencia,
   } = useRepartidorStore();
