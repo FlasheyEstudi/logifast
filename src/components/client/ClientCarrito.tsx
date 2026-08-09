@@ -15,11 +15,15 @@ import {
   Check,
   Store,
   ChevronDown,
+  MapPin,
+  Locate,
 } from '@/components/icons';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
 import { notify } from '@/lib/notify';
 import { LogoSpinner } from '@/components/ui/loaders';
+
+import { reverseGeocode } from '@/lib/osrm';
 
 interface ClientCarritoProps {
   isOpen: boolean;
@@ -50,6 +54,33 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Address validation & GPS states
+  const [direccionEntregaInput, setDireccionEntregaInput] = useState('');
+  const [deliveryLat, setDeliveryLat] = useState(0);
+  const [deliveryLng, setDeliveryLng] = useState(0);
+  const [addressError, setAddressError] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<Array<{ id: string; etiqueta: string; direccion: string; lat?: number; lng?: number }>>([]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      fetch('/api/cliente/direcciones')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.direcciones && Array.isArray(d.direcciones)) {
+            setSavedAddresses(d.direcciones);
+            if (d.direcciones.length > 0 && !direccionEntregaInput) {
+              const defaultAddr = d.direcciones.find((a: any) => a.predeterminada) || d.direcciones[0];
+              setDireccionEntregaInput(defaultAddr.direccion);
+              setDeliveryLat(defaultAddr.lat || 0);
+              setDeliveryLng(defaultAddr.lng || 0);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const subtotal = getCartSubtotal();
@@ -74,6 +105,37 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
     return acc;
   }, [] as Array<{ tiendaId: string; tiendaNombre: string; tiendaLogoIniciales: string; items: typeof cartItems }>);
 
+  const handleUseCartLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      notify.error('La geolocalización no está disponible en este navegador.');
+      return;
+    }
+    setIsGettingLocation(true);
+    notify.info('Obteniendo tu posición GPS...');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setDeliveryLat(lat);
+        setDeliveryLng(lng);
+        const tempLabel = `Ubicación GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+        setDireccionEntregaInput(tempLabel);
+        setAddressError(false);
+
+        const realAddr = await reverseGeocode(lat, lng);
+        setDireccionEntregaInput(realAddr);
+        setIsGettingLocation(false);
+        notify.success('Ubicación GPS obtenida para la entrega.');
+      },
+      (err) => {
+        console.error('[cart geolocation error]', err);
+        setIsGettingLocation(false);
+        notify.error('No se pudo obtener la ubicación GPS.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const handleAplicarCodigo = () => {
     if (!codigoPromoInput.trim()) return;
     if (codigoPromoInput.trim().toUpperCase() === 'LOGIFAST20') {
@@ -92,42 +154,83 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
 
   const handlePagar = async () => {
     if (cartItems.length === 0) return;
+    if (!direccionEntregaInput || direccionEntregaInput.trim().length < 3) {
+      setAddressError(true);
+      notify.error('Debes ingresar o confirmar una dirección de entrega válida.');
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      await new Promise((res) => setTimeout(res, 1200));
+      const tiendaId = cartItems[0]?.tiendaId;
+      const tiendaNombre = grupos[0]?.tiendaNombre || 'Tienda LogiFast';
 
-      const tiendaPrincipal = grupos[0]?.tiendaNombre || 'Tienda Logifast';
-      addOrder({
-        id: `ORD-${Date.now()}`,
-        cliente: 'Cliente',
-        clienteTelefono: '+505 8888 8888',
-        origen: tiendaPrincipal,
-        destino: 'Mi Ubicación Actual',
-        origenLat: 12.1264,
-        origenLng: -86.2652,
-        destinoLat: 12.1402,
-        destinoLng: -86.2954,
-        repartidor: null,
-        repartidorInitials: 'RL',
-        descripcion: cartInstrucciones || 'Pedido en línea',
-        monto: total,
-        estado: 'pendiente',
-        metodoPago: cartMetodoPago,
-        estadoPago: 'pendiente',
-        fecha: 'Hoy',
-        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        timeline: [],
+      const res = await fetch('/api/ordenes-compra', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tiendaId,
+          items: cartItems.map((i) => ({
+            productoId: i.productoId,
+            cantidad: i.cantidad,
+            notas: i.notas,
+          })),
+          direccionEntrega: direccionEntregaInput.trim(),
+          lat: deliveryLat,
+          lng: deliveryLng,
+          metodoPago: cartMetodoPago,
+          codigoPromo: cartCodigoPromo || undefined,
+          descuento: cartDescuento ?? 0,
+          instrucciones: cartInstrucciones || undefined,
+        }),
       });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo procesar la compra.');
+      }
+
+      const ordenCreada = data.orden;
+
+      // Recargar órdenes de compra en store de Marketplace
+      useMarketplaceStore.getState().fetchOrdenesCompra();
+
+      // Agregar a useStore para tracking y rastreo sin recargar la página
+      if (ordenCreada) {
+        addOrder({
+          id: ordenCreada.id,
+          codigoPin: ordenCreada.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
+          cliente: 'Cliente',
+          clienteTelefono: '+505 8888 8888',
+          origen: tiendaNombre,
+          destino: direccionEntregaInput.trim(),
+          origenLat: 12.1264,
+          origenLng: -86.2652,
+          destinoLat: deliveryLat || 12.1402,
+          destinoLng: deliveryLng || -86.2954,
+          repartidor: null,
+          repartidorInitials: 'RL',
+          descripcion: cartInstrucciones || `Pedido de compra: ${tiendaNombre}`,
+          monto: total,
+          estado: 'pendiente',
+          metodoPago: cartMetodoPago as any,
+          estadoPago: 'pendiente',
+          fecha: 'Hoy',
+          hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timeline: [],
+        });
+      }
 
       clearCart();
       setIsProcessing(false);
-      notify.success('¡Pedido realizado con éxito!');
+      notify.success('¡Pedido de compra realizado y guardado con éxito!');
       if (onSuccessCheckout) onSuccessCheckout();
       onClose();
-    } catch {
+    } catch (err: any) {
+      console.error('[handlePagar error]', err);
       setIsProcessing(false);
-      notify.error('Ocurrió un error al procesar tu pedido');
+      notify.error(err?.message || 'Ocurrió un error al procesar tu pedido de compra');
     }
   };
 
@@ -469,6 +572,103 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                       >
                         Aplicar
                       </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dirección de Entrega (Obligatoria) */}
+                <div
+                  style={{
+                    background: 'rgba(30, 41, 59, 0.8)',
+                    backdropFilter: 'blur(16px)',
+                    border: addressError ? '2px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: 20,
+                    padding: 16,
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <MapPin size={16} color="#34C759" />
+                      <span>Dirección de Entrega</span>
+                      <span style={{ fontSize: 11, color: '#EF4444', fontWeight: 600 }}>*Obligatorio</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleUseCartLocation}
+                      disabled={isGettingLocation}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: 'rgba(52, 199, 89, 0.15)',
+                        border: '1px solid rgba(52, 199, 89, 0.3)',
+                        borderRadius: 100,
+                        padding: '4px 10px',
+                        color: '#34C759',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Locate size={12} />
+                      <span>{isGettingLocation ? 'Obteniendo GPS...' : 'Usar mi GPS'}</span>
+                    </button>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={direccionEntregaInput}
+                    onChange={(e) => {
+                      setDireccionEntregaInput(e.target.value);
+                      setAddressError(false);
+                    }}
+                    placeholder="Ej: Col. Los Robles, de la gasolinera 2c al sur, Managua"
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: addressError ? '1.5px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#F8FAFC',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      outline: 'none',
+                    }}
+                  />
+
+                  {addressError && (
+                    <div style={{ fontSize: 11, color: '#EF4444', marginTop: 6, fontWeight: 600 }}>
+                      Debes escribir o confirmar tu dirección de entrega antes de pagar.
+                    </div>
+                  )}
+
+                  {savedAddresses.length > 0 && (
+                    <div style={{ marginTop: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 10, color: '#94A3B8', width: '100%', marginBottom: 2 }}>Mis direcciones guardadas:</span>
+                      {savedAddresses.map((addr) => (
+                        <button
+                          key={addr.id}
+                          type="button"
+                          onClick={() => {
+                            setDireccionEntregaInput(addr.direccion);
+                            setDeliveryLat(addr.lat || 0);
+                            setDeliveryLng(addr.lng || 0);
+                            setAddressError(false);
+                          }}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 8,
+                            background: direccionEntregaInput === addr.direccion ? 'rgba(0, 122, 255, 0.25)' : 'rgba(255, 255, 255, 0.06)',
+                            border: direccionEntregaInput === addr.direccion ? '1px solid #007AFF' : '1px solid rgba(255, 255, 255, 0.1)',
+                            color: '#F8FAFC',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {addr.etiqueta || addr.direccion}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
