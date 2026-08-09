@@ -198,9 +198,11 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
         {/* List */}
         <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
           {filtered.map((moto) => {
-            const cfg = STATUS_CONFIG[moto.status];
+            const cfg = STATUS_CONFIG[moto.status] || STATUS_CONFIG[moto.status?.toUpperCase()] || STATUS_CONFIG.available;
             const isExpanded = expandedMoto === moto.id;
             const rider = riders.find((r) => r.motoId === moto.id);
+            const kmVal = (moto.km ?? (moto as any).kmAcumulados ?? 0);
+            const costoVal = (moto.costoTotalMantenimiento ?? 0);
             return (
               <div key={moto.id} style={{
                 background: 'var(--lf-surface)', border: '1px solid var(--lf-border)', borderRadius: 12,
@@ -218,7 +220,7 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
                   </div>
                   {rider && <span style={{ fontSize: 12, color: 'var(--lf-text-secondary)' }}>{rider.nombre}</span>}
                   <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
-                  <span className="font-mono" style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{moto.km.toLocaleString()} km</span>
+                  <span className="font-mono" style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{kmVal.toLocaleString()} km</span>
                   {isExpanded ? <ChevronUp size={16} style={{ color: 'var(--lf-text-muted)' }} /> : <ChevronDown size={16} style={{ color: 'var(--lf-text-muted)' }} />}
                 </div>
 
@@ -231,9 +233,9 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
                           <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Placa</span><div style={{ fontSize: 13, fontWeight: 600 }}>{moto.placa}</div></div>
                           <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Año</span><div style={{ fontSize: 13 }}>{moto.anio}</div></div>
                           <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Repartidor</span><div style={{ fontSize: 13 }}>{moto.repartidorAsignado || 'Sin asignar'}</div></div>
-                          <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Último mant.</span><div style={{ fontSize: 13 }}>{moto.ultimoMantenimiento}</div></div>
-                          <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Próximo mant.</span><div style={{ fontSize: 13 }}>{moto.proximoMantenimiento}</div></div>
-                          <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Costo total</span><div className="font-mono" style={{ fontSize: 13, fontWeight: 600 }}>C${moto.costoTotalMantenimiento.toLocaleString()}</div></div>
+                          <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Último mant.</span><div style={{ fontSize: 13 }}>{moto.ultimoMantenimiento || '—'}</div></div>
+                          <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Próximo mant.</span><div style={{ fontSize: 13 }}>{moto.proximoMantenimiento || '—'}</div></div>
+                          <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Costo total</span><div className="font-mono" style={{ fontSize: 13, fontWeight: 600 }}>C${costoVal.toLocaleString()}</div></div>
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button onClick={() => openEdit(moto)} style={{

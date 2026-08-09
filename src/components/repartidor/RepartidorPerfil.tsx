@@ -604,17 +604,19 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
           <div>
             <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Km acumulados</div>
             <div className="font-mono" style={{ color: 'var(--text)', fontWeight: 700 }}>
-              {moto.kmAcumulados.toLocaleString('es-NI')} km
+              {(moto?.kmAcumulados ?? 0).toLocaleString('es-NI')} km
             </div>
           </div>
           <div>
             <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Último mantenimiento</div>
             <div style={{ color: 'var(--text)', fontWeight: 600 }}>
-              {new Date(moto.ultimoMantenimiento).toLocaleDateString('es-NI', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-              })}
+              {moto?.ultimoMantenimiento
+                ? new Date(moto.ultimoMantenimiento).toLocaleDateString('es-NI', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })
+                : '—'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{moto.tipoUltimoMantenimiento}</div>
           </div>

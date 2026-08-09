@@ -275,7 +275,7 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{moto.modelo} ({moto.anio})</div>
                 <div style={{ fontSize: 12, color: STATUS_COLORS[moto.status], fontWeight: 600, marginTop: 4 }}>{STATUS_LABELS[moto.status]}</div>
                 {moto.repartidorAsignado && <div style={{ fontSize: 12, marginTop: 2 }}>Repartidor: {moto.repartidorAsignado}</div>}
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>KM: {moto.km.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>KM: {(moto.km ?? (moto as any).kmAcumulados ?? 0).toLocaleString()}</div>
               </div>
             </MarkerPopup>
           </MapMarker>
@@ -648,7 +648,7 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[moto.status] }} />
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{moto.nombre}</span>
                 </div>
-                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{moto.km.toLocaleString()} km</span>
+                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{(moto.km ?? (moto as any).kmAcumulados ?? 0).toLocaleString()} km</span>
               </div>
             ))}
           </div>
