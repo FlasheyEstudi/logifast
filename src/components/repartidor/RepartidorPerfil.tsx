@@ -20,6 +20,14 @@ import {
   LogOut,
   TrendingUp,
   ChevronRight,
+  FileText,
+  Shield,
+  CreditCard,
+  Plus,
+  Check,
+  Zap,
+  DollarSign,
+  Camera,
 } from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { useConfigStore } from '@/store/configStore';

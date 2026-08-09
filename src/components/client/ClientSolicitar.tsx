@@ -26,6 +26,7 @@ import {
   ChevronUp,
   Locate,
   Navigation,
+  Camera,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';

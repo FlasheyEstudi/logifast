@@ -95,9 +95,15 @@ export default function RepartidorIncidencia() {
         onClick={() => toggleIncidencia(false)}
         style={{
           position: 'fixed',
-          inset: 0,
-          zIndex: 9990,
-          background: 'rgba(0,0,0,0.4)',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 999999,
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(8px)',
         }}
       />
 
@@ -116,8 +122,8 @@ export default function RepartidorIncidencia() {
           margin: '0 auto',
           width: '100%',
           maxWidth: 480,
-          maxHeight: '90vh',
-          zIndex: 9991,
+          maxHeight: '85vh',
+          zIndex: 1000000,
           background: 'rgba(15, 23, 42, 0.95)',
           backdropFilter: 'blur(20px)',
           borderRadius: '28px 28px 0 0',
