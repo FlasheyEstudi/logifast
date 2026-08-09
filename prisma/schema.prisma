@@ -55,6 +55,8 @@ model User {
   tiendasSeguidas      TiendaFollow[]
   usosCodigos          UsoCodigo[]
   valoracionesProducto ValoracionProducto[]
+  tiendasPropias       Tienda[]                 @relation("TiendaPropietario")
+  posts                Post[]
 }
 
 model Post {
@@ -65,6 +67,9 @@ model Post {
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
 }
 
 model OrdenServicio {
@@ -305,6 +310,7 @@ model Tienda {
   updatedAt      DateTime         @updatedAt
   ruc            String?
   whatsapp       String?
+  propietario    User?            @relation("TiendaPropietario", fields: [propietarioId], references: [id], onDelete: SetNull)
   carritosItem   CarritoItem[]
   favoritos      FavoritoTienda[]
   ordenes        OrdenCompra[]
@@ -312,6 +318,8 @@ model Tienda {
   resenas        ResenaTienda[]
   stories        Story[]
   seguidores     TiendaFollow[]
+
+  @@index([propietarioId])
 }
 
 model Producto {
@@ -362,10 +370,12 @@ model OrdenCompra {
   items            ItemOrdenCompra[]
   cliente          User              @relation("OrdenCompraCliente", fields: [clienteId], references: [id], onDelete: Cascade)
   tienda           Tienda            @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  repartidor       RepartidorProfile? @relation("OrdenCompraRepartidor", fields: [repartidorId], references: [id], onDelete: SetNull)
   resenas          ResenaTienda[]
 
   @@index([clienteId])
   @@index([tiendaId])
+  @@index([repartidorId])
 }
 
 model ItemOrdenCompra {
@@ -459,8 +469,10 @@ model RepartidorProfile {
   chats            ChatRepartidor[]
   notificaciones   NotificacionRepartidor[]
   ordenes          OrdenServicio[]          @relation("OrdenRepartidor")
+  ordenesCompra    OrdenCompra[]            @relation("OrdenCompraRepartidor")
   posiciones       PosicionRepartidor[]
   recargas         RecargaSaldo[]
+  motoAsignada     MotoAsignada?
   moto             Moto?                    @relation(fields: [motoId], references: [id])
   user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   servicios        ServicioRepartidor[]
@@ -521,19 +533,20 @@ model CalificacionRepartidor {
 }
 
 model MotoAsignada {
-  id                      String    @id @default(cuid())
-  repartidorId            String    @unique
+  id                      String            @id @default(cuid())
+  repartidorId            String            @unique
   nombre                  String
   modelo                  String
   placa                   String
-  kmAcumulados            Float     @default(0)
-  estado                  String    @default("DISPONIBLE")
+  kmAcumulados            Float             @default(0)
+  estado                  String            @default("DISPONIBLE")
   ultimoMantenimiento     DateTime?
   tipoUltimoMantenimiento String?
   proximoMantenimientoKm  Float?
-  alertaMantenimiento     Boolean   @default(false)
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  alertaMantenimiento     Boolean           @default(false)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  repartidor              RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
 }
 
 model NotificacionRepartidor {

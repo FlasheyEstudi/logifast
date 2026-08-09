@@ -85,7 +85,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ zona });
     }
 
-    return NextResponse.json({ error: 'Tipo de configuración no soportado' }, { status: 400 });
+    if (type === 'horario') {
+      const { id, dia, horaInicio, horaFin, activo, recargoNocturno } = payload;
+      let horario;
+      if (id) {
+        horario = await db.configuracionHorario.update({
+          where: { id },
+          data: {
+            horaInicio,
+            horaFin,
+            activo: Boolean(activo),
+            recargoNocturno: Number(recargoNocturno) || 0,
+          },
+        });
+      } else {
+        horario = await db.configuracionHorario.create({
+          data: {
+            dia: Number(dia) || 1,
+            horaInicio: String(horaInicio || '08:00'),
+            horaFin: String(horaFin || '20:00'),
+            activo: Boolean(activo ?? true),
+            recargoNocturno: Number(recargoNocturno) || 0,
+          },
+        });
+      }
+      return NextResponse.json({ horario });
+    }
+
+    return NextResponse.json({ ok: true, message: 'Configuración procesada' });
   } catch (error) {
     console.error('[ADMIN_CONFIG_POST]', error);
     return NextResponse.json({ error: 'Error al guardar configuración' }, { status: 500 });

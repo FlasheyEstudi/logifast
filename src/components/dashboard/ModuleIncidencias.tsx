@@ -79,7 +79,22 @@ export default function ModuleIncidencias() {
       .then((r) => r.json())
       .then((d) => {
         if (d.incidencias && Array.isArray(d.incidencias)) {
-          setDbIncidents(d.incidencias);
+          const formatted: Incident[] = d.incidencias.map((item: any) => ({
+            id: `INC-${item.id.slice(-4)}`,
+            orderId: item.id,
+            tipo: item.incidenciaTipo || 'retraso',
+            descripcion: item.incidenciaDesc || 'Incidencia reportada en orden',
+            cliente: item.cliente?.name || item.clienteNombre || 'Cliente',
+            repartidor: item.repartidor?.nombre || 'Repartidor',
+            origen: item.origen || 'Managua',
+            destino: item.destino || 'Managua',
+            monto: item.monto || 0,
+            gravedad: 'alta',
+            estado: item.estado === 'incidencia' ? 'activa' : 'resuelta',
+            fecha: new Date(item.createdAt).toISOString().split('T')[0],
+            tiempoResolucion: item.estado === 'incidencia' ? undefined : '15 min',
+          }));
+          setDbIncidents(formatted);
         }
       })
       .catch(() => null);

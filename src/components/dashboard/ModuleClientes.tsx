@@ -134,8 +134,9 @@ export default function ModuleClientes() {
     fetch('/api/admin/clientes')
       .then((res) => res.json())
       .then((data) => {
-        if (data.clientesFormatted && Array.isArray(data.clientesFormatted)) {
-          setDbClients(data.clientesFormatted);
+        const list = data.clientes || data.clientesFormatted;
+        if (list && Array.isArray(list)) {
+          setDbClients(list);
         }
       })
       .catch(() => null);
