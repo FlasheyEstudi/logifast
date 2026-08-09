@@ -124,10 +124,24 @@ function statusLabel(estado: string) {
    ═══════════════════════════════════════════════ */
 
 export default function ModuleClientes() {
-  const { clients, orders } = useStore();
+  const { clients: storeClients, orders } = useStore();
+  const [dbClients, setDbClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('envios');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/clientes')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.clientesFormatted && Array.isArray(data.clientesFormatted)) {
+          setDbClients(data.clientesFormatted);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
+  const clients = dbClients.length > 0 ? dbClients : storeClients;
 
   // Active this month: clients whose ultimoEnvio is within current month
   const activeThisMonth = useMemo(() => {

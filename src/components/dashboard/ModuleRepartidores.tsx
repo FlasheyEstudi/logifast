@@ -14,8 +14,41 @@ const STATUS_CONFIG: Record<RiderStatus, { label: string; color: string; bg: str
 };
 
 export default function ModuleRepartidores() {
-  const { riders, motos, orders, addRiderOpen, setAddRiderOpen, editRider, setEditRider,
+  const { riders: storeRiders, motos, orders, addRiderOpen, setAddRiderOpen, editRider, setEditRider,
     addRider, updateRider, toggleRiderConnection, riderDetail, setRiderDetail } = useStore();
+
+  const [dbRiders, setDbRiders] = useState<Rider[]>([]);
+
+  useEffect(() => {
+    fetch('/api/admin/repartidores')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.profiles && Array.isArray(data.profiles)) {
+          const formatted: Rider[] = data.profiles.map((p: any) => ({
+            id: p.id,
+            nombre: p.user?.name || p.nombre,
+            email: p.user?.email || p.email || '',
+            telefono: p.user?.telefono || p.telefono || '',
+            initials: (p.user?.name || p.nombre || 'RP').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+            color: p.user?.color || '#0066FF',
+            status: p.enServicio ? 'in-service' : p.conectado ? 'available' : 'offline',
+            motoId: p.motoId || null,
+            entregasHoy: p.entregasHoy || 0,
+            kmHoy: p.kmHoy || 0,
+            entregasTotal: p.totalEntregas || 0,
+            kmTotal: p.totalKm || 0,
+            calificacion: p.calificacion || 5.0,
+            conectado: p.conectado,
+            lat: p.user?.lat || p.lat,
+            lng: p.user?.lng || p.lng,
+          }));
+          setDbRiders(formatted);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
+  const riders = dbRiders.length > 0 ? dbRiders : storeRiders;
 
   const [formNombre, setFormNombre] = useState('');
   const [formEmail, setFormEmail] = useState('');

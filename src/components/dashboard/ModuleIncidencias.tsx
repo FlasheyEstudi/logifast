@@ -68,9 +68,24 @@ type SortDir = 'asc' | 'desc';
 
 export default function ModuleIncidencias() {
   const {
-    incidents, riders, resolveIncident, addActivityEvent,
+    incidents: storeIncidents, riders, resolveIncident, addActivityEvent,
     reassignRider, setActiveModule,
   } = useStore();
+
+  const [dbIncidents, setDbIncidents] = useState<Incident[]>([]);
+
+  useEffect(() => {
+    fetch('/api/admin/incidencias')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.incidencias && Array.isArray(d.incidencias)) {
+          setDbIncidents(d.incidencias);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
+  const incidents = dbIncidents.length > 0 ? dbIncidents : storeIncidents;
 
   const { toasts, showToast } = useToast();
 
