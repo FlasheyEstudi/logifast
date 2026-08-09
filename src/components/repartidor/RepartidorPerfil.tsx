@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { notify } from '@/lib/notify';
 import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import {
   Star,
@@ -301,6 +302,57 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
   const [rechargeMsg, setRechargeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [recargasHistorial, setRecargasHistorial] = useState<Array<{ id: string; monto: number; metodo: string; codigo?: string | null; createdAt: string }>>([]);
 
+  // Profile edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editNombre, setEditNombre] = useState(perfil.nombre || userName || '');
+  const [editTelefono, setEditTelefono] = useState(perfil.telefono || '');
+  const [editCedula, setEditCedula] = useState('');
+  const [editMunicipio, setEditMunicipio] = useState('Managua');
+  const [editZona, setEditZona] = useState(perfil.zonaPreferida || 'Todas las Zonas');
+  const [isSavingPerfil, setIsSavingPerfil] = useState(false);
+
+  useEffect(() => {
+    if (perfil) {
+      setEditNombre(perfil.nombre || userName || '');
+      setEditTelefono(perfil.telefono || '');
+      setEditZona(perfil.zonaPreferida || 'Todas las Zonas');
+    }
+  }, [perfil, userName]);
+
+  const handleSavePerfil = async () => {
+    if (!editNombre.trim()) {
+      notify.error('El nombre completo es obligatorio.');
+      return;
+    }
+    setIsSavingPerfil(true);
+    try {
+      const res = await fetch('/api/repartidor/perfil', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: editNombre.trim(),
+          telefono: editTelefono.trim(),
+          cedula: editCedula.trim(),
+          municipio: editMunicipio.trim(),
+          zonaPreferida: editZona,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        notify.success('Perfil de repartidor actualizado correctamente.');
+        setShowEditModal(false);
+        await syncFromBackend();
+      } else {
+        notify.error(data?.error || 'Error al actualizar el perfil.');
+      }
+    } catch (err) {
+      console.error(err);
+      notify.error('Error al conectar con el servidor.');
+    } finally {
+      setIsSavingPerfil(false);
+    }
+  };
+
   // Cargar historial de recargas real
   useEffect(() => {
     fetch('/api/recargas')
@@ -444,6 +496,23 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             </span>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => setShowEditModal(true)}
+          style={{
+            padding: '6px 12px',
+            borderRadius: 10,
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            background: 'rgba(255, 255, 255, 0.08)',
+            color: '#F8FAFC',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          Editar Perfil
+        </button>
       </div>
 
       {/* ─── 1. ESTADÍSTICAS GENERALES ─── */}
@@ -1229,6 +1298,223 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
       >
         LOGIFAST Repartidor v2.0
       </div>
+
+      {/* ─── MODAL EDITAR PERFIL ─── */}
+      <AnimatePresence>
+        {showEditModal && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 16,
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEditModal(false)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'rgba(15, 23, 42, 0.75)',
+                backdropFilter: 'blur(8px)',
+              }}
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: 480,
+                background: 'rgba(19, 24, 34, 0.96)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: 24,
+                padding: 24,
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+                zIndex: 10000,
+                color: '#F8FAFC',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#F8FAFC' }}>
+                  Editar Perfil de Repartidor
+                </h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#94A3B8' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                    Nombre Completo *
+                  </label>
+                  <input
+                    type="text"
+                    value={editNombre}
+                    onChange={(e) => setEditNombre(e.target.value)}
+                    placeholder="Tu nombre y apellido"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: 12,
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#F8FAFC',
+                      fontSize: 13,
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                      Teléfono Móvil
+                    </label>
+                    <input
+                      type="text"
+                      value={editTelefono}
+                      onChange={(e) => setEditTelefono(e.target.value)}
+                      placeholder="+505 8888 8888"
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#F8FAFC',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                      N° de Cédula / DNI
+                    </label>
+                    <input
+                      type="text"
+                      value={editCedula}
+                      onChange={(e) => setEditCedula(e.target.value.toUpperCase())}
+                      placeholder="001-000000-0000A"
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#F8FAFC',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                      Municipio
+                    </label>
+                    <input
+                      type="text"
+                      value={editMunicipio}
+                      onChange={(e) => setEditMunicipio(e.target.value)}
+                      placeholder="Managua"
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#F8FAFC',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                      Zona de Cobertura
+                    </label>
+                    <select
+                      value={editZona}
+                      onChange={(e) => setEditZona(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#F8FAFC',
+                        fontSize: 13,
+                        outline: 'none',
+                      }}
+                    >
+                      <option value="Todas las Zonas">Todas las Zonas</option>
+                      <option value="Managua Centro">Managua Centro</option>
+                      <option value="Carretera a Masaya">Carretera a Masaya</option>
+                      <option value="Linda Vista">Linda Vista</option>
+                      <option value="Bello Horizonte">Bello Horizonte</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 12, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      background: 'transparent',
+                      color: '#F8FAFC',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSavePerfil}
+                    disabled={isSavingPerfil}
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: 12,
+                      border: 'none',
+                      background: '#007AFF',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {isSavingPerfil ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
         </div>
       )}
     </PullToRefresh>

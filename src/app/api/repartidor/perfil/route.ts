@@ -61,56 +61,91 @@ export async function PATCH(req: NextRequest) {
     const { user: _u, profile } = rp;
 
     const body = await req.json();
-    const updates = body as Partial<Record<ConfigCampo | 'contratoAceptado' | 'zonaPreferida', boolean | string>>;
+    const {
+      nombre,
+      telefono,
+      cedula,
+      municipio,
+      zonaPreferida,
+      sonidoActivo,
+      vibracionActiva,
+      ubicacionActiva,
+      contratoAceptado,
+    } = body;
 
-    const data: Record<string, unknown> = {};
+    const profileData: Record<string, unknown> = {};
+    const userData: Record<string, unknown> = {};
     const camposAplicados: string[] = [];
 
-    if (typeof updates.sonidoActivo === 'boolean') {
-      data.sonidoActivo = updates.sonidoActivo;
-      camposAplicados.push('sonidoActivo');
+    if (typeof nombre === 'string' && nombre.trim()) {
+      profileData.nombre = nombre.trim();
+      userData.name = nombre.trim();
+      camposAplicados.push('nombre');
     }
-    if (typeof updates.vibracionActiva === 'boolean') {
-      data.vibracionActiva = updates.vibracionActiva;
-      camposAplicados.push('vibracionActiva');
+    if (typeof telefono === 'string') {
+      profileData.telefono = telefono.trim();
+      userData.telefono = telefono.trim();
+      camposAplicados.push('telefono');
     }
-    if (typeof updates.ubicacionActiva === 'boolean') {
-      data.ubicacionActiva = updates.ubicacionActiva;
-      camposAplicados.push('ubicacionActiva');
+    if (typeof cedula === 'string') {
+      profileData.cedulaRepartidor = cedula.trim();
+      userData.cedula = cedula.trim();
+      camposAplicados.push('cedula');
     }
-    if (typeof updates.zonaPreferida === 'string') {
-      data.zonaPreferida = updates.zonaPreferida;
+    if (typeof municipio === 'string') {
+      userData.municipio = municipio.trim();
+      camposAplicados.push('municipio');
+    }
+    if (typeof zonaPreferida === 'string') {
+      profileData.zonaPreferida = zonaPreferida.trim();
       camposAplicados.push('zonaPreferida');
     }
-    if (typeof updates.contratoAceptado === 'boolean') {
-      data.contratoAceptado = updates.contratoAceptado;
+    if (typeof sonidoActivo === 'boolean') {
+      profileData.sonidoActivo = sonidoActivo;
+      camposAplicados.push('sonidoActivo');
+    }
+    if (typeof vibracionActiva === 'boolean') {
+      profileData.vibracionActiva = vibracionActiva;
+      camposAplicados.push('vibracionActiva');
+    }
+    if (typeof ubicacionActiva === 'boolean') {
+      profileData.ubicacionActiva = ubicacionActiva;
+      camposAplicados.push('ubicacionActiva');
+    }
+    if (typeof contratoAceptado === 'boolean') {
+      profileData.contratoAceptado = contratoAceptado;
       camposAplicados.push('contratoAceptado');
     }
 
     if (camposAplicados.length === 0) {
       return NextResponse.json(
-        { error: 'No se enviaron campos válidos' },
+        { error: 'No se enviaron campos válidos para actualizar' },
         { status: 400 }
       );
     }
 
-    const updated = await db.repartidorProfile.update({
+    if (Object.keys(profileData).length > 0) {
+      await db.repartidorProfile.update({
+        where: { id: profile.id },
+        data: profileData,
+      });
+    }
+
+    if (Object.keys(userData).length > 0) {
+      await db.user.update({
+        where: { id: profile.userId },
+        data: userData,
+      });
+    }
+
+    const updatedProfile = await db.repartidorProfile.findUnique({
       where: { id: profile.id },
-      data,
+      include: { user: true },
     });
 
     return NextResponse.json({
       ok: true,
-      perfil: {
-        id: updated.id,
-        nombre: updated.nombre,
-        sonidoActivo: updated.sonidoActivo,
-        vibracionActiva: updated.vibracionActiva,
-        ubicacionActiva: updated.ubicacionActiva,
-        zonaPreferida: updated.zonaPreferida,
-        contratoAceptado: updated.contratoAceptado,
-        saldo: updated.saldo,
-      },
+      perfil: updatedProfile,
       actualizados: camposAplicados,
     });
   } catch (error) {
