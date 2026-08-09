@@ -256,3 +256,45 @@ export async function buscarUbicacionDinamica(query: string): Promise<Array<{ di
     return [];
   }
 }
+
+/**
+ * Reverse Geocoding using OpenStreetMap Nominatim for Nicaragua.
+ * Converts lat & lng coordinates into a clean human-readable address.
+ */
+export async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  if (!lat || !lng || (lat === 0 && lng === 0)) return 'Ubicación seleccionada';
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
+    const res = await fetch(url, {
+      headers: {
+        'Accept-Language': 'es-NI,es;q=0.9',
+        'User-Agent': 'LogifastApp/1.0',
+      },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.address) {
+        const addr = data.address;
+        const main = addr.road || addr.suburb || addr.neighbourhood || addr.amenity || addr.building || addr.city_district || addr.city || addr.town || addr.county || 'Nicaragua';
+        const sub = addr.suburb || addr.city || addr.state || 'Managua';
+        
+        if (main && sub && main !== sub) {
+          return `${main}, ${sub}`;
+        }
+        return main;
+      }
+      if (data && data.display_name) {
+        const parts = data.display_name.split(',');
+        const p1 = parts[0]?.trim() || '';
+        const p2 = parts[1]?.trim() || '';
+        return p1 && p2 ? `${p1}, ${p2}` : p1 || `Punto GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+      }
+    }
+  } catch (err) {
+    console.warn('[reverseGeocode error]', err);
+  }
+
+  return `Punto GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+}

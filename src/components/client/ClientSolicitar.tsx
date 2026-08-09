@@ -29,7 +29,7 @@ import {
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
-import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta } from '@/lib/osrm';
+import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta, reverseGeocode } from '@/lib/osrm';
 import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, MarkerLabel } from '@/components/ui/map';
 
 /* ═══════════════════════════════════════════════
@@ -923,6 +923,23 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     setTimeout(() => setToast(null), 3000);
   }, []);
 
+  useEffect(() => {
+    if (!solicitudEnvio.origen || solicitudEnvio.origenLat === 0) {
+      setSolicitudEnvio({
+        origen: solicitudEnvio.origen || 'Metrocentro, Managua',
+        origenLat: solicitudEnvio.origenLat || 12.1264,
+        origenLng: solicitudEnvio.origenLng || -86.2652,
+      });
+    }
+    if (!solicitudEnvio.destino || solicitudEnvio.destinoLat === 0) {
+      setSolicitudEnvio({
+        destino: solicitudEnvio.destino || 'Colonia Los Robles, Managua',
+        destinoLat: solicitudEnvio.destinoLat || 12.1402,
+        destinoLng: solicitudEnvio.destinoLng || -86.2954,
+      });
+    }
+  }, []);
+
   /* ─── Cost calculation ─── */
   const costBreakdown = useMemo<CostBreakdown>(() => {
     const BASE = 0;
@@ -982,10 +999,13 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
 
   const canContinue = useCallback((): boolean => {
     switch (currentStep) {
-      case 1:
-        if (solicitudEnvio.origen.length === 0 || solicitudEnvio.destino.length === 0) return false;
+      case 1: {
+        const hasOrigen = (solicitudEnvio.origen && solicitudEnvio.origen.trim().length > 0) || (solicitudEnvio.origenLat !== 0 && solicitudEnvio.origenLng !== 0);
+        const hasDestino = (solicitudEnvio.destino && solicitudEnvio.destino.trim().length > 0) || (solicitudEnvio.destinoLat !== 0 && solicitudEnvio.destinoLng !== 0);
+        if (!hasOrigen || !hasDestino) return false;
         if (scheduleMode === 'programar' && (!scheduleDate || !scheduleTime)) return false;
         return true;
+      }
       case 2:
         return solicitudEnvio.descripcion.length > 0;
       case 3:
@@ -1029,26 +1049,27 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         async (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          const addressName = await reverseGeocode(lat, lng);
+          const tempLabel = `Ubicación GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
 
+          // Immediately update state so text field and coordinates populate right away
           if (field === 'origen') {
-            setSolicitudEnvio({
-              origen: addressName,
-              origenLat: lat,
-              origenLng: lng,
-            });
+            setSolicitudEnvio({ origen: tempLabel, origenLat: lat, origenLng: lng });
           } else {
-            setSolicitudEnvio({
-              destino: addressName,
-              destinoLat: lat,
-              destinoLng: lng,
-            });
+            setSolicitudEnvio({ destino: tempLabel, destinoLat: lat, destinoLng: lng });
           }
-          showToast('Ubicación actual obtenida.', 'success');
+
+          // Then reverse geocode to refine address label cleanly
+          const realAddress = await reverseGeocode(lat, lng);
+          if (field === 'origen') {
+            setSolicitudEnvio({ origen: realAddress, origenLat: lat, origenLng: lng });
+          } else {
+            setSolicitudEnvio({ destino: realAddress, destinoLat: lat, destinoLng: lng });
+          }
+          showToast('Ubicación actual establecida correctamente.', 'success');
         },
         (err) => {
           console.error('[geolocation error]', err);
-          showToast('No se pudo obtener la ubicación GPS.', 'error');
+          showToast('No se pudo obtener la ubicación GPS. Revisa tus permisos.', 'error');
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
