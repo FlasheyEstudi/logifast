@@ -374,6 +374,45 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
     }
   };
 
+  /* Driver photo upload handler with canvas compression */
+  const handleDriverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 250;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          setEditFotoUrl(compressedBase64);
+          notify.success('¡Foto de perfil cargada y optimizada!');
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Cargar historial de recargas real
   useEffect(() => {
     fetch('/api/recargas')
@@ -1326,8 +1365,13 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
           <div
             style={{
               position: 'fixed',
-              inset: 0,
-              zIndex: 9999,
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 999999,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
@@ -1341,9 +1385,15 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
               onClick={() => setShowEditModal(false)}
               style={{
                 position: 'absolute',
-                inset: 0,
-                background: 'rgba(15, 23, 42, 0.8)',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                height: '100%',
+                background: 'rgba(15, 23, 42, 0.82)',
                 backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
               }}
             />
 
@@ -1355,16 +1405,16 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                 position: 'relative',
                 width: '100%',
                 maxWidth: 500,
-                maxHeight: '90vh',
+                maxHeight: '85vh',
                 overflowY: 'auto',
-                background: 'rgba(19, 24, 34, 0.96)',
+                background: 'rgba(19, 24, 34, 0.98)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: 28,
                 padding: 24,
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-                zIndex: 10000,
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+                zIndex: 1000000,
                 color: '#F8FAFC',
               }}
             >
@@ -1398,47 +1448,37 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Avatar Preview & Photo URL */}
+                {/* Avatar Preview & Photo Picker */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(30, 41, 59, 0.5)', padding: 14, borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <div
                     style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 16,
+                      width: 64,
+                      height: 64,
+                      borderRadius: 20,
                       background: editFotoUrl ? `url(${editFotoUrl}) center/cover` : `linear-gradient(135deg, ${perfil.color}, #000)`,
                       color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontFamily: "'Syne', sans-serif",
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: 700,
                       flexShrink: 0,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+                      border: '2px solid #007AFF',
                     }}
                   >
                     {!editFotoUrl && perfil.initials}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>
-                      URL de Foto de Perfil
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC' }}>
+                      Foto de Perfil del Repartidor
                     </label>
-                    <input
-                      type="text"
-                      value={editFotoUrl}
-                      onChange={(e) => setEditFotoUrl(e.target.value)}
-                      placeholder="https://..."
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px',
-                        borderRadius: 10,
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#F8FAFC',
-                        fontSize: 12,
-                        outline: 'none',
-                      }}
-                    />
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: '#007AFF', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', width: 'fit-content', boxShadow: '0 4px 12px rgba(0,122,255,0.3)' }}>
+                      <Camera size={15} />
+                      Subir / Tomar Foto
+                      <input type="file" accept="image/*" capture="environment" onChange={handleDriverPhotoUpload} style={{ display: 'none' }} />
+                    </label>
                   </div>
                 </div>
 

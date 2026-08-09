@@ -289,8 +289,10 @@ export default function RepartidorHistorial() {
               filteredHistorial.map((s, i) => (
                 <motion.div key={s.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                   onClick={() => verServicioDetalle(s)} style={{ ...card, padding: '12px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 12, background: s.estado === 'entregado' ? 'rgba(52,199,89,.15)' : 'rgba(255,59,48,.15)', color: ESTADO_COLOR[s.estado]||'#9E9E9E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {s.tipo === 'compra' ? <ShoppingBag size={18} /> : <Package size={18} />}
+                  <div style={{ width: 40, height: 40, borderRadius: 12, overflow: 'hidden', background: s.estado === 'entregado' ? 'rgba(52,199,89,.15)' : 'rgba(255,59,48,.15)', color: ESTADO_COLOR[s.estado]||'#9E9E9E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {s.paqueteFotoUrl ? (
+                      <img src={s.paqueteFotoUrl} alt="Foto paquete" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : s.tipo === 'compra' ? <ShoppingBag size={18} /> : <Package size={18} />}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
