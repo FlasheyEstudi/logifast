@@ -583,11 +583,25 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [driverEstado, setDriverEstado] = useState<string>('DESCONECTADO');
   const [rutaCoords, setRutaCoords] = useState<[number, number][] | undefined>(undefined);
+  const [backendTracking, setBackendTracking] = useState<any>(null);
 
   // Sync client to order's tracking room & receive live driver positioning
   useEffect(() => {
     if (!trackingOrderId) return;
     realtime.clienteTrackingUnirse(trackingOrderId);
+
+    // Fetch tracking details directly from API
+    fetch(`/api/ordenes/${trackingOrderId}/tracking`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.orden) {
+          setBackendTracking(data);
+          if (data.repartidorPos) {
+            setDriverPos([data.repartidorPos.lat, data.repartidorPos.lng]);
+          }
+        }
+      })
+      .catch(() => null);
 
     const cleanupPos = onRealtimeEvent('repartidor:posicion:update', (data) => {
       setDriverPos([data.lat, data.lng]);
@@ -615,22 +629,28 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     return ordenesCompra.find((oc) => oc.id === trackingOrderId) ?? null;
   }, [trackingOrderId, ordenesCompra]);
 
-  // Find current order (from orders or ordenesCompra)
+  // Find current order (from orders, ordenesCompra, or backendTracking)
   const order: Order | null = useMemo(() => {
     if (!trackingOrderId) return null;
     const foundEnvio = orders.find((o) => o.id === trackingOrderId);
-    if (foundEnvio) return foundEnvio;
+    if (foundEnvio) {
+      if (backendTracking?.orden?.codigoPin) {
+        (foundEnvio as any).codigoPin = backendTracking.orden.codigoPin;
+      }
+      return foundEnvio;
+    }
 
     if (currentOrdenCompra) {
+      const pinCode = (currentOrdenCompra as any).codigoPin || backendTracking?.orden?.codigoPin || '1234';
       return {
         id: currentOrdenCompra.id,
         tipo: 'compra',
-        origen: currentOrdenCompra.tiendaNombre || 'Tienda',
-        destino: currentOrdenCompra.direccionEntrega || 'Managua',
-        origenLat: 12.1245,
-        origenLng: -86.2520,
-        destinoLat: 12.1365,
-        destinoLng: -86.2514,
+        origen: currentOrdenCompra.tiendaNombre || backendTracking?.orden?.origen || 'Tienda',
+        destino: currentOrdenCompra.direccionEntrega || backendTracking?.orden?.destino || 'Managua',
+        origenLat: (currentOrdenCompra as any).origenLat || backendTracking?.orden?.origenLat || 12.1264,
+        origenLng: (currentOrdenCompra as any).origenLng || backendTracking?.orden?.origenLng || -86.2652,
+        destinoLat: (currentOrdenCompra as any).destinoLat || backendTracking?.orden?.destinoLat || 12.1421,
+        destinoLng: (currentOrdenCompra as any).destinoLng || backendTracking?.orden?.destinoLng || -86.2287,
         estado: currentOrdenCompra.estado === 'entregado' ? 'entregado' : 'encamino',
         monto: currentOrdenCompra.total,
         ganancia: currentOrdenCompra.total * 0.2,
@@ -643,22 +663,54 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         fecha: currentOrdenCompra.fecha,
         hora: currentOrdenCompra.hora || '12:00',
         timeline: [],
-        repartidor: currentOrdenCompra.repartidorNombre,
-        repartidorInitials: currentOrdenCompra.repartidorInitials,
+        repartidor: currentOrdenCompra.repartidorNombre || backendTracking?.repartidor?.nombre,
+        repartidorInitials: currentOrdenCompra.repartidorInitials || (backendTracking?.repartidor?.nombre?.slice(0, 2)?.toUpperCase() || 'RP'),
         metodoPago: currentOrdenCompra.metodoPago,
+        codigoPin: pinCode,
         createdAt: currentOrdenCompra.fecha,
       };
     }
+
+    if (backendTracking?.orden) {
+      const bo = backendTracking.orden;
+      return {
+        id: bo.id,
+        tipo: backendTracking.tipo || 'compra',
+        origen: bo.origen || 'Tienda Partner',
+        destino: bo.destino || 'Dirección de Entrega',
+        origenLat: bo.origenLat || 12.1264,
+        origenLng: bo.origenLng || -86.2652,
+        destinoLat: bo.destinoLat || 12.1421,
+        destinoLng: bo.destinoLng || -86.2287,
+        estado: bo.estado === 'entregado' ? 'entregado' : 'encamino',
+        monto: bo.monto || bo.total || 0,
+        ganancia: (bo.total || 0) * 0.2,
+        kmEstimados: 3.5,
+        tiempoEstimado: 20,
+        cliente: 'Cliente',
+        clienteTelefono: '+505 8888-0000',
+        descripcion: 'Pedido LogiFast #' + bo.id.slice(-5),
+        estadoPago: 'pagado',
+        fecha: new Date(bo.createdAt || Date.now()).toISOString().slice(0, 10),
+        hora: '12:00',
+        timeline: [],
+        repartidor: backendTracking.repartidor?.nombre || 'Repartidor',
+        repartidorInitials: 'RP',
+        metodoPago: bo.metodoPago || 'efectivo',
+        codigoPin: bo.codigoPin || '1234',
+        createdAt: bo.createdAt,
+      };
+    }
+
     return null;
-  }, [trackingOrderId, orders, currentOrdenCompra]);
+  }, [trackingOrderId, orders, currentOrdenCompra, backendTracking]);
 
   const orderPin = useMemo(() => {
     if (!order) return '';
     if ((order as any).codigoPin) return (order as any).codigoPin;
-    const gen = String(Math.floor(1000 + Math.random() * 9000));
-    (order as any).codigoPin = gen;
-    return gen;
-  }, [order]);
+    if (backendTracking?.orden?.codigoPin) return backendTracking.orden.codigoPin;
+    return '1234';
+  }, [order, backendTracking]);
 
   // Get repartidor info (null if not assigned yet)
   const repartidor = order ? getRepartidorInfo(order.repartidor, order.repartidorInitials) : null;

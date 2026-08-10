@@ -43,38 +43,55 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       take: 100,
       include: {
-        tienda: { select: { id: true, nombre: true, logoIniciales: true, logoColor: true } },
+        tienda: { select: { id: true, nombre: true, logoIniciales: true, logoColor: true, lat: true, lng: true } },
         items: true,
+        repartidor: { include: { user: { select: { name: true, telefono: true, fotoUrl: true } } } },
       },
     });
 
-    const result = ordenes.map((o) => ({
-      id: o.id,
-      clienteId: o.clienteId,
-      tiendaId: o.tiendaId,
-      tiendaNombre: o.tienda?.nombre ?? '',
-      tiendaLogo: o.tienda?.logoIniciales ?? '',
-      tiendaColor: o.tienda?.logoColor ?? '#FF5722',
-      estado: o.estado,
-      direccionEntrega: o.direccionEntrega,
-      metodoPago: o.metodoPago,
-      items: o.items.map((it) => ({
-        nombreProducto: it.nombreProducto,
-        cantidad: it.cantidad,
-        precioUnitario: it.precioUnitario,
-      })),
-      subtotal: o.subtotal,
-      costoEnvio: o.costoEnvio,
-      descuento: o.descuento,
-      total: o.total,
-      codigoUsado: o.codigoUsado ?? undefined,
-      fecha: o.createdAt.toISOString().slice(0, 10),
-      hora: o.createdAt.toLocaleTimeString('es-NI', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }),
-    }));
+    const result = ordenes.map((o) => {
+      const repNombre = o.repartidor?.nombre || o.repartidor?.user?.name || null;
+      const repInitials = repNombre
+        ? repNombre.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+        : 'RP';
+
+      return {
+        id: o.id,
+        clienteId: o.clienteId,
+        tiendaId: o.tiendaId,
+        tiendaNombre: o.tienda?.nombre ?? '',
+        tiendaLogo: o.tienda?.logoIniciales ?? '',
+        tiendaColor: o.tienda?.logoColor ?? '#FF5722',
+        estado: o.estado,
+        direccionEntrega: o.direccionEntrega,
+        origenLat: o.tienda?.lat ?? 12.1264,
+        origenLng: o.tienda?.lng ?? -86.2652,
+        destinoLat: o.lat ?? 12.1421,
+        destinoLng: o.lng ?? -86.2287,
+        metodoPago: o.metodoPago,
+        codigoPin: o.codigoPin ?? '1234',
+        repartidorNombre: repNombre,
+        repartidorTelefono: o.repartidor?.telefono || o.repartidor?.user?.telefono || null,
+        repartidorFotoUrl: o.repartidor?.user?.fotoUrl || null,
+        repartidorInitials: repInitials,
+        items: o.items.map((it) => ({
+          nombreProducto: it.nombreProducto,
+          cantidad: it.cantidad,
+          precioUnitario: it.precioUnitario,
+        })),
+        subtotal: o.subtotal,
+        costoEnvio: o.costoEnvio,
+        descuento: o.descuento,
+        total: o.total,
+        codigoUsado: o.codigoUsado ?? undefined,
+        fecha: o.createdAt.toISOString().slice(0, 10),
+        hora: o.createdAt.toLocaleTimeString('es-NI', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }),
+      };
+    });
 
     return NextResponse.json({
       total: result.length,

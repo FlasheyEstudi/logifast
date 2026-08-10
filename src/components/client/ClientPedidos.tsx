@@ -124,6 +124,13 @@ function ActiveCompraCard({ oc, onOpenTracking, onOpenChat }: { oc: OrdenCompra;
           </div>
         </div>
 
+        {oc.codigoPin && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 10, background: 'rgba(52,199,89,0.12)', border: '1px solid rgba(52,199,89,0.3)' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>PIN de confirmación:</span>
+            <span style={{ fontSize: 18, fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", color: '#34C759', letterSpacing: 2 }}>{oc.codigoPin}</span>
+          </div>
+        )}
+
         {/* Total + Botones */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>C$ {oc.total}</span>
