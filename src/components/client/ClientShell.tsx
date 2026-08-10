@@ -246,13 +246,21 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     }
   }, [clientActiveModule]);
 
-  /* ─── Cargar datos del backend al montar (P1: persistencia BD) ─── */
+  /* ─── Cargar datos del backend al montar y sincronizar en segundo plano ─── */
   useEffect(() => {
     fetchTiendas();
     fetchOrdenesCompra();
     fetchFavoritos();
     fetchCarrito();
-    fetchOrders(); // P1: cargar envíos del cliente desde la BD (sobrevive F5)
+    fetchOrders(); // P1: cargar envíos del cliente desde la BD
+
+    // Sync en segundo plano cada 3 segundos sin recargar pantalla
+    const pollInterval = setInterval(() => {
+      fetchOrdenesCompra();
+      fetchOrders();
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
   }, [fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, fetchOrders]);
 
   /* ─── SPLASH STATE ─── */
