@@ -282,13 +282,13 @@ model FeatureFlag {
 }
 
 model Tienda {
-  id             String           @id @default(cuid())
+  id             String             @id @default(cuid())
   nombre         String
   descripcion    String?
   categoria      String
-  logoColor      String           @default("#FF5722")
+  logoColor      String             @default("#FF5722")
   logoIniciales  String
-  portadaColor   String           @default("#1B1B2F")
+  portadaColor   String             @default("#1B1B2F")
   imagenUrl      String?
   bannerUrl      String?
   direccion      String
@@ -296,22 +296,28 @@ model Tienda {
   lng            Float
   telefono       String?
   email          String?
-  calificacion   Float            @default(0)
-  totalPedidos   Int              @default(0)
-  tiempoEstimado String           @default("25-35 min")
-  costoEnvio     Float            @default(20)
-  pedidoMinimo   Float            @default(50)
+  calificacion   Float              @default(0)
+  totalPedidos   Int                @default(0)
+  tiempoEstimado String             @default("25-35 min")
+  costoEnvio     Float              @default(20)
+  pedidoMinimo   Float              @default(50)
   horario        String
-  zonaCobertura  String           @default("[]")
-  verificado     Boolean          @default(false)
-  popular        Boolean          @default(false)
-  estado         String           @default("activo")
+  zonaCobertura  String             @default("[]")
+  verificado     Boolean            @default(false)
+  popular        Boolean            @default(false)
+  estado         String             @default("activo")
   propietarioId  String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   ruc            String?
   whatsapp       String?
-  propietario    User?            @relation("TiendaPropietario", fields: [propietarioId], references: [id], onDelete: SetNull)
+  razonSocial    String?
+  regimenDgi     String?
+  saludoFactura  String?
+  piePaginaFactura String?
+  serieFactura   String?            @default("F001")
+  pieMarcaLogifast String?          @default("Generado por LogiFast PWA - Sistema POS & E-Commerce")
+  propietario    User?              @relation("TiendaPropietario", fields: [propietarioId], references: [id], onDelete: SetNull)
   carritosItem   CarritoItem[]
   favoritos      FavoritoTienda[]
   ordenes        OrdenCompra[]
@@ -319,6 +325,8 @@ model Tienda {
   resenas        ResenaTienda[]
   stories        Story[]
   seguidores     TiendaFollow[]
+  kardexMovimientos KardexMovimiento[]
+  ventasPos      VentaPOS[]
 
   @@index([propietarioId])
 }
@@ -333,10 +341,15 @@ model Producto {
   precioOriginal  Float?
   imagenColor     String               @default("#E8E4DE")
   imagenUrl       String?
+  portadaUrl      String?
   disponible      Boolean              @default(true)
   esNuevo         Boolean              @default(false)
   esPopular       Boolean              @default(false)
   stock           Int?
+  stockMinimo     Int?                 @default(5)
+  costo           Float?
+  codigoBarras    String?
+  unidadMedida    String?              @default("unidad")
   posicion        Int                  @default(0)
   createdAt       DateTime             @default(now())
   carritoItems    CarritoItem[]
@@ -345,8 +358,71 @@ model Producto {
   tienda          Tienda               @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
   likes           ProductoLike[]
   valoraciones    ValoracionProducto[]
+  kardexMovimientos KardexMovimiento[]
+  itemsVentaPos   ItemVentaPOS[]
 
   @@index([tiendaId])
+}
+
+model KardexMovimiento {
+  id            String   @id @default(cuid())
+  tiendaId      String
+  productoId    String
+  tipo          String
+  cantidad      Int
+  stockAnterior Int
+  stockNuevo    Int
+  costoUnitario Float?
+  precioVenta   Float?
+  motivo        String?
+  usuarioId     String?
+  createdAt     DateTime @default(now())
+
+  tienda   Tienda   @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@index([tiendaId])
+  @@index([productoId])
+}
+
+model VentaPOS {
+  id                String         @id @default(cuid())
+  tiendaId          String
+  numeroComprobante String
+  clienteNombre     String?        @default("Cliente General")
+  clienteRuc        String?
+  clienteTelefono   String?
+  metodoPago        String         @default("efectivo")
+  subtotal          Float
+  descuento         Float          @default(0)
+  impuesto          Float          @default(0)
+  total             Float
+  montoRecibido     Float          @default(0)
+  cambioDado        Float          @default(0)
+  notas             String?
+  vendedorId        String?
+  createdAt         DateTime       @default(now())
+
+  tienda Tienda         @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  items  ItemVentaPOS[]
+
+  @@index([tiendaId])
+}
+
+model ItemVentaPOS {
+  id             String    @id @default(cuid())
+  ventaId        String
+  productoId     String?
+  nombreProducto String
+  cantidad       Int
+  precioUnitario Float
+  subtotal       Float
+
+  venta    VentaPOS  @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  producto Producto? @relation(fields: [productoId], references: [id], onDelete: SetNull)
+
+  @@index([ventaId])
+  @@index([productoId])
 }
 
 model OrdenCompra {

@@ -23,6 +23,7 @@ import AuthRedesign from '@/components/auth/AuthRedesign';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false, loading: () => <RoleLoader role="repartidor" /> });
 const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false, loading: () => <RoleLoader role="ingeniero" /> });
+const TiendaApp = dynamic(() => import('@/components/tienda/TiendaApp'), { ssr: false, loading: () => <RoleLoader role="cliente" /> });
 
 /* ═══════════════════════════════════════════════════════
    SVG HIGH-TECH ICONS
@@ -759,7 +760,10 @@ export default function Home() {
         {loginRole === 'ingeniero' && (
           <IngenieroApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
         )}
-        {loginRole !== 'cliente' && loginRole !== 'repartidor' && loginRole !== 'ingeniero' && (
+        {loginRole === 'tienda' && (
+          <TiendaApp isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} userName={loginUserName} />
+        )}
+        {loginRole !== 'cliente' && loginRole !== 'repartidor' && loginRole !== 'ingeniero' && loginRole !== 'tienda' && (
           <Dashboard isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
         )}
       </DashboardErrorBoundary>
