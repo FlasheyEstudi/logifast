@@ -731,6 +731,8 @@ export default function ClientInicio({
                   <img
                     src={tienda.imagenUrl}
                     alt={tienda.nombre}
+                    crossOrigin="anonymous"
+                    referrerPolicy="no-referrer"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (

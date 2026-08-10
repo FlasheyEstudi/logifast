@@ -106,6 +106,8 @@ export function TiendaNavbar({
             <img
               src={tiendaImagenUrl}
               alt={tiendaNombre}
+              crossOrigin="anonymous"
+              referrerPolicy="no-referrer"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (

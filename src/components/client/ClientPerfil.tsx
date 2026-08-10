@@ -645,7 +645,13 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
             }}
           >
             {fotoUrl ? (
-              <img src={fotoUrl} alt={userName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img
+                src={fotoUrl}
+                alt={userName}
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             ) : (
               initials
             )}
