@@ -3,11 +3,16 @@
 import React from 'react';
 import TiendaApp from '@/components/tienda/TiendaApp';
 
-export default function ClientMiTienda() {
+interface ClientMiTiendaProps {
+  onReturnToClient?: () => void;
+}
+
+export default function ClientMiTienda({ onReturnToClient }: ClientMiTiendaProps) {
   return (
     <TiendaApp
       isDark={true}
       toggleTheme={() => {}}
+      onReturnToClient={onReturnToClient}
       onLogout={() => {
         if (typeof window !== 'undefined') {
           window.location.href = '/api/auth/logout';

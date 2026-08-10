@@ -14,10 +14,11 @@ interface TiendaAppProps {
   isDark: boolean;
   toggleTheme: () => void;
   onLogout: () => void;
+  onReturnToClient?: () => void;
   userName?: string;
 }
 
-export function TiendaApp({ isDark, toggleTheme, onLogout, userName }: TiendaAppProps) {
+export function TiendaApp({ isDark, toggleTheme, onLogout, onReturnToClient, userName }: TiendaAppProps) {
   const [moduloActivo, setModuloActivo] = useState<TiendaModulo>('kds');
   const [tiendaNombre, setTiendaNombre] = useState('Mi Tienda');
   const [tiendaCategoria, setTiendaCategoria] = useState('tienda');
@@ -59,6 +60,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, userName }: TiendaApp
         isDark={isDark}
         toggleTheme={toggleTheme}
         onLogout={onLogout}
+        onReturnToClient={onReturnToClient}
         tiendaNombre={tiendaNombre}
         tiendaEstado={tiendaEstado}
         moduloActivo={moduloActivo}

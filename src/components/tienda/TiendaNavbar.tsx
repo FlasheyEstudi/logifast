@@ -28,6 +28,7 @@ interface TiendaNavbarProps {
   isDark: boolean;
   toggleTheme: () => void;
   onLogout: () => void;
+  onReturnToClient?: () => void;
   tiendaNombre: string;
   tiendaEstado: string;
   moduloActivo: TiendaModulo;
@@ -38,6 +39,7 @@ export function TiendaNavbar({
   isDark,
   toggleTheme,
   onLogout,
+  onReturnToClient,
   tiendaNombre,
   tiendaEstado,
   moduloActivo,
@@ -121,8 +123,30 @@ export function TiendaNavbar({
           </div>
         </div>
 
-        {/* Acciones de Cabecera (Tema y Salir) */}
+        {/* Acciones de Cabecera (Modo Cliente, Tema y Salir) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {onReturnToClient && (
+            <button
+              onClick={onReturnToClient}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '0 12px',
+                height: 34,
+                borderRadius: 999,
+                border: '1px solid rgba(0, 102, 255, 0.3)',
+                background: 'rgba(0, 102, 255, 0.1)',
+                color: '#0066FF',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <span>Modo Cliente</span>
+            </button>
+          )}
+
           <button
             onClick={toggleTheme}
             style={{

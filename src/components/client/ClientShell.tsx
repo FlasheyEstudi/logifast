@@ -412,7 +412,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       case 'perfil':
         return <ClientPerfil {...perfilProps} />;
       case 'tienda':
-        return <ClientMiTienda />;
+        return <ClientMiTienda onReturnToClient={() => setClientActiveModule('perfil')} />;
       case 'ayuda':
         return <ClientAyuda isDark={isDark} onClose={() => setClientActiveModule('perfil')} />;
       case 'puntos':
@@ -560,82 +560,84 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         </div>
 
         {/* ═══════ HEADER FLOTANTE CÁPSULA PREMIUM ═══════ */}
-        <header
-          style={{
-            position: 'fixed',
-            top: 'calc(env(safe-area-inset-top, 10px) + 8px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 9980,
-            width: 'calc(100vw - 28px)',
-            maxWidth: 680,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '7px 8px 7px 18px',
-            borderRadius: 100,
-            background: 'color-mix(in srgb, var(--surface) 90%, transparent)',
-            backdropFilter: 'saturate(180%) blur(28px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(28px)',
-            border: '1px solid color-mix(in srgb, var(--primario) 20%, transparent)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
-            transition: 'all 0.3s ease',
-          }}
-        >
-          {/* Left: título del módulo */}
-          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: '-0.02em' }}>
-            {iosTitle}
-          </span>
+        {clientActiveModule !== 'tienda' && (
+          <header
+            style={{
+              position: 'fixed',
+              top: 'calc(env(safe-area-inset-top, 10px) + 8px)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 9980,
+              width: 'calc(100vw - 28px)',
+              maxWidth: 680,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '7px 8px 7px 18px',
+              borderRadius: 100,
+              background: 'color-mix(in srgb, var(--surface) 90%, transparent)',
+              backdropFilter: 'saturate(180%) blur(28px)',
+              WebkitBackdropFilter: 'saturate(180%) blur(28px)',
+              border: '1px solid color-mix(in srgb, var(--primario) 20%, transparent)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
+              transition: 'all 0.3s ease',
+            }}
+          >
+            {/* Left: título del módulo */}
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: '-0.02em' }}>
+              {iosTitle}
+            </span>
 
-          {/* Right: acciones en cápsula compacta */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'color-mix(in srgb, var(--text-muted) 8%, transparent)', borderRadius: 100, padding: '4px' }}>
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
-              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-            >
-              {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
-            </button>
-
-            {/* Bell */}
-            <div ref={notifRef} style={{ position: 'relative' }}>
+            {/* Right: acciones en cápsula compacta */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'color-mix(in srgb, var(--text-muted) 8%, transparent)', borderRadius: 100, padding: '4px' }}>
+              {/* Theme Toggle */}
               <button
-                onClick={() => { setClientNotifOpen(!clientNotifOpen); setAvatarOpen(false); }}
-                aria-label="Notificaciones"
-                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
+                onClick={toggleTheme}
+                aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
+                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
               >
-                <Bell size={16} strokeWidth={1.8} />
-                {unreadCount > 0 && (
-                  <span style={{ position: 'absolute', top: 1, right: 1, width: 13, height: 13, borderRadius: '50%', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
+              </button>
+
+              {/* Bell */}
+              <div ref={notifRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => { setClientNotifOpen(!clientNotifOpen); setAvatarOpen(false); }}
+                  aria-label="Notificaciones"
+                  style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
+                >
+                  <Bell size={16} strokeWidth={1.8} />
+                  {unreadCount > 0 && (
+                    <span style={{ position: 'absolute', top: 1, right: 1, width: 13, height: 13, borderRadius: '50%', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Cart */}
+              <button
+                onClick={() => setCarritoOpen(true)}
+                aria-label="Carrito"
+                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: carritoOpen ? 'var(--primario)' : 'transparent', color: carritoOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
+              >
+                <ShoppingBag size={16} strokeWidth={1.8} />
+                {getCartItemCount() > 0 && (
+                  <span style={{ position: 'absolute', top: 0, right: 0, minWidth: 13, height: 13, borderRadius: 7, padding: '0 3px', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                    {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
                   </span>
                 )}
               </button>
             </div>
-
-            {/* Cart */}
-            <button
-              onClick={() => setCarritoOpen(true)}
-              aria-label="Carrito"
-              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: carritoOpen ? 'var(--primario)' : 'transparent', color: carritoOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
-            >
-              <ShoppingBag size={16} strokeWidth={1.8} />
-              {getCartItemCount() > 0 && (
-                <span style={{ position: 'absolute', top: 0, right: 0, minWidth: 13, height: 13, borderRadius: 7, padding: '0 3px', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                  {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
-                </span>
-              )}
-            </button>
-          </div>
-        </header>
+          </header>
+        )}
 
         {/* ─── CONTENT AREA ─── */}
         <main
           style={{
             flex: 1,
-            paddingTop: 'calc(96px + env(safe-area-inset-top, 0px))',
-            paddingBottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
+            paddingTop: clientActiveModule === 'tienda' ? 0 : 'calc(96px + env(safe-area-inset-top, 0px))',
+            paddingBottom: clientActiveModule === 'tienda' ? 0 : 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
             minHeight: '100vh',
             backgroundColor: 'var(--ios-bg)',
             transition: 'padding 0.3s ease, background-color 0.3s ease',
@@ -644,60 +646,15 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         >
           <div
             style={{
-              maxWidth: 960,
+              maxWidth: clientActiveModule === 'tienda' ? '100%' : 960,
               margin: '0 auto',
-              paddingLeft: 16,
-              paddingRight: 16,
-              paddingTop: 20,
-              paddingBottom: 20,
+              paddingLeft: clientActiveModule === 'tienda' ? 0 : 16,
+              paddingRight: clientActiveModule === 'tienda' ? 0 : 16,
+              paddingTop: clientActiveModule === 'tienda' ? 0 : 20,
+              paddingBottom: clientActiveModule === 'tienda' ? 0 : 20,
             }}
             className="lf-client-inner-pad"
           >
-            {clientActiveModule === 'tienda' && (
-              <div
-                style={{
-                  padding: '12px 18px',
-                  background: 'linear-gradient(135deg, var(--primario) 0%, #D84315 100%)',
-                  color: '#FFFFFF',
-                  borderRadius: 16,
-                  boxShadow: '0 8px 24px rgba(255, 87, 34, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 10,
-                  marginBottom: 16,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#4CAF50', boxShadow: '0 0 8px #4CAF50' }} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Syne', sans-serif" }}>Modo Gestión de Tienda</div>
-                    <div style={{ fontSize: 11, opacity: 0.9 }}>Administra tus productos, inventario y pedidos recibidos</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setClientActiveModule('perfil')}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 100,
-                    background: 'rgba(255, 255, 255, 0.22)',
-                    border: '1px solid rgba(255, 255, 255, 0.4)',
-                    color: '#FFFFFF',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    backdropFilter: 'blur(8px)',
-                  }}
-                >
-                  Regresar a Modo Cliente
-                </button>
-              </div>
-            )}
-
             <AnimatePresence mode="wait">
               <motion.div
                 key={clientActiveModule}
@@ -713,31 +670,32 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           </div>
         </main>
 
-        {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE / MODO TIENDA) ═══════ */}
-        <nav
-          style={{
-            position: 'fixed',
-            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 10px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 9990,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-around',
-            gap: 2,
-            padding: '6px 8px',
-            borderRadius: 100,
-            background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--border) 80%, transparent)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
-            width: 'auto',
-            maxWidth: 480,
-            backdropFilter: 'saturate(200%) blur(28px)',
-            WebkitBackdropFilter: 'saturate(200%) blur(28px)',
-          }}
-          aria-label="Navegación principal flotante"
-        >
-          {(clientActiveModule === 'tienda' ? STORE_NAV_ITEMS : NAV_ITEMS).map((item) => {
+        {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
+        {clientActiveModule !== 'tienda' && (
+          <nav
+            style={{
+              position: 'fixed',
+              bottom: 'calc(env(safe-area-inset-bottom, 16px) + 10px)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 9990,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-around',
+              gap: 2,
+              padding: '6px 8px',
+              borderRadius: 100,
+              background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--border) 80%, transparent)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
+              width: 'auto',
+              maxWidth: 480,
+              backdropFilter: 'saturate(200%) blur(28px)',
+              WebkitBackdropFilter: 'saturate(200%) blur(28px)',
+            }}
+            aria-label="Navegación principal flotante"
+          >
+          {NAV_ITEMS.map((item) => {
             const isActive = clientActiveModule === item.key;
             const showPedidosBadge = item.key === 'pedidos' && activeOrdersCount > 0;
             return (
@@ -829,6 +787,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             );
           })}
         </nav>
+        )}
 
         {/* ═══════ iOS SNACKBAR ═══════ */}
         <AnimatePresence>
