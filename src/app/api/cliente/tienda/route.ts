@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/cliente/tienda
- * Devuelve la tienda afiliada del cliente autenticado de forma ultra optimizada.
+ * Devuelve la tienda afiliada del cliente autenticado.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -18,7 +18,12 @@ export async function GET(req: NextRequest) {
 
     try {
       const tienda = await db.tienda.findFirst({
-        where: { propietarioId: user.id },
+        where: {
+          OR: [
+            { propietarioId: user.id },
+            ...(user.email ? [{ email: user.email }] : []),
+          ],
+        },
         select: {
           id: true,
           nombre: true,
@@ -100,7 +105,12 @@ export async function POST(req: NextRequest) {
 
     // Verificar si ya tiene tienda
     const existente = await db.tienda.findFirst({
-      where: { propietarioId: user.id },
+      where: {
+        OR: [
+          { propietarioId: user.id },
+          ...(user.email ? [{ email: user.email }] : []),
+        ],
+      },
       select: { id: true },
     });
 
@@ -117,6 +127,7 @@ export async function POST(req: NextRequest) {
         lat: parseFloat(lat) || 12.1365,
         lng: parseFloat(lng) || -86.2514,
         propietarioId: user.id,
+        email: user.email || '',
         telefono: telefono || '',
         whatsapp: whatsapp || '',
         ruc: ruc || '',

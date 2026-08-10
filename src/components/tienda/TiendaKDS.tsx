@@ -102,71 +102,47 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* KDS Minimalist Header Controls */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'var(--surface)',
-          padding: '8px 14px',
-          borderRadius: 999,
-          border: '1px solid var(--border)',
-          flexWrap: 'wrap',
-          gap: 8,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 8px #0066FF' }} />
-          <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>
-            {isComida ? 'Monitor KDS (Comandas)' : 'Monitor de Despacho & Alistamiento'}
-          </span>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }} className="hidden md:inline">
-            • En Vivo
-          </span>
-        </div>
+      {/* Controles de Alerta en Barra Delgada */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+        <button
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 12px',
+            borderRadius: 9999,
+            border: `1px solid ${soundEnabled ? 'rgba(52, 199, 89, 0.4)' : 'var(--border)'}`,
+            background: soundEnabled ? 'rgba(52, 199, 89, 0.1)' : 'var(--bg-alt)',
+            color: soundEnabled ? '#34C759' : 'var(--text-muted)',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          <Bell size={14} />
+          <span>{soundEnabled ? 'Sonido Activo' : 'Silenciado'}</span>
+        </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 14px',
-              borderRadius: 10,
-              border: `1px solid ${soundEnabled ? 'rgba(52, 199, 89, 0.4)' : 'var(--border)'}`,
-              background: soundEnabled ? 'rgba(52, 199, 89, 0.1)' : 'var(--bg-alt)',
-              color: soundEnabled ? '#34C759' : 'var(--text-muted)',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <Bell size={16} />
-            <span>{soundEnabled ? 'Alarma Sonora Activa' : 'Alarma Silenciada'}</span>
-          </button>
-
-          <button
-            onClick={cargarOrdenes}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 14px',
-              borderRadius: 10,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-alt)',
-              color: 'var(--text)',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            <span>Actualizar</span>
-          </button>
-        </div>
+        <button
+          onClick={cargarOrdenes}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 12px',
+            borderRadius: 9999,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-alt)',
+            color: 'var(--text)',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <span>Actualizar</span>
+        </button>
       </div>
 
       {/* Orders Grid */}

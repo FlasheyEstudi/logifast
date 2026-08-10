@@ -63,157 +63,168 @@ export function TiendaNavbar({
 
   return (
     <>
-      {/* Header Superior Limpio con Cápsulas Independientes */}
-      <header
+      {/* ─── CÁPSULA FLOTANTE IZQUIERDA FIJA EN LA PARTE MÁS ALTA (Identidad Comercio) ─── */}
+      <div
         style={{
-          position: 'sticky',
-          top: 10,
-          zIndex: 900,
-          width: '96%',
-          maxWidth: 1400,
-          margin: '0 auto',
-          height: 60,
-          borderRadius: 999,
-          background: isDark ? 'rgba(15, 17, 26, 0.88)' : 'rgba(255, 255, 255, 0.94)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)',
-          boxShadow: isDark
-            ? '0 12px 30px rgba(0, 0, 0, 0.4)'
-            : '0 8px 24px rgba(0, 0, 0, 0.06)',
-          padding: '0 16px',
+          position: 'fixed',
+          top: 12,
+          left: 16,
+          zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
+          gap: 10,
+          padding: '6px 14px 6px 8px',
+          borderRadius: 9999,
+          background: isDark ? 'rgba(15, 17, 26, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.12)',
+          boxShadow: isDark
+            ? '0 12px 30px rgba(0, 0, 0, 0.45)'
+            : '0 8px 24px rgba(0, 0, 0, 0.08)',
+          maxWidth: 'calc(60vw - 20px)',
           transition: 'all 0.3s ease',
         }}
       >
-        {/* Lado Izquierdo: Foto/Logo de Perfil + Nombre de la Tienda + Categoría + Estado */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 9999,
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #0066FF, #00C853)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            flexShrink: 0,
+            boxShadow: '0 4px 12px rgba(0, 102, 255, 0.35)',
+            border: isDark ? '2px solid rgba(255, 255, 255, 0.2)' : '2px solid rgba(255, 255, 255, 0.9)',
+          }}
+        >
+          {tiendaImagenUrl ? (
+            <img
+              src={tiendaImagenUrl}
+              alt={tiendaNombre}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <Store size={18} />
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: 999,
+              fontSize: 13,
+              fontWeight: 800,
+              lineHeight: 1.1,
+              color: isDark ? '#FFFFFF' : '#0F172A',
+              whiteSpace: 'nowrap',
               overflow: 'hidden',
-              background: 'linear-gradient(135deg, #0066FF, #00C853)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(0, 102, 255, 0.3)',
-              border: isDark ? '2px solid rgba(255, 255, 255, 0.15)' : '2px solid rgba(255, 255, 255, 0.8)',
+              textOverflow: 'ellipsis',
             }}
           >
-            {tiendaImagenUrl ? (
-              <img
-                src={tiendaImagenUrl}
-                alt={tiendaNombre}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <Store size={20} />
-            )}
+            {tiendaNombre || 'Mi Tienda'}
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+            <span
               style={{
-                fontSize: 14,
-                fontWeight: 800,
-                lineHeight: 1.1,
-                color: isDark ? '#FFFFFF' : '#0F172A',
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#0066FF',
+                textTransform: 'capitalize',
                 whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
               }}
             >
-              {tiendaNombre || 'Mi Tienda'}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: '#0066FF',
-                  textTransform: 'capitalize',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {tiendaCategoria}
-              </span>
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  padding: '1px 6px',
-                  borderRadius: 999,
-                  background: tiendaEstado === 'activo' ? 'rgba(52, 199, 89, 0.18)' : 'rgba(255, 149, 0, 0.18)',
-                  color: tiendaEstado === 'activo' ? '#34C759' : '#FF9500',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {tiendaEstado === 'activo' ? 'Abierta' : 'Pausada'}
-              </span>
-            </div>
+              {tiendaCategoria}
+            </span>
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                padding: '1px 5px',
+                borderRadius: 9999,
+                background: tiendaEstado === 'activo' ? 'rgba(52, 199, 89, 0.18)' : 'rgba(255, 149, 0, 0.18)',
+                color: tiendaEstado === 'activo' ? '#34C759' : '#FF9500',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {tiendaEstado === 'activo' ? 'Abierta' : 'Pausada'}
+            </span>
           </div>
         </div>
+      </div>
 
-        {/* Lado Derecho: Cápsulas Independientes (Cápsula de Tema y Cápsula de Salida/Retorno) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {/* Cápsula Modo Día / Noche */}
-          <button
-            onClick={toggleTheme}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '0 14px',
-              height: 36,
-              borderRadius: 999,
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.1)',
-              background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(241, 245, 249, 0.9)',
-              color: isDark ? '#FFFFFF' : '#0F172A',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: isDark ? 'none' : '0 2px 6px rgba(0, 0, 0, 0.04)',
-              transition: 'all 0.2s ease',
-            }}
-            title={isDark ? 'Cambiar a Modo Día' : 'Cambiar a Modo Noche'}
-          >
-            {isDark ? <Sun size={15} style={{ color: '#FFCC00' }} /> : <Moon size={15} style={{ color: '#0066FF' }} />}
-            <span className="hidden sm:inline">{isDark ? 'Modo Día' : 'Modo Noche'}</span>
-          </button>
+      {/* ─── CÁPSULAS FLOTANTES DERECHAS FIJAS EN LA PARTE MÁS ALTA (Acciones Independientes) ─── */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 12,
+          right: 16,
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        {/* Cápsula Modo Día / Noche */}
+        <button
+          onClick={toggleTheme}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '0 14px',
+            height: 38,
+            borderRadius: 9999,
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.12)',
+            background: isDark ? 'rgba(15, 17, 26, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            color: isDark ? '#FFFFFF' : '#0F172A',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: isDark
+              ? '0 10px 25px rgba(0, 0, 0, 0.4)'
+              : '0 6px 20px rgba(0, 0, 0, 0.08)',
+            transition: 'all 0.2s ease',
+          }}
+          title={isDark ? 'Cambiar a Modo Día' : 'Cambiar a Modo Noche'}
+        >
+          {isDark ? <Sun size={15} style={{ color: '#FFCC00' }} /> : <Moon size={15} style={{ color: '#0066FF' }} />}
+          <span className="hidden sm:inline">{isDark ? 'Modo Día' : 'Modo Noche'}</span>
+        </button>
 
-          {/* Cápsula Única de Salida / Retorno */}
-          <button
-            onClick={handleExitAction}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '0 14px',
-              height: 36,
-              borderRadius: 999,
-              border: '1px solid rgba(255, 69, 58, 0.3)',
-              background: 'rgba(255, 69, 58, 0.1)',
-              color: '#FF453A',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <LogOut size={14} />
-            <span className="hidden sm:inline">{onReturnToClient ? 'Salir a Cliente' : 'Salir'}</span>
-          </button>
-        </div>
-      </header>
+        {/* Cápsula Única Salir a Cliente / Salir */}
+        <button
+          onClick={handleExitAction}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '0 14px',
+            height: 38,
+            borderRadius: 9999,
+            border: '1px solid rgba(255, 69, 58, 0.35)',
+            background: isDark ? 'rgba(255, 69, 58, 0.18)' : 'rgba(255, 69, 58, 0.12)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            color: '#FF453A',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 6px 20px rgba(255, 69, 58, 0.15)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <LogOut size={14} />
+          <span className="hidden sm:inline">{onReturnToClient ? 'Salir a Cliente' : 'Salir'}</span>
+        </button>
+      </div>
 
-      {/* Navbar Flotante Inferior Unificado (Ocupa 96% del Celular y 96-100% de Tablet) */}
+      {/* ─── DOCK FLOTANTE INFERIOR DE NAVEGACIÓN DEDICADO ─── */}
       <nav
         style={{
           position: 'fixed',
@@ -222,10 +233,10 @@ export function TiendaNavbar({
           transform: 'translateX(-50%)',
           zIndex: 1000,
           width: '96%',
-          maxWidth: 720,
+          maxWidth: 680,
           height: 62,
-          borderRadius: 999,
-          background: isDark ? 'rgba(15, 17, 26, 0.92)' : 'rgba(255, 255, 255, 0.94)',
+          borderRadius: 9999,
+          background: isDark ? 'rgba(15, 17, 26, 0.94)' : 'rgba(255, 255, 255, 0.96)',
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
           border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.12)',
@@ -265,7 +276,7 @@ export function TiendaNavbar({
               <div
                 style={{
                   padding: '4px 10px',
-                  borderRadius: 999,
+                  borderRadius: 9999,
                   background: active
                     ? isDark
                       ? 'rgba(0, 102, 255, 0.25)'

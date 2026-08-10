@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/tienda/perfil
- * Devuelve el perfil completo de la tienda asociada al usuario autenticado de forma ultra rápida.
+ * Devuelve el perfil completo de la tienda asociada al usuario autenticado.
  */
 export async function GET() {
   try {
@@ -16,7 +16,12 @@ export async function GET() {
     }
 
     let tienda = await db.tienda.findFirst({
-      where: { propietarioId: user.id },
+      where: {
+        OR: [
+          { propietarioId: user.id },
+          ...(user.email ? [{ email: user.email }] : []),
+        ],
+      },
       select: {
         id: true,
         nombre: true,
@@ -48,12 +53,13 @@ export async function GET() {
     });
 
     if (!tienda) {
-      // Auto-crear tienda demo para el comercio si no existe
+      // Auto-crear tienda demo vinculada al usuario si no existe
       const nueva = await db.tienda.create({
         data: {
           nombre: `Tienda de ${user.name}`,
           categoria: 'tienda',
           propietarioId: user.id,
+          email: user.email || '',
           direccion: 'Managua, Nicaragua',
           lat: 12.1365,
           lng: -86.2514,
@@ -139,7 +145,12 @@ export async function PATCH(req: NextRequest) {
     } = body;
 
     const tienda = await db.tienda.findFirst({
-      where: { propietarioId: user.id },
+      where: {
+        OR: [
+          { propietarioId: user.id },
+          ...(user.email ? [{ email: user.email }] : []),
+        ],
+      },
       select: { id: true },
     });
 
