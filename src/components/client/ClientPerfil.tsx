@@ -402,31 +402,42 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
     // Vista previa instantánea
     const reader = new FileReader();
-    reader.onload = (evt) => {
-      if (evt.target?.result) setFotoUrl(evt.target.result as string);
+    reader.onload = async (evt) => {
+      const base64Data = evt.target?.result as string;
+      if (base64Data) setFotoUrl(base64Data);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        let res = await fetch('/api/cliente/foto-perfil', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          // Fallback a JSON Base64
+          res = await fetch('/api/cliente/foto-perfil', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fotoUrl: base64Data }),
+          });
+        }
+
+        const data = await res.json();
+        if (res.ok && data.ok && data.fotoUrl) {
+          setFotoUrl(data.fotoUrl);
+          notify.success('¡Foto de perfil actualizada con éxito!');
+        } else {
+          notify.error(data?.error || 'Error al actualizar foto de perfil');
+        }
+      } catch {
+        notify.error('Error de conexión con el servidor');
+      } finally {
+        setUploadingFoto(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
     };
     reader.readAsDataURL(file);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/cliente/foto-perfil', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok && data.ok && data.fotoUrl) {
-        setFotoUrl(data.fotoUrl);
-        notify.success('¡Foto de perfil actualizada con éxito!');
-      } else {
-        notify.error(data?.error || 'Error al actualizar foto de perfil');
-      }
-    } catch {
-      notify.error('Error de conexión con el servidor');
-    } finally {
-      setUploadingFoto(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
   };
 
   /* ─── Save address ─── */
@@ -845,20 +856,14 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
           {myStore ? (
             <button
-              onClick={() => setShowMiTiendaEnv(!showMiTiendaEnv)}
+              onClick={() => onNavigate('tienda' as any)}
               style={btnPrimary}
             >
-              {showMiTiendaEnv ? 'Ocultar Mi Tienda' : 'Gestionar Mi Tienda'}
+              Gestionar Mi Tienda
             </button>
           ) : (
             <button
-              onClick={() => {
-                if (myStore) {
-                  setShowMiTiendaEnv(true);
-                } else {
-                  setShowStoreModal(true);
-                }
-              }}
+              onClick={() => onNavigate('tienda' as any)}
               style={btnPrimary}
             >
               <Plus size={14} /> Activar Modo Tienda

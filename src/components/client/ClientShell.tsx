@@ -189,6 +189,21 @@ function IcoPedidos()   { return <svg width="22" height="22" viewBox="0 0 24 24"
 function IcoBilletera() { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, display: 'block' }}><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.2" fill="currentColor" stroke="none"/></svg>; }
 function IcoPerfil()    { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, display: 'block' }}><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>; }
 
+function IcoTiendaReturn() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, display: 'block' }}>
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  );
+}
+
+const STORE_NAV_ITEMS: NavItem[] = [
+  { key: 'tienda', label: 'Mi Tienda', Icon: IcoPerfil },
+  { key: 'perfil', label: 'Modo Cliente', Icon: IcoTiendaReturn },
+];
+
 const NAV_ITEMS: NavItem[] = [
   { key: 'inicio',   label: 'Inicio',    Icon: IcoInicio },
   { key: 'explorar', label: 'Explorar',  Icon: IcoExplorar },
@@ -638,6 +653,51 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             }}
             className="lf-client-inner-pad"
           >
+            {clientActiveModule === 'tienda' && (
+              <div
+                style={{
+                  padding: '12px 18px',
+                  background: 'linear-gradient(135deg, var(--primario) 0%, #D84315 100%)',
+                  color: '#FFFFFF',
+                  borderRadius: 16,
+                  boxShadow: '0 8px 24px rgba(255, 87, 34, 0.35)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                  marginBottom: 16,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#4CAF50', boxShadow: '0 0 8px #4CAF50' }} />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Syne', sans-serif" }}>Modo Gestión de Tienda</div>
+                    <div style={{ fontSize: 11, opacity: 0.9 }}>Administra tus productos, inventario y pedidos recibidos</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setClientActiveModule('perfil')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 100,
+                    background: 'rgba(255, 255, 255, 0.22)',
+                    border: '1px solid rgba(255, 255, 255, 0.4)',
+                    color: '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  Regresar a Modo Cliente
+                </button>
+              </div>
+            )}
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={clientActiveModule}
@@ -653,7 +713,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           </div>
         </main>
 
-        {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
+        {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE / MODO TIENDA) ═══════ */}
         <nav
           style={{
             position: 'fixed',
@@ -677,7 +737,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           }}
           aria-label="Navegación principal flotante"
         >
-          {NAV_ITEMS.map((item) => {
+          {(clientActiveModule === 'tienda' ? STORE_NAV_ITEMS : NAV_ITEMS).map((item) => {
             const isActive = clientActiveModule === item.key;
             const showPedidosBadge = item.key === 'pedidos' && activeOrdersCount > 0;
             return (
