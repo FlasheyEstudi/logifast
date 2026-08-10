@@ -106,11 +106,24 @@ export default function ClientInicio({
     return () => clearInterval(interval);
   }, [banners.length]);
 
+  const { ordenesCompra } = useMarketplaceStore();
+
   const activeOrders = useMemo(() => {
-    return orders.filter(
+    const enviosActivos = orders.filter(
       (o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'
     );
-  }, [orders]);
+    const comprasActivas = ordenesCompra
+      .filter((oc) => oc.estado !== 'entregado' && oc.estado !== 'cancelado')
+      .map((oc) => ({
+        id: oc.id,
+        tipo: 'compra' as const,
+        destino: oc.tiendaNombre ? `Pedido en ${oc.tiendaNombre}` : oc.direccionEntrega,
+        repartidor: oc.repartidorNombre,
+        codigoPin: oc.codigoPin || '1234',
+        estado: oc.estado,
+      }));
+    return [...enviosActivos, ...comprasActivas];
+  }, [orders, ordenesCompra]);
 
   const featuredTiendas = useMemo(() => {
     return tiendas.slice(0, 6);
@@ -296,7 +309,7 @@ export default function ClientInicio({
                       color: 'rgba(255, 255, 255, 0.9)',
                     }}
                   >
-                    Envío Activo • #{activeOrders[0].id.substring(0, 8)}
+                    {activeOrders[0].tipo === 'compra' ? 'Pedido de Tienda' : 'Envío Activo'} • #{activeOrders[0].id.substring(0, 8)}
                   </span>
                 </div>
                 <div
@@ -313,8 +326,30 @@ export default function ClientInicio({
                 >
                   {activeOrders[0].destino}
                 </div>
-                <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.85)' }}>
-                  {activeOrders[0].repartidor ? `Repartidor: ${activeOrders[0].repartidor}` : 'Buscando repartidor...'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.85)' }}>
+                    {activeOrders[0].repartidor ? `Repartidor: ${activeOrders[0].repartidor}` : 'Buscando repartidor...'}
+                  </div>
+                  {activeOrders[0].codigoPin && (
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '2px 8px',
+                        borderRadius: 6,
+                        background: 'rgba(52, 199, 89, 0.3)',
+                        border: '1px solid rgba(52, 199, 89, 0.6)',
+                        color: '#FFFFFF',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      <span>PIN:</span>
+                      <span style={{ color: '#4ADE80', fontWeight: 900 }}>{activeOrders[0].codigoPin}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
