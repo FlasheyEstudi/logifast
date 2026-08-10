@@ -70,7 +70,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, userName }: TiendaApp
         style={{
           maxWidth: 1400,
           margin: '0 auto',
-          padding: '24px 16px',
+          padding: '24px 16px 90px 16px',
         }}
       >
         {moduloActivo === 'kds' && <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />}

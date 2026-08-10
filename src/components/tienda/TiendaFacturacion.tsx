@@ -70,7 +70,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
       {/* Columna Izquierda: Formulario de Configuración Fiscal */}
       <div
         style={{
