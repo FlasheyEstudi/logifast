@@ -400,40 +400,13 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
     setUploadingFoto(true);
 
-    // 1. Mostrar vista previa instantánea comprimida
+    // Vista previa instantánea
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIZE = 250;
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round((height * MAX_SIZE) / width);
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round((width * MAX_SIZE) / height);
-            height = MAX_SIZE;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
-          setFotoUrl(compressedBase64);
-        }
-      };
-      img.src = evt.target?.result as string;
+      if (evt.target?.result) setFotoUrl(evt.target.result as string);
     };
     reader.readAsDataURL(file);
 
-    // 2. Guardar en backend
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -442,14 +415,14 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
         body: formData,
       });
       const data = await res.json();
-      if (res.ok && data.ok) {
+      if (res.ok && data.ok && data.fotoUrl) {
         setFotoUrl(data.fotoUrl);
-        notify.success('¡Foto de perfil actualizada!');
+        notify.success('¡Foto de perfil actualizada con éxito!');
       } else {
-        notify.error(data.error || 'Error al subir foto');
+        notify.error(data?.error || 'Error al actualizar foto de perfil');
       }
     } catch {
-      notify.error('Error de conexión');
+      notify.error('Error de conexión con el servidor');
     } finally {
       setUploadingFoto(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -639,9 +612,10 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 8 }}>
         <div style={{ position: 'relative' }}>
           <div
+            onClick={() => fileInputRef.current?.click()}
             style={{
-              width: 88,
-              height: 88,
+              width: 92,
+              height: 92,
               borderRadius: '50%',
               background: 'var(--primario-soft)',
               display: 'flex',
@@ -655,6 +629,8 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
               border: '3px solid var(--primario)',
               overflow: 'hidden',
               position: 'relative',
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(255,87,34,0.25)',
             }}
           >
             {fotoUrl ? (
@@ -664,13 +640,14 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
             )}
           </div>
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             style={{
               position: 'absolute',
-              bottom: -2,
-              right: -2,
-              width: 32,
-              height: 32,
+              bottom: 0,
+              right: 0,
+              width: 36,
+              height: 36,
               borderRadius: '50%',
               border: '3px solid var(--bg)',
               background: 'var(--primario)',
@@ -679,17 +656,17 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(255,87,34,0.4)',
+              boxShadow: '0 4px 14px rgba(255,87,34,0.45)',
               transition: 'transform 0.2s',
             }}
             title="Cambiar foto de perfil"
           >
-            <Camera size={14} />
+            <Camera size={16} />
           </button>
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/*"
             style={{ display: 'none' }}
             onChange={handleFotoChange}
           />

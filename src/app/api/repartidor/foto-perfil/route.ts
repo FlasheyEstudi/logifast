@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getSessionUser } from '@/lib/auth/session';
+import { getRepartidorProfile } from '@/lib/repartidor/helpers';
 import { saveImage } from '@/lib/upload/image';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/cliente/foto-perfil
- * Soporta Multipart FormData (File) y JSON ({ fotoUrl: base64/url }).
+ * POST /api/repartidor/foto-perfil
+ * Permite al repartidor subir su foto de perfil directamente via FormData o JSON base64.
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getSessionUser();
-    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const rp = await getRepartidorProfile();
+    if (!rp) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
+    const { user, profile } = rp;
     const contentType = req.headers.get('content-type') || '';
     let fotoUrlResult = '';
 
@@ -24,8 +25,8 @@ export async function POST(req: NextRequest) {
 
       const result = await saveImage(file, {
         uploaderId: user.id,
-        categoria: 'perfil',
-        entidadId: user.id,
+        categoria: 'perfil_repartidor',
+        entidadId: profile.id,
         maxWidth: 500,
         maxHeight: 500,
         quality: 85,
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Foto no válida o vacía' }, { status: 400 });
     }
 
-    // Actualizar el User con la URL de la foto
+    // Actualizar fotoUrl en la tabla User de la BD
     await db.user.update({
       where: { id: user.id },
       data: { fotoUrl: fotoUrlResult },
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, fotoUrl: fotoUrlResult });
   } catch (error) {
-    console.error('[CLIENTE_FOTO_POST]', error);
-    return NextResponse.json({ error: 'Error al actualizar foto de perfil' }, { status: 500 });
+    console.error('[REPARTIDOR_FOTO_POST]', error);
+    return NextResponse.json({ error: 'Error al actualizar la foto de perfil' }, { status: 500 });
   }
 }

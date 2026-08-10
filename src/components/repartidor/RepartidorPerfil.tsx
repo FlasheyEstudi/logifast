@@ -382,43 +382,44 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
     }
   };
 
-  /* Driver photo upload handler with canvas compression */
-  const handleDriverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  /* Driver photo upload handler with direct backend sync */
+  const handleDriverPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadingAvatar(true);
+
+    // Instant local preview
     const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIZE = 250;
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round((height * MAX_SIZE) / width);
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round((width * MAX_SIZE) / height);
-            height = MAX_SIZE;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          setEditFotoUrl(compressedBase64);
-          notify.success('¡Foto de perfil cargada y optimizada!');
-        }
-      };
-      img.src = event.target?.result as string;
+      if (event.target?.result) setEditFotoUrl(event.target.result as string);
     };
     reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/repartidor/foto-perfil', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.ok && data.fotoUrl) {
+        setEditFotoUrl(data.fotoUrl);
+        notify.success('¡Foto de perfil actualizada con éxito!');
+        await syncFromBackend();
+      } else {
+        notify.error(data?.error || 'Error al actualizar foto de perfil.');
+      }
+    } catch {
+      notify.error('Error al conectar con el servidor.');
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
   };
 
   // Cargar historial de recargas real
@@ -509,10 +510,12 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
         }}
       >
         <div
+          onClick={() => avatarInputRef.current?.click()}
           style={{
-            width: 72,
-            height: 72,
-            borderRadius: 20,
+            position: 'relative',
+            width: 76,
+            height: 76,
+            borderRadius: 22,
             background: `linear-gradient(135deg, ${perfil.color}, color-mix(in srgb, ${perfil.color} 70%, #000))`,
             color: '#fff',
             display: 'flex',
@@ -522,15 +525,42 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             fontSize: 22,
             fontWeight: 700,
             flexShrink: 0,
-            boxShadow: 'var(--md-elevation-2)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
             overflow: 'hidden',
+            cursor: 'pointer',
+            border: '2.5px solid #FF5722',
           }}
+          title="Toca para cambiar foto de perfil"
         >
           {(perfil.fotoUrl || editFotoUrl) ? (
             <img src={perfil.fotoUrl || editFotoUrl} alt={perfil.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             perfil.initials
           )}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              left: 0,
+              height: 26,
+              background: 'rgba(0, 0, 0, 0.55)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFF',
+            }}
+          >
+            <Camera size={14} />
+          </div>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleDriverPhotoUpload}
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1
