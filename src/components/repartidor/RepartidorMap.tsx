@@ -420,8 +420,7 @@ export default function RepartidorMap({
         {origen && (
           <MapMarker longitude={origen[1]} latitude={origen[0]}>
             <div style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="marker-pill" style={{ background: pickupColor }}>{pickupLabel}</span>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: pickupColor, border: '3px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: STORE_SVG }} />
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: pickupColor, border: '3px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: STORE_SVG }} />
             </div>
             <MarkerPopup>
               <div className="maplibre-popup-content">
@@ -436,8 +435,7 @@ export default function RepartidorMap({
         {destino && (
           <MapMarker longitude={destino[1]} latitude={destino[0]}>
             <div style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="marker-pill" style={{ background: '#DC2626' }}>{isCompra ? 'CLIENTE' : 'ENTREGAR'}</span>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#DC2626', border: '3px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: MAPPIN_SVG }} />
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#DC2626', border: '3px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: MAPPIN_SVG }} />
             </div>
             <MarkerPopup>
               <div className="maplibre-popup-content">
@@ -450,17 +448,15 @@ export default function RepartidorMap({
 
         {/* Marcador de Repartidor — Moto con aro pulsante y dirección */}
         <MapMarker longitude={driverPos[1]} latitude={driverPos[0]}>
-          <div style={{ position: 'relative', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {/* Etiqueta TU */}
-            <span className="marker-pill" style={{ background: '#16A34A', top: -26, fontSize: 9, letterSpacing: 0.5 }}>MOTO</span>
+          <div style={{ position: 'relative', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {/* Aros pulsantes */}
             <span className="marker-pulse-ring" />
             <span className="marker-pulse-ring-2" />
             {/* Flecha de dirección */}
             <div style={{
-              position: 'absolute', top: -10, left: '50%',
+              position: 'absolute', top: -8, left: '50%',
               transform: `translateX(-50%) rotate(${activeBearing}deg)`,
-              transformOrigin: 'center 28px',
+              transformOrigin: 'center 26px',
               pointerEvents: 'none', zIndex: 3,
             }}>
               <svg width="10" height="14" viewBox="0 0 10 14" fill="none">
@@ -470,9 +466,9 @@ export default function RepartidorMap({
             {/* Círculo con icono moto */}
             <div
               style={{
-                position: 'relative', width: 48, height: 48, borderRadius: '50%',
+                position: 'relative', width: 44, height: 44, borderRadius: '50%',
                 background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
-                border: '3.5px solid #FFFFFF',
+                border: '3px solid #FFFFFF',
                 boxShadow: '0 6px 20px rgba(22,163,74,0.6), 0 2px 8px rgba(0,0,0,0.4)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2,
               }}
@@ -490,26 +486,6 @@ export default function RepartidorMap({
 
       {mapReady && (
         <>
-          {/* Leyenda flotante para identificación inmediata */}
-          <div className="map-legend-box">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#16A34A', display: 'inline-block', boxShadow: '0 0 6px #16A34A' }} />
-              <span>TÚ</span>
-            </div>
-            {origen && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: pickupColor, display: 'inline-block' }} />
-                <span>{pickupLabel}</span>
-              </div>
-            )}
-            {destino && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#DC2626', display: 'inline-block' }} />
-                <span>{isCompra ? 'CLIENTE' : 'ENTREGAR'}</span>
-              </div>
-            )}
-          </div>
-
           <button
             onClick={() => {
               setIs3DMode(prev => !prev);
