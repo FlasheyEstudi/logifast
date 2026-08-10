@@ -19,6 +19,10 @@ export async function uploadToSupabaseStorage(
   try {
     const cleanFilename = `${folder}/${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.warn('[Supabase Storage Warning]: Falta NEXT_PUBLIC_SUPABASE_ANON_KEY en las variables de entorno.');
+    }
+
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(cleanFilename, fileBuffer, {
@@ -28,7 +32,7 @@ export async function uploadToSupabaseStorage(
       });
 
     if (error) {
-      console.warn('[Supabase Storage] Notice during upload:', error.message);
+      console.error('[Supabase Storage Upload Error]:', error.message);
       // Fallback a URL publica generada directamente
       return `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/${cleanFilename}`;
     }
