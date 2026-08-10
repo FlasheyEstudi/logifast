@@ -43,6 +43,7 @@ export default function ModuleDespacho() {
   /* Rapid 3-second polling to guarantee instant order synchronization */
   useEffect(() => {
     const fetchDespacho = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const res = await fetch('/api/admin/despacho');
         if (res.ok) {
@@ -54,7 +55,7 @@ export default function ModuleDespacho() {
       } catch (e) {}
     };
     fetchDespacho();
-    const interval = setInterval(fetchDespacho, 3000);
+    const interval = setInterval(fetchDespacho, 15000);
     return () => clearInterval(interval);
   }, []);
 

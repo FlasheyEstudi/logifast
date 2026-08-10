@@ -199,6 +199,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
   // Sincronizar datos reales de la base de datos (Órdenes, Compras y Usuarios)
   useEffect(() => {
     const fetchAllData = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       // 1. Órdenes y Compras
       try {
         const [resServicios, resCompras] = await Promise.all([
@@ -420,8 +421,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     };
 
     fetchAllData();
-    // Rapid 3-second synchronization loop
-    const interval = setInterval(fetchAllData, 3000);
+    const interval = setInterval(fetchAllData, 15000);
     return () => clearInterval(interval);
   }, []);
 

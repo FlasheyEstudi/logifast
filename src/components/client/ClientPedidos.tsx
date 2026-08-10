@@ -258,6 +258,7 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
 
   React.useEffect(() => {
     const fetchClientOrders = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const res = await fetch('/api/ordenes');
         if (res.ok) {
@@ -267,7 +268,7 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
       } catch {}
     };
     fetchClientOrders();
-    const interval = setInterval(fetchClientOrders, 3000);
+    const interval = setInterval(fetchClientOrders, 12000);
     return () => clearInterval(interval);
   }, []);
 
