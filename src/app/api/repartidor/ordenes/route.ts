@@ -36,8 +36,40 @@ function mapOrdenToActiva(o: Awaited<ReturnType<typeof db.ordenServicio.findFirs
   };
 }
 
+function mapCompraToActiva(c: any): OrdenActiva | null {
+  if (!c) return null;
+  const origenNombre = c.tienda?.nombre || 'Tienda Partner';
+  const origenLat = Number(c.tienda?.lat || 12.1264);
+  const origenLng = Number(c.tienda?.lng || -86.2652);
+  const totalMonto = Number(c.total || 0);
+  const costoEnvio = Number(c.costoEnvio || 0);
+  const gananciaCalculada = Math.round(costoEnvio > 0 ? costoEnvio : (totalMonto * 0.2));
+
+  return {
+    id: c.id,
+    tipo: 'compra',
+    cliente: c.cliente?.name || 'Cliente Marketplace',
+    clienteTelefono: c.cliente?.telefono || '',
+    tiendaNombre: origenNombre,
+    origen: origenNombre,
+    destino: c.direccionEntrega || 'Managua',
+    origenLat,
+    origenLng,
+    destinoLat: Number(c.lat || 12.1421),
+    destinoLng: Number(c.lng || -86.2287),
+    paquete: `Pedido #${c.id.slice(-5).toUpperCase()}`,
+    metodoPago: (c.metodoPago === 'efectivo' ? 'efectivo' : 'transferencia') as 'efectivo' | 'transferencia',
+    monto: totalMonto,
+    ganancia: gananciaCalculada,
+    kmEstimados: 3.5,
+    tiempoEstimado: 25,
+    codigoPin: c.codigoPin || '1234',
+  };
+}
+
 /**
  * GET /api/repartidor/ordenes?estado=activa|historial
+ * Soporta tanto Envíos (ordenServicio) como Pedidos de Tienda (ordenCompra).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -65,6 +97,7 @@ export async function GET(req: NextRequest) {
             repartidorId: profile.id,
             estado: { in: ['entregado', 'cancelado'] },
           },
+          include: { tienda: true },
           orderBy: { createdAt: 'desc' },
           take: 50,
         }),
@@ -95,17 +128,17 @@ export async function GET(req: NextRequest) {
         paqueteFotoUrl: s.incidenciaDesc ?? undefined,
       }));
 
-      const historialCompras: ServicioHistorial[] = compras.map((c) => ({
+      const historialCompras: ServicioHistorial[] = compras.map((c: any) => ({
         id: c.id,
         ordenId: c.id,
         tipo: 'compra' as const,
         cliente: 'Cliente Marketplace',
-        tiendaNombre: c.tiendaNombre ?? 'Tienda',
-        origen: c.tiendaNombre ?? 'Tienda',
-        destino: c.direccionEntrega ?? 'Managua',
+        tiendaNombre: c.tienda?.nombre || 'Tienda Partner',
+        origen: c.tienda?.nombre || 'Tienda Partner',
+        destino: c.direccionEntrega || 'Managua',
         hora: horaString(c.createdAt),
         kmRecorridos: 3.5,
-        ganancia: Math.round(c.total * 0.2),
+        ganancia: Math.round(c.costoEnvio > 0 ? c.costoEnvio : (c.total * 0.2)),
         tiempoTotal: 20,
         estado: 'entregado' as const,
         calificacion: 5,
@@ -122,32 +155,54 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Cargar ofertas disponibles (órdenes sin repartidor en estado pendiente)
-    const ofertasDB = await db.ordenServicio.findMany({
-      where: { estado: 'pendiente', repartidorId: null },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    });
-    const ofertasDisponibles = ofertasDB.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
+    // Cargar ofertas disponibles y órdenes activas asignadas (unificando Envíos y Pedidos de Tienda)
+    const [ofertasServicio, ofertasCompra, ordenesServicio, ordenesCompra] = await Promise.all([
+      db.ordenServicio.findMany({
+        where: { estado: 'pendiente', repartidorId: null },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      db.ordenCompra.findMany({
+        where: { estado: { in: ['recibido', 'preparando', 'pendiente'] }, repartidorId: null },
+        include: { tienda: true, cliente: true, items: true },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      db.ordenServicio.findMany({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['asignado', 'aceptado', 'en_camino', 'recogido'] },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+      db.ordenCompra.findMany({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['recibido', 'preparando', 'en_camino', 'recogido'] },
+        },
+        include: { tienda: true, cliente: true, items: true },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+    ]);
 
-    // Cargar órdenes asignadas/activas del repartidor
-    const ordenesDB = await db.ordenServicio.findMany({
-      where: {
-        repartidorId: profile.id,
-        estado: { in: ['asignado', 'aceptado', 'recogido'] },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-    });
+    const ofertasDisponibles = [
+      ...ofertasServicio.map((o) => mapOrdenToActiva(o)).filter(Boolean),
+      ...ofertasCompra.map((c) => mapCompraToActiva(c)).filter(Boolean),
+    ] as OrdenActiva[];
 
-    const ordenesActivas = ordenesDB.map((o) => mapOrdenToActiva(o)).filter(Boolean) as OrdenActiva[];
+    const ordenesActivas = [
+      ...ordenesServicio.map((o) => mapOrdenToActiva(o)).filter(Boolean),
+      ...ordenesCompra.map((c) => mapCompraToActiva(c)).filter(Boolean),
+    ] as OrdenActiva[];
 
     return NextResponse.json({
       orden: ordenesActivas[0] || null,
       ordenes: ordenesActivas,
       ofertas: ofertasDisponibles,
-      estadoServicio: ordenesDB[0]?.estado ?? 'disponible',
-      kmRecorridos: ordenesDB[0]?.kmRecorridos ?? 0,
+      estadoServicio: ordenesActivas.length > 0 ? 'en_servicio' : 'disponible',
+      kmRecorridos: ordenesServicio[0]?.kmRecorridos ?? 0,
       conectado: profile.conectado,
     });
   } catch (error) {
