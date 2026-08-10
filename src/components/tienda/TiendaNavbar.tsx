@@ -55,19 +55,40 @@ export function TiendaNavbar({
   ];
 
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 900,
-        width: '100%',
-        background: isDark ? 'rgba(18, 18, 24, 0.92)' : 'rgba(255, 255, 255, 0.92)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--border)',
-        padding: '0 16px',
-      }}
-    >
+    <>
+      {/* Banner de Sugerencia para Pantallas Pequeñas (Móvil) */}
+      <div
+        className="md:hidden"
+        style={{
+          background: 'linear-gradient(90deg, #0066FF, #00C853)',
+          color: 'white',
+          padding: '6px 12px',
+          fontSize: 11,
+          fontWeight: 700,
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+        }}
+      >
+        <Store size={14} />
+        <span>Para la mejor experiencia POS e impresión, se recomienda usar una Tablet o Pantalla Grande.</span>
+      </div>
+
+      <header
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 900,
+          width: '100%',
+          background: isDark ? 'rgba(18, 18, 24, 0.92)' : 'rgba(255, 255, 255, 0.92)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderBottom: '1px solid var(--border)',
+          padding: '0 16px',
+        }}
+      >
       <div
         style={{
           maxWidth: 1400,
@@ -208,5 +229,6 @@ export function TiendaNavbar({
         </div>
       </div>
     </header>
-  );
+  </>
+);
 }
