@@ -267,7 +267,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                 gap: 4,
               }}
             >
-              📍 Detectar Mi GPS
+              Detectar Mi GPS
             </button>
           </div>
 
@@ -320,7 +320,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
             </div>
           </div>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0 0' }}>
-            💡 Estas coordenadas alimentan el <b>Mapa Inteligente</b> de LogiFast para calcular distancias exactas y asignar repartidores cercanos.
+            Estas coordenadas alimentan el Mapa Inteligente de LogiFast para calcular distancias exactas y asignar repartidores cercanos.
           </p>
         </div>
 

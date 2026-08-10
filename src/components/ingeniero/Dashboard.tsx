@@ -84,13 +84,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 🏭 MÉTRICAS DE INGENIERÍA INDUSTRIAL & MTTR */}
+        {/* METRICAS DE INGENIERIA INDUSTRIAL & MTTR */}
         <div className="dashboard-section" style={{ background: 'var(--lf-surface, #ffffff)', borderRadius: 16, padding: 18, border: '1px solid var(--lf-border, #e5e7eb)', marginBottom: 20 }}>
           <div className="dashboard-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 16 }}>📊</span>
               <h3 className="dashboard-section-title" style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
-                Eficiencia de Mantenimiento (KPi Industrial)
+                Eficiencia de Mantenimiento (KPI Industrial)
               </h3>
             </div>
             <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100, background: 'rgba(0, 200, 83, 0.12)', color: '#00C853' }}>
@@ -108,7 +107,7 @@ export default function Dashboard() {
                 {stats?.mttrMinutos || 45} <span style={{ fontSize: 13, fontWeight: 600 }}>min</span>
               </div>
               <div style={{ fontSize: 11, color: '#00C853', marginTop: 4, fontWeight: 600 }}>
-                ⚡ Optimal (&lt; 60 min)
+                Óptimo (&lt; 60 min)
               </div>
             </div>
 
