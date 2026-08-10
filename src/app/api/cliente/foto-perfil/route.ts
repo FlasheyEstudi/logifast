@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { saveImage } from '@/lib/upload/image';
+import { uploadToSupabaseStorage } from '@/lib/upload/supabase-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,17 +24,12 @@ export async function POST(req: NextRequest) {
       if (!file) return NextResponse.json({ error: 'Falta el archivo de imagen' }, { status: 400 });
 
       try {
-        const result = await saveImage(file, {
-          uploaderId: user.id,
-          categoria: 'perfil',
-          entidadId: user.id,
-          maxWidth: 500,
-          maxHeight: 500,
-          quality: 85,
-        });
-        fotoUrlResult = result.url;
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const mimeType = file.type || 'image/jpeg';
+        fotoUrlResult = await uploadToSupabaseStorage(buffer, file.name, mimeType, 'perfil-cliente');
       } catch (saveErr) {
-        console.warn('[CLIENTE_FOTO_FS_WARN] Read-only filesystem detected, falling back to Base64:', saveErr);
+        console.warn('[CLIENTE_FOTO_FS_WARN] Storage fallback:', saveErr);
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const mimeType = file.type || 'image/jpeg';
