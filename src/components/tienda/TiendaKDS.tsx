@@ -101,30 +101,29 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
   const isComida = catTienda === 'comida';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* KDS Header Controls */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* KDS Minimalist Header Controls */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           background: 'var(--surface)',
-          padding: '16px 20px',
-          borderRadius: 16,
+          padding: '8px 14px',
+          borderRadius: 999,
           border: '1px solid var(--border)',
           flexWrap: 'wrap',
-          gap: 12,
+          gap: 8,
         }}
       >
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
-            {isComida ? 'Monitor KDS (Cocina y Comandas en Vivo)' : 'Monitor de Despacho & Alistamiento en Vivo'}
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-            {isComida
-              ? 'Control en tiempo real de comanda con alarma sonora y tiempos de preparación.'
-              : 'Control en tiempo real de alistamiento, empaque de paquetes y recolección de repartidor.'}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 8px #0066FF' }} />
+          <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>
+            {isComida ? 'Monitor KDS (Comandas)' : 'Monitor de Despacho & Alistamiento'}
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }} className="hidden md:inline">
+            • En Vivo
+          </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

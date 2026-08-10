@@ -22,6 +22,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, onReturnToClient, use
   const [moduloActivo, setModuloActivo] = useState<TiendaModulo>('kds');
   const [tiendaNombre, setTiendaNombre] = useState('Mi Tienda');
   const [tiendaCategoria, setTiendaCategoria] = useState('tienda');
+  const [tiendaImagenUrl, setTiendaImagenUrl] = useState<string | null>(null);
   const [tiendaEstado, setTiendaEstado] = useState('activo');
   const [loading, setLoading] = useState(true);
 
@@ -34,6 +35,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, onReturnToClient, use
         setTiendaNombre(data.tienda.nombre || 'Mi Tienda');
         setTiendaCategoria(data.tienda.categoria || 'tienda');
         setTiendaEstado(data.tienda.estado || 'activo');
+        setTiendaImagenUrl(data.tienda.imagenUrl || null);
       }
     } catch (err) {
       console.error(err);
@@ -62,6 +64,8 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, onReturnToClient, use
         onLogout={onLogout}
         onReturnToClient={onReturnToClient}
         tiendaNombre={tiendaNombre}
+        tiendaCategoria={tiendaCategoria}
+        tiendaImagenUrl={tiendaImagenUrl}
         tiendaEstado={tiendaEstado}
         moduloActivo={moduloActivo}
         onSelectModulo={(mod) => setModuloActivo(mod)}

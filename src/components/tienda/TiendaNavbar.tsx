@@ -30,6 +30,8 @@ interface TiendaNavbarProps {
   onLogout: () => void;
   onReturnToClient?: () => void;
   tiendaNombre: string;
+  tiendaCategoria?: string;
+  tiendaImagenUrl?: string | null;
   tiendaEstado: string;
   moduloActivo: TiendaModulo;
   onSelectModulo: (mod: TiendaModulo) => void;
@@ -41,6 +43,8 @@ export function TiendaNavbar({
   onLogout,
   onReturnToClient,
   tiendaNombre,
+  tiendaCategoria = 'tienda',
+  tiendaImagenUrl,
   tiendaEstado,
   moduloActivo,
   onSelectModulo,
@@ -55,9 +59,11 @@ export function TiendaNavbar({
     { id: 'configuracion', label: 'Perfil', shortLabel: 'Perfil', icon: <Settings size={18} /> },
   ];
 
+  const handleExitAction = onReturnToClient || onLogout;
+
   return (
     <>
-      {/* Header Superior Limpio (Sin la lista saturada de botones) */}
+      {/* Header Superior Limpio con Cápsulas Independientes */}
       <header
         style={{
           position: 'sticky',
@@ -66,9 +72,9 @@ export function TiendaNavbar({
           width: '96%',
           maxWidth: 1400,
           margin: '0 auto',
-          height: 58,
+          height: 60,
           borderRadius: 999,
-          background: isDark ? 'rgba(15, 17, 26, 0.88)' : 'rgba(255, 255, 255, 0.92)',
+          background: isDark ? 'rgba(15, 17, 26, 0.88)' : 'rgba(255, 255, 255, 0.94)',
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)',
@@ -80,32 +86,63 @@ export function TiendaNavbar({
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 12,
+          transition: 'all 0.3s ease',
         }}
       >
-        {/* Brand / Logo + Nombre + Estado */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Lado Izquierdo: Foto/Logo de Perfil + Nombre de la Tienda + Categoría + Estado */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
           <div
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
+              width: 38,
+              height: 38,
+              borderRadius: 999,
+              overflow: 'hidden',
               background: 'linear-gradient(135deg, #0066FF, #00C853)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
-              boxShadow: '0 4px 12px rgba(0, 102, 255, 0.35)',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(0, 102, 255, 0.3)',
+              border: isDark ? '2px solid rgba(255, 255, 255, 0.15)' : '2px solid rgba(255, 255, 255, 0.8)',
             }}
           >
-            <Store size={20} />
+            {tiendaImagenUrl ? (
+              <img
+                src={tiendaImagenUrl}
+                alt={tiendaNombre}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <Store size={20} />
+            )}
           </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1.1, color: 'var(--text)' }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 800,
+                lineHeight: 1.1,
+                color: isDark ? '#FFFFFF' : '#0F172A',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
               {tiendaNombre || 'Mi Tienda'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#0066FF' }}>
-                LogiFast Partner
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: '#0066FF',
+                  textTransform: 'capitalize',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {tiendaCategoria}
               </span>
               <span
                 style={{
@@ -115,6 +152,7 @@ export function TiendaNavbar({
                   borderRadius: 999,
                   background: tiendaEstado === 'activo' ? 'rgba(52, 199, 89, 0.18)' : 'rgba(255, 149, 0, 0.18)',
                   color: tiendaEstado === 'activo' ? '#34C759' : '#FF9500',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {tiendaEstado === 'activo' ? 'Abierta' : 'Pausada'}
@@ -123,57 +161,42 @@ export function TiendaNavbar({
           </div>
         </div>
 
-        {/* Acciones de Cabecera (Modo Cliente, Tema y Salir) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {onReturnToClient && (
-            <button
-              onClick={onReturnToClient}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '0 12px',
-                height: 34,
-                borderRadius: 999,
-                border: '1px solid rgba(0, 102, 255, 0.3)',
-                background: 'rgba(0, 102, 255, 0.1)',
-                color: '#0066FF',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              <span>Modo Cliente</span>
-            </button>
-          )}
-
+        {/* Lado Derecho: Cápsulas Independientes (Cápsula de Tema y Cápsula de Salida/Retorno) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Cápsula Modo Día / Noche */}
           <button
             onClick={toggleTheme}
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 999,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-alt)',
-              color: 'var(--text)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-            title="Cambiar Tema"
-          >
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-
-          <button
-            onClick={onLogout}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              padding: '0 12px',
-              height: 34,
+              padding: '0 14px',
+              height: 36,
+              borderRadius: 999,
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.1)',
+              background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(241, 245, 249, 0.9)',
+              color: isDark ? '#FFFFFF' : '#0F172A',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: isDark ? 'none' : '0 2px 6px rgba(0, 0, 0, 0.04)',
+              transition: 'all 0.2s ease',
+            }}
+            title={isDark ? 'Cambiar a Modo Día' : 'Cambiar a Modo Noche'}
+          >
+            {isDark ? <Sun size={15} style={{ color: '#FFCC00' }} /> : <Moon size={15} style={{ color: '#0066FF' }} />}
+            <span className="hidden sm:inline">{isDark ? 'Modo Día' : 'Modo Noche'}</span>
+          </button>
+
+          {/* Cápsula Única de Salida / Retorno */}
+          <button
+            onClick={handleExitAction}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '0 14px',
+              height: 36,
               borderRadius: 999,
               border: '1px solid rgba(255, 69, 58, 0.3)',
               background: 'rgba(255, 69, 58, 0.1)',
@@ -181,10 +204,11 @@ export function TiendaNavbar({
               fontSize: 12,
               fontWeight: 700,
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
             }}
           >
             <LogOut size={14} />
-            <span>Salir</span>
+            <span className="hidden sm:inline">{onReturnToClient ? 'Salir a Cliente' : 'Salir'}</span>
           </button>
         </div>
       </header>
@@ -213,6 +237,7 @@ export function TiendaNavbar({
           justifyContent: 'space-around',
           padding: '0 6px',
           overflow: 'hidden',
+          transition: 'all 0.3s ease',
         }}
       >
         {modulos.map((m) => {
@@ -231,7 +256,7 @@ export function TiendaNavbar({
                 minWidth: 0,
                 border: 'none',
                 background: 'transparent',
-                color: active ? '#0066FF' : 'var(--text-muted)',
+                color: active ? '#0066FF' : isDark ? 'rgba(255, 255, 255, 0.5)' : '#64748B',
                 cursor: 'pointer',
                 padding: '4px 2px',
                 transition: 'all 0.15s ease',

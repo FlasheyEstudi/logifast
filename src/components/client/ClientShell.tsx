@@ -412,7 +412,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       case 'perfil':
         return <ClientPerfil {...perfilProps} />;
       case 'tienda':
-        return <ClientMiTienda onReturnToClient={() => setClientActiveModule('perfil')} />;
+        return (
+          <ClientMiTienda
+            isDark={isDark}
+            toggleTheme={toggleTheme}
+            onReturnToClient={() => setClientActiveModule('perfil')}
+          />
+        );
       case 'ayuda':
         return <ClientAyuda isDark={isDark} onClose={() => setClientActiveModule('perfil')} />;
       case 'puntos':
