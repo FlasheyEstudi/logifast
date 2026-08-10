@@ -21,7 +21,7 @@ export interface Producto {
   disponible: boolean;
 }
 
-export function TiendaInventario({ isDark }: { isDark: boolean }) {
+export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDark: boolean; categoriaTienda?: string }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');

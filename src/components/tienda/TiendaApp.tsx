@@ -74,7 +74,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, userName }: TiendaApp
         }}
       >
         {moduloActivo === 'kds' && <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />}
-        {moduloActivo === 'inventario' && <TiendaInventario isDark={isDark} />}
+        {moduloActivo === 'inventario' && <TiendaInventario isDark={isDark} categoriaTienda={tiendaCategoria} />}
         {moduloActivo === 'kardex' && <TiendaKardex isDark={isDark} />}
         {moduloActivo === 'pos' && <TiendaPOS isDark={isDark} />}
         {moduloActivo === 'facturacion' && <TiendaFacturacion isDark={isDark} />}
