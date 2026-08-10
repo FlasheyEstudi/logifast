@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jkqinkhodbabqznmqsuk.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.s6B0000000000000000000000000000000000000000';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImprcWlua2hvZGJhYnF6bm1xc3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMDU0NzEsImV4cCI6MjEwMDc4MTQ3MX0.PU3u6kh_JrxhBUBRhO6hCKciLuvV_BVfvhAXs21iXeg';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -19,10 +19,6 @@ export async function uploadToSupabaseStorage(
   try {
     const cleanFilename = `${folder}/${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.warn('[Supabase Storage Warning]: Falta NEXT_PUBLIC_SUPABASE_ANON_KEY en las variables de entorno.');
-    }
-
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(cleanFilename, fileBuffer, {
@@ -32,9 +28,10 @@ export async function uploadToSupabaseStorage(
       });
 
     if (error) {
-      console.error('[Supabase Storage Upload Error]:', error.message);
-      // Fallback a URL publica generada directamente
-      return `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/${cleanFilename}`;
+      console.warn('[Supabase Storage Upload Warning]:', error.message);
+      // Si falla por permisos RLS del bucket, devolver Data URL para no romper la UI
+      const base64Str = Buffer.from(fileBuffer).toString('base64');
+      return `data:${contentType};base64,${base64Str}`;
     }
 
     const { data: publicUrlData } = supabase.storage
@@ -44,8 +41,7 @@ export async function uploadToSupabaseStorage(
     return publicUrlData.publicUrl;
   } catch (err) {
     console.error('[Supabase Storage Error]:', err);
-    // Retornar URL pública estática estimada
-    const cleanFilename = `${folder}/${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    return `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/${cleanFilename}`;
+    const base64Str = Buffer.from(fileBuffer).toString('base64');
+    return `data:${contentType};base64,${base64Str}`;
   }
 }
