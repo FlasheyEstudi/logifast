@@ -31,7 +31,7 @@ export async function GET() {
       vehiculoMarca: profile.vehiculoMarca ?? 'Honda',
       vehiculoModelo: profile.vehiculoModelo ?? 'Wave 110',
       vehiculoPlaca: profile.vehiculoPlaca ?? '',
-      cedulaRepartidor: profile.cedulaRepartidor ?? user.cedula ?? '',
+      cedulaRepartidor: profile.cedulaRepartidor ?? (user as any).cedula ?? '',
       licenciaConducir: user.bio ?? '',
       zonaPreferida: profile.zonaPreferida ?? 'Todas las Zonas',
       calificacion: profile.calificacion,

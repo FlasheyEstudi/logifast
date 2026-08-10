@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
         skip: offset,
         include: {
           cliente: { select: { id: true, name: true, email: true, telefono: true, initials: true, color: true } },
-          repartidor: { select: { id: true, fotoUrl: true, user: { select: { name: true, telefono: true } } } },
+          repartidor: { select: { id: true, user: { select: { name: true, telefono: true, fotoUrl: true } } } },
         },
       }),
       db.ordenServicio.count({ where }),

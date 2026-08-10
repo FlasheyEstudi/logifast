@@ -181,6 +181,8 @@ export const useIngenieroStore = create<IngenieroState>()(
         calificacion: 4.9
       },
 
+      showCrearMoto: false,
+
       stats: {
         totalMotos: 0,
         disponibles: 0,

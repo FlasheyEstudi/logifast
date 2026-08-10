@@ -65,14 +65,14 @@ interface TiendaData {
   };
 }
 
-const CATEGORIAS = [
-  { value: 'comida', label: 'Comida rápida' },
-  { value: 'tienda', label: 'Tienda' },
-  { value: 'farmacia', label: 'Farmacia' },
-  { value: 'regalos', label: 'Regalos / Flores' },
-  { value: 'supermercado', label: 'Supermercado' },
-  { value: 'tecnologia', label: 'Tecnología' },
-  { value: 'deportes', label: 'Deportes' },
+const CATEGORIAS: { value: string; label: string; icon: string }[] = [
+  { value: 'comida', label: 'Comida rápida', icon: '' },
+  { value: 'tienda', label: 'Tienda', icon: '' },
+  { value: 'farmacia', label: 'Farmacia', icon: '' },
+  { value: 'regalos', label: 'Regalos / Flores', icon: '' },
+  { value: 'supermercado', label: 'Supermercado', icon: '' },
+  { value: 'tecnologia', label: 'Tecnología', icon: '' },
+  { value: 'deportes', label: 'Deportes', icon: '' },
 ];
 
 export default function ClientMiTienda() {
@@ -216,10 +216,10 @@ export default function ClientMiTienda() {
       {/* Tabs */}
       <div className="lf-mt-tabs">
         {[
-          { value: 'overview', label: 'Resumen' },
-          { value: 'productos', label: 'Productos' },
-          { value: 'pedidos', label: 'Pedidos' },
-          { value: 'config', label: 'Configuración' },
+          { value: 'overview', label: 'Resumen', icon: '' },
+          { value: 'productos', label: 'Productos', icon: '' },
+          { value: 'pedidos', label: 'Pedidos', icon: '' },
+          { value: 'config', label: 'Configuración', icon: '' },
         ].map((tab) => (
           <button
             key={tab.value}

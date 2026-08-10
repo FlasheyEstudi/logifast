@@ -32,6 +32,7 @@ import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
 import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta, reverseGeocode } from '@/lib/osrm';
 import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, MarkerLabel } from '@/components/ui/map';
+import { useMapaPuntos } from '@/hooks/useMapaPuntos';
 
 /* ═══════════════════════════════════════════════
    TYPES
@@ -272,6 +273,7 @@ function SolicitarMapPreview({
   const [rutaCoords, setRutaCoords] = useState<[number, number][]>([]);
   const [distanciaKm, setDistanciaKm] = useState(0);
   const [duracionMin, setDuracionMin] = useState(0);
+  const { tiendas: tiendasMapa } = useMapaPuntos();
   const mapRef = useRef<any>(null);
 
   const hasOrigen = origenLat !== 0 && origenLng !== 0;
@@ -442,6 +444,48 @@ function SolicitarMapPreview({
               </MarkerLabel>
             </MapMarker>
           )}
+
+          {/* Tiendas registradas en el mapa global */}
+          {tiendasMapa && tiendasMapa.map((t) => (
+            <MapMarker key={`solicitar-tienda-${t.id}`} longitude={t.lng} latitude={t.lat}>
+              <MarkerContent>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: t.logoColor || '#0066FF',
+                    border: '2px solid #FFFFFF',
+                    boxShadow: '0 3px 8px rgba(0,102,255,0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                  title={`${t.nombre} (${t.categoria})`}
+                >
+                  {t.nombre.slice(0, 2).toUpperCase()}
+                </div>
+              </MarkerContent>
+              <MarkerLabel position="top">
+                <span
+                  style={{
+                    background: 'rgba(0,102,255,0.9)',
+                    color: '#FFFFFF',
+                    padding: '2px 6px',
+                    borderRadius: 6,
+                    fontSize: 10,
+                    fontWeight: 600,
+                  }}
+                >
+                  {t.nombre}
+                </span>
+              </MarkerLabel>
+            </MapMarker>
+          ))}
 
           {/* Ruta GeoJSON */}
           {hasOrigen && hasDestino && mapLibreRoute.length > 1 && (
@@ -877,6 +921,7 @@ function CheckAnimation() {
    ═══════════════════════════════════════════════ */
 
 export default function ClientSolicitar({ isDark, userName, onNavigate }: ClientSolicitarProps) {
+  const { tiendas: tiendasMapa } = useMapaPuntos();
   const {
     solicitudEnvio,
     setSolicitudEnvio,

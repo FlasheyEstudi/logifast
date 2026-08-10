@@ -58,6 +58,14 @@ export interface SessionClaims extends JwtPayload {
 
 /** Firma un JWT para el usuario dado y lo guarda como cookie httpOnly. */
 export async function createSession(user: SessionUser): Promise<void> {
+  // Garantizar que fotoUrl y bio nunca inflen la cookie JWT por encima del límite de 4KB por cookie (RFC 6265).
+  // getSessionUser() recupera la fotoUrl y bio de forma segura directamente desde la BD en cada petición.
+  const safeFotoUrl =
+    user.fotoUrl && user.fotoUrl.length < 500 && !user.fotoUrl.startsWith('data:')
+      ? user.fotoUrl
+      : null;
+  const safeBio = user.bio && user.bio.length < 500 ? user.bio : null;
+
   const claims: SessionClaims = {
     sub: user.id,
     email: user.email,
@@ -66,8 +74,8 @@ export async function createSession(user: SessionUser): Promise<void> {
     telefono: user.telefono ?? null,
     initials: user.initials ?? null,
     color: user.color ?? null,
-    fotoUrl: user.fotoUrl ?? null,
-    bio: user.bio ?? null,
+    fotoUrl: safeFotoUrl,
+    bio: safeBio,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
   };

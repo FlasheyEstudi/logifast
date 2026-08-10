@@ -11,6 +11,7 @@ import {
 import { useStore, type Order, type Moto, type ZonePolygon } from '@/lib/store';
 
 import { Map, MapMarker, MarkerPopup, MapRoute, MapGeoJSON, MapRef } from '@/components/ui/map';
+import { useMapaPuntos } from '@/hooks/useMapaPuntos';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
@@ -52,6 +53,7 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
   zonePolygons: ZonePolygon[]; showZones: boolean; showRoutes: boolean;
   showHeatmap: boolean; showSatellite: boolean; panelOpen: boolean; orders: Order[];
 }) {
+  const { tiendas, clientePuntos } = useMapaPuntos();
   const [routes, setRoutes] = useState<Array<{ positions: [number, number][]; order: Order }>>([]);
   const updateMotoPositions = useStore((s) => s.updateMotoPositions);
   const mapRef = useRef<MapRef | null>(null);
@@ -276,6 +278,53 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
                 <div style={{ fontSize: 12, color: STATUS_COLORS[moto.status], fontWeight: 600, marginTop: 4 }}>{STATUS_LABELS[moto.status]}</div>
                 {moto.repartidorAsignado && <div style={{ fontSize: 12, marginTop: 2 }}>Repartidor: {moto.repartidorAsignado}</div>}
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>KM: {(moto.km ?? (moto as any).kmAcumulados ?? 0).toLocaleString()}</div>
+              </div>
+            </MarkerPopup>
+          </MapMarker>
+        ))}
+
+        {/* Tiendas registradas en el mapa */}
+        {tiendas.map((t) => (
+          <MapMarker key={`tienda-${t.id}`} longitude={t.lng} latitude={t.lat}>
+            <div style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: t.logoColor || '#0066FF',
+              border: '2px solid white',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontWeight: 700, fontSize: 12, cursor: 'pointer'
+            }}>
+              {t.nombre.slice(0, 2).toUpperCase()}
+            </div>
+            <MarkerPopup>
+              <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 160, padding: '4px 8px', color: 'var(--text)' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0066FF' }}>{t.nombre}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Categoría: {t.categoria}</div>
+                <div style={{ fontSize: 12, marginTop: 4 }}>Dirección: {t.direccion}</div>
+                {t.telefono && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Tel: {t.telefono}</div>}
+              </div>
+            </MarkerPopup>
+          </MapMarker>
+        ))}
+
+        {/* Direcciones registradas por clientes */}
+        {clientePuntos.map((cp) => (
+          <MapMarker key={`cliente-punto-${cp.id}`} longitude={cp.lng} latitude={cp.lat}>
+            <div style={{
+              width: 26, height: 26, borderRadius: '50%',
+              background: '#10B981',
+              border: '2px solid white',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontWeight: 600, fontSize: 10, cursor: 'pointer'
+            }}>
+              {cp.etiqueta.slice(0, 1).toUpperCase()}
+            </div>
+            <MarkerPopup>
+              <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 160, padding: '4px 8px', color: 'var(--text)' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#10B981' }}>{cp.etiqueta} ({cp.nombreCliente})</div>
+                <div style={{ fontSize: 12, marginTop: 2 }}>{cp.direccion}</div>
+                {cp.referencia && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Ref: {cp.referencia}</div>}
               </div>
             </MarkerPopup>
           </MapMarker>

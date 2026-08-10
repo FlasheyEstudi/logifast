@@ -181,6 +181,8 @@ type MapProps = {
   blank?: boolean;
   /** Map projection type. Use `{ type: "globe" }` for 3D globe view. */
   projection?: MapLibreGL.ProjectionSpecification;
+  /** Initial view state fallback */
+  initialViewState?: { longitude?: number; latitude?: number; zoom?: number; center?: [number, number]; bearing?: number; pitch?: number };
   /**
    * Controlled viewport. When provided with onViewportChange,
    * the map becomes controlled and viewport is driven by this prop.
