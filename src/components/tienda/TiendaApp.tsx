@@ -20,6 +20,7 @@ interface TiendaAppProps {
 export function TiendaApp({ isDark, toggleTheme, onLogout, userName }: TiendaAppProps) {
   const [moduloActivo, setModuloActivo] = useState<TiendaModulo>('kds');
   const [tiendaNombre, setTiendaNombre] = useState('Mi Tienda');
+  const [tiendaCategoria, setTiendaCategoria] = useState('tienda');
   const [tiendaEstado, setTiendaEstado] = useState('activo');
   const [loading, setLoading] = useState(true);
 
@@ -30,6 +31,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, userName }: TiendaApp
       const data = await res.json();
       if (data.ok && data.tienda) {
         setTiendaNombre(data.tienda.nombre || 'Mi Tienda');
+        setTiendaCategoria(data.tienda.categoria || 'tienda');
         setTiendaEstado(data.tienda.estado || 'activo');
       }
     } catch (err) {
@@ -71,7 +73,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, userName }: TiendaApp
           padding: '24px 16px',
         }}
       >
-        {moduloActivo === 'kds' && <TiendaKDS isDark={isDark} />}
+        {moduloActivo === 'kds' && <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />}
         {moduloActivo === 'inventario' && <TiendaInventario isDark={isDark} />}
         {moduloActivo === 'kardex' && <TiendaKardex isDark={isDark} />}
         {moduloActivo === 'pos' && <TiendaPOS isDark={isDark} />}

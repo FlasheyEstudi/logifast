@@ -24,8 +24,9 @@ interface OrdenKDS {
   repartidorNombre?: string;
 }
 
-export function TiendaKDS({ isDark }: { isDark: boolean }) {
+export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: boolean; categoriaTienda?: string }) {
   const [ordenes, setOrdenes] = useState<OrdenKDS[]>([]);
+  const [catTienda, setCatTienda] = useState(categoriaTienda);
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -97,6 +98,8 @@ export function TiendaKDS({ isDark }: { isDark: boolean }) {
     }
   };
 
+  const isComida = catTienda === 'comida';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* KDS Header Controls */}
@@ -109,14 +112,18 @@ export function TiendaKDS({ isDark }: { isDark: boolean }) {
           padding: '16px 20px',
           borderRadius: 16,
           border: '1px solid var(--border)',
+          flexWrap: 'wrap',
+          gap: 12,
         }}
       >
         <div>
           <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
-            Monitor KDS (Cocina y Despacho en Vivo)
+            {isComida ? 'Monitor KDS (Cocina y Comandas en Vivo)' : 'Monitor de Despacho & Alistamiento en Vivo'}
           </h2>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-            Control en tiempo real de comanda con alarma sonora y tiempos de preparación.
+            {isComida
+              ? 'Control en tiempo real de comanda con alarma sonora y tiempos de preparación.'
+              : 'Control en tiempo real de alistamiento, empaque de paquetes y recolección de repartidor.'}
           </p>
         </div>
 
@@ -248,7 +255,7 @@ export function TiendaKDS({ isDark }: { isDark: boolean }) {
                     }}
                   >
                     <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                      Ítems de Comanda
+                      {isComida ? 'Ítems de Comanda' : 'Productos a Empacar'}
                     </div>
                     {ord.items.map((it, idx) => (
                       <div
@@ -291,7 +298,7 @@ export function TiendaKDS({ isDark }: { isDark: boolean }) {
                           cursor: 'pointer',
                         }}
                       >
-                        Aceptar y Preparar
+                        {isComida ? 'Aceptar y Preparar Platos' : 'Aceptar y Alistar Paquete'}
                       </button>
                     )}
                     {ord.estado === 'preparando' && (
@@ -309,7 +316,7 @@ export function TiendaKDS({ isDark }: { isDark: boolean }) {
                           cursor: 'pointer',
                         }}
                       >
-                        Marcar Pedido Listo
+                        {isComida ? 'Marcar Pedido Listo' : 'Marcar Paquete Empacado y Listo'}
                       </button>
                     )}
                     {ord.estado === 'listo' && (
@@ -327,7 +334,7 @@ export function TiendaKDS({ isDark }: { isDark: boolean }) {
                           cursor: 'pointer',
                         }}
                       >
-                        Finalizar / Despachado
+                        Finalizar / Entregado a Repartidor
                       </button>
                     )}
                   </div>
