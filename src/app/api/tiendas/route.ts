@@ -61,6 +61,8 @@ export async function GET(req: NextRequest) {
         categoria: t.categoria,
         logoColor: t.logoColor,
         logoIniciales: t.logoIniciales,
+        imagenUrl: t.imagenUrl ?? null,
+        bannerUrl: t.bannerUrl ?? null,
         portadaColor: t.portadaColor,
         direccion: t.direccion,
         lat: t.lat,

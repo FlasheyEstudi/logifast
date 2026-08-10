@@ -713,6 +713,7 @@ export default function ClientInicio({
                   width: 48,
                   height: 48,
                   borderRadius: 14,
+                  overflow: 'hidden',
                   background: 'var(--primario-soft)',
                   color: 'var(--primario)',
                   fontFamily: "'Syne', sans-serif",
@@ -722,9 +723,19 @@ export default function ClientInicio({
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
+                  boxShadow: 'var(--lf-shadow-card)',
+                  border: '1px solid var(--border)',
                 }}
               >
-                {tienda.nombre.substring(0, 2).toUpperCase()}
+                {tienda.imagenUrl ? (
+                  <img
+                    src={tienda.imagenUrl}
+                    alt={tienda.nombre}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  tienda.nombre.substring(0, 2).toUpperCase()
+                )}
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>

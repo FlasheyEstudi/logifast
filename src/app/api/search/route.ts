@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
                 { descripcion: { contains: q } },
               ],
             },
-            include: { tienda: { select: { nombre: true, logoColor: true, logoIniciales: true } } },
+            include: { tienda: { select: { id: true, nombre: true, logoColor: true, logoIniciales: true, imagenUrl: true, bannerUrl: true } } },
             take: limit,
             skip: offset,
             orderBy: { esPopular: 'desc' },

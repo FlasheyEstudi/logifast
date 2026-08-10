@@ -318,8 +318,10 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
                 {/* Banner de Tienda */}
                 <div
                   style={{
-                    height: 100,
-                    background: tienda.logoColor || 'linear-gradient(135deg, var(--primario), #D84315)',
+                    height: 105,
+                    background: tienda.bannerUrl
+                      ? `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.7)), url(${tienda.bannerUrl}) center/cover no-repeat`
+                      : (tienda.logoColor || 'linear-gradient(135deg, var(--primario), #D84315)'),
                     padding: 14,
                     display: 'flex',
                     alignItems: 'flex-end',
@@ -333,6 +335,7 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
                         width: 44,
                         height: 44,
                         borderRadius: 14,
+                        overflow: 'hidden',
                         background: 'var(--surface)',
                         color: 'var(--primario)',
                         fontFamily: "'Syne', sans-serif",
@@ -345,7 +348,15 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
                         border: '1px solid var(--border)',
                       }}
                     >
-                      {tienda.nombre.substring(0, 2).toUpperCase()}
+                      {tienda.imagenUrl ? (
+                        <img
+                          src={tienda.imagenUrl}
+                          alt={tienda.nombre}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        tienda.nombre.substring(0, 2).toUpperCase()
+                      )}
                     </div>
                     <div>
                       <h3

@@ -15,6 +15,8 @@ export interface Tienda {
   categoria: TiendaCategoria;
   logoColor: string;
   logoIniciales: string;
+  imagenUrl?: string | null;
+  bannerUrl?: string | null;
   portadaColor: string;
   direccion: string;
   lat: number;
