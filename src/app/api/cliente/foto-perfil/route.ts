@@ -22,15 +22,23 @@ export async function POST(req: NextRequest) {
       const file = formData.get('file') as File | null;
       if (!file) return NextResponse.json({ error: 'Falta el archivo de imagen' }, { status: 400 });
 
-      const result = await saveImage(file, {
-        uploaderId: user.id,
-        categoria: 'perfil',
-        entidadId: user.id,
-        maxWidth: 500,
-        maxHeight: 500,
-        quality: 85,
-      });
-      fotoUrlResult = result.url;
+      try {
+        const result = await saveImage(file, {
+          uploaderId: user.id,
+          categoria: 'perfil',
+          entidadId: user.id,
+          maxWidth: 500,
+          maxHeight: 500,
+          quality: 85,
+        });
+        fotoUrlResult = result.url;
+      } catch (saveErr) {
+        console.warn('[CLIENTE_FOTO_FS_WARN] Read-only filesystem detected, falling back to Base64:', saveErr);
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const mimeType = file.type || 'image/jpeg';
+        fotoUrlResult = `data:${mimeType};base64,${buffer.toString('base64')}`;
+      }
     } else {
       const body = await req.json();
       if (body.fotoUrl && typeof body.fotoUrl === 'string') {
