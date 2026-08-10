@@ -20,10 +20,23 @@ export async function PATCH(
     }
     const { profile } = rp;
 
-    const orden = await db.ordenServicio.findUnique({ where: { id } });
+    let orden = await db.ordenServicio.findUnique({ where: { id } });
     if (!orden) {
-      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+      const ordenCompra = await db.ordenCompra.findUnique({ where: { id } });
+      if (!ordenCompra) {
+        return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+      }
+      await db.ordenCompra.update({
+        where: { id },
+        data: { estado: 'en_camino' },
+      });
+      return NextResponse.json({
+        ok: true,
+        estado: 'recogido',
+        ordenId: id,
+      });
     }
+
     if (orden.repartidorId !== profile.id) {
       return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
     }

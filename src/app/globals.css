@@ -10497,27 +10497,83 @@ body {
   40% { transform: scale(1); opacity: 1; }
 }
 
-/* Moto loader */
+/* Moto / Cyber Rider Loader */
 .lf-moto-loader {
   display: inline-block;
+  position: relative;
 }
 
-.lf-moto-loader .lf-wheel-spin {
-  animation: lf-logo-spin 0.8s linear infinite;
+.lf-rider-bounce {
+  animation: lf-cyber-bounce 1.2s ease-in-out infinite alternate;
 }
 
-.lf-moto-loader .lf-speed-lines line {
-  animation: lf-speed-flow 1.2s ease-in-out infinite;
+@keyframes lf-cyber-bounce {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(-3px) rotate(-1deg); }
 }
 
-.lf-moto-loader .lf-speed-lines line:nth-child(2) { animation-delay: 0.2s; }
-.lf-moto-loader .lf-speed-lines line:nth-child(3) { animation-delay: 0.4s; }
-.lf-moto-loader .lf-speed-lines line:nth-child(4) { animation-delay: 0.6s; }
-.lf-moto-loader .lf-speed-lines line:nth-child(5) { animation-delay: 0.8s; }
+.lf-rider-headlight-beam {
+  animation: lf-headlight-pulse 1.2s ease-in-out infinite alternate;
+}
 
-@keyframes lf-speed-flow {
-  0%, 100% { opacity: 0; transform: translateX(-8px); }
-  50% { opacity: 0.8; transform: translateX(0); }
+@keyframes lf-headlight-pulse {
+  0% { opacity: 0.35; transform: scaleX(0.9); }
+  100% { opacity: 0.9; transform: scaleX(1.15); }
+}
+
+.lf-road-grid-line {
+  stroke-dasharray: 14 8;
+  animation: lf-road-dash 0.5s linear infinite;
+}
+
+@keyframes lf-road-dash {
+  to { stroke-dashoffset: -22; }
+}
+
+.lf-cyber-wheel-spin {
+  transform-origin: center;
+  animation: lf-logo-spin 0.6s linear infinite;
+}
+
+.lf-speed-particle {
+  animation: lf-speed-dash 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes lf-speed-dash {
+  0% { transform: translateX(25px); opacity: 0; }
+  30% { opacity: 0.9; }
+  100% { transform: translateX(-45px); opacity: 0; }
+}
+
+.lf-radar-sweep-beam {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(52, 199, 89, 0.4), transparent 70deg, transparent 360deg);
+  animation: lf-radar-spin 2.2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes lf-radar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.lf-ping-ring-1 {
+  animation: lf-radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.lf-ping-ring-2 {
+  animation: lf-radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite 0.65s;
+}
+
+.lf-ping-ring-3 {
+  animation: lf-radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite 1.3s;
+}
+
+@keyframes lf-radar-ping {
+  0% { transform: scale(0.5); opacity: 0.95; }
+  85%, 100% { transform: scale(1.65); opacity: 0; }
 }
 
 /* Shimmer card */

@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 /**
- * Spinner con logo LOGIFAST animado (moto estilizada).
- * Usa el primario #FF5722 y rotación suave.
+ * Spinner con logo LOGIFAST animado (Logotipo de envío veloz de alto nivel).
+ * Reemplaza la forma básica antigua por una geometría de escudo/alas veloces con gradiente dinámico.
  */
 export function LogoSpinner({ size = 64 }: { size?: number }) {
   return (
@@ -16,34 +16,27 @@ export function LogoSpinner({ size = 64 }: { size?: number }) {
           stroke="url(#lf-spinner-grad)"
           strokeWidth="4"
           strokeLinecap="round"
-          strokeDasharray="60 220"
+          strokeDasharray="70 200"
           fill="none"
           className="lf-spinner-ring"
         />
-        {/* Moto estilizada en el centro */}
+        {/* Emblema estilizado de entrega veloz / rayo aerodinámico */}
         <g className="lf-spinner-logo">
-          <circle cx="32" cy="62" r="7" fill="#FF5722" />
-          <circle cx="68" cy="62" r="7" fill="#FF5722" />
-          <circle cx="32" cy="62" r="3" fill="#fff" />
-          <circle cx="68" cy="62" r="3" fill="#fff" />
           <path
-            d="M32 62 L42 48 L58 48 L68 62 L58 62 L52 54 L44 54 L40 62 Z"
-            fill="#FF5722"
-          />
-          <path
-            d="M48 48 L52 42 L56 48"
-            stroke="#FF5722"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
+            d="M36 28 L68 28 L52 48 L64 48 L32 74 L42 54 L30 54 Z"
+            fill="url(#lf-icon-grad)"
+            filter="drop-shadow(0px 2px 6px rgba(255, 87, 34, 0.4))"
           />
         </g>
         <defs>
           <linearGradient id="lf-spinner-grad" x1="0" y1="0" x2="100" y2="100">
             <stop offset="0%" stopColor="#FF5722" />
-            <stop offset="50%" stopColor="#FF8A65" />
+            <stop offset="50%" stopColor="#34C759" />
             <stop offset="100%" stopColor="#FFB74D" />
+          </linearGradient>
+          <linearGradient id="lf-icon-grad" x1="30" y1="28" x2="68" y2="74">
+            <stop offset="0%" stopColor="#FF7043" />
+            <stop offset="100%" stopColor="#FF3D00" />
           </linearGradient>
         </defs>
       </svg>
@@ -76,7 +69,7 @@ export function GradientSpinner({ size = 40 }: { size?: number }) {
         <defs>
           <linearGradient id="lf-grad" x1="0" y1="0" x2="50" y2="50">
             <stop offset="0%" stopColor="#FF5722" />
-            <stop offset="100%" stopColor="#FFB74D" />
+            <stop offset="100%" stopColor="#34C759" />
           </linearGradient>
         </defs>
       </svg>
@@ -98,42 +91,84 @@ export function PulseDots({ color = '#FF5722' }: { color?: string }) {
 }
 
 /**
- * Loader de moto en movimiento (ruedas girando + líneas de velocidad).
+ * Loader de Scooter / Rider Cyber-Express de alta velocidad (Reemplaza la bicicleta antigua por un vehículo cyber ultra moderno).
  */
-export function MotoLoader({ size = 120 }: { size?: number }) {
+export function MotoLoader({ size = 140 }: { size?: number }) {
   return (
-    <div className="lf-moto-loader" style={{ width: size, height: size * 0.7 }}>
-      <svg viewBox="0 0 120 80" fill="none">
-        {/* Líneas de velocidad */}
-        <g className="lf-speed-lines">
-          <line x1="0" y1="40" x2="20" y2="40" stroke="#FF5722" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-          <line x1="5" y1="30" x2="22" y2="30" stroke="#FF5722" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-          <line x1="5" y1="50" x2="22" y2="50" stroke="#FF5722" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-          <line x1="0" y1="20" x2="15" y2="20" stroke="#FF5722" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
-          <line x1="0" y1="60" x2="15" y2="60" stroke="#FF5722" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
+    <div className="lf-moto-loader" style={{ width: size, height: size * 0.65 }}>
+      <svg viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="cyber-body-grad" x1="20" y1="30" x2="130" y2="70">
+            <stop offset="0%" stopColor="#FF5722" />
+            <stop offset="70%" stopColor="#FF3D00" />
+            <stop offset="100%" stopColor="#E64A19" />
+          </linearGradient>
+          <linearGradient id="cyber-neon-green" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#34C759" />
+            <stop offset="100%" stopColor="#30B04A" />
+          </linearGradient>
+          <linearGradient id="headlight-beam" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="rgba(52, 199, 89, 0.75)" />
+            <stop offset="100%" stopColor="rgba(52, 199, 89, 0)" />
+          </linearGradient>
+        </defs>
+
+        {/* Línea de pista/carretera con perspectiva */}
+        <line x1="10" y1="85" x2="150" y2="85" stroke="#34C759" strokeWidth="2.5" strokeOpacity="0.4" className="lf-road-grid-line" />
+
+        {/* Partículas de velocidad que pasan rápido */}
+        <g className="lf-speed-particle">
+          <line x1="150" y1="35" x2="120" y2="35" stroke="#FF8A65" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+          <line x1="140" y1="50" x2="105" y2="50" stroke="#34C759" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+          <line x1="155" y1="65" x2="125" y2="65" stroke="#FF5722" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
         </g>
 
-        {/* Moto */}
-        <g className="lf-moto-body">
-          {/* Rueda trasera */}
-          <circle cx="30" cy="55" r="12" fill="var(--text)" />
-          <circle cx="30" cy="55" r="8" fill="#FF5722" className="lf-wheel-spin" style={{ transformOrigin: '30px 55px' }} />
-          <circle cx="30" cy="55" r="3" fill="#fff" />
+        {/* Halo / Haz de luz del faro delantero */}
+        <polygon
+          points="115,54 158,40 158,68"
+          fill="url(#headlight-beam)"
+          className="lf-rider-headlight-beam"
+        />
 
-          {/* Rueda delantera */}
-          <circle cx="90" cy="55" r="12" fill="var(--text)" />
-          <circle cx="90" cy="55" r="8" fill="#FF5722" className="lf-wheel-spin" style={{ transformOrigin: '90px 55px' }} />
-          <circle cx="90" cy="55" r="3" fill="#fff" />
+        {/* Grupo principal del Rider + Scooter (Sombra y Chasis con rebote continuo) */}
+        <g className="lf-rider-bounce">
+          {/* Sombra proyectada en el suelo */}
+          <ellipse cx="75" cy="85" rx="45" ry="5" fill="rgba(0,0,0,0.3)" />
 
-          {/* Cuerpo moto */}
-          <path d="M30 55 L48 35 L70 35 L82 55 L70 55 L62 42 L52 42 L42 55 Z" fill="#FF5722" />
-          {/* Manillar */}
-          <path d="M82 45 L92 30 L96 30" stroke="var(--text)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          {/* Asiento */}
-          <path d="M50 35 L70 35 L68 32 L52 32 Z" fill="var(--text)" />
-          {/* Casco repartidor */}
-          <circle cx="78" cy="25" r="6" fill="#FF5722" />
-          <path d="M72 25 Q78 18 84 25" stroke="var(--text)" strokeWidth="1.5" fill="none" />
+          {/* Rueda trasera Cyber-Neon */}
+          <g transform="translate(38, 70)">
+            <circle cx="0" cy="0" r="14" fill="#1E293B" stroke="#0F172A" strokeWidth="3" />
+            <circle cx="0" cy="0" r="9" stroke="#FF5722" strokeWidth="2.5" fill="none" className="lf-cyber-wheel-spin" strokeDasharray="12 6" />
+            <circle cx="0" cy="0" r="4" fill="#34C759" />
+          </g>
+
+          {/* Rueda delantera Cyber-Neon */}
+          <g transform="translate(112, 70)">
+            <circle cx="0" cy="0" r="14" fill="#1E293B" stroke="#0F172A" strokeWidth="3" />
+            <circle cx="0" cy="0" r="9" stroke="#FF5722" strokeWidth="2.5" fill="none" className="lf-cyber-wheel-spin" strokeDasharray="12 6" />
+            <circle cx="0" cy="0" r="4" fill="#34C759" />
+          </g>
+
+          {/* Chasis aerodinámico del Scooter Express */}
+          <path
+            d="M32 68 L48 48 L72 45 L98 52 L116 68 L96 72 L78 58 L54 60 L38 72 Z"
+            fill="url(#cyber-body-grad)"
+          />
+
+          {/* Mochila Térmica de Repartidor LogiFast en la parte trasera */}
+          <rect x="28" y="32" width="22" height="26" rx="4" fill="#1E293B" stroke="#FF5722" strokeWidth="2" />
+          <path d="M33 45 L45 45" stroke="#34C759" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="39" cy="38" r="2" fill="#FF9500" />
+
+          {/* Cuerpo y Casco Cyber-Rider */}
+          {/* Torso */}
+          <path d="M52 48 L65 30 L80 34 L74 52 Z" fill="#0F172A" />
+          {/* Brazo sujetando el manubrio */}
+          <path d="M66 36 L94 44" stroke="#FF5722" strokeWidth="4" strokeLinecap="round" />
+          {/* Casco aerodinámico con visera glowing */}
+          <ellipse cx="72" cy="24" rx="10" ry="9" fill="#0F172A" stroke="#FF5722" strokeWidth="2" />
+          {/* Visera Neón Green */}
+          <path d="M72 20 Q82 20 81 27 Q74 28 72 24 Z" fill="url(#cyber-neon-green)" />
         </g>
       </svg>
     </div>
@@ -157,40 +192,151 @@ export function ShimmerCard({ lines = 3 }: { lines?: number }) {
 }
 
 /**
- * Loader de Radar GPS animado para Repartidor.
+ * Loader de Radar GPS animado de ultra precisión para Repartidor.
+ * Cuenta con scanner HUD giratorio, pings de satélite en tiempo real y tipografía de tablero digital.
  */
-export function RepartidorRadarLoader({ message = 'Iniciando GPS y Órdenes en Vivo...' }: { message?: string }) {
+export function RepartidorRadarLoader({ message }: { message?: string }) {
+  const [tickerIndex, setTickerIndex] = useState(0);
+
+  const subMessages = [
+    'Conectando GPS de Alta Precisión...',
+    'Buscando Pedidos Activos en Tu Zona...',
+    'Sincronizando Tablero LogiFast...',
+    'Optimizando Ruta y Tráfico...'
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTickerIndex((prev) => (prev + 1) % subMessages.length);
+    }, 1800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const displayMessage = message || subMessages[tickerIndex];
+
   return (
     <div
       style={{
         position: 'absolute',
         inset: 0,
-        background: 'var(--bg)',
+        background: 'linear-gradient(135deg, #0F172A 0%, #020617 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 16,
+        gap: 20,
         padding: 24,
-        zIndex: 50,
+        zIndex: 60,
       }}
     >
-      <div style={{ position: 'relative', width: 96, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid #FF5722', opacity: 0.3, animation: 'ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
-        <div style={{ position: 'absolute', inset: 12, borderRadius: '50%', border: '2px solid #34C759', opacity: 0.4, animation: 'ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite 0.4s' }} />
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,87,34,0.14)', border: '1.5px solid rgba(255,87,34,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(255,87,34,0.35)' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h2l3 3M5.5 14L9 6h4l-2 8"/>
-          </svg>
+      {/* Contenedor HUD del Radar */}
+      <div
+        style={{
+          position: 'relative',
+          width: 140,
+          height: 140,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '50%',
+          background: 'rgba(15, 23, 42, 0.6)',
+          border: '1px solid rgba(52, 199, 89, 0.25)',
+          boxShadow: '0 0 40px rgba(52, 199, 89, 0.15)',
+        }}
+      >
+        {/* Anillos concéntricos de Radar */}
+        <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px stroke rgba(255, 87, 34, 0.2)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 28, borderRadius: '50%', border: '1px stroke rgba(52, 199, 89, 0.3)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 48, borderRadius: '50%', border: '1px stroke rgba(255, 87, 34, 0.4)', pointerEvents: 'none' }} />
+
+        {/* Anillos de expansión de pulso Radar */}
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1.5px solid #34C759', pointerEvents: 'none' }} className="lf-ping-ring-1" />
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1.5px solid #FF5722', pointerEvents: 'none' }} className="lf-ping-ring-2" />
+
+        {/* Haz de Luz Giratorio de Scanner Radar */}
+        <div className="lf-radar-sweep-beam" />
+
+        {/* Icono central de Cyber Rider / GPS Target */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 10,
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(255,87,34,0.2) 0%, rgba(52,199,89,0.2) 100%)',
+            border: '2px solid #34C759',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 0 24px rgba(52, 199, 89, 0.4)',
+          }}
+        >
+          <MotoLoader size={60} />
         </div>
       </div>
-      <div style={{ textAlign: 'center' }}>
-        <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: 0.3 }}>
-          LOGIFAST REPARTIDOR
+
+      {/* Título y Mensajes de Estado del Sistema */}
+      <div style={{ textAlign: 'center', maxWidth: 280 }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '4px 12px',
+            borderRadius: 20,
+            background: 'rgba(52, 199, 89, 0.1)',
+            border: '1px solid rgba(52, 199, 89, 0.3)',
+            marginBottom: 8,
+          }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 8px #34C759' }} />
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#34C759', letterSpacing: 1, textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
+            REPARTIDOR GPS HUD
+          </span>
+        </div>
+
+        <h4 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#FFFFFF', fontFamily: "'Syne', sans-serif", letterSpacing: 0.5 }}>
+          LOGIFAST RIDER
         </h4>
-        <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 700, color: '#34C759', fontFamily: "'JetBrains Mono', monospace" }}>
-          {message}
+
+        <p
+          style={{
+            margin: '8px 0 0',
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#94A3B8',
+            minHeight: 20,
+            transition: 'all 0.3s ease',
+          }}
+        >
+          {displayMessage}
         </p>
+
+        {/* Indicador de barra de estado en vivo */}
+        <div
+          style={{
+            width: 140,
+            height: 4,
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: 2,
+            margin: '14px auto 0',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              width: '45%',
+              background: 'linear-gradient(90deg, #FF5722, #34C759)',
+              borderRadius: 2,
+              animation: 'lf-road-dash 1.2s ease-in-out infinite alternate',
+            }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -204,8 +350,8 @@ export function RoleLoader({ role, message }: { role: 'cliente' | 'repartidor' |
   if (role === 'repartidor') {
     return (
       <div className="lf-role-loader" style={{ '--role-color': '#34C759' } as React.CSSProperties}>
-        <div className="lf-role-loader-content">
-          <RepartidorRadarLoader message={message || 'Conectando Panel de Repartidor LogiFast...'} />
+        <div className="lf-role-loader-content" style={{ width: '100%', height: '100%' }}>
+          <RepartidorRadarLoader message={message} />
         </div>
       </div>
     );
@@ -224,10 +370,10 @@ export function RoleLoader({ role, message }: { role: 'cliente' | 'repartidor' |
     repartidor: {
       icon: (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h2l3 3M5.5 14L9 6h4l-2 8"/>
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
         </svg>
       ),
-      label: 'Repartidor',
+      label: 'Repartidor Express',
       color: '#34C759'
     },
     admin: {

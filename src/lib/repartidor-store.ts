@@ -1021,7 +1021,7 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
               estado: 'DESCONECTADO',
             });
           } else {
-            const ACTIVE_TRIP_STATES = ['EN_CAMINO_RECOGER', 'EN_PUNTO_RECOGIDA', 'RECOGIDO', 'EN_CAMINO_ENTREGAR', 'EN_PUNTO_ENTREGA'];
+            const ACTIVE_TRIP_STATES = ['ORDEN_ASIGNADA', 'EN_CAMINO_RECOGER', 'EN_PUNTO_RECOGIDA', 'RECOGIDO', 'EN_CAMINO_ENTREGAR', 'EN_PUNTO_ENTREGA'];
             const isCurrentlyInTrip = ACTIVE_TRIP_STATES.includes(freshState.estado);
 
             set({
