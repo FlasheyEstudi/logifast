@@ -81,6 +81,8 @@ export interface RepartidorProfile {
   saldo: number;
   contratoAceptado: boolean;
   recargas: RepartidorRecarga[];
+  fotoUrl?: string;
+  cedulaRepartidor?: string;
 }
 
 export interface MotoAsignada {

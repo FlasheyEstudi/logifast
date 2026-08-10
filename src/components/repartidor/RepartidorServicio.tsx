@@ -61,6 +61,7 @@ export default function RepartidorServicio() {
     estado, conectado, ordenActiva, ordenesActivas = [], ordenAsignadaPendiente, ofertasDisponibles = [], lat, lng, eta, perfil,
     conectar, desconectar, optimizarRutaAutomatica, llegarRecogida, recogerPaquete,
     llegarEntrega, confirmarEntrega, toggleChat, toggleIncidencia,
+    aceptarOfertaDirecta, rechazarOfertaDirecta,
   } = useRepartidorStore();
 
   const showSnackbar = useRepartidorSnackbar();
