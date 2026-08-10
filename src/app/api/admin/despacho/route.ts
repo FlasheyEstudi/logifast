@@ -36,10 +36,17 @@ export async function GET() {
       }),
     ]);
 
-    return NextResponse.json({
-      queue: ordenesPendientes,
-      driversOnline: repartidoresOnline,
-    });
+    return NextResponse.json(
+      {
+        queue: ordenesPendientes,
+        driversOnline: repartidoresOnline,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=20',
+        },
+      }
+    );
   } catch (error) {
     console.error('[ADMIN_DESPACHO_GET]', error);
     const status = (error as Error & { status?: number }).status ?? 500;

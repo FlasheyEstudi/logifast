@@ -66,8 +66,29 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
 
   useEffect(() => {
     cargarOrdenes();
-    const interval = setInterval(cargarOrdenes, 15000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityAndFetch = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        cargarOrdenes();
+      }
+    };
+
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        cargarOrdenes();
+      }
+    }, 20000);
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityAndFetch);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityAndFetch);
+      }
+    };
   }, [cargarOrdenes]);
 
   const cambiarEstado = async (ordenId: string, nuevoEstado: string) => {

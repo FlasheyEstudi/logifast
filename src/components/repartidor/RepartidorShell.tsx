@@ -421,13 +421,32 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   const snackbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [clock, setClock] = useState('9:41');
 
-  /* ─── Sync inicial con backend (cada 5s) — MANTENER ─── */
+  /* ─── Sync inicial con backend (10s cuando la pestaña está visible) ─── */
   useEffect(() => {
     syncFromBackend();
+
+    const handleVisibilityAndSync = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncFromBackend();
+      }
+    };
+
     const interval = setInterval(() => {
-      syncFromBackend();
-    }, 2000);
-    return () => clearInterval(interval);
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncFromBackend();
+      }
+    }, 10000);
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityAndSync);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityAndSync);
+      }
+    };
   }, [syncFromBackend]);
 
   // Initialize browser geolocation — MANTENER watch: true

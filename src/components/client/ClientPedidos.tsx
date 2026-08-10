@@ -268,8 +268,29 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
       } catch {}
     };
     fetchClientOrders();
-    const interval = setInterval(fetchClientOrders, 12000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityAndFetch = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchClientOrders();
+      }
+    };
+
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchClientOrders();
+      }
+    }, 20000);
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityAndFetch);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityAndFetch);
+      }
+    };
   }, []);
 
   const activeEnvios = useMemo(() => orders.filter(o => ['pendiente','encamino','recogido'].includes(o.estado)), [orders]);

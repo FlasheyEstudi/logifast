@@ -64,9 +64,30 @@ export function useMapaPuntos() {
 
   useEffect(() => {
     fetchPuntos();
-    // Actualizar automáticamente los puntos del mapa cada 30 segundos
-    const interval = setInterval(fetchPuntos, 30000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityAndPoll = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchPuntos();
+      }
+    };
+
+    // Actualizar automáticamente los puntos del mapa cada 35s solo cuando la pestaña es visible
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchPuntos();
+      }
+    }, 35000);
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityAndPoll);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityAndPoll);
+      }
+    };
   }, [fetchPuntos]);
 
   return { tiendas, clientePuntos, repartidoresPuntos, loading, refetch: fetchPuntos };

@@ -119,13 +119,20 @@ export async function GET() {
       color: r.user?.color || '#10B981',
     }));
 
-    return NextResponse.json({
-      ok: true,
-      tiendas,
-      clientePuntos,
-      repartidoresPuntos,
-      totalPuntos: tiendas.length + clientePuntos.length + repartidoresPuntos.length,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        tiendas,
+        clientePuntos,
+        repartidoresPuntos,
+        totalPuntos: tiendas.length + clientePuntos.length + repartidoresPuntos.length,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=30',
+        },
+      }
+    );
   } catch (error) {
     console.error('[API_MAPA_PUNTOS_ERROR]', error);
     return NextResponse.json(

@@ -48,6 +48,7 @@ export async function GET() {
           repartidorId: profile.id,
           estado: { in: ['asignado', 'aceptado', 'en_camino', 'en_camino_recoger', 'en_punto_recogida', 'recogido', 'en_punto_entrega'] },
         },
+        select: { id: true, estado: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
       }),
       db.ordenCompra.findFirst({
@@ -55,6 +56,7 @@ export async function GET() {
           repartidorId: profile.id,
           estado: { in: ['asignado', 'aceptado', 'recibido', 'preparando', 'listo', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
         },
+        select: { id: true, estado: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
       }),
     ]);
@@ -69,14 +71,21 @@ export async function GET() {
       ordenActiva?.estado ?? null
     );
 
-    return NextResponse.json({
-      conectado: profile.conectado,
-      enServicio: profile.enServicio,
-      pausado: profile.pausado,
-      pausaHasta: profile.pausaHasta,
-      estado,
-      rechazosHora: profile.rechazosHora,
-    });
+    return NextResponse.json(
+      {
+        conectado: profile.conectado,
+        enServicio: profile.enServicio,
+        pausado: profile.pausado,
+        pausaHasta: profile.pausaHasta,
+        estado,
+        rechazosHora: profile.rechazosHora,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=10',
+        },
+      }
+    );
   } catch (error) {
     console.error('[REPARTIDOR_CONEXION_GET]', error);
     return NextResponse.json({

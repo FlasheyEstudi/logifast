@@ -421,8 +421,29 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     };
 
     fetchAllData();
-    const interval = setInterval(fetchAllData, 15000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityAndFetch = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchAllData();
+      }
+    };
+
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchAllData();
+      }
+    }, 25000);
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityAndFetch);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityAndFetch);
+      }
+    };
   }, []);
 
   // Close avatar dropdown on outside click

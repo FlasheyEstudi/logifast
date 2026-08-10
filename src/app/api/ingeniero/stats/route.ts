@@ -73,7 +73,11 @@ export async function GET(req: NextRequest) {
       mttrMinutos,
     };
 
-    return NextResponse.json(stats);
+    return NextResponse.json(stats, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=30',
+      },
+    });
 } catch (error) {
     return handleError(error, 'INGENIERO_STATS_GET');
   }

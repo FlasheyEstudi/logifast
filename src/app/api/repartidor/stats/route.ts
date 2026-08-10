@@ -195,7 +195,14 @@ export async function GET(req: NextRequest) {
       computeTrends(profile.id, validPeriodo),
     ]);
 
-    return NextResponse.json({ stats, trends });
+    return NextResponse.json(
+      { stats, trends },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=20',
+        },
+      }
+    );
   } catch (error) {
     console.error('[REPARTIDOR_STATS_GET]', error);
     return NextResponse.json({
