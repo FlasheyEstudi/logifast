@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/tienda/perfil
- * Devuelve el perfil completo de la tienda asociada al usuario autenticado.
+ * Devuelve el perfil completo de la tienda asociada al usuario autenticado de forma ultra rápida.
  */
 export async function GET() {
   try {
@@ -17,16 +17,39 @@ export async function GET() {
 
     let tienda = await db.tienda.findFirst({
       where: { propietarioId: user.id },
-      include: {
-        productos: {
-          orderBy: { posicion: 'asc' },
-        },
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+        categoria: true,
+        direccion: true,
+        lat: true,
+        lng: true,
+        telefono: true,
+        email: true,
+        whatsapp: true,
+        ruc: true,
+        razonSocial: true,
+        regimenDgi: true,
+        saludoFactura: true,
+        piePaginaFactura: true,
+        serieFactura: true,
+        imagenUrl: true,
+        logoIniciales: true,
+        bannerUrl: true,
+        calificacion: true,
+        totalPedidos: true,
+        costoEnvio: true,
+        pedidoMinimo: true,
+        horario: true,
+        estado: true,
+        propietarioId: true,
       },
     });
 
     if (!tienda) {
       // Auto-crear tienda demo para el comercio si no existe
-      tienda = await db.tienda.create({
+      const nueva = await db.tienda.create({
         data: {
           nombre: `Tienda de ${user.name}`,
           categoria: 'tienda',
@@ -42,10 +65,36 @@ export async function GET() {
           saludoFactura: '¡Gracias por su compra en LogiFast Partner!',
           piePaginaFactura: 'Conservar este comprobante para cualquier garantía.',
         },
-        include: {
-          productos: true,
+        select: {
+          id: true,
+          nombre: true,
+          descripcion: true,
+          categoria: true,
+          direccion: true,
+          lat: true,
+          lng: true,
+          telefono: true,
+          email: true,
+          whatsapp: true,
+          ruc: true,
+          razonSocial: true,
+          regimenDgi: true,
+          saludoFactura: true,
+          piePaginaFactura: true,
+          serieFactura: true,
+          imagenUrl: true,
+          logoIniciales: true,
+          bannerUrl: true,
+          calificacion: true,
+          totalPedidos: true,
+          costoEnvio: true,
+          pedidoMinimo: true,
+          horario: true,
+          estado: true,
+          propietarioId: true,
         },
       });
+      tienda = nueva;
     }
 
     return NextResponse.json({ ok: true, tienda });
@@ -91,6 +140,7 @@ export async function PATCH(req: NextRequest) {
 
     const tienda = await db.tienda.findFirst({
       where: { propietarioId: user.id },
+      select: { id: true },
     });
 
     if (!tienda) {
@@ -100,31 +150,31 @@ export async function PATCH(req: NextRequest) {
     const updated = await db.tienda.update({
       where: { id: tienda.id },
       data: {
-        nombre: typeof nombre === 'string' && nombre.trim() ? nombre.trim() : undefined,
-        descripcion: typeof descripcion === 'string' ? descripcion.trim() : undefined,
-        categoria: typeof categoria === 'string' && categoria.trim() ? categoria.trim() : undefined,
-        direccion: typeof direccion === 'string' && direccion.trim() ? direccion.trim() : undefined,
-        telefono: typeof telefono === 'string' ? telefono.trim() : undefined,
-        email: typeof email === 'string' ? email.trim() : undefined,
-        whatsapp: typeof whatsapp === 'string' ? whatsapp.trim() : undefined,
-        ruc: typeof ruc === 'string' ? ruc.trim() : undefined,
-        razonSocial: typeof razonSocial === 'string' ? razonSocial.trim() : undefined,
-        regimenDgi: typeof regimenDgi === 'string' ? regimenDgi.trim() : undefined,
-        saludoFactura: typeof saludoFactura === 'string' ? saludoFactura.trim() : undefined,
-        piePaginaFactura: typeof piePaginaFactura === 'string' ? piePaginaFactura.trim() : undefined,
-        serieFactura: typeof serieFactura === 'string' ? serieFactura.trim() : undefined,
-        imagenUrl: typeof imagenUrl === 'string' ? imagenUrl.trim() : undefined,
-        bannerUrl: typeof bannerUrl === 'string' ? bannerUrl.trim() : undefined,
-        costoEnvio: typeof costoEnvio === 'number' ? costoEnvio : undefined,
-        pedidoMinimo: typeof pedidoMinimo === 'number' ? pedidoMinimo : undefined,
-        horario: typeof horario === 'string' ? horario.trim() : undefined,
-        estado: typeof estado === 'string' ? estado.trim() : undefined,
+        ...(nombre !== undefined && { nombre }),
+        ...(descripcion !== undefined && { descripcion }),
+        ...(categoria !== undefined && { categoria }),
+        ...(direccion !== undefined && { direccion }),
+        ...(telefono !== undefined && { telefono }),
+        ...(email !== undefined && { email }),
+        ...(whatsapp !== undefined && { whatsapp }),
+        ...(ruc !== undefined && { ruc }),
+        ...(razonSocial !== undefined && { razonSocial }),
+        ...(regimenDgi !== undefined && { regimenDgi }),
+        ...(saludoFactura !== undefined && { saludoFactura }),
+        ...(piePaginaFactura !== undefined && { piePaginaFactura }),
+        ...(serieFactura !== undefined && { serieFactura }),
+        ...(imagenUrl !== undefined && { imagenUrl }),
+        ...(bannerUrl !== undefined && { bannerUrl }),
+        ...(costoEnvio !== undefined && { costoEnvio: parseFloat(costoEnvio) || 0 }),
+        ...(pedidoMinimo !== undefined && { pedidoMinimo: parseFloat(pedidoMinimo) || 0 }),
+        ...(horario !== undefined && { horario }),
+        ...(estado !== undefined && { estado }),
       },
     });
 
     return NextResponse.json({ ok: true, tienda: updated });
   } catch (error) {
     console.error('[TIENDA_PERFIL_PATCH_ERROR]', error);
-    return NextResponse.json({ ok: false, error: 'Error al actualizar perfil de tienda' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: 'Error al actualizar perfil' }, { status: 500 });
   }
 }
