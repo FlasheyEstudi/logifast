@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveImage } from '@/lib/upload/image';
+import { uploadToSupabaseStorage } from '@/lib/upload/supabase-storage';
 import { getSessionUser } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
@@ -24,15 +25,23 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const result = await saveImage(file, {
-        uploaderId: userId,
-        categoria,
-        entidadId,
-      });
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const mimeType = file.type || 'image/jpeg';
+      
+      const publicUrl = await uploadToSupabaseStorage(buffer, file.name, mimeType, categoria);
 
-      return NextResponse.json({ ok: true, ...result });
+      return NextResponse.json({
+        ok: true,
+        id: `img-${Date.now()}`,
+        url: publicUrl,
+        filename: file.name,
+        size: file.size,
+        width: 800,
+        height: 600,
+      });
     } catch (saveErr) {
-      console.warn('[UPLOAD_SAVE_BASE64_FALLBACK] Read-only filesystem, returning Data URL:', saveErr);
+      console.warn('[UPLOAD_STORAGE_FALLBACK]:', saveErr);
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       const mimeType = file.type || 'image/png';
