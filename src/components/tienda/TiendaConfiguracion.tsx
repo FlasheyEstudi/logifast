@@ -10,6 +10,8 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   const [descripcion, setDescripcion] = useState('');
   const [categoria, setCategoria] = useState('tienda');
   const [direccion, setDireccion] = useState('');
+  const [lat, setLat] = useState<number | string>(12.1365);
+  const [lng, setLng] = useState<number | string>(-86.2514);
   const [telefono, setTelefono] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [horario, setHorario] = useState('8:00 AM - 6:00 PM');
@@ -32,6 +34,8 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
         setDescripcion(t.descripcion || '');
         setCategoria(t.categoria || 'tienda');
         setDireccion(t.direccion || '');
+        setLat(t.lat ?? 12.1365);
+        setLng(t.lng ?? -86.2514);
         setTelefono(t.telefono || '');
         setWhatsapp(t.whatsapp || '');
         setHorario(t.horario || '8:00 AM - 6:00 PM');
@@ -52,6 +56,26 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
     cargarPerfil();
   }, [cargarPerfil]);
 
+  const detectarGPS = () => {
+    if (!navigator.geolocation) {
+      notify.error('Geolocalización no soportada en este navegador');
+      return;
+    }
+    notify.info('Obteniendo ubicación GPS...');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude);
+        setLng(pos.coords.longitude);
+        notify.success('Ubicación GPS capturada con éxito');
+      },
+      (err) => {
+        console.error(err);
+        notify.error('No se pudo obtener la ubicación GPS');
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
   const guardarConfiguracion = async (e: React.FormEvent) => {
     e.preventDefault();
     setGuardando(true);
@@ -64,6 +88,8 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
           descripcion,
           categoria,
           direccion,
+          lat: Number(lat),
+          lng: Number(lng),
           telefono,
           whatsapp,
           horario,
@@ -213,6 +239,89 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
             }}
             required
           />
+        </div>
+
+        {/* Coordenadas GPS para Mapa Inteligente */}
+        <div style={{ background: 'var(--bg-alt, #f8f9fa)', padding: 14, borderRadius: 12, border: '1px solid var(--border, #e5e7eb)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <MapPin size={16} color="#0066FF" />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                Ubicación GPS Exacta en Mapa (Geolocalización) *
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={detectarGPS}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#0066FF',
+                color: '#ffffff',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              📍 Detectar Mi GPS
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>Latitud (GPS)</label>
+              <input
+                type="number"
+                step="any"
+                value={lat}
+                onChange={(e) => setLat(e.target.value)}
+                placeholder="12.1365"
+                style={{
+                  width: '100%',
+                  height: 38,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface, #ffffff)',
+                  padding: '0 10px',
+                  color: 'var(--text)',
+                  fontSize: 12,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  marginTop: 2,
+                }}
+                required
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>Longitud (GPS)</label>
+              <input
+                type="number"
+                step="any"
+                value={lng}
+                onChange={(e) => setLng(e.target.value)}
+                placeholder="-86.2514"
+                style={{
+                  width: '100%',
+                  height: 38,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface, #ffffff)',
+                  padding: '0 10px',
+                  color: 'var(--text)',
+                  fontSize: 12,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  marginTop: 2,
+                }}
+                required
+              />
+            </div>
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0 0' }}>
+            💡 Estas coordenadas alimentan el <b>Mapa Inteligente</b> de LogiFast para calcular distancias exactas y asignar repartidores cercanos.
+          </p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>

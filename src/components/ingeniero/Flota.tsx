@@ -41,26 +41,66 @@ export default function Flota() {
     <PullToRefresh onRefresh={async () => { await store.cargarDatos(); }}>
       <div className="flota-pantalla">
         {/* Header */}
-        <div className="flota-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="flota-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="pantalla-title" style={{ margin: 0 }}>Flota</h1>
-            <div className="flota-header-count mono">{store.motos.length} motos</div>
+            <h1 className="pantalla-title" style={{ margin: 0, fontSize: 22, fontWeight: 800, fontFamily: "'Syne', sans-serif" }}>Control de Flota</h1>
+            <div className="flota-header-count mono" style={{ fontSize: 13, color: 'var(--lf-text-muted, #6B7280)' }}>{store.motos.length} motocicletas registradas</div>
           </div>
-          <button
-            onClick={() => store.toggleCrearMoto()}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 10,
-              border: 'none',
-              background: 'var(--lf-accent, #FF5722)',
-              color: '#ffffff',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            + Registrar Moto
-          </button>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <button
+              onClick={() => {
+                const sample = store.motos[0];
+                if (sample) store.seleccionarMoto(sample);
+              }}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 12,
+                border: '1px solid var(--lf-border, #e5e7eb)',
+                background: 'var(--lf-surface, #ffffff)',
+                color: 'var(--lf-text-main, #1a1a2e)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+              title="Escanear Código QR de Moto"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <path d="M14 14h3v3h-3z"/>
+                <path d="M17 17h4v4h-4z"/>
+              </svg>
+              <span>Escáner QR</span>
+            </button>
+
+            <button
+              onClick={() => store.toggleCrearMoto()}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 12,
+                border: 'none',
+                background: 'var(--lf-accent, #FF5722)',
+                color: '#ffffff',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(255,87,34,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              + Registrar Moto
+            </button>
+          </div>
         </div>
 
         {/* Buscador */}

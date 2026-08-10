@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
       db.ordenServicio.findMany({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['asignado', 'aceptado', 'en_camino', 'recogido'] },
+          estado: { in: ['asignado', 'aceptado', 'en_camino', 'en_camino_recoger', 'en_punto_recogida', 'recogido', 'en_punto_entrega', 'pendiente_confirmacion'] },
         },
         orderBy: { createdAt: 'desc' },
         take: 5,
@@ -179,7 +179,7 @@ export async function GET(req: NextRequest) {
       db.ordenCompra.findMany({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['recibido', 'preparando', 'en_camino', 'recogido'] },
+          estado: { in: ['asignado', 'aceptado', 'recibido', 'preparando', 'listo', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
         },
         include: { tienda: true, cliente: true, items: true },
         orderBy: { createdAt: 'desc' },

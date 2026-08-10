@@ -86,9 +86,13 @@ export interface StatsIngeniero {
   costoMantenimientoMes: number
   alertasActivas: number
   repuestosBajoStock: number
+  preventivoPct?: number
+  correctivoPct?: number
+  mttrMinutos?: number
 }
 
 export interface IngenieroState {
+  loading: boolean
   // Perfil
   perfil: {
     id: string
@@ -153,7 +157,7 @@ export interface IngenieroState {
   // CRUD Mantenimientos
   crearMantenimiento: (data: Partial<Mantenimiento>) => Promise<void> | void
   iniciarMantenimiento: (id: string) => Promise<void> | void
-  completarMantenimiento: (id: string, costoFinal: number) => Promise<void> | void
+  completarMantenimiento: (id: string, costoFinal: number | { costoTotal: number; repuestosUsados?: any[] }) => Promise<void> | void
   cancelarMantenimiento: (id: string) => Promise<void> | void
 
   // CRUD Repuestos
@@ -173,6 +177,7 @@ export interface IngenieroState {
 export const useIngenieroStore = create<IngenieroState>()(
   persist(
     (set, get) => ({
+      loading: false,
       perfil: {
         id: 'ing001',
         nombre: 'Roberto Martinez',
@@ -246,6 +251,7 @@ export const useIngenieroStore = create<IngenieroState>()(
 
       crearMoto: async (data) => {
         try {
+          set({ loading: true });
           const res = await fetch('/api/ingeniero/motos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -257,11 +263,14 @@ export const useIngenieroStore = create<IngenieroState>()(
           }
         } catch (error) {
           console.error('Error al crear moto:', error);
+        } finally {
+          set({ loading: false });
         }
       },
 
       actualizarMoto: async (id, data) => {
         try {
+          set({ loading: true });
           const res = await fetch('/api/ingeniero/motos', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -272,6 +281,8 @@ export const useIngenieroStore = create<IngenieroState>()(
           }
         } catch (error) {
           console.error('Error al actualizar moto:', error);
+        } finally {
+          set({ loading: false });
         }
       },
 

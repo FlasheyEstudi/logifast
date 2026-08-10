@@ -309,15 +309,65 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
       <CrearMotoModal />
       <DetalleMotoModal />
 
-      {/* Responsive Styles (Same rules as admin dashboard) */}
+      {/* Responsive Styles for Desktop, Tablet & Mobile */}
       <style dangerouslySetInnerHTML={{ __html: `
-        @media (max-width: 1024px) {
-          .lf-nav-label { display: none; }
+        .ingeniero-content {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 24px;
         }
+
+        /* Desktop Grid Optimizations */
+        @media (min-width: 1025px) {
+          .dashboard-kpis {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 16px !important;
+          }
+          .dashboard-mes-stats {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 16px !important;
+          }
+          .flota-lista {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 16px !important;
+          }
+        }
+
+        /* Tablet Grid Optimizations (769px - 1024px) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .ingeniero-content { padding: 18px !important; }
+          .lf-nav-label { display: inline-block; font-size: 11px; }
+          .dashboard-kpis {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 14px !important;
+          }
+          .dashboard-mes-stats {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 12px !important;
+          }
+          .flota-lista {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 14px !important;
+          }
+        }
+
+        /* Mobile Styles (<= 768px) */
         @media (max-width: 768px) {
+          .ingeniero-content { padding: 14px !important; }
           .lf-dash-desktop-nav { display: none !important; }
           .lf-dash-bottom-nav { display: flex !important; }
-          .ingeniero-content-wrapper { padding-bottom: 64px !important; }
+          .ingeniero-content-wrapper { padding-bottom: 72px !important; }
+          .flota-lista {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
         }
       ` }} />
     </div>

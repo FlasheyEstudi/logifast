@@ -65,19 +65,43 @@ async function computeStats(
 ): Promise<StatsRepartidor> {
   const start = getStartOfPeriod(periodo);
 
-  const servicios = await db.ordenServicio.findMany({
-    where: {
-      repartidorId,
-      estado: 'entregado',
-      entregadoEn: { gte: start },
-    },
-    select: { kmRecorridos: true, ganancia: true, tiempoTotal: true },
-  });
+  const [servicios, compras] = await Promise.all([
+    db.ordenServicio.findMany({
+      where: {
+        repartidorId,
+        estado: 'entregado',
+        OR: [
+          { entregadoEn: { gte: start } },
+          { updatedAt: { gte: start } },
+        ],
+      },
+      select: { kmRecorridos: true, ganancia: true, tiempoTotal: true },
+    }),
+    db.ordenCompra.findMany({
+      where: {
+        repartidorId,
+        estado: 'entregado',
+        updatedAt: { gte: start },
+      },
+      select: { total: true, costoEnvio: true },
+    }),
+  ]);
 
-  const entregas = servicios.length;
-  const km = servicios.reduce((s, x) => s + (x.kmRecorridos || 0), 0);
-  const ganancias = servicios.reduce((s, x) => s + (x.ganancia || 0), 0);
-  const tiempoActivo = servicios.reduce((s, x) => s + (x.tiempoTotal || 0), 0);
+  const entregas = servicios.length + compras.length;
+  const kmServicios = servicios.reduce((s, x) => s + (x.kmRecorridos || 0), 0);
+  const kmCompras = compras.length * 3.5;
+  const km = kmServicios + kmCompras;
+
+  const gananciasServicios = servicios.reduce((s, x) => s + (x.ganancia || 0), 0);
+  const gananciasCompras = compras.reduce(
+    (s, c) => s + Math.round(Number(c.costoEnvio || 0) > 0 ? Number(c.costoEnvio) : Number(c.total || 0) * 0.2),
+    0
+  );
+  const ganancias = gananciasServicios + gananciasCompras;
+
+  const tiempoServicios = servicios.reduce((s, x) => s + (x.tiempoTotal || 0), 0);
+  const tiempoCompras = compras.length * 20;
+  const tiempoActivo = tiempoServicios + tiempoCompras;
 
   return {
     entregas,
@@ -95,19 +119,42 @@ async function computeTrends(
     (async () => {
       const start = getStartOfPreviousPeriod(periodo);
       const end = getEndOfPreviousPeriod(periodo);
-      const servicios = await db.ordenServicio.findMany({
-        where: {
-          repartidorId,
-          estado: 'entregado',
-          entregadoEn: { gte: start, lt: end },
-        },
-        select: { kmRecorridos: true, ganancia: true, tiempoTotal: true },
-      });
+      const [servicios, compras] = await Promise.all([
+        db.ordenServicio.findMany({
+          where: {
+            repartidorId,
+            estado: 'entregado',
+            OR: [
+              { entregadoEn: { gte: start, lt: end } },
+              { updatedAt: { gte: start, lt: end } },
+            ],
+          },
+          select: { kmRecorridos: true, ganancia: true, tiempoTotal: true },
+        }),
+        db.ordenCompra.findMany({
+          where: {
+            repartidorId,
+            estado: 'entregado',
+            updatedAt: { gte: start, lt: end },
+          },
+          select: { total: true, costoEnvio: true },
+        }),
+      ]);
+      const entregas = servicios.length + compras.length;
+      const km = servicios.reduce((s, x) => s + (x.kmRecorridos || 0), 0) + compras.length * 3.5;
+      const ganancias =
+        servicios.reduce((s, x) => s + (x.ganancia || 0), 0) +
+        compras.reduce(
+          (s, c) => s + Math.round(Number(c.costoEnvio || 0) > 0 ? Number(c.costoEnvio) : Number(c.total || 0) * 0.2),
+          0
+        );
+      const tiempoActivo = servicios.reduce((s, x) => s + (x.tiempoTotal || 0), 0) + compras.length * 20;
+
       return {
-        entregas: servicios.length,
-        km: servicios.reduce((s, x) => s + (x.kmRecorridos || 0), 0),
-        ganancias: servicios.reduce((s, x) => s + (x.ganancia || 0), 0),
-        tiempoActivo: servicios.reduce((s, x) => s + (x.tiempoTotal || 0), 0),
+        entregas,
+        km,
+        ganancias,
+        tiempoActivo,
       };
     })(),
     computeStats(repartidorId, periodo),

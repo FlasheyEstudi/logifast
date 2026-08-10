@@ -42,13 +42,23 @@ export async function GET() {
     }
     const { profile } = rp;
 
-    const ordenActiva = await db.ordenServicio.findFirst({
-      where: {
-        repartidorId: profile.id,
-        estado: { in: ['asignado', 'aceptado', 'recogido'] },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [ordenServicio, ordenCompra] = await Promise.all([
+      db.ordenServicio.findFirst({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['asignado', 'aceptado', 'en_camino', 'en_camino_recoger', 'en_punto_recogida', 'recogido', 'en_punto_entrega'] },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      db.ordenCompra.findFirst({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['asignado', 'aceptado', 'recibido', 'preparando', 'listo', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+    const ordenActiva = ordenServicio || ordenCompra;
 
     // Si tiene una orden activa o está en servicio, asegurar que figure conectado
     const isConectado = profile.conectado || !!ordenActiva || profile.enServicio;
@@ -131,13 +141,23 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
-    const ordenActiva = await db.ordenServicio.findFirst({
-      where: {
-        repartidorId: profile.id,
-        estado: { in: ['asignado', 'aceptado', 'recogido'] },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [ordenServicio, ordenCompra] = await Promise.all([
+      db.ordenServicio.findFirst({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['asignado', 'aceptado', 'en_camino', 'en_camino_recoger', 'en_punto_recogida', 'recogido', 'en_punto_entrega'] },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      db.ordenCompra.findFirst({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['asignado', 'aceptado', 'recibido', 'preparando', 'listo', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+    const ordenActiva = ordenServicio || ordenCompra;
 
     const estado = calcularEstado(
       updated.conectado,

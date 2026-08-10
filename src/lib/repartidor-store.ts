@@ -962,12 +962,14 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       const currentState = get();
       const isManualDisconnected = !currentState.conectado && (currentState.ordenesActivas || []).length === 0;
 
-      const [perfilRes, motoRes, conexionRes, ordenesRes, statsRes, notifsRes, calsRes] = await Promise.all([
+      const [perfilRes, motoRes, conexionRes, ordenesRes, statsHoyRes, statsSemanaRes, statsMesRes, notifsRes, calsRes] = await Promise.all([
         fetch('/api/repartidor/perfil'),
         fetch('/api/repartidor/moto'),
         fetch('/api/repartidor/conexion'),
         fetch('/api/repartidor/ordenes?estado=activa'),
         fetch('/api/repartidor/stats?periodo=hoy'),
+        fetch('/api/repartidor/stats?periodo=semana'),
+        fetch('/api/repartidor/stats?periodo=mes'),
         fetch('/api/repartidor/notificaciones'),
         fetch('/api/repartidor/calificaciones'),
       ]);
@@ -1046,10 +1048,22 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
           }
         }
       }
-      if (statsRes.ok) {
-        const data = await statsRes.json();
+      if (statsHoyRes.ok) {
+        const data = await statsHoyRes.json();
         if (data?.stats) {
           set({ statsHoy: data.stats });
+        }
+      }
+      if (statsSemanaRes.ok) {
+        const data = await statsSemanaRes.json();
+        if (data?.stats) {
+          set({ statsSemana: data.stats });
+        }
+      }
+      if (statsMesRes.ok) {
+        const data = await statsMesRes.json();
+        if (data?.stats) {
+          set({ statsMes: data.stats });
         }
       }
       if (notifsRes.ok) {

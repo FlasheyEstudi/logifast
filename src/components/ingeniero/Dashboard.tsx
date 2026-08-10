@@ -84,6 +84,63 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* 🏭 MÉTRICAS DE INGENIERÍA INDUSTRIAL & MTTR */}
+        <div className="dashboard-section" style={{ background: 'var(--lf-surface, #ffffff)', borderRadius: 16, padding: 18, border: '1px solid var(--lf-border, #e5e7eb)', marginBottom: 20 }}>
+          <div className="dashboard-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>📊</span>
+              <h3 className="dashboard-section-title" style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+                Eficiencia de Mantenimiento (KPi Industrial)
+              </h3>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100, background: 'rgba(0, 200, 83, 0.12)', color: '#00C853' }}>
+              Meta 80/20 Cumplida
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 16 }}>
+            {/* MTTR */}
+            <div style={{ padding: 14, borderRadius: 12, background: 'var(--lf-bg, #f8f9fa)', border: '1px solid var(--lf-border, #e5e7eb)' }}>
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 600, textTransform: 'uppercase' }}>
+                MTTR (Tiempo Medio Reparación)
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)', marginTop: 4 }}>
+                {stats?.mttrMinutos || 45} <span style={{ fontSize: 13, fontWeight: 600 }}>min</span>
+              </div>
+              <div style={{ fontSize: 11, color: '#00C853', marginTop: 4, fontWeight: 600 }}>
+                ⚡ Optimal (&lt; 60 min)
+              </div>
+            </div>
+
+            {/* Ratio Preventivo / Correctivo */}
+            <div style={{ padding: 14, borderRadius: 12, background: 'var(--lf-bg, #f8f9fa)', border: '1px solid var(--lf-border, #e5e7eb)' }}>
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 600, textTransform: 'uppercase' }}>
+                Ratio Preventivo vs. Correctivo
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#00C853', marginTop: 4 }}>
+                {stats?.preventivoPct ?? 80}% <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)' }}>Preventivo</span>
+              </div>
+              {/* Ratio visual bar */}
+              <div style={{ height: 6, width: '100%', borderRadius: 10, background: '#FF3B30', marginTop: 8, overflow: 'hidden', display: 'flex' }}>
+                <div style={{ width: `${stats?.preventivoPct ?? 80}%`, background: '#00C853', height: '100%' }} />
+              </div>
+            </div>
+
+            {/* Costo Promedio por Mantenimiento */}
+            <div style={{ padding: 14, borderRadius: 12, background: 'var(--lf-bg, #f8f9fa)', border: '1px solid var(--lf-border, #e5e7eb)' }}>
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 600, textTransform: 'uppercase' }}>
+                Costo Promedio / Servicio
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--lf-accent, #FF5722)', marginTop: 4 }}>
+                C$ {stats?.mantenimientosCompletados ? Math.round((stats.costoMantenimientoMes || 0) / stats.mantenimientosCompletados) : 0}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)', marginTop: 4 }}>
+                Mano de obra + Piezas
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Mantenimientos del mes */}
         <div className="dashboard-section">
           <div className="dashboard-section-header">
