@@ -12,6 +12,16 @@ export const dynamic = 'force-dynamic';
  * - Repartidor/Ingeniero: no listado (deben usar /api/repartidor/ordenes).
  * - Admin: puede filtrar por clienteId.
  */
+function getOrdenPin(id: string, existingPin?: string | null): string {
+  if (existingPin && existingPin.trim() && existingPin !== '1234') return existingPin.trim();
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+    hash |= 0;
+  }
+  return String(Math.abs(hash) % 9000 + 1000);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
@@ -69,7 +79,7 @@ export async function GET(req: NextRequest) {
         destinoLat: o.lat ?? 12.1421,
         destinoLng: o.lng ?? -86.2287,
         metodoPago: o.metodoPago,
-        codigoPin: o.codigoPin ?? '1234',
+        codigoPin: getOrdenPin(o.id, o.codigoPin),
         repartidorNombre: repNombre,
         repartidorTelefono: o.repartidor?.telefono || o.repartidor?.user?.telefono || null,
         repartidorFotoUrl: o.repartidor?.user?.fotoUrl || null,
