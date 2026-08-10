@@ -76,6 +76,7 @@ export interface OrdenCompra {
   descuento: number;
   total: number;
   codigoUsado?: string;
+  codigoPin?: string;
   repartidorNombre: string;
   repartidorInitials: string;
   fecha: string;

@@ -113,7 +113,7 @@ export default function ClientInicio({
       (o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'
     );
     const comprasActivas = ordenesCompra
-      .filter((oc) => oc.estado !== 'entregado' && oc.estado !== 'cancelado')
+      .filter((oc) => oc.estado !== 'entregado')
       .map((oc) => ({
         id: oc.id,
         tipo: 'compra' as const,
