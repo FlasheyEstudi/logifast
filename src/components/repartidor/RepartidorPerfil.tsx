@@ -666,7 +666,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
           Entregas últimos 7 días
         </div>
         <div style={{ height: 110, width: '100%', minWidth: 0, minHeight: 110 }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={110}>
             <BarChart data={ENTREGAS_SEMANA} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
               <XAxis
                 dataKey="x"

@@ -1135,7 +1135,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
         {/* Bar chart */}
         <div style={{ height: 120, marginBottom: 0, minWidth: 0, minHeight: 120 }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={120}>
             <BarChart data={MONTHLY_DATA} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
               <XAxis
                 dataKey="mes"
