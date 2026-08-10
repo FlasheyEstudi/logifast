@@ -972,6 +972,11 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         fetch('/api/repartidor/calificaciones'),
       ]);
 
+      if (perfilRes.status === 401) {
+        // Sesión no autenticada como repartidor
+        return;
+      }
+
       if (perfilRes.ok) {
         const perfil = await perfilRes.json();
         if (perfil && perfil.id) {

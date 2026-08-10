@@ -32,12 +32,16 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ ok: true, ...result });
     } catch (saveErr) {
-      console.warn('[UPLOAD_SAVE_FALLBACK]', saveErr);
-      const fakeUrl = `/uploads/${categoria}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      console.warn('[UPLOAD_SAVE_BASE64_FALLBACK] Read-only filesystem, returning Data URL:', saveErr);
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const mimeType = file.type || 'image/png';
+      const dataUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+
       return NextResponse.json({
         ok: true,
         id: `img-${Date.now()}`,
-        url: fakeUrl,
+        url: dataUrl,
         filename: file.name,
         size: file.size,
         width: 800,
@@ -45,15 +49,10 @@ export async function POST(req: NextRequest) {
       });
     }
   } catch (error) {
-    console.error('[UPLOAD]', error);
+    console.error('[UPLOAD_ERROR]', error);
     return NextResponse.json({
-      ok: true,
-      id: `img-${Date.now()}`,
-      url: '/logos/image3.png',
-      filename: 'image.png',
-      size: 1024,
-      width: 800,
-      height: 600,
-    });
+      ok: false,
+      error: 'Error al procesar la imagen',
+    }, { status: 500 });
   }
 }

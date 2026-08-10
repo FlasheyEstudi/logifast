@@ -215,3 +215,55 @@ export async function POST(req: NextRequest) {
     return fail('Error interno al afiliar la tienda negocio', 500);
   }
 }
+
+/**
+ * PATCH /api/cliente/tienda
+ * Actualiza la información y/o foto/logo de la tienda del cliente autenticado.
+ */
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = await getSessionUser();
+    if (!user) {
+      return fail('No autorizado', 401);
+    }
+
+    const body = await req.json();
+
+    const tienda = await db.tienda.findFirst({
+      where: { propietarioId: user.id },
+    });
+
+    if (!tienda) {
+      return fail('No tienes una tienda registrada', 440);
+    }
+
+    const updateData: Record<string, any> = {};
+    if (body.nombre) updateData.nombre = String(body.nombre).trim();
+    if (body.descripcion !== undefined) updateData.descripcion = String(body.descripcion).trim();
+    if (body.categoria) updateData.categoria = String(body.categoria).trim();
+    if (body.direccion) updateData.direccion = String(body.direccion).trim();
+    if (body.telefono) updateData.telefono = String(body.telefono).trim();
+    if (body.email) updateData.email = String(body.email).trim();
+    if (body.imagenUrl !== undefined) updateData.imagenUrl = String(body.imagenUrl).trim();
+    if (body.bannerUrl !== undefined) updateData.bannerUrl = String(body.bannerUrl).trim();
+    if (body.logoColor) updateData.logoColor = String(body.logoColor);
+    if (body.portadaColor) updateData.portadaColor = String(body.portadaColor);
+    if (body.costoEnvio !== undefined) updateData.costoEnvio = Number(body.costoEnvio);
+    if (body.pedidoMinimo !== undefined) updateData.pedidoMinimo = Number(body.pedidoMinimo);
+    if (body.tiempoEstimado) updateData.tiempoEstimado = String(body.tiempoEstimado);
+    if (body.estado) updateData.estado = String(body.estado);
+    if (body.horario) updateData.horario = typeof body.horario === 'string' ? body.horario : JSON.stringify(body.horario);
+    if (body.zonaCobertura) updateData.zonaCobertura = typeof body.zonaCobertura === 'string' ? body.zonaCobertura : JSON.stringify(body.zonaCobertura);
+
+    const updated = await db.tienda.update({
+      where: { id: tienda.id },
+      data: updateData,
+      include: { productos: true, ordenes: true },
+    });
+
+    return ok({ ok: true, tienda: updated });
+  } catch (error) {
+    console.error('[CLIENTE_TIENDA_PATCH]', error);
+    return fail('Error al actualizar datos de la tienda', 500);
+  }
+}
