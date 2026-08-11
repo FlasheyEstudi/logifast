@@ -185,23 +185,28 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
 
                     {/* Repartidor */}
                     {order.repartidor && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: 14, background: 'var(--bg-alt)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--primario)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>
-                            {order.repartidor.substring(0,2).toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{order.repartidor}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text-muted)' }}>
-                              <Star size={10} fill="#FF9500" style={{ color:'#FF9500' }} />
-                              <span>4.9 • LogiFast</span>
+                      (() => {
+                        const repName = typeof order.repartidor === 'string' ? order.repartidor : ((order.repartidor as any)?.user?.name || (order.repartidor as any)?.nombre || 'Repartidor LogiFast');
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: 14, background: 'var(--bg-alt)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--primario)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>
+                                {repName.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{repName}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text-muted)' }}>
+                                  <Star size={10} fill="#FF9500" style={{ color:'#FF9500' }} />
+                                  <span>4.9 • LogiFast</span>
+                                </div>
+                              </div>
                             </div>
+                            <button onClick={() => onOpenChat(order.id)} style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primario-soft)', color: 'var(--primario)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <MessageCircle size={17} />
+                            </button>
                           </div>
-                        </div>
-                        <button onClick={() => onOpenChat(order.id)} style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primario-soft)', color: 'var(--primario)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <MessageCircle size={17} />
-                        </button>
-                      </div>
+                        );
+                      })()
                     )}
 
                     {/* Botones */}

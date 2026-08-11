@@ -75,7 +75,7 @@ async function computeStats(
           { updatedAt: { gte: start } },
         ],
       },
-      select: { kmRecorridos: true, ganancia: true, tiempoTotal: true },
+      select: { kmRecorridos: true, kmEstimados: true, ganancia: true, tiempoTotal: true },
     }),
     db.ordenCompra.findMany({
       where: {
@@ -88,7 +88,7 @@ async function computeStats(
   ]);
 
   const entregas = servicios.length + compras.length;
-  const kmServicios = servicios.reduce((s, x) => s + (x.kmRecorridos || 0), 0);
+  const kmServicios = servicios.reduce((s, x) => s + (x.kmRecorridos || x.kmEstimados || 3.5), 0);
   const kmCompras = compras.length * 3.5;
   const km = kmServicios + kmCompras;
 
@@ -129,7 +129,7 @@ async function computeTrends(
               { updatedAt: { gte: start, lt: end } },
             ],
           },
-          select: { kmRecorridos: true, ganancia: true, tiempoTotal: true },
+          select: { kmRecorridos: true, kmEstimados: true, ganancia: true, tiempoTotal: true },
         }),
         db.ordenCompra.findMany({
           where: {

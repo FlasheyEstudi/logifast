@@ -182,7 +182,9 @@ function ActiveEnvioCard({ order, onOpenTracking, onOpenChat }: { order: Order; 
               {order.repartidorInitials || '?'}
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{order.repartidor || 'Sin asignar'}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                {typeof order.repartidor === 'string' ? order.repartidor : ((order.repartidor as any)?.user?.name || (order.repartidor as any)?.nombre || 'Sin asignar')}
+              </div>
               <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Repartidor</div>
             </div>
           </div>

@@ -328,7 +328,11 @@ export default function ClientInicio({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.85)' }}>
-                    {activeOrders[0].repartidor ? `Repartidor: ${activeOrders[0].repartidor}` : 'Buscando repartidor...'}
+                    {(() => {
+                      const rep = activeOrders[0].repartidor as any;
+                      const repName = typeof rep === 'string' ? rep : (rep?.user?.name || rep?.nombre || null);
+                      return repName ? `Repartidor: ${repName}` : 'Buscando repartidor...';
+                    })()}
                   </div>
                   {activeOrders[0].codigoPin && (
                     <div

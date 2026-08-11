@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
         origen: s.origen,
         destino: s.destino,
         hora: horaString(s.createdAt),
-        kmRecorridos: s.kmRecorridos,
+        kmRecorridos: s.kmRecorridos || s.kmEstimados || 3.5,
         ganancia: s.ganancia,
         tiempoTotal: s.tiempoTotal,
         estado: (s.estado === 'incidencia' ? 'incidencia' : 'entregado') as 'entregado' | 'incidencia',
