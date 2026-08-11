@@ -293,7 +293,7 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
     };
   }, []);
 
-  const activeEnvios = useMemo(() => orders.filter(o => ['pendiente','encamino','recogido'].includes(o.estado)), [orders]);
+  const activeEnvios = useMemo(() => orders.filter(o => !['entregado', 'entregada', 'completado', 'completada', 'cancelado', 'cancelada', 'incidencia'].includes(o.estado)), [orders]);
   const activeCompras = useMemo(() => ordenesCompra.filter(oc => oc.estado !== 'entregado'), [ordenesCompra]);
   const deliveredCompras = useMemo(() => ordenesCompra.filter(oc => oc.estado === 'entregado'), [ordenesCompra]);
 

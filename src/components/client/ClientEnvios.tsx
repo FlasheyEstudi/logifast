@@ -80,8 +80,8 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
   const [filterState, setFilterState] = useState<'todos' | 'entregados' | 'incidencia'>('todos');
   const [reportModal, setReportModal] = useState<ReportModalState>({ open: false, orderId: '', reason: 'retraso', description: '' });
 
-  const activeOrders = useMemo(() => orders.filter(o => ['pendiente','encamino','recogido'].includes(o.estado)), [orders]);
-  const historicalOrders = useMemo(() => orders.filter(o => ['entregado','incidencia'].includes(o.estado)), [orders]);
+  const activeOrders = useMemo(() => orders.filter(o => !['entregado', 'entregada', 'completado', 'completada', 'cancelado', 'cancelada', 'incidencia'].includes(o.estado)), [orders]);
+  const historicalOrders = useMemo(() => orders.filter(o => ['entregado', 'entregada', 'completado', 'completada', 'cancelado', 'cancelada', 'incidencia'].includes(o.estado)), [orders]);
 
   const filteredHistory = useMemo(() => historicalOrders.filter(o => {
     if (filterState === 'entregados' && o.estado !== 'entregado') return false;

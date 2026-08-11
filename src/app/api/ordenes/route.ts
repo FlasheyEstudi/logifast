@@ -20,7 +20,7 @@ const postSchema = z.object({
   fragil: z.boolean().optional(),
   tiendaId: z.string().optional().nullable(),
   tiendaNombre: z.string().max(200).optional().nullable(),
-  metodoPago: z.enum(['efectivo', 'tarjeta', 'transferencia']).optional(),
+  metodoPago: z.string().optional(),
   monto: z.union([z.number().min(0), z.string()]).optional(),
   ganancia: z.union([z.number().min(0), z.string()]).optional(),
   kmEstimados: z.union([z.number().min(0), z.string()]).optional(),

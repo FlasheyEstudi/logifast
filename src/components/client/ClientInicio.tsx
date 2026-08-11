@@ -110,7 +110,7 @@ export default function ClientInicio({
 
   const activeOrders = useMemo(() => {
     const enviosActivos = orders.filter(
-      (o) => o.estado === 'pendiente' || o.estado === 'encamino' || o.estado === 'recogido'
+      (o) => !['entregado', 'entregada', 'completado', 'completada', 'cancelado', 'cancelada', 'incidencia'].includes(o.estado)
     );
     const comprasActivas = ordenesCompra
       .filter((oc) => oc.estado !== 'entregado')
