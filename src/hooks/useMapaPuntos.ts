@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { supabaseRealtime } from '@/lib/supabaseClient';
 
 export interface TiendaPunto {
   id: string;
@@ -65,18 +66,46 @@ export function useMapaPuntos() {
   useEffect(() => {
     fetchPuntos();
 
+    // Suscripción a Supabase Realtime por WebSockets para cambios vivos de GPS
+    const channel = supabaseRealtime
+      .channel('mapa-puntos-live')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'RepartidorProfile' },
+        (payload) => {
+          const updated = payload.new as any;
+          setRepartidoresPuntos((prev) => {
+            if (!updated.conectado) {
+              return prev.filter((r) => r.id !== updated.id);
+            }
+            const idx = prev.findIndex((r) => r.id === updated.id);
+            if (idx !== -1) {
+              const list = [...prev];
+              list[idx] = {
+                ...list[idx],
+                lat: updated.lat ?? list[idx].lat,
+                lng: updated.lng ?? list[idx].lng,
+              };
+              return list;
+            }
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
     const handleVisibilityAndPoll = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         fetchPuntos();
       }
     };
 
-    // Actualizar automáticamente los puntos del mapa cada 35s solo cuando la pestaña es visible
+    // Respaldo de actualización diferida cada 45s solo si la pestaña está visible
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         fetchPuntos();
       }
-    }, 35000);
+    }, 45000);
 
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', handleVisibilityAndPoll);
@@ -84,6 +113,7 @@ export function useMapaPuntos() {
 
     return () => {
       clearInterval(interval);
+      supabaseRealtime.removeChannel(channel);
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityAndPoll);
       }
