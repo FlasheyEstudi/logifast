@@ -1164,7 +1164,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
           {[
             { value: String(metrics.total), label: 'Envios totales' },
-            { value: `C$${metrics.totalSpent.toLocaleString()}`, label: 'Gastados' },
+            { value: `C$${(metrics.totalSpent ?? 0).toLocaleString()}`, label: 'Gastados' },
             { value: String(metrics.thisMonth), label: 'Este mes' },
           ].map((m, i) => (
             <div key={i} style={{ textAlign: 'center', padding: '12px 8px', borderRadius: 14, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>

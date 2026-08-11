@@ -723,8 +723,8 @@ export default function ModuleReportes() {
                     background: row.anomaly ? 'rgba(251,191,36,0.06)' : 'transparent',
                   }}>
                     <td className="font-mono" style={{ padding: '8px 10px', fontWeight: 600, fontSize: 13 }}>{row.moto}</td>
-                    <td className="font-mono" style={{ padding: '8px 10px', fontSize: 13 }}>C${row.costoTotal.toLocaleString()}</td>
-                    <td className="font-mono" style={{ padding: '8px 10px', fontSize: 13 }}>{row.km.toLocaleString()}</td>
+                    <td className="font-mono" style={{ padding: '8px 10px', fontSize: 13 }}>C${(row.costoTotal ?? 0).toLocaleString()}</td>
+                    <td className="font-mono" style={{ padding: '8px 10px', fontSize: 13 }}>{(row.km ?? 0).toLocaleString()}</td>
                     <td className="font-mono" style={{ padding: '8px 10px', fontSize: 13, fontWeight: 700, color: row.anomaly ? 'var(--lf-danger)' : 'var(--lf-success)' }}>
                       C${row.costoKm.toFixed(2)}
                     </td>

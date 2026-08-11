@@ -190,7 +190,7 @@ export default function ClientPuntos({ onClose, initialTab = 'puntos' }: ClientP
                 Balance de Puntos Acumulados
               </div>
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 40, fontWeight: 800, lineHeight: 1.1, marginBottom: 12 }}>
-                {puntos.toLocaleString()} <span style={{ fontSize: 18, fontWeight: 500 }}>PTS</span>
+                {(puntos ?? 0).toLocaleString()} <span style={{ fontSize: 18, fontWeight: 500 }}>PTS</span>
               </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 100, background: 'rgba(255,255,255,0.2)', fontSize: 13, fontWeight: 700 }}>
                 <Star size={16} fill="#FFD700" color="#FFD700" />

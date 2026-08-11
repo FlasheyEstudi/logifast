@@ -52,7 +52,7 @@ function CustomTooltip({ active, payload, label }: any) {
           />
           <span style={{ fontSize: 12, opacity: 0.8 }}>{p.name}:</span>
           <strong style={{ fontSize: 13 }}>
-            C${p.value?.toLocaleString()}
+            C${p.value != null ? p.value.toLocaleString() : '0'}
           </strong>
         </div>
       ))}
@@ -66,7 +66,7 @@ function DonutCenterLabel({ viewBox, total }: any) {
   return (
     <g>
       <text x={cx} y={cy - 6} textAnchor="middle" fontSize={16} fontWeight={700} fill="var(--lf-text-main)">
-        C${total.toLocaleString()}
+        C${(total ?? 0).toLocaleString()}
       </text>
       <text x={cx} y={cy + 12} textAnchor="middle" fontSize={10} fill="var(--lf-text-muted)">
         Total gastos
