@@ -323,6 +323,42 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const [storeTelefonoInput, setStoreTelefonoInput] = useState('');
   const [creatingStore, setCreatingStore] = useState(false);
 
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Guardar datos editados del perfil del cliente
+  const handleSaveClientProfile = async () => {
+    if (!editName.trim()) {
+      notify.error('El nombre completo es obligatorio');
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      const res = await fetch('/api/cliente/perfil', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName.trim(),
+          telefono: editPhone.trim(),
+        }),
+      });
+      const data = await res.json();
+      setSavingProfile(false);
+      if (res.ok && data.ok) {
+        setEditing(false);
+        notify.success('¡Perfil de cliente actualizado con éxito!');
+        // Sincronizar datos locales
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      } else {
+        notify.error(data.error || 'Error al actualizar el perfil');
+      }
+    } catch {
+      setSavingProfile(false);
+      notify.error('Error de conexión con el servidor');
+    }
+  };
+
   // Cargar foto, direcciones, métodos de pago y tienda afiliada del cliente al montar
   useEffect(() => {
     fetch('/api/auth/me')
@@ -828,11 +864,11 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                   </AnimatePresence>
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button style={btnGhost} onClick={() => setEditing(false)}>
+                  <button style={btnGhost} onClick={() => setEditing(false)} disabled={savingProfile}>
                     <X size={15} /> Cancelar
                   </button>
-                  <button style={btnPrimary} onClick={() => setEditing(false)}>
-                    <Save size={15} /> Guardar
+                  <button style={btnPrimary} onClick={handleSaveClientProfile} disabled={savingProfile}>
+                    <Save size={15} /> {savingProfile ? 'Guardando...' : 'Guardar'}
                   </button>
                 </div>
               </motion.div>

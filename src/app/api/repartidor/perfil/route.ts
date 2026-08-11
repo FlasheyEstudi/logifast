@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import { createSession } from '@/lib/auth/session';
 import type { RepartidorProfile } from '@/lib/repartidor-store';
 
 export const dynamic = 'force-dynamic';
@@ -168,9 +169,40 @@ export async function PATCH(req: NextRequest) {
       });
     }
 
+    // Actualizar la Moto asignada si existe en la tabla Moto
+    if (profile.motoId && (profileData.vehiculoModelo || profileData.vehiculoPlaca)) {
+      try {
+        await db.moto.update({
+          where: { id: profile.motoId },
+          data: {
+            modelo: (profileData.vehiculoModelo as string) || undefined,
+            placa: (profileData.vehiculoPlaca as string) || undefined,
+          },
+        });
+      } catch (motoErr) {
+        console.warn('[REPARTIDOR_PERFIL_MOTO_WARN]', motoErr);
+      }
+    }
+
+    // Refrescar cookie de sesión JWT con los nuevos datos del usuario
+    const updatedUser = await db.user.findUnique({ where: { id: profile.userId } });
+    if (updatedUser) {
+      await createSession({
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role as any,
+        telefono: updatedUser.telefono,
+        initials: updatedUser.initials,
+        color: updatedUser.color,
+        fotoUrl: updatedUser.fotoUrl,
+        bio: updatedUser.bio,
+      }).catch(() => null);
+    }
+
     const updatedProfile = await db.repartidorProfile.findUnique({
       where: { id: profile.id },
-      include: { user: true },
+      include: { user: true, moto: true },
     });
 
     return NextResponse.json({

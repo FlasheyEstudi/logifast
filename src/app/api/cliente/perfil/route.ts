@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getSessionUser } from '@/lib/auth/session';
+import { getSessionUser, createSession } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
+
+function computeInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
 
 /**
  * GET /api/cliente/perfil
@@ -60,17 +67,34 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { name, telefono, bio, fotoUrl } = body;
 
+    const newName = name ? String(name).trim() : undefined;
+    const newPhone = telefono ? String(telefono).trim() : undefined;
+
     const updatedUser = await db.user.update({
       where: { id: user.id },
       data: {
-        name: name ? String(name) : undefined,
-        telefono: telefono ? String(telefono) : undefined,
+        name: newName,
+        telefono: newPhone,
+        initials: newName ? computeInitials(newName) : undefined,
         bio: bio !== undefined ? String(bio) : undefined,
         fotoUrl: fotoUrl !== undefined ? String(fotoUrl) : undefined,
       },
     });
 
-    return NextResponse.json({ profile: updatedUser });
+    // Refrescar sesión activa con los datos actualizados
+    await createSession({
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      role: updatedUser.role as any,
+      telefono: updatedUser.telefono,
+      initials: updatedUser.initials,
+      color: updatedUser.color,
+      fotoUrl: updatedUser.fotoUrl,
+      bio: updatedUser.bio,
+    }).catch(() => null);
+
+    return NextResponse.json({ ok: true, profile: updatedUser });
   } catch (error) {
     console.error('[CLIENTE_PERFIL_PATCH]', error);
     return NextResponse.json({ error: 'Error al actualizar perfil' }, { status: 500 });
