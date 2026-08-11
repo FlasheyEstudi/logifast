@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
-import { saveImage } from '@/lib/upload/image';
+import { uploadToSupabaseStorage } from '@/lib/upload/supabase-storage';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/mantenimientos/[id]/fotos
- * Sube fotos "antes/después" de un mantenimiento.
+ * Sube fotos "antes/después" de un mantenimiento a Supabase Storage.
  * Body: FormData con `file` y opcional `tipo` (antes|después|proceso).
  */
 export async function POST(
@@ -32,20 +32,29 @@ export async function POST(
 
     if (!file) return NextResponse.json({ error: 'Falta el archivo' }, { status: 400 });
 
-    const result = await saveImage(file, {
-      uploaderId: user.id,
-      categoria: 'mantenimiento',
-      entidadId: id,
-      maxWidth: 1600,
-      maxHeight: 1200,
-      quality: 82,
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const mimeType = file.type || 'image/jpeg';
+    const publicUrl = await uploadToSupabaseStorage(buffer, file.name, mimeType, 'mantenimiento');
+
+    const mediaAsset = await db.mediaAsset.create({
+      data: {
+        uploaderId: user.id,
+        categoria: 'mantenimiento',
+        entidadId: id,
+        url: publicUrl,
+        filename: file.name,
+        originalName: file.name,
+        size: file.size,
+        mimeType,
+      },
     });
 
     // Guardar metadata del tipo en la descripción del MediaAsset
     // (usamos entidadId como identificador del mantenimiento)
     return NextResponse.json({
       ok: true,
-      foto: { ...result, tipo, mantenimientoId: id },
+      foto: { ...mediaAsset, tipo, mantenimientoId: id },
     });
   } catch (error) {
     console.error('[MANTENIMIENTO_FOTOS_POST]', error);
