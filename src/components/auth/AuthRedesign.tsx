@@ -978,8 +978,9 @@ function RegisterView({
     }
 
     const cedulaRegex = /^\d{3}-?\d{6}-?\d{4}[A-Za-z]$/;
-    if (!form.cedula || !cedulaRegex.test(form.cedula.trim())) {
-      errs.cedula = 'Formato inválido (ej: 001-120495-0002E)';
+    const cleanCedula = (form.cedula || '').replace(/\s+/g, '');
+    if (!cleanCedula || !cedulaRegex.test(cleanCedula)) {
+      errs.cedula = 'Formato de cédula inválido (ej: 001-120495-0002E)';
     }
 
     setErrors(errs);
@@ -1042,7 +1043,16 @@ function RegisterView({
           zonaPreferida: form.zonaPreferida,
         }),
       });
-      const data = await res.json();
+
+      const responseText = await res.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        setLoading(false);
+        sileo.error({ title: 'Respuesta de servidor no válida. Intenta de nuevo.' });
+        return;
+      }
       setLoading(false);
 
       if (!res.ok || !data.ok) {
@@ -1050,7 +1060,7 @@ function RegisterView({
         return;
       }
 
-      sileo.success({ title: `¡Cuenta verificada, ${data.user.name}!`, description: 'Bienvenido a LOGIFAST' });
+      sileo.success({ title: `Bienvenido a LOGIFAST, ${data.user.name}`, description: 'Cuenta registrada exitosamente.' });
       onLoginSuccess(data.user.role, data.user.name);
     } catch {
       setLoading(false);

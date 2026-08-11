@@ -57,9 +57,16 @@ export function useUpload(options: UseUploadOptions = {}) {
         clearInterval(progressInterval);
         setProgress(100);
 
-        const data = await res.json();
+        const responseText = await res.text();
+        let data: any = {};
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error('El servidor no devolvió una respuesta JSON válida. Inténtalo con una imagen de menor tamaño.');
+        }
+
         if (!res.ok || !data.ok) {
-          throw new Error(data.error || 'Error al subir imagen');
+          throw new Error(data.error || 'Error al subir la imagen');
         }
 
         const r: UploadResult = {

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const entidadId = (formData.get('entidadId') as string) || undefined;
 
     if (!file) {
-      return NextResponse.json({ error: 'Falta el archivo' }, { status: 400 });
+      return NextResponse.json({ ok: false, error: 'Falta el archivo de imagen' }, { status: 400 });
     }
 
     try {

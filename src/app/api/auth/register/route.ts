@@ -90,8 +90,9 @@ export async function POST(req: NextRequest) {
 
     // Exigencia 6: Cédula de Identidad Nicaragüense Obligatoria
     if (!cedula) return fail('La Cédula de Identidad es obligatoria');
-    const cedulaRegex = /^\d{3}-?\d{6}-?\d{4}[A-Za-z]$/;
-    if (!cedulaRegex.test(cedula)) {
+    const cleanCedula = cedula.replace(/\s+/g, '').toUpperCase();
+    const cedulaRegex = /^\d{3}-?\d{6}-?\d{4}[A-ZA-Z]$/;
+    if (!cedulaRegex.test(cleanCedula)) {
       return fail('Formato de cédula nicaragüense inválido (ej: 001-120495-0002E)');
     }
 
