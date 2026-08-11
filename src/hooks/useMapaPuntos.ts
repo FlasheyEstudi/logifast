@@ -67,8 +67,9 @@ export function useMapaPuntos() {
     fetchPuntos();
 
     // Suscripción a Supabase Realtime por WebSockets para cambios vivos de GPS
+    const channelId = `mapa-puntos-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const channel = supabaseRealtime
-      .channel('mapa-puntos-live')
+      .channel(channelId)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'RepartidorProfile' },

@@ -324,6 +324,11 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const [creatingStore, setCreatingStore] = useState(false);
 
   const [savingProfile, setSavingProfile] = useState(false);
+  const [currentName, setCurrentName] = useState(userName);
+
+  useEffect(() => {
+    setCurrentName(userName);
+  }, [userName]);
 
   // Guardar datos editados del perfil del cliente
   const handleSaveClientProfile = async () => {
@@ -344,12 +349,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       const data = await res.json();
       setSavingProfile(false);
       if (res.ok && data.ok) {
+        setCurrentName(editName.trim());
         setEditing(false);
         notify.success('¡Perfil de cliente actualizado con éxito!');
-        // Sincronizar datos locales
-        if (typeof window !== 'undefined') {
-          window.location.reload();
-        }
       } else {
         notify.error(data.error || 'Error al actualizar el perfil');
       }
@@ -364,6 +366,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => {
+        if (data?.user?.name) setCurrentName(data.user.name);
         if (data?.user?.fotoUrl) setFotoUrl(data.user.fotoUrl);
       })
       .catch(() => null);
@@ -752,14 +755,14 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                 exit={{ opacity: 0, y: -8 }}
               >
                 <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif" }}>
-                  {userName}
+                  {currentName}
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                   <Mail size={14} /> {email}
                 </div>
                 <button
                   onClick={() => {
-                    setEditName(userName);
+                    setEditName(currentName);
                     setEditPhone('+505 8888-1234');
                     setEditAddress('Col. Los Robles, Managua');
                     setEditing(true);

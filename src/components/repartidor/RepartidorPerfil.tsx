@@ -567,7 +567,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             className="font-syne"
             style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}
           >
-            {userName || perfil.nombre}
+            {perfil?.nombre || userName}
           </h1>
           <div
             style={{
