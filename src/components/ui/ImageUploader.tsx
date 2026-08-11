@@ -97,9 +97,20 @@ export function ImageUploader({
       const url = URL.createObjectURL(file);
       objectUrlRef.current = url;
       setLocalPreview(url);
+
+      // Notificar inmediatamente la vista previa de imagen en base64 para evitar errores de campo obligatorio
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const dataUrl = evt.target?.result as string;
+        if (dataUrl) {
+          onUploaded(dataUrl, 'temp-id');
+        }
+      };
+      reader.readAsDataURL(file);
+
       upload(file);
     },
-    [upload]
+    [upload, onUploaded]
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
