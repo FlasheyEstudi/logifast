@@ -437,8 +437,8 @@ export default function RepartidorMap({
         }
       `}</style>
 
-      {/* Navigation HUD Top Overlay - Only rendered for Driver Navigation view */}
-      {mostrarNavegacionDriver && routeDistanceKm !== null && routeDurationMin !== null && (
+      {/* Navigation HUD Top Overlay - Only rendered for Driver when an active delivery is in progress */}
+      {mostrarNavegacionDriver && !['ENTREGADO', 'ENTREGADA', 'FINALIZADO', 'FINALIZADA', 'COMPLETADO', 'COMPLETADA', 'CANCELADO', 'CANCELADA', 'DISPONIBLE', 'INACTIVO', 'EN_LINEA', 'OFFLINE', 'DESCONECTADO'].includes((estado || '').toUpperCase()) && routeDistanceKm !== null && routeDurationMin !== null && (
         <div className="nav-hud-card">
           <div className="flex items-center gap-3">
             <div
