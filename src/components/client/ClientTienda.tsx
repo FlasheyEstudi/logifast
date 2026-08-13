@@ -126,6 +126,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
     updateCartItemQty,
     removeFromCart,
     getCartItemCount,
+    fetchTiendas,
     fetchProductosTienda,
   } = useMarketplaceStore();
 
@@ -140,10 +141,11 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
   /* ─── Derived data ─── */
   const tienda = useMemo(() => tiendas.find((t) => t.id === tiendaId), [tiendas, tiendaId]);
 
-  /* ─── Cargar productos del backend ─── */
+  /* ─── Cargar tienda y productos del backend ─── */
   useEffect(() => {
+    fetchTiendas();
     if (tiendaId) fetchProductosTienda(tiendaId);
-  }, [tiendaId, fetchProductosTienda]);
+  }, [tiendaId, fetchTiendas, fetchProductosTienda]);
 
   const tiendaProductos = useMemo(
     () => productos.filter((p) => p.tiendaId === tiendaId && p.disponible),
@@ -263,27 +265,41 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
     >
 
       {/* ════════════════════════════════════════════
-          1. PORTADA (200px)
+          1. PORTADA (220px)
           ════════════════════════════════════════════ */}
-      <div style={{ position: 'relative', height: 200 }}>
-        {/* Background color */}
+      <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
+        {/* Banner Image or Fallback Color */}
+        {tienda.bannerUrl ? (
+          <img
+            src={tienda.bannerUrl}
+            alt={`Banner ${tienda.nombre}`}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: tienda.portadaColor || tienda.logoColor || 'linear-gradient(135deg, var(--primario), #D84315)',
+            }}
+          />
+        )}
+
+        {/* Geometric pattern overlay (only when no image) */}
+        {!tienda.bannerUrl && <GeometricPattern color="#FFFFFF" />}
+
+        {/* Gradient overlays for contrast */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            background: tienda.portadaColor,
-          }}
-        />
-
-        {/* Geometric pattern overlay */}
-        <GeometricPattern color="#FFFFFF" />
-
-        {/* Bottom gradient: transparent → rgba(0,0,0,0.3) */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.3) 100%)',
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.65) 100%)',
           }}
         />
 
@@ -381,32 +397,41 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
           2. LOGO + INFO (debajo de portada)
           ════════════════════════════════════════════ */}
 
-      {/* Logo: 72x72, border-radius 22px, border 4px surface, top -32px left 20px */}
+      {/* Logo: 76x76, border-radius 22px, border 4px surface, top -36px left 20px */}
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
         style={{
           position: 'relative',
-          top: -32,
+          top: -36,
           left: 20,
-          width: 72,
-          height: 72,
+          width: 76,
+          height: 76,
           borderRadius: 22,
-          background: tienda.logoColor,
+          overflow: 'hidden',
+          background: tienda.logoColor || 'var(--surface)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: '#fff',
           fontFamily: "'Syne', sans-serif",
-          fontWeight: 700,
+          fontWeight: 800,
           fontSize: 22,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
           border: '4px solid var(--surface)',
           zIndex: 2,
         }}
       >
-        {tienda.logoIniciales}
+        {tienda.imagenUrl ? (
+          <img
+            src={tienda.imagenUrl}
+            alt={`Logo de ${tienda.nombre}`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          tienda.logoIniciales || tienda.nombre.substring(0, 2).toUpperCase()
+        )}
       </motion.div>
 
       {/* Name: Syne 24px bold, margin-top -8px, padding 0 20px */}
