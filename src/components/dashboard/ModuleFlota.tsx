@@ -29,7 +29,7 @@ function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders
   const [showMotos, setShowMotos] = useState(true);
   const [showRepartidores, setShowRepartidores] = useState(true);
 
-  const effectiveMotos = liveMotos.length > 0 ? liveMotos : storeMotos;
+  const effectiveMotos = liveMotos;
 
   useEffect(() => {
     if (!searchQuery.trim()) {

@@ -14,6 +14,8 @@ import {
   useMemo,
   useRef,
   useState,
+  Children,
+  isValidElement,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -574,9 +576,34 @@ function MapMarker({
     pitchAlignment,
   ]);
 
+  const popupChildren: ReactNode[] = [];
+  const contentChildren: ReactNode[] = [];
+
+  Children.forEach(children, (child) => {
+    if (!child) return;
+    if (isValidElement(child)) {
+      if (child.type === MarkerPopup || child.type === MarkerTooltip || child.type === MarkerLabel) {
+        popupChildren.push(child);
+      } else if (child.type === MarkerContent) {
+        popupChildren.push(child);
+      } else {
+        contentChildren.push(child);
+      }
+    } else {
+      contentChildren.push(child);
+    }
+  });
+
   return (
     <MarkerContext.Provider value={{ marker, map }}>
-      {children}
+      {popupChildren}
+      {contentChildren.length > 0 &&
+        createPortal(
+          <div className="relative cursor-pointer">
+            {contentChildren}
+          </div>,
+          marker.getElement()
+        )}
     </MarkerContext.Provider>
   );
 }

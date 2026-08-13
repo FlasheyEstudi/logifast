@@ -283,7 +283,7 @@ function MapInner({
   }, [zonePolygons]);
 
   const activeStatuses = ['encamino', 'recogido'];
-  const effectiveMotos = liveMotos.length > 0 ? liveMotos : storeMotos;
+  const effectiveMotos = liveMotos;
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
