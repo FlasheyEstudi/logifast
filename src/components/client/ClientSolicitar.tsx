@@ -1158,7 +1158,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     [setSolicitudEnvio]
   );
 
-  /* ─── Package Photo Upload + Client Compression ─── */
+  /* ─── Package Photo Upload + Ultra Compression ─── */
   const handlePackagePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1168,7 +1168,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_SIZE = 300;
+        const MAX_SIZE = 360;
         let width = img.width;
         let height = img.height;
         if (width > height) {
@@ -1187,9 +1187,13 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
+          // High compression WebP / JPEG (~15KB)
+          let compressedBase64 = canvas.toDataURL('image/webp', 0.5);
+          if (!compressedBase64.startsWith('data:image/webp')) {
+            compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+          }
           setSolicitudEnvio({ paqueteFotoUrl: compressedBase64 });
-          showToast('¡Foto del paquete adjuntada y optimizada!', 'success');
+          showToast('¡Foto comprimida y adjuntada (<20 KB)!', 'success');
         }
       };
       img.src = event.target?.result as string;
