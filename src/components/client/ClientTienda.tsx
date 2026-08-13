@@ -13,6 +13,8 @@ import {
   type Producto,
   CATEGORIAS,
 } from '@/lib/marketplace-store';
+import { Map, MapMarker, MarkerPopup } from '@/components/ui/map';
+import { PinTienda } from '@/components/ui/MapPins';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -659,6 +661,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
 
         {/* Direccion (outline, MapPin) */}
         <button
+          onClick={() => setActiveTab('info')}
           style={{
             padding: '10px 16px',
             borderRadius: 12,
@@ -1144,35 +1147,48 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Map placeholder */}
+              {/* Real Interactive Store Location Map */}
               <div
                 style={{
                   width: '100%',
-                  height: 160,
+                  height: 180,
                   borderRadius: 'var(--lf-card-radius)',
-                  background: `linear-gradient(135deg, ${tienda.logoColor}22, ${tienda.portadaColor}22)`,
+                  overflow: 'hidden',
                   border: '1.5px solid var(--border)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
                   marginTop: 16,
                   marginBottom: 20,
+                  position: 'relative',
                 }}
               >
-                <MapPin size={28} style={{ color: 'var(--primario)' }} />
-                <span
-                  style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 13,
-                    color: 'var(--text-secondary)',
-                    textAlign: 'center',
-                    padding: '0 24px',
-                  }}
+                <Map
+                  center={[tienda.lng || -86.2361742, tienda.lat || 12.1149926]}
+                  zoom={14.5}
+                  className="w-full h-full"
+                  dragPan={false}
+                  scrollZoom={false}
+                  doubleClickZoom={false}
+                  boxZoom={false}
+                  dragRotate={false}
+                  keyboard={false}
+                  touchZoomRotate={false}
                 >
-                  {tienda.direccion}
-                </span>
+                  <MapMarker
+                    longitude={tienda.lng || -86.2361742}
+                    latitude={tienda.lat || 12.1149926}
+                  >
+                    <PinTienda
+                      nombre={tienda.nombre}
+                      logoColor={tienda.logoColor}
+                      fotoUrl={tienda.imagenUrl}
+                    />
+                    <MarkerPopup>
+                      <div style={{ fontFamily: "'DM Sans', sans-serif", padding: '4px 8px', color: 'var(--text, #0F172A)' }}>
+                        <strong>{tienda.nombre}</strong>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)' }}>{tienda.direccion}</div>
+                      </div>
+                    </MarkerPopup>
+                  </MapMarker>
+                </Map>
               </div>
 
               {/* Address */}
