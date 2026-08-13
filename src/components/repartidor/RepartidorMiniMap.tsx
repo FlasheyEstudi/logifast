@@ -6,21 +6,12 @@ import {
   Map,
   MapMarker,
   MarkerPopup,
-  MapRoute
+  MapRoute,
 } from '@/components/ui/map';
 import { type RepartidorMapProps } from './RepartidorMap';
+import { PinRecogida, PinEntrega, PinRepartidorMoto } from '@/components/ui/MapPins';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
-
-const MOTO_SVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="5.5" cy="17.5" r="3.5"/>
-  <circle cx="18.5" cy="17.5" r="3.5"/>
-  <path d="M15 6h2l3 6M5.5 14L10 6h4M9 6L7 14"/>
-</svg>`;
-
-const STORE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
-
-const MAPPIN_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3" fill="#DC2626"/></svg>`;
 
 function isValidPos(p: [number, number] | undefined): p is [number, number] {
   if (!p) return false;
@@ -56,7 +47,7 @@ export default function RepartidorMiniMap({
 
   const mapLibreRoute = useMemo(() => {
     if (!rutaCoordenadas || rutaCoordenadas.length < 2) return [];
-    return rutaCoordenadas.map(c => [c[1], c[0]] as [number, number]);
+    return rutaCoordenadas.map((c) => [c[1], c[0]] as [number, number]);
   }, [rutaCoordenadas]);
 
   return (
@@ -94,7 +85,7 @@ export default function RepartidorMiniMap({
         {/* Marcador de Origen */}
         {origen && (
           <MapMarker longitude={origen[1]} latitude={origen[0]}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#16A34A', border: '2.5px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: STORE_SVG }} />
+            <PinRecogida label="Recogida" />
             <MarkerPopup>
               <div className="maplibre-popup-content">Punto de recogida</div>
             </MarkerPopup>
@@ -104,7 +95,7 @@ export default function RepartidorMiniMap({
         {/* Marcador de Destino */}
         {destino && (
           <MapMarker longitude={destino[1]} latitude={destino[0]}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#DC2626', border: '2.5px solid #FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: MAPPIN_SVG }} />
+            <PinEntrega label="Entrega" />
             <MarkerPopup>
               <div className="maplibre-popup-content">Punto de entrega</div>
             </MarkerPopup>
@@ -113,9 +104,9 @@ export default function RepartidorMiniMap({
 
         {/* Marcador de Repartidor */}
         <MapMarker longitude={driverPos[1]} latitude={driverPos[0]}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--lf-primario)', border: '2.5px solid #FFFFFF', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: MOTO_SVG }} />
+          <PinRepartidorMoto label="Repartidor" />
           <MarkerPopup>
-            <div className="maplibre-popup-content">Repartidor</div>
+            <div className="maplibre-popup-content">Repartidor en vivo</div>
           </MarkerPopup>
         </MapMarker>
       </Map>

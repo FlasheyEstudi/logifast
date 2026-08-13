@@ -5815,6 +5815,12 @@ body {
   backface-visibility: hidden;
 }
 
+@keyframes lf-beacon-pulse {
+  0% { transform: scale(0.92); opacity: 0.7; }
+  50% { transform: scale(1.35); opacity: 0.2; }
+  100% { transform: scale(0.92); opacity: 0.7; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

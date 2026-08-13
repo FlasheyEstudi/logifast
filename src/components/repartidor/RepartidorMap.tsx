@@ -10,19 +10,9 @@ import {
   MapRef,
 } from '@/components/ui/map';
 import { obtenerRuta, type PasoRuta } from '@/lib/osrm';
+import { PinRecogida, PinEntrega, PinTienda, PinRepartidorMoto } from '@/components/ui/MapPins';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
-
-const MOTO_SVG = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="5.5" cy="17.5" r="3.5"/>
-  <circle cx="18.5" cy="17.5" r="3.5"/>
-  <path d="M15 6h2l3 6M5.5 14L10 6h4M9 6L7 14"/>
-  <path d="M10 14h5.5"/>
-</svg>`;
-
-const STORE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
-
-const MAPPIN_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3" fill="#DC2626"/></svg>`;
 
 function isValidPos(p: [number, number] | undefined): p is [number, number] {
   if (!p) return false;
@@ -505,22 +495,11 @@ export default function RepartidorMap({
         {/* Origin / Store Marker */}
         {origen && (
           <MapMarker longitude={origen[1]} latitude={origen[0]}>
-            <div style={{ position: 'relative', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: '50%',
-                  background: pickupColor,
-                  border: '3px solid #FFFFFF',
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                dangerouslySetInnerHTML={{ __html: STORE_SVG }}
-              />
-            </div>
+            {isCompra ? (
+              <PinTienda nombre={pickupLabel} logoColor={pickupColor} />
+            ) : (
+              <PinRecogida label="Recogida" />
+            )}
             <MarkerPopup>
               <div className="maplibre-popup-content">
                 <strong>{pickupLabel}</strong>
@@ -535,22 +514,7 @@ export default function RepartidorMap({
         {/* Destination Marker */}
         {destino && (
           <MapMarker longitude={destino[1]} latitude={destino[0]}>
-            <div style={{ position: 'relative', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: '50%',
-                  background: '#DC2626',
-                  border: '3px solid #FFFFFF',
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                dangerouslySetInnerHTML={{ __html: MAPPIN_SVG }}
-              />
-            </div>
+            <PinEntrega label={isCompra ? 'Cliente' : 'Entrega'} />
             <MarkerPopup>
               <div className="maplibre-popup-content">
                 <strong>{isCompra ? 'Cliente' : 'Punto de entrega'}</strong>
@@ -562,53 +526,17 @@ export default function RepartidorMap({
           </MapMarker>
         )}
 
-        {/* Driver Marker with Smooth Orientation & Pulsing Aura */}
+        {/* Driver Marker with Smooth Orientation & Clean Beacon Aura */}
         <MapMarker longitude={animatedPos[1]} latitude={animatedPos[0]}>
-          <div style={{ position: 'relative', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span className="marker-pulse-ring" />
-            <span className="marker-pulse-ring-2" />
-
-            {/* Direction Arrow */}
-            <div
-              style={{
-                position: 'absolute',
-                top: -8,
-                left: '50%',
-                transform: `translateX(-50%) rotate(${activeBearing}deg)`,
-                transformOrigin: 'center 26px',
-                pointerEvents: 'none',
-                zIndex: 3,
-                transition: 'transform 0.15s ease-out',
-              }}
-            >
-              <svg width="12" height="16" viewBox="0 0 12 16" fill="none">
-                <path d="M6 0L12 16H0L6 0Z" fill="#10B981" />
-              </svg>
-            </div>
-
-            {/* Bike Icon */}
-            <div
-              style={{
-                position: 'relative',
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                border: '3px solid #FFFFFF',
-                boxShadow: '0 8px 24px rgba(16,185,129,0.6), 0 2px 8px rgba(0,0,0,0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 2,
-              }}
-              dangerouslySetInnerHTML={{ __html: MOTO_SVG }}
-            />
-          </div>
+          <PinRepartidorMoto
+            bearing={activeBearing}
+            label="Repartidor en vivo"
+          />
           <MarkerPopup>
             <div className="maplibre-popup-content">
-              <strong>Tú (Repartidor)</strong>
+              <strong>Repartidor</strong>
               <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
-                Ubicación GPS en vivo
+                Ubicación GPS en tiempo real
               </div>
             </div>
           </MarkerPopup>

@@ -12,6 +12,7 @@ import { Store, Navigation, MapPin, Phone, Check, Star } from 'lucide-react';
 import { useStore, type Order, type Moto, type ZonePolygon } from '@/lib/store';
 
 import { Map, MapMarker, MarkerPopup, MapRoute, MapGeoJSON, MapRef } from '@/components/ui/map';
+import { PinTienda, PinRepartidorMoto, PinCasa, PinRecogida, PinEntrega } from '@/components/ui/MapPins';
 import { useMapaPuntos } from '@/hooks/useMapaPuntos';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
@@ -358,47 +359,7 @@ function MapInner({
         {filterTiendas &&
           tiendas.map((t) => (
             <MapMarker key={`tienda-${t.id}`} longitude={t.lng} latitude={t.lat}>
-              <div
-                style={{
-                  position: 'relative',
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  background: t.logoColor || '#0066FF',
-                  border: '2.5px solid #FFFFFF',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontWeight: 800,
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  transform: selectedEntityId === `tienda-${t.id}` ? 'scale(1.25)' : 'scale(1)',
-                  transition: 'transform 0.2s ease',
-                }}
-              >
-                {t.nombre.slice(0, 2).toUpperCase()}
-                {t.verificado && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      bottom: -2,
-                      right: -2,
-                      width: 12,
-                      height: 12,
-                      borderRadius: '50%',
-                      background: '#10B981',
-                      border: '1.5px solid #FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Check size={8} color="#FFFFFF" strokeWidth={3} />
-                  </span>
-                )}
-              </div>
+              <PinTienda nombre={t.nombre} logoColor={t.logoColor} fotoUrl={t.imagenUrl} />
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 180, padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -427,35 +388,7 @@ function MapInner({
         {filterRepartidores &&
           repartidoresPuntos.map((r) => (
             <MapMarker key={`rep-${r.id}`} longitude={r.lng} latitude={r.lat}>
-              <div style={{ position: 'relative', width: 34, height: 34, cursor: 'pointer' }}>
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: -4,
-                    borderRadius: '50%',
-                    background: r.estado === 'in-service' ? 'rgba(255,102,0,0.35)' : 'rgba(16,185,129,0.35)',
-                    animation: 'marker-pulse 2s ease-out infinite',
-                  }}
-                />
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: '50%',
-                    background: r.estado === 'in-service' ? '#FF6600' : '#10B981',
-                    border: '2.5px solid #FFFFFF',
-                    boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: 11,
-                  }}
-                >
-                  <Bike size={17} color="#FFFFFF" />
-                </div>
-              </div>
+              <PinRepartidorMoto label={r.nombre || 'Repartidor'} />
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 170, padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
                   <div style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -488,27 +421,10 @@ function MapInner({
             const statusKey = moto.estado || (moto as any).status || 'available';
             return (
               <MapMarker key={`moto-fleet-${moto.id}`} longitude={moto.lng} latitude={moto.lat}>
-                <div style={{ position: 'relative', width: 28, height: 28 }}>
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: STATUS_COLORS[statusKey] || '#6B7280',
-                      border: '2.5px solid white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Bike size={14} color="white" />
-                  </div>
-                </div>
+                <PinRepartidorMoto label={moto.nombre} />
                 <MarkerPopup>
                   <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 150, padding: '4px 8px', color: 'var(--text, #0F172A)' }}>
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{moto.nombre}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted, #64748B)' }}>{moto.modelo} ({moto.anio || 2024})</div>
                     <div style={{ fontSize: 12, color: STATUS_COLORS[statusKey] || '#16A34A', fontWeight: 600, marginTop: 4 }}>
                       {STATUS_LABELS[statusKey] || 'Disponible'}
                     </div>
@@ -528,25 +444,7 @@ function MapInner({
         {filterClientes &&
           clientePuntos.map((cp) => (
             <MapMarker key={`cliente-punto-${cp.id}`} longitude={cp.lng} latitude={cp.lat}>
-              <div
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: '50%',
-                  background: '#8B5CF6',
-                  border: '2px solid white',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 700,
-                  fontSize: 11,
-                  cursor: 'pointer',
-                }}
-              >
-                🏠
-              </div>
+              <PinCasa label={cp.etiqueta || cp.nombreCliente || 'Casa'} />
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 160, padding: '4px 8px', color: 'var(--text, #0F172A)' }}>
                   <div style={{ fontWeight: 700, fontSize: 13, color: '#8B5CF6' }}>

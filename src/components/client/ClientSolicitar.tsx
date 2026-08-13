@@ -32,6 +32,7 @@ import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
 import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta, reverseGeocode } from '@/lib/osrm';
 import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, MarkerLabel } from '@/components/ui/map';
+import { PinRecogida, PinEntrega, PinTienda } from '@/components/ui/MapPins';
 import { useMapaPuntos } from '@/hooks/useMapaPuntos';
 
 /* ═══════════════════════════════════════════════
@@ -363,43 +364,11 @@ function SolicitarMapPreview({
                 onDragOrigen(lngLat.lat, lngLat.lng);
               }}
             >
-              <MarkerContent>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: '#34C759',
-                    border: '3px solid #FFFFFF',
-                    boxShadow: '0 4px 12px rgba(52,199,89,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#FFFFFF',
-                    cursor: 'grab',
-                  }}
-                >
-                  <MapPin size={18} />
-                </div>
-              </MarkerContent>
-              <MarkerLabel position="top">
-                <span
-                  style={{
-                    background: 'rgba(0,0,0,0.75)',
-                    color: '#FFFFFF',
-                    padding: '2px 6px',
-                    borderRadius: 6,
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}
-                >
-                  Recogida
-                </span>
-              </MarkerLabel>
+              <PinRecogida label="Recogida" />
             </MapMarker>
           )}
 
-          {/* Destino Marker (Azul - Entrega) */}
+          {/* Destino Marker (Rojo/Azul - Entrega) */}
           {hasDestino && (
             <MapMarker
               longitude={destinoLng}
@@ -409,81 +378,18 @@ function SolicitarMapPreview({
                 onDragDestino(lngLat.lat, lngLat.lng);
               }}
             >
-              <MarkerContent>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: '#007AFF',
-                    border: '3px solid #FFFFFF',
-                    boxShadow: '0 4px 12px rgba(0,122,255,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#FFFFFF',
-                    cursor: 'grab',
-                  }}
-                >
-                  <MapPin size={18} />
-                </div>
-              </MarkerContent>
-              <MarkerLabel position="top">
-                <span
-                  style={{
-                    background: 'rgba(0,0,0,0.75)',
-                    color: '#FFFFFF',
-                    padding: '2px 6px',
-                    borderRadius: 6,
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}
-                >
-                  Entrega
-                </span>
-              </MarkerLabel>
+              <PinEntrega label="Entrega" />
             </MapMarker>
           )}
 
           {/* Tiendas registradas en el mapa global */}
           {tiendasMapa && tiendasMapa.map((t) => (
             <MapMarker key={`solicitar-tienda-${t.id}`} longitude={t.lng} latitude={t.lat}>
-              <MarkerContent>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    background: t.logoColor || '#0066FF',
-                    border: '2px solid #FFFFFF',
-                    boxShadow: '0 3px 8px rgba(0,102,255,0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#FFFFFF',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                  title={`${t.nombre} (${t.categoria})`}
-                >
-                  {t.nombre.slice(0, 2).toUpperCase()}
-                </div>
-              </MarkerContent>
-              <MarkerLabel position="top">
-                <span
-                  style={{
-                    background: 'rgba(0,102,255,0.9)',
-                    color: '#FFFFFF',
-                    padding: '2px 6px',
-                    borderRadius: 6,
-                    fontSize: 10,
-                    fontWeight: 600,
-                  }}
-                >
-                  {t.nombre}
-                </span>
-              </MarkerLabel>
+              <PinTienda
+                nombre={t.nombre}
+                logoColor={t.logoColor}
+                fotoUrl={t.imagenUrl}
+              />
             </MapMarker>
           ))}
 

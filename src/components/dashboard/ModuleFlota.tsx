@@ -10,6 +10,7 @@ import { Store, Navigation, Phone } from 'lucide-react';
 import { useStore, type Moto, type MotoStatus } from '@/lib/store';
 
 import { Map, MapMarker, MarkerPopup } from '@/components/ui/map';
+import { PinTienda, PinRepartidorMoto } from '@/components/ui/MapPins';
 import { useMapaPuntos } from '@/hooks/useMapaPuntos';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
@@ -174,25 +175,7 @@ function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders
         {showTiendas &&
           tiendas.map((t) => (
             <MapMarker key={`flota-tienda-${t.id}`} longitude={t.lng} latitude={t.lat}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: '50%',
-                  background: t.logoColor || '#0066FF',
-                  border: '2.5px solid white',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 800,
-                  fontSize: 11,
-                  cursor: 'pointer',
-                }}
-              >
-                {t.nombre.slice(0, 2).toUpperCase()}
-              </div>
+              <PinTienda nombre={t.nombre} logoColor={t.logoColor} fotoUrl={t.imagenUrl} />
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
                   <div style={{ fontWeight: 800, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -221,23 +204,7 @@ function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders
             const cfg = STATUS_CONFIG[statusKey as MotoStatus] || STATUS_CONFIG.available;
             return (
               <MapMarker key={`moto-${moto.id}`} longitude={moto.lng || -86.2581} latitude={moto.lat || 12.1364}>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    background: cfg.color,
-                    border: '2.5px solid white',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: 12,
-                  }}
-                >
-                  <Bike size={14} />
-                </div>
+                <PinRepartidorMoto label={moto.nombre} />
                 <MarkerPopup>
                   <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
                     <div style={{ fontWeight: 700 }}>{moto.nombre} ({moto.modelo})</div>
@@ -256,41 +223,13 @@ function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders
         {showRepartidores &&
           repartidoresPuntos.map((rider) => (
             <MapMarker key={`rider-${rider.id}`} longitude={rider.lng || -86.255} latitude={rider.lat || 12.14}>
-              <div style={{ position: 'relative', width: 32, height: 32 }}>
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: -3,
-                    borderRadius: '50%',
-                    background: 'rgba(0, 122, 255, 0.35)',
-                    animation: 'marker-pulse 2s ease-out infinite',
-                  }}
-                />
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: '#007AFF',
-                    border: '2.5px solid #FFFFFF',
-                    boxShadow: '0 0 12px rgba(0, 122, 255, 0.7)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: 11,
-                    fontWeight: 700,
-                  }}
-                >
-                  {rider.initials || 'RP'}
-                </div>
-              </div>
+              <PinRepartidorMoto label={rider.nombre || rider.initials || 'Repartidor'} />
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
                   <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Navigation size={13} color="#007AFF" /> {rider.nombre}
                   </div>
-                  <div style={{ fontSize: 12, color: '#007AFF', fontWeight: 600 }}>
+                  <div style={{ fontSize: 12, color: '#10B981', fontWeight: 600 }}>
                     {rider.estado === 'in-service' ? 'En viaje' : 'En línea (GPS Activo)'}
                   </div>
                   {rider.telefono && (
