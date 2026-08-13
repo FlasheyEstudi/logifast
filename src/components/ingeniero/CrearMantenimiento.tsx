@@ -38,10 +38,16 @@ export default function CrearMantenimiento() {
   const [descripcion, setDescripcion] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [prioridad, setPrioridad] = useState<'BAJA' | 'NORMAL' | 'ALTA' | 'URGENTE'>('NORMAL');
-  const [costoManoObra, setCostoManoObra] = useState('');
+  const [costoManoObra, setCostoManoObra] = useState('200');
   const [programadoPara, setProgramadoPara] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+
+  React.useEffect(() => {
+    if (store.showCrearMantenimiento && store.motoSeleccionada) {
+      setMotoId(store.motoSeleccionada.id);
+    }
+  }, [store.showCrearMantenimiento, store.motoSeleccionada]);
 
   const motoSeleccionada = store.motos.find(m => m.id === motoId);
 
@@ -53,7 +59,7 @@ export default function CrearMantenimiento() {
     setDescripcion('');
     setObservaciones('');
     setPrioridad('NORMAL');
-    setCostoManoObra('');
+    setCostoManoObra('200');
     setProgramadoPara('');
     setErrors({});
   };

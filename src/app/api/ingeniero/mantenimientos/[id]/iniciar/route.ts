@@ -11,14 +11,14 @@ export async function PATCH(
     await requireRole('ingeniero', 'admin');
     const { id } = await params;
 
-    // P0-21: Validar estado previo (state machine)
+    // Validar estado previo (state machine)
     const mantenimiento = await prisma.mantenimiento.findUnique({ where: { id } });
     if (!mantenimiento) {
       return NextResponse.json({ error: 'Mantenimiento no encontrado' }, { status: 404 });
     }
-    if (mantenimiento.estado !== 'PENDIENTE') {
+    if (mantenimiento.estado !== 'PENDIENTE' && mantenimiento.estado !== 'PROGRAMADO') {
       return NextResponse.json(
-        { error: `Solo se pueden iniciar mantenimientos pendientes. Estado actual: ${mantenimiento.estado}` },
+        { error: `Solo se pueden iniciar mantenimientos programados o pendientes. Estado actual: ${mantenimiento.estado}` },
         { status: 400 }
       );
     }

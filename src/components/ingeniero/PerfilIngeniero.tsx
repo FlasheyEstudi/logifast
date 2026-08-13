@@ -42,7 +42,7 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
   };
 
   const handleInventario = () => {
-    store.toggleInventario();
+    store.setTabActiva('inventario');
   };
 
   return (

@@ -6,14 +6,40 @@
 
 export type PuntoRuta = { lat: number; lng: number };
 
+export type PasoRuta = {
+  instruccion: string;
+  distanciaMetros: number;
+  duracionSegundos: number;
+  tipo: string;
+  modificador?: string;
+};
+
 export type ResultadoRuta = {
-  /** Array of [lat, lng] pairs ready for react-leaflet Polyline */
+  /** Array of [lat, lng] pairs ready for MapLibre / Leaflet */
   coordenadas: [number, number][];
   distanciaKm: number;
   duracionMin: number;
+  pasos?: PasoRuta[];
   exito: boolean;
   error?: string;
 };
+
+interface OSRMManeuver {
+  type: string;
+  modifier?: string;
+  instruction?: string;
+}
+
+interface OSRMStep {
+  distance: number;
+  duration: number;
+  name: string;
+  maneuver: OSRMManeuver;
+}
+
+interface OSRMLeg {
+  steps?: OSRMStep[];
+}
 
 interface OSRMRoute {
   distance: number; // meters
@@ -23,6 +49,7 @@ interface OSRMRoute {
     /** GeoJSON coordinates are [lng, lat] pairs */
     coordinates: [number, number][];
   };
+  legs?: OSRMLeg[];
 }
 
 interface OSRMResponse {
@@ -32,6 +59,7 @@ interface OSRMResponse {
 }
 
 const OSRM_TIMEOUT_MS = 6000;
+const rutaCache = new Map<string, { res: ResultadoRuta; exp: number }>();
 
 /**
  * Fetch a driving route between two points from the public OSRM API.
@@ -59,8 +87,15 @@ export async function obtenerRuta(
     };
   }
 
-  // OSRM expects lng,lat order
-  const url = `https://router.project-osrm.org/route/v1/driving/${origen.lng},${origen.lat};${destino.lng},${destino.lat}?overview=full&geometries=geojson`;
+  const cacheKey = `${origen.lat.toFixed(4)},${origen.lng.toFixed(4)}->${destino.lat.toFixed(4)},${destino.lng.toFixed(4)}`;
+  const now = Date.now();
+  const cached = rutaCache.get(cacheKey);
+  if (cached && cached.exp > now) {
+    return cached.res;
+  }
+
+  // OSRM expects lng,lat order with steps enabled
+  const url = `https://router.project-osrm.org/route/v1/driving/${origen.lng},${origen.lat};${destino.lng},${destino.lat}?overview=full&geometries=geojson&steps=true`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), OSRM_TIMEOUT_MS);
@@ -74,7 +109,7 @@ export async function obtenerRuta(
 
     if (!res.ok) {
       return {
-        coordenadas: [],
+        coordenadas: rutaLineaRecta(origen, destino),
         distanciaKm: 0,
         duracionMin: 0,
         exito: false,
@@ -86,7 +121,7 @@ export async function obtenerRuta(
 
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
       return {
-        coordenadas: [],
+        coordenadas: rutaLineaRecta(origen, destino),
         distanciaKm: 0,
         duracionMin: 0,
         exito: false,
@@ -97,23 +132,39 @@ export async function obtenerRuta(
     const route = data.routes[0];
     const rawCoords = route.geometry?.coordinates ?? [];
 
-    // Convert [lng, lat] → [lat, lng] for Leaflet
+    // Convert [lng, lat] → [lat, lng]
     const coordenadas: [number, number][] = rawCoords.map(
       (c) => [c[1], c[0]] as [number, number]
     );
 
-    return {
+    // Extract navigation steps
+    const rawSteps = route.legs?.[0]?.steps ?? [];
+    const pasos: PasoRuta[] = rawSteps.map((s) => ({
+      instruccion: s.name ? `Continúa por ${s.name}` : (s.maneuver.type === 'arrive' ? 'Llegada al destino' : 'Sigue la ruta'),
+      distanciaMetros: Math.round(s.distance),
+      duracionSegundos: Math.round(s.duration),
+      tipo: s.maneuver.type || 'turn',
+      modificador: s.maneuver.modifier,
+    }));
+
+    const resultado: ResultadoRuta = {
       coordenadas,
-      distanciaKm: route.distance / 1000,
-      duracionMin: route.duration / 60,
+      distanciaKm: Math.round((route.distance / 1000) * 10) / 10,
+      duracionMin: Math.max(1, Math.round(route.duration / 60)),
+      pasos: pasos.length > 0 ? pasos : undefined,
       exito: true,
     };
+
+    // Cache valid route for 3 minutes
+    rutaCache.set(cacheKey, { res: resultado, exp: now + 180000 });
+
+    return resultado;
   } catch (err) {
     clearTimeout(timeoutId);
 
     if (err instanceof Error && err.name === 'AbortError') {
       return {
-        coordenadas: [],
+        coordenadas: rutaLineaRecta(origen, destino),
         distanciaKm: 0,
         duracionMin: 0,
         exito: false,
@@ -123,7 +174,7 @@ export async function obtenerRuta(
 
     const msg = err instanceof Error ? err.message : 'Error de red';
     return {
-      coordenadas: [],
+      coordenadas: rutaLineaRecta(origen, destino),
       distanciaKm: 0,
       duracionMin: 0,
       exito: false,

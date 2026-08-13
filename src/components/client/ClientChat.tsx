@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, Send, Check, CheckCheck } from '@/components/icons';
-import { useStore, type ChatMessage, type ChatConversation } from '@/lib/store';
+import { useStore, type ChatMessage } from '@/lib/store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 
 /* ═══════════════════════════════════════════════
@@ -22,33 +22,28 @@ interface ClientChatProps {
    ═══════════════════════════════════════════════ */
 
 const QUICK_REPLIES = [
-  '¿Ya vienes?',
-  '¿Cuánto falta?',
-  'Estoy en la puerta',
-  'Gracias!',
+  '¿Ya vienes en camino?',
+  '¿Cuánto tiempo falta?',
+  'Estoy en la puerta esperándote',
+  '¡Muchas gracias!',
 ];
-
-const DEACTIVATION_WARNING_MS = 30 * 60 * 1000; // 30 minutes
-const DEACTIVATION_TOTAL_MS = 60 * 60 * 1000; // 1 hour after delivery
 
 /* ═══════════════════════════════════════════════
    HELPERS
    ═══════════════════════════════════════════════ */
 
 function getInitials(name: string): string {
+  if (!name) return 'RP';
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return parts[0].substring(0, 2).toUpperCase();
 }
 
-function formatTime(timestamp: string): string {
-  return timestamp;
-}
-
-/** Trigger haptic feedback if available */
 function hapticTap() {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(10);
+    try {
+      navigator.vibrate(10);
+    } catch {}
   }
 }
 
@@ -56,7 +51,6 @@ function hapticTap() {
    SUB-COMPONENTS
    ═══════════════════════════════════════════════ */
 
-/** Typing indicator with 3 sequential bouncing dots */
 function TypingIndicator({ isDark }: { isDark: boolean }) {
   return (
     <motion.div
@@ -65,9 +59,7 @@ function TypingIndicator({ isDark }: { isDark: boolean }) {
       exit={{ opacity: 0, y: 8 }}
       className="flex justify-start mb-1"
     >
-      <div
-        className="chat-bubble-other px-5 py-3 flex items-center gap-[5px]"
-      >
+      <div className="chat-bubble-other px-5 py-3 flex items-center gap-[5px]">
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
@@ -87,86 +79,60 @@ function TypingIndicator({ isDark }: { isDark: boolean }) {
   );
 }
 
-/** Single message bubble — iMessage / WhatsApp style */
 function MessageBubble({
   msg,
   isClient,
-  isSystem,
   isDark,
 }: {
-  msg: ChatMessage;
+  msg: { id: string; contenido: string; emisor: string; enviadoEn: string; leido?: boolean };
   isClient: boolean;
-  isSystem: boolean;
   isDark: boolean;
 }) {
-  /* System message — centered pill */
-  if (isSystem) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2 }}
-        className="flex justify-center my-3"
-      >
-        <span
-          className="chat-bubble-system text-[12px] px-4 py-1.5 rounded-full"
-        >
-          {msg.content}
-        </span>
-      </motion.div>
-    );
-  }
-
-  /* Chat bubble */
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`flex ${isClient ? 'justify-end' : 'justify-start'} mb-1`}
+      transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className={`flex ${isClient ? 'justify-end' : 'justify-start'} mb-2`}
     >
       <div className="max-w-[80%] relative">
         <div
           className={`px-4 py-2.5 text-[14px] leading-relaxed break-words ${isClient ? 'chat-bubble-self' : 'chat-bubble-other'}`}
           style={{
             color: isClient ? '#FFFFFF' : 'var(--text)',
-            borderRadius: isClient
-              ? '20px 20px 4px 20px'
-              : '20px 20px 20px 4px',
+            background: isClient ? 'var(--primario, #007AFF)' : isDark ? '#1E293B' : '#F1F5F9',
+            borderRadius: isClient ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
             fontFamily: "'DM Sans', sans-serif",
           }}
         >
-          {msg.content}
+          {msg.contenido}
         </div>
-        {/* Read indicator for client messages */}
-        {isClient && (
-          <div className="flex justify-end mt-0.5 mr-1.5">
-            {msg.read ? (
-              <CheckCheck className="w-3.5 h-3.5" style={{ color: 'var(--info)' }} />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isClient ? 'flex-end' : 'flex-start',
+            gap: 4,
+            marginTop: 2,
+            paddingLeft: isClient ? 0 : 4,
+            paddingRight: isClient ? 4 : 0,
+            fontSize: 10,
+            color: 'var(--text-muted)',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          <span>{msg.enviadoEn}</span>
+          {isClient && (
+            msg.leido ? (
+              <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
             ) : (
-              <Check className="w-3.5 h-3.5" style={{ color: isClient ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)' }} />
-            )}
-          </div>
-        )}
+              <Check className="w-3.5 h-3.5 opacity-60" />
+            )
+          )}
+        </div>
       </div>
     </motion.div>
-  );
-}
-
-/** Timestamp divider — centered, 11px muted */
-function TimestampDivider({ time }: { time: string }) {
-  return (
-    <div className="flex justify-center my-3">
-      <span
-        className="text-[11px]"
-        style={{
-          color: 'var(--text-muted)',
-          fontFamily: "'JetBrains Mono', monospace",
-        }}
-      >
-        {time}
-      </span>
-    </div>
   );
 }
 
@@ -175,78 +141,116 @@ function TimestampDivider({ time }: { time: string }) {
    ═══════════════════════════════════════════════ */
 
 export default function ClientChat({ isDark, onClose }: ClientChatProps) {
-  /* ── Store ─────────────────────────────── */
   const chatOpen = useStore((s) => s.chatOpen);
   const chatOrderId = useStore((s) => s.chatOrderId);
-  const chatConversations = useStore((s) => s.chatConversations);
-  const sendChatMessage = useStore((s) => s.sendChatMessage);
   const setChatOpen = useStore((s) => s.setChatOpen);
+  const orders = useStore((s) => s.orders);
 
-  /* ── Local state ──────────────────────── */
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Array<{ id: string; ordenId: string; emisor: string; contenido: string; enviadoEn: string; leido?: boolean }>>([]);
+  const [driver, setDriver] = useState<{
+    id: string;
+    nombre: string;
+    telefono: string;
+    fotoUrl: string | null;
+    initials: string;
+    color: string;
+    calificacion?: number;
+  } | null>(null);
+  const [isOrderActive, setIsOrderActive] = useState(true);
+  const [loading, setLoading] = useState(true);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [isTyping, setIsTyping] = useState(false);
 
-  /* ── Derived ──────────────────────────── */
-  const conversation: ChatConversation | undefined = chatConversations.find(
-    (c) => c.orderId === chatOrderId
-  );
-  const isActive = conversation?.active ?? false;
-  const repartidor = conversation?.repartidor;
-
-  /* ── Deactivation logic ───────────────── */
-  const [showDeactivationWarning, setShowDeactivationWarning] = useState(false);
-  const [chatDeactivated, setChatDeactivated] = useState(false);
+  // Load chat history and real driver data
+  const loadChatData = useCallback(async () => {
+    if (!chatOrderId) return;
+    try {
+      const res = await fetch(`/api/repartidor/chat?ordenId=${chatOrderId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mensajes) {
+          setMessages(data.mensajes);
+        }
+        if (data.repartidor) {
+          setDriver(data.repartidor);
+        }
+        if (typeof data.activa === 'boolean') {
+          setIsOrderActive(data.activa);
+        }
+      }
+    } catch (err) {
+      console.warn('[ClientChat load error]', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [chatOrderId]);
 
   useEffect(() => {
-    if (!conversation || !conversation.closedAt) {
-      setShowDeactivationWarning(false);
-      setChatDeactivated(false);
-      return;
+    loadChatData();
+    const interval = setInterval(loadChatData, 5000);
+    return () => clearInterval(interval);
+  }, [loadChatData]);
+
+  // Fallback driver info from local store if backend did not return it yet
+  useEffect(() => {
+    if (!driver && chatOrderId) {
+      const foundOrder = orders.find((o) => o.id === chatOrderId);
+      if (foundOrder && foundOrder.repartidor && foundOrder.repartidor !== 'Sin asignar') {
+        setDriver({
+          id: 'rep-assigned',
+          nombre: foundOrder.repartidor,
+          telefono: (foundOrder as any).repartidorTelefono || '',
+          fotoUrl: null,
+          initials: foundOrder.repartidorInitials || getInitials(foundOrder.repartidor),
+          color: 'var(--primario, #007AFF)',
+        });
+      }
     }
+  }, [driver, chatOrderId, orders]);
 
-    const closedTime = new Date(conversation.closedAt).getTime();
-    const now = Date.now();
-    const elapsed = now - closedTime;
-    const remaining = DEACTIVATION_TOTAL_MS - elapsed;
+  // Listen for real-time WebSocket chat updates
+  useEffect(() => {
+    if (!chatOrderId) return;
+    realtime.clienteTrackingUnirse(chatOrderId);
 
-    if (remaining <= 0) {
-      setChatDeactivated(true);
-      setShowDeactivationWarning(false);
-      return;
-    }
-
-    if (remaining <= DEACTIVATION_WARNING_MS) {
-      setShowDeactivationWarning(true);
-    }
-
-    const warnTimeout = setTimeout(() => {
-      setShowDeactivationWarning(true);
-    }, Math.max(0, remaining - DEACTIVATION_WARNING_MS));
-
-    const deactivateTimeout = setTimeout(() => {
-      setChatDeactivated(true);
-      setShowDeactivationWarning(false);
-    }, remaining);
+    const cleanup = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
+      if (msg.ordenId === chatOrderId) {
+        setMessages((prev) => {
+          const yaExiste = prev.some((m) => m.id === msg.id || (m.contenido === msg.contenido && m.enviadoEn === msg.enviadoEn));
+          if (yaExiste) return prev;
+          return [...prev, {
+            id: msg.id || `ws-${Date.now()}`,
+            ordenId: msg.ordenId,
+            emisor: msg.emisor,
+            contenido: msg.contenido,
+            enviadoEn: msg.enviadoEn || new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            leido: false,
+          }];
+        });
+        if (msg.emisor === 'repartidor') {
+          hapticTap();
+        }
+      }
+    });
 
     return () => {
-      clearTimeout(warnTimeout);
-      clearTimeout(deactivateTimeout);
+      cleanup();
     };
-  }, [conversation]);
+  }, [chatOrderId]);
 
-  /* ── Auto-scroll ──────────────────────── */
+  // Auto-scroll on new messages
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [conversation?.messages, isTyping, scrollToBottom]);
+  }, [messages.length, scrollToBottom]);
 
-  /* ── Textarea auto-resize ─────────────── */
+  // Textarea auto-resize
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     const ta = textareaRef.current;
@@ -256,49 +260,74 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     }
   }, []);
 
-  /* ── Send message ─────────────────────── */
-  const handleSend = useCallback(() => {
+  // Send message
+  const handleSend = useCallback(async () => {
     const trimmed = input.trim();
-    if (!trimmed || !chatOrderId || !isActive || chatDeactivated) return;
+    if (!trimmed || !chatOrderId) return;
 
-    realtime.chatMensaje(chatOrderId, 'cliente', trimmed);
+    hapticTap();
+    const timeNow = new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const localId = `loc-${Date.now()}`;
 
-    fetch('/api/repartidor/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ordenId: chatOrderId, contenido: trimmed }),
-    }).catch((err) => console.error('[ClientChat API send error]', err));
-
+    // Optimistic update
+    const optimisticMsg = {
+      id: localId,
+      ordenId: chatOrderId,
+      emisor: 'cliente',
+      contenido: trimmed,
+      enviadoEn: timeNow,
+      leido: false,
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
     setInput('');
-
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-  }, [input, chatOrderId, isActive, chatDeactivated]);
 
-  /* ── Quick reply ──────────────────────── */
+    // Emit via WebSocket & POST to backend API
+    realtime.chatMensaje(chatOrderId, 'cliente', trimmed);
+
+    try {
+      const res = await fetch('/api/repartidor/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ordenId: chatOrderId, contenido: trimmed, emisor: 'cliente' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mensaje) {
+          setMessages((prev) => prev.map((m) => (m.id === localId ? { ...data.mensaje, id: data.mensaje.id } : m)));
+        }
+      }
+    } catch (err) {
+      console.error('[ClientChat send error]', err);
+    }
+  }, [input, chatOrderId]);
+
+  // Quick reply
   const handleQuickReply = useCallback(
     (text: string) => {
-      if (!chatOrderId || !isActive || chatDeactivated) return;
+      if (!chatOrderId) return;
       hapticTap();
-      sendChatMessage(chatOrderId, text, 'cliente');
+      const timeNow = new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const localId = `loc-${Date.now()}`;
+
+      setMessages((prev) => [
+        ...prev,
+        { id: localId, ordenId: chatOrderId, emisor: 'cliente', contenido: text, enviadoEn: timeNow, leido: false },
+      ]);
+
       realtime.chatMensaje(chatOrderId, 'cliente', text);
 
       fetch('/api/repartidor/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ordenId: chatOrderId,
-          emisor: 'cliente',
-          contenido: text,
-        }),
-      }).catch((err) => console.error('[ClientChat API quick reply error]', err));
+        body: JSON.stringify({ ordenId: chatOrderId, contenido: text, emisor: 'cliente' }),
+      }).catch((err) => console.error('[Quick reply error]', err));
     },
-    [chatOrderId, isActive, chatDeactivated, sendChatMessage]
+    [chatOrderId]
   );
 
-  /* ── Keyboard handler ─────────────────── */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -309,130 +338,70 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     [handleSend]
   );
 
-  /* ── Close handler ────────────────────── */
   const handleClose = useCallback(() => {
     setChatOpen(false);
     onClose();
   }, [setChatOpen, onClose]);
 
-  // Listen for real-time WebSocket chat updates
-  useEffect(() => {
-    if (!chatOrderId) return;
-    realtime.clienteTrackingUnirse(chatOrderId);
-
-    const cleanup = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
-      if (msg.ordenId === chatOrderId) {
-        // Only append if it does not exist in store to avoid duplication
-        const state = useStore.getState();
-        const conv = state.chatConversations.find((c) => c.orderId === chatOrderId);
-        const yaExiste = conv?.messages.some((m) => m.id === msg.id);
-        if (!yaExiste) {
-          sendChatMessage(chatOrderId, msg.contenido, msg.emisor);
-          if (msg.emisor === 'repartidor') {
-            hapticTap();
-          }
-        }
-      }
-    });
-
-    return () => {
-      cleanup();
-    };
-  }, [chatOrderId, sendChatMessage]);
-
-  /* ── Group messages by timestamp ──────── */
-  const renderMessages = useCallback(() => {
-    if (!conversation) return null;
-    const messages = conversation.messages;
-    const elements: React.ReactNode[] = [];
-    let lastTimestamp = '';
-
-    messages.forEach((msg, idx) => {
-      const isClient = msg.senderType === 'cliente';
-      const isSystem = msg.senderType === 'sistema';
-
-      // Show timestamp divider when timestamp changes
-      if (msg.timestamp !== lastTimestamp) {
-        elements.push(
-          <TimestampDivider key={`ts-${msg.id}`} time={formatTime(msg.timestamp)} />
-        );
-        lastTimestamp = msg.timestamp;
-      }
-
-      elements.push(
-        <MessageBubble key={msg.id} msg={msg} isClient={isClient} isSystem={isSystem} isDark={isDark} />
-      );
-    });
-
-    // Typing indicator
-    if (isTyping) {
-      elements.push(
-        <TypingIndicator key="typing-indicator" isDark={isDark} />
-      );
-    }
-
-    return elements;
-  }, [conversation, isDark, isTyping]);
-
-  /* ═══════════════════════════════════════════
-     RENDER
-     ═══════════════════════════════════════════ */
+  const driverPhone = driver?.telefono || '';
 
   return (
     <AnimatePresence>
       {chatOpen && (
         <>
-          {/* ── BACKDROP ───────────────────────────── */}
+          {/* Backdrop */}
           <div
             className="bottom-sheet-overlay visible fixed inset-0 z-40"
             onClick={handleClose}
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
           />
 
-          {/* ── BOTTOM SHEET (FULL SCREEN) ─────────── */}
+          {/* Chat Sheet */}
           <motion.div
             key="chat-sheet"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             className="fixed inset-0 z-50 flex flex-col lf-bottom-sheet open"
             style={{
-              background: 'var(--surface)',
-              borderTopLeftRadius: 'var(--lf-sheet-radius)',
-              borderTopRightRadius: 'var(--lf-sheet-radius)',
-              boxShadow: '0 -12px 48px rgba(0,0,0,0.15)',
+              background: 'var(--surface, #0F172A)',
+              color: 'var(--text, #F8FAFC)',
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              boxShadow: '0 -12px 48px rgba(0,0,0,0.4)',
+              maxHeight: '100vh',
             }}
           >
-            {/* ── HEADER (Glassmorphism) ──────────────── */}
+            {/* Header */}
             <div
               className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3"
               style={{
-                background: 'var(--lf-glass-bg)',
-                backdropFilter: 'blur(var(--lf-glass-blur))',
-                WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
-                borderBottom: '1px solid var(--lf-glass-border)',
-                borderTopLeftRadius: 'var(--lf-sheet-radius)',
-                borderTopRightRadius: 'var(--lf-sheet-radius)',
+                background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderBottom: '1px solid var(--border, rgba(255,255,255,0.1))',
+                borderTopLeftRadius: 28,
+                borderTopRightRadius: 28,
               }}
             >
-              {/* Driver avatar 36x36 */}
-              {repartidor ? (
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                  style={{ background: repartidor.color }}
-                >
-                  {repartidor.initials || getInitials(repartidor.nombre)}
-                </div>
+              {/* Driver Avatar */}
+              {driver?.fotoUrl ? (
+                <img
+                  src={driver.fotoUrl}
+                  alt={driver.nombre}
+                  className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/20"
+                />
               ) : (
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                  style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)' }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-md"
+                  style={{ background: driver?.color || 'var(--primario, #007AFF)' }}
                 >
-                  ?
+                  {driver ? (driver.initials || getInitials(driver.nombre)) : 'RP'}
                 </div>
               )}
 
-              {/* Driver name + online status */}
+              {/* Driver Name & Status */}
               <div className="flex-1 min-w-0">
                 <span
                   className="font-bold text-[15px] truncate block"
@@ -441,221 +410,146 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                     fontFamily: "'Syne', sans-serif",
                   }}
                 >
-                  {repartidor?.nombre ?? 'Repartidor'}
+                  {driver?.nombre || 'Repartidor asignado'}
                 </span>
-                {isActive && !chatDeactivated ? (
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="w-[7px] h-[7px] rounded-full bg-green-500 shrink-0" />
-                    <span
-                      className="text-[12px]"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      En línea
-                    </span>
-                  </div>
-                ) : (
+                <div className="flex items-center gap-1.5 mt-0.5">
                   <span
-                    className="text-[12px]"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    Chat finalizado
+                    className={`w-[7px] h-[7px] rounded-full shrink-0 ${isOrderActive ? 'bg-green-500' : 'bg-gray-400'}`}
+                  />
+                  <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                    {isOrderActive ? 'En camino a tu entrega' : 'Servicio finalizado'}
                   </span>
-                )}
+                </div>
               </div>
 
-              {/* Phone button */}
-              {isActive && !chatDeactivated && repartidor && (
-                <button
-                  className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-                  style={{ background: 'var(--primario-soft)', color: 'var(--primario)' }}
-                  aria-label="Llamar repartidor"
+              {/* Phone call button */}
+              {driverPhone ? (
+                <a
+                  href={`tel:${driverPhone}`}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-95"
+                  style={{ background: 'rgba(52,199,89,0.18)', color: '#34C759' }}
+                  aria-label={`Llamar al repartidor (${driverPhone})`}
+                  title={`Llamar al repartidor (${driverPhone})`}
                 >
                   <Phone className="w-4 h-4" />
-                </button>
-              )}
+                </a>
+              ) : null}
 
-              {/* Close button 36x36 */}
+              {/* Close button */}
               <button
                 onClick={handleClose}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors active:scale-90"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-colors active:scale-90"
                 style={{
-                  background: 'var(--bg-alt)',
+                  background: 'var(--bg-alt, rgba(255,255,255,0.08))',
                   color: 'var(--text-muted)',
                 }}
                 aria-label="Cerrar chat"
               >
-                <X className="w-[18px] h-[18px]" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* ── DEACTIVATION WARNING ──────────────── */}
-            <AnimatePresence>
-              {showDeactivationWarning && !chatDeactivated && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <div
-                    className="px-4 py-2.5 text-[13px] text-center"
-                    style={{
-                      background: isDark ? 'rgba(255,183,0,0.1)' : 'rgba(255,183,0,0.08)',
-                      color: 'var(--warning)',
-                      fontFamily: "'DM Sans', sans-serif",
-                    }}
-                  >
-                    Este chat se cerrará pronto. ¿Necesitas algo más?
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* ── DEACTIVATED NOTICE ────────────────── */}
-            <AnimatePresence>
-              {chatDeactivated && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <div
-                    className="px-4 py-2.5 text-[13px] text-center"
-                    style={{
-                      background: isDark ? 'rgba(255,23,68,0.1)' : 'rgba(255,23,68,0.06)',
-                      color: 'var(--peligro)',
-                      fontFamily: "'DM Sans', sans-serif",
-                    }}
-                  >
-                    Chat finalizado. Para ayuda, contacta soporte.
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* ── MESSAGES AREA ─────────────────────── */}
+            {/* Messages Area */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-4 py-3"
+              className="flex-1 overflow-y-auto px-4 py-4 space-y-1"
               style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: isDark ? 'var(--border) transparent' : '#D1CBC4 transparent',
+                minHeight: 250,
+                background: isDark ? 'rgba(15,23,42,0.6)' : 'var(--bg, #F8FAFC)',
               }}
             >
-              {/* Custom scrollbar styles */}
-              <style>{`
-                [data-messages-scroll]::-webkit-scrollbar { width: 5px; }
-                [data-messages-scroll]::-webkit-scrollbar-track { background: transparent; }
-                [data-messages-scroll]::-webkit-scrollbar-thumb {
-                  background: ${isDark ? 'var(--border)' : '#D1CBC4'};
-                  border-radius: 10px;
-                }
-              `}</style>
-
-              {!conversation ? (
-                <div className="flex items-center justify-center h-full">
-                  <p
-                    className="text-[14px]"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    No hay conversación activa
-                  </p>
+              {loading && messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full py-16 text-[13px] text-gray-400">
+                  Cargando mensajes del pedido...
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-16 text-center text-gray-400 gap-2">
+                  <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                    <Send className="w-5 h-5" />
+                  </div>
+                  <p className="text-sm font-medium">Inicia la conversación con tu repartidor</p>
+                  <span className="text-xs text-gray-500">Coordina la entrega o detalles de tu dirección</span>
                 </div>
               ) : (
-                <>
-                  {renderMessages()}
-                  <div ref={messagesEndRef} />
-                </>
+                messages.map((m) => (
+                  <MessageBubble
+                    key={m.id}
+                    msg={m}
+                    isClient={m.emisor === 'cliente'}
+                    isDark={isDark}
+                  />
+                ))
               )}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* ── BOTTOM SECTION: Quick Replies + Input (Glassmorphism) ── */}
-            {isActive && !chatDeactivated ? (
+            {/* Quick Replies & Input */}
+            <div
+              className="sticky bottom-0 z-10"
+              style={{
+                background: 'color-mix(in srgb, var(--surface) 95%, transparent)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderTop: '1px solid var(--border, rgba(255,255,255,0.1))',
+                paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
+              }}
+            >
+              {/* Quick Replies Chips */}
               <div
-                className="sticky bottom-0 z-10"
-                style={{
-                  background: 'var(--lf-glass-bg)',
-                  backdropFilter: 'blur(var(--lf-glass-blur))',
-                  WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
-                  borderTop: '1px solid var(--lf-glass-border)',
-                  paddingBottom: 'var(--lf-safe-bottom)',
-                }}
+                className="flex gap-2 px-4 pt-2.5 pb-1 overflow-x-auto"
+                style={{ scrollbarWidth: 'none' }}
               >
-                {/* Quick reply chips — horizontal scroll */}
-                {conversation && (
-                  <div
-                    className="flex gap-2 px-4 pt-2.5 pb-1 overflow-x-auto"
-                    style={{ scrollbarWidth: 'none' }}
-                  >
-                    {QUICK_REPLIES.map((text) => (
-                      <button
-                        key={text}
-                        onClick={() => handleQuickReply(text)}
-                        className="shrink-0 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all hover:opacity-80 active:scale-95"
-                        style={{
-                          border: '1px solid var(--border)',
-                          background: 'transparent',
-                          color: 'var(--text)',
-                          fontFamily: "'DM Sans', sans-serif",
-                        }}
-                      >
-                        {text}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Input area */}
-                <div className="chat-input-area flex items-end gap-2 px-4 py-3">
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={handleInputChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Escribe un mensaje..."
-                    rows={1}
-                    className="chat-input flex-1 resize-none px-4 py-2.5 text-[14px] outline-none transition-colors"
-                  />
-                  <motion.button
-                    onClick={handleSend}
-                    disabled={!input.trim()}
-                    whileTap={{ scale: 0.9 }}
-                    className="chat-send-btn w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors"
+                {QUICK_REPLIES.map((text) => (
+                  <button
+                    key={text}
+                    onClick={() => handleQuickReply(text)}
+                    className="shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all hover:opacity-80 active:scale-95 border"
                     style={{
-                      opacity: input.trim() ? 1 : 0.5,
+                      borderColor: 'var(--border, rgba(255,255,255,0.15))',
+                      background: isDark ? 'rgba(30,41,59,0.8)' : '#FFFFFF',
+                      color: 'var(--text)',
+                      fontFamily: "'DM Sans', sans-serif",
                     }}
-                    aria-label="Enviar mensaje"
                   >
-                    <Send className="w-[18px] h-[18px]" />
-                  </motion.button>
-                </div>
+                    {text}
+                  </button>
+                ))}
               </div>
-            ) : (
-              /* ── Deactivated / inactive bottom bar ── */
-              <div
-                className="sticky bottom-0 z-10 border-t px-4 py-3"
-                style={{
-                  background: 'var(--lf-glass-bg)',
-                  backdropFilter: 'blur(var(--lf-glass-blur))',
-                  WebkitBackdropFilter: 'blur(var(--lf-glass-blur))',
-                  borderTop: '1px solid var(--lf-glass-border)',
-                  paddingBottom: 'var(--lf-safe-bottom)',
-                }}
-              >
-                <div
-                  className="flex items-center justify-center py-2 text-[13px]"
+
+              {/* Input row */}
+              <div className="chat-input-area flex items-end gap-2 px-4 py-2.5">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Escribe un mensaje al repartidor..."
+                  rows={1}
+                  className="chat-input flex-1 resize-none px-4 py-2.5 text-[14px] outline-none rounded-2xl border"
                   style={{
-                    color: 'var(--text-muted)',
-                    fontFamily: "'DM Sans', sans-serif",
+                    background: isDark ? 'rgba(30,41,59,0.8)' : '#FFFFFF',
+                    borderColor: 'var(--border, rgba(255,255,255,0.15))',
+                    color: 'var(--text)',
+                    maxHeight: 96,
                   }}
+                />
+                <motion.button
+                  onClick={handleSend}
+                  disabled={!input.trim()}
+                  whileTap={{ scale: 0.92 }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-opacity"
+                  style={{
+                    background: input.trim() ? 'var(--primario, #007AFF)' : 'rgba(255,255,255,0.15)',
+                    color: '#FFFFFF',
+                    cursor: input.trim() ? 'pointer' : 'not-allowed',
+                    opacity: input.trim() ? 1 : 0.5,
+                  }}
+                  aria-label="Enviar mensaje"
                 >
-                  Chat finalizado
-                </div>
+                  <Send className="w-[18px] h-[18px]" />
+                </motion.button>
               </div>
-            )}
+            </div>
           </motion.div>
         </>
       )}

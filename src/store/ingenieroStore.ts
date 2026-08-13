@@ -31,6 +31,7 @@ export interface Mantenimiento {
   motoId: string
   motoNombre: string
   motoModelo: string
+  motoPlaca?: string | null
   tipo: 'PREVENTIVO' | 'CORRECTIVO' | 'EMERGENCIA'
   categoria: string
   descripcion: string
@@ -44,7 +45,7 @@ export interface Mantenimiento {
   programadoPara: string | null
   iniciadoEn: string | null
   completadoEn: string | null
-  repuestosUsados: { nombre: string; cantidad: number; subtotal: number }[]
+  repuestosUsados: { id?: string; repuestoId?: string; nombre: string; cantidad: number; precioUnitario?: number; subtotal: number }[]
   createdAt: string
 }
 
@@ -125,17 +126,18 @@ export interface IngenieroState {
   alertasNoLeidas: number
 
   // UI
-  tabActiva: 'dashboard' | 'flota' | 'mantenimientos' | 'perfil'
+  tabActiva: 'dashboard' | 'flota' | 'mantenimientos' | 'inventario' | 'perfil'
   showCrearMantenimiento: boolean
   showCrearMoto: boolean
   showDetalleMoto: boolean
   showDetalleMantenimiento: boolean
   showInventario: boolean
   showAgregarRepuesto: boolean
+  repuestoAEditar: Repuesto | null
   mantenimientoSeleccionado: Mantenimiento | null
 
   // Actions
-  setTabActiva: (tab: 'dashboard' | 'flota' | 'mantenimientos' | 'perfil') => void
+  setTabActiva: (tab: 'dashboard' | 'flota' | 'mantenimientos' | 'inventario' | 'perfil') => void
   setFiltroEstado: (estado: string | null) => void
   setBusquedaFlota: (q: string) => void
   setMantenimientosFiltro: (f: any) => void
@@ -143,6 +145,7 @@ export interface IngenieroState {
   setRepuestosFiltro: (f: string | null) => void
   seleccionarMoto: (moto: Moto | null) => void
   seleccionarMantenimiento: (m: Mantenimiento | null) => void
+  setRepuestoAEditar: (r: Repuesto | null) => void
   toggleCrearMantenimiento: () => void
   toggleCrearMoto: () => void
   toggleDetalleMoto: () => void
@@ -151,21 +154,25 @@ export interface IngenieroState {
   toggleAgregarRepuesto: () => void
 
   // CRUD Motos
-  crearMoto: (data: Partial<Moto>) => Promise<void> | void
-  actualizarMoto: (id: string, data: Partial<Moto>) => Promise<void> | void
+  crearMoto: (data: Partial<Moto>) => Promise<void>
+  actualizarMoto: (id: string, data: Partial<Moto>) => Promise<void>
+  eliminarMoto: (id: string) => Promise<void>
 
   // CRUD Mantenimientos
-  crearMantenimiento: (data: Partial<Mantenimiento>) => Promise<void> | void
-  iniciarMantenimiento: (id: string) => Promise<void> | void
-  completarMantenimiento: (id: string, costoFinal: number | { costoTotal: number; repuestosUsados?: any[] }) => Promise<void> | void
-  cancelarMantenimiento: (id: string) => Promise<void> | void
+  crearMantenimiento: (data: Partial<Mantenimiento>) => Promise<void>
+  iniciarMantenimiento: (id: string) => Promise<void>
+  completarMantenimiento: (id: string, data: any) => Promise<void>
+  cancelarMantenimiento: (id: string) => Promise<void>
 
   // CRUD Repuestos
-  agregarRepuesto: (data: Partial<Repuesto>) => Promise<void> | void
-  actualizarStock: (id: string, nuevoStock: number) => Promise<void> | void
+  agregarRepuesto: (data: Partial<Repuesto>) => Promise<void>
+  editarRepuesto: (id: string, data: Partial<Repuesto>) => Promise<void>
+  eliminarRepuesto: (id: string) => Promise<void>
+  actualizarStock: (id: string, nuevoStock: number) => Promise<void>
 
   // Alertas
-  resolverAlerta: (id: string) => Promise<void> | void
+  crearAlerta: (data: any) => Promise<void>
+  resolverAlerta: (id: string) => Promise<void>
   marcarAlertasLeidas: () => void
 
   // Stats
@@ -180,9 +187,9 @@ export const useIngenieroStore = create<IngenieroState>()(
       loading: false,
       perfil: {
         id: 'ing001',
-        nombre: 'Roberto Martinez',
+        nombre: 'Ingeniero Logifast',
         email: 'ingeniero@logifast.com',
-        rol: 'Ingeniero Mecanico',
+        rol: 'Ingeniero Mecánico y Flota',
         calificacion: 4.9
       },
 
@@ -198,7 +205,10 @@ export const useIngenieroStore = create<IngenieroState>()(
         mantenimientosPendientes: 0,
         costoMantenimientoMes: 0,
         alertasActivas: 0,
-        repuestosBajoStock: 0
+        repuestosBajoStock: 0,
+        preventivoPct: 80,
+        correctivoPct: 20,
+        mttrMinutos: 45
       },
 
       motos: [],
@@ -212,6 +222,7 @@ export const useIngenieroStore = create<IngenieroState>()(
       repuestos: [],
       repuestosFiltro: null,
       busquedaRepuestos: '',
+      repuestoAEditar: null,
 
       alertas: [],
       alertasNoLeidas: 0,
@@ -231,6 +242,7 @@ export const useIngenieroStore = create<IngenieroState>()(
       setMantenimientosFiltro: (f) => set({ mantenimientosFiltro: f }),
       setBusquedaRepuestos: (q) => set({ busquedaRepuestos: q }),
       setRepuestosFiltro: (f) => set({ repuestosFiltro: f }),
+      setRepuestoAEditar: (r) => set({ repuestoAEditar: r, showAgregarRepuesto: r !== null }),
 
       seleccionarMoto: (moto) => set({
         motoSeleccionada: moto,
@@ -247,7 +259,7 @@ export const useIngenieroStore = create<IngenieroState>()(
       toggleDetalleMoto: () => set(s => ({ showDetalleMoto: !s.showDetalleMoto })),
       toggleDetalleMantenimiento: () => set(s => ({ showDetalleMantenimiento: !s.showDetalleMantenimiento })),
       toggleInventario: () => set(s => ({ showInventario: !s.showInventario })),
-      toggleAgregarRepuesto: () => set(s => ({ showAgregarRepuesto: !s.showAgregarRepuesto })),
+      toggleAgregarRepuesto: () => set(s => ({ showAgregarRepuesto: !s.showAgregarRepuesto, repuestoAEditar: null })),
 
       crearMoto: async (data) => {
         try {
@@ -286,6 +298,23 @@ export const useIngenieroStore = create<IngenieroState>()(
         }
       },
 
+      eliminarMoto: async (id) => {
+        try {
+          set({ loading: true });
+          const res = await fetch(`/api/ingeniero/motos?id=${id}`, {
+            method: 'DELETE',
+          });
+          if (res.ok) {
+            set({ showDetalleMoto: false, motoSeleccionada: null });
+            await get().cargarDatos();
+          }
+        } catch (error) {
+          console.error('Error al eliminar moto:', error);
+        } finally {
+          set({ loading: false });
+        }
+      },
+
       crearMantenimiento: async (data) => {
         try {
           const res = await fetch('/api/ingeniero/mantenimientos', {
@@ -315,14 +344,16 @@ export const useIngenieroStore = create<IngenieroState>()(
         }
       },
 
-      completarMantenimiento: async (id, costoFinal) => {
+      completarMantenimiento: async (id, payload) => {
         try {
+          const bodyData = typeof payload === 'object' ? payload : { costoTotal: payload };
           const res = await fetch(`/api/ingeniero/mantenimientos/${id}/completar`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ costoTotal: costoFinal })
+            body: JSON.stringify(bodyData)
           });
           if (res.ok) {
+            set({ showDetalleMantenimiento: false, mantenimientoSeleccionado: null });
             await get().cargarDatos();
           }
         } catch (error) {
@@ -336,6 +367,7 @@ export const useIngenieroStore = create<IngenieroState>()(
             method: 'PATCH'
           });
           if (res.ok) {
+            set({ showDetalleMantenimiento: false, mantenimientoSeleccionado: null });
             await get().cargarDatos();
           }
         } catch (error) {
@@ -351,11 +383,40 @@ export const useIngenieroStore = create<IngenieroState>()(
             body: JSON.stringify(data)
           });
           if (res.ok) {
-            set({ showAgregarRepuesto: false });
+            set({ showAgregarRepuesto: false, repuestoAEditar: null });
             await get().cargarDatos();
           }
         } catch (error) {
           console.error('Error al agregar repuesto:', error);
+        }
+      },
+
+      editarRepuesto: async (id, data) => {
+        try {
+          const res = await fetch('/api/ingeniero/repuestos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, ...data })
+          });
+          if (res.ok) {
+            set({ showAgregarRepuesto: false, repuestoAEditar: null });
+            await get().cargarDatos();
+          }
+        } catch (error) {
+          console.error('Error al editar repuesto:', error);
+        }
+      },
+
+      eliminarRepuesto: async (id) => {
+        try {
+          const res = await fetch(`/api/ingeniero/repuestos?id=${id}`, {
+            method: 'DELETE'
+          });
+          if (res.ok) {
+            await get().cargarDatos();
+          }
+        } catch (error) {
+          console.error('Error al eliminar repuesto:', error);
         }
       },
 
@@ -371,6 +432,21 @@ export const useIngenieroStore = create<IngenieroState>()(
           }
         } catch (error) {
           console.error('Error al actualizar stock:', error);
+        }
+      },
+
+      crearAlerta: async (data) => {
+        try {
+          const res = await fetch('/api/ingeniero/alertas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) {
+            await get().cargarDatos();
+          }
+        } catch (error) {
+          console.error('Error al crear alerta:', error);
         }
       },
 
@@ -412,15 +488,19 @@ export const useIngenieroStore = create<IngenieroState>()(
           const safeRepuestos = Array.isArray(repuestosData) ? repuestosData : (Array.isArray(repuestosData?.repuestos) ? repuestosData.repuestos : []);
           const safeAlertas = Array.isArray(alertasData) ? alertasData : (Array.isArray(alertasData?.alertas) ? alertasData.alertas : []);
 
-          // Flatten Prisma relations into the shape the store/components expect
+          // Flatten Prisma relations
           const safeMantenimientos = rawMantenimientos.map((m: any) => ({
             ...m,
-            motoNombre: m.motoNombre ?? m.moto?.nombre ?? '',
+            motoNombre: m.motoNombre ?? m.moto?.nombre ?? 'Moto',
             motoModelo: m.motoModelo ?? m.moto?.modelo ?? '',
+            motoPlaca: m.motoPlaca ?? m.moto?.placa ?? '',
             repuestosUsados: Array.isArray(m.repuestosUsados)
               ? m.repuestosUsados.map((r: any) => ({
-                  nombre: r.nombre ?? r.repuesto?.nombre ?? '',
-                  cantidad: r.cantidad ?? 0,
+                  id: r.id,
+                  repuestoId: r.repuestoId,
+                  nombre: r.nombre ?? r.repuesto?.nombre ?? 'Repuesto',
+                  cantidad: r.cantidad ?? 1,
+                  precioUnitario: r.precioUnitario ?? 0,
                   subtotal: r.subtotal ?? 0,
                 }))
               : [],

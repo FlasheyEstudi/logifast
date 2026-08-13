@@ -4,220 +4,318 @@
 import React from 'react';
 import { useIngenieroStore } from '@/store/ingenieroStore';
 import PullToRefresh from '@/components/ui/PullToRefresh';
+import { notify } from '@/lib/notify';
 
 export default function Dashboard() {
   const store = useIngenieroStore();
   const stats = store.stats;
-  const alertasActivas = store.alertas.filter(a => a.activa);
+  const alertasActivas = store.alertas.filter((a) => a.activa);
 
   const handleRefresh = async () => {
     await store.cargarDatos();
   };
 
+  const handleResolveAlert = async (id: string) => {
+    await store.resolverAlerta(id);
+    notify.success('Alerta de mantenimiento resuelta');
+  };
+
+  const totalMotos = stats?.totalMotos || store.motos.length || 1;
+  const disponiblesPct = Math.round(((stats?.disponibles || 0) / totalMotos) * 100);
+  const servicioPct = Math.round(((stats?.enServicio || 0) / totalMotos) * 100);
+  const mantenimientoPct = Math.round(((stats?.enMantenimiento || 0) / totalMotos) * 100);
+  const fueraPct = Math.round(((stats?.fueraServicio || 0) / totalMotos) * 100);
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="dashboard-pantalla">
-        {/* Header */}
-        <div className="dashboard-header">
+      <div className="dashboard-pantalla" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Top Greeting & Action Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div className="dashboard-saludo">
-              {getSaludo()}, {(store.perfil?.nombre || '').split(' ')[0] || 'Ingeniero'}
+            <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--lf-text-main, #1a1a2e)' }}>
+              {getSaludo()}, {(store.perfil?.nombre || '').split(' ')[0] || 'Ingeniero'} 👋
             </div>
-            <div className="dashboard-fecha">
-              {new Date().toLocaleDateString('es-NI', { weekday: 'long', day: 'numeric', month: 'long' })}
+            <div style={{ fontSize: 13, color: 'var(--lf-text-muted, #6B7280)', marginTop: 2, textTransform: 'capitalize' }}>
+              {new Date().toLocaleDateString('es-NI', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
           </div>
-          <div className="dashboard-header-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => store.setTabActiva('inventario')}
+              style={{
+                padding: '9px 16px',
+                borderRadius: 12,
+                border: '1px solid var(--lf-border, #e5e7eb)',
+                background: 'var(--lf-surface, #ffffff)',
+                color: 'var(--lf-text-main, #1a1a2e)',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              📦 Inventario
+            </button>
+
+            <button
+              onClick={() => store.toggleCrearMoto()}
+              style={{
+                padding: '9px 16px',
+                borderRadius: 12,
+                border: '1px solid var(--lf-border, #e5e7eb)',
+                background: 'var(--lf-surface, #ffffff)',
+                color: 'var(--lf-text-main, #1a1a2e)',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              🏍️ + Registrar Moto
+            </button>
+
+            <button
+              onClick={() => store.toggleCrearMantenimiento()}
+              style={{
+                padding: '9px 18px',
+                borderRadius: 12,
+                border: 'none',
+                background: 'var(--lf-accent, #FF5722)',
+                color: '#ffffff',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(255,87,34,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              🔧 + Mantenimiento
+            </button>
           </div>
         </div>
 
-        {/* KPIs de la flota */}
-        <div className="dashboard-kpis">
-          <div className="dashboard-kpi dashboard-kpi-total">
-            <div className="dashboard-kpi-valor">{stats?.totalMotos || 0}</div>
-            <div className="dashboard-kpi-label">Total motos</div>
-          </div>
-          <div className="dashboard-kpi dashboard-kpi-disponible">
-            <div className="dashboard-kpi-valor">{stats?.disponibles || 0}</div>
-            <div className="dashboard-kpi-label">Disponibles</div>
-          </div>
-          <div className="dashboard-kpi dashboard-kpi-servicio">
-            <div className="dashboard-kpi-valor">{stats?.enServicio || 0}</div>
-            <div className="dashboard-kpi-label">En servicio</div>
-          </div>
-          <div className="dashboard-kpi dashboard-kpi-mantenimiento">
-            <div className="dashboard-kpi-valor">{stats?.enMantenimiento || 0}</div>
-            <div className="dashboard-kpi-label">En taller</div>
-          </div>
-        </div>
-
-        {/* Barra de estado de la flota */}
-        <div className="dashboard-flota-bar">
-          <div className="flota-bar-label">Estado de la flota</div>
-          <div className="flota-bar">
-            <div
-              className="flota-bar-segment disponible"
-              style={{ width: `${((stats?.disponibles || 0) / (stats?.totalMotos || 1)) * 100}%` }}
-            />
-            <div
-              className="flota-bar-segment servicio"
-              style={{ width: `${((stats?.enServicio || 0) / (stats?.totalMotos || 1)) * 100}%` }}
-            />
-            <div
-              className="flota-bar-segment mantenimiento"
-              style={{ width: `${((stats?.enMantenimiento || 0) / (stats?.totalMotos || 1)) * 100}%` }}
-            />
-            <div
-              className="flota-bar-segment fuera"
-              style={{ width: `${((stats?.fueraServicio || 0) / (stats?.totalMotos || 1)) * 100}%` }}
-            />
-          </div>
-          <div className="flota-bar-leyenda">
-            <span><i className="dot disponible" /> Disponibles</span>
-            <span><i className="dot servicio" /> En servicio</span>
-            <span><i className="dot mantenimiento" /> En taller</span>
-            <span><i className="dot fuera" /> Fuera</span>
-          </div>
-        </div>
-
-        {/* METRICAS DE INGENIERIA INDUSTRIAL & MTTR */}
-        <div className="dashboard-section" style={{ background: 'var(--lf-surface, #ffffff)', borderRadius: 16, padding: 18, border: '1px solid var(--lf-border, #e5e7eb)', marginBottom: 20 }}>
-          <div className="dashboard-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h3 className="dashboard-section-title" style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
-                Eficiencia de Mantenimiento (KPI Industrial)
-              </h3>
+        {/* Fleet KPIs Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+          <div
+            onClick={() => { store.setFiltroEstado(null); store.setTabActiva('flota'); }}
+            style={{ background: 'var(--lf-surface, #ffffff)', padding: 16, borderRadius: 16, border: '1px solid var(--lf-border, #e5e7eb)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6 }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 700 }}>Total Flota</span>
+              <span style={{ fontSize: 16 }}>🏍️</span>
             </div>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100, background: 'rgba(0, 200, 83, 0.12)', color: '#00C853' }}>
-              Meta 80/20 Cumplida
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)' }}>
+              {store.motos.length}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #94A3B8)' }}>100% Unidades activas</div>
+          </div>
+
+          <div
+            onClick={() => { store.setFiltroEstado('DISPONIBLE'); store.setTabActiva('flota'); }}
+            style={{ background: 'var(--lf-surface, #ffffff)', padding: 16, borderRadius: 16, border: '1px solid var(--lf-border, #e5e7eb)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6 }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 700 }}>Disponibles</span>
+              <span style={{ fontSize: 16 }}>🟢</span>
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#10B981' }}>
+              {store.motos.filter((m) => m.estado === 'DISPONIBLE').length}
+            </div>
+            <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600 }}>{disponiblesPct}% de la flota</div>
+          </div>
+
+          <div
+            onClick={() => { store.setFiltroEstado('EN_SERVICIO'); store.setTabActiva('flota'); }}
+            style={{ background: 'var(--lf-surface, #ffffff)', padding: 16, borderRadius: 16, border: '1px solid var(--lf-border, #e5e7eb)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6 }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 700 }}>En Rutas / Servicio</span>
+              <span style={{ fontSize: 16 }}>🔵</span>
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#0066FF' }}>
+              {store.motos.filter((m) => m.estado === 'EN_SERVICIO').length}
+            </div>
+            <div style={{ fontSize: 11, color: '#0066FF', fontWeight: 600 }}>{servicioPct}% operativa</div>
+          </div>
+
+          <div
+            onClick={() => { store.setMantenimientosFiltro('en_proceso'); store.setTabActiva('mantenimientos'); }}
+            style={{ background: 'var(--lf-surface, #ffffff)', padding: 16, borderRadius: 16, border: '1px solid var(--lf-border, #e5e7eb)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6 }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 700 }}>En Taller</span>
+              <span style={{ fontSize: 16 }}>🟠</span>
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#D97706' }}>
+              {store.mantenimientos.filter((m) => m.estado === 'EN_PROCESO').length || store.motos.filter((m) => m.estado === 'EN_MANTENIMIENTO').length}
+            </div>
+            <div style={{ fontSize: 11, color: '#D97706', fontWeight: 600 }}>{mantenimientoPct}% en servicio</div>
+          </div>
+        </div>
+
+        {/* Fleet Distribution Bar */}
+        <div style={{ background: 'var(--lf-surface, #ffffff)', borderRadius: 16, padding: 16, border: '1px solid var(--lf-border, #e5e7eb)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--lf-text-main, #1a1a2e)' }}>
+              Distribución Operativa de Motocicletas
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontFamily: "'DM Mono', monospace" }}>
+              {store.motos.length} vehículos
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 16 }}>
+          {/* Bar */}
+          <div style={{ height: 10, width: '100%', borderRadius: 99, background: '#E2E8F0', overflow: 'hidden', display: 'flex' }}>
+            <div style={{ width: `${disponiblesPct}%`, background: '#10B981' }} title={`Disponibles: ${disponiblesPct}%`} />
+            <div style={{ width: `${servicioPct}%`, background: '#0066FF' }} title={`En Servicio: ${servicioPct}%`} />
+            <div style={{ width: `${mantenimientoPct}%`, background: '#FFB300' }} title={`En Taller: ${mantenimientoPct}%`} />
+            <div style={{ width: `${fueraPct}%`, background: '#EF4444' }} title={`Fuera: ${fueraPct}%`} />
+          </div>
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12, fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 600 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} /> Disponibles ({disponiblesPct}%)
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF' }} /> En Servicio ({servicioPct}%)
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFB300' }} /> En Taller ({mantenimientoPct}%)
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} /> Fuera de Servicio ({fueraPct}%)
+            </span>
+          </div>
+        </div>
+
+        {/* Industrial Engineering Metrics */}
+        <div style={{ background: 'var(--lf-surface, #ffffff)', borderRadius: 16, padding: 18, border: '1px solid var(--lf-border, #e5e7eb)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--lf-text-main, #1a1a2e)' }}>
+              Eficiencia de Mantenimiento & MTTR
+            </h3>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
+              Meta Industrial 80/20 Cumplida
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
             {/* MTTR */}
-            <div style={{ padding: 14, borderRadius: 12, background: 'var(--lf-bg, #f8f9fa)', border: '1px solid var(--lf-border, #e5e7eb)' }}>
-              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 600, textTransform: 'uppercase' }}>
+            <div style={{ padding: 14, borderRadius: 14, background: 'var(--lf-bg, #f8fafc)', border: '1px solid var(--lf-border, #e2e8f0)' }}>
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase' }}>
                 MTTR (Tiempo Medio Reparación)
               </div>
-              <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)', marginTop: 4 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)', marginTop: 4 }}>
                 {stats?.mttrMinutos || 45} <span style={{ fontSize: 13, fontWeight: 600 }}>min</span>
               </div>
-              <div style={{ fontSize: 11, color: '#00C853', marginTop: 4, fontWeight: 600 }}>
-                Óptimo (&lt; 60 min)
+              <div style={{ fontSize: 11, color: '#10B981', marginTop: 4, fontWeight: 600 }}>
+                ✓ Nivel de servicio óptimo (&lt; 60 min)
               </div>
             </div>
 
             {/* Ratio Preventivo / Correctivo */}
-            <div style={{ padding: 14, borderRadius: 12, background: 'var(--lf-bg, #f8f9fa)', border: '1px solid var(--lf-border, #e5e7eb)' }}>
-              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 600, textTransform: 'uppercase' }}>
+            <div style={{ padding: 14, borderRadius: 14, background: 'var(--lf-bg, #f8fafc)', border: '1px solid var(--lf-border, #e2e8f0)' }}>
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase' }}>
                 Ratio Preventivo vs. Correctivo
               </div>
-              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#00C853', marginTop: 4 }}>
-                {stats?.preventivoPct ?? 80}% <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)' }}>Preventivo</span>
+              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#10B981', marginTop: 4 }}>
+                {stats?.preventivoPct ?? 80}% <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #64748B)' }}>Preventivo</span>
               </div>
-              {/* Ratio visual bar */}
-              <div style={{ height: 6, width: '100%', borderRadius: 10, background: '#FF3B30', marginTop: 8, overflow: 'hidden', display: 'flex' }}>
-                <div style={{ width: `${stats?.preventivoPct ?? 80}%`, background: '#00C853', height: '100%' }} />
+              <div style={{ height: 6, width: '100%', borderRadius: 99, background: '#EF4444', marginTop: 8, overflow: 'hidden', display: 'flex' }}>
+                <div style={{ width: `${stats?.preventivoPct ?? 80}%`, background: '#10B981', height: '100%' }} />
               </div>
             </div>
 
-            {/* Costo Promedio por Mantenimiento */}
-            <div style={{ padding: 14, borderRadius: 12, background: 'var(--lf-bg, #f8f9fa)', border: '1px solid var(--lf-border, #e5e7eb)' }}>
-              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 600, textTransform: 'uppercase' }}>
+            {/* Costo Promedio */}
+            <div style={{ padding: 14, borderRadius: 14, background: 'var(--lf-bg, #f8fafc)', border: '1px solid var(--lf-border, #e2e8f0)' }}>
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase' }}>
                 Costo Promedio / Servicio
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--lf-accent, #FF5722)', marginTop: 4 }}>
-                C$ {stats?.mantenimientosCompletados ? Math.round((stats.costoMantenimientoMes || 0) / stats.mantenimientosCompletados) : 0}
+              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-accent, #FF5722)', marginTop: 4 }}>
+                C$ {stats?.mantenimientosCompletados ? Math.round((stats.costoMantenimientoMes || 0) / stats.mantenimientosCompletados).toLocaleString() : '450'}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)', marginTop: 4 }}>
-                Mano de obra + Piezas
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mantenimientos del mes */}
-        <div className="dashboard-section">
-          <div className="dashboard-section-header">
-            <h3 className="dashboard-section-title">Resumen del mes</h3>
-          </div>
-          <div className="dashboard-mes-stats">
-            <div className="dashboard-mes-stat">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00C853" strokeWidth="2">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-              <div>
-                <div className="dashboard-mes-valor mono">{stats?.mantenimientosCompletados || 0}</div>
-                <div className="dashboard-mes-label">Completados</div>
-              </div>
-            </div>
-            <div className="dashboard-mes-stat">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB300" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              <div>
-                <div className="dashboard-mes-valor mono">{stats?.mantenimientosPendientes || 0}</div>
-                <div className="dashboard-mes-label">Pendientes</div>
-              </div>
-            </div>
-            <div className="dashboard-mes-stat">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="2">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-              <div>
-                <div className="dashboard-mes-valor mono">C$ {(stats?.costoMantenimientoMes || 0).toLocaleString()}</div>
-                <div className="dashboard-mes-label">Costo total</div>
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', marginTop: 4 }}>
+                Mano de obra + Piezas liquidadas
               </div>
             </div>
           </div>
         </div>
 
-        {/* Alertas activas */}
-        <div className="dashboard-section">
-          <div className="dashboard-section-header">
-            <h3 className="dashboard-section-title">Alertas activas</h3>
-            <span className="dashboard-section-badge">{alertasActivas.length}</span>
+        {/* Active Alerts */}
+        <div style={{ background: 'var(--lf-surface, #ffffff)', borderRadius: 16, padding: 18, border: '1px solid var(--lf-border, #e5e7eb)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+                Alertas Mecánicas Activas
+              </h3>
+              <span
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: 99,
+                  background: alertasActivas.length > 0 ? '#FFB300' : 'rgba(16, 185, 129, 0.12)',
+                  color: alertasActivas.length > 0 ? '#fff' : '#10B981',
+                  fontSize: 11,
+                  fontWeight: 800,
+                }}
+              >
+                {alertasActivas.length}
+              </span>
+            </div>
           </div>
 
           {alertasActivas.length === 0 ? (
-            <div className="dashboard-alertas-empty">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00C853" strokeWidth="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              <span>Sin alertas pendientes</span>
+            <div style={{ padding: 20, textAlign: 'center', color: '#10B981', fontSize: 13, fontWeight: 600 }}>
+              ✅ Todas las alertas mecánicas se encuentran resueltas y al día.
             </div>
           ) : (
-            <div className="dashboard-alertas">
-              {alertasActivas.map(alerta => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {alertasActivas.map((alerta) => (
                 <div
                   key={alerta.id}
-                  className={`dashboard-alerta ${alerta.urgente ? 'urgente' : ''}`}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 14px',
+                    borderRadius: 12,
+                    background: 'rgba(255, 179, 0, 0.08)',
+                    border: '1px solid rgba(255, 179, 0, 0.25)',
+                  }}
                 >
-                  <div className="dashboard-alerta-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                      <line x1="12" y1="9" x2="12" y2="13"/>
-                      <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>⚠️</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--lf-text-main, #1a1a2e)' }}>
+                        {alerta.motoNombre}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--lf-text-muted, #64748B)' }}>
+                        {alerta.descripcion}
+                      </div>
+                    </div>
                   </div>
-                  <div className="dashboard-alerta-info">
-                    <div className="dashboard-alerta-moto mono">{alerta.motoNombre}</div>
-                    <div className="dashboard-alerta-desc">{alerta.descripcion}</div>
-                  </div>
+
                   <button
-                    className="dashboard-alerta-action"
-                    onClick={() => store.resolverAlerta(alerta.id)}
+                    onClick={() => handleResolveAlert(alerta.id)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#10B981',
+                      color: '#fff',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+                    ✓ Resolver
                   </button>
                 </div>
               ))}
@@ -225,57 +323,126 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Proximos mantenimientos */}
-        <div className="dashboard-section">
-          <div className="dashboard-section-header">
-            <h3 className="dashboard-section-title">Proximos mantenimientos</h3>
-          </div>
-          <div className="dashboard-proximos">
-            {store.mantenimientos
-              .filter(m => m.estado === 'PROGRAMADO')
-              .sort((a, b) => (a.programadoPara || '').localeCompare(b.programadoPara || ''))
-              .slice(0, 3)
-              .map(m => (
-                <div
-                  key={m.id}
-                  className="dashboard-proximo"
-                  onClick={() => store.seleccionarMantenimiento(m)}
-                >
-                  <div className={`dashboard-proximo-prioridad ${m.prioridad.toLowerCase()}`} />
-                  <div className="dashboard-proximo-info">
-                    <div className="dashboard-proximo-moto">{m.motoNombre} · {m.motoModelo}</div>
-                    <div className="dashboard-proximo-desc">{m.descripcion}</div>
-                  </div>
-                  <div className="dashboard-proximo-fecha">
-                    {m.programadoPara
-                      ? new Date(m.programadoPara).toLocaleDateString('es-NI', { day: 'numeric', month: 'short' })
-                      : 'Sin fecha'}
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
+        {/* Bottom Split: Próximos Mantenimientos + Repuestos Bajo Stock */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+          {/* Próximos Mantenimientos */}
+          <div style={{ background: 'var(--lf-surface, #ffffff)', borderRadius: 16, padding: 18, border: '1px solid var(--lf-border, #e5e7eb)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+                Próximos Mantenimientos
+              </h3>
+              <button
+                onClick={() => store.setTabActiva('mantenimientos')}
+                style={{ background: 'none', border: 'none', color: 'var(--lf-accent, #FF5722)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Ver todos →
+              </button>
+            </div>
 
-        {/* Repuestos bajo stock */}
-        <div className="dashboard-section">
-          <div className="dashboard-section-header">
-            <h3 className="dashboard-section-title">Repuestos bajo stock</h3>
-            <span className="dashboard-section-badge warning">{stats.repuestosBajoStock}</span>
-          </div>
-          <div className="dashboard-repuestos-bajo">
-            {store.repuestos.filter(r => r.bajoStock).map(r => (
-              <div key={r.id} className="dashboard-repuesto-bajo">
-                <div className="dashboard-repuesto-info">
-                  <div className="dashboard-repuesto-nombre">{r.nombre}</div>
-                  <div className="dashboard-repuesto-stock">
-                    Stock: <span className="mono bold">{r.stock}</span> / min: {r.stockMinimo}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {store.mantenimientos
+                .filter((m) => m.estado === 'PROGRAMADO' || m.estado === 'EN_PROCESO')
+                .slice(0, 4)
+                .map((m) => (
+                  <div
+                    key={m.id}
+                    onClick={() => store.setTabActiva('mantenimientos')}
+                    style={{
+                      padding: 12,
+                      borderRadius: 12,
+                      background: 'var(--lf-bg, #f8fafc)',
+                      border: '1px solid var(--lf-border, #e2e8f0)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--lf-text-main, #1a1a2e)' }}>
+                        {m.motoNombre} ({m.motoModelo})
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)' }}>
+                        {m.descripcion}
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        background: m.estado === 'EN_PROCESO' ? 'rgba(255, 179, 0, 0.15)' : 'rgba(0, 102, 255, 0.1)',
+                        color: m.estado === 'EN_PROCESO' ? '#D97706' : '#0066FF',
+                      }}
+                    >
+                      {m.estado === 'EN_PROCESO' ? 'En Taller' : 'Programado'}
+                    </span>
                   </div>
-                </div>
-                <div className="dashboard-repuesto-categoria">
-                  {r.categoria}
-                </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Repuestos Bajo Stock */}
+          <div style={{ background: 'var(--lf-surface, #ffffff)', borderRadius: 16, padding: 18, border: '1px solid var(--lf-border, #e5e7eb)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+                  Repuestos Bajo Stock Mínimo
+                </h3>
               </div>
-            ))}
+              <button
+                onClick={() => store.setTabActiva('inventario')}
+                style={{ background: 'none', border: 'none', color: 'var(--lf-accent, #FF5722)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Inventario →
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {store.repuestos.filter((r) => r.stock <= r.stockMinimo).length === 0 ? (
+                <div style={{ padding: 20, textAlign: 'center', color: '#10B981', fontSize: 12, fontWeight: 600 }}>
+                  ✅ Todos los repuestos tienen niveles de stock saludables.
+                </div>
+              ) : (
+                store.repuestos
+                  .filter((r) => r.stock <= r.stockMinimo)
+                  .slice(0, 4)
+                  .map((r) => (
+                    <div
+                      key={r.id}
+                      onClick={() => store.setTabActiva('inventario')}
+                      style={{
+                        padding: 12,
+                        borderRadius: 12,
+                        background: 'rgba(255, 179, 0, 0.08)',
+                        border: '1px solid rgba(255, 179, 0, 0.25)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--lf-text-main, #1a1a2e)' }}>
+                          {r.nombre}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)' }}>
+                          Ubicación: {r.ubicacion || 'Almacén general'}
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#D97706' }}>
+                          {r.stock} / min: {r.stockMinimo} {r.unidad}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#D97706', fontWeight: 600 }}>Reabastecer</div>
+                      </div>
+                    </div>
+                  ))
+              )}
+            </div>
           </div>
         </div>
 

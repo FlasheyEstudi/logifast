@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/helpers';
+import { geocodeAddress } from '@/lib/osrm';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,14 +119,16 @@ export async function POST(req: NextRequest) {
       return fail('El usuario ya tiene una tienda registrada');
     }
 
+    const [geoLat, geoLng] = geocodeAddress(direccion || nombre);
+
     const nuevaTienda = await db.tienda.create({
       data: {
         nombre,
         descripcion: descripcion || '',
         categoria: categoria || 'tienda',
         direccion,
-        lat: parseFloat(lat) || 12.1365,
-        lng: parseFloat(lng) || -86.2514,
+        lat: parseFloat(lat) || geoLat || 12.1365,
+        lng: parseFloat(lng) || geoLng || -86.2514,
         propietarioId: user.id,
         email: user.email || '',
         telefono: telefono || '',

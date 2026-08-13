@@ -1,53 +1,110 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { X, Send, Phone, MessageSquare, Zap } from '@/components/icons';
 import { useRepartidorStore, type ChatMensaje } from '@/lib/repartidor-store';
+import { realtime } from '@/services/realtime';
 
 /* ═══════════════════════════════════════════════
-   MAIN COMPONENT
+   CONSTANTS
    ═══════════════════════════════════════════════ */
 
 const MENSAJES_RAPIDOS = [
-  'Estoy llegando',
-  'Ya estoy aquí',
-  'Un momento por favor',
-  'No encuentro la dirección',
-  'Llame por favor'
+  'Voy en camino a la dirección',
+  'Ya estoy afuera en el punto',
+  'Un momento por favor, hay tráfico',
+  'No logro encontrar la dirección exacta',
+  'Por favor llámame cuando puedas',
 ];
 
 export default function RepartidorChat() {
   const {
-    mensajes,
     chatOrdenId,
     ordenActiva,
     toggleChat,
-    enviarMensaje,
   } = useRepartidorStore();
 
   const [input, setInput] = useState('');
   const [mostrarRapidos, setMostrarRapidos] = useState(false);
+  const [mensajes, setMensajes] = useState<ChatMensaje[]>([]);
+  const [clienteData, setClienteData] = useState<{ nombre: string; telefono: string } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const ordenIdActiva = chatOrdenId || ordenActiva?.id;
-  const clienteNombre = ordenActiva?.cliente || 'Cliente';
-  const mensajesFiltrados: ChatMensaje[] = ordenIdActiva
-    ? mensajes.filter((m) => m.ordenId === ordenIdActiva)
-    : mensajes;
+
+  // Load chat messages and client details from API
+  const loadChat = useCallback(async () => {
+    if (!ordenIdActiva) return;
+    try {
+      const res = await fetch(`/api/repartidor/chat?ordenId=${ordenIdActiva}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mensajes) {
+          setMensajes(data.mensajes);
+        }
+        if (data.cliente) {
+          setClienteData({
+            nombre: data.cliente.nombre || ordenActiva?.cliente || 'Cliente',
+            telefono: data.cliente.telefono || ordenActiva?.clienteTelefono || '',
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[RepartidorChat load error]', err);
+    }
+  }, [ordenIdActiva, ordenActiva]);
+
+  useEffect(() => {
+    loadChat();
+    const interval = setInterval(loadChat, 4000);
+    return () => clearInterval(interval);
+  }, [loadChat]);
 
   /* Auto-scroll to bottom on new message */
   useEffect(() => {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
-  }, [mensajesFiltrados.length]);
+  }, [mensajes.length]);
 
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text) return;
-    enviarMensaje(text);
-    setInput('');
+  const handleSend = async (customText?: string) => {
+    const text = (customText || input).trim();
+    if (!text || !ordenIdActiva) return;
+
+    const timeNow = new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const localId = `rep-${Date.now()}`;
+
+    // Optimistic UI update
+    const nuevoMensaje: ChatMensaje = {
+      id: localId,
+      ordenId: ordenIdActiva,
+      emisor: 'repartidor',
+      contenido: text,
+      enviadoEn: timeNow,
+    };
+    setMensajes((prev) => [...prev, nuevoMensaje]);
+    if (!customText) setInput('');
+
+    // Emit via WebSocket
+    realtime.chatMensaje(ordenIdActiva, 'repartidor', text);
+
+    // Save to database
+    try {
+      const res = await fetch('/api/repartidor/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ordenId: ordenIdActiva, contenido: text, emisor: 'repartidor' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mensaje) {
+          setMensajes((prev) => prev.map((m) => (m.id === localId ? data.mensaje : m)));
+        }
+      }
+    } catch (err) {
+      console.error('[RepartidorChat send error]', err);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -56,6 +113,9 @@ export default function RepartidorChat() {
       handleSend();
     }
   };
+
+  const clienteNombre = clienteData?.nombre || ordenActiva?.cliente || 'Cliente';
+  const clienteTelefono = clienteData?.telefono || ordenActiva?.clienteTelefono || '';
 
   return (
     <>
@@ -70,11 +130,12 @@ export default function RepartidorChat() {
           position: 'fixed',
           inset: 0,
           zIndex: 9990,
-          background: 'rgba(0,0,0,0.4)',
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(4px)',
         }}
       />
 
-      {/* Sheet */}
+      {/* Bottom Sheet */}
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
@@ -88,10 +149,10 @@ export default function RepartidorChat() {
           right: 0,
           margin: '0 auto',
           width: '100%',
-          maxWidth: 480,
-          maxHeight: '85vh',
+          maxWidth: 500,
+          maxHeight: '88vh',
           zIndex: 9991,
-          background: 'rgba(15, 23, 42, 0.95)',
+          background: 'rgba(15, 23, 42, 0.96)',
           backdropFilter: 'blur(20px)',
           borderRadius: '28px 28px 0 0',
           boxShadow: '0 -12px 48px rgba(0,0,0,0.5)',
@@ -105,7 +166,7 @@ export default function RepartidorChat() {
         {/* Drag handle */}
         <div
           style={{
-            paddingTop: 8,
+            paddingTop: 10,
             paddingBottom: 4,
             display: 'flex',
             justifyContent: 'center',
@@ -114,10 +175,10 @@ export default function RepartidorChat() {
           <div
             className="lf-sheet-handle bottom-sheet-handle"
             style={{
-              width: 40,
+              width: 44,
               height: 4,
               borderRadius: 2,
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'rgba(255, 255, 255, 0.25)',
             }}
           />
         </div>
@@ -128,14 +189,14 @@ export default function RepartidorChat() {
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            padding: '8px 16px 12px',
+            padding: '10px 16px 14px',
             borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           }}
         >
           <div
             style={{
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               borderRadius: 12,
               background: 'rgba(0, 122, 255, 0.15)',
               color: '#007AFF',
@@ -145,31 +206,55 @@ export default function RepartidorChat() {
               flexShrink: 0,
             }}
           >
-            <MessageSquare size={18} />
+            <MessageSquare size={20} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
                 fontSize: 15,
                 fontWeight: 700,
-                color: 'var(--text)',
+                color: '#FFFFFF',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
+                fontFamily: "'Syne', sans-serif",
               }}
             >
               {clienteNombre}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              {ordenIdActiva ? `Orden ${ordenIdActiva}` : 'Chat'}
+            <div style={{ fontSize: 11, color: '#94A3B8' }}>
+              {ordenIdActiva ? `Orden #${ordenIdActiva.slice(-6).toUpperCase()}` : 'Chat en vivo'}
             </div>
           </div>
+
+          {/* Call client directly */}
+          {clienteTelefono ? (
+            <a
+              href={`tel:${clienteTelefono}`}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                background: 'rgba(52, 199, 89, 0.18)',
+                color: '#34C759',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textDecoration: 'none',
+              }}
+              title={`Llamar a ${clienteNombre} (${clienteTelefono})`}
+            >
+              <Phone size={17} />
+            </a>
+          ) : null}
+
+          {/* Close button */}
           <button
             onClick={() => toggleChat()}
             aria-label="Cerrar chat"
             style={{
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               borderRadius: 10,
               border: 'none',
               background: 'rgba(255, 255, 255, 0.08)',
@@ -190,16 +275,16 @@ export default function RepartidorChat() {
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '12px 16px',
+            padding: '14px 16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
-            maxHeight: 'calc(85vh - 130px)',
-            minHeight: 200,
-            background: 'rgba(15, 23, 42, 0.6)',
+            gap: 10,
+            maxHeight: 'calc(85vh - 140px)',
+            minHeight: 220,
+            background: 'rgba(15, 23, 42, 0.65)',
           }}
         >
-          {mensajesFiltrados.length === 0 && (
+          {mensajes.length === 0 ? (
             <div
               style={{
                 flex: 1,
@@ -211,54 +296,56 @@ export default function RepartidorChat() {
                 color: '#94A3B8',
                 fontSize: 13,
                 textAlign: 'center',
+                padding: '30px 0',
               }}
             >
-              <MessageSquare size={28} color="#94A3B8" />
-              <div>No hay mensajes aún. Inicia la conversación.</div>
+              <MessageSquare size={32} color="#64748B" />
+              <div>No hay mensajes aún. Inicia la conversación con el cliente.</div>
             </div>
-          )}
-          {mensajesFiltrados.map((m) => {
-            const isRepartidor = m.emisor === 'repartidor';
-            return (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  display: 'flex',
-                  justifyContent: isRepartidor ? 'flex-end' : 'flex-start',
-                }}
-              >
-                <div
-                  className={isRepartidor ? 'chat-bubble-self lf-chat-bubble-self' : 'chat-bubble-other lf-chat-bubble-other'}
+          ) : (
+            mensajes.map((m) => {
+              const isRepartidor = m.emisor === 'repartidor';
+              return (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
                   style={{
-                    maxWidth: '78%',
-                    padding: '10px 14px',
-                    borderRadius: 18,
-                    borderBottomRightRadius: isRepartidor ? 4 : 18,
-                    borderBottomLeftRadius: isRepartidor ? 18 : 4,
-                    background: isRepartidor ? '#007AFF' : 'rgba(30, 41, 59, 0.9)',
-                    color: '#FFFFFF',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    display: 'flex',
+                    justifyContent: isRepartidor ? 'flex-end' : 'flex-start',
                   }}
                 >
-                  <div>{m.contenido}</div>
                   <div
-                    className="font-mono"
                     style={{
-                      fontSize: 10,
-                      color: isRepartidor ? 'rgba(255,255,255,0.7)' : '#94A3B8',
-                      textAlign: isRepartidor ? 'right' : 'left',
-                      marginTop: 2,
+                      maxWidth: '80%',
+                      padding: '10px 14px',
+                      borderRadius: 18,
+                      borderBottomRightRadius: isRepartidor ? 4 : 18,
+                      borderBottomLeftRadius: isRepartidor ? 18 : 4,
+                      background: isRepartidor ? '#007AFF' : 'rgba(30, 41, 59, 0.95)',
+                      color: '#FFFFFF',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                     }}
                   >
-                    {m.enviadoEn}
+                    <div style={{ fontSize: 14, lineHeight: 1.4 }}>{m.contenido}</div>
+                    <div
+                      className="font-mono"
+                      style={{
+                        fontSize: 10,
+                        color: isRepartidor ? 'rgba(255,255,255,0.7)' : '#94A3B8',
+                        textAlign: isRepartidor ? 'right' : 'left',
+                        marginTop: 3,
+                      }}
+                    >
+                      {m.enviadoEn}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              );
+            })
+          )}
         </div>
 
         {/* Mensajes rápidos */}
@@ -271,7 +358,7 @@ export default function RepartidorChat() {
               padding: '10px 16px',
               overflowX: 'auto',
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-              background: 'rgba(15, 23, 42, 0.9)',
+              background: 'rgba(15, 23, 42, 0.95)',
               flexShrink: 0,
               scrollbarWidth: 'none',
             }}
@@ -280,19 +367,19 @@ export default function RepartidorChat() {
               <button
                 key={i}
                 onClick={() => {
-                  enviarMensaje(msg);
+                  handleSend(msg);
                   setMostrarRapidos(false);
                 }}
                 style={{
                   flexShrink: 0,
-                  padding: '8px 16px',
+                  padding: '8px 14px',
                   borderRadius: 100,
                   border: '1px solid rgba(255, 255, 255, 0.15)',
-                  background: 'rgba(30, 41, 59, 0.8)',
+                  background: 'rgba(30, 41, 59, 0.9)',
                   fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: '#CBD5E1',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#E2E8F0',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                 }}
@@ -312,32 +399,33 @@ export default function RepartidorChat() {
             gap: 8,
             padding: 12,
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            background: 'rgba(15, 23, 42, 0.95)',
+            background: 'rgba(15, 23, 42, 0.98)',
           }}
         >
-          <button
-            onClick={() => {
-              if (ordenActiva?.clienteTelefono) {
-                window.open(`tel:${ordenActiva.clienteTelefono}`);
-              }
-            }}
-            aria-label="Llamar"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 14,
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: '#34C759',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Phone size={16} />
-          </button>
+          {clienteTelefono ? (
+            <a
+              href={`tel:${clienteTelefono}`}
+              aria-label="Llamar al cliente"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                border: '1px solid rgba(52, 199, 89, 0.3)',
+                background: 'rgba(52, 199, 89, 0.15)',
+                color: '#34C759',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                textDecoration: 'none',
+              }}
+              title={`Llamar a ${clienteNombre}`}
+            >
+              <Phone size={17} />
+            </a>
+          ) : null}
+
           <button
             onClick={() => setMostrarRapidos(!mostrarRapidos)}
             aria-label="Mensajes rápidos"
@@ -355,35 +443,35 @@ export default function RepartidorChat() {
               flexShrink: 0,
             }}
           >
-            <Zap size={16} />
+            <Zap size={17} />
           </button>
+
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Escribe un mensaje…"
+            placeholder="Escribe un mensaje al cliente…"
             className="chat-input lf-chat-input"
             style={{
               flex: 1,
               minHeight: 44,
-              padding: '0 18px',
+              padding: '0 16px',
               borderRadius: 22,
               border: '1px solid rgba(255, 255, 255, 0.15)',
               background: 'rgba(30, 41, 59, 0.8)',
               color: '#F8FAFC',
-              fontSize: 15,
+              fontSize: 14,
               fontFamily: "'DM Sans', sans-serif",
               outline: 'none',
-              transition: 'border-color 0.2s, background 0.2s',
             }}
           />
+
           <motion.button
             whileTap={{ scale: 0.92 }}
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim()}
             aria-label="Enviar mensaje"
-            className="chat-send-btn lf-chat-send-btn"
             style={{
               width: 44,
               height: 44,

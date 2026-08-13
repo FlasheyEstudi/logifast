@@ -107,7 +107,6 @@ model OrdenServicio {
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   calificaciones  CalificacionRepartidor[]
-  chats           ChatRepartidor[]
   cliente         User                     @relation("OrdenCliente", fields: [clienteId], references: [id], onDelete: Cascade)
   repartidor      RepartidorProfile?       @relation("OrdenRepartidor", fields: [repartidorId], references: [id])
   servicios       ServicioRepartidor[]
@@ -642,17 +641,16 @@ model NotificacionRepartidor {
 }
 
 model ChatRepartidor {
-  id           String            @id @default(cuid())
+  id           String             @id @default(cuid())
   ordenId      String
-  repartidorId String
+  repartidorId String?
   clienteId    String
   emisor       String
   contenido    String
-  leido        Boolean           @default(false)
-  enviadoEn    DateTime          @default(now())
-  cliente      User              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  orden        OrdenServicio     @relation(fields: [ordenId], references: [id], onDelete: Cascade)
-  repartidor   RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
+  leido        Boolean            @default(false)
+  enviadoEn    DateTime           @default(now())
+  cliente      User               @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  repartidor   RepartidorProfile? @relation(fields: [repartidorId], references: [id], onDelete: SetNull)
 
   @@index([ordenId, enviadoEn])
   @@index([repartidorId])

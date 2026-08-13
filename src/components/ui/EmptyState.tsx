@@ -10,13 +10,17 @@ interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
+  accionLabel?: string;
+  onAccion?: () => void;
   secundaria?: {
     label: string;
     onClick: () => void;
   };
 }
 
-export default function EmptyState({ icono, titulo, descripcion, accion, secundaria }: EmptyStateProps) {
+export default function EmptyState({ icono, titulo, descripcion, accion, accionLabel, onAccion, secundaria }: EmptyStateProps) {
+  const btnAccion = accion || (accionLabel && onAccion ? { label: accionLabel, onClick: onAccion } : undefined);
+
   return (
     <div className="empty-state">
       <div className="empty-state-icono">
@@ -25,9 +29,9 @@ export default function EmptyState({ icono, titulo, descripcion, accion, secunda
       <h3 className="empty-state-titulo">{titulo}</h3>
       <p className="empty-state-desc">{descripcion}</p>
       <div className="empty-state-acciones" style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 200, margin: '0 auto' }}>
-        {accion && (
-          <button className="lf-btn lf-btn-primary lf-btn-block" onClick={accion.onClick}>
-            {accion.label}
+        {btnAccion && (
+          <button className="lf-btn lf-btn-primary lf-btn-block" onClick={btnAccion.onClick}>
+            {btnAccion.label}
           </button>
         )}
         {secundaria && (

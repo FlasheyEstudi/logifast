@@ -2,7 +2,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useIngenieroStore } from '@/store/ingenieroStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useIngenieroStore, type Mantenimiento } from '@/store/ingenieroStore';
 import PullToRefresh from '@/components/ui/PullToRefresh';
 import EmptyState from '@/components/ui/EmptyState';
 import { ImageUploader } from '@/components/ui/ImageUploader';
@@ -14,34 +15,29 @@ interface Foto {
   filename: string;
 }
 
-/* ═══════════════════════════════════════════════
-   FOTOS LRU CACHE
-   Limita `selectedFotos` a FOTOS_CACHE_MAX entradas
-   con política LRU (Least Recently Used).
-   ═══════════════════════════════════════════════ */
 const FOTOS_CACHE_MAX = 50;
 
 export default function Mantenimientos() {
   const store = useIngenieroStore();
   const [selectedFotos, setSelectedFotos] = useState<Record<string, Foto[]>>({});
   const [openId, setOpenId] = useState<string | null>(null);
-  // Orden de acceso LRU: el índice 0 es el menos usado, el último es el más reciente.
   const fotosOrderRef = useRef<string[]>([]);
 
-  /**
-   * Escribe fotos para `mantId` (acepta un updater) y actualiza el orden LRU.
-   * Si el cache excede FOTOS_CACHE_MAX, evicta la entrada menos usada.
-   */
+  // Completion modal state
+  const [completingMant, setCompletingMant] = useState<Mantenimiento | null>(null);
+  const [manoObra, setManoObra] = useState<string>('200');
+  const [observacionesFinales, setObservacionesFinales] = useState<string>('');
+  const [selectedRepuestos, setSelectedRepuestos] = useState<Array<{ repuestoId: string; cantidad: number }>>([]);
+  const [submittingComplete, setSubmittingComplete] = useState(false);
+
   const writeFotos = useCallback(
     (mantId: string, updater: (prev: Foto[] | undefined) => Foto[]) => {
       setSelectedFotos((prev) => {
         const nextFotos = updater(prev[mantId]);
-        // Mover mantId al final (más recientemente usado)
         const order = fotosOrderRef.current.filter((k) => k !== mantId);
         order.push(mantId);
         fotosOrderRef.current = order;
         const next: Record<string, Foto[]> = { ...prev, [mantId]: nextFotos };
-        // Evictar LRU si excede el cap
         while (fotosOrderRef.current.length > FOTOS_CACHE_MAX) {
           const oldest = fotosOrderRef.current.shift();
           if (oldest !== undefined) delete next[oldest];
@@ -52,10 +48,6 @@ export default function Mantenimientos() {
     []
   );
 
-  /**
-   * Marca `mantId` como recientemente usado sin modificar sus fotos.
-   * Útil para bump de LRU al abrir una tarjeta (aunque el fetch aún no retorne).
-   */
   const touchFotos = useCallback((mantId: string) => {
     const order = fotosOrderRef.current.filter((k) => k !== mantId);
     order.push(mantId);
@@ -71,7 +63,6 @@ export default function Mantenimientos() {
     });
   }, []);
 
-
   const mantenimientosFiltrados = store.mantenimientos.filter((m) => {
     if (store.mantenimientosFiltro === 'todos') return true;
     if (store.mantenimientosFiltro === 'programados') return m.estado === 'PROGRAMADO';
@@ -83,7 +74,6 @@ export default function Mantenimientos() {
   // Cargar fotos para el mantenimiento abierto
   useEffect(() => {
     if (!openId) return;
-    // Marcar la tarjeta como recientemente usada (bump LRU) aunque el fetch falle.
     touchFotos(openId);
     fetch(`/api/mantenimientos/${openId}/fotos`)
       .then((r) => r.json())
@@ -94,6 +84,66 @@ export default function Mantenimientos() {
       })
       .catch(() => null);
   }, [openId, touchFotos, writeFotos]);
+
+  const handleOpenCompleteModal = (m: Mantenimiento) => {
+    setCompletingMant(m);
+    setManoObra(String(m.costoManoObra || 200));
+    setObservacionesFinales(m.observaciones || 'Servicio realizado satisfactoriamente');
+    setSelectedRepuestos([]);
+  };
+
+  const handleAddRepuestoToComplete = (repuestoId: string) => {
+    if (!repuestoId) return;
+    setSelectedRepuestos((prev) => {
+      const exists = prev.find((p) => p.repuestoId === repuestoId);
+      if (exists) {
+        return prev.map((p) => (p.repuestoId === repuestoId ? { ...p, cantidad: p.cantidad + 1 } : p));
+      }
+      return [...prev, { repuestoId, cantidad: 1 }];
+    });
+  };
+
+  const handleRemoveRepuesto = (repuestoId: string) => {
+    setSelectedRepuestos((prev) => prev.filter((p) => p.repuestoId !== repuestoId));
+  };
+
+  const handleUpdateRepuestoQty = (repuestoId: string, qty: number) => {
+    if (qty <= 0) {
+      handleRemoveRepuesto(repuestoId);
+      return;
+    }
+    setSelectedRepuestos((prev) =>
+      prev.map((p) => (p.repuestoId === repuestoId ? { ...p, cantidad: qty } : p))
+    );
+  };
+
+  const handleConfirmComplete = async () => {
+    if (!completingMant) return;
+    setSubmittingComplete(true);
+    try {
+      await store.completarMantenimiento(completingMant.id, {
+        costoManoObra: parseFloat(manoObra) || 0,
+        observaciones: observacionesFinales.trim() || undefined,
+        repuestosUsados: selectedRepuestos,
+      });
+      notify.success('Mantenimiento completado y motocicleta liberada.');
+      setCompletingMant(null);
+    } catch (err) {
+      console.error(err);
+      notify.error('Error al completar el mantenimiento.');
+    } finally {
+      setSubmittingComplete(false);
+    }
+  };
+
+  const calculateTotalPreview = () => {
+    const mano = parseFloat(manoObra) || 0;
+    const partsTotal = selectedRepuestos.reduce((acc, item) => {
+      const rep = store.repuestos.find((r) => r.id === item.repuestoId);
+      return acc + (rep?.precioUnitario || 0) * item.cantidad;
+    }, 0);
+    return { mano, partsTotal, total: mano + partsTotal };
+  };
 
   const getPrioridadColor = (p: string) => {
     const map: Record<string, string> = {
@@ -107,246 +157,637 @@ export default function Mantenimientos() {
 
   const getPrioridadGlow = (p: string) => {
     const map: Record<string, string> = {
-      BAJA: 'rgba(41,121,255,0.2)',
-      NORMAL: 'rgba(0,200,83,0.2)',
-      ALTA: 'rgba(255,179,0,0.25)',
-      URGENTE: 'rgba(255,23,68,0.3)',
+      BAJA: 'rgba(41,121,255,0.15)',
+      NORMAL: 'rgba(0,200,83,0.15)',
+      ALTA: 'rgba(255,179,0,0.18)',
+      URGENTE: 'rgba(255,23,68,0.22)',
     };
     return map[p] || 'transparent';
   };
 
   const getEstadoInfo = (e: string) => {
-    const map: Record<string, { bg: string; fg: string; label: string; icon: string }> = {
-      PROGRAMADO: { bg: 'rgba(41,121,255,0.12)', fg: '#2979FF', label: 'Programado', icon: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
-      EN_PROCESO: { bg: 'rgba(255,179,0,0.12)', fg: '#FFB300', label: 'En proceso', icon: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
-      COMPLETADO: { bg: 'rgba(0,200,83,0.12)', fg: '#00C853', label: 'Completado', icon: 'M5 13l4 4L19 7' },
-      CANCELADO: { bg: 'rgba(142,142,160,0.12)', fg: 'var(--text-muted)', label: 'Cancelado', icon: 'M6 18L18 6M6 6l12 12' },
+    const map: Record<string, { bg: string; fg: string; label: string }> = {
+      PROGRAMADO: { bg: 'rgba(41,121,255,0.12)', fg: '#2979FF', label: 'Programado' },
+      EN_PROCESO: { bg: 'rgba(255,179,0,0.15)', fg: '#D97706', label: 'En Taller / Proceso' },
+      COMPLETADO: { bg: 'rgba(16,185,129,0.15)', fg: '#10B981', label: 'Completado' },
+      CANCELADO: { bg: 'rgba(148,163,184,0.15)', fg: '#64748B', label: 'Cancelado' },
     };
-    return map[e] || { bg: 'rgba(142,142,160,0.12)', fg: 'var(--text-muted)', label: e, icon: 'M12 8v4l3 3' };
+    return map[e] || { bg: 'rgba(148,163,184,0.15)', fg: '#64748B', label: e };
   };
 
   const handleFotoSubida = (mantId: string, url: string) => {
     writeFotos(mantId, (prev) => [...(prev || []), { id: Date.now().toString(), url, filename: '' }]);
   };
 
+  const totals = calculateTotalPreview();
+
   return (
     <PullToRefresh onRefresh={async () => { await store.cargarDatos(); }}>
-      <div className="mantenimientos-pantalla">
+      <div className="mantenimientos-pantalla" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Header */}
-        <div className="mantenimientos-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="pantalla-title">Mantenimientos</h1>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
-              {mantenimientosFiltrados.length} {mantenimientosFiltrados.length === 1 ? 'registro' : 'registros'}
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--lf-text-main, #1a1a2e)' }}>
+              Mantenimientos de Flota
+            </h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--lf-text-muted, #6B7280)' }}>
+              {mantenimientosFiltrados.length} {mantenimientosFiltrados.length === 1 ? 'registro' : 'registros'} en el taller
             </p>
           </div>
+
           <button
-            className="lf-btn lf-btn-primary lf-btn-sm"
             onClick={() => store.toggleCrearMantenimiento()}
+            style={{
+              padding: '10px 20px',
+              borderRadius: 12,
+              border: 'none',
+              background: 'var(--lf-accent, #FF5722)',
+              color: '#ffffff',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(255,87,34,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Nuevo
+            <span style={{ fontSize: 16 }}>+</span> Programar Mantenimiento
           </button>
         </div>
 
-        {/* Filtros tipo chips */}
-        <div className="mantenimientos-filtros lf-modern-chips">
+        {/* Filtros Chips */}
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
           {[
             { value: 'todos', label: 'Todos', count: store.mantenimientos.length },
             { value: 'programados', label: 'Programados', count: store.mantenimientos.filter((m) => m.estado === 'PROGRAMADO').length },
-            { value: 'en_proceso', label: 'En proceso', count: store.mantenimientos.filter((m) => m.estado === 'EN_PROCESO').length },
+            { value: 'en_proceso', label: 'En Proceso', count: store.mantenimientos.filter((m) => m.estado === 'EN_PROCESO').length },
             { value: 'completados', label: 'Completados', count: store.mantenimientos.filter((m) => m.estado === 'COMPLETADO').length },
-          ].map((f) => (
-            <button
-              key={f.value}
-              className={`lf-modern-chip ${store.mantenimientosFiltro === f.value ? 'active' : ''}`}
-              onClick={() => store.setMantenimientosFiltro(f.value)}
-            >
-              <span>{f.label}</span>
-              <span className="lf-chip-count">{f.count}</span>
-            </button>
-          ))}
+          ].map((f) => {
+            const isActive = store.mantenimientosFiltro === f.value;
+            return (
+              <button
+                key={f.value}
+                onClick={() => store.setMantenimientosFiltro(f.value)}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 12,
+                  border: `1px solid ${isActive ? 'var(--lf-accent, #FF5722)' : 'var(--lf-border, #e5e7eb)'}`,
+                  background: isActive ? 'var(--lf-accent, #FF5722)' : 'var(--lf-surface, #ffffff)',
+                  color: isActive ? '#ffffff' : 'var(--lf-text-muted, #6B7280)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span>{f.label}</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '2px 6px',
+                    borderRadius: 99,
+                    background: isActive ? 'rgba(255,255,255,0.25)' : 'var(--lf-bg, #f1f5f9)',
+                    color: isActive ? '#ffffff' : 'inherit',
+                  }}
+                >
+                  {f.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Timeline vertical */}
         {mantenimientosFiltrados.length === 0 ? (
           <EmptyState
-            icono={
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-              </svg>
-            }
-            titulo="Sin mantenimientos"
-            descripcion="Crea un nuevo mantenimiento para una moto de la flota"
-            accion={{ label: 'Crear mantenimiento', onClick: () => store.toggleCrearMantenimiento() }}
+            icono={<span style={{ fontSize: 32 }}>🔧</span>}
+            titulo="Sin mantenimientos registrados"
+            descripcion="Programa un mantenimiento preventivo o correctivo para una motocicleta de la flota."
+            accionLabel="+ Programar Mantenimiento"
+            onAccion={() => store.toggleCrearMantenimiento()}
           />
         ) : (
-          <div className="lf-timeline">
-            {mantenimientosFiltrados.map((m, idx) => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {mantenimientosFiltrados.map((m) => {
               const info = getEstadoInfo(m.estado);
               const prioridadColor = getPrioridadColor(m.prioridad);
               const isOpen = openId === m.id;
               const fotos = selectedFotos[m.id] || [];
+
               return (
                 <div
                   key={m.id}
-                  className={`lf-mant-card ${isOpen ? 'open' : ''} stagger-item`}
                   style={{
-                    animationDelay: `${idx * 0.05}s`,
-                    '--prioridad-color': prioridadColor,
-                    '--prioridad-glow': getPrioridadGlow(m.prioridad),
-                  } as React.CSSProperties}
+                    background: 'var(--lf-surface, #ffffff)',
+                    borderRadius: 20,
+                    border: '1px solid var(--lf-border, #e5e7eb)',
+                    padding: 20,
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
                 >
-                  {/* Timeline dot */}
-                  <div className="lf-timeline-dot" style={{ background: prioridadColor }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                    </svg>
-                  </div>
+                  {/* Top: Priority pill + Category + Status Badge */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span
+                        style={{
+                          padding: '3px 10px',
+                          borderRadius: 8,
+                          fontSize: 11,
+                          fontWeight: 800,
+                          background: getPrioridadGlow(m.prioridad),
+                          color: prioridadColor,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Prioridad {m.prioridad}
+                      </span>
 
-                  <div className="lf-mant-card-content">
-                    {/* Top: prioridad + estado + fecha */}
-                    <div className="lf-mant-card-top">
-                      <div className="lf-mant-prioridad">
-                        <span className="lf-mant-prioridad-pill" style={{ background: getPrioridadGlow(m.prioridad), color: prioridadColor }}>
-                          {m.prioridad}
-                        </span>
-                        <span className="lf-mant-tipo">{m.tipo}</span>
-                      </div>
-                      <span className="lf-mant-estado" style={{ background: info.bg, color: info.fg }}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path d={info.icon} />
-                        </svg>
-                        {info.label}
+                      <span
+                        style={{
+                          padding: '3px 10px',
+                          borderRadius: 8,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          background: 'var(--lf-bg, #f1f5f9)',
+                          color: 'var(--lf-text-muted, #64748B)',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {m.tipo} · {m.categoria}
                       </span>
                     </div>
 
-                    {/* Moto info destacada */}
-                    <div className="lf-mant-moto-info">
-                      <div className="lf-mant-moto-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                          <circle cx="5.5" cy="17.5" r="3.5" />
-                          <circle cx="18.5" cy="17.5" r="3.5" />
-                          <path d="M15 6h2l3 3M5.5 14L9 6h4l-2 8M12 14h3" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="lf-mant-moto-nombre">{m.motoNombre}</div>
-                        <div className="lf-mant-moto-modelo">{m.motoModelo}</div>
-                      </div>
-                      <div className="lf-mant-km">
-                        <span className="lf-mant-km-value">{m.kmAlMomento.toLocaleString()}</span>
-                        <span className="lf-mant-km-unit">km</span>
-                      </div>
-                    </div>
+                    <span
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: 10,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        background: info.bg,
+                        color: info.fg,
+                      }}
+                    >
+                      {info.label}
+                    </span>
+                  </div>
 
-                    {/* Descripción */}
-                    <p className="lf-mant-desc">{m.descripcion}</p>
-
-                    {/* Metadata compacta */}
-                    <div className="lf-mant-meta">
-                      <div className="lf-mant-meta-item">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="12" y1="1" x2="12" y2="23" />
-                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
-                        <span>C$ {m.costoTotal.toLocaleString()}</span>
+                  {/* Moto Info & Mileage */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--lf-text-main, #1a1a2e)' }}>
+                        {m.motoNombre} <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--lf-text-muted, #6B7280)' }}>({m.motoModelo})</span>
                       </div>
-                      {m.programadoPara && (
-                        <div className="lf-mant-meta-item">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                          </svg>
-                          <span>{new Date(m.programadoPara).toLocaleDateString('es-NI', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                      )}
-                      {fotos.length > 0 && (
-                        <div className="lf-mant-meta-item fotos">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <polyline points="21 15 16 10 5 21" />
-                          </svg>
-                          <span>{fotos.length} foto{fotos.length !== 1 ? 's' : ''}</span>
+                      {m.motoPlaca && (
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--lf-text-muted, #94A3B8)', fontFamily: 'monospace', marginTop: 2 }}>
+                          PLACA: {m.motoPlaca}
                         </div>
                       )}
                     </div>
 
-                    {/* Galería de fotos (si está abierto) */}
-                    {isOpen && (
-                      <div className="lf-mant-fotos-section">
-                        <div className="lf-mant-fotos-header">
-                          <h4>Fotos del mantenimiento</h4>
-                          <span className="lf-mant-fotos-hint">Antes, durante y después</span>
-                        </div>
-                        {fotos.length > 0 && (
-                          <div className="lf-mant-fotos-grid">
-                            {fotos.map((f) => (
-                              <div key={f.id} className="lf-mant-foto">
-                                <img src={f.url} alt="mantenimiento" />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <ImageUploader
-                          categoria="mantenimiento"
-                          entidadId={m.id}
-                          onUploaded={(url) => handleFotoSubida(m.id, url)}
-                          label="Subir foto"
-                          hint="JPG, PNG, WEBP — máx 5MB"
-                          aspectRatio="wide"
-                          rounded="md"
-                        />
+                    <div style={{ background: 'var(--lf-bg, #f8fafc)', padding: '6px 12px', borderRadius: 10, border: '1px solid var(--lf-border, #e2e8f0)', textAlign: 'right' }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)' }}>
+                        {(m.kmAlMomento || 0).toLocaleString()} km
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--lf-text-muted, #94A3B8)' }}>Odómetro al servicio</div>
+                    </div>
+                  </div>
+
+                  {/* Description & Observations */}
+                  <div style={{ fontSize: 13, color: 'var(--lf-text-main, #334155)', lineHeight: 1.5, background: 'var(--lf-bg, #f8fafc)', padding: 12, borderRadius: 12 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>Descripción del trabajo:</div>
+                    <div>{m.descripcion}</div>
+                    {m.observaciones && (
+                      <div style={{ marginTop: 6, fontSize: 12, color: 'var(--lf-text-muted, #64748B)', borderTop: '1px dashed #e2e8f0', paddingTop: 6 }}>
+                        <strong>Notas del mecánico:</strong> {m.observaciones}
                       </div>
                     )}
+                  </div>
 
-                    {/* Acciones */}
-                    <div className="lf-mant-card-actions">
+                  {/* Spare Parts Breakdown (if any) */}
+                  {Array.isArray(m.repuestosUsados) && m.repuestosUsados.length > 0 && (
+                    <div style={{ background: 'var(--lf-bg, #f8fafc)', padding: 12, borderRadius: 12, border: '1px solid var(--lf-border, #e2e8f0)' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-muted, #64748B)', marginBottom: 6 }}>
+                        🔩 Repuestos instalados ({m.repuestosUsados.length}):
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {m.repuestosUsados.map((ru, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                            <span>{ru.nombre} × {ru.cantidad}</span>
+                            <span style={{ fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>C$ {(ru.subtotal || 0).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bottom: Costs, Scheduled Date & Actions */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderTop: '1px solid var(--lf-border, #e5e7eb)', paddingTop: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: 'var(--lf-text-muted, #94A3B8)', textTransform: 'uppercase', fontWeight: 700 }}>Costo Total</div>
+                        <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#10B981' }}>
+                          C$ {(m.costoTotal || 0).toLocaleString()}
+                        </div>
+                      </div>
+
+                      {m.programadoPara && (
+                        <div style={{ borderLeft: '1px solid var(--lf-border, #e5e7eb)', paddingLeft: 14 }}>
+                          <div style={{ fontSize: 10, color: 'var(--lf-text-muted, #94A3B8)', textTransform: 'uppercase', fontWeight: 700 }}>Programado</div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted, #64748B)' }}>
+                            {new Date(m.programadoPara).toLocaleDateString('es-NI', { day: 'numeric', month: 'short' })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       {m.estado === 'PROGRAMADO' && (
                         <>
                           <button
-                            className="lf-btn lf-btn-primary lf-btn-sm lf-btn-block"
-                            onClick={(e) => { e.stopPropagation(); store.iniciarMantenimiento(m.id); notify.success('Mantenimiento iniciado'); }}
+                            onClick={async () => {
+                              await store.iniciarMantenimiento(m.id);
+                              notify.success('Mantenimiento en proceso. Moto enviada a taller.');
+                            }}
+                            style={{
+                              padding: '8px 14px',
+                              borderRadius: 10,
+                              border: 'none',
+                              background: 'var(--lf-accent, #FF5722)',
+                              color: '#ffffff',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                            Iniciar
+                            ▶ Iniciar Trabajo
                           </button>
+
                           <button
-                            className="lf-btn lf-btn-ghost lf-btn-sm"
-                            onClick={(e) => { e.stopPropagation(); store.cancelarMantenimiento(m.id); notify.info('Mantenimiento cancelado'); }}
+                            onClick={() => handleOpenCompleteModal(m)}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: 10,
+                              border: '1px solid var(--lf-border, #e5e7eb)',
+                              background: 'rgba(16, 185, 129, 0.1)',
+                              color: '#10B981',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✓ Completar
+                          </button>
+
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('¿Cancelar este mantenimiento programado?')) {
+                                await store.cancelarMantenimiento(m.id);
+                                notify.info('Mantenimiento cancelado.');
+                              }
+                            }}
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: 10,
+                              border: '1px solid var(--lf-border, #e5e7eb)',
+                              background: 'transparent',
+                              color: 'var(--lf-text-muted, #94A3B8)',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✕ Cancelar
+                          </button>
+                        </>
+                      )}
+
+                      {m.estado === 'EN_PROCESO' && (
+                        <>
+                          <button
+                            onClick={() => handleOpenCompleteModal(m)}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: 10,
+                              border: 'none',
+                              background: '#10B981',
+                              color: '#ffffff',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              boxShadow: '0 4px 10px rgba(16, 185, 129, 0.25)',
+                            }}
+                          >
+                            ✓ Finalizar & Completar
+                          </button>
+
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('¿Cancelar mantenimiento en proceso?')) {
+                                await store.cancelarMantenimiento(m.id);
+                                notify.info('Mantenimiento cancelado y moto liberada.');
+                              }
+                            }}
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: 10,
+                              border: '1px solid var(--lf-border, #e5e7eb)',
+                              background: 'transparent',
+                              color: 'var(--lf-text-muted, #94A3B8)',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                            }}
                           >
                             Cancelar
                           </button>
                         </>
                       )}
-                      {m.estado === 'EN_PROCESO' && (
-                        <button
-                          className="lf-btn lf-btn-success lf-btn-sm lf-btn-block"
-                          onClick={(e) => { e.stopPropagation(); store.completarMantenimiento(m.id, m.costoTotal); notify.success('Mantenimiento completado'); }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
-                          Completar
-                        </button>
-                      )}
+
                       <button
-                        className="lf-btn lf-btn-ghost lf-btn-sm"
-                        onClick={(e) => { e.stopPropagation(); setOpenId(isOpen ? null : m.id); }}
+                        onClick={() => setOpenId(isOpen ? null : m.id)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 10,
+                          border: '1px solid var(--lf-border, #e5e7eb)',
+                          background: 'transparent',
+                          color: 'var(--lf-text-main, #334155)',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
                       >
-                        {isOpen ? 'Cerrar' : 'Ver detalles'}
+                        {isOpen ? 'Ocultar fotos' : '📷 Fotos'}
                       </button>
                     </div>
                   </div>
+
+                  {/* Photo attachment gallery */}
+                  {isOpen && (
+                    <div style={{ borderTop: '1px solid var(--lf-border, #e5e7eb)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-main, #1a1a2e)' }}>
+                        Fotografías y Evidencia del Trabajo
+                      </div>
+                      {fotos.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
+                          {fotos.map((f) => (
+                            <img
+                              key={f.id}
+                              src={f.url}
+                              alt="evidencia"
+                              style={{ width: '100%', height: 90, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <ImageUploader
+                        categoria="mantenimiento"
+                        entidadId={m.id}
+                        onUploaded={(url) => handleFotoSubida(m.id, url)}
+                        label="Subir foto del trabajo"
+                        hint="JPG, PNG — máx 5MB"
+                        aspectRatio="wide"
+                        rounded="md"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
+
+        {/* ── COMPLETAR MANTENIMIENTO MODAL ── */}
+        <AnimatePresence>
+          {completingMant && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9999,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: 16,
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => !submittingComplete && setCompletingMant(null)}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(8px)',
+                }}
+              />
+
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  maxWidth: 540,
+                  background: 'var(--lf-surface, #ffffff)',
+                  borderRadius: 20,
+                  padding: 24,
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+                  zIndex: 10000,
+                  border: '1px solid var(--lf-border, #e5e7eb)',
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <div>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--lf-text-main, #1a1a2e)' }}>
+                      Finalizar y Completar Mantenimiento
+                    </h2>
+                    <div style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', marginTop: 2 }}>
+                      {completingMant.motoNombre} ({completingMant.motoModelo})
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => !submittingComplete && setCompletingMant(null)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#94A3B8' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {/* Mano de obra */}
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted, #6B7280)', marginBottom: 4, display: 'block' }}>
+                      Costo de Mano de Obra (C$) *
+                    </label>
+                    <input
+                      type="number"
+                      value={manoObra}
+                      onChange={(e) => setManoObra(e.target.value)}
+                      placeholder="200"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 10,
+                        border: '1px solid var(--lf-border, #e5e7eb)',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        fontFamily: "'DM Mono', monospace",
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+
+                  {/* Selector de repuestos utilizados */}
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted, #6B7280)', marginBottom: 4, display: 'block' }}>
+                      Agregar Repuestos Usados del Inventario
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        handleAddRepuestoToComplete(e.target.value);
+                        e.target.value = '';
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 10,
+                        border: '1px solid var(--lf-border, #e5e7eb)',
+                        fontSize: 13,
+                      }}
+                    >
+                      <option value="">Seleccionar repuesto de almacén...</option>
+                      {store.repuestos.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.nombre} — C$ {r.precioUnitario} (Stock: {r.stock} {r.unidad})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Lista de repuestos seleccionados */}
+                  {selectedRepuestos.length > 0 && (
+                    <div style={{ background: 'var(--lf-bg, #f8fafc)', padding: 12, borderRadius: 12, border: '1px solid var(--lf-border, #e2e8f0)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--lf-text-muted, #64748B)' }}>
+                        Repuestos a descontar del inventario:
+                      </div>
+                      {selectedRepuestos.map((item) => {
+                        const rep = store.repuestos.find((r) => r.id === item.repuestoId);
+                        const sub = (rep?.precioUnitario || 0) * item.cantidad;
+                        return (
+                          <div key={item.repuestoId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: 12, fontWeight: 600 }}>{rep?.nombre || 'Repuesto'}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateRepuestoQty(item.repuestoId, item.cantidad - 1)}
+                                  style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer' }}
+                                >
+                                  -
+                                </button>
+                                <span style={{ fontSize: 12, fontWeight: 700, minWidth: 18, textAlign: 'center' }}>{item.cantidad}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateRepuestoQty(item.repuestoId, item.cantidad + 1)}
+                                  style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer' }}
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'DM Mono', monospace", minWidth: 60, textAlign: 'right' }}>
+                                C$ {sub.toLocaleString()}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveRepuesto(item.repuestoId)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', fontSize: 14 }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Observaciones */}
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted, #6B7280)', marginBottom: 4, display: 'block' }}>
+                      Notas Finales del Mecánico
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={observacionesFinales}
+                      onChange={(e) => setObservacionesFinales(e.target.value)}
+                      placeholder="Detalles sobre el trabajo realizado..."
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 10,
+                        border: '1px solid var(--lf-border, #e5e7eb)',
+                        fontSize: 13,
+                        outline: 'none',
+                        resize: 'none',
+                      }}
+                    />
+                  </div>
+
+                  {/* Resumen Total */}
+                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: 14, borderRadius: 14, border: '1px solid rgba(16, 185, 129, 0.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#065F46', fontWeight: 600 }}>Costo Total Liquidado</div>
+                      <div style={{ fontSize: 11, color: '#047857' }}>Mano de obra (C$ {totals.mano}) + Repuestos (C$ {totals.partsTotal})</div>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#047857' }}>
+                      C$ {totals.total.toLocaleString()}
+                    </div>
+                  </div>
+
+                  {/* Botones */}
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCompletingMant(null)}
+                      disabled={submittingComplete}
+                      style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid var(--lf-border, #e5e7eb)', background: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmComplete}
+                      disabled={submittingComplete}
+                      style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: '#10B981', color: '#ffffff', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
+                    >
+                      {submittingComplete ? 'Procesando...' : 'Finalizar y Liberar Moto'}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         <div style={{ height: 100 }} />
       </div>

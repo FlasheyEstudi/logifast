@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { geocodeAddress } from '@/lib/osrm';
 
 export const dynamic = 'force-dynamic';
 
@@ -165,10 +166,9 @@ export async function PATCH(req: NextRequest) {
       data: {
         ...(nombre !== undefined && { nombre }),
         ...(descripcion !== undefined && { descripcion }),
-        ...(categoria !== undefined && { categoria }),
         ...(direccion !== undefined && { direccion }),
-        ...(lat !== undefined && { lat: parseFloat(lat) || 0 }),
-        ...(lng !== undefined && { lng: parseFloat(lng) || 0 }),
+        ...(lat !== undefined ? { lat: parseFloat(lat) || (direccion ? geocodeAddress(direccion)[0] : 12.1365) } : (direccion ? { lat: geocodeAddress(direccion)[0] } : {})),
+        ...(lng !== undefined ? { lng: parseFloat(lng) || (direccion ? geocodeAddress(direccion)[1] : -86.2514) } : (direccion ? { lng: geocodeAddress(direccion)[1] } : {})),
         ...(telefono !== undefined && { telefono }),
         ...(email !== undefined && { email }),
         ...(whatsapp !== undefined && { whatsapp }),

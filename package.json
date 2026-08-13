@@ -52,7 +52,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@reactuses/core": "^6.0.5",
-    "@supabase/supabase-js": "^2.112.2",
+    "@supabase/supabase-js": "^2.112.3",
     "@tabler/icons-react": "^3.44.0",
     "@tailwindcss/postcss": "^4",
     "@tanstack/react-query": "^5.82.0",

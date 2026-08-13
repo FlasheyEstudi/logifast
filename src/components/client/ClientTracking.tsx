@@ -43,7 +43,17 @@ interface ClientTrackingProps {
    REPARTIDORES INFO MAP
    ═══════════════════════════════════════════════ */
 
-function getRepartidorInfo(driverName?: string | null, initials?: string | null): RepartidorInfo | null {
+function getRepartidorInfo(
+  driverName?: string | null,
+  initials?: string | null,
+  realData?: {
+    telefono?: string | null;
+    calificacion?: number | null;
+    totalEntregas?: number | null;
+    fotoUrl?: string | null;
+    color?: string | null;
+  } | null
+): RepartidorInfo | null {
   if (
     !driverName ||
     driverName === 'Sin asignar' ||
@@ -66,11 +76,11 @@ function getRepartidorInfo(driverName?: string | null, initials?: string | null)
     id: 'rep-assigned',
     nombre: driverName,
     initials: cleanInitials,
-    color: 'var(--primario)',
-    calificacion: 5.0,
-    totalEntregas: 48,
+    color: realData?.color || 'var(--primario, #007AFF)',
+    calificacion: realData?.calificacion ?? 5.0,
+    totalEntregas: realData?.totalEntregas ?? 0,
     moto: 'Moto LogiFast',
-    telefono: '+505 8888-0000',
+    telefono: realData?.telefono || '',
     lat: 12.114,
     lng: -86.24,
   };
@@ -656,14 +666,15 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         ganancia: currentOrdenCompra.total * 0.2,
         kmEstimados: 3.2,
         tiempoEstimado: 18,
-        cliente: 'Cliente',
-        clienteTelefono: '+505 8888-0000',
+        cliente: (currentOrdenCompra as any).clienteNombre || backendTracking?.cliente?.nombre || 'Cliente',
+        clienteTelefono: (currentOrdenCompra as any).clienteTelefono || backendTracking?.cliente?.telefono || '',
         descripcion: 'Compra en tienda ' + (currentOrdenCompra.tiendaNombre || 'Marketplace'),
         estadoPago: 'pagado',
         fecha: currentOrdenCompra.fecha,
         hora: currentOrdenCompra.hora || '12:00',
         timeline: [],
         repartidor: currentOrdenCompra.repartidorNombre || backendTracking?.repartidor?.nombre,
+        repartidorTelefono: (currentOrdenCompra as any).repartidorTelefono || backendTracking?.repartidor?.telefono || '',
         repartidorInitials: currentOrdenCompra.repartidorInitials || (backendTracking?.repartidor?.nombre?.slice(0, 2)?.toUpperCase() || 'RP'),
         metodoPago: currentOrdenCompra.metodoPago,
         codigoPin: pinCode,
@@ -687,15 +698,16 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         ganancia: (bo.total || 0) * 0.2,
         kmEstimados: 3.5,
         tiempoEstimado: 20,
-        cliente: 'Cliente',
-        clienteTelefono: '+505 8888-0000',
+        cliente: backendTracking.cliente?.nombre || 'Cliente',
+        clienteTelefono: backendTracking.cliente?.telefono || '',
         descripcion: 'Pedido LogiFast #' + bo.id.slice(-5),
         estadoPago: 'pagado',
         fecha: new Date(bo.createdAt || Date.now()).toISOString().slice(0, 10),
         hora: '12:00',
         timeline: [],
         repartidor: backendTracking.repartidor?.nombre || 'Repartidor',
-        repartidorInitials: 'RP',
+        repartidorTelefono: backendTracking.repartidor?.telefono || '',
+        repartidorInitials: backendTracking.repartidor?.initials || (backendTracking.repartidor?.nombre ? backendTracking.repartidor.nombre.slice(0, 2).toUpperCase() : 'RP'),
         metodoPago: bo.metodoPago || 'efectivo',
         codigoPin: bo.codigoPin || '1234',
         createdAt: bo.createdAt,
@@ -712,8 +724,15 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     return '1234';
   }, [order, backendTracking]);
 
-  // Get repartidor info (null if not assigned yet)
-  const repartidor = order ? getRepartidorInfo(order.repartidor, order.repartidorInitials) : null;
+  // Get repartidor info with real phone and backend metrics (null if not assigned yet)
+  const repartidor = order
+    ? getRepartidorInfo(order.repartidor, order.repartidorInitials, {
+        telefono: backendTracking?.repartidor?.telefono || (order as any).repartidorTelefono || '',
+        calificacion: backendTracking?.repartidor?.calificacion || 5.0,
+        totalEntregas: backendTracking?.repartidor?.totalEntregas || 0,
+        fotoUrl: backendTracking?.repartidor?.fotoUrl || null,
+      })
+    : null;
 
   // Fetch OSRM route dynamically
   useEffect(() => {

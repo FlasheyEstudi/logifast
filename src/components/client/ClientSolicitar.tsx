@@ -922,6 +922,17 @@ function CheckAnimation() {
 
 export default function ClientSolicitar({ isDark, userName, onNavigate }: ClientSolicitarProps) {
   const { tiendas: tiendasMapa } = useMapaPuntos();
+  const [clientPhone, setClientPhone] = useState('');
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.user?.telefono) setClientPhone(data.user.telefono);
+      })
+      .catch(() => null);
+  }, []);
+
   const {
     solicitudEnvio,
     setSolicitudEnvio,
@@ -1262,7 +1273,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         id: newId,
         codigoPin: randomPin,
         cliente: userName,
-        clienteTelefono: '+505 8888-0000',
+        clienteTelefono: clientPhone || '',
         origen: solicitudEnvio.origen,
         destino: solicitudEnvio.destino,
         origenLat: solicitudEnvio.origenLat,
@@ -1309,6 +1320,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
           ganancia: Math.round(costBreakdown.total * 0.7),
           kmEstimados: costBreakdown.distanceKm || 3.5,
           tiempoEstimado: Math.round((costBreakdown.distanceKm || 3.5) * 4) || 15,
+          clienteTelefono: clientPhone || undefined,
         }),
       })
         .then((res) => res.json())

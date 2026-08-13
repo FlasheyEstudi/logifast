@@ -48,18 +48,99 @@ const satelliteStyle = {
 };
 
 /* ─── MapLibre map inner component ─── */
-function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRoutes, showHeatmap, showSatellite, panelOpen, orders }: {
-  isDark: boolean; motos: Moto[]; activeOrders: Order[];
-  zonePolygons: ZonePolygon[]; showZones: boolean; showRoutes: boolean;
-  showHeatmap: boolean; showSatellite: boolean; panelOpen: boolean; orders: Order[];
+function MapInner({
+  isDark,
+  motos: storeMotos,
+  activeOrders,
+  zonePolygons,
+  showZones,
+  showRoutes,
+  showHeatmap,
+  showSatellite,
+  panelOpen,
+  orders,
+}: {
+  isDark: boolean;
+  motos: Moto[];
+  activeOrders: Order[];
+  zonePolygons: ZonePolygon[];
+  showZones: boolean;
+  showRoutes: boolean;
+  showHeatmap: boolean;
+  showSatellite: boolean;
+  panelOpen: boolean;
+  orders: Order[];
 }) {
-  const { tiendas, clientePuntos } = useMapaPuntos();
+  const {
+    tiendas,
+    clientePuntos,
+    repartidoresPuntos,
+    motos: liveMotos,
+    buscarPuntos,
+  } = useMapaPuntos();
+
   const [routes, setRoutes] = useState<Array<{ positions: [number, number][]; order: Order }>>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+
+  // Filter toggles
+  const [filterTiendas, setFilterTiendas] = useState(true);
+  const [filterMotos, setFilterMotos] = useState(true);
+  const [filterRepartidores, setFilterRepartidores] = useState(true);
+  const [filterClientes, setFilterClientes] = useState(true);
+
   const updateMotoPositions = useStore((s) => s.updateMotoPositions);
   const mapRef = useRef<MapRef | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Intelligent search handler
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+    setIsSearching(true);
+    const timeout = setTimeout(() => {
+      buscarPuntos(searchQuery).then((res) => {
+        setSearchResults(res);
+        setShowSearchDropdown(true);
+        setIsSearching(false);
+      });
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, buscarPuntos]);
+
+  const handleSelectSearchResult = (item: any) => {
+    setSelectedEntityId(item.id);
+    setShowSearchDropdown(false);
+    setSearchQuery(item.titulo);
+    if (mapRef.current && item.lat && item.lng) {
+      mapRef.current.flyTo({
+        center: [item.lng, item.lat],
+        zoom: 16.5,
+        duration: 1200,
+        pitch: 45,
+      });
+    }
+  };
 
   useEffect(() => {
-    const interval = setInterval(() => updateMotoPositions(), 8000);
+    const interval = setInterval(() => updateMotoPositions(), 5000);
     return () => clearInterval(interval);
   }, [updateMotoPositions]);
 
@@ -88,7 +169,7 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
 
   useEffect(() => {
     fetchRoutes();
-    const iv = setInterval(fetchRoutes, 30000);
+    const iv = setInterval(fetchRoutes, 20000);
     return () => clearInterval(iv);
   }, [fetchRoutes]);
 
@@ -98,35 +179,47 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
       mapRef.current.flyTo({
         center: [MANAGUA_CENTER[1], MANAGUA_CENTER[0]],
         zoom: 13,
-        duration: 1500
+        pitch: 0,
+        bearing: 0,
+        duration: 1500,
       });
     }
   }, []);
 
   const showAllMotos = useCallback(() => {
     const map = mapRef.current;
-    if (!map || motos.length === 0) return;
-    const validMotos = motos.filter(m => typeof m.lat === 'number' && typeof m.lng === 'number' && m.lat !== 0 && m.lng !== 0);
+    const allMotos = liveMotos.length > 0 ? liveMotos : storeMotos;
+    if (!map || allMotos.length === 0) return;
+    const validMotos = allMotos.filter(
+      (m) => typeof m.lat === 'number' && typeof m.lng === 'number' && m.lat !== 0 && m.lng !== 0
+    );
     if (validMotos.length === 0) return;
 
-    let minLng = Infinity;
-    let maxLng = -Infinity;
-    let minLat = Infinity;
-    let maxLat = -Infinity;
-    validMotos.forEach(m => {
+    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    validMotos.forEach((m) => {
       if (m.lng < minLng) minLng = m.lng;
       if (m.lng > maxLng) maxLng = m.lng;
       if (m.lat < minLat) minLat = m.lat;
       if (m.lat > maxLat) maxLat = m.lat;
     });
 
-    map.fitBounds([
-      [minLng, minLat],
-      [maxLng, maxLat]
-    ], { padding: 40, duration: 1500 });
-  }, [motos]);
+    map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, duration: 1500 });
+  }, [liveMotos, storeMotos]);
 
-  // ─── Heatmap data: order origin/destination coordinates ───
+  const showAllTiendas = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || tiendas.length === 0) return;
+    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    tiendas.forEach((t) => {
+      if (t.lng < minLng) minLng = t.lng;
+      if (t.lng > maxLng) maxLng = t.lng;
+      if (t.lat < minLat) minLat = t.lat;
+      if (t.lat > maxLat) maxLat = t.lat;
+    });
+    map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, duration: 1500 });
+  }, [tiendas]);
+
+  // Heatmap data
   const heatmapPoints = useMemo(() => {
     if (!showHeatmap) return [];
     const points: Array<{ lat: number; lng: number }> = [];
@@ -137,7 +230,7 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
     return points;
   }, [showHeatmap, orders]);
 
-  // ─── ETA labels for active routes ───
+  // ETA labels
   const etaLabels = useMemo(() => {
     const activeStatuses = ['encamino'];
     return routes
@@ -146,14 +239,13 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
         const positions = route.positions;
         const midIndex = Math.floor(positions.length / 2);
         const midPoint = positions[midIndex] || positions[0];
-        // Calculate approximate distance in km using Haversine-like approximation
         let totalDist = 0;
         for (let i = 1; i < positions.length; i++) {
           const dLat = positions[i][0] - positions[i - 1][0];
           const dLng = positions[i][1] - positions[i - 1][1];
-          totalDist += Math.sqrt(dLat * dLat + dLng * dLng) * 111; // rough km
+          totalDist += Math.sqrt(dLat * dLat + dLng * dLng) * 111;
         }
-        const etaMin = Math.round(totalDist * 3); // ~3 min per km
+        const etaMin = Math.round(totalDist * 3);
         return {
           id: route.order.id,
           position: midPoint,
@@ -163,12 +255,12 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
       });
   }, [routes]);
 
-  // Convert zone polygons to GeoJSON FeatureCollection
+  // Zone polygons
   const zoneGeoJSON = useMemo(() => {
     return {
       type: 'FeatureCollection' as const,
-      features: zonePolygons.map(zone => {
-        const coords = zone.coords.map(c => [c[1], c[0]]);
+      features: zonePolygons.map((zone) => {
+        const coords = zone.coords.map((c) => [c[1], c[0]]);
         if (coords.length > 0 && (coords[0][0] !== coords[coords.length - 1][0] || coords[0][1] !== coords[coords.length - 1][1])) {
           coords.push(coords[0]);
         }
@@ -177,19 +269,20 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
           id: zone.id,
           geometry: {
             type: 'Polygon' as const,
-            coordinates: [coords]
+            coordinates: [coords],
           },
           properties: {
             id: zone.id,
             nombre: zone.nombre,
-            color: zone.color
-          }
+            color: zone.color,
+          },
         };
-      })
+      }),
     };
   }, [zonePolygons]);
 
   const activeStatuses = ['encamino', 'recogido'];
+  const effectiveMotos = liveMotos.length > 0 ? liveMotos : storeMotos;
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -201,19 +294,22 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
         theme={isDark ? 'dark' : 'light'}
         styles={showSatellite ? { light: satelliteStyle, dark: satelliteStyle } : undefined}
       >
-        {/* Heatmap circles - simulated using CSS radial gradient markers */}
-        {showHeatmap && heatmapPoints.map((point, i) => (
-          <MapMarker key={`hm-${i}`} longitude={point.lng} latitude={point.lat}>
-            <div style={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(255,102,0,0.3) 0%, rgba(255,102,0,0) 70%)',
-              transform: 'translate(-50%, -50%)',
-              pointerEvents: 'none'
-            }} />
-          </MapMarker>
-        ))}
+        {/* Heatmap circles */}
+        {showHeatmap &&
+          heatmapPoints.map((point, i) => (
+            <MapMarker key={`hm-${i}`} longitude={point.lng} latitude={point.lat}>
+              <div
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(255,102,0,0.3) 0%, rgba(255,102,0,0) 70%)',
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'none',
+                }}
+              />
+            </MapMarker>
+          ))}
 
         {/* Zone polygons */}
         {showZones && (
@@ -221,191 +317,565 @@ function MapInner({ isDark, motos, activeOrders, zonePolygons, showZones, showRo
             data={zoneGeoJSON}
             fillPaint={{
               'fill-color': ['get', 'color'],
-              'fill-opacity': 0.1
+              'fill-opacity': 0.1,
             }}
             linePaint={{
               'line-color': ['get', 'color'],
               'line-width': 2,
-              'line-dasharray': [3, 3]
+              'line-dasharray': [3, 3],
             }}
           />
         )}
 
         {/* Zone labels */}
-        {showZones && zonePolygons.map((zone) => {
-          const centerLat = zone.coords.reduce((s, c) => s + c[0], 0) / zone.coords.length;
-          const centerLng = zone.coords.reduce((s, c) => s + c[1], 0) / zone.coords.length;
-          return (
-            <MapMarker key={`zl-${zone.id}`} longitude={centerLng} latitude={centerLat}>
-              <div style={{
-                fontFamily: "'DM Sans',sans-serif",
-                fontWeight: 700,
-                fontSize: 11,
-                color: zone.color,
-                textShadow: '0 1px 3px rgba(255,255,255,0.8), 0 1px 3px rgba(0,0,0,0.1)',
-                whiteSpace: 'nowrap',
-                textAlign: 'center',
-                opacity: 0.9,
-                pointerEvents: 'none'
-              }}>
-                {zone.nombre}
+        {showZones &&
+          zonePolygons.map((zone) => {
+            const centerLat = zone.coords.reduce((s, c) => s + c[0], 0) / zone.coords.length;
+            const centerLng = zone.coords.reduce((s, c) => s + c[1], 0) / zone.coords.length;
+            return (
+              <MapMarker key={`zl-${zone.id}`} longitude={centerLng} latitude={centerLat}>
+                <div
+                  style={{
+                    fontFamily: "'DM Sans',sans-serif",
+                    fontWeight: 700,
+                    fontSize: 11,
+                    color: zone.color,
+                    textShadow: '0 1px 3px rgba(255,255,255,0.8), 0 1px 3px rgba(0,0,0,0.1)',
+                    whiteSpace: 'nowrap',
+                    textAlign: 'center',
+                    opacity: 0.9,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {zone.nombre}
+                </div>
+              </MapMarker>
+            );
+          })}
+
+        {/* Tiendas registradas en el mapa con geolocalización inteligente */}
+        {filterTiendas &&
+          tiendas.map((t) => (
+            <MapMarker key={`tienda-${t.id}`} longitude={t.lng} latitude={t.lat}>
+              <div
+                style={{
+                  position: 'relative',
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  background: t.logoColor || '#0066FF',
+                  border: '2.5px solid #FFFFFF',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  transform: selectedEntityId === `tienda-${t.id}` ? 'scale(1.25)' : 'scale(1)',
+                  transition: 'transform 0.2s ease',
+                }}
+              >
+                {t.nombre.slice(0, 2).toUpperCase()}
+                {t.verificado && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: -2,
+                      right: -2,
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      background: '#10B981',
+                      border: '1.5px solid #FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 8,
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
               </div>
+              <MarkerPopup>
+                <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 180, padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {t.nombre}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>{t.categoria}</div>
+                  <div style={{ fontSize: 12, marginTop: 4, lineHeight: 1.3 }}>📍 {t.direccion}</div>
+                  {t.telefono && (
+                    <div style={{ fontSize: 12, marginTop: 4 }}>
+                      <a href={`tel:${t.telefono}`} style={{ color: '#10B981', fontWeight: 600, textDecoration: 'none' }}>
+                        📞 {t.telefono}
+                      </a>
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, marginTop: 4 }}>★ {t.calificacion.toFixed(1)}</div>
+                </div>
+              </MarkerPopup>
             </MapMarker>
-          );
-        })}
+          ))}
 
-        {/* Moto markers with popup info */}
-        {motos.map((moto) => (
-          <MapMarker key={moto.id} longitude={moto.lng} latitude={moto.lat}>
-            <div style={{ position: 'relative', width: 28, height: 28 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: '50%',
-                background: STATUS_COLORS[moto.status] || '#6B7280',
-                border: '3px solid white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <Bike size={14} color="white" />
+        {/* Repartidores activos en tiempo real */}
+        {filterRepartidores &&
+          repartidoresPuntos.map((r) => (
+            <MapMarker key={`rep-${r.id}`} longitude={r.lng} latitude={r.lat}>
+              <div style={{ position: 'relative', width: 34, height: 34, cursor: 'pointer' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: -4,
+                    borderRadius: '50%',
+                    background: r.estado === 'in-service' ? 'rgba(255,102,0,0.35)' : 'rgba(16,185,129,0.35)',
+                    animation: 'marker-pulse 2s ease-out infinite',
+                  }}
+                />
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: '50%',
+                    background: r.estado === 'in-service' ? '#FF6600' : '#10B981',
+                    border: '2.5px solid #FFFFFF',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: 11,
+                  }}
+                >
+                  <Bike size={17} color="#FFFFFF" />
+                </div>
               </div>
-              {moto.status === 'in-service' && (
-                <div className="lf-marker-pulse" style={{ position: 'absolute', inset: -4, borderRadius: '50%' }}></div>
-              )}
-            </div>
-            <MarkerPopup>
-              <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 150, padding: '4px 8px', color: 'var(--text)' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{moto.nombre}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{moto.modelo} ({moto.anio})</div>
-                <div style={{ fontSize: 12, color: STATUS_COLORS[moto.status], fontWeight: 600, marginTop: 4 }}>{STATUS_LABELS[moto.status]}</div>
-                {moto.repartidorAsignado && <div style={{ fontSize: 12, marginTop: 2 }}>Repartidor: {moto.repartidorAsignado}</div>}
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>KM: {(moto.km ?? (moto as any).kmAcumulados ?? 0).toLocaleString()}</div>
-              </div>
-            </MarkerPopup>
-          </MapMarker>
-        ))}
+              <MarkerPopup>
+                <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 170, padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>🛵 {r.nombre}</div>
+                  <div style={{ fontSize: 12, color: r.estado === 'in-service' ? '#FF6600' : '#10B981', fontWeight: 700, marginTop: 2 }}>
+                    {r.estado === 'in-service' ? 'En viaje / entrega' : 'En línea (Disponible)'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
+                    Vehículo: {r.vehiculoTipo} ({r.vehiculoPlaca || 'Sin placa'})
+                  </div>
+                  {r.telefono && (
+                    <div style={{ fontSize: 12, marginTop: 4 }}>
+                      <a href={`tel:${r.telefono}`} style={{ color: '#10B981', fontWeight: 600, textDecoration: 'none' }}>
+                        📞 {r.telefono}
+                      </a>
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
+                    Entregas totales: {r.totalEntregas ?? 0}
+                  </div>
+                </div>
+              </MarkerPopup>
+            </MapMarker>
+          ))}
 
-        {/* Tiendas registradas en el mapa */}
-        {tiendas.map((t) => (
-          <MapMarker key={`tienda-${t.id}`} longitude={t.lng} latitude={t.lat}>
-            <div style={{
-              width: 30, height: 30, borderRadius: '50%',
-              background: t.logoColor || '#0066FF',
-              border: '2px solid white',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 700, fontSize: 12, cursor: 'pointer'
-            }}>
-              {t.nombre.slice(0, 2).toUpperCase()}
-            </div>
-            <MarkerPopup>
-              <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 160, padding: '4px 8px', color: 'var(--text)' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0066FF' }}>{t.nombre}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Categoría: {t.categoria}</div>
-                <div style={{ fontSize: 12, marginTop: 4 }}>Dirección: {t.direccion}</div>
-                {t.telefono && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Tel: {t.telefono}</div>}
-              </div>
-            </MarkerPopup>
-          </MapMarker>
-        ))}
+        {/* Motos de la flota */}
+        {filterMotos &&
+          effectiveMotos.map((moto) => {
+            const statusKey = moto.estado || (moto as any).status || 'available';
+            return (
+              <MapMarker key={`moto-fleet-${moto.id}`} longitude={moto.lng} latitude={moto.lat}>
+                <div style={{ position: 'relative', width: 28, height: 28 }}>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: STATUS_COLORS[statusKey] || '#6B7280',
+                      border: '2.5px solid white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Bike size={14} color="white" />
+                  </div>
+                </div>
+                <MarkerPopup>
+                  <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 150, padding: '4px 8px', color: 'var(--text, #0F172A)' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{moto.nombre}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted, #64748B)' }}>{moto.modelo} ({moto.anio || 2024})</div>
+                    <div style={{ fontSize: 12, color: STATUS_COLORS[statusKey] || '#16A34A', fontWeight: 600, marginTop: 4 }}>
+                      {STATUS_LABELS[statusKey] || 'Disponible'}
+                    </div>
+                    {moto.repartidorAsignado && (
+                      <div style={{ fontSize: 12, marginTop: 2 }}>Repartidor: {moto.repartidorAsignado}</div>
+                    )}
+                    <div style={{ fontSize: 12, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
+                      KM: {(moto.km ?? 0).toLocaleString()}
+                    </div>
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+            );
+          })}
 
         {/* Direcciones registradas por clientes */}
-        {clientePuntos.map((cp) => (
-          <MapMarker key={`cliente-punto-${cp.id}`} longitude={cp.lng} latitude={cp.lat}>
-            <div style={{
-              width: 26, height: 26, borderRadius: '50%',
-              background: '#10B981',
-              border: '2px solid white',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 600, fontSize: 10, cursor: 'pointer'
-            }}>
-              {cp.etiqueta.slice(0, 1).toUpperCase()}
-            </div>
-            <MarkerPopup>
-              <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 160, padding: '4px 8px', color: 'var(--text)' }}>
-                <div style={{ fontWeight: 700, fontSize: 13, color: '#10B981' }}>{cp.etiqueta} ({cp.nombreCliente})</div>
-                <div style={{ fontSize: 12, marginTop: 2 }}>{cp.direccion}</div>
-                {cp.referencia && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Ref: {cp.referencia}</div>}
+        {filterClientes &&
+          clientePuntos.map((cp) => (
+            <MapMarker key={`cliente-punto-${cp.id}`} longitude={cp.lng} latitude={cp.lat}>
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  background: '#8B5CF6',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 700,
+                  fontSize: 11,
+                  cursor: 'pointer',
+                }}
+              >
+                🏠
               </div>
-            </MarkerPopup>
-          </MapMarker>
-        ))}
+              <MarkerPopup>
+                <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 160, padding: '4px 8px', color: 'var(--text, #0F172A)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#8B5CF6' }}>
+                    {cp.etiqueta} ({cp.nombreCliente})
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 2 }}>{cp.direccion}</div>
+                  {cp.referencia && <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>Ref: {cp.referencia}</div>}
+                </div>
+              </MarkerPopup>
+            </MapMarker>
+          ))}
 
-        {/* Routes - solid orange for active, dashed for planned */}
-        {showRoutes && routes.map((route) => {
-          const isActive = activeStatuses.includes(route.order.estado);
-          const coords = route.positions.map(c => [c[1], c[0]] as [number, number]);
-          if (coords.length < 2) return null;
-          return (
-            <MapRoute
-              key={route.order.id}
-              coordinates={coords}
-              color="#FF6600"
-              width={isActive ? 4 : 3}
-              opacity={isActive ? 0.85 : 0.5}
-              dashArray={isActive ? undefined : [8, 6]}
-            />
-          );
-        })}
+        {/* Routes */}
+        {showRoutes &&
+          routes.map((route) => {
+            const isActive = activeStatuses.includes(route.order.estado);
+            const coords = route.positions.map((c) => [c[1], c[0]] as [number, number]);
+            if (coords.length < 2) return null;
+            return (
+              <MapRoute
+                key={route.order.id}
+                coordinates={coords}
+                color="#FF6600"
+                width={isActive ? 5 : 3}
+                opacity={isActive ? 0.9 : 0.5}
+                dashArray={isActive ? undefined : [8, 6]}
+              />
+            );
+          })}
 
-        {/* Route ETA labels (encamino only) */}
-        {showRoutes && etaLabels.map((eta) => (
-          <MapMarker key={`eta-${eta.id}`} longitude={eta.position[1]} latitude={eta.position[0]}>
-            <div style={{
-              fontFamily: "'DM Sans',sans-serif",
-              background: 'rgba(0,42,92,0.85)',
-              color: 'white',
-              padding: '3px 10px',
-              borderRadius: 999,
-              fontSize: 11,
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              textAlign: 'center',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(4px)',
-              lineHeight: 1.4,
-              pointerEvents: 'none'
-            }}>
-              <div>ETA: {eta.eta} min</div>
-              {eta.repartidor && <div style={{ fontSize: 9, fontWeight: 500, opacity: 0.85 }}>{eta.repartidor}</div>}
-            </div>
-          </MapMarker>
-        ))}
+        {/* Route ETA labels */}
+        {showRoutes &&
+          etaLabels.map((eta) => (
+            <MapMarker key={`eta-${eta.id}`} longitude={eta.position[1]} latitude={eta.position[0]}>
+              <div
+                style={{
+                  fontFamily: "'DM Sans',sans-serif",
+                  background: 'rgba(0,42,92,0.88)',
+                  color: 'white',
+                  padding: '3px 10px',
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  backdropFilter: 'blur(4px)',
+                  lineHeight: 1.4,
+                  pointerEvents: 'none',
+                }}
+              >
+                <div>ETA: {eta.eta} min</div>
+                {eta.repartidor && <div style={{ fontSize: 9, fontWeight: 500, opacity: 0.85 }}>{eta.repartidor}</div>}
+              </div>
+            </MapMarker>
+          ))}
 
         {/* Origin and destination markers */}
-        {showRoutes && routes.map((route) => (
-          <Fragment key={route.order.id}>
-            <MapMarker longitude={route.order.origenLng} latitude={route.order.origenLat}>
-              <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#16A34A', border: '3px solid white', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }} />
-              <MarkerPopup>
-                <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>Origen del pedido: #{route.order.id}</div>
-              </MarkerPopup>
-            </MapMarker>
-            <MapMarker longitude={route.order.destinoLng} latitude={route.order.destinoLat}>
-              <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FF6600', border: '3px solid white', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }} />
-              <MarkerPopup>
-                <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>Destino del pedido: #{route.order.id}</div>
-              </MarkerPopup>
-            </MapMarker>
-          </Fragment>
-        ))}
+        {showRoutes &&
+          routes.map((route) => (
+            <Fragment key={route.order.id}>
+              <MapMarker longitude={route.order.origenLng} latitude={route.order.origenLat}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#16A34A', border: '3px solid white', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }} />
+                <MarkerPopup>
+                  <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text, #0F172A)' }}>
+                    Origen del pedido: #{route.order.id}
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+              <MapMarker longitude={route.order.destinoLng} latitude={route.order.destinoLat}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#FF6600', border: '3px solid white', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }} />
+                <MarkerPopup>
+                  <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text, #0F172A)' }}>
+                    Destino del pedido: #{route.order.id}
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+            </Fragment>
+          ))}
       </Map>
 
+      {/* ── INTELLIGENT SEARCH BAR & FILTERS OVERLAY ── */}
+      <div
+        ref={searchContainerRef}
+        style={{
+          position: 'absolute',
+          top: 12,
+          left: 12,
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          maxWidth: 'min(380px, calc(100% - 100px))',
+        }}
+      >
+        {/* Search input */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid var(--border, rgba(255,255,255,0.15))',
+            borderRadius: 14,
+            padding: '4px 12px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          }}
+        >
+          <span style={{ fontSize: 15, marginRight: 8 }}>🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar tienda, moto, repartidor o lugar..."
+            style={{
+              flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'var(--text, #F8FAFC)',
+              fontSize: 13,
+              fontFamily: "'DM Sans', sans-serif",
+              padding: '6px 0',
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setShowSearchDropdown(false);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted, #94A3B8)',
+                cursor: 'pointer',
+                fontSize: 14,
+                padding: '2px 4px',
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Search results dropdown */}
+        <AnimatePresence>
+          {showSearchDropdown && searchResults.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              style={{
+                background: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid var(--border, rgba(255,255,255,0.15))',
+                borderRadius: 14,
+                boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
+                maxHeight: 280,
+                overflowY: 'auto',
+                padding: 6,
+              }}
+            >
+              {searchResults.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleSelectSearchResult(item)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    transition: 'background 0.15s',
+                  }}
+                  className="hover:bg-blue-500/10"
+                >
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: item.color || '#007AFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFF',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.tipo === 'tienda' ? '🏪' : item.tipo === 'repartidor' || item.tipo === 'moto' ? '🛵' : '📍'}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="truncate" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text, #F8FAFC)' }}>
+                      {item.titulo}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted, #94A3B8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.subtitulo}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Quick filter chips */}
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setFilterTiendas((p) => !p)}
+            style={{
+              padding: '3px 9px',
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 700,
+              border: '1px solid var(--border, rgba(255,255,255,0.15))',
+              background: filterTiendas ? '#0066FF' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
+              color: filterTiendas ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
+              cursor: 'pointer',
+            }}
+          >
+            🏪 Tiendas ({tiendas.length})
+          </button>
+          <button
+            onClick={() => setFilterRepartidores((p) => !p)}
+            style={{
+              padding: '3px 9px',
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 700,
+              border: '1px solid var(--border, rgba(255,255,255,0.15))',
+              background: filterRepartidores ? '#10B981' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
+              color: filterRepartidores ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
+              cursor: 'pointer',
+            }}
+          >
+            🛵 Repartidores ({repartidoresPuntos.length})
+          </button>
+          <button
+            onClick={() => setFilterMotos((p) => !p)}
+            style={{
+              padding: '3px 9px',
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 700,
+              border: '1px solid var(--border, rgba(255,255,255,0.15))',
+              background: filterMotos ? '#FF5722' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
+              color: filterMotos ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
+              cursor: 'pointer',
+            }}
+          >
+            🏍️ Motos ({effectiveMotos.length})
+          </button>
+        </div>
+      </div>
+
       {/* Custom map controls - top right */}
-      <div style={{ position: 'absolute', top: 12, right: panelOpen ? 404 : 12, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <button onClick={centerMap} title="Centrar mapa" className="lf-map-ctrl-btn" style={{
-          width: 34, height: 34, borderRadius: 8, border: '1px solid var(--lf-border)',
-          background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(16px)', cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        }}><Crosshair size={15} /></button>
-        <button onClick={showAllMotos} title="Ver todas las motos" className="lf-map-ctrl-btn" style={{
-          width: 34, height: 34, borderRadius: 8, border: '1px solid var(--lf-border)',
-          background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(16px)', cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        }}><Bike size={15} /></button>
+      <div
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: panelOpen ? 404 : 12,
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+        }}
+      >
+        <button
+          onClick={centerMap}
+          title="Centrar en Managua"
+          className="lf-map-ctrl-btn"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+            background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(16px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--lf-text, #F8FAFC)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          <Crosshair size={17} />
+        </button>
+        <button
+          onClick={showAllMotos}
+          title="Enfocar todas las motos"
+          className="lf-map-ctrl-btn"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+            background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(16px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--lf-text, #F8FAFC)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          <Bike size={17} />
+        </button>
+        <button
+          onClick={showAllTiendas}
+          title="Enfocar todas las tiendas"
+          className="lf-map-ctrl-btn"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+            background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(16px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--lf-text, #F8FAFC)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            fontSize: 16,
+          }}
+        >
+          🏪
+        </button>
       </div>
     </div>
   );

@@ -196,9 +196,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
   /* ─── Edit profile state ─── */
   const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState(userName);
-  const [editPhone, setEditPhone] = useState('+505 8888-1234');
-  const [editAddress, setEditAddress] = useState('Col. Los Robles, Managua');
+  const [editName, setEditName] = useState(userName || '');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAddress, setEditAddress] = useState('Managua, Nicaragua');
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const [showAddressSugg, setShowAddressSugg] = useState(false);
 
@@ -366,7 +366,16 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => {
-        if (data?.user?.name) setCurrentName(data.user.name);
+        if (data?.user?.name) {
+          setCurrentName(data.user.name);
+          setEditName(data.user.name);
+        }
+        if (data?.user?.telefono) {
+          setEditPhone(data.user.telefono);
+        }
+        if (data?.user?.direccion) {
+          setEditAddress(data.user.direccion);
+        }
         if (data?.user?.fotoUrl) setFotoUrl(data.user.fotoUrl);
       })
       .catch(() => null);

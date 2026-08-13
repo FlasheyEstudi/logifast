@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireSession } from '@/lib/auth/session';
+import { getSessionUser } from '@/lib/auth/session';
+import { geocodeAddress } from '@/lib/osrm';
 import { handleError } from '@/lib/auth/helpers';
 
 export const dynamic = 'force-dynamic';
@@ -124,6 +126,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const [geoLat, geoLng] = geocodeAddress(direccion || nombre);
+
     const tienda = await db.tienda.create({
       data: {
         nombre,
@@ -133,8 +137,8 @@ export async function POST(req: NextRequest) {
         logoIniciales: logoIniciales ?? nombre.slice(0, 2).toUpperCase(),
         portadaColor,
         direccion,
-        lat: Number(lat) || 0,
-        lng: Number(lng) || 0,
+        lat: Number(lat) || geoLat || 12.1365,
+        lng: Number(lng) || geoLng || -86.2514,
         telefono: telefono ?? null,
         email: email ?? null,
         tiempoEstimado,

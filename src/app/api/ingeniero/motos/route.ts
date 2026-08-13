@@ -136,3 +136,22 @@ export async function PATCH(req: NextRequest) {
     return handleError(error, 'INGENIERO_MOTOS_PATCH');
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    await requireRole('ingeniero', 'admin');
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
+    }
+
+    await prisma.moto.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ ok: true, message: 'Moto eliminada con éxito' });
+  } catch (error) {
+    return handleError(error, 'INGENIERO_MOTOS_DELETE');
+  }
+}

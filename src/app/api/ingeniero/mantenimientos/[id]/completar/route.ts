@@ -11,21 +11,21 @@ export async function PATCH(
     await requireRole('ingeniero', 'admin');
     const { id } = await params;
     const body = await req.json();
-    const { costoTotal, repuestosUsados } = body;
+    const { costoTotal, costoManoObra: manoObraInput, observaciones, repuestosUsados } = body;
 
-    // P0-21: Validar estado previo (state machine)
+    // Validar estado previo
     const mantenimiento = await prisma.mantenimiento.findUnique({ where: { id } });
     if (!mantenimiento) {
       return NextResponse.json({ error: 'Mantenimiento no encontrado' }, { status: 404 });
     }
-    if (mantenimiento.estado !== 'EN_PROCESO') {
+    if (mantenimiento.estado === 'COMPLETADO' || mantenimiento.estado === 'CANCELADO') {
       return NextResponse.json(
-        { error: `Solo se pueden completar mantenimientos en proceso. Estado actual: ${mantenimiento.estado}` },
+        { error: `El mantenimiento ya se encuentra ${mantenimiento.estado}` },
         { status: 400 }
       );
     }
 
-    // P0-22: Decrementar stock de repuestos transaccionalmente
+    // Decrementar stock de repuestos transaccionalmente
     let costoRepuestos = 0;
     if (Array.isArray(repuestosUsados) && repuestosUsados.length > 0) {
       await prisma.$transaction(async (tx) => {
@@ -35,9 +35,6 @@ export async function PATCH(
             where: { id: ru.repuestoId },
             data: { stock: { decrement: cantidad } },
           });
-          if (repuesto.stock < 0) {
-            throw new Error(`Stock insuficiente para ${repuesto.nombre}`);
-          }
           const precioUnitario = repuesto.precioUnitario;
           const subtotalRep = precioUnitario * cantidad;
           costoRepuestos += subtotalRep;
@@ -54,23 +51,26 @@ export async function PATCH(
       });
     }
 
-    const costoManoObra = parseFloat(costoTotal) || 0;
+    const costoManoObra = parseFloat(manoObraInput) || parseFloat(costoTotal) || mantenimiento.costoManoObra || 0;
     const costoTotalFinal = costoManoObra + costoRepuestos;
 
     const updated = await prisma.mantenimiento.update({
       where: { id },
       data: {
         estado: 'COMPLETADO',
+        costoManoObra,
+        costoRepuestos,
         costoTotal: costoTotalFinal,
-        completadoEn: new Date()
+        completadoEn: new Date(),
+        ...(observaciones ? { observaciones } : {}),
       }
     });
 
-    // P0-23: Solo liberar la moto si no hay otros mantenimientos activos para esa moto
+    // Liberar la moto si no hay otros mantenimientos pendientes o en proceso
     const otrosActivos = await prisma.mantenimiento.count({
       where: {
         motoId: mantenimiento.motoId,
-        estado: { in: ['PENDIENTE', 'EN_PROCESO'] },
+        estado: { in: ['PENDIENTE', 'PROGRAMADO', 'EN_PROCESO'] },
         id: { not: id },
       },
     });

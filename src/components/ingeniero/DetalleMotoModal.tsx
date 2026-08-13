@@ -198,7 +198,7 @@ export default function DetalleMotoModal() {
               <button
                 type="button"
                 onClick={() => {
-                  store.seleccionarMoto(null);
+                  store.toggleDetalleMoto();
                   store.toggleCrearMantenimiento();
                 }}
                 style={{

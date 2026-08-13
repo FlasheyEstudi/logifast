@@ -8,21 +8,22 @@ import { useIngenieroStore } from '@/store/ingenieroStore';
 import { useDeviceInfo } from '@/hooks/useDeviceInfo';
 import { DashboardSkeleton, FlotaSkeleton, MantenimientosSkeleton, PerfilSkeleton } from './Skeletons';
 import CrearMantenimiento from './CrearMantenimiento';
-import Inventario from './Inventario';
 import CrearMotoModal from './CrearMotoModal';
 import DetalleMotoModal from './DetalleMotoModal';
 
 const Dashboard = lazy(() => import('./Dashboard'));
 const Flota = lazy(() => import('./Flota'));
 const Mantenimientos = lazy(() => import('./Mantenimientos'));
+const Inventario = lazy(() => import('./Inventario'));
 const PerfilIngeniero = lazy(() => import('./PerfilIngeniero'));
 
-type TabId = 'dashboard' | 'flota' | 'mantenimientos' | 'perfil';
+type TabId = 'dashboard' | 'flota' | 'mantenimientos' | 'inventario' | 'perfil';
 
 const TABS = [
   { id: 'dashboard' as TabId, label: 'Dashboard' },
   { id: 'flota' as TabId, label: 'Flota' },
   { id: 'mantenimientos' as TabId, label: 'Mantenimientos' },
+  { id: 'inventario' as TabId, label: 'Inventario' },
   { id: 'perfil' as TabId, label: 'Perfil' }
 ];
 
@@ -84,6 +85,14 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
           </svg>
         );
+      case 'inventario':
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw}>
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+        );
       case 'perfil':
         return (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw}>
@@ -94,13 +103,11 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
     }
   };
 
-  const getModuleLabel = (id: TabId) => {
-    switch (id) {
-      case 'dashboard': return 'Dashboard General';
-      case 'flota': return 'Control de Flota';
-      case 'mantenimientos': return 'Historial y Mantenimientos';
-      case 'perfil': return 'Configuración de Perfil';
-    }
+  const getBadgeCount = (id: TabId) => {
+    if (id === 'inventario' && store.stats.repuestosBajoStock > 0) return store.stats.repuestosBajoStock;
+    if (id === 'mantenimientos' && store.stats.mantenimientosPendientes > 0) return store.stats.mantenimientosPendientes;
+    if (id === 'flota' && store.stats.alertasActivas > 0) return store.stats.alertasActivas;
+    return null;
   };
 
   return (
@@ -125,7 +132,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
 
           {/* Breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, paddingLeft: 12, borderLeft: '1px solid var(--lf-border, #e5e7eb)' }}>
-            <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)' }}>Mantenimiento</span>
+            <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)' }}>Ingeniería</span>
             <span style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)' }}>›</span>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main, #1a1a2e)' }}>
               {TABS.find(t => t.id === store.tabActiva)?.label || 'Dashboard'}
@@ -137,6 +144,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
         <nav style={{ display: 'flex', gap: 2, alignItems: 'center' }} className="lf-dash-desktop-nav">
           {TABS.map((tab) => {
             const isActive = store.tabActiva === tab.id;
+            const badge = getBadgeCount(tab.id);
             return (
               <button
                 key={tab.id}
@@ -151,6 +159,17 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
               >
                 {getTabIcon(tab.id, isActive)}
                 <span className="lf-nav-label" style={{ marginLeft: 4 }}>{tab.label}</span>
+                {badge !== null && badge > 0 && (
+                  <span style={{
+                    minWidth: 16, height: 16, borderRadius: 99,
+                    background: tab.id === 'inventario' ? '#FFB300' : '#FF1744',
+                    color: '#fff', fontSize: 10, fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0 4px',
+                  }}>
+                    {badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -222,7 +241,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
         </div>
       </header>
 
-      {/* ═══ CONTENT (Fades in like admin) ═══ */}
+      {/* ═══ CONTENT ═══ */}
       <div className="ingeniero-content-wrapper" style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
         <AnimatePresence mode="wait">
           <motion.div
@@ -252,6 +271,12 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
                 </Suspense>
               </ErrorBoundary>
 
+              <ErrorBoundary nombre="Inventario">
+                <Suspense fallback={<FlotaSkeleton />}>
+                  {store.tabActiva === 'inventario' && <Inventario isTab={true} />}
+                </Suspense>
+              </ErrorBoundary>
+
               <ErrorBoundary nombre="Perfil">
                 <Suspense fallback={<PerfilSkeleton />}>
                   {store.tabActiva === 'perfil' && <PerfilIngeniero onLogout={onLogout} userName={userName} />}
@@ -270,11 +295,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
       }}>
         {TABS.map((tab) => {
           const isActive = store.tabActiva === tab.id;
-          const badge = tab.id === 'flota' && store.stats.alertasActivas > 0
-            ? store.stats.alertasActivas
-            : tab.id === 'mantenimientos' && store.stats.mantenimientosPendientes > 0
-              ? store.stats.mantenimientosPendientes
-              : null;
+          const badge = getBadgeCount(tab.id);
 
           return (
             <button
@@ -292,7 +313,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
                 {badge !== null && badge > 0 && (
                   <span className="ingeniero-nav-badge" style={{
                     position: 'absolute', top: -6, right: -10, minWidth: 16, height: 16,
-                    borderRadius: '50%', background: 'var(--lf-error, #FF1744)', color: '#fff',
+                    borderRadius: '50%', background: tab.id === 'inventario' ? '#FFB300' : 'var(--lf-error, #FF1744)', color: '#fff',
                     fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>{badge}</span>
                 )}
@@ -305,7 +326,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
 
       {/* Auxiliar Modals / Screens */}
       <CrearMantenimiento />
-      <Inventario />
+      {! (store.tabActiva === 'inventario') && <Inventario isTab={false} />}
       <CrearMotoModal />
       <DetalleMotoModal />
 

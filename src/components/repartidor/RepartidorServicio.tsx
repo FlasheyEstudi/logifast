@@ -191,11 +191,13 @@ export default function RepartidorServicio() {
             title="Navegación GPS"
           ><Compass size={21} /></button>
           {/* Llamar */}
-          <button
-            onClick={() => window.open(`tel:${ordenActiva.clienteTelefono || '88888888'}`, '_self')}
-            style={{ width: 46, height: 46, borderRadius: '50%', background: '#34C759', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(52,199,89,0.5)', cursor: 'pointer' }}
-            title="Llamar Cliente"
-          ><Phone size={20} /></button>
+          {ordenActiva.clienteTelefono ? (
+            <a
+              href={`tel:${ordenActiva.clienteTelefono}`}
+              style={{ width: 46, height: 46, borderRadius: '50%', background: '#34C759', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(52,199,89,0.5)', cursor: 'pointer', textDecoration: 'none' }}
+              title={`Llamar al cliente (${ordenActiva.clienteTelefono})`}
+            ><Phone size={20} /></a>
+          ) : null}
           {/* Chat */}
           <button
             onClick={() => toggleChat(ordenActiva.id)}

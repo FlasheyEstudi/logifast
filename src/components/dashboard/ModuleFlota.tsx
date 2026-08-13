@@ -9,6 +9,7 @@ import {
 import { useStore, type Moto, type MotoStatus } from '@/lib/store';
 
 import { Map, MapMarker, MarkerPopup } from '@/components/ui/map';
+import { useMapaPuntos } from '@/hooks/useMapaPuntos';
 
 const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
 
@@ -18,72 +19,272 @@ const STATUS_CONFIG: Record<MotoStatus, { label: string; color: string; bg: stri
   maintenance: { label: 'Mantenimiento', color: '#DC2626', bg: 'rgba(220,38,38,0.1)' },
 };
 
-function FlotaMap({ motos, riders, isDark }: { motos: Moto[]; riders: any[]; isDark: boolean }) {
+function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders: any[]; isDark: boolean }) {
+  const { tiendas, repartidoresPuntos, motos: liveMotos, buscarPuntos } = useMapaPuntos();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showTiendas, setShowTiendas] = useState(true);
+  const [showMotos, setShowMotos] = useState(true);
+  const [showRepartidores, setShowRepartidores] = useState(true);
+
+  const effectiveMotos = liveMotos.length > 0 ? liveMotos : storeMotos;
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      buscarPuntos(searchQuery).then((res) => {
+        setSearchResults(res);
+        setShowSearchDropdown(true);
+      });
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, buscarPuntos]);
+
   return (
-    <div style={{ height: '100%', borderRadius: 12, overflow: 'hidden' }}>
+    <div style={{ height: '100%', borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
+      {/* Top Search & Filter Bar on Map */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 10,
+          left: 10,
+          right: 10,
+          zIndex: 100,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid var(--border, rgba(255,255,255,0.15))',
+            borderRadius: 12,
+            padding: '4px 10px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+          }}
+        >
+          <span style={{ fontSize: 13, marginRight: 6 }}>🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar tienda, moto o repartidor..."
+            style={{
+              flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'var(--text, #F8FAFC)',
+              fontSize: 12,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setShowSearchDropdown(false);
+              }}
+              style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: 12 }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Filter chips */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button
+            onClick={() => setShowTiendas((p) => !p)}
+            style={{
+              padding: '2px 8px',
+              borderRadius: 99,
+              fontSize: 10,
+              fontWeight: 700,
+              border: '1px solid var(--border, rgba(255,255,255,0.15))',
+              background: showTiendas ? '#0066FF' : 'rgba(0,0,0,0.4)',
+              color: '#FFFFFF',
+              cursor: 'pointer',
+            }}
+          >
+            🏪 Tiendas ({tiendas.length})
+          </button>
+          <button
+            onClick={() => setShowMotos((p) => !p)}
+            style={{
+              padding: '2px 8px',
+              borderRadius: 99,
+              fontSize: 10,
+              fontWeight: 700,
+              border: '1px solid var(--border, rgba(255,255,255,0.15))',
+              background: showMotos ? '#FF5722' : 'rgba(0,0,0,0.4)',
+              color: '#FFFFFF',
+              cursor: 'pointer',
+            }}
+          >
+            🏍️ Flota ({effectiveMotos.length})
+          </button>
+          <button
+            onClick={() => setShowRepartidores((p) => !p)}
+            style={{
+              padding: '2px 8px',
+              borderRadius: 99,
+              fontSize: 10,
+              fontWeight: 700,
+              border: '1px solid var(--border, rgba(255,255,255,0.15))',
+              background: showRepartidores ? '#10B981' : 'rgba(0,0,0,0.4)',
+              color: '#FFFFFF',
+              cursor: 'pointer',
+            }}
+          >
+            🛵 En Vivo ({repartidoresPuntos.length})
+          </button>
+        </div>
+      </div>
+
       <Map
         center={[MANAGUA_CENTER[1], MANAGUA_CENTER[0]]}
         zoom={13}
-        className="rounded-xl overflow-hidden"
+        className="rounded-xl overflow-hidden h-full w-full"
         theme={isDark ? 'dark' : 'light'}
       >
-        {motos.map((moto) => {
-          const cfg = STATUS_CONFIG[moto.status] || STATUS_CONFIG.available;
-          return (
-            <MapMarker key={`moto-${moto.id}`} longitude={moto.lng || -86.2581} latitude={moto.lat || 12.1364}>
-              <div style={{
-                width: 26,
-                height: 26,
-                borderRadius: '50%',
-                background: cfg.color,
-                border: '3px solid white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: 12,
-              }}>
-                <Bike size={14} />
+        {/* Tiendas asociadas */}
+        {showTiendas &&
+          tiendas.map((t) => (
+            <MapMarker key={`flota-tienda-${t.id}`} longitude={t.lng} latitude={t.lat}>
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '50%',
+                  background: t.logoColor || '#0066FF',
+                  border: '2.5px solid white',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 800,
+                  fontSize: 11,
+                  cursor: 'pointer',
+                }}
+              >
+                {t.nombre.slice(0, 2).toUpperCase()}
               </div>
               <MarkerPopup>
-                <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>
-                  <div style={{ fontWeight: 700 }}>{moto.nombre} ({moto.modelo})</div>
-                  <div style={{ fontSize: 12, color: cfg.color, fontWeight: 600 }}>{cfg.label}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Placa: {moto.placa}</div>
+                <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
+                  <div style={{ fontWeight: 800, color: '#0066FF' }}>🏪 {t.nombre}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)' }}>{t.categoria}</div>
+                  <div style={{ fontSize: 11, marginTop: 2 }}>📍 {t.direccion}</div>
+                  {t.telefono && (
+                    <div style={{ fontSize: 11, marginTop: 2 }}>
+                      <a href={`tel:${t.telefono}`} style={{ color: '#10B981', textDecoration: 'none' }}>
+                        📞 {t.telefono}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </MarkerPopup>
             </MapMarker>
-          );
-        })}
+          ))}
 
-        {riders.filter((r) => r.conectado).map((rider) => (
-          <MapMarker key={`rider-${rider.id}`} longitude={rider.lng || -86.2550} latitude={rider.lat || 12.1400}>
-            <div style={{
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              background: '#007AFF',
-              border: '3px solid #FFFFFF',
-              boxShadow: '0 0 10px rgba(0, 122, 255, 0.6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: 11,
-              fontWeight: 700,
-            }}>
-              {rider.initials || 'RP'}
-            </div>
-            <MarkerPopup>
-              <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '4px 8px', color: 'var(--text)' }}>
-                <div style={{ fontWeight: 700 }}>Repartidor: {rider.nombre}</div>
-                <div style={{ fontSize: 12, color: '#007AFF', fontWeight: 600 }}>En línea — Transmitiendo GPS</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Tel: {rider.telefono || 'N/A'}</div>
+        {/* Motos de la flota */}
+        {showMotos &&
+          effectiveMotos.map((moto) => {
+            const statusKey = (moto as any).status || moto.estado || 'available';
+            const cfg = STATUS_CONFIG[statusKey as MotoStatus] || STATUS_CONFIG.available;
+            return (
+              <MapMarker key={`moto-${moto.id}`} longitude={moto.lng || -86.2581} latitude={moto.lat || 12.1364}>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: cfg.color,
+                    border: '2.5px solid white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: 12,
+                  }}
+                >
+                  <Bike size={14} />
+                </div>
+                <MarkerPopup>
+                  <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
+                    <div style={{ fontWeight: 700 }}>{moto.nombre} ({moto.modelo})</div>
+                    <div style={{ fontSize: 12, color: cfg.color, fontWeight: 600 }}>{cfg.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)' }}>Placa: {moto.placa}</div>
+                    {moto.repartidorAsignado && (
+                      <div style={{ fontSize: 11, marginTop: 2 }}>Asignada a: {moto.repartidorAsignado}</div>
+                    )}
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+            );
+          })}
+
+        {/* Repartidores activos en tiempo real */}
+        {showRepartidores &&
+          repartidoresPuntos.map((rider) => (
+            <MapMarker key={`rider-${rider.id}`} longitude={rider.lng || -86.255} latitude={rider.lat || 12.14}>
+              <div style={{ position: 'relative', width: 32, height: 32 }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: -3,
+                    borderRadius: '50%',
+                    background: 'rgba(0, 122, 255, 0.35)',
+                    animation: 'marker-pulse 2s ease-out infinite',
+                  }}
+                />
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: '#007AFF',
+                    border: '2.5px solid #FFFFFF',
+                    boxShadow: '0 0 12px rgba(0, 122, 255, 0.7)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 700,
+                  }}
+                >
+                  {rider.initials || 'RP'}
+                </div>
               </div>
-            </MarkerPopup>
-          </MapMarker>
-        ))}
+              <MarkerPopup>
+                <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
+                  <div style={{ fontWeight: 700 }}>🛵 {rider.nombre}</div>
+                  <div style={{ fontSize: 12, color: '#007AFF', fontWeight: 600 }}>
+                    {rider.estado === 'in-service' ? 'En viaje' : 'En línea (GPS Activo)'}
+                  </div>
+                  {rider.telefono && (
+                    <div style={{ fontSize: 11, marginTop: 2 }}>
+                      <a href={`tel:${rider.telefono}`} style={{ color: '#10B981', textDecoration: 'none' }}>
+                        📞 {rider.telefono}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </MarkerPopup>
+            </MapMarker>
+          ))}
       </Map>
     </div>
   );
