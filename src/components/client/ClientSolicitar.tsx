@@ -1348,6 +1348,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         .finally(() => {
           setConfirming(false);
           setConfirmed(true);
+          resetSolicitudEnvio();
         });
     }, 2000);
   }, [orders, userName, solicitudEnvio, costBreakdown.total, addOrder, confirmarEnvio, scheduleMode, scheduleDate, scheduleTime]);
@@ -2569,7 +2570,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 8 }}>
             <button
-              onClick={() => onNavigate('envios')}
+              onClick={() => {
+                resetSolicitudEnvio();
+                setCurrentStep(1);
+                setConfirmed(false);
+                onNavigate('envios');
+              }}
               style={{
                 width: '100%',
                 padding: '14px 20px',
@@ -2596,6 +2602,8 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
             <button
               onClick={() => {
                 resetSolicitudEnvio();
+                setCurrentStep(1);
+                setConfirmed(false);
                 onNavigate('inicio');
               }}
               style={{

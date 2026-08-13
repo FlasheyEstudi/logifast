@@ -143,6 +143,7 @@ export default function RepartidorServicio() {
           estado={estado}
           altura="100%"
           seguirRepartidor
+          mostrarNavegacionDriver={true}
         />
       </div>
 

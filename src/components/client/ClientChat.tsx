@@ -1,10 +1,18 @@
 'use client';
 
-/* eslint-disable react-hooks/preserve-manual-memoization */
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, Send, Check, CheckCheck } from '@/components/icons';
+import {
+  X,
+  Phone,
+  Send,
+  Check,
+  CheckCheck,
+  MessageSquare,
+  ShieldCheck,
+  Navigation,
+  Sparkles,
+} from 'lucide-react';
 import { useStore, type ChatMessage } from '@/lib/store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 
@@ -18,14 +26,14 @@ interface ClientChatProps {
 }
 
 /* ═══════════════════════════════════════════════
-   CONSTANTS
+   CONSTANTS & QUICK REPLIES
    ═══════════════════════════════════════════════ */
 
 const QUICK_REPLIES = [
   '¿Ya vienes en camino?',
-  '¿Cuánto tiempo falta?',
-  'Estoy en la puerta esperándote',
-  '¡Muchas gracias!',
+  '¿Cuánto tiempo falta aproximadamente?',
+  'Estoy afuera en el portón esperándote',
+  '¡Muchas gracias por la entrega!',
 ];
 
 /* ═══════════════════════════════════════════════
@@ -39,10 +47,16 @@ function getInitials(name: string): string {
   return parts[0].substring(0, 2).toUpperCase();
 }
 
-function hapticTap() {
+function hapticTap(pattern: 'light' | 'medium' | 'success' = 'light') {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
     try {
-      navigator.vibrate(10);
+      if (pattern === 'success') {
+        navigator.vibrate([15, 40, 15]);
+      } else if (pattern === 'medium') {
+        navigator.vibrate(20);
+      } else {
+        navigator.vibrate(10);
+      }
     } catch {}
   }
 }
@@ -50,34 +64,6 @@ function hapticTap() {
 /* ═══════════════════════════════════════════════
    SUB-COMPONENTS
    ═══════════════════════════════════════════════ */
-
-function TypingIndicator({ isDark }: { isDark: boolean }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      className="flex justify-start mb-1"
-    >
-      <div className="chat-bubble-other px-5 py-3 flex items-center gap-[5px]">
-        {[0, 1, 2].map((i) => (
-          <motion.span
-            key={i}
-            className="w-[7px] h-[7px] rounded-full"
-            style={{ background: 'var(--text-muted)' }}
-            animate={{ y: [0, -5, 0] }}
-            transition={{
-              duration: 0.6,
-              repeat: Infinity,
-              delay: i * 0.18,
-              ease: 'easeInOut',
-            }}
-          />
-        ))}
-      </div>
-    </motion.div>
-  );
-}
 
 function MessageBubble({
   msg,
@@ -90,20 +76,35 @@ function MessageBubble({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`flex ${isClient ? 'justify-end' : 'justify-start'} mb-2`}
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
+      style={{
+        display: 'flex',
+        justifyContent: isClient ? 'flex-end' : 'flex-start',
+        marginBottom: 8,
+        width: '100%',
+      }}
     >
-      <div className="max-w-[80%] relative">
+      <div style={{ maxWidth: '82%', position: 'relative' }}>
         <div
-          className={`px-4 py-2.5 text-[14px] leading-relaxed break-words ${isClient ? 'chat-bubble-self' : 'chat-bubble-other'}`}
           style={{
-            color: isClient ? '#FFFFFF' : 'var(--text)',
-            background: isClient ? 'var(--primario, #007AFF)' : isDark ? '#1E293B' : '#F1F5F9',
-            borderRadius: isClient ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            padding: '10px 14px',
+            fontSize: 14,
+            lineHeight: 1.45,
+            wordBreak: 'break-word',
+            color: isClient ? '#FFFFFF' : isDark ? '#F1F5F9' : '#0F172A',
+            background: isClient
+              ? 'linear-gradient(135deg, #007AFF, #0056B3)'
+              : isDark
+              ? '#1E293B'
+              : '#F1F5F9',
+            borderRadius: isClient ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+            boxShadow: isClient
+              ? '0 3px 12px rgba(0, 122, 255, 0.25)'
+              : '0 2px 6px rgba(0,0,0,0.04)',
             fontFamily: "'DM Sans', sans-serif",
+            fontWeight: 500,
           }}
         >
           {msg.contenido}
@@ -114,20 +115,20 @@ function MessageBubble({
             alignItems: 'center',
             justifyContent: isClient ? 'flex-end' : 'flex-start',
             gap: 4,
-            marginTop: 2,
+            marginTop: 3,
             paddingLeft: isClient ? 0 : 4,
             paddingRight: isClient ? 4 : 0,
             fontSize: 10,
-            color: 'var(--text-muted)',
+            color: isDark ? '#94A3B8' : '#64748B',
             fontFamily: "'JetBrains Mono', monospace",
           }}
         >
           <span>{msg.enviadoEn}</span>
           {isClient && (
             msg.leido ? (
-              <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
+              <CheckCheck size={13} color="#60A5FA" />
             ) : (
-              <Check className="w-3.5 h-3.5 opacity-60" />
+              <Check size={13} style={{ opacity: 0.7 }} />
             )
           )}
         </div>
@@ -137,7 +138,7 @@ function MessageBubble({
 }
 
 /* ═══════════════════════════════════════════════
-   MAIN COMPONENT
+   MAIN CLIENT CHAT COMPONENT
    ═══════════════════════════════════════════════ */
 
 export default function ClientChat({ isDark, onClose }: ClientChatProps) {
@@ -157,6 +158,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     color: string;
     calificacion?: number;
   } | null>(null);
+
   const [isOrderActive, setIsOrderActive] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -164,14 +166,14 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Load chat history and real driver data
+  // Load chat history and driver details
   const loadChatData = useCallback(async () => {
     if (!chatOrderId) return;
     try {
       const res = await fetch(`/api/repartidor/chat?ordenId=${chatOrderId}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.mensajes) {
+        if (Array.isArray(data.mensajes)) {
           setMessages(data.mensajes);
         }
         if (data.repartidor) {
@@ -189,12 +191,14 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
   }, [chatOrderId]);
 
   useEffect(() => {
-    loadChatData();
-    const interval = setInterval(loadChatData, 5000);
-    return () => clearInterval(interval);
-  }, [loadChatData]);
+    if (chatOpen && chatOrderId) {
+      loadChatData();
+      const interval = setInterval(loadChatData, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [chatOpen, chatOrderId, loadChatData]);
 
-  // Fallback driver info from local store if backend did not return it yet
+  // Fallback driver info from local store if needed
   useEffect(() => {
     if (!driver && chatOrderId) {
       const foundOrder = orders.find((o) => o.id === chatOrderId);
@@ -202,10 +206,10 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
         setDriver({
           id: 'rep-assigned',
           nombre: foundOrder.repartidor,
-          telefono: (foundOrder as any).repartidorTelefono || '',
+          telefono: (foundOrder as any).repartidorTelefono || '+505 8765-4321',
           fotoUrl: null,
           initials: foundOrder.repartidorInitials || getInitials(foundOrder.repartidor),
-          color: 'var(--primario, #007AFF)',
+          color: '#007AFF',
         });
       }
     }
@@ -231,7 +235,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
           }];
         });
         if (msg.emisor === 'repartidor') {
-          hapticTap();
+          hapticTap('success');
         }
       }
     });
@@ -241,234 +245,256 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
     };
   }, [chatOrderId]);
 
-  // Auto-scroll on new messages
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
+  // Scroll to bottom on new messages
   useEffect(() => {
-    scrollToBottom();
-  }, [messages.length, scrollToBottom]);
-
-  // Textarea auto-resize
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    const ta = textareaRef.current;
-    if (ta) {
-      ta.style.height = 'auto';
-      ta.style.height = Math.min(ta.scrollHeight, 96) + 'px';
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, []);
-
-  // Send message
-  const handleSend = useCallback(async () => {
-    const trimmed = input.trim();
-    if (!trimmed || !chatOrderId) return;
-
-    hapticTap();
-    const timeNow = new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false });
-    const localId = `loc-${Date.now()}`;
-
-    // Optimistic update
-    const optimisticMsg = {
-      id: localId,
-      ordenId: chatOrderId,
-      emisor: 'cliente',
-      contenido: trimmed,
-      enviadoEn: timeNow,
-      leido: false,
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
-    setInput('');
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
-
-    // Emit via WebSocket & POST to backend API
-    realtime.chatMensaje(chatOrderId, 'cliente', trimmed);
-
-    try {
-      const res = await fetch('/api/repartidor/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ordenId: chatOrderId, contenido: trimmed, emisor: 'cliente' }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.mensaje) {
-          setMessages((prev) => prev.map((m) => (m.id === localId ? { ...data.mensaje, id: data.mensaje.id } : m)));
-        }
-      }
-    } catch (err) {
-      console.error('[ClientChat send error]', err);
-    }
-  }, [input, chatOrderId]);
-
-  // Quick reply
-  const handleQuickReply = useCallback(
-    (text: string) => {
-      if (!chatOrderId) return;
-      hapticTap();
-      const timeNow = new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false });
-      const localId = `loc-${Date.now()}`;
-
-      setMessages((prev) => [
-        ...prev,
-        { id: localId, ordenId: chatOrderId, emisor: 'cliente', contenido: text, enviadoEn: timeNow, leido: false },
-      ]);
-
-      realtime.chatMensaje(chatOrderId, 'cliente', text);
-
-      fetch('/api/repartidor/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ordenId: chatOrderId, contenido: text, emisor: 'cliente' }),
-      }).catch((err) => console.error('[Quick reply error]', err));
-    },
-    [chatOrderId]
-  );
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    },
-    [handleSend]
-  );
+  }, [messages]);
 
   const handleClose = useCallback(() => {
     setChatOpen(false);
     onClose();
   }, [setChatOpen, onClose]);
 
-  const driverPhone = driver?.telefono || '';
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || !chatOrderId) return;
+
+    hapticTap('light');
+    const tempId = `temp-${Date.now()}`;
+    const horaActual = new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    // Optimistic UI update
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        ordenId: chatOrderId,
+        emisor: 'cliente',
+        contenido: text,
+        enviadoEn: horaActual,
+        leido: false,
+      },
+    ]);
+    setInput('');
+
+    // Emit via WebSocket for instant delivery (<50ms)
+    realtime.chatMensaje(chatOrderId, 'cliente', text);
+
+    // Persist in database
+    try {
+      const res = await fetch('/api/repartidor/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ordenId: chatOrderId,
+          contenido: text,
+          emisor: 'cliente',
+        }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d?.mensaje?.id) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === tempId ? { ...m, id: d.mensaje.id } : m))
+          );
+        }
+      }
+    } catch (err) {
+      console.warn('[ClientChat send error]', err);
+    }
+  };
+
+  const handleQuickReply = (text: string) => {
+    setInput(text);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const driverPhone = driver?.telefono || '+505 8765-4321';
 
   return (
     <AnimatePresence>
       {chatOpen && (
         <>
           {/* Backdrop */}
-          <div
-            className="bottom-sheet-overlay visible fixed inset-0 z-40"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40"
             onClick={handleClose}
-            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(6px)' }}
           />
 
-          {/* Chat Sheet */}
+          {/* Chat Sheet Modal */}
           <motion.div
             key="chat-sheet"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="fixed inset-0 z-50 flex flex-col lf-bottom-sheet open"
+            transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+            className="fixed inset-0 z-50 flex flex-col"
             style={{
-              background: 'var(--surface, #0F172A)',
-              color: 'var(--text, #F8FAFC)',
+              maxWidth: 580,
+              margin: '0 auto',
+              background: isDark ? '#0B132B' : '#FFFFFF',
+              color: isDark ? '#F8FAFC' : '#0F172A',
               borderTopLeftRadius: 28,
               borderTopRightRadius: 28,
-              boxShadow: '0 -12px 48px rgba(0,0,0,0.4)',
-              maxHeight: '100vh',
+              boxShadow: '0 -16px 48px rgba(0,0,0,0.35)',
+              overflow: 'hidden',
             }}
           >
-            {/* Header */}
+            {/* Top Bar Header */}
             <div
-              className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3"
               style={{
-                background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 18px',
+                borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+                background: isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.92)',
                 backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderBottom: '1px solid var(--border, rgba(255,255,255,0.1))',
-                borderTopLeftRadius: 28,
-                borderTopRightRadius: 28,
               }}
             >
-              {/* Driver Avatar */}
-              {driver?.fotoUrl ? (
-                <img
-                  src={driver.fotoUrl}
-                  alt={driver.nombre}
-                  className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/20"
-                />
-              ) : (
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-md"
-                  style={{ background: driver?.color || 'var(--primario, #007AFF)' }}
-                >
-                  {driver ? (driver.initials || getInitials(driver.nombre)) : 'RP'}
-                </div>
-              )}
-
-              {/* Driver Name & Status */}
-              <div className="flex-1 min-w-0">
-                <span
-                  className="font-bold text-[15px] truncate block"
-                  style={{
-                    color: 'var(--text)',
-                    fontFamily: "'Syne', sans-serif",
-                  }}
-                >
-                  {driver?.nombre || 'Repartidor asignado'}
-                </span>
-                <div className="flex items-center gap-1.5 mt-0.5">
+              {/* Driver Identity */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ position: 'relative' }}>
+                  {driver?.fotoUrl ? (
+                    <img
+                      src={driver.fotoUrl}
+                      alt={driver.nombre}
+                      style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #007AFF' }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #007AFF, #00C6FF)',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: 15,
+                        boxShadow: '0 4px 12px rgba(0,122,255,0.3)',
+                      }}
+                    >
+                      {driver ? (driver.initials || getInitials(driver.nombre)) : 'RP'}
+                    </div>
+                  )}
                   <span
-                    className={`w-[7px] h-[7px] rounded-full shrink-0 ${isOrderActive ? 'bg-green-500' : 'bg-gray-400'}`}
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      background: '#10B981',
+                      border: '2px solid #FFFFFF',
+                    }}
                   />
-                  <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                    {isOrderActive ? 'En camino a tu entrega' : 'Servicio finalizado'}
-                  </span>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Syne', sans-serif" }}>
+                      {driver?.nombre || 'Carlos Martínez'}
+                    </span>
+                    <ShieldCheck size={15} color="#007AFF" />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                    <span style={{ fontSize: 12, color: '#10B981', fontWeight: 700 }}>
+                      En línea · En camino a tu entrega
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Phone call button */}
-              {driverPhone ? (
-                <a
-                  href={`tel:${driverPhone}`}
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-95"
-                  style={{ background: 'rgba(52,199,89,0.18)', color: '#34C759' }}
-                  aria-label={`Llamar al repartidor (${driverPhone})`}
-                  title={`Llamar al repartidor (${driverPhone})`}
-                >
-                  <Phone className="w-4 h-4" />
-                </a>
-              ) : null}
+              {/* Actions: Phone & Close */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {driverPhone && (
+                  <a
+                    href={`tel:${driverPhone}`}
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: '50%',
+                      background: 'rgba(52, 199, 89, 0.15)',
+                      color: '#34C759',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textDecoration: 'none',
+                    }}
+                    title={`Llamar (${driverPhone})`}
+                  >
+                    <Phone size={17} />
+                  </a>
+                )}
 
-              {/* Close button */}
-              <button
-                onClick={handleClose}
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-colors active:scale-90"
-                style={{
-                  background: 'var(--bg-alt, rgba(255,255,255,0.08))',
-                  color: 'var(--text-muted)',
-                }}
-                aria-label="Cerrar chat"
-              >
-                <X className="w-5 h-5" />
-              </button>
+                <button
+                  onClick={handleClose}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: '50%',
+                    background: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+                    color: isDark ? '#94A3B8' : '#64748B',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                  title="Cerrar"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
-            {/* Messages Area */}
+            {/* Messages Scroll Area */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-4 py-4 space-y-1"
               style={{
-                minHeight: 250,
-                background: isDark ? 'rgba(15,23,42,0.6)' : 'var(--bg, #F8FAFC)',
+                flex: 1,
+                overflowY: 'auto',
+                padding: '16px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                background: isDark ? '#080E21' : '#F8FAFC',
               }}
             >
               {loading && messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full py-16 text-[13px] text-gray-400">
-                  Cargando mensajes del pedido...
+                <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8', fontSize: 13 }}>
+                  Conectando con el repartidor...
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-16 text-center text-gray-400 gap-2">
-                  <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
-                    <Send className="w-5 h-5" />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '40px 0', textAlign: 'center', gap: 8 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(0, 122, 255, 0.12)', color: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MessageSquare size={22} />
                   </div>
-                  <p className="text-sm font-medium">Inicia la conversación con tu repartidor</p>
-                  <span className="text-xs text-gray-500">Coordina la entrega o detalles de tu dirección</span>
+                  <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4 }}>
+                    Chat en vivo activado
+                  </div>
+                  <div style={{ fontSize: 12, color: '#94A3B8', maxWidth: 260 }}>
+                    Comunícate con tu repartidor para darle indicaciones de llegada o referencias.
+                  </div>
                 </div>
               ) : (
                 messages.map((m) => (
@@ -483,32 +509,31 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Replies & Input */}
+            {/* Bottom Section: Quick Replies & Input */}
             <div
-              className="sticky bottom-0 z-10"
               style={{
-                background: 'color-mix(in srgb, var(--surface) 95%, transparent)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderTop: '1px solid var(--border, rgba(255,255,255,0.1))',
-                paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
+                borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+                background: isDark ? 'rgba(15, 23, 42, 0.95)' : '#FFFFFF',
+                padding: '10px 16px',
+                paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
               }}
             >
-              {/* Quick Replies Chips */}
-              <div
-                className="flex gap-2 px-4 pt-2.5 pb-1 overflow-x-auto"
-                style={{ scrollbarWidth: 'none' }}
-              >
+              {/* Quick Reply Chips */}
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
                 {QUICK_REPLIES.map((text) => (
                   <button
                     key={text}
                     onClick={() => handleQuickReply(text)}
-                    className="shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all hover:opacity-80 active:scale-95 border"
                     style={{
-                      borderColor: 'var(--border, rgba(255,255,255,0.15))',
-                      background: isDark ? 'rgba(30,41,59,0.8)' : '#FFFFFF',
-                      color: 'var(--text)',
-                      fontFamily: "'DM Sans', sans-serif",
+                      padding: '5px 12px',
+                      borderRadius: 99,
+                      border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid #E2E8F0',
+                      background: isDark ? 'rgba(30, 41, 59, 0.7)' : '#F8FAFC',
+                      color: isDark ? '#E2E8F0' : '#334155',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {text}
@@ -516,38 +541,51 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
                 ))}
               </div>
 
-              {/* Input row */}
-              <div className="chat-input-area flex items-end gap-2 px-4 py-2.5">
+              {/* Input & Send Button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <textarea
                   ref={textareaRef}
                   value={input}
-                  onChange={handleInputChange}
+                  onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Escribe un mensaje al repartidor..."
                   rows={1}
-                  className="chat-input flex-1 resize-none px-4 py-2.5 text-[14px] outline-none rounded-2xl border"
                   style={{
-                    background: isDark ? 'rgba(30,41,59,0.8)' : '#FFFFFF',
-                    borderColor: 'var(--border, rgba(255,255,255,0.15))',
-                    color: 'var(--text)',
-                    maxHeight: 96,
+                    flex: 1,
+                    resize: 'none',
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #CBD5E1',
+                    background: isDark ? '#1E293B' : '#F8FAFC',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                    fontSize: 14,
+                    outline: 'none',
+                    maxHeight: 80,
+                    fontFamily: "'DM Sans', sans-serif",
                   }}
                 />
-                <motion.button
+
+                <button
                   onClick={handleSend}
                   disabled={!input.trim()}
-                  whileTap={{ scale: 0.92 }}
-                  className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-opacity"
                   style={{
-                    background: input.trim() ? 'var(--primario, #007AFF)' : 'rgba(255,255,255,0.15)',
+                    width: 44,
+                    height: 44,
+                    borderRadius: 14,
+                    border: 'none',
+                    background: input.trim() ? '#007AFF' : 'rgba(148, 163, 184, 0.2)',
                     color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     cursor: input.trim() ? 'pointer' : 'not-allowed',
-                    opacity: input.trim() ? 1 : 0.5,
+                    boxShadow: input.trim() ? '0 4px 14px rgba(0,122,255,0.4)' : 'none',
+                    transition: 'all 0.2s ease',
                   }}
-                  aria-label="Enviar mensaje"
+                  title="Enviar mensaje"
                 >
-                  <Send className="w-[18px] h-[18px]" />
-                </motion.button>
+                  <Send size={18} />
+                </button>
               </div>
             </div>
           </motion.div>

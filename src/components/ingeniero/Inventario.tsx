@@ -3,22 +3,53 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Package,
+  AlertTriangle,
+  DollarSign,
+  Search,
+  Plus,
+  Edit3,
+  Trash2,
+  X,
+  Droplets,
+  Disc,
+  CircleDot,
+  Link2,
+  Zap,
+  Cog,
+  Wrench,
+  CheckCircle2,
+  ArrowLeft,
+  MapPin,
+  Building2,
+} from 'lucide-react';
 import { useIngenieroStore, type Repuesto } from '@/store/ingenieroStore';
 import EmptyState from '@/components/ui/EmptyState';
 import { notify } from '@/lib/notify';
 
 const CATEGORIAS = ['TODAS', 'ACEITE', 'FRENO', 'LLANTA', 'CADENA', 'ELECTRICO', 'MOTOR', 'GENERAL', 'OTRO'];
 
-const CATEGORIA_ICONS: Record<string, string> = {
-  ACEITE: '🛢️',
-  FRENO: '🛑',
-  LLANTA: '🛞',
-  CADENA: '⛓️',
-  ELECTRICO: '⚡',
-  MOTOR: '⚙️',
-  GENERAL: '📦',
-  OTRO: '🔧',
-};
+function getCategoriaIcon(categoria: string, size = 15) {
+  switch (categoria.toUpperCase()) {
+    case 'ACEITE':
+      return <Droplets size={size} color="#F59E0B" />;
+    case 'FRENO':
+      return <Disc size={size} color="#EF4444" />;
+    case 'LLANTA':
+      return <CircleDot size={size} color="#6366F1" />;
+    case 'CADENA':
+      return <Link2 size={size} color="#8B5CF6" />;
+    case 'ELECTRICO':
+      return <Zap size={size} color="#3B82F6" />;
+    case 'MOTOR':
+      return <Cog size={size} color="#FF5722" />;
+    case 'GENERAL':
+      return <Package size={size} color="#10B981" />;
+    default:
+      return <Wrench size={size} color="#64748B" />;
+  }
+}
 
 interface InventarioProps {
   isTab?: boolean;
@@ -194,9 +225,10 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                color: 'var(--lf-text-main, #1a1a2e)',
               }}
             >
-              ←
+              <ArrowLeft size={18} />
             </button>
           )}
           <div>
@@ -226,15 +258,15 @@ export default function Inventario({ isTab = false }: InventarioProps) {
             gap: 6,
           }}
         >
-          <span style={{ fontSize: 16 }}>+</span> Nuevo Repuesto
+          <Plus size={16} /> Nuevo Repuesto
         </button>
       </div>
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
         <div style={{ background: 'var(--lf-surface, #ffffff)', padding: 16, borderRadius: 16, border: '1px solid var(--lf-border, #e5e7eb)', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0, 102, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-            📦
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0, 102, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Package size={22} color="#0066FF" />
           </div>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)' }}>
@@ -245,8 +277,8 @@ export default function Inventario({ isTab = false }: InventarioProps) {
         </div>
 
         <div style={{ background: 'var(--lf-surface, #ffffff)', padding: 16, borderRadius: 16, border: '1px solid var(--lf-border, #e5e7eb)', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255, 179, 0, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-            ⚠️
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255, 179, 0, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AlertTriangle size={22} color="#FFB300" />
           </div>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: bajoStockCount > 0 ? '#FFB300' : '#10B981' }}>
@@ -257,8 +289,8 @@ export default function Inventario({ isTab = false }: InventarioProps) {
         </div>
 
         <div style={{ background: 'var(--lf-surface, #ffffff)', padding: 16, borderRadius: 16, border: '1px solid var(--lf-border, #e5e7eb)', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-            💵
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <DollarSign size={22} color="#10B981" />
           </div>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#10B981' }}>
@@ -286,7 +318,7 @@ export default function Inventario({ isTab = false }: InventarioProps) {
               boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
             }}
           >
-            <span style={{ fontSize: 15, marginRight: 8, color: '#94A3B8' }}>🔍</span>
+            <Search size={16} style={{ marginRight: 8, color: '#94A3B8' }} />
             <input
               type="text"
               value={busqueda}
@@ -304,7 +336,7 @@ export default function Inventario({ isTab = false }: InventarioProps) {
             />
             {busqueda && (
               <button onClick={() => setBusqueda('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}>
-                ✕
+                <X size={16} />
               </button>
             )}
           </div>
@@ -326,7 +358,8 @@ export default function Inventario({ isTab = false }: InventarioProps) {
               gap: 6,
             }}
           >
-            <span>⚠️ Solo Bajo Stock</span>
+            <AlertTriangle size={14} color={soloBajoStock ? '#D97706' : '#94A3B8'} />
+            <span>Solo Bajo Stock</span>
           </button>
 
           {/* Sorter */}
@@ -363,7 +396,7 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                 key={cat}
                 onClick={() => setFiltroCategoria(cat)}
                 style={{
-                  padding: '5px 12px',
+                  padding: '6px 12px',
                   borderRadius: 999,
                   border: `1px solid ${isSelected ? 'var(--lf-accent, #FF5722)' : 'var(--lf-border, #e5e7eb)'}`,
                   background: isSelected ? 'var(--lf-accent, #FF5722)' : 'var(--lf-surface, #ffffff)',
@@ -374,10 +407,10 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                   whiteSpace: 'nowrap',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 5,
+                  gap: 6,
                 }}
               >
-                <span>{CATEGORIA_ICONS[cat] || '📦'}</span>
+                {getCategoriaIcon(cat, 14)}
                 <span>{cat.charAt(0) + cat.slice(1).toLowerCase()}</span>
                 <span
                   style={{
@@ -399,7 +432,7 @@ export default function Inventario({ isTab = false }: InventarioProps) {
       {/* Grid of Spare Parts */}
       {repuestosFiltrados.length === 0 ? (
         <EmptyState
-          icono={<span style={{ fontSize: 32 }}>📦</span>}
+          icono={<Package size={36} color="#94A3B8" />}
           titulo="No se encontraron repuestos"
           descripcion="Prueba ajustando los filtros de búsqueda o agrega un nuevo repuesto al inventario."
           accionLabel="+ Agregar Repuesto"
@@ -443,7 +476,7 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                 {/* Top: Category and SKU */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>{CATEGORIA_ICONS[rep.categoria.toUpperCase()] || '📦'}</span>
+                    {getCategoriaIcon(rep.categoria, 16)}
                     <span
                       style={{
                         fontSize: 11,
@@ -480,16 +513,27 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                 </div>
 
                 {/* Details (Location & Supplier) */}
-                <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {rep.ubicacion && <div>📍 Ubicación: <strong>{rep.ubicacion}</strong></div>}
-                  {rep.proveedor && <div>🏢 Proveedor: <strong>{rep.proveedor}</strong></div>}
+                <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {rep.ubicacion && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <MapPin size={13} color="#94A3B8" />
+                      <span>Ubicación: <strong>{rep.ubicacion}</strong></span>
+                    </div>
+                  )}
+                  {rep.proveedor && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Building2 size={13} color="#94A3B8" />
+                      <span>Proveedor: <strong>{rep.proveedor}</strong></span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Stock Bar & Counter */}
                 <div style={{ background: 'var(--lf-bg, #f8fafc)', padding: 10, borderRadius: 12, border: '1px solid var(--lf-border, #e2e8f0)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: isLowStock ? '#D97706' : 'var(--lf-text-main, #334155)' }}>
-                      {isLowStock ? '⚠️ Stock Crítico' : '✅ Stock Disponible'}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: isLowStock ? '#D97706' : 'var(--lf-text-main, #334155)' }}>
+                      {isLowStock ? <AlertTriangle size={13} color="#D97706" /> : <CheckCircle2 size={13} color="#10B981" />}
+                      {isLowStock ? 'Stock Crítico' : 'Stock Disponible'}
                     </span>
                     <span style={{ fontSize: 12, fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
                       {rep.stock} / min: {rep.stockMinimo} {rep.unidad}
@@ -575,8 +619,12 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                         fontWeight: 700,
                         cursor: 'pointer',
                         color: 'var(--lf-text-main, #334155)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
                       }}
                     >
+                      <Edit3 size={12} />
                       Editar
                     </button>
                     <button
@@ -590,9 +638,13 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                         fontWeight: 700,
                         cursor: 'pointer',
                         color: '#EF4444',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
+                      title="Eliminar repuesto"
                     >
-                      🗑️
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
@@ -653,9 +705,9 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                 </h2>
                 <button
                   onClick={() => !submitting && setFormOpen(false)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#94A3B8' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
                 >
-                  ✕
+                  <X size={18} />
                 </button>
               </div>
 
@@ -684,14 +736,14 @@ export default function Inventario({ isTab = false }: InventarioProps) {
                       onChange={(e) => setFormCategoria(e.target.value)}
                       style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--lf-border, #e5e7eb)', fontSize: 13 }}
                     >
-                      <option value="ACEITE">🛢️ Aceite / Lubricante</option>
-                      <option value="FRENO">🛑 Frenos</option>
-                      <option value="LLANTA">🛞 Llantas y Ruedas</option>
-                      <option value="CADENA">⛓️ Transmisión / Cadena</option>
-                      <option value="ELECTRICO">⚡ Sistema Eléctrico</option>
-                      <option value="MOTOR">⚙️ Motor y Mecánica</option>
-                      <option value="GENERAL">📦 Accesorios / General</option>
-                      <option value="OTRO">🔧 Otros</option>
+                      <option value="ACEITE">Aceite / Lubricante</option>
+                      <option value="FRENO">Frenos</option>
+                      <option value="LLANTA">Llantas y Ruedas</option>
+                      <option value="CADENA">Transmisión / Cadena</option>
+                      <option value="ELECTRICO">Sistema Eléctrico</option>
+                      <option value="MOTOR">Motor y Mecánica</option>
+                      <option value="GENERAL">Accesorios / General</option>
+                      <option value="OTRO">Otros</option>
                     </select>
                   </div>
 

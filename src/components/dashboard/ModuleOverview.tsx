@@ -8,6 +8,7 @@ import {
   ChevronRight, Plus, BarChart3, Layers, Crosshair,
   Maximize2, Minimize2, Eye, EyeOff, Route, Flame, Satellite,
 } from '@/components/icons';
+import { Store, Navigation, MapPin, Phone, Check, Star } from 'lucide-react';
 import { useStore, type Order, type Moto, type ZonePolygon } from '@/lib/store';
 
 import { Map, MapMarker, MarkerPopup, MapRoute, MapGeoJSON, MapRef } from '@/components/ui/map';
@@ -392,28 +393,31 @@ function MapInner({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 8,
                     }}
                   >
-                    ✓
+                    <Check size={8} color="#FFFFFF" strokeWidth={3} />
                   </span>
                 )}
               </div>
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 180, padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {t.nombre}
+                    <Store size={14} color="#0066FF" /> {t.nombre}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>{t.categoria}</div>
-                  <div style={{ fontSize: 12, marginTop: 4, lineHeight: 1.3 }}>📍 {t.direccion}</div>
+                  <div style={{ fontSize: 12, marginTop: 4, lineHeight: 1.3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <MapPin size={12} color="#64748B" /> {t.direccion}
+                  </div>
                   {t.telefono && (
                     <div style={{ fontSize: 12, marginTop: 4 }}>
-                      <a href={`tel:${t.telefono}`} style={{ color: '#10B981', fontWeight: 600, textDecoration: 'none' }}>
-                        📞 {t.telefono}
+                      <a href={`tel:${t.telefono}`} style={{ color: '#10B981', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Phone size={12} color="#10B981" /> {t.telefono}
                       </a>
                     </div>
                   )}
-                  <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, marginTop: 4 }}>★ {t.calificacion.toFixed(1)}</div>
+                  <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Star size={11} fill="#F59E0B" color="#F59E0B" /> {t.calificacion.toFixed(1)}
+                  </div>
                 </div>
               </MarkerPopup>
             </MapMarker>
@@ -454,7 +458,9 @@ function MapInner({
               </div>
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", minWidth: 170, padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>🛵 {r.nombre}</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Navigation size={14} color="#007AFF" /> {r.nombre}
+                  </div>
                   <div style={{ fontSize: 12, color: r.estado === 'in-service' ? '#FF6600' : '#10B981', fontWeight: 700, marginTop: 2 }}>
                     {r.estado === 'in-service' ? 'En viaje / entrega' : 'En línea (Disponible)'}
                   </div>
@@ -463,8 +469,8 @@ function MapInner({
                   </div>
                   {r.telefono && (
                     <div style={{ fontSize: 12, marginTop: 4 }}>
-                      <a href={`tel:${r.telefono}`} style={{ color: '#10B981', fontWeight: 600, textDecoration: 'none' }}>
-                        📞 {r.telefono}
+                      <a href={`tel:${r.telefono}`} style={{ color: '#10B981', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Phone size={12} color="#10B981" /> {r.telefono}
                       </a>
                     </div>
                   )}
@@ -734,7 +740,15 @@ function MapInner({
                       flexShrink: 0,
                     }}
                   >
-                    {item.tipo === 'tienda' ? '🏪' : item.tipo === 'repartidor' || item.tipo === 'moto' ? '🛵' : '📍'}
+                    {item.tipo === 'tienda' ? (
+                      <Store size={14} color="#FFF" />
+                    ) : item.tipo === 'repartidor' ? (
+                      <Navigation size={14} color="#FFF" />
+                    ) : item.tipo === 'moto' ? (
+                      <Bike size={14} color="#FFF" />
+                    ) : (
+                      <MapPin size={14} color="#FFF" />
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="truncate" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text, #F8FAFC)' }}>
@@ -755,7 +769,7 @@ function MapInner({
           <button
             onClick={() => setFilterTiendas((p) => !p)}
             style={{
-              padding: '3px 9px',
+              padding: '4px 10px',
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -763,14 +777,18 @@ function MapInner({
               background: filterTiendas ? '#0066FF' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
               color: filterTiendas ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            🏪 Tiendas ({tiendas.length})
+            <Store size={12} />
+            <span>Tiendas ({tiendas.length})</span>
           </button>
           <button
             onClick={() => setFilterRepartidores((p) => !p)}
             style={{
-              padding: '3px 9px',
+              padding: '4px 10px',
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -778,14 +796,18 @@ function MapInner({
               background: filterRepartidores ? '#10B981' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
               color: filterRepartidores ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            🛵 Repartidores ({repartidoresPuntos.length})
+            <Navigation size={12} />
+            <span>Repartidores ({repartidoresPuntos.length})</span>
           </button>
           <button
             onClick={() => setFilterMotos((p) => !p)}
             style={{
-              padding: '3px 9px',
+              padding: '4px 10px',
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -793,9 +815,13 @@ function MapInner({
               background: filterMotos ? '#FF5722' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
               color: filterMotos ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            🏍️ Motos ({effectiveMotos.length})
+            <Bike size={12} />
+            <span>Motos ({effectiveMotos.length})</span>
           </button>
         </div>
       </div>
@@ -871,10 +897,9 @@ function MapInner({
             justifyContent: 'center',
             color: 'var(--lf-text, #F8FAFC)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            fontSize: 16,
           }}
         >
-          🏪
+          <Store size={17} />
         </button>
       </div>
     </div>

@@ -3,6 +3,23 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Wrench,
+  Plus,
+  Play,
+  CheckCircle2,
+  XCircle,
+  Camera,
+  Layers,
+  AlertTriangle,
+  Clock,
+  DollarSign,
+  Calendar,
+  X,
+  Minus,
+  Trash2,
+  Check,
+} from 'lucide-react';
 import { useIngenieroStore, type Mantenimiento } from '@/store/ingenieroStore';
 import PullToRefresh from '@/components/ui/PullToRefresh';
 import EmptyState from '@/components/ui/EmptyState';
@@ -212,7 +229,8 @@ export default function Mantenimientos() {
               gap: 6,
             }}
           >
-            <span style={{ fontSize: 16 }}>+</span> Programar Mantenimiento
+            <Plus size={16} />
+            <span>Programar Mantenimiento</span>
           </button>
         </div>
 
@@ -264,7 +282,7 @@ export default function Mantenimientos() {
         {/* Timeline vertical */}
         {mantenimientosFiltrados.length === 0 ? (
           <EmptyState
-            icono={<span style={{ fontSize: 32 }}>🔧</span>}
+            icono={<Wrench size={36} color="#94A3B8" />}
             titulo="Sin mantenimientos registrados"
             descripcion="Programa un mantenimiento preventivo o correctivo para una motocicleta de la flota."
             accionLabel="+ Programar Mantenimiento"
@@ -375,8 +393,9 @@ export default function Mantenimientos() {
                   {/* Spare Parts Breakdown (if any) */}
                   {Array.isArray(m.repuestosUsados) && m.repuestosUsados.length > 0 && (
                     <div style={{ background: 'var(--lf-bg, #f8fafc)', padding: 12, borderRadius: 12, border: '1px solid var(--lf-border, #e2e8f0)' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-muted, #64748B)', marginBottom: 6 }}>
-                        🔩 Repuestos instalados ({m.repuestosUsados.length}):
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-muted, #64748B)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <Layers size={13} color="#64748B" />
+                        <span>Repuestos instalados ({m.repuestosUsados.length}):</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {m.repuestosUsados.map((ru, idx) => (
@@ -429,10 +448,11 @@ export default function Mantenimientos() {
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: 4,
+                              gap: 5,
                             }}
                           >
-                            ▶ Iniciar Trabajo
+                            <Play size={12} fill="#fff" />
+                            <span>Iniciar Trabajo</span>
                           </button>
 
                           <button
@@ -446,9 +466,13 @@ export default function Mantenimientos() {
                               fontSize: 12,
                               fontWeight: 700,
                               cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
                             }}
                           >
-                            ✓ Completar
+                            <CheckCircle2 size={13} />
+                            <span>Completar</span>
                           </button>
 
                           <button
@@ -467,9 +491,13 @@ export default function Mantenimientos() {
                               fontSize: 12,
                               fontWeight: 600,
                               cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
                             }}
                           >
-                            ✕ Cancelar
+                            <XCircle size={13} />
+                            <span>Cancelar</span>
                           </button>
                         </>
                       )}
@@ -489,11 +517,12 @@ export default function Mantenimientos() {
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: 4,
+                              gap: 5,
                               boxShadow: '0 4px 10px rgba(16, 185, 129, 0.25)',
                             }}
                           >
-                            ✓ Finalizar & Completar
+                            <CheckCircle2 size={14} />
+                            <span>Finalizar & Completar</span>
                           </button>
 
                           <button
@@ -529,9 +558,13 @@ export default function Mantenimientos() {
                           fontSize: 12,
                           fontWeight: 600,
                           cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
                         }}
                       >
-                        {isOpen ? 'Ocultar fotos' : '📷 Fotos'}
+                        <Camera size={13} />
+                        <span>{isOpen ? 'Ocultar' : 'Fotos'}</span>
                       </button>
                     </div>
                   </div>
@@ -627,9 +660,9 @@ export default function Mantenimientos() {
                   </div>
                   <button
                     onClick={() => !submittingComplete && setCompletingMant(null)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#94A3B8' }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
                   >
-                    ✕
+                    <X size={18} />
                   </button>
                 </div>
 
@@ -701,17 +734,17 @@ export default function Mantenimientos() {
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateRepuestoQty(item.repuestoId, item.cantidad - 1)}
-                                  style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer' }}
+                                  style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
-                                  -
+                                  <Minus size={11} />
                                 </button>
                                 <span style={{ fontSize: 12, fontWeight: 700, minWidth: 18, textAlign: 'center' }}>{item.cantidad}</span>
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateRepuestoQty(item.repuestoId, item.cantidad + 1)}
-                                  style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer' }}
+                                  style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
-                                  +
+                                  <Plus size={11} />
                                 </button>
                               </div>
                               <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'DM Mono', monospace", minWidth: 60, textAlign: 'right' }}>
@@ -720,9 +753,9 @@ export default function Mantenimientos() {
                               <button
                                 type="button"
                                 onClick={() => handleRemoveRepuesto(item.repuestoId)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', fontSize: 14 }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', display: 'flex', alignItems: 'center' }}
                               >
-                                ✕
+                                <X size={14} />
                               </button>
                             </div>
                           </div>
@@ -778,9 +811,10 @@ export default function Mantenimientos() {
                       type="button"
                       onClick={handleConfirmComplete}
                       disabled={submittingComplete}
-                      style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: '#10B981', color: '#ffffff', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
+                      style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: '#10B981', color: '#ffffff', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}
                     >
-                      {submittingComplete ? 'Procesando...' : 'Finalizar y Liberar Moto'}
+                      <Check size={15} />
+                      <span>{submittingComplete ? 'Procesando...' : 'Finalizar y Liberar Moto'}</span>
                     </button>
                   </div>
                 </div>

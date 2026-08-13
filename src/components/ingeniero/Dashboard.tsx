@@ -2,6 +2,19 @@
 'use client';
 
 import React from 'react';
+import {
+  Bike,
+  CheckCircle2,
+  Clock,
+  Wrench,
+  AlertTriangle,
+  Package,
+  Plus,
+  ArrowRight,
+  TrendingUp,
+  Activity,
+  DollarSign,
+} from 'lucide-react';
 import { useIngenieroStore } from '@/store/ingenieroStore';
 import PullToRefresh from '@/components/ui/PullToRefresh';
 import { notify } from '@/lib/notify';
@@ -33,7 +46,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--lf-text-main, #1a1a2e)' }}>
-              {getSaludo()}, {(store.perfil?.nombre || '').split(' ')[0] || 'Ingeniero'} 👋
+              {getSaludo()}, {(store.perfil?.nombre || '').split(' ')[0] || 'Ingeniero'}
             </div>
             <div style={{ fontSize: 13, color: 'var(--lf-text-muted, #6B7280)', marginTop: 2, textTransform: 'capitalize' }}>
               {new Date().toLocaleDateString('es-NI', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
@@ -57,7 +70,8 @@ export default function Dashboard() {
                 gap: 6,
               }}
             >
-              📦 Inventario
+              <Package size={15} color="var(--lf-accent, #FF5722)" />
+              <span>Inventario</span>
             </button>
 
             <button
@@ -76,7 +90,8 @@ export default function Dashboard() {
                 gap: 6,
               }}
             >
-              🏍️ + Registrar Moto
+              <Bike size={15} color="var(--lf-accent, #FF5722)" />
+              <span>+ Registrar Moto</span>
             </button>
 
             <button
@@ -96,7 +111,8 @@ export default function Dashboard() {
                 gap: 6,
               }}
             >
-              🔧 + Mantenimiento
+              <Wrench size={15} />
+              <span>+ Mantenimiento</span>
             </button>
           </div>
         </div>
@@ -109,7 +125,7 @@ export default function Dashboard() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 700 }}>Total Flota</span>
-              <span style={{ fontSize: 16 }}>🏍️</span>
+              <Bike size={18} color="#64748B" />
             </div>
             <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)' }}>
               {store.motos.length}
@@ -123,7 +139,7 @@ export default function Dashboard() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 700 }}>Disponibles</span>
-              <span style={{ fontSize: 16 }}>🟢</span>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
             </div>
             <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#10B981' }}>
               {store.motos.filter((m) => m.estado === 'DISPONIBLE').length}
@@ -137,7 +153,7 @@ export default function Dashboard() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 700 }}>En Rutas / Servicio</span>
-              <span style={{ fontSize: 16 }}>🔵</span>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#0066FF', display: 'inline-block' }} />
             </div>
             <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#0066FF' }}>
               {store.motos.filter((m) => m.estado === 'EN_SERVICIO').length}
@@ -151,7 +167,7 @@ export default function Dashboard() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)', fontWeight: 700 }}>En Taller</span>
-              <span style={{ fontSize: 16 }}>🟠</span>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFB300', display: 'inline-block' }} />
             </div>
             <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#D97706' }}>
               {store.mantenimientos.filter((m) => m.estado === 'EN_PROCESO').length || store.motos.filter((m) => m.estado === 'EN_MANTENIMIENTO').length}
@@ -210,21 +226,24 @@ export default function Dashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
             {/* MTTR */}
             <div style={{ padding: 14, borderRadius: 14, background: 'var(--lf-bg, #f8fafc)', border: '1px solid var(--lf-border, #e2e8f0)' }}>
-              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase' }}>
-                MTTR (Tiempo Medio Reparación)
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Clock size={13} color="#64748B" />
+                <span>MTTR (Tiempo Medio Reparación)</span>
               </div>
               <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)', marginTop: 4 }}>
                 {stats?.mttrMinutos || 45} <span style={{ fontSize: 13, fontWeight: 600 }}>min</span>
               </div>
-              <div style={{ fontSize: 11, color: '#10B981', marginTop: 4, fontWeight: 600 }}>
-                ✓ Nivel de servicio óptimo (&lt; 60 min)
+              <div style={{ fontSize: 11, color: '#10B981', marginTop: 4, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CheckCircle2 size={12} color="#10B981" />
+                <span>Nivel de servicio óptimo (&lt; 60 min)</span>
               </div>
             </div>
 
             {/* Ratio Preventivo / Correctivo */}
             <div style={{ padding: 14, borderRadius: 14, background: 'var(--lf-bg, #f8fafc)', border: '1px solid var(--lf-border, #e2e8f0)' }}>
-              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase' }}>
-                Ratio Preventivo vs. Correctivo
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Activity size={13} color="#64748B" />
+                <span>Ratio Preventivo vs. Correctivo</span>
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: '#10B981', marginTop: 4 }}>
                 {stats?.preventivoPct ?? 80}% <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #64748B)' }}>Preventivo</span>
@@ -236,8 +255,9 @@ export default function Dashboard() {
 
             {/* Costo Promedio */}
             <div style={{ padding: 14, borderRadius: 14, background: 'var(--lf-bg, #f8fafc)', border: '1px solid var(--lf-border, #e2e8f0)' }}>
-              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase' }}>
-                Costo Promedio / Servicio
+              <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #64748B)', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <DollarSign size={13} color="#64748B" />
+                <span>Costo Promedio / Servicio</span>
               </div>
               <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-accent, #FF5722)', marginTop: 4 }}>
                 C$ {stats?.mantenimientosCompletados ? Math.round((stats.costoMantenimientoMes || 0) / stats.mantenimientosCompletados).toLocaleString() : '450'}
@@ -272,8 +292,9 @@ export default function Dashboard() {
           </div>
 
           {alertasActivas.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#10B981', fontSize: 13, fontWeight: 600 }}>
-              ✅ Todas las alertas mecánicas se encuentran resueltas y al día.
+            <div style={{ padding: 20, textAlign: 'center', color: '#10B981', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <CheckCircle2 size={16} color="#10B981" />
+              <span>Todas las alertas mecánicas se encuentran resueltas y al día.</span>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -291,7 +312,7 @@ export default function Dashboard() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 18 }}>⚠️</span>
+                    <AlertTriangle size={18} color="#D97706" />
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--lf-text-main, #1a1a2e)' }}>
                         {alerta.motoNombre}
@@ -313,9 +334,13 @@ export default function Dashboard() {
                       fontSize: 11,
                       fontWeight: 700,
                       cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
                     }}
                   >
-                    ✓ Resolver
+                    <CheckCircle2 size={13} />
+                    <span>Resolver</span>
                   </button>
                 </div>
               ))}
@@ -333,9 +358,10 @@ export default function Dashboard() {
               </h3>
               <button
                 onClick={() => store.setTabActiva('mantenimientos')}
-                style={{ background: 'none', border: 'none', color: 'var(--lf-accent, #FF5722)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--lf-accent, #FF5722)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
               >
-                Ver todos →
+                <span>Ver todos</span>
+                <ArrowRight size={13} />
               </button>
             </div>
 
@@ -394,16 +420,18 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => store.setTabActiva('inventario')}
-                style={{ background: 'none', border: 'none', color: 'var(--lf-accent, #FF5722)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--lf-accent, #FF5722)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
               >
-                Inventario →
+                <span>Inventario</span>
+                <ArrowRight size={13} />
               </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {store.repuestos.filter((r) => r.stock <= r.stockMinimo).length === 0 ? (
-                <div style={{ padding: 20, textAlign: 'center', color: '#10B981', fontSize: 12, fontWeight: 600 }}>
-                  ✅ Todos los repuestos tienen niveles de stock saludables.
+                <div style={{ padding: 20, textAlign: 'center', color: '#10B981', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <CheckCircle2 size={15} color="#10B981" />
+                  <span>Todos los repuestos tienen niveles de stock saludables.</span>
                 </div>
               ) : (
                 store.repuestos

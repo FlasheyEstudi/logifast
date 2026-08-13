@@ -1,7 +1,6 @@
-'use client';
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X, Bike, Check } from 'lucide-react';
 import { useIngenieroStore } from '@/store/ingenieroStore';
 import { notify } from '@/lib/notify';
 
@@ -87,14 +86,15 @@ export default function CrearMotoModal() {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--lf-text-main, #1a1a2e)' }}>
-              Registrar Nueva Motocicleta
+            <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--lf-text-main, #1a1a2e)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Bike size={18} color="var(--lf-accent, #FF5722)" />
+              <span>Registrar Nueva Motocicleta</span>
             </h2>
             <button
               onClick={() => store.toggleCrearMoto()}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#94A3B8' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
             >
-              ✕
+              <X size={18} />
             </button>
           </div>
 

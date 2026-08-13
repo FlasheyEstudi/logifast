@@ -3,6 +3,23 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Bike,
+  Plus,
+  QrCode,
+  Search,
+  X,
+  SlidersHorizontal,
+  LayoutGrid,
+  List,
+  Wrench,
+  Trash2,
+  AlertTriangle,
+  CheckCircle2,
+  User,
+  Gauge,
+  Calendar,
+} from 'lucide-react';
 import { useIngenieroStore, type Moto } from '@/store/ingenieroStore';
 import PullToRefresh from '@/components/ui/PullToRefresh';
 import EmptyState from '@/components/ui/EmptyState';
@@ -76,9 +93,13 @@ export default function Flota() {
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
                 }}
               >
-                ⊞ Tarjetas
+                <LayoutGrid size={14} />
+                <span>Tarjetas</span>
               </button>
               <button
                 onClick={() => setVista('lista')}
@@ -91,9 +112,13 @@ export default function Flota() {
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
                 }}
               >
-                ☰ Lista
+                <List size={14} />
+                <span>Lista</span>
               </button>
             </div>
 
@@ -114,7 +139,8 @@ export default function Flota() {
                 gap: 6,
               }}
             >
-              <span style={{ fontSize: 16 }}>+</span> Registrar Moto
+              <Plus size={16} />
+              <span>Registrar Moto</span>
             </button>
           </div>
         </div>
@@ -131,7 +157,7 @@ export default function Flota() {
             boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
           }}
         >
-          <span style={{ fontSize: 16, marginRight: 10, color: '#94A3B8' }}>🔍</span>
+          <Search size={16} style={{ marginRight: 10, color: '#94A3B8' }} />
           <input
             type="text"
             placeholder="Buscar moto por alias, modelo o número de placa..."
@@ -152,7 +178,7 @@ export default function Flota() {
               onClick={() => store.setBusquedaFlota('')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
             >
-              ✕
+              <X size={16} />
             </button>
           )}
         </div>
@@ -200,7 +226,7 @@ export default function Flota() {
         {/* Lista / Grid de motos */}
         {motosFiltradas.length === 0 ? (
           <EmptyState
-            icono={<span style={{ fontSize: 32 }}>🏍️</span>}
+            icono={<Bike size={36} color="#94A3B8" />}
             titulo="Sin motocicletas encontradas"
             descripcion="No hay motocicletas que coincidan con los criterios de búsqueda o filtros seleccionados."
             accionLabel="+ Registrar Moto"
@@ -279,15 +305,21 @@ export default function Flota() {
                   {/* Metrics: Odómetro & Repartidor */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, paddingLeft: 6 }}>
                     <div style={{ background: 'var(--lf-bg, #f8fafc)', padding: 10, borderRadius: 12, border: '1px solid var(--lf-border, #e2e8f0)' }}>
-                      <div style={{ fontSize: 10, color: 'var(--lf-text-muted, #94A3B8)', textTransform: 'uppercase', fontWeight: 700 }}>Kilometraje</div>
-                      <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)' }}>
+                      <div style={{ fontSize: 10, color: 'var(--lf-text-muted, #94A3B8)', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Gauge size={12} />
+                        <span>Kilometraje</span>
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--lf-text-main, #1a1a2e)', marginTop: 2 }}>
                         {(moto.kmAcumulados || 0).toLocaleString()} km
                       </div>
                     </div>
 
                     <div style={{ background: 'var(--lf-bg, #f8fafc)', padding: 10, borderRadius: 12, border: '1px solid var(--lf-border, #e2e8f0)' }}>
-                      <div style={{ fontSize: 10, color: 'var(--lf-text-muted, #94A3B8)', textTransform: 'uppercase', fontWeight: 700 }}>Asignada a</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: moto.repartidorNombre || moto.asignadaA ? '#0066FF' : 'var(--lf-text-muted, #94A3B8)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 10, color: 'var(--lf-text-muted, #94A3B8)', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <User size={12} />
+                        <span>Asignada a</span>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: moto.repartidorNombre || moto.asignadaA ? '#0066FF' : 'var(--lf-text-muted, #94A3B8)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
                         {moto.repartidorNombre || (moto.asignadaA ? 'Repartidor' : 'Sin asignar')}
                       </div>
                     </div>
@@ -296,7 +328,7 @@ export default function Flota() {
                   {/* Active Alerts (if any) */}
                   {motoAlerts.length > 0 && (
                     <div style={{ background: 'rgba(255, 179, 0, 0.12)', padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(255, 179, 0, 0.3)', display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 10 }}>
-                      <span style={{ fontSize: 14 }}>⚠️</span>
+                      <AlertTriangle size={15} color="#D97706" />
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#D97706' }}>
                         {motoAlerts[0]?.descripcion || 'Alerta de mantenimiento activa'}
                       </div>
@@ -317,9 +349,13 @@ export default function Flota() {
                           fontWeight: 700,
                           cursor: 'pointer',
                           color: 'var(--lf-text-main, #1a1a2e)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
                         }}
                       >
-                        ⚙️ Administrar
+                        <SlidersHorizontal size={13} />
+                        <span>Administrar</span>
                       </button>
 
                       <button
@@ -333,10 +369,14 @@ export default function Flota() {
                           fontWeight: 600,
                           cursor: 'pointer',
                           color: 'var(--lf-text-muted, #64748B)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
                         }}
                         title="Ver Código QR"
                       >
-                        📱 QR
+                        <QrCode size={13} />
+                        <span>QR</span>
                       </button>
                     </div>
 
@@ -355,9 +395,13 @@ export default function Flota() {
                           fontSize: 12,
                           fontWeight: 700,
                           cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
                         }}
                       >
-                        + Taller
+                        <Wrench size={13} />
+                        <span>+ Taller</span>
                       </button>
 
                       <button
@@ -370,10 +414,13 @@ export default function Flota() {
                           color: '#EF4444',
                           fontSize: 12,
                           cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
                         title="Eliminar de la flota"
                       >
-                        🗑️
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bike, ChevronDown, ChevronUp, Plus, X, Wrench, MapPin,
 } from '@/components/icons';
+import { Store, Navigation, Phone } from 'lucide-react';
 import { useStore, type Moto, type MotoStatus } from '@/lib/store';
 
 import { Map, MapMarker, MarkerPopup } from '@/components/ui/map';
@@ -106,47 +107,59 @@ function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders
           <button
             onClick={() => setShowTiendas((p) => !p)}
             style={{
-              padding: '2px 8px',
+              padding: '4px 10px',
               borderRadius: 99,
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               border: '1px solid var(--border, rgba(255,255,255,0.15))',
               background: showTiendas ? '#0066FF' : 'rgba(0,0,0,0.4)',
               color: '#FFFFFF',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            🏪 Tiendas ({tiendas.length})
+            <Store size={12} />
+            <span>Tiendas ({tiendas.length})</span>
           </button>
           <button
             onClick={() => setShowMotos((p) => !p)}
             style={{
-              padding: '2px 8px',
+              padding: '4px 10px',
               borderRadius: 99,
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               border: '1px solid var(--border, rgba(255,255,255,0.15))',
               background: showMotos ? '#FF5722' : 'rgba(0,0,0,0.4)',
               color: '#FFFFFF',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            🏍️ Flota ({effectiveMotos.length})
+            <Bike size={12} />
+            <span>Flota ({effectiveMotos.length})</span>
           </button>
           <button
             onClick={() => setShowRepartidores((p) => !p)}
             style={{
-              padding: '2px 8px',
+              padding: '4px 10px',
               borderRadius: 99,
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               border: '1px solid var(--border, rgba(255,255,255,0.15))',
               background: showRepartidores ? '#10B981' : 'rgba(0,0,0,0.4)',
               color: '#FFFFFF',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            🛵 En Vivo ({repartidoresPuntos.length})
+            <Navigation size={12} />
+            <span>En Vivo ({repartidoresPuntos.length})</span>
           </button>
         </div>
       </div>
@@ -182,13 +195,17 @@ function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders
               </div>
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
-                  <div style={{ fontWeight: 800, color: '#0066FF' }}>🏪 {t.nombre}</div>
+                  <div style={{ fontWeight: 800, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Store size={13} color="#0066FF" /> {t.nombre}
+                  </div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)' }}>{t.categoria}</div>
-                  <div style={{ fontSize: 11, marginTop: 2 }}>📍 {t.direccion}</div>
+                  <div style={{ fontSize: 11, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <MapPin size={11} color="#64748B" /> {t.direccion}
+                  </div>
                   {t.telefono && (
                     <div style={{ fontSize: 11, marginTop: 2 }}>
-                      <a href={`tel:${t.telefono}`} style={{ color: '#10B981', textDecoration: 'none' }}>
-                        📞 {t.telefono}
+                      <a href={`tel:${t.telefono}`} style={{ color: '#10B981', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Phone size={11} color="#10B981" /> {t.telefono}
                       </a>
                     </div>
                   )}
@@ -270,14 +287,16 @@ function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders
               </div>
               <MarkerPopup>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", padding: '6px 10px', color: 'var(--text, #0F172A)' }}>
-                  <div style={{ fontWeight: 700 }}>🛵 {rider.nombre}</div>
+                  <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Navigation size={13} color="#007AFF" /> {rider.nombre}
+                  </div>
                   <div style={{ fontSize: 12, color: '#007AFF', fontWeight: 600 }}>
                     {rider.estado === 'in-service' ? 'En viaje' : 'En línea (GPS Activo)'}
                   </div>
                   {rider.telefono && (
                     <div style={{ fontSize: 11, marginTop: 2 }}>
-                      <a href={`tel:${rider.telefono}`} style={{ color: '#10B981', textDecoration: 'none' }}>
-                        📞 {rider.telefono}
+                      <a href={`tel:${rider.telefono}`} style={{ color: '#10B981', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Phone size={11} color="#10B981" /> {rider.telefono}
                       </a>
                     </div>
                   )}

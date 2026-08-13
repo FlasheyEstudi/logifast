@@ -1,7 +1,6 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X, Bike, Wrench, Check } from 'lucide-react';
 import { useIngenieroStore, type Moto } from '@/store/ingenieroStore';
 import { notify } from '@/lib/notify';
 
@@ -98,8 +97,9 @@ export default function DetalleMotoModal() {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-accent, #FF5722)', textTransform: 'uppercase' }}>
-                {moto.modelo}
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-accent, #FF5722)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Bike size={13} color="var(--lf-accent, #FF5722)" />
+                <span>{moto.modelo}</span>
               </div>
               <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--lf-text-main, #1a1a2e)' }}>
                 {moto.nombre}
@@ -112,9 +112,9 @@ export default function DetalleMotoModal() {
             </div>
             <button
               onClick={() => store.seleccionarMoto(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94A3B8' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
             >
-              ✕
+              <X size={20} />
             </button>
           </div>
 

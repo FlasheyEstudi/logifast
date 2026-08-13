@@ -19,6 +19,7 @@ import {
   Navigation,
   Check,
   ArrowDown,
+  ArrowLeft,
   ChevronUp,
 } from '@/components/icons';
 import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/lib/store';
@@ -1108,7 +1109,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           }}
           aria-label="Volver atrás"
         >
-          <ArrowDown size={16} /> Volver
+          <ArrowLeft size={16} /> Volver
         </button>
 
         {/* ─── Top Right: Quick Actions Floating Panel ─── */}

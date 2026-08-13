@@ -61,6 +61,7 @@ export interface RepartidorMapProps {
   altura?: number | string;
   zoom?: number;
   seguirRepartidor?: boolean;
+  mostrarNavegacionDriver?: boolean;
   onMapClick?: (lat: number, lng: number) => void;
   className?: string;
 }
@@ -75,6 +76,7 @@ export default function RepartidorMap({
   altura = 280,
   zoom = 14,
   seguirRepartidor = false,
+  mostrarNavegacionDriver = false,
   onMapClick,
   className,
 }: RepartidorMapProps) {
@@ -435,8 +437,8 @@ export default function RepartidorMap({
         }
       `}</style>
 
-      {/* Navigation HUD Top Overlay */}
-      {routeDistanceKm !== null && routeDurationMin !== null && (
+      {/* Navigation HUD Top Overlay - Only rendered for Driver Navigation view */}
+      {mostrarNavegacionDriver && routeDistanceKm !== null && routeDurationMin !== null && (
         <div className="nav-hud-card">
           <div className="flex items-center gap-3">
             <div
@@ -613,7 +615,7 @@ export default function RepartidorMap({
         </MapMarker>
       </Map>
 
-      {mapReady && (
+      {mostrarNavegacionDriver && mapReady && (
         <>
           {/* 3D View Toggle */}
           <button
