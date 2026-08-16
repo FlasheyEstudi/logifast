@@ -303,7 +303,17 @@ const RATING_DIST = [
    ═══════════════════════════════════════════════ */
 
 export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfilProps) {
-  const { perfil, moto, calificaciones, actualizarConfig, zonasDisponibles, recargarSaldo, aceptarContrato, syncFromBackend } = useRepartidorStore();
+  const {
+    perfil,
+    moto,
+    calificaciones,
+    actualizarConfig,
+    zonasDisponibles,
+    recargarSaldo,
+    aceptarContrato,
+    syncFromBackend,
+    reportarProblemaMotoAsync,
+  } = useRepartidorStore();
   const [zonaOpen, setZonaOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rechargeCode, setRechargeCode] = useState('');
@@ -323,6 +333,57 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
   const [editMunicipio, setEditMunicipio] = useState('Managua');
   const [editZona, setEditZona] = useState('Todas las Zonas');
   const [isSavingPerfil, setIsSavingPerfil] = useState(false);
+
+  // Motorcycle problem report states (Vinculación con rol Mantenimiento / Ingeniero)
+  const [showReportarMotoModal, setShowReportarMotoModal] = useState(false);
+  const [categoriaProblema, setCategoriaProblema] = useState('FRENOS');
+  const [prioridadProblema, setPrioridadProblema] = useState<'NORMAL' | 'ALTA' | 'URGENTE'>('ALTA');
+  const [descripcionProblema, setDescripcionProblema] = useState('');
+  const [kmReporte, setKmReporte] = useState<string>('');
+  const [observacionesReporte, setObservacionesReporte] = useState('');
+  const [isSubmittingReporte, setIsSubmittingReporte] = useState(false);
+  const [reportesTab, setReportesTab] = useState<'nuevo' | 'historial'>('nuevo');
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
+  useEffect(() => {
+    if (moto?.kmAcumulados !== undefined) {
+      setKmReporte(String(moto.kmAcumulados));
+    }
+  }, [moto?.kmAcumulados]);
+
+  const handleEnviarReporteMoto = async () => {
+    if (!descripcionProblema.trim()) {
+      notify.error('Por favor describe detalladamente la falla observada en la moto.');
+      return;
+    }
+
+    setIsSubmittingReporte(true);
+    try {
+      const res = await reportarProblemaMotoAsync({
+        categoria: categoriaProblema,
+        prioridad: prioridadProblema,
+        tipo: prioridadProblema === 'URGENTE' ? 'EMERGENCIA' : 'CORRECTIVO',
+        descripcion: descripcionProblema.trim(),
+        kmAlMomento: kmReporte ? Number(kmReporte) : (moto?.kmAcumulados ?? 0),
+        observaciones: observacionesReporte.trim() || undefined,
+      });
+
+      if (res.ok) {
+        notify.success('¡Reporte enviado exitosamente al equipo de Mantenimiento / Taller!');
+        setDescripcionProblema('');
+        setObservacionesReporte('');
+        setReportesTab('historial');
+        await syncFromBackend();
+      } else {
+        notify.error(res.error || 'Error al enviar el reporte a mantenimiento.');
+      }
+    } catch (err) {
+      console.error(err);
+      notify.error('Error al conectar con el servidor.');
+    } finally {
+      setIsSubmittingReporte(false);
+    }
+  };
 
   useEffect(() => {
     if (perfil) {
@@ -695,7 +756,35 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
       </SectionCard>
 
       {/* ─── 2. MOTO ASIGNADA ─── */}
-      <SectionCard title="Moto asignada">
+      <SectionCard
+        title="Moto asignada"
+        action={
+          <button
+            onClick={() => {
+              setReportesTab('nuevo');
+              setShowReportarMotoModal(true);
+            }}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 10,
+              background: 'color-mix(in srgb, var(--primario) 15%, transparent)',
+              border: '1px solid var(--primario)',
+              color: 'var(--primario)',
+              fontSize: 12,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+              transition: 'all 0.2s',
+            }}
+          >
+            <Wrench size={13} />
+            Reportar problema
+          </button>
+        }
+      >
         <div
           style={{
             display: 'flex',
@@ -810,15 +899,41 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
               background: 'color-mix(in srgb, var(--warning, var(--warning)) 10%, transparent)',
               border: '1px solid var(--warning, var(--warning))',
               display: 'flex',
-              alignItems: 'flex-start',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               gap: 8,
             }}
           >
-            <AlertTriangle size={16} color="var(--warning, var(--warning))" style={{ flexShrink: 0, marginTop: 1 }} />
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-              <strong style={{ color: 'var(--text)' }}>Mantenimiento pronto.</strong> La moto está
-              cerca del próximo servicio programado.
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <AlertTriangle size={16} color="var(--warning, var(--warning))" style={{ flexShrink: 0, marginTop: 1 }} />
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                <strong style={{ color: 'var(--text)' }}>
+                  {moto.estado === 'EN_MANTENIMIENTO' ? 'En Mantenimiento.' : 'Alerta de Mantenimiento Activa.'}
+                </strong>{' '}
+                {moto.estado === 'EN_MANTENIMIENTO'
+                  ? 'La moto se encuentra en revisión o reparación por el equipo técnico.'
+                  : 'Reportes activos vinculados con el taller de ingeniería.'}
+              </div>
             </div>
+            <button
+              onClick={() => {
+                setReportesTab('historial');
+                setShowReportarMotoModal(true);
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                background: 'var(--warning, #F59E0B)',
+                color: '#000',
+                fontSize: 11,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              Ver Taller
+            </button>
           </motion.div>
         )}
       </SectionCard>
@@ -1355,15 +1470,14 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
           icon={<Wrench size={16} />}
           label="Reportar problema con moto"
           onClick={() => {
-            /* abriría un formulario */
+            setReportesTab('nuevo');
+            setShowReportarMotoModal(true);
           }}
         />
         <ConfigLink
           icon={<HelpCircle size={16} />}
-          label="Centro de ayuda"
-          onClick={() => {
-            /* abriría FAQ */
-          }}
+          label="Centro de ayuda y soporte técnico"
+          onClick={() => setShowHelpModal(true)}
         />
 
         {/* Cerrar sesión */}
@@ -1793,6 +1907,816 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                     {isSavingPerfil ? 'Guardando...' : 'Guardar Cambios'}
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── MODAL REPORTAR PROBLEMA CON MOTO (VINCULADO CON MANTENIMIENTO) ─── */}
+      <AnimatePresence>
+        {showReportarMotoModal && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 999999,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 16,
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowReportarMotoModal(false)}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                height: '100%',
+                background: 'rgba(15, 23, 42, 0.82)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+              }}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              style={{
+                position: 'relative',
+                zIndex: 10,
+                width: '100%',
+                maxWidth: 540,
+                maxHeight: '90vh',
+                background: '#1E293B',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 24,
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  padding: '18px 20px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'rgba(30, 41, 59, 0.95)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: 'color-mix(in srgb, var(--primario) 15%, transparent)',
+                      color: 'var(--primario)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Wrench size={22} />
+                  </div>
+                  <div>
+                    <h3
+                      className="font-syne"
+                      style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#F8FAFC' }}
+                    >
+                      Reportar Falla Mecánica
+                    </h3>
+                    <div style={{ fontSize: 12, color: '#94A3B8' }}>
+                      Enlace directo con el Ingeniero de Mantenimiento & Taller
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowReportarMotoModal(false)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: 'none',
+                    borderRadius: 10,
+                    width: 32,
+                    height: 32,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Moto Badge Summary & Tabs */}
+              <div
+                style={{
+                  padding: '12px 20px',
+                  background: 'rgba(15, 23, 42, 0.5)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                  <span style={{ color: '#94A3B8' }}>Moto:</span>
+                  <span style={{ color: '#F8FAFC', fontWeight: 700 }}>
+                    {moto.nombre || 'Moto Asignada'} ({moto.placa || 'Sin placa'})
+                  </span>
+                  <span
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      background: 'rgba(255,255,255,0.08)',
+                      color: 'var(--primario)',
+                    }}
+                  >
+                    {(moto.kmAcumulados || 0).toLocaleString('es-NI')} km
+                  </span>
+                </div>
+
+                {/* Tabs */}
+                <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.25)', padding: 3, borderRadius: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setReportesTab('nuevo')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 7,
+                      border: 'none',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: reportesTab === 'nuevo' ? 'var(--primario)' : 'transparent',
+                      color: reportesTab === 'nuevo' ? '#fff' : '#94A3B8',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    📝 Nuevo Reporte
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportesTab('historial')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 7,
+                      border: 'none',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: reportesTab === 'historial' ? 'var(--primario)' : 'transparent',
+                      color: reportesTab === 'historial' ? '#fff' : '#94A3B8',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    🔧 Historial ({moto.mantenimientos?.length || 0})
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {reportesTab === 'nuevo' ? (
+                  <>
+                    {/* Selector de Categoría de Falla */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', marginBottom: 8, display: 'block' }}>
+                        1. Selecciona el componente o falla principal
+                      </label>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: 8,
+                        }}
+                      >
+                        {[
+                          { id: 'FRENOS', label: 'Frenos', icon: '🛑', desc: 'Pastillas, zapatas, líquido' },
+                          { id: 'MOTOR', label: 'Motor & Aceite', icon: '⚙️', desc: 'Ruido, fuga, recalentamiento' },
+                          { id: 'LLANTAS', label: 'Neumáticos / Llantas', icon: '🛞', desc: 'Pinchazo, baja presión' },
+                          { id: 'ELECTRICO', label: 'Sistema Eléctrico', icon: '⚡', desc: 'Batería, arranque, pito' },
+                          { id: 'TRANSMISION', label: 'Cadena & Clutch', icon: '⛓️', desc: 'Cadena floja, piñón' },
+                          { id: 'SUSPENSION', label: 'Suspensión & Chasis', icon: '🔩', desc: 'Amortiguadores, barras' },
+                          { id: 'LUCES', label: 'Luces & Focos', icon: '💡', desc: 'Foco delantero, direccionales' },
+                          { id: 'OTRO', label: 'Otro Problema', icon: '🔧', desc: 'Carrocería, espejos, etc.' },
+                        ].map((cat) => {
+                          const isSelected = categoriaProblema === cat.id;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setCategoriaProblema(cat.id)}
+                              style={{
+                                padding: '10px 12px',
+                                borderRadius: 12,
+                                border: isSelected
+                                  ? '1.5px solid var(--primario)'
+                                  : '1px solid rgba(255, 255, 255, 0.1)',
+                                background: isSelected
+                                  ? 'color-mix(in srgb, var(--primario) 16%, rgba(15, 23, 42, 0.6))'
+                                  : 'rgba(15, 23, 42, 0.6)',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                transition: 'all 0.15s',
+                              }}
+                            >
+                              <span style={{ fontSize: 20 }}>{cat.icon}</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    fontWeight: isSelected ? 700 : 600,
+                                    color: isSelected ? 'var(--primario)' : '#F8FAFC',
+                                    lineHeight: 1.2,
+                                  }}
+                                >
+                                  {cat.label}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: 10,
+                                    color: '#94A3B8',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    marginTop: 2,
+                                  }}
+                                >
+                                  {cat.desc}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Selector de Nivel de Urgencia */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', marginBottom: 8, display: 'block' }}>
+                        2. Nivel de gravedad / urgencia
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                        {[
+                          { id: 'NORMAL', label: 'Normal', color: '#10B981', desc: 'Moto operativa' },
+                          { id: 'ALTA', label: 'Alta', color: '#F59E0B', desc: 'Revisión hoy' },
+                          { id: 'URGENTE', label: 'Urgente', color: '#EF4444', desc: 'Inmovilizada' },
+                        ].map((prio) => {
+                          const isSelected = prioridadProblema === prio.id;
+                          return (
+                            <button
+                              key={prio.id}
+                              type="button"
+                              onClick={() => setPrioridadProblema(prio.id as any)}
+                              style={{
+                                padding: '10px 8px',
+                                borderRadius: 12,
+                                border: isSelected
+                                  ? `1.5px solid ${prio.color}`
+                                  : '1px solid rgba(255, 255, 255, 0.1)',
+                                background: isSelected
+                                  ? `color-mix(in srgb, ${prio.color} 18%, rgba(15, 23, 42, 0.6))`
+                                  : 'rgba(15, 23, 42, 0.6)',
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                              }}
+                            >
+                              <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? prio.color : '#F8FAFC' }}>
+                                {prio.label}
+                              </div>
+                              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>{prio.desc}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {prioridadProblema === 'URGENTE' && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          style={{
+                            marginTop: 8,
+                            padding: '10px 12px',
+                            borderRadius: 10,
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            fontSize: 11,
+                            color: '#FCA5A5',
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          ⚠️ <strong>Atención:</strong> Al marcar como <strong>Urgente</strong>, la moto se colocará automáticamente en estado <strong>EN MANTENIMIENTO</strong> en el sistema de despacho y el taller de ingeniería recibirá una alerta prioritaria de emergencia.
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* Kilometraje y Descripción */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', marginBottom: 4, display: 'block' }}>
+                          3. Kilometraje actual aproximado (km)
+                        </label>
+                        <input
+                          type="number"
+                          value={kmReporte}
+                          onChange={(e) => setKmReporte(e.target.value)}
+                          placeholder="Ej: 15300"
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: 12,
+                            background: 'rgba(15, 23, 42, 0.7)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: '#F8FAFC',
+                            fontSize: 13,
+                            fontFamily: 'monospace',
+                            fontWeight: 700,
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', marginBottom: 4, display: 'block' }}>
+                          4. Descripción detallada del problema <span style={{ color: '#EF4444' }}>*</span>
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={descripcionProblema}
+                          onChange={(e) => setDescripcionProblema(e.target.value)}
+                          placeholder="Ej: El freno delantero perdió presión y hace un chirrido agudo al frenar en bajadas. La manigueta llega casi al fondo."
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: 12,
+                            background: 'rgba(15, 23, 42, 0.7)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: '#F8FAFC',
+                            fontSize: 13,
+                            outline: 'none',
+                            resize: 'none',
+                            fontFamily: "'DM Sans', sans-serif",
+                            lineHeight: 1.4,
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                          5. Notas u observaciones adicionales para el mecánico (opcional)
+                        </label>
+                        <input
+                          type="text"
+                          value={observacionesReporte}
+                          onChange={(e) => setObservacionesReporte(e.target.value)}
+                          placeholder="Ej: Disponible para llevarla al taller después de las 2:00 PM."
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: 12,
+                            background: 'rgba(15, 23, 42, 0.7)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: '#F8FAFC',
+                            fontSize: 12,
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Submit Actions */}
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowReportarMotoModal(false)}
+                        style={{
+                          padding: '12px 18px',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          background: 'transparent',
+                          color: '#F8FAFC',
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleEnviarReporteMoto}
+                        disabled={isSubmittingReporte || !descripcionProblema.trim()}
+                        style={{
+                          padding: '12px 24px',
+                          borderRadius: 12,
+                          border: 'none',
+                          background: 'var(--primario, #FF5722)',
+                          color: '#FFFFFF',
+                          cursor: isSubmittingReporte || !descripcionProblema.trim() ? 'not-allowed' : 'pointer',
+                          opacity: isSubmittingReporte || !descripcionProblema.trim() ? 0.6 : 1,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          boxShadow: '0 4px 14px rgba(255, 87, 34, 0.4)',
+                        }}
+                      >
+                        <Wrench size={15} />
+                        {isSubmittingReporte ? 'Enviando a Mantenimiento...' : 'Enviar Reporte a Mantenimiento'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* Historial de mantenimientos / reportes de la moto */
+                  <div>
+                    <div style={{ fontSize: 13, color: '#94A3B8', marginBottom: 14 }}>
+                      Registro de intervenciones y reportes técnicos enviados al taller de Mantenimiento / Ingeniería.
+                    </div>
+
+                    {(!moto.mantenimientos || moto.mantenimientos.length === 0) && (!moto.alertas || moto.alertas.length === 0) ? (
+                      <div
+                        style={{
+                          padding: '32px 16px',
+                          textAlign: 'center',
+                          borderRadius: 14,
+                          background: 'rgba(15, 23, 42, 0.5)',
+                          border: '1px dashed rgba(255, 255, 255, 0.15)',
+                          color: '#94A3B8',
+                          fontSize: 13,
+                        }}
+                      >
+                        <Wrench size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+                        <div>No hay reportes ni mantenimientos registrados para esta moto.</div>
+                        <button
+                          type="button"
+                          onClick={() => setReportesTab('nuevo')}
+                          style={{
+                            marginTop: 14,
+                            padding: '8px 16px',
+                            borderRadius: 10,
+                            background: 'var(--primario)',
+                            color: '#fff',
+                            border: 'none',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Crear primer reporte
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {moto.mantenimientos?.map((m) => (
+                          <div
+                            key={m.id}
+                            style={{
+                              padding: 14,
+                              borderRadius: 14,
+                              background: 'rgba(15, 23, 42, 0.6)',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 6,
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    padding: '3px 8px',
+                                    borderRadius: 6,
+                                    background:
+                                      m.tipo === 'EMERGENCIA'
+                                        ? 'rgba(239, 68, 68, 0.2)'
+                                        : 'rgba(59, 130, 246, 0.2)',
+                                    color: m.tipo === 'EMERGENCIA' ? '#EF4444' : '#3B82F6',
+                                  }}
+                                >
+                                  {m.tipo} • {m.categoria}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    padding: '2px 6px',
+                                    borderRadius: 4,
+                                    background: 'rgba(255, 255, 255, 0.08)',
+                                    color: '#94A3B8',
+                                  }}
+                                >
+                                  {m.prioridad}
+                                </span>
+                              </div>
+
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  padding: '3px 8px',
+                                  borderRadius: 6,
+                                  background:
+                                    m.estado === 'COMPLETADO'
+                                      ? 'rgba(16, 185, 129, 0.2)'
+                                      : m.estado === 'EN_PROCESO'
+                                        ? 'rgba(245, 158, 11, 0.2)'
+                                        : 'rgba(59, 130, 246, 0.2)',
+                                  color:
+                                    m.estado === 'COMPLETADO'
+                                      ? '#10B981'
+                                      : m.estado === 'EN_PROCESO'
+                                        ? '#F59E0B'
+                                        : '#3B82F6',
+                                }}
+                              >
+                                {m.estado.replace('_', ' ')}
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>
+                              {m.descripcion}
+                            </div>
+
+                            {m.observaciones && (
+                              <div style={{ fontSize: 11, color: '#94A3B8', fontStyle: 'italic' }}>
+                                {m.observaciones}
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#64748B', marginTop: 4 }}>
+                              <span>Km: {m.kmAlMomento?.toLocaleString('es-NI') || 0} km</span>
+                              <span>{new Date(m.createdAt).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── MODAL CENTRO DE AYUDA Y SOPORTE AL REPARTIDOR ─── */}
+      <AnimatePresence>
+        {showHelpModal && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 999999,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 16,
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHelpModal(false)}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                height: '100%',
+                background: 'rgba(15, 23, 42, 0.82)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+              }}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              style={{
+                position: 'relative',
+                zIndex: 10,
+                width: '100%',
+                maxWidth: 520,
+                maxHeight: '85vh',
+                background: '#1E293B',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 24,
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  padding: '18px 20px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'rgba(30, 41, 59, 0.95)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: 'rgba(41, 121, 255, 0.15)',
+                      color: '#2979FF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <HelpCircle size={22} />
+                  </div>
+                  <div>
+                    <h3
+                      className="font-syne"
+                      style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#F8FAFC' }}
+                    >
+                      Centro de Ayuda al Repartidor
+                    </h3>
+                    <div style={{ fontSize: 12, color: '#94A3B8' }}>
+                      Soporte operativo y emergencias en ruta
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowHelpModal(false)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: 'none',
+                    borderRadius: 10,
+                    width: 32,
+                    height: 32,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Emergency Contact SOS */}
+                <div
+                  style={{
+                    padding: 14,
+                    borderRadius: 16,
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#FCA5A5', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      Central de Despacho y Emergencias
+                    </div>
+                    <div style={{ fontSize: 11, color: '#F8FAFC', marginTop: 2 }}>
+                      Asistencia inmediata para accidentes, extravíos o soporte en vivo.
+                    </div>
+                  </div>
+
+                  <a
+                    href="tel:+50522705000"
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 10,
+                      background: '#EF4444',
+                      color: '#fff',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      flexShrink: 0,
+                    }}
+                  >
+                    Llamar SOS
+                  </a>
+                </div>
+
+                {/* FAQ list */}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC', marginBottom: 10 }}>
+                    Preguntas Frecuentes de Motorizados
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[
+                      {
+                        q: '¿Cómo reporto una avería o falla en la moto?',
+                        a: 'En esta misma sección de perfil, pulsa en "Reportar problema". Selecciona la falla (frenos, motor, llantas, etc.) y la prioridad. El taller de mantenimiento la recibirá al instante.',
+                      },
+                      {
+                        q: '¿Qué hacer si el cliente no responde o la dirección no existe?',
+                        a: 'Tienes el chat directo y el botón de llamada dentro de la orden activa. Si tras 5 minutos no consigues contacto, reporta la incidencia desde el botón de alerta para que la central intervenga.',
+                      },
+                      {
+                        q: '¿Cómo se calculan mis comisiones y ganancias?',
+                        a: 'Recibes el pago íntegro de la entrega menos la comisión de plataforma del 15%. Las propinas de los clientes son 100% tuyas y se suman directamente.',
+                      },
+                      {
+                        q: '¿Por qué no suena la alerta cuando llega un pedido?',
+                        a: 'Verifica en tu perfil que el interruptor de Sonido esté activo y que tu teléfono no esté en modo "No Molestar" o silencio.',
+                      },
+                    ].map((faq, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: 12,
+                          borderRadius: 14,
+                          background: 'rgba(15, 23, 42, 0.6)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                        }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC', marginBottom: 4 }}>
+                          {faq.q}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.45 }}>
+                          {faq.a}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowHelpModal(false)}
+                  style={{
+                    padding: '12px 20px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: 'transparent',
+                    color: '#F8FAFC',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    width: '100%',
+                    marginTop: 6,
+                  }}
+                >
+                  Cerrar
+                </button>
               </div>
             </motion.div>
           </div>

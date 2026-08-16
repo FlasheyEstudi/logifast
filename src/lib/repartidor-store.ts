@@ -91,11 +91,23 @@ export interface MotoAsignada {
   modelo: string;
   placa: string;
   kmAcumulados: number;
-  estado: 'DISPONIBLE' | 'EN_SERVICIO' | 'MANTENIMIENTO';
-  ultimoMantenimiento: string;
+  estado: 'DISPONIBLE' | 'EN_SERVICIO' | 'MANTENIMIENTO' | 'EN_MANTENIMIENTO' | 'FUERA_SERVICIO';
+  ultimoMantenimiento: string | null;
   tipoUltimoMantenimiento: string;
   proximoMantenimientoKm: number | null;
   alertaMantenimiento: boolean;
+  alertas?: Array<{ id: string; tipo: string; descripcion: string; createdAt: string; activa: boolean }>;
+  mantenimientos?: Array<{
+    id: string;
+    tipo: string;
+    categoria: string;
+    descripcion: string;
+    estado: string;
+    prioridad: string;
+    kmAlMomento?: number | null;
+    createdAt: string;
+    observaciones?: string | null;
+  }>;
 }
 
 export interface ProductoChecklist {
@@ -347,6 +359,14 @@ interface RepartidorStoreState {
   actualizarPosicionAsync: (lat: number, lng: number) => Promise<void>;
   marcarNotificacionesLeidasAsync: () => Promise<void>;
   actualizarConfigAsync: (campo: 'sonidoActivo' | 'vibracionActiva' | 'ubicacionActiva' | 'zonaPreferida', valor: boolean | string) => Promise<boolean>;
+  reportarProblemaMotoAsync: (datos: {
+    categoria: string;
+    descripcion: string;
+    prioridad?: 'BAJA' | 'NORMAL' | 'ALTA' | 'URGENTE';
+    tipo?: 'PREVENTIVO' | 'CORRECTIVO' | 'EMERGENCIA';
+    kmAlMomento?: number;
+    observaciones?: string;
+  }) => Promise<{ ok: boolean; message?: string; error?: string }>;
   fetchChat: (ordenId: string) => Promise<void>;
 }
 
@@ -1378,6 +1398,31 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     } catch (err) {
       console.error('[actualizarConfigAsync]', err);
       return false;
+    }
+  },
+
+  reportarProblemaMotoAsync: async (datos) => {
+    try {
+      const res = await fetch('/api/repartidor/moto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { ok: false, error: data?.error || 'Error al reportar el problema' };
+      }
+
+      // Disparar feedback sonoro
+      dispararFeedback('notificacion', [100, 50, 100]);
+
+      // Refrescar estado completo desde backend (moto, mantenimientos, notificaciones)
+      await get().syncFromBackend();
+
+      return { ok: true, message: data?.message || 'Reporte enviado a Mantenimiento' };
+    } catch (err) {
+      console.error('[reportarProblemaMotoAsync]', err);
+      return { ok: false, error: 'Error de conexión con el servidor' };
     }
   },
 

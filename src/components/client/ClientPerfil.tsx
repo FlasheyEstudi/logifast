@@ -20,7 +20,6 @@ import { SonidoToggle } from '@/components/ui/SonidoToggle';
 import { notify } from '@/lib/notify';
 import ClientMiTienda from './ClientMiTienda';
 
-// Icono cámara (no estaba en el set)
 function Camera({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -29,6 +28,15 @@ function Camera({ size = 16 }: { size?: number }) {
     </svg>
   );
 }
+
+function CheckIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -230,6 +238,10 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const [logoutModal, setLogoutModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteText, setDeleteText] = useState('');
+  const [privacyModal, setPrivacyModal] = useState(false);
+  const [languageModal, setLanguageModal] = useState(false);
+  const [paymentModal, setPaymentModal] = useState(false);
+  const [selectedLang, setSelectedLang] = useState('es');
 
   /* ─── Toast state ─── */
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -1734,8 +1746,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                   borderRadius: 10,
                   border: '1px solid var(--border)',
                   background: 'transparent',
-                  color: 'var(--text-secondary)',
+                  color: 'var(--primario)',
                   fontSize: 13,
+                  fontWeight: 600,
                   fontFamily: "'DM Sans', sans-serif",
                   cursor: 'pointer',
                   display: 'flex',
@@ -1743,32 +1756,51 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                   gap: 4,
                 }}
               >
-                {prefPayment === 'efectivo' ? 'Efectivo' : 'Transferencia'} <ChevronRight size={14} />
+                {prefPayment === 'efectivo' ? 'Efectivo' : prefPayment === 'transferencia' ? 'Transferencia' : 'Tarjeta'} <ChevronRight size={14} />
               </button>
             }
+            onClick={() => setPaymentModal(true)}
           />
           {/* Idioma */}
           <SettingsRow
             icon={<Globe size={18} />}
-            label="Idioma"
+            label="Idioma de la aplicación"
+            desc="Selecciona tu idioma preferido"
             right={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>
-                Espanol <ChevronRight size={14} />
-              </div>
+              <button
+                type="button"
+                onClick={() => setLanguageModal(true)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  color: 'var(--text-secondary)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                {selectedLang === 'es' ? 'Español' : 'English'} <ChevronRight size={14} />
+              </button>
             }
-            disabled
+            onClick={() => setLanguageModal(true)}
           />
           {/* Privacidad */}
           <SettingsRow
             icon={<Shield size={18} />}
-            label="Politica de privacidad"
+            label="Política de privacidad y protección de datos"
+            desc="Tratamiento seguro de tu información y ubicación GPS"
             right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
-            onClick={() => {}}
+            onClick={() => setPrivacyModal(true)}
           />
           {/* Centro de ayuda */}
           <SettingsRow
             icon={<AlertTriangle size={18} />}
-            label="Centro de ayuda"
+            label="Centro de ayuda y soporte técnico"
+            desc="Preguntas frecuentes, contacto y asistencia en vivo"
             right={<ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />}
             onClick={() => setClientActiveModule('ayuda')}
           />
@@ -1928,6 +1960,234 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       </AnimatePresence>
 
       {/* ═══════════════════════════════════════════
+          MODAL: POLÍTICA DE PRIVACIDAD
+          ═══════════════════════════════════════════ */}
+      <AnimatePresence>
+        {privacyModal && (
+          <Modal onClose={() => setPrivacyModal(false)}>
+            <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: 'color-mix(in srgb, var(--primario) 15%, transparent)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--primario)',
+                }}>
+                  <Shield size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: 0, fontFamily: "'Syne', sans-serif" }}>
+                    Privacidad y Datos
+                  </h3>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    Logifast Delivery • Términos y Seguridad
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, fontFamily: "'DM Sans', sans-serif" }}>
+                <div style={{ padding: 12, borderRadius: 12, background: 'var(--surface-variant, rgba(0,0,0,0.04))', border: '1px solid var(--border)' }}>
+                  <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 4 }}>Cifrado y Protección</strong>
+                  Toda tu información personal, historial de pedidos y direcciones están protegidos con cifrado de grado bancario (TLS 1.3).
+                </div>
+
+                <div style={{ padding: 12, borderRadius: 12, background: 'var(--surface-variant, rgba(0,0,0,0.04))', border: '1px solid var(--border)' }}>
+                  <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 4 }}>Uso de Ubicación GPS</strong>
+                  Tu geolocalización solo se utiliza para facilitar la entrega, calcular la tarifa justa y mostrarte el repartidor en tiempo real. Nunca vendemos tus datos a terceros.
+                </div>
+
+                <div style={{ padding: 12, borderRadius: 12, background: 'var(--surface-variant, rgba(0,0,0,0.04))', border: '1px solid var(--border)' }}>
+                  <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 4 }}>Control Total y Eliminación</strong>
+                  Tienes derecho a solicitar la descarga o la eliminación definitiva de tu cuenta y todos los registros asociados en cualquier momento.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                style={{ ...btnPrimary, width: '100%', marginTop: 20 }}
+                onClick={() => setPrivacyModal(false)}
+              >
+                Entendido
+              </button>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════
+          MODAL: SELECTOR DE IDIOMA
+          ═══════════════════════════════════════════ */}
+      <AnimatePresence>
+        {languageModal && (
+          <Modal onClose={() => setLanguageModal(false)}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: 'color-mix(in srgb, var(--primario) 15%, transparent)',
+                color: 'var(--primario)', margin: '0 auto 12px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Globe size={24} />
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 6 }}>
+                Idioma / Language
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, fontFamily: "'DM Sans', sans-serif" }}>
+                Selecciona tu idioma preferido para la interfaz
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedLang('es');
+                    notify.success('Idioma configurado en Español');
+                    setLanguageModal(false);
+                  }}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    border: selectedLang === 'es' ? '2px solid var(--primario)' : '1px solid var(--border)',
+                    background: selectedLang === 'es' ? 'color-mix(in srgb, var(--primario) 10%, var(--surface))' : 'var(--surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 14,
+                    fontWeight: selectedLang === 'es' ? 700 : 500,
+                    color: 'var(--text)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span>Español (América Latina)</span>
+                  </div>
+                  {selectedLang === 'es' && <CheckIcon size={16} color="var(--primario)" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedLang('en');
+                    notify.success('Language set to English');
+                    setLanguageModal(false);
+                  }}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    border: selectedLang === 'en' ? '2px solid var(--primario)' : '1px solid var(--border)',
+                    background: selectedLang === 'en' ? 'color-mix(in srgb, var(--primario) 10%, var(--surface))' : 'var(--surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 14,
+                    fontWeight: selectedLang === 'en' ? 700 : 500,
+                    color: 'var(--text)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span>English (United States)</span>
+                  </div>
+                  {selectedLang === 'en' && <CheckIcon size={16} color="var(--primario)" />}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                style={{ ...btnGhost, width: '100%' }}
+                onClick={() => setLanguageModal(false)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════
+          MODAL: MÉTODO DE PAGO PREDETERMINADO
+          ═══════════════════════════════════════════ */}
+      <AnimatePresence>
+        {paymentModal && (
+          <Modal onClose={() => setPaymentModal(false)}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: 'color-mix(in srgb, var(--primario) 15%, transparent)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--primario)',
+                }}>
+                  <CreditCard size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: 0, fontFamily: "'Syne', sans-serif" }}>
+                    Método de Pago Predeterminado
+                  </h3>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    Para tus compras y pedidos de delivery
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                {[
+                  { id: 'efectivo', label: 'Efectivo contra Entrega', desc: 'Pagas en efectivo al recibir tu paquete (C$ o $)' },
+                  { id: 'transferencia', label: 'Transferencia Bancaria Directa', desc: 'BAC Credomatic, Banpro, Lafise Bancentro' },
+                  { id: 'tarjeta', label: 'Tarjeta de Débito / Crédito', desc: 'Visa, Mastercard - Pasarela de pago segura' },
+                ].map((met) => {
+                  const isSel = prefPayment === met.id;
+                  return (
+                    <button
+                      key={met.id}
+                      type="button"
+                      onClick={() => {
+                        setPrefPayment(met.id as any);
+                        notify.success(`Método de pago predeterminado: ${met.label}`);
+                        setPaymentModal(false);
+                      }}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 14,
+                        border: isSel ? '2px solid var(--primario)' : '1px solid var(--border)',
+                        background: isSel ? 'color-mix(in srgb, var(--primario) 10%, var(--surface))' : 'var(--surface)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: isSel ? 700 : 600, color: 'var(--text)' }}>
+                          {met.label}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                          {met.desc}
+                        </div>
+                      </div>
+                      {isSel && <CheckIcon size={18} color="var(--primario)" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                style={{ ...btnGhost, width: '100%' }}
+                onClick={() => setPaymentModal(false)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════
           TOAST NOTIFICATION
           ═══════════════════════════════════════════ */}
       <AnimatePresence>
@@ -1969,12 +2229,14 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 function SettingsRow({
   icon,
   label,
+  desc,
   right,
   onClick,
   disabled = false,
 }: {
   icon: React.ReactNode;
   label: string;
+  desc?: string;
   right: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
@@ -2001,9 +2263,13 @@ function SettingsRow({
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text)' }}>
         <span style={{ color: 'var(--text-secondary)' }}>{icon}</span>
-        <span style={{ fontSize: 14, color: disabled ? 'var(--text-muted)' : 'var(--text)' }}>{label}</span>
+        <div>
+          <div style={{ fontSize: 14, color: disabled ? 'var(--text-muted)' : 'var(--text)', fontWeight: 500 }}>{label}</div>
+          {desc && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>}
+        </div>
       </div>
       {right}
     </div>
   );
 }
+
