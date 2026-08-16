@@ -8,7 +8,7 @@ import { useRepartidorStore } from '@/lib/repartidor-store';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { useConfigStore } from '@/store/configStore';
-import { reproducirSiActivo } from '@/services/audio';
+import { reproducirSiActivo, reproducirSonido } from '@/services/audio';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 /* ═══════════════════════════════════════════════
@@ -421,6 +421,15 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   const snackbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [clock, setClock] = useState('9:41');
 
+  /* ─── SNACKBAR AUTO-DISMISS ─── */
+  const showSnackbar = useCallback((data: SnackbarData | null) => {
+    if (snackbarTimerRef.current) clearTimeout(snackbarTimerRef.current);
+    setSnackbar(data);
+    if (data) {
+      snackbarTimerRef.current = setTimeout(() => setSnackbar(null), 4000);
+    }
+  }, []);
+
   /* ─── Sync inicial con backend (10s cuando la pestaña está visible) ─── */
   useEffect(() => {
     syncFromBackend();
@@ -490,11 +499,12 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     }
   }, [conectado, storeLat, storeLng, storeHeading, storeEstado]);
 
-  // Emit state updates to client tracking room
+  // Emit state updates to client tracking room & join order room
   const ordenId = useRepartidorStore((s) => s.ordenActiva?.id);
   useEffect(() => {
     if (conectado && ordenId) {
       realtime.repartidorEstadoCambio(ordenId, storeEstado);
+      realtime.clienteTrackingUnirse(ordenId);
     }
   }, [conectado, ordenId, storeEstado]);
 
@@ -503,18 +513,22 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     if (!conectado) return;
 
     const cleanupChat = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
+      if (!msg) return;
       const state = useRepartidorStore.getState();
       const yaExiste = state.mensajes.some((m) => m.id === msg.id);
       if (!yaExiste) {
         useRepartidorStore.setState({
           mensajes: [...state.mensajes, msg]
         });
-        if (msg.emisor === 'cliente') {
-          const cfg = useConfigStore.getState();
-          reproducirSiActivo('mensaje', {
-            sonidoActivo: cfg.sonidoActivo,
-            volumenSonido: cfg.volumenSonido,
-            notificacionesSonido: cfg.notificacionesSonido,
+      }
+      if (msg.emisor === 'cliente') {
+        reproducirSonido('mensaje', 90);
+        HAPTIC_PATTERNS.light();
+        if (!state.chatAbierto) {
+          showSnackbar({
+            message: `Mensaje de cliente: "${(msg.contenido || '').slice(0, 45)}${(msg.contenido || '').length > 45 ? '...' : ''}"`,
+            action: 'Ver chat',
+            onAction: () => state.toggleChat(msg.ordenId),
           });
         }
       }
@@ -532,7 +546,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
       cleanupChat();
       cleanupOrder();
     };
-  }, [conectado]);
+  }, [conectado, showSnackbar]);
 
   /* ─── SIMULATION LOOP (5s) — MANTENER ─── */
   useEffect(() => {
@@ -556,15 +570,6 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     update();
     const i = setInterval(update, 10000);
     return () => clearInterval(i);
-  }, []);
-
-  /* ─── SNACKBAR AUTO-DISMISS — MANTENER ─── */
-  const showSnackbar = useCallback((data: SnackbarData | null) => {
-    if (snackbarTimerRef.current) clearTimeout(snackbarTimerRef.current);
-    setSnackbar(data);
-    if (data) {
-      snackbarTimerRef.current = setTimeout(() => setSnackbar(null), 4000);
-    }
   }, []);
 
   /* ─── handleNav — MANTENER firma, extender para 'ganancias' ─── */
@@ -725,11 +730,11 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
             gap: 4,
             padding: '4px 4px 4px 14px',
             borderRadius: 100,
-            background: 'color-mix(in srgb, var(--ios-bg-elevated, #1E293B) 90%, transparent)',
+            background: 'color-mix(in srgb, var(--surface, var(--ios-bg-elevated)) 92%, transparent)',
             backdropFilter: 'saturate(200%) blur(28px)',
             WebkitBackdropFilter: 'saturate(200%) blur(28px)',
             border: '1px solid color-mix(in srgb, var(--ios-blue, var(--primario)) 20%, transparent)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
             transition: 'all 0.3s ease',
           }}
         >
@@ -900,7 +905,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
                         alignItems: 'center',
                         justifyContent: 'center',
                         padding: '0 4px',
-                        border: '2px solid var(--ios-bg-elevated, #1E293B)',
+                        border: '2px solid var(--surface, var(--ios-bg-elevated))',
                       }}
                     >
                       {serviciosBadgeCount > 9 ? '9+' : serviciosBadgeCount}

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useRepartidorStore, type ChatMensaje } from '@/lib/repartidor-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
+import { reproducirSonido } from '@/services/audio';
 
 /* ═══════════════════════════════════════════════
    CONSTANTS
@@ -110,6 +111,7 @@ export default function RepartidorChat() {
           }];
         });
         if (msg.emisor === 'cliente') {
+          reproducirSonido('mensaje', 90);
           hapticTap('success');
         }
       }
@@ -200,7 +202,6 @@ export default function RepartidorChat() {
   return (
     <AnimatePresence>
       <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -209,7 +210,6 @@ export default function RepartidorChat() {
           style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(6px)' }}
         />
 
-        {/* Modal Sheet */}
         <motion.div
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
@@ -221,25 +221,24 @@ export default function RepartidorChat() {
             maxWidth: 540,
             height: '100vh',
             maxHeight: '92vh',
-            background: 'var(--surface, #1E293B)',
-            color: 'var(--text, #F8FAFC)',
+            background: 'var(--surface)',
+            color: 'var(--text)',
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
-            boxShadow: '0 -16px 48px rgba(0,0,0,0.4)',
+            boxShadow: '0 -16px 48px rgba(0,0,0,0.3)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
             zIndex: 10000,
           }}
         >
-          {/* Header */}
           <div
             style={{
               padding: '14px 18px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              borderBottom: '1px solid var(--border, rgba(255,255,255,0.1))',
+              borderBottom: '1px solid var(--border)',
               background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
               backdropFilter: 'blur(16px)',
             }}
@@ -264,13 +263,13 @@ export default function RepartidorChat() {
               </div>
 
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Syne', sans-serif" }}>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>
                   {clienteNombre}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
                   <span style={{ fontSize: 12, color: '#10B981', fontWeight: 700 }}>
-                    Cliente conectado · En vivo
+                    Cliente conectado
                   </span>
                 </div>
               </div>
@@ -283,7 +282,7 @@ export default function RepartidorChat() {
                   style={{
                     width: 38,
                     height: 38,
-                    borderRadius: '50%',
+                    borderRadius: 12,
                     background: 'rgba(52, 199, 89, 0.15)',
                     color: '#34C759',
                     display: 'flex',
@@ -291,9 +290,9 @@ export default function RepartidorChat() {
                     justifyContent: 'center',
                     textDecoration: 'none',
                   }}
-                  title={`Llamar al cliente (${clienteTelefono})`}
+                  title="Llamar al cliente"
                 >
-                  <Phone size={17} />
+                  <Phone size={18} />
                 </a>
               )}
 
@@ -302,22 +301,22 @@ export default function RepartidorChat() {
                 style={{
                   width: 38,
                   height: 38,
-                  borderRadius: '50%',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: 'var(--text-muted, #94A3B8)',
+                  borderRadius: 12,
+                  background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 90%, var(--text) 10%))',
                   border: 'none',
+                  color: 'var(--text-muted)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                 }}
+                title="Cerrar chat"
               >
                 <X size={18} />
               </button>
             </div>
           </div>
 
-          {/* Messages list */}
           <div
             ref={listRef}
             style={{
@@ -326,77 +325,66 @@ export default function RepartidorChat() {
               padding: '16px 18px',
               display: 'flex',
               flexDirection: 'column',
-              gap: 8,
-              background: 'var(--bg, #0B132B)',
+              gap: 12,
+              background: 'var(--bg)',
             }}
           >
             {mensajes.length === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '40px 0', textAlign: 'center', gap: 8, color: '#94A3B8' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <MessageSquare size={22} />
+              <div
+                style={{
+                  margin: 'auto',
+                  textAlign: 'center',
+                  color: 'var(--text-muted)',
+                  padding: 24,
+                }}
+              >
+                <div style={{ width: 48, height: 48, borderRadius: 16, background: 'var(--surface-variant)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: 'var(--primario, #10B981)' }}>
+                  <MessageSquare size={24} />
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4, color: 'var(--text, #F8FAFC)' }}>
-                  Canal de chat directo con el cliente
-                </div>
-                <div style={{ fontSize: 12, maxWidth: 260 }}>
-                  Envía un mensaje rápido para notificar tu llegada o solicitar detalles del acceso.
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Canal de chat directo</div>
+                <div style={{ fontSize: 12, marginTop: 4 }}>
+                  Comunícate con el cliente para confirmar detalles de recogida o entrega.
                 </div>
               </div>
             ) : (
               mensajes.map((m) => {
-                const isRepartidor = m.emisor === 'repartidor';
+                const esMio = m.emisor === 'repartidor';
                 return (
                   <div
                     key={m.id}
                     style={{
                       display: 'flex',
-                      justifyContent: isRepartidor ? 'flex-end' : 'flex-start',
-                      width: '100%',
+                      flexDirection: 'column',
+                      alignItems: esMio ? 'flex-end' : 'flex-start',
+                      gap: 4,
                     }}
                   >
-                    <div style={{ maxWidth: '82%' }}>
+                    <div
+                      style={{
+                        maxWidth: '82%',
+                        padding: '10px 14px',
+                        borderRadius: esMio ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                        background: esMio
+                          ? 'var(--primario, #10B981)'
+                          : 'var(--surface)',
+                        color: esMio ? '#FFFFFF' : 'var(--text)',
+                        fontSize: 14,
+                        lineHeight: 1.4,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        border: esMio ? 'none' : '1px solid var(--border)',
+                      }}
+                    >
+                      {m.contenido}
                       <div
                         style={{
-                          padding: '10px 14px',
-                          fontSize: 14,
-                          lineHeight: 1.45,
-                          wordBreak: 'break-word',
-                          color: '#FFFFFF',
-                          background: isRepartidor
-                            ? 'linear-gradient(135deg, #10B981, #059669)'
-                            : '#334155',
-                          borderRadius: isRepartidor ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                          boxShadow: isRepartidor
-                            ? '0 3px 12px rgba(16, 185, 129, 0.25)'
-                            : '0 2px 6px rgba(0,0,0,0.1)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {m.contenido}
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: isRepartidor ? 'flex-end' : 'flex-start',
-                          gap: 4,
-                          marginTop: 3,
-                          paddingLeft: isRepartidor ? 0 : 4,
-                          paddingRight: isRepartidor ? 4 : 0,
                           fontSize: 10,
-                          color: '#94A3B8',
-                          fontFamily: "'JetBrains Mono', monospace",
+                          textAlign: 'right',
+                          marginTop: 4,
+                          color: esMio ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+                          fontFamily: 'monospace',
                         }}
                       >
-                        <span>{m.enviadoEn}</span>
-                        {isRepartidor && (
-                          (m as any).leido ? (
-                            <CheckCheck size={13} color="#60A5FA" />
-                          ) : (
-                            <Check size={13} style={{ opacity: 0.7 }} />
-                          )
-                        )}
+                        {m.enviadoEn}
                       </div>
                     </div>
                   </div>
@@ -405,11 +393,10 @@ export default function RepartidorChat() {
             )}
           </div>
 
-          {/* Quick replies tray */}
           <div
             style={{
-              borderTop: '1px solid var(--border, rgba(255,255,255,0.08))',
-              background: 'var(--surface, #1E293B)',
+              borderTop: '1px solid var(--border)',
+              background: 'var(--surface)',
               padding: '10px 16px',
               paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
             }}
@@ -422,9 +409,9 @@ export default function RepartidorChat() {
                   style={{
                     padding: '5px 12px',
                     borderRadius: 99,
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    color: '#E2E8F0',
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 92%, var(--text) 8%))',
+                    color: 'var(--text)',
                     fontSize: 11,
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -436,7 +423,6 @@ export default function RepartidorChat() {
               ))}
             </div>
 
-            {/* Input row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <textarea
                 ref={textareaRef}
@@ -450,9 +436,9 @@ export default function RepartidorChat() {
                   resize: 'none',
                   padding: '10px 14px',
                   borderRadius: 14,
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  background: 'rgba(0,0,0,0.25)',
-                  color: '#FFFFFF',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
                   fontSize: 14,
                   outline: 'none',
                   maxHeight: 80,
@@ -468,8 +454,8 @@ export default function RepartidorChat() {
                   height: 44,
                   borderRadius: 14,
                   border: 'none',
-                  background: input.trim() ? '#10B981' : 'rgba(255, 255, 255, 0.1)',
-                  color: '#FFFFFF',
+                  background: input.trim() ? '#10B981' : 'var(--surface-variant, rgba(0, 0, 0, 0.08))',
+                  color: input.trim() ? '#FFFFFF' : 'var(--text-muted)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

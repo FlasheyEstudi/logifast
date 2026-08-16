@@ -41,6 +41,20 @@ function calculateBearing(start: [number, number], end: [number, number]): numbe
   return (brng + 360) % 360;
 }
 
+function calcularDistanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export interface RepartidorMapProps {
   repartidorPos: [number, number];
   origenPos?: [number, number];
@@ -251,27 +265,67 @@ export default function RepartidorMap({
     }
   }, [mapReady, origen, destino, animatedPos, is3DMode, shouldFollow]);
 
-  // Fetch OSRM driving route
-  useEffect(() => {
-    if (rutaCoordenadas && rutaCoordenadas.length >= 2) return;
+  // Fetch OSRM driving route - Stable, no jitter
+  const lastFetchedPosRef = useRef<{ lat: number; lng: number; targetLat: number; targetLng: number; estado?: string } | null>(null);
+  const routeRequestIdRef = useRef(0);
 
-    let targetPos = (estado === 'EN_CAMINO_RECOGER' || estado === 'ORDEN_ASIGNADA') ? origen : (destino || origen);
-    if (!targetPos) return;
+  useEffect(() => {
+    const targetPos = (estado === 'EN_CAMINO_RECOGER' || estado === 'ORDEN_ASIGNADA') ? origen : (destino || origen);
+    if (!targetPos || !isValidPos(targetPos) || !isValidPos(targetDriverPos)) return;
+
+    if (rutaCoordenadas && rutaCoordenadas.length >= 2) {
+      const d = Math.max(0.1, Math.round(calcularDistanciaKm(targetDriverPos[0], targetDriverPos[1], targetPos[0], targetPos[1]) * 1.25 * 10) / 10);
+      setRouteDistanceKm(d);
+      setRouteDurationMin(Math.max(1, Math.round(d * 2.8)));
+      return;
+    }
+
+    const last = lastFetchedPosRef.current;
+    if (last) {
+      const distFromLast = calcularDistanciaKm(last.lat, last.lng, targetDriverPos[0], targetDriverPos[1]);
+      const sameTarget = Math.abs(last.targetLat - targetPos[0]) < 0.0001 && Math.abs(last.targetLng - targetPos[1]) < 0.0001 && last.estado === estado;
+      if (sameTarget && distFromLast < 0.035) {
+        // Driver moved less than 35m and target is identical -> do not trigger network fetch or jitter
+        const directKm = Math.max(0.1, Math.round(calcularDistanciaKm(targetDriverPos[0], targetDriverPos[1], targetPos[0], targetPos[1]) * 1.25 * 10) / 10);
+        setRouteDistanceKm(directKm);
+        setRouteDurationMin(Math.max(1, Math.round(directKm * 2.8)));
+        return;
+      }
+    }
+
+    const currentReqId = ++routeRequestIdRef.current;
+    lastFetchedPosRef.current = {
+      lat: targetDriverPos[0],
+      lng: targetDriverPos[1],
+      targetLat: targetPos[0],
+      targetLng: targetPos[1],
+      estado,
+    };
 
     obtenerRuta(
-      { lat: animatedPos[0], lng: animatedPos[1] },
+      { lat: targetDriverPos[0], lng: targetDriverPos[1] },
       { lat: targetPos[0], lng: targetPos[1] }
     )
       .then((res) => {
+        if (currentReqId !== routeRequestIdRef.current) return;
         if (res && res.exito && res.coordenadas && res.coordenadas.length > 1) {
           setOsrmRouteCoords(res.coordenadas);
           setRouteDistanceKm(res.distanciaKm);
           setRouteDurationMin(res.duracionMin);
           if (res.pasos) setRouteSteps(res.pasos);
+        } else {
+          const directKm = Math.max(0.1, Math.round(calcularDistanciaKm(targetDriverPos[0], targetDriverPos[1], targetPos[0], targetPos[1]) * 1.25 * 10) / 10);
+          setRouteDistanceKm(directKm);
+          setRouteDurationMin(Math.max(1, Math.round(directKm * 2.8)));
         }
       })
-      .catch(() => null);
-  }, [animatedPos, origen, destino, estado, rutaCoordenadas]);
+      .catch(() => {
+        if (currentReqId !== routeRequestIdRef.current) return;
+        const directKm = Math.max(0.1, Math.round(calcularDistanciaKm(targetDriverPos[0], targetDriverPos[1], targetPos[0], targetPos[1]) * 1.25 * 10) / 10);
+        setRouteDistanceKm(directKm);
+        setRouteDurationMin(Math.max(1, Math.round(directKm * 2.8)));
+      });
+  }, [targetDriverPos, origen, destino, estado, rutaCoordenadas]);
 
   // MapLibre route coordinates [lng, lat][]
   const mapLibreRoute = useMemo(() => {
@@ -351,18 +405,18 @@ export default function RepartidorMap({
           top: 14px;
           left: 14px;
           right: 14px;
-          background: rgba(15, 23, 42, 0.92);
+          background: color-mix(in srgb, var(--surface) 92%, transparent);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 1px solid var(--border);
           border-radius: 18px;
           padding: 10px 14px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           z-index: 40;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-          color: #F8FAFC;
+          box-shadow: var(--lf-shadow-card, 0 8px 32px rgba(0, 0, 0, 0.2));
+          color: var(--text);
         }
         .btn-auto-center {
           position: absolute;
@@ -371,17 +425,17 @@ export default function RepartidorMap({
           width: 46px;
           height: 46px;
           border-radius: 14px;
-          background: rgba(15, 23, 42, 0.92);
+          background: color-mix(in srgb, var(--surface) 92%, transparent);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+          border: 1px solid var(--border);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           z-index: 40;
-          color: #F8FAFC;
+          color: var(--text);
           transition: all 0.2s;
         }
         .btn-auto-center:active {
@@ -399,17 +453,17 @@ export default function RepartidorMap({
           width: 46px;
           height: 46px;
           border-radius: 14px;
-          background: rgba(15, 23, 42, 0.92);
+          background: color-mix(in srgb, var(--surface) 92%, transparent);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+          border: 1px solid var(--border);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           z-index: 40;
-          color: #F8FAFC;
+          color: var(--text);
           transition: all 0.2s;
         }
         .btn-3d-toggle:active {

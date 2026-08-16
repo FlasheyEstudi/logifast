@@ -61,10 +61,13 @@ export default function RepartidorServicio() {
     estado, conectado, ordenActiva, ordenesActivas = [], ordenAsignadaPendiente, ofertasDisponibles = [], lat, lng, eta, perfil,
     conectar, desconectar, optimizarRutaAutomatica, llegarRecogida, recogerPaquete,
     llegarEntrega, confirmarEntrega, toggleChat, toggleIncidencia,
-    aceptarOfertaDirecta, rechazarOfertaDirecta,
+    aceptarOfertaDirecta, rechazarOfertaDirecta, obtenerStats,
   } = useRepartidorStore();
 
   const showSnackbar = useRepartidorSnackbar();
+
+  const [periodoGanancias, setPeriodoGanancias] = useState<'hoy' | 'semana' | 'mes'>('hoy');
+  const statsGanancias = obtenerStats(periodoGanancias);
 
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
@@ -329,13 +332,49 @@ export default function RepartidorServicio() {
                   </div>
                   <button onClick={handleToggleConnection} style={{ background: 'none', border: 'none', color: '#FF3B30', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Salir</button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {[{ label: 'Ganancias hoy', val: `C$ ${(perfil.totalGanancias||0).toFixed(2)}`, color: '#34C759' }, { label: 'Entregas', val: `${perfil.totalEntregas||0} envíos`, color: 'var(--text)' }].map(s => (
-                    <div key={s.label} style={{ padding: '10px 14px', borderRadius: 14, background: 'var(--bg-alt)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{s.label}</span>
-                      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: s.color }}>{s.val}</span>
-                    </div>
+
+                {/* Selector de Periodo: Hoy / Semana / Mes */}
+                <div style={{ display: 'flex', gap: 6, background: 'var(--bg-alt)', padding: 3, borderRadius: 12, border: '1px solid var(--border)' }}>
+                  {(['hoy', 'semana', 'mes'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPeriodoGanancias(p)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 8px',
+                        borderRadius: 9,
+                        border: 'none',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        background: periodoGanancias === p ? 'var(--primario)' : 'transparent',
+                        color: periodoGanancias === p ? '#FFFFFF' : 'var(--text-muted)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {p === 'hoy' ? 'Hoy' : p === 'semana' ? 'Esta Semana' : 'Este Mes'}
+                    </button>
                   ))}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div style={{ padding: '10px 14px', borderRadius: 14, background: 'var(--bg-alt)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Ganancias {periodoGanancias === 'hoy' ? 'hoy' : periodoGanancias === 'semana' ? 'semana' : 'mes'}
+                    </span>
+                    <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>
+                      C$ {statsGanancias.ganancias.toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ padding: '10px 14px', borderRadius: 14, background: 'var(--bg-alt)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Entregas {periodoGanancias === 'hoy' ? 'hoy' : periodoGanancias === 'semana' ? 'semana' : 'mes'}
+                    </span>
+                    <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
+                      {statsGanancias.entregas} {statsGanancias.entregas === 1 ? 'envío' : 'envíos'}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}

@@ -115,6 +115,8 @@ io.on('connection', (socket) => {
   socket.on('chat:mensaje', (data: { ordenId: string; emisor: 'repartidor' | 'cliente'; contenido: string; enviadoEn: string }) => {
     const mensaje = { id: `msg-${Date.now()}`, ...data };
     io.to(`orden:${data.ordenId}`).emit('chat:mensaje:nuevo', mensaje);
+    io.to('repartidores').emit('chat:mensaje:nuevo', mensaje);
+    io.to('admin').emit('chat:mensaje:nuevo', mensaje);
   });
 
   // ─── ESTADO DEL REPARTIDOR cambió ───

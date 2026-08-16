@@ -47,3 +47,14 @@ export function emitOrdenActualizada(orden: any) {
 export function emitOrdenEliminada(ordenId: string) {
   emitirEventoRealtime({ room: 'admin', event: 'admin:orden:eliminada', data: { id: ordenId } });
 }
+
+export function emitChatMensaje(ordenId: string, mensaje: any, repartidorId?: string | null, clienteId?: string | null) {
+  emitirEventoRealtime({ room: `orden:${ordenId}`, event: 'chat:mensaje:nuevo', data: mensaje });
+  emitirEventoRealtime({ room: 'repartidores', event: 'chat:mensaje:nuevo', data: mensaje });
+  if (repartidorId) {
+    emitirEventoRealtime({ room: `repartidor:${repartidorId}`, event: 'chat:mensaje:nuevo', data: mensaje });
+  }
+  if (clienteId) {
+    emitirEventoRealtime({ room: `cliente:${clienteId}`, event: 'chat:mensaje:nuevo', data: mensaje });
+  }
+}

@@ -25,6 +25,8 @@ import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { LogoSpinner } from '@/components/ui/loaders';
+import { realtime, onRealtimeEvent } from '@/services/realtime';
+import { reproducirSonido } from '@/services/audio';
 
 /* ═══════════════════════════════════════════════
    SKELETON COMPONENT (PLACEHOLDER)
@@ -325,6 +327,46 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       }, 4000);
     }
   }, []);
+
+  /* ─── REALTIME CHAT & ORDER TRACKING ROOMS ─── */
+  useEffect(() => {
+    const activeOrderIds = [
+      ...orders.filter((o) => !['entregado', 'incidencia'].includes(o.estado)).map((o) => o.id),
+      ...ordenesCompra.filter((o) => o.estado !== 'entregado').map((o) => o.id),
+    ];
+    activeOrderIds.forEach((id) => {
+      if (id) realtime.clienteTrackingUnirse(id);
+    });
+  }, [orders, ordenesCompra]);
+
+  useEffect(() => {
+    const cleanupChat = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
+      if (msg && msg.emisor === 'repartidor') {
+        reproducirSonido('mensaje', 90);
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate([20, 50, 20]);
+          } catch {}
+        }
+        const isChatCurrentlyOpen = useStore.getState().chatOpen;
+        const currentChatOrderId = useStore.getState().chatOrderId;
+        if (!isChatCurrentlyOpen || currentChatOrderId !== msg.ordenId) {
+          showSnackbar({
+            message: `Mensaje de tu repartidor: "${(msg.contenido || '').slice(0, 45)}${(msg.contenido || '').length > 45 ? '...' : ''}"`,
+            action: 'Abrir Chat',
+            onAction: () => {
+              setChatOrderId(msg.ordenId);
+              setChatOpen(true);
+            },
+          });
+        }
+      }
+    });
+
+    return () => {
+      cleanupChat();
+    };
+  }, [showSnackbar, setChatOrderId, setChatOpen]);
 
   /* Close dropdowns on outside click */
   useEffect(() => {

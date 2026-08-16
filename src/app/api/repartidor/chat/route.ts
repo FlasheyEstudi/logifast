@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { emitChatMensaje } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -226,6 +227,9 @@ export async function POST(req: NextRequest) {
         hour12: false,
       }),
     };
+
+    // Emitir mensaje en tiempo real al instante vía WebSocket/HTTP
+    emitChatMensaje(ordenId, formattedMensaje, repartidorId, clienteId);
 
     return NextResponse.json({ ok: true, mensaje: formattedMensaje });
   } catch (error) {

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useStore, type ChatMessage } from '@/lib/store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
+import { reproducirSonido } from '@/services/audio';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -235,6 +236,7 @@ export default function ClientChat({ isDark, onClose }: ClientChatProps) {
           }];
         });
         if (msg.emisor === 'repartidor') {
+          reproducirSonido('mensaje', 90);
           hapticTap('success');
         }
       }

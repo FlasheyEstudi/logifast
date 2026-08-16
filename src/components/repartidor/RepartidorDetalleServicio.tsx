@@ -77,7 +77,7 @@ function MiniMap({
         borderRadius: 16,
         overflow: 'hidden',
         position: 'relative',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
+        border: '1px solid var(--border)',
       }}
     >
       <RepartidorMiniMap
@@ -104,7 +104,7 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
         alignItems: 'center',
         gap: 10,
         padding: '10px 0',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        borderBottom: '1px solid var(--border)',
       }}
     >
       <span
@@ -112,8 +112,8 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
           width: 28,
           height: 28,
           borderRadius: 8,
-          background: 'rgba(255, 255, 255, 0.08)',
-          color: '#CBD5E1',
+          background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 90%, var(--text) 10%))',
+          color: 'var(--text-secondary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -122,12 +122,12 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
       >
         {icon}
       </span>
-      <span style={{ flex: 1, fontSize: 13, color: '#94A3B8' }}>{label}</span>
+      <span style={{ flex: 1, fontSize: 13, color: 'var(--text-muted)' }}>{label}</span>
       <span
         style={{
           fontSize: 13,
           fontWeight: 700,
-          color: '#F8FAFC',
+          color: 'var(--text)',
           textAlign: 'right',
           maxWidth: '60%',
           overflow: 'hidden',
@@ -183,9 +183,9 @@ export default function RepartidorDetalleServicio() {
         position: 'fixed',
         inset: 0,
         zIndex: 9995,
-        background: '#0B0E14',
+        background: 'var(--bg)',
         overflowY: 'auto',
-        color: '#F8FAFC',
+        color: 'var(--text)',
       }}
     >
       <div
@@ -212,14 +212,14 @@ export default function RepartidorDetalleServicio() {
               width: 40,
               height: 40,
               borderRadius: 12,
-              border: 'none',
-              background: 'var(--md-surface)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
               color: 'var(--text)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: 'var(--md-elevation-1)',
+              boxShadow: 'var(--lf-shadow-card, 0 2px 8px rgba(0,0,0,0.05))',
             }}
           >
             <ChevronLeft size={20} />
@@ -266,9 +266,9 @@ export default function RepartidorDetalleServicio() {
           style={{
             padding: 16,
             borderRadius: 20,
-            background: 'rgba(30, 41, 59, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--lf-shadow-card, 0 4px 20px rgba(0,0,0,0.05))',
             marginBottom: 12,
           }}
         >
@@ -280,7 +280,7 @@ export default function RepartidorDetalleServicio() {
               justifyContent: 'space-between',
               marginBottom: 8,
               paddingBottom: 12,
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              borderBottom: '1px solid var(--border)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -311,7 +311,7 @@ export default function RepartidorDetalleServicio() {
             </div>
             <span
               className="font-mono"
-              style={{ fontSize: 13, color: '#94A3B8', fontWeight: 600 }}
+              style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}
             >
               {s.id}
             </span>
@@ -345,8 +345,8 @@ export default function RepartidorDetalleServicio() {
                 width: 28,
                 height: 28,
                 borderRadius: 8,
-                background: 'rgba(255, 255, 255, 0.08)',
-                color: '#CBD5E1',
+                background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 90%, var(--text) 10%))',
+                color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -355,10 +355,10 @@ export default function RepartidorDetalleServicio() {
             >
               <Clock size={14} />
             </span>
-            <span style={{ flex: 1, fontSize: 13, color: '#94A3B8' }}>Hora</span>
+            <span style={{ flex: 1, fontSize: 13, color: 'var(--text-muted)' }}>Hora</span>
             <span
               className="font-mono"
-              style={{ fontSize: 13, fontWeight: 600, color: '#F8FAFC' }}
+              style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}
             >
               {s.hora}
             </span>
@@ -387,15 +387,15 @@ export default function RepartidorDetalleServicio() {
               <AlertTriangle size={16} color="#FF3B30" />
               <span
                 className="font-syne"
-                style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC' }}
+                style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}
               >
                 Incidencia reportada
               </span>
             </div>
-            <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 4 }}>
-              <strong style={{ color: '#F8FAFC' }}>Tipo:</strong> {s.incidenciaTipo || '—'}
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
+              <strong style={{ color: 'var(--text)' }}>Tipo:</strong> {s.incidenciaTipo || '—'}
             </div>
-            <div style={{ fontSize: 13, color: '#94A3B8' }}>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
               El servicio fue marcado como incidencia y notificado al administrador.
             </div>
           </div>
@@ -407,9 +407,9 @@ export default function RepartidorDetalleServicio() {
             style={{
               padding: 16,
               borderRadius: 20,
-              background: 'rgba(30, 41, 59, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              backdropFilter: 'blur(16px)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--lf-shadow-card, 0 4px 20px rgba(0,0,0,0.05))',
               marginBottom: 12,
             }}
           >
@@ -425,7 +425,7 @@ export default function RepartidorDetalleServicio() {
                 style={{
                   fontSize: 32,
                   fontWeight: 700,
-                  color: '#F8FAFC',
+                  color: 'var(--text)',
                   fontFamily: "'Syne', sans-serif",
                   lineHeight: 1,
                 }}
@@ -434,7 +434,7 @@ export default function RepartidorDetalleServicio() {
               </div>
               <div>
                 <StarRating value={s.calificacion} size={18} />
-                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                   Calificación del cliente
                 </div>
               </div>
@@ -447,9 +447,9 @@ export default function RepartidorDetalleServicio() {
           style={{
             padding: 16,
             borderRadius: 20,
-            background: 'rgba(30, 41, 59, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--lf-shadow-card, 0 4px 20px rgba(0,0,0,0.05))',
             marginBottom: 12,
           }}
         >
@@ -458,7 +458,7 @@ export default function RepartidorDetalleServicio() {
             style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#F8FAFC',
+              color: 'var(--text)',
               marginBottom: 12,
             }}
           >
@@ -498,8 +498,8 @@ export default function RepartidorDetalleServicio() {
                           ? '#34C759'
                           : isCurrentIncidencia
                             ? '#FF3B30'
-                            : 'rgba(255, 255, 255, 0.15)',
-                        color: '#fff',
+                            : 'var(--surface-variant, rgba(0, 0, 0, 0.08))',
+                        color: isCompleted || isCurrentIncidencia ? '#fff' : 'var(--text-muted)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -524,7 +524,7 @@ export default function RepartidorDetalleServicio() {
                           width: 2,
                           background: isCompleted
                             ? '#34C759'
-                            : 'rgba(255, 255, 255, 0.15)',
+                            : 'var(--border, rgba(0, 0, 0, 0.08))',
                         }}
                       />
                     )}
@@ -535,7 +535,7 @@ export default function RepartidorDetalleServicio() {
                       paddingTop: 2,
                       fontSize: 13,
                       fontWeight: isCompleted ? 600 : 500,
-                      color: isCompleted ? '#F8FAFC' : '#94A3B8',
+                      color: isCompleted ? 'var(--text)' : 'var(--text-muted)',
                     }}
                   >
                     {step.label}

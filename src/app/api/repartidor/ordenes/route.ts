@@ -128,7 +128,11 @@ export async function GET(req: NextRequest) {
         paqueteFotoUrl: s.incidenciaDesc ?? undefined,
       }));
 
-      const historialCompras: ServicioHistorial[] = compras.map((c: any) => ({
+      const servicioIds = new Set(servicios.map((s) => s.id));
+      const servicioTiendaIds = new Set(servicios.map((s) => s.tiendaId).filter(Boolean));
+      const comprasUnicas = compras.filter((c: any) => !servicioIds.has(c.id) && !servicioTiendaIds.has(c.tiendaId));
+
+      const historialCompras: ServicioHistorial[] = comprasUnicas.map((c: any) => ({
         id: c.id,
         ordenId: c.id,
         tipo: 'compra' as const,
@@ -187,14 +191,26 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    const activeServicioIds = new Set(ordenesServicio.map((s) => s.id));
+    const activeServicioTiendaIds = new Set(ordenesServicio.map((s) => s.tiendaId).filter(Boolean));
+    const ordenesCompraUnicas = ordenesCompra.filter(
+      (c) => !activeServicioIds.has(c.id) && !activeServicioTiendaIds.has(c.tiendaId)
+    );
+
+    const ofertaServicioIds = new Set(ofertasServicio.map((s) => s.id));
+    const ofertaServicioTiendaIds = new Set(ofertasServicio.map((s) => s.tiendaId).filter(Boolean));
+    const ofertasCompraUnicas = ofertasCompra.filter(
+      (c) => !ofertaServicioIds.has(c.id) && !ofertaServicioTiendaIds.has(c.tiendaId)
+    );
+
     const ofertasDisponibles = [
       ...ofertasServicio.map((o) => mapOrdenToActiva(o)).filter(Boolean),
-      ...ofertasCompra.map((c) => mapCompraToActiva(c)).filter(Boolean),
+      ...ofertasCompraUnicas.map((c) => mapCompraToActiva(c)).filter(Boolean),
     ] as OrdenActiva[];
 
     const ordenesActivas = [
       ...ordenesServicio.map((o) => mapOrdenToActiva(o)).filter(Boolean),
-      ...ordenesCompra.map((c) => mapCompraToActiva(c)).filter(Boolean),
+      ...ordenesCompraUnicas.map((c) => mapCompraToActiva(c)).filter(Boolean),
     ] as OrdenActiva[];
 
     return NextResponse.json({

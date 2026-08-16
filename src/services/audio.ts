@@ -92,6 +92,17 @@ const SONIDOS: Record<SonidoTipo, Nota[]> = {
 // Lazily-initialized singleton AudioContext.
 let audioContext: AudioContext | null = null;
 
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume().catch(() => {});
+    }
+  };
+  window.addEventListener('click', unlockAudio, { passive: true });
+  window.addEventListener('touchstart', unlockAudio, { passive: true });
+  window.addEventListener('keydown', unlockAudio, { passive: true });
+}
+
 /**
  * Get (or create) the singleton AudioContext. Returns null on SSR
  * or when Web Audio API isn't available.
@@ -115,29 +126,7 @@ function getAudioContext(): AudioContext | null {
   return audioContext;
 }
 
-/**
- * Play a synthesized sound. Safe to call from anywhere — no-ops on
- * the server or when Web Audio API is unavailable.
- *
- * @param tipo      which sound to play
- * @param volumen   0-100 (default 80); scaled into a gain multiplier
- */
-export function reproducirSonido(tipo: SonidoTipo, volumen = 80): void {
-  if (typeof window === 'undefined') return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  // Autoplay policy: context can start suspended until a user gesture.
-  if (ctx.state === 'suspended') {
-    ctx.resume().catch((err) => {
-      console.warn('audio: failed to resume AudioContext', err);
-    });
-  }
-
-  const notas = SONIDOS[tipo];
-  if (!notas || notas.length === 0) return;
-
-  const volumeMultiplier = Math.max(0, Math.min(100, volumen)) / 100;
+function emitNotes(ctx: AudioContext, notas: Nota[], volumeMultiplier: number) {
   const now = ctx.currentTime;
   let offset = 0;
 
@@ -164,6 +153,39 @@ export function reproducirSonido(tipo: SonidoTipo, volumen = 80): void {
 
     offset += nota.dur + 0.03;
   }
+}
+
+/**
+ * Play a synthesized sound. Safe to call from anywhere — no-ops on
+ * the server or when Web Audio API is unavailable.
+ *
+ * @param tipo      which sound to play
+ * @param volumen   0-100 (default 80); scaled into a gain multiplier
+ */
+export function reproducirSonido(tipo: SonidoTipo, volumen = 80): void {
+  if (typeof window === 'undefined') return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const notas = SONIDOS[tipo];
+  if (!notas || notas.length === 0) return;
+
+  const volumeMultiplier = Math.max(0, Math.min(100, volumen)) / 100;
+
+  // Autoplay policy: context can start suspended until a user gesture.
+  if (ctx.state === 'suspended') {
+    ctx
+      .resume()
+      .then(() => {
+        emitNotes(ctx, notas, volumeMultiplier);
+      })
+      .catch((err) => {
+        console.warn('audio: failed to resume AudioContext', err);
+      });
+    return;
+  }
+
+  emitNotes(ctx, notas, volumeMultiplier);
 }
 
 /**

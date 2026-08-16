@@ -124,15 +124,15 @@ export default function RepartidorIncidencia() {
           maxWidth: 480,
           maxHeight: '85vh',
           zIndex: 1000000,
-          background: 'rgba(15, 23, 42, 0.95)',
+          background: 'var(--surface)',
           backdropFilter: 'blur(20px)',
           borderRadius: '28px 28px 0 0',
-          boxShadow: '0 -12px 48px rgba(0,0,0,0.5)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          boxShadow: '0 -12px 48px rgba(0,0,0,0.3)',
+          border: '1px solid var(--border)',
           display: 'flex',
           flexDirection: 'column',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          color: '#F8FAFC',
+          color: 'var(--text)',
         }}
       >
         {/* Drag handle */}
@@ -150,7 +150,7 @@ export default function RepartidorIncidencia() {
               width: 40,
               height: 4,
               borderRadius: 2,
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'var(--border)',
             }}
           />
         </div>
@@ -162,7 +162,7 @@ export default function RepartidorIncidencia() {
             alignItems: 'center',
             gap: 12,
             padding: '8px 16px 12px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
           <div
@@ -183,12 +183,12 @@ export default function RepartidorIncidencia() {
           <div style={{ flex: 1 }}>
             <div
               className="font-syne"
-              style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC' }}
+              style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}
             >
               Reportar incidencia
             </div>
             {ordenActiva && (
-              <div style={{ fontSize: 11, color: '#94A3B8' }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                 Orden {ordenActiva.id}
               </div>
             )}
@@ -201,8 +201,8 @@ export default function RepartidorIncidencia() {
               height: 36,
               borderRadius: 10,
               border: 'none',
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: '#94A3B8',
+              background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 90%, var(--text) 10%))',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -226,7 +226,7 @@ export default function RepartidorIncidencia() {
           <div
             style={{
               fontSize: 12,
-              color: '#94A3B8',
+              color: 'var(--text-muted)',
               marginBottom: 10,
               fontWeight: 600,
               textTransform: 'uppercase',
@@ -256,10 +256,10 @@ export default function RepartidorIncidencia() {
                     padding: 14,
                     borderRadius: 14,
                     background: isActive
-                      ? 'rgba(0, 122, 255, 0.15)'
-                      : 'rgba(30, 41, 59, 0.8)',
-                    border: `1.5px solid ${isActive ? '#007AFF' : 'rgba(255, 255, 255, 0.1)'}`,
-                    boxShadow: isActive ? '0 4px 16px rgba(0,122,255,0.3)' : 'none',
+                      ? 'color-mix(in srgb, var(--primario) 16%, var(--surface))'
+                      : 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))',
+                    border: `1.5px solid ${isActive ? 'var(--primario)' : 'var(--border)'}`,
+                    boxShadow: isActive ? '0 4px 16px color-mix(in srgb, var(--primario) 30%, transparent)' : 'none',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
@@ -275,7 +275,7 @@ export default function RepartidorIncidencia() {
                       height: 36,
                       borderRadius: 10,
                       background: isActive
-                        ? '#007AFF'
+                        ? 'var(--primario)'
                         : `color-mix(in srgb, ${op.color} 14%, transparent)`,
                       color: isActive ? '#fff' : op.color,
                       display: 'flex',
@@ -290,12 +290,12 @@ export default function RepartidorIncidencia() {
                       style={{
                         fontSize: 13,
                         fontWeight: 700,
-                        color: '#F8FAFC',
+                        color: 'var(--text)',
                       }}
                     >
                       {op.label}
                     </div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>{op.desc}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{op.desc}</div>
                   </div>
                 </motion.button>
               );
@@ -306,7 +306,7 @@ export default function RepartidorIncidencia() {
           <div
             style={{
               fontSize: 12,
-              color: '#94A3B8',
+              color: 'var(--text-muted)',
               marginBottom: 8,
               fontWeight: 600,
               textTransform: 'uppercase',
@@ -325,9 +325,9 @@ export default function RepartidorIncidencia() {
               width: '100%',
               padding: 14,
               borderRadius: 14,
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              background: 'rgba(30, 41, 59, 0.8)',
-              color: '#F8FAFC',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--text)',
               fontSize: 15,
               fontFamily: "'DM Sans', sans-serif",
               resize: 'vertical',
@@ -342,8 +342,8 @@ export default function RepartidorIncidencia() {
         <div
           style={{
             padding: 12,
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            background: 'rgba(15, 23, 42, 0.95)',
+            borderTop: '1px solid var(--border)',
+            background: 'var(--surface)',
           }}
         >
           <motion.button
@@ -359,8 +359,8 @@ export default function RepartidorIncidencia() {
               background:
                 tipo && descripcion.trim()
                   ? '#FF3B30'
-                  : 'rgba(255, 255, 255, 0.15)',
-              color: '#fff',
+                  : 'var(--surface-variant, rgba(0, 0, 0, 0.12))',
+              color: tipo && descripcion.trim() ? '#fff' : 'var(--text-muted)',
               fontSize: 15,
               fontWeight: 700,
               fontFamily: "'DM Sans', sans-serif",

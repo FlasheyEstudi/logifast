@@ -28,7 +28,9 @@ import {
   Zap,
   DollarSign,
   Camera,
+  CheckCircle,
 } from '@/components/icons';
+import { User, Phone, X, Disc, Cog, Activity, Link2, Sun, CircleDot } from 'lucide-react';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { useConfigStore } from '@/store/configStore';
 import { TemaToggle } from '@/components/ui/TemaToggle';
@@ -36,6 +38,68 @@ import { SonidoToggle } from '@/components/ui/SonidoToggle';
 import { Switch } from '@/components/ui/switch';
 import PullToRefresh from '@/components/ui/PullToRefresh';
 import { PerfilSkeleton } from '@/components/ui/Skeletons';
+
+/* ═══════════════════════════════════════════════
+   MODAL COMPONENT (Mobile-responsive, standard overlay)
+   ═══════════════════════════════════════════════ */
+
+function RepartidorModal({
+  children,
+  onClose,
+  maxWidth = 440,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+  maxWidth?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="modal-overlay visible"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        background: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0, y: 16 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.94, opacity: 0, y: 16 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 320 }}
+        onClick={(e) => e.stopPropagation()}
+        className="lf-modal open"
+        style={{
+          background: 'var(--surface)',
+          padding: 20,
+          maxWidth,
+          width: '100%',
+          maxHeight: '85vh',
+          overflowY: 'auto',
+          borderRadius: 24,
+          border: '1px solid var(--border)',
+          boxShadow: '0 20px 48px rgba(0,0,0,0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          color: 'var(--text)',
+        }}
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
 
 /* ═══════════════════════════════════════════════
    STAR RATING (exported for reuse)
@@ -102,9 +166,9 @@ function SectionCard({
       style={{
         padding: 16,
         borderRadius: 20,
-        background: 'rgba(30, 41, 59, 0.8)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-        backdropFilter: 'blur(16px)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--lf-shadow-card, 0 4px 20px rgba(0,0,0,0.05))',
         marginBottom: 12,
       }}
     >
@@ -118,7 +182,7 @@ function SectionCard({
       >
         <h2
           className="font-syne"
-          style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.2px' }}
+          style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.2px' }}
         >
           {title}
         </h2>
@@ -145,8 +209,8 @@ function StatBox({
       style={{
         padding: 12,
         borderRadius: 14,
-        background: 'rgba(15, 23, 42, 0.6)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 92%, var(--text) 8%))',
+        border: '1px solid var(--border)',
         display: 'flex',
         flexDirection: 'column',
         gap: 4,
@@ -313,7 +377,10 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
     aceptarContrato,
     syncFromBackend,
     reportarProblemaMotoAsync,
+    obtenerStats,
   } = useRepartidorStore();
+  const [periodoResumen, setPeriodoResumen] = useState<'hoy' | 'semana' | 'mes'>('hoy');
+  const statsResumen = obtenerStats(periodoResumen);
   const [zonaOpen, setZonaOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rechargeCode, setRechargeCode] = useState('');
@@ -552,7 +619,8 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
   };
 
   return (
-    <PullToRefresh onRefresh={handleRefresh}>
+    <>
+      <PullToRefresh onRefresh={handleRefresh}>
       {loading ? (
         <PerfilSkeleton />
       ) : (
@@ -666,9 +734,9 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
           style={{
             padding: '6px 12px',
             borderRadius: 10,
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            background: 'rgba(255, 255, 255, 0.08)',
-            color: '#F8FAFC',
+            border: '1px solid var(--border)',
+            background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 90%, var(--text) 10%))',
+            color: 'var(--text)',
             fontSize: 12,
             fontWeight: 700,
             cursor: 'pointer',
@@ -678,6 +746,72 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
           Editar Perfil
         </button>
       </div>
+
+      {/* ─── 0. RESUMEN DE GANANCIAS (HOY / SEMANA / MES) ─── */}
+      <SectionCard title="Resumen de ganancias">
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14, background: 'var(--bg-alt)', padding: 3, borderRadius: 12, border: '1px solid var(--border)' }}>
+          {(['hoy', 'semana', 'mes'] as const).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPeriodoResumen(p)}
+              style={{
+                flex: 1,
+                padding: '7px 10px',
+                borderRadius: 9,
+                border: 'none',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: periodoResumen === p ? 'var(--primario)' : 'transparent',
+                color: periodoResumen === p ? '#FFFFFF' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {p === 'hoy' ? 'Hoy' : p === 'semana' ? 'Esta Semana' : 'Este Mes'}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', padding: '16px 12px', background: 'var(--bg-alt)', borderRadius: 16, marginBottom: 12, border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+            Ganancias netas {periodoResumen === 'hoy' ? 'de hoy' : periodoResumen === 'semana' ? 'de la semana' : 'del mes'}
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759', lineHeight: 1.1 }}>
+            C$ {statsResumen.ganancias.toFixed(2)}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+            {statsResumen.entregas} {statsResumen.entregas === 1 ? 'entrega completada' : 'entregas completadas'}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <StatBox
+            label="Km recorridos"
+            value={`${statsResumen.km.toFixed(1)} km`}
+            icon={<RouteIcon size={12} />}
+            color="var(--info, #2979FF)"
+          />
+          <StatBox
+            label="Tiempo activo"
+            value={`${statsResumen.tiempoActivo} min`}
+            icon={<Clock size={12} />}
+            color="var(--exito, #34C759)"
+          />
+          <StatBox
+            label="Promedio / viaje"
+            value={statsResumen.entregas > 0 ? `C$ ${(statsResumen.ganancias / statsResumen.entregas).toFixed(2)}` : 'C$ 0.00'}
+            icon={<TrendingUp size={12} />}
+            color="var(--primario)"
+          />
+          <StatBox
+            label="Tasa éxito"
+            value="100%"
+            icon={<CheckCircle size={12} />}
+            color="var(--warning, #FF9500)"
+          />
+        </div>
+      </SectionCard>
 
       {/* ─── 1. ESTADÍSTICAS GENERALES ─── */}
       <SectionCard title="Estadísticas generales">
@@ -1515,374 +1649,692 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
       >
         LOGIFAST Repartidor v2.0
       </div>
+    </div>
+  )}
+</PullToRefresh>
 
-      {/* ─── MODAL EDITAR PERFIL COMPLETO ─── */}
-      <AnimatePresence>
-        {showEditModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 999999,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 16,
-            }}
-          >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+    {/* ─── MODAL EDITAR PERFIL COMPLETO ─── */}
+    <AnimatePresence>
+      {showEditModal && (
+        <RepartidorModal onClose={() => setShowEditModal(false)} maxWidth={460}>
+          {/* Header Modal */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'color-mix(in srgb, #007AFF 15%, transparent)', color: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <User size={18} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
+                  Configuración de Perfil
+                </h3>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Datos personales y vehículo asignado</span>
+              </div>
+            </div>
+            <button
+              type="button"
               onClick={() => setShowEditModal(false)}
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                width: '100%',
-                height: '100%',
-                background: 'rgba(15, 23, 42, 0.82)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-              }}
-            />
-
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 12 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 12 }}
-              style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: 500,
-                maxHeight: '85vh',
-                overflowY: 'auto',
-                background: 'rgba(19, 24, 34, 0.98)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: 28,
-                padding: 24,
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
-                zIndex: 1000000,
-                color: '#F8FAFC',
+                background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 90%, var(--text) 10%))',
+                border: 'none',
+                borderRadius: '50%',
+                width: 30,
+                height: 30,
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              {/* Header Modal */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <div>
-                  <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#F8FAFC' }}>
-                    Configuración de Perfil
-                  </h2>
-                  <span style={{ fontSize: 12, color: '#94A3B8' }}>Datos personales y vehículo asignado</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: 32,
-                    height: 32,
-                    cursor: 'pointer',
-                    fontSize: 16,
-                    color: '#94A3B8',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  ✕
-                </button>
+              <X size={16} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Avatar Preview & Photo Picker */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))', padding: 12, borderRadius: 14, border: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: editFotoUrl ? `url(${editFotoUrl}) center/cover` : `linear-gradient(135deg, ${perfil.color}, #000)`,
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  border: '2px solid #007AFF',
+                }}
+              >
+                {!editFotoUrl && perfil.initials}
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                  Foto de Perfil del Repartidor
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#007AFF', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', width: 'fit-content' }}>
+                  <Camera size={13} />
+                  Subir / Tomar Foto
+                  <input type="file" accept="image/*" capture="environment" onChange={handleDriverPhotoUpload} style={{ display: 'none' }} />
+                </label>
+              </div>
+            </div>
+
+            {/* Seccion 1: Datos Personales Obligatorios */}
+            <div style={{ background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))', padding: 12, borderRadius: 14, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#007AFF', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                Información Personal
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Avatar Preview & Photo Picker */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(30, 41, 59, 0.5)', padding: 14, borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span>Nombre Completo</span>
+                  <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editNombre}
+                  onChange={(e) => setEditNombre(e.target.value)}
+                  placeholder="Ej: Carlos Mendoza"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    background: 'var(--surface)',
+                    border: !editNombre.trim() ? '1.5px solid #EF4444' : '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span>Número de Teléfono Móvil</span>
+                  <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editTelefono}
+                  onChange={(e) => setEditTelefono(e.target.value)}
+                  placeholder="Ej: +505 8888 8888"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    background: 'var(--surface)',
+                    border: !editTelefono.trim() ? '1.5px solid #EF4444' : '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                    Cédula / DNI
+                  </label>
+                  <input
+                    type="text"
+                    value={editCedula}
+                    onChange={(e) => setEditCedula(e.target.value.toUpperCase())}
+                    placeholder="001-000000-0000A"
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)',
+                      fontSize: 12,
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                    Licencia de Conducir
+                  </label>
+                  <input
+                    type="text"
+                    value={editLicenciaConducir}
+                    onChange={(e) => setEditLicenciaConducir(e.target.value.toUpperCase())}
+                    placeholder="LIC-948102"
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)',
+                      fontSize: 12,
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Seccion 2: Datos de Vehiculo / Moto */}
+            <div style={{ background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))', padding: 12, borderRadius: 14, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#FF9500', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                Vehículo Operativo
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                    Marca de Moto
+                  </label>
+                  <input
+                    type="text"
+                    value={editVehiculoMarca}
+                    onChange={(e) => setEditVehiculoMarca(e.target.value)}
+                    placeholder="Honda / Yamaha"
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)',
+                      fontSize: 12,
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                    Modelo de Moto
+                  </label>
+                  <input
+                    type="text"
+                    value={editVehiculoModelo}
+                    onChange={(e) => setEditVehiculoModelo(e.target.value)}
+                    placeholder="Wave 110"
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)',
+                      fontSize: 12,
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                  N° de Placa (Matrícula)
+                </label>
+                <input
+                  type="text"
+                  value={editVehiculoPlaca}
+                  onChange={(e) => setEditVehiculoPlaca(e.target.value.toUpperCase())}
+                  placeholder="Ej: M-94812"
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Seccion 3: Zona y Ubicacion */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                  Municipio
+                </label>
+                <input
+                  type="text"
+                  value={editMunicipio}
+                  onChange={(e) => setEditMunicipio(e.target.value)}
+                  placeholder="Managua"
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontSize: 12,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                  Zona Cobertura
+                </label>
+                <select
+                  value={editZona}
+                  onChange={(e) => setEditZona(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontSize: 12,
+                    outline: 'none',
+                  }}
+                >
+                  <option value="Todas las Zonas">Todas las Zonas</option>
+                  <option value="Managua Centro">Managua Centro</option>
+                  <option value="Carretera a Masaya">Carretera a Masaya</option>
+                  <option value="Linda Vista">Linda Vista</option>
+                  <option value="Bello Horizonte">Bello Horizonte</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSavePerfil}
+                disabled={isSavingPerfil}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: '#007AFF',
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  boxShadow: '0 4px 12px rgba(0, 122, 255, 0.35)',
+                }}
+              >
+                {isSavingPerfil ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </div>
+        </RepartidorModal>
+      )}
+    </AnimatePresence>
+
+    {/* ─── MODAL REPORTAR PROBLEMA CON MOTO ─── */}
+    <AnimatePresence>
+      {showReportarMotoModal && (
+        <RepartidorModal onClose={() => setShowReportarMotoModal(false)} maxWidth={480}>
+          {/* Header */}
+          <div
+            style={{
+              paddingBottom: 12,
+              marginBottom: 12,
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: 'color-mix(in srgb, var(--primario) 15%, transparent)',
+                  color: 'var(--primario)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Wrench size={18} />
+              </div>
+              <div>
+                <h3
+                  className="font-syne"
+                  style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}
+                >
+                  Reportar Falla Mecánica
+                </h3>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  Enlace directo con Mantenimiento y Taller
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowReportarMotoModal(false)}
+              style={{
+                background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 90%, var(--text) 10%))',
+                border: 'none',
+                borderRadius: '50%',
+                width: 30,
+                height: 30,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Moto Badge Summary & Tabs */}
+          <div
+            style={{
+              padding: '10px 12px',
+              background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))',
+              borderRadius: 12,
+              border: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 8,
+              marginBottom: 14,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Moto:</span>
+              <span style={{ color: 'var(--text)', fontWeight: 700 }}>
+                {moto.nombre || 'Moto Asignada'} ({moto.placa || 'Sin placa'})
+              </span>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 3, background: 'var(--surface)', border: '1px solid var(--border)', padding: 2, borderRadius: 8 }}>
+              <button
+                type="button"
+                onClick={() => setReportesTab('nuevo')}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  border: 'none',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: reportesTab === 'nuevo' ? 'var(--primario)' : 'transparent',
+                  color: reportesTab === 'nuevo' ? '#fff' : 'var(--text-muted)',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <FileText size={12} />
+                Nuevo Reporte
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportesTab('historial')}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  border: 'none',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: reportesTab === 'historial' ? 'var(--primario)' : 'transparent',
+                  color: reportesTab === 'historial' ? '#fff' : 'var(--text-muted)',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Clock size={12} />
+                Historial ({moto.mantenimientos?.length || 0})
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Body */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {reportesTab === 'nuevo' ? (
+              <>
+                {/* Selector de Categoría de Falla */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', marginBottom: 6, display: 'block' }}>
+                    1. Componente o falla principal
+                  </label>
                   <div
                     style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 20,
-                      background: editFotoUrl ? `url(${editFotoUrl}) center/cover` : `linear-gradient(135deg, ${perfil.color}, #000)`,
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontFamily: "'Syne', sans-serif",
-                      fontSize: 22,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                      boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
-                      border: '2px solid #007AFF',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: 6,
                     }}
                   >
-                    {!editFotoUrl && perfil.initials}
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC' }}>
-                      Foto de Perfil del Repartidor
-                    </label>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: '#007AFF', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', width: 'fit-content', boxShadow: '0 4px 12px rgba(0,122,255,0.3)' }}>
-                      <Camera size={15} />
-                      Subir / Tomar Foto
-                      <input type="file" accept="image/*" capture="environment" onChange={handleDriverPhotoUpload} style={{ display: 'none' }} />
-                    </label>
-                  </div>
-                </div>
-
-                {/* Seccion 1: Datos Personales Obligatorios */}
-                <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: 14, borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#007AFF', textTransform: 'uppercase' }}>
-                    Información Personal
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#F8FAFC', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span>Nombre Completo</span>
-                      <span style={{ color: '#EF4444' }}>*Obligatorio</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={editNombre}
-                      onChange={(e) => setEditNombre(e.target.value)}
-                      placeholder="Ej: Carlos Mendoza"
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 12,
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        border: !editNombre.trim() ? '1.5px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#F8FAFC',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#F8FAFC', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span>Número de Teléfono Móvil</span>
-                      <span style={{ color: '#EF4444' }}>*Obligatorio</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={editTelefono}
-                      onChange={(e) => setEditTelefono(e.target.value)}
-                      placeholder="Ej: +505 8888 8888"
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 12,
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        border: !editTelefono.trim() ? '1.5px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#F8FAFC',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                        N° de Cédula / DNI
-                      </label>
-                      <input
-                        type="text"
-                        value={editCedula}
-                        onChange={(e) => setEditCedula(e.target.value.toUpperCase())}
-                        placeholder="001-000000-0000A"
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          borderRadius: 10,
-                          background: 'rgba(15, 23, 42, 0.6)',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          color: '#F8FAFC',
-                          fontSize: 12,
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                        N° Licencia de Conducir
-                      </label>
-                      <input
-                        type="text"
-                        value={editLicenciaConducir}
-                        onChange={(e) => setEditLicenciaConducir(e.target.value.toUpperCase())}
-                        placeholder="LIC-948102"
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          borderRadius: 10,
-                          background: 'rgba(15, 23, 42, 0.6)',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          color: '#F8FAFC',
-                          fontSize: 12,
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
+                    {[
+                      { id: 'FRENOS', label: 'Frenos', icon: <Disc size={16} />, desc: 'Pastillas, zapatas' },
+                      { id: 'MOTOR', label: 'Motor y Aceite', icon: <Cog size={16} />, desc: 'Ruido, fuga' },
+                      { id: 'LLANTAS', label: 'Llantas / Ruedas', icon: <CircleDot size={16} />, desc: 'Pinchazo, presión' },
+                      { id: 'ELECTRICO', label: 'Sistema Eléctrico', icon: <Zap size={16} />, desc: 'Batería, arranque' },
+                      { id: 'TRANSMISION', label: 'Cadena y Clutch', icon: <Link2 size={16} />, desc: 'Cadena floja' },
+                      { id: 'SUSPENSION', label: 'Suspensión', icon: <Activity size={16} />, desc: 'Amortiguadores' },
+                      { id: 'LUCES', label: 'Luces y Focos', icon: <Sun size={16} />, desc: 'Foco, direccionales' },
+                      { id: 'OTRO', label: 'Otro Problema', icon: <Wrench size={16} />, desc: 'Carrocería, espejos' },
+                    ].map((cat) => {
+                      const isSelected = categoriaProblema === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setCategoriaProblema(cat.id)}
+                          style={{
+                            padding: '8px 10px',
+                            borderRadius: 10,
+                            border: isSelected
+                              ? '1.5px solid var(--primario)'
+                              : '1px solid var(--border)',
+                            background: isSelected
+                              ? 'color-mix(in srgb, var(--primario) 16%, var(--surface))'
+                              : 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          <div style={{ color: isSelected ? 'var(--primario)' : 'var(--text-muted)' }}>
+                            {cat.icon}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                fontWeight: isSelected ? 700 : 600,
+                                color: isSelected ? 'var(--primario)' : 'var(--text)',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {cat.label}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 9,
+                                color: 'var(--text-muted)',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                marginTop: 1,
+                              }}
+                            >
+                              {cat.desc}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Seccion 2: Datos de Vehiculo / Moto */}
-                <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: 14, borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#FF9500', textTransform: 'uppercase' }}>
-                    Vehículo Operativo
+                {/* Selector de Nivel de Urgencia */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', marginBottom: 6, display: 'block' }}>
+                    2. Nivel de gravedad
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                    {[
+                      { id: 'NORMAL', label: 'Normal', color: '#10B981', desc: 'Operativa' },
+                      { id: 'ALTA', label: 'Alta', color: '#F59E0B', desc: 'Revisión hoy' },
+                      { id: 'URGENTE', label: 'Urgente', color: '#EF4444', desc: 'Inmovilizada' },
+                    ].map((prio) => {
+                      const isSelected = prioridadProblema === prio.id;
+                      return (
+                        <button
+                          key={prio.id}
+                          type="button"
+                          onClick={() => setPrioridadProblema(prio.id as any)}
+                          style={{
+                            padding: '8px 6px',
+                            borderRadius: 10,
+                            border: isSelected
+                              ? `1.5px solid ${prio.color}`
+                              : '1px solid var(--border)',
+                            background: isSelected
+                              ? `color-mix(in srgb, ${prio.color} 18%, var(--surface))`
+                              : 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          <div style={{ fontSize: 11, fontWeight: 700, color: isSelected ? prio.color : 'var(--text)' }}>
+                            {prio.label}
+                          </div>
+                          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>{prio.desc}</div>
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                        Marca de Moto
-                      </label>
-                      <input
-                        type="text"
-                        value={editVehiculoMarca}
-                        onChange={(e) => setEditVehiculoMarca(e.target.value)}
-                        placeholder="Honda / Yamaha"
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          borderRadius: 10,
-                          background: 'rgba(15, 23, 42, 0.6)',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          color: '#F8FAFC',
-                          fontSize: 12,
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                        Modelo de Moto
-                      </label>
-                      <input
-                        type="text"
-                        value={editVehiculoModelo}
-                        onChange={(e) => setEditVehiculoModelo(e.target.value)}
-                        placeholder="Wave 110"
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          borderRadius: 10,
-                          background: 'rgba(15, 23, 42, 0.6)',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          color: '#F8FAFC',
-                          fontSize: 12,
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                      N° de Placa (Matrícula)
-                    </label>
-                    <input
-                      type="text"
-                      value={editVehiculoPlaca}
-                      onChange={(e) => setEditVehiculoPlaca(e.target.value.toUpperCase())}
-                      placeholder="Ej: M-94812"
+                  {prioridadProblema === 'URGENTE' && (
+                    <div
                       style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#F8FAFC',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        fontFamily: 'monospace',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Seccion 3: Zona y Ubicacion */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                      Municipio
-                    </label>
-                    <input
-                      type="text"
-                      value={editMunicipio}
-                      onChange={(e) => setEditMunicipio(e.target.value)}
-                      placeholder="Managua"
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#F8FAFC',
-                        fontSize: 12,
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                      Zona Cobertura
-                    </label>
-                    <select
-                      value={editZona}
-                      onChange={(e) => setEditZona(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#F8FAFC',
-                        fontSize: 12,
-                        outline: 'none',
+                        marginTop: 8,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        fontSize: 11,
+                        color: '#DC2626',
+                        lineHeight: 1.4,
                       }}
                     >
-                      <option value="Todas las Zonas">Todas las Zonas</option>
-                      <option value="Managua Centro">Managua Centro</option>
-                      <option value="Carretera a Masaya">Carretera a Masaya</option>
-                      <option value="Linda Vista">Linda Vista</option>
-                      <option value="Bello Horizonte">Bello Horizonte</option>
-                    </select>
+                      <strong>Atención:</strong> La moto entrará en estado de <strong>Mantenimiento Prioritario</strong> y se alertará al equipo técnico.
+                    </div>
+                  )}
+                </div>
+
+                {/* Kilometraje y Descripción */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', marginBottom: 4, display: 'block' }}>
+                      3. Kilometraje aproximado (km)
+                    </label>
+                    <input
+                      type="number"
+                      value={kmReporte}
+                      onChange={(e) => setKmReporte(e.target.value)}
+                      placeholder="Ej: 15300"
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: 10,
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                        fontWeight: 700,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', marginBottom: 4, display: 'block' }}>
+                      4. Descripción detallada de la falla <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={descripcionProblema}
+                      onChange={(e) => setDescripcionProblema(e.target.value)}
+                      placeholder="Describe qué ocurre con la moto..."
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: 10,
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        fontSize: 12,
+                        outline: 'none',
+                        resize: 'none',
+                        fontFamily: "'DM Sans', sans-serif",
+                        lineHeight: 1.4,
+                      }}
+                    />
                   </div>
                 </div>
 
-                {/* Footer Actions */}
-                <div style={{ marginTop: 10, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                {/* Submit Actions */}
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                   <button
                     type="button"
-                    onClick={() => setShowEditModal(false)}
+                    onClick={() => setShowReportarMotoModal(false)}
                     style={{
-                      padding: '12px 20px',
-                      borderRadius: 12,
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      padding: '10px 16px',
+                      borderRadius: 10,
+                      border: '1px solid var(--border)',
                       background: 'transparent',
-                      color: '#F8FAFC',
+                      color: 'var(--text)',
                       cursor: 'pointer',
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: 600,
                     }}
                   >
@@ -1890,840 +2342,301 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                   </button>
                   <button
                     type="button"
-                    onClick={handleSavePerfil}
-                    disabled={isSavingPerfil}
+                    onClick={handleEnviarReporteMoto}
+                    disabled={isSubmittingReporte || !descripcionProblema.trim()}
                     style={{
-                      padding: '12px 24px',
-                      borderRadius: 12,
-                      border: 'none',
-                      background: '#007AFF',
-                      color: '#FFFFFF',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      boxShadow: '0 4px 14px rgba(0, 122, 255, 0.4)',
-                    }}
-                  >
-                    {isSavingPerfil ? 'Guardando...' : 'Guardar Cambios'}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ─── MODAL REPORTAR PROBLEMA CON MOTO (VINCULADO CON MANTENIMIENTO) ─── */}
-      <AnimatePresence>
-        {showReportarMotoModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 999999,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 16,
-            }}
-          >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowReportarMotoModal(false)}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                width: '100%',
-                height: '100%',
-                background: 'rgba(15, 23, 42, 0.82)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-              }}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 16 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              style={{
-                position: 'relative',
-                zIndex: 10,
-                width: '100%',
-                maxWidth: 540,
-                maxHeight: '90vh',
-                background: '#1E293B',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: 24,
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Header */}
-              <div
-                style={{
-                  padding: '18px 20px',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: 'rgba(30, 41, 59, 0.95)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div
-                    style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 12,
-                      background: 'color-mix(in srgb, var(--primario) 15%, transparent)',
-                      color: 'var(--primario)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Wrench size={22} />
-                  </div>
-                  <div>
-                    <h3
-                      className="font-syne"
-                      style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#F8FAFC' }}
-                    >
-                      Reportar Falla Mecánica
-                    </h3>
-                    <div style={{ fontSize: 12, color: '#94A3B8' }}>
-                      Enlace directo con el Ingeniero de Mantenimiento & Taller
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowReportarMotoModal(false)}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: 'none',
-                    borderRadius: 10,
-                    width: 32,
-                    height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#94A3B8',
-                    cursor: 'pointer',
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Moto Badge Summary & Tabs */}
-              <div
-                style={{
-                  padding: '12px 20px',
-                  background: 'rgba(15, 23, 42, 0.5)',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 10,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                  <span style={{ color: '#94A3B8' }}>Moto:</span>
-                  <span style={{ color: '#F8FAFC', fontWeight: 700 }}>
-                    {moto.nombre || 'Moto Asignada'} ({moto.placa || 'Sin placa'})
-                  </span>
-                  <span
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: 6,
-                      fontSize: 10,
-                      fontWeight: 700,
-                      background: 'rgba(255,255,255,0.08)',
-                      color: 'var(--primario)',
-                    }}
-                  >
-                    {(moto.kmAcumulados || 0).toLocaleString('es-NI')} km
-                  </span>
-                </div>
-
-                {/* Tabs */}
-                <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.25)', padding: 3, borderRadius: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => setReportesTab('nuevo')}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: 7,
-                      border: 'none',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      background: reportesTab === 'nuevo' ? 'var(--primario)' : 'transparent',
-                      color: reportesTab === 'nuevo' ? '#fff' : '#94A3B8',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    📝 Nuevo Reporte
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReportesTab('historial')}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: 7,
-                      border: 'none',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      background: reportesTab === 'historial' ? 'var(--primario)' : 'transparent',
-                      color: reportesTab === 'historial' ? '#fff' : '#94A3B8',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    🔧 Historial ({moto.mantenimientos?.length || 0})
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Body */}
-              <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {reportesTab === 'nuevo' ? (
-                  <>
-                    {/* Selector de Categoría de Falla */}
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', marginBottom: 8, display: 'block' }}>
-                        1. Selecciona el componente o falla principal
-                      </label>
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: 8,
-                        }}
-                      >
-                        {[
-                          { id: 'FRENOS', label: 'Frenos', icon: '🛑', desc: 'Pastillas, zapatas, líquido' },
-                          { id: 'MOTOR', label: 'Motor & Aceite', icon: '⚙️', desc: 'Ruido, fuga, recalentamiento' },
-                          { id: 'LLANTAS', label: 'Neumáticos / Llantas', icon: '🛞', desc: 'Pinchazo, baja presión' },
-                          { id: 'ELECTRICO', label: 'Sistema Eléctrico', icon: '⚡', desc: 'Batería, arranque, pito' },
-                          { id: 'TRANSMISION', label: 'Cadena & Clutch', icon: '⛓️', desc: 'Cadena floja, piñón' },
-                          { id: 'SUSPENSION', label: 'Suspensión & Chasis', icon: '🔩', desc: 'Amortiguadores, barras' },
-                          { id: 'LUCES', label: 'Luces & Focos', icon: '💡', desc: 'Foco delantero, direccionales' },
-                          { id: 'OTRO', label: 'Otro Problema', icon: '🔧', desc: 'Carrocería, espejos, etc.' },
-                        ].map((cat) => {
-                          const isSelected = categoriaProblema === cat.id;
-                          return (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => setCategoriaProblema(cat.id)}
-                              style={{
-                                padding: '10px 12px',
-                                borderRadius: 12,
-                                border: isSelected
-                                  ? '1.5px solid var(--primario)'
-                                  : '1px solid rgba(255, 255, 255, 0.1)',
-                                background: isSelected
-                                  ? 'color-mix(in srgb, var(--primario) 16%, rgba(15, 23, 42, 0.6))'
-                                  : 'rgba(15, 23, 42, 0.6)',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                transition: 'all 0.15s',
-                              }}
-                            >
-                              <span style={{ fontSize: 20 }}>{cat.icon}</span>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div
-                                  style={{
-                                    fontSize: 12,
-                                    fontWeight: isSelected ? 700 : 600,
-                                    color: isSelected ? 'var(--primario)' : '#F8FAFC',
-                                    lineHeight: 1.2,
-                                  }}
-                                >
-                                  {cat.label}
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: 10,
-                                    color: '#94A3B8',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  {cat.desc}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Selector de Nivel de Urgencia */}
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', marginBottom: 8, display: 'block' }}>
-                        2. Nivel de gravedad / urgencia
-                      </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                        {[
-                          { id: 'NORMAL', label: 'Normal', color: '#10B981', desc: 'Moto operativa' },
-                          { id: 'ALTA', label: 'Alta', color: '#F59E0B', desc: 'Revisión hoy' },
-                          { id: 'URGENTE', label: 'Urgente', color: '#EF4444', desc: 'Inmovilizada' },
-                        ].map((prio) => {
-                          const isSelected = prioridadProblema === prio.id;
-                          return (
-                            <button
-                              key={prio.id}
-                              type="button"
-                              onClick={() => setPrioridadProblema(prio.id as any)}
-                              style={{
-                                padding: '10px 8px',
-                                borderRadius: 12,
-                                border: isSelected
-                                  ? `1.5px solid ${prio.color}`
-                                  : '1px solid rgba(255, 255, 255, 0.1)',
-                                background: isSelected
-                                  ? `color-mix(in srgb, ${prio.color} 18%, rgba(15, 23, 42, 0.6))`
-                                  : 'rgba(15, 23, 42, 0.6)',
-                                textAlign: 'center',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s',
-                              }}
-                            >
-                              <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? prio.color : '#F8FAFC' }}>
-                                {prio.label}
-                              </div>
-                              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>{prio.desc}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {prioridadProblema === 'URGENTE' && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          style={{
-                            marginTop: 8,
-                            padding: '10px 12px',
-                            borderRadius: 10,
-                            background: 'rgba(239, 68, 68, 0.12)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            fontSize: 11,
-                            color: '#FCA5A5',
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          ⚠️ <strong>Atención:</strong> Al marcar como <strong>Urgente</strong>, la moto se colocará automáticamente en estado <strong>EN MANTENIMIENTO</strong> en el sistema de despacho y el taller de ingeniería recibirá una alerta prioritaria de emergencia.
-                        </motion.div>
-                      )}
-                    </div>
-
-                    {/* Kilometraje y Descripción */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
-                      <div>
-                        <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', marginBottom: 4, display: 'block' }}>
-                          3. Kilometraje actual aproximado (km)
-                        </label>
-                        <input
-                          type="number"
-                          value={kmReporte}
-                          onChange={(e) => setKmReporte(e.target.value)}
-                          placeholder="Ej: 15300"
-                          style={{
-                            width: '100%',
-                            padding: '10px 14px',
-                            borderRadius: 12,
-                            background: 'rgba(15, 23, 42, 0.7)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#F8FAFC',
-                            fontSize: 13,
-                            fontFamily: 'monospace',
-                            fontWeight: 700,
-                            outline: 'none',
-                          }}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC', marginBottom: 4, display: 'block' }}>
-                          4. Descripción detallada del problema <span style={{ color: '#EF4444' }}>*</span>
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={descripcionProblema}
-                          onChange={(e) => setDescripcionProblema(e.target.value)}
-                          placeholder="Ej: El freno delantero perdió presión y hace un chirrido agudo al frenar en bajadas. La manigueta llega casi al fondo."
-                          style={{
-                            width: '100%',
-                            padding: '10px 14px',
-                            borderRadius: 12,
-                            background: 'rgba(15, 23, 42, 0.7)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#F8FAFC',
-                            fontSize: 13,
-                            outline: 'none',
-                            resize: 'none',
-                            fontFamily: "'DM Sans', sans-serif",
-                            lineHeight: 1.4,
-                          }}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
-                          5. Notas u observaciones adicionales para el mecánico (opcional)
-                        </label>
-                        <input
-                          type="text"
-                          value={observacionesReporte}
-                          onChange={(e) => setObservacionesReporte(e.target.value)}
-                          placeholder="Ej: Disponible para llevarla al taller después de las 2:00 PM."
-                          style={{
-                            width: '100%',
-                            padding: '10px 14px',
-                            borderRadius: 12,
-                            background: 'rgba(15, 23, 42, 0.7)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#F8FAFC',
-                            fontSize: 12,
-                            outline: 'none',
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Submit Actions */}
-                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 6 }}>
-                      <button
-                        type="button"
-                        onClick={() => setShowReportarMotoModal(false)}
-                        style={{
-                          padding: '12px 18px',
-                          borderRadius: 12,
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          background: 'transparent',
-                          color: '#F8FAFC',
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleEnviarReporteMoto}
-                        disabled={isSubmittingReporte || !descripcionProblema.trim()}
-                        style={{
-                          padding: '12px 24px',
-                          borderRadius: 12,
-                          border: 'none',
-                          background: 'var(--primario, #FF5722)',
-                          color: '#FFFFFF',
-                          cursor: isSubmittingReporte || !descripcionProblema.trim() ? 'not-allowed' : 'pointer',
-                          opacity: isSubmittingReporte || !descripcionProblema.trim() ? 0.6 : 1,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          boxShadow: '0 4px 14px rgba(255, 87, 34, 0.4)',
-                        }}
-                      >
-                        <Wrench size={15} />
-                        {isSubmittingReporte ? 'Enviando a Mantenimiento...' : 'Enviar Reporte a Mantenimiento'}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  /* Historial de mantenimientos / reportes de la moto */
-                  <div>
-                    <div style={{ fontSize: 13, color: '#94A3B8', marginBottom: 14 }}>
-                      Registro de intervenciones y reportes técnicos enviados al taller de Mantenimiento / Ingeniería.
-                    </div>
-
-                    {(!moto.mantenimientos || moto.mantenimientos.length === 0) && (!moto.alertas || moto.alertas.length === 0) ? (
-                      <div
-                        style={{
-                          padding: '32px 16px',
-                          textAlign: 'center',
-                          borderRadius: 14,
-                          background: 'rgba(15, 23, 42, 0.5)',
-                          border: '1px dashed rgba(255, 255, 255, 0.15)',
-                          color: '#94A3B8',
-                          fontSize: 13,
-                        }}
-                      >
-                        <Wrench size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-                        <div>No hay reportes ni mantenimientos registrados para esta moto.</div>
-                        <button
-                          type="button"
-                          onClick={() => setReportesTab('nuevo')}
-                          style={{
-                            marginTop: 14,
-                            padding: '8px 16px',
-                            borderRadius: 10,
-                            background: 'var(--primario)',
-                            color: '#fff',
-                            border: 'none',
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Crear primer reporte
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {moto.mantenimientos?.map((m) => (
-                          <div
-                            key={m.id}
-                            style={{
-                              padding: 14,
-                              borderRadius: 14,
-                              background: 'rgba(15, 23, 42, 0.6)',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 6,
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span
-                                  style={{
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    padding: '3px 8px',
-                                    borderRadius: 6,
-                                    background:
-                                      m.tipo === 'EMERGENCIA'
-                                        ? 'rgba(239, 68, 68, 0.2)'
-                                        : 'rgba(59, 130, 246, 0.2)',
-                                    color: m.tipo === 'EMERGENCIA' ? '#EF4444' : '#3B82F6',
-                                  }}
-                                >
-                                  {m.tipo} • {m.categoria}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    padding: '2px 6px',
-                                    borderRadius: 4,
-                                    background: 'rgba(255, 255, 255, 0.08)',
-                                    color: '#94A3B8',
-                                  }}
-                                >
-                                  {m.prioridad}
-                                </span>
-                              </div>
-
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  padding: '3px 8px',
-                                  borderRadius: 6,
-                                  background:
-                                    m.estado === 'COMPLETADO'
-                                      ? 'rgba(16, 185, 129, 0.2)'
-                                      : m.estado === 'EN_PROCESO'
-                                        ? 'rgba(245, 158, 11, 0.2)'
-                                        : 'rgba(59, 130, 246, 0.2)',
-                                  color:
-                                    m.estado === 'COMPLETADO'
-                                      ? '#10B981'
-                                      : m.estado === 'EN_PROCESO'
-                                        ? '#F59E0B'
-                                        : '#3B82F6',
-                                }}
-                              >
-                                {m.estado.replace('_', ' ')}
-                              </span>
-                            </div>
-
-                            <div style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>
-                              {m.descripcion}
-                            </div>
-
-                            {m.observaciones && (
-                              <div style={{ fontSize: 11, color: '#94A3B8', fontStyle: 'italic' }}>
-                                {m.observaciones}
-                              </div>
-                            )}
-
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#64748B', marginTop: 4 }}>
-                              <span>Km: {m.kmAlMomento?.toLocaleString('es-NI') || 0} km</span>
-                              <span>{new Date(m.createdAt).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ─── MODAL CENTRO DE AYUDA Y SOPORTE AL REPARTIDOR ─── */}
-      <AnimatePresence>
-        {showHelpModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 999999,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 16,
-            }}
-          >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowHelpModal(false)}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                width: '100%',
-                height: '100%',
-                background: 'rgba(15, 23, 42, 0.82)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-              }}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 16 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              style={{
-                position: 'relative',
-                zIndex: 10,
-                width: '100%',
-                maxWidth: 520,
-                maxHeight: '85vh',
-                background: '#1E293B',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: 24,
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Header */}
-              <div
-                style={{
-                  padding: '18px 20px',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: 'rgba(30, 41, 59, 0.95)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div
-                    style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 12,
-                      background: 'rgba(41, 121, 255, 0.15)',
-                      color: '#2979FF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <HelpCircle size={22} />
-                  </div>
-                  <div>
-                    <h3
-                      className="font-syne"
-                      style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#F8FAFC' }}
-                    >
-                      Centro de Ayuda al Repartidor
-                    </h3>
-                    <div style={{ fontSize: 12, color: '#94A3B8' }}>
-                      Soporte operativo y emergencias en ruta
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowHelpModal(false)}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: 'none',
-                    borderRadius: 10,
-                    width: 32,
-                    height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#94A3B8',
-                    cursor: 'pointer',
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Body */}
-              <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Emergency Contact SOS */}
-                <div
-                  style={{
-                    padding: 14,
-                    borderRadius: 16,
-                    background: 'rgba(239, 68, 68, 0.12)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#FCA5A5', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      Central de Despacho y Emergencias
-                    </div>
-                    <div style={{ fontSize: 11, color: '#F8FAFC', marginTop: 2 }}>
-                      Asistencia inmediata para accidentes, extravíos o soporte en vivo.
-                    </div>
-                  </div>
-
-                  <a
-                    href="tel:+50522705000"
-                    style={{
-                      padding: '8px 14px',
+                      padding: '10px 20px',
                       borderRadius: 10,
-                      background: '#EF4444',
-                      color: '#fff',
+                      border: 'none',
+                      background: 'var(--primario, #FF5722)',
+                      color: '#FFFFFF',
+                      cursor: isSubmittingReporte || !descripcionProblema.trim() ? 'not-allowed' : 'pointer',
+                      opacity: isSubmittingReporte || !descripcionProblema.trim() ? 0.6 : 1,
                       fontSize: 12,
                       fontWeight: 700,
-                      textDecoration: 'none',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
-                      flexShrink: 0,
+                      boxShadow: '0 4px 12px rgba(255, 87, 34, 0.35)',
                     }}
                   >
-                    Llamar SOS
-                  </a>
+                    <Wrench size={14} />
+                    {isSubmittingReporte ? 'Enviando...' : 'Enviar Reporte al Taller'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* Historial de taller */
+              <div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
+                  Intervenciones y reportes técnicos enviados al taller de Mantenimiento.
                 </div>
 
-                {/* FAQ list */}
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC', marginBottom: 10 }}>
-                    Preguntas Frecuentes de Motorizados
+                {(!moto.mantenimientos || moto.mantenimientos.length === 0) ? (
+                  <div
+                    style={{
+                      padding: '24px 16px',
+                      textAlign: 'center',
+                      borderRadius: 12,
+                      background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))',
+                      border: '1px dashed var(--border)',
+                      color: 'var(--text-muted)',
+                      fontSize: 12,
+                    }}
+                  >
+                    <Wrench size={28} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
+                    <div>No hay intervenciones registradas para esta moto.</div>
                   </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {[
-                      {
-                        q: '¿Cómo reporto una avería o falla en la moto?',
-                        a: 'En esta misma sección de perfil, pulsa en "Reportar problema". Selecciona la falla (frenos, motor, llantas, etc.) y la prioridad. El taller de mantenimiento la recibirá al instante.',
-                      },
-                      {
-                        q: '¿Qué hacer si el cliente no responde o la dirección no existe?',
-                        a: 'Tienes el chat directo y el botón de llamada dentro de la orden activa. Si tras 5 minutos no consigues contacto, reporta la incidencia desde el botón de alerta para que la central intervenga.',
-                      },
-                      {
-                        q: '¿Cómo se calculan mis comisiones y ganancias?',
-                        a: 'Recibes el pago íntegro de la entrega menos la comisión de plataforma del 15%. Las propinas de los clientes son 100% tuyas y se suman directamente.',
-                      },
-                      {
-                        q: '¿Por qué no suena la alerta cuando llega un pedido?',
-                        a: 'Verifica en tu perfil que el interruptor de Sonido esté activo y que tu teléfono no esté en modo "No Molestar" o silencio.',
-                      },
-                    ].map((faq, idx) => (
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {moto.mantenimientos?.map((m) => (
                       <div
-                        key={idx}
+                        key={m.id}
                         style={{
                           padding: 12,
-                          borderRadius: 14,
-                          background: 'rgba(15, 23, 42, 0.6)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: 12,
+                          background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))',
+                          border: '1px solid var(--border)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4,
                         }}
                       >
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC', marginBottom: 4 }}>
-                          {faq.q}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              background:
+                                m.tipo === 'EMERGENCIA'
+                                  ? 'rgba(239, 68, 68, 0.15)'
+                                  : 'rgba(59, 130, 246, 0.15)',
+                              color: m.tipo === 'EMERGENCIA' ? '#EF4444' : '#3B82F6',
+                            }}
+                          >
+                            {m.tipo} • {m.categoria}
+                          </span>
+
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              background:
+                                m.estado === 'COMPLETADO'
+                                  ? 'rgba(16, 185, 129, 0.15)'
+                                  : m.estado === 'EN_PROCESO'
+                                    ? 'rgba(245, 158, 11, 0.15)'
+                                    : 'rgba(59, 130, 246, 0.15)',
+                              color:
+                                m.estado === 'COMPLETADO'
+                                  ? '#10B981'
+                                  : m.estado === 'EN_PROCESO'
+                                    ? '#F59E0B'
+                                    : '#3B82F6',
+                            }}
+                          >
+                            {m.estado.replace('_', ' ')}
+                          </span>
                         </div>
-                        <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.45 }}>
-                          {faq.a}
+
+                        <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>
+                          {m.descripcion}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                          <span>Km: {m.kmAlMomento?.toLocaleString('es-NI') || 0} km</span>
+                          <span>{new Date(m.createdAt).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowHelpModal(false)}
-                  style={{
-                    padding: '12px 20px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    background: 'transparent',
-                    color: '#F8FAFC',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    width: '100%',
-                    marginTop: 6,
-                  }}
-                >
-                  Cerrar
-                </button>
+                )}
               </div>
-            </motion.div>
+            )}
           </div>
-        )}
-      </AnimatePresence>
-        </div>
+        </RepartidorModal>
       )}
-    </PullToRefresh>
-  );
+    </AnimatePresence>
+
+    {/* ─── MODAL CENTRO DE AYUDA Y SOPORTE AL REPARTIDOR ─── */}
+    <AnimatePresence>
+      {showHelpModal && (
+        <RepartidorModal onClose={() => setShowHelpModal(false)} maxWidth={460}>
+          {/* Header */}
+          <div
+            style={{
+              paddingBottom: 12,
+              marginBottom: 12,
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: 'rgba(41, 121, 255, 0.15)',
+                  color: '#2979FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <HelpCircle size={18} />
+              </div>
+              <div>
+                <h3
+                  className="font-syne"
+                  style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}
+                >
+                  Centro de Ayuda al Repartidor
+                </h3>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  Soporte operativo y emergencias en ruta
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowHelpModal(false)}
+              style={{
+                background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 90%, var(--text) 10%))',
+                border: 'none',
+                borderRadius: '50%',
+                width: 30,
+                height: 30,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Emergency Contact SOS */}
+            <div
+              style={{
+                padding: 12,
+                borderRadius: 12,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#DC2626' }}>
+                  Central de Despacho SOS
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text)', marginTop: 2 }}>
+                  Asistencia inmediata para emergencias en ruta.
+                </div>
+              </div>
+
+              <a
+                href="tel:+50522705000"
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  background: '#EF4444',
+                  color: '#fff',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  flexShrink: 0,
+                }}
+              >
+                <Phone size={12} />
+                SOS
+              </a>
+            </div>
+
+            {/* FAQ list */}
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+                Preguntas Frecuentes
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  {
+                    q: '¿Cómo reporto una avería en la moto?',
+                    a: 'En tu perfil, pulsa en "Reportar problema". Selecciona el componente afectado y el taller lo atenderá.',
+                  },
+                  {
+                    q: '¿Qué hacer si el cliente no responde?',
+                    a: 'Utiliza el chat o llamada de la orden activa. Tras 5 minutos, reporta una incidencia desde el botón de alerta.',
+                  },
+                  {
+                    q: '¿Cómo se calculan mis ganancias?',
+                    a: 'Recibes el pago íntegro de la entrega menos el 15% de comisión. Las propinas son 100% tuyas.',
+                  },
+                  {
+                    q: '¿Por qué no suena la notificación?',
+                    a: 'Verifica que el interruptor de Sonido en tu perfil esté activo y tu celular no esté en silencio.',
+                  },
+                ].map((faq, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: 10,
+                      borderRadius: 10,
+                      background: 'var(--surface-variant, color-mix(in srgb, var(--surface) 94%, var(--text) 6%))',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                      {faq.q}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                      {faq.a}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowHelpModal(false)}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 10,
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+                width: '100%',
+                marginTop: 2,
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </RepartidorModal>
+      )}
+    </AnimatePresence>
+  </>
+);
 }
