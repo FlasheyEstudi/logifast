@@ -35,16 +35,18 @@ function hashColor(str: string): string {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function getFrequencyBadge(totalEnvios: number) {
-  if (totalEnvios > 20)
+function getFrequencyBadge(totalEnvios?: number | null) {
+  const count = Number(totalEnvios ?? 0);
+  if (count > 20)
     return { label: 'Frecuente', bg: 'rgba(255,102,0,0.12)', color: '#FF6600' };
-  if (totalEnvios >= 5)
+  if (count >= 5)
     return { label: 'Regular', bg: 'rgba(59,130,246,0.12)', color: '#3B82F6' };
   return { label: 'Nuevo', bg: 'rgba(22,163,74,0.12)', color: '#16A34A' };
 }
 
-function formatCurrency(n: number) {
-  return `C$${n.toLocaleString('es-NI')}`;
+function formatCurrency(n?: number | null) {
+  const val = Number(n ?? 0);
+  return `C$${Number.isFinite(val) ? val.toLocaleString('es-NI') : '0'}`;
 }
 
 type SortKey = 'envios' | 'monto' | 'ultimo';
@@ -148,33 +150,37 @@ export default function ModuleClientes() {
   const activeThisMonth = useMemo(() => {
     const now = new Date();
     const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    return clients.filter((c) => (c.ultimoEnvio || '').startsWith(ym)).length;
+    return (clients || []).filter((c) => (c?.ultimoEnvio || '').startsWith(ym)).length;
   }, [clients]);
 
   // Filtered & sorted
   const filtered = useMemo(() => {
-    let list = [...clients];
+    let list = Array.isArray(clients) ? [...clients] : [];
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
-        (c) => c.nombre.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
+        (c) =>
+          (c?.nombre || '').toLowerCase().includes(q) ||
+          (c?.email || '').toLowerCase().includes(q)
       );
     }
-    if (sortBy === 'envios') list.sort((a, b) => b.totalEnvios - a.totalEnvios);
-    else if (sortBy === 'monto') list.sort((a, b) => b.montoTotal - a.montoTotal);
-    else list.sort((a, b) => (b.ultimoEnvio || '').localeCompare(a.ultimoEnvio || ''));
+    if (sortBy === 'envios') list.sort((a, b) => (b?.totalEnvios || 0) - (a?.totalEnvios || 0));
+    else if (sortBy === 'monto') list.sort((a, b) => (b?.montoTotal || 0) - (a?.montoTotal || 0));
+    else list.sort((a, b) => (b?.ultimoEnvio || '').localeCompare(a?.ultimoEnvio || ''));
     return list;
   }, [clients, search, sortBy]);
 
   // Selected client orders
   const selectedOrders = useMemo(() => {
     if (!selectedClient) return [];
-    return orders.filter((o) => o.cliente === selectedClient.nombre);
+    return (orders || []).filter(
+      (o) => o.cliente === selectedClient.nombre || (o as any).clienteId === selectedClient.id
+    );
   }, [selectedClient, orders]);
 
   const selectedAvg = selectedClient
-    ? selectedClient.totalEnvios > 0
-      ? Math.round(selectedClient.montoTotal / selectedClient.totalEnvios)
+    ? (selectedClient.totalEnvios || 0) > 0
+      ? Math.round((selectedClient.montoTotal || 0) / (selectedClient.totalEnvios || 1))
       : 0
     : 0;
 
@@ -288,9 +294,11 @@ export default function ModuleClientes() {
           className="lf-clientes-grid"
         >
           {filtered.map((client) => {
-            const badge = getFrequencyBadge(client.totalEnvios);
-            const avatarColor = hashColor(client.nombre);
-            const initials = getInitials(client.nombre);
+            const nombre = client?.nombre || 'Cliente';
+            const totalEnvios = client?.totalEnvios ?? 0;
+            const badge = getFrequencyBadge(totalEnvios);
+            const avatarColor = hashColor(nombre);
+            const initials = getInitials(nombre);
 
             return (
               <motion.div
@@ -349,7 +357,7 @@ export default function ModuleClientes() {
                         marginBottom: 2,
                       }}
                     >
-                      {client.nombre}
+                      {nombre}
                     </div>
                     <div
                       style={{
@@ -364,7 +372,7 @@ export default function ModuleClientes() {
                       }}
                     >
                       <Mail size={11} style={{ flexShrink: 0 }} />
-                      {client.email}
+                      {client?.email || 'Sin correo'}
                     </div>
                     <div
                       style={{
@@ -377,7 +385,7 @@ export default function ModuleClientes() {
                       }}
                     >
                       <Phone size={11} style={{ flexShrink: 0 }} />
-                      {client.telefono}
+                      {client?.telefono || 'Sin teléfono'}
                     </div>
                   </div>
                 </div>
@@ -400,14 +408,14 @@ export default function ModuleClientes() {
                   >
                     <Package size={13} style={{ color: 'var(--lf-accent)' }} />
                     <span className="font-mono" style={{ fontWeight: 600 }}>
-                      {client.totalEnvios}
+                      {totalEnvios}
                     </span>
                     <span style={{ fontSize: 12 }}>envíos</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <DollarSign size={13} style={{ color: 'var(--lf-success)' }} />
                     <span className="font-mono" style={{ fontWeight: 600 }}>
-                      {formatCurrency(client.montoTotal)}
+                      {formatCurrency(client?.montoTotal)}
                     </span>
                   </div>
                 </div>
@@ -444,7 +452,7 @@ export default function ModuleClientes() {
                     }}
                   >
                     <MapPin size={11} />
-                    {client.zonaFrecuente}
+                    {client?.zonaFrecuente || 'Managua'}
                   </div>
                 </div>
 
@@ -635,14 +643,14 @@ export default function ModuleClientes() {
                   {
                     icon: Package,
                     label: 'Envíos totales',
-                    value: String(selectedClient.totalEnvios),
+                    value: String(selectedClient?.totalEnvios ?? 0),
                     color: 'var(--lf-accent)',
                     bg: 'var(--lf-accent-soft)',
                   },
                   {
                     icon: DollarSign,
                     label: 'Monto total',
-                    value: formatCurrency(selectedClient.montoTotal),
+                    value: formatCurrency(selectedClient?.montoTotal),
                     color: 'var(--lf-success)',
                     bg: 'rgba(22,163,74,0.08)',
                   },
@@ -656,7 +664,7 @@ export default function ModuleClientes() {
                   {
                     icon: MapPin,
                     label: 'Zona más frecuente',
-                    value: selectedClient.zonaFrecuente,
+                    value: selectedClient?.zonaFrecuente || 'Managua',
                     color: '#8B5CF6',
                     bg: 'rgba(139,92,246,0.08)',
                   },
