@@ -23,18 +23,21 @@ export function usePullToRefresh(options: UsePullToRefreshOptions) {
 
   // Función helper para detectar el scrollTop real (P0-37)
   const getScrollTop = useCallback(() => {
-    const el = scrollRef.current;
-    if (el) return el.scrollTop;
-    // Fallback: body o window scroll (iOS Safari suele usar body)
     if (typeof window !== 'undefined') {
-      return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      const winY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      if (winY > 5) return winY;
     }
+    const el = scrollRef.current;
+    if (el && el.scrollTop > 5) return el.scrollTop;
     return 0;
   }, []);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
-      if (getScrollTop() > 0 || isRefreshing) return;
+      if (getScrollTop() > 5 || isRefreshing) {
+        isPullingRef.current = false;
+        return;
+      }
       startYRef.current = e.touches[0].clientY;
       isPullingRef.current = true;
     },
@@ -45,20 +48,37 @@ export function usePullToRefresh(options: UsePullToRefreshOptions) {
     (e: React.TouchEvent) => {
       if (!isPullingRef.current || isRefreshing) return;
 
-      const deltaY = e.touches[0].clientY - startYRef.current;
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - startYRef.current;
+
+      // Si el usuario desliza hacia arriba para ver el contenido inferior, liberar el gesto inmediatamente
+      if (deltaY < 0) {
+        isPullingRef.current = false;
+        setPullDistance(0);
+        setCanRefresh(false);
+        return;
+      }
+
+      // Si el usuario está scrolleando contenido, no activar pull
+      if (getScrollTop() > 5) {
+        isPullingRef.current = false;
+        setPullDistance(0);
+        setCanRefresh(false);
+        return;
+      }
 
       if (deltaY > 0) {
         // Throttle con requestAnimationFrame (evita 60 setState/seg)
         if (rafRef.current !== null) return;
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null;
-          const distance = Math.min(deltaY * 0.5, maxPull); // 0.5 = resistance
+          const distance = Math.min(deltaY * 0.4, maxPull); // 0.4 = resistencia elástica
           setPullDistance(distance);
           setCanRefresh(distance >= threshold);
         });
       }
     },
-    [isRefreshing, threshold, maxPull]
+    [getScrollTop, isRefreshing, threshold, maxPull]
   );
 
   const handleTouchEnd = useCallback(async () => {

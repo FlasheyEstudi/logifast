@@ -330,8 +330,17 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     return () => clearInterval(pollInterval);
   }, [fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, fetchOrders]);
 
-  /* ─── SPLASH STATE ─── */
-  const [showSplash, setShowSplash] = useState(true);
+  /* ─── SPLASH STATE (solo una vez por sesión para fluidez total) ─── */
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const alreadyShown = sessionStorage.getItem('client_splash_shown');
+      if (!alreadyShown) {
+        sessionStorage.setItem('client_splash_shown', 'true');
+        return true;
+      }
+    }
+    return false;
+  });
   const [splashFading, setSplashFading] = useState(false);
 
   /* ─── SNACKBAR STATE ─── */
@@ -353,19 +362,20 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   /* ─── iOS Large Title for current module ─── */
   const iosTitle = IOS_TITLE_MAP[clientActiveModule] || 'Logifast';
 
-  /* ─── SPLASH TIMER ─── */
+  /* ─── SPLASH TIMER (rápido y no bloqueante) ─── */
   useEffect(() => {
+    if (!showSplash) return;
     const fadeTimer = setTimeout(() => {
       setSplashFading(true);
-    }, 1500);
+    }, 600);
     const removeTimer = setTimeout(() => {
       setShowSplash(false);
-    }, 1900);
+    }, 900);
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(removeTimer);
     };
-  }, []);
+  }, [showSplash]);
 
   /* ─── SNACKBAR AUTO-DISMISS ─── */
   const showSnackbar = useCallback((data: SnackbarData | null) => {

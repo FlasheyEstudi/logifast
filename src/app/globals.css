@@ -5577,11 +5577,9 @@ body {
 
 /* --- 5. Pull to Refresh --- */
 .pull-refresh-container {
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  height: 100%;
+  position: relative;
+  width: 100%;
+  touch-action: pan-y;
 }
 
 .pull-refresh-indicator {
