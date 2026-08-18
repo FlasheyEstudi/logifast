@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { requireRole } from '@/lib/auth/session';
+import { requireRole, getSessionUser } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
 
 export const dynamic = 'force-dynamic';
@@ -151,6 +151,19 @@ export async function POST(req: NextRequest) {
       }).catch((err) => console.error('[CREATE_REPARTIDOR_PROFILE_ERROR]', err));
     }
 
+    // Registrar en auditoría
+    const sessionUser = await getSessionUser();
+    if (sessionUser) {
+      await db.auditLog.create({
+        data: {
+          userId: sessionUser.id,
+          accion: 'CREAR_USUARIO',
+          recurso: `Usuario ${user.email}`,
+          detalles: `Nombre: ${user.name} | Rol: ${user.role}`,
+        },
+      }).catch(() => null);
+    }
+
     return NextResponse.json({ ok: true, user });
   } catch (error) {
     return handleError(error, 'ADMIN_USERS_POST');
@@ -209,6 +222,19 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    // Registrar en auditoría
+    const sessionUser = await getSessionUser();
+    if (sessionUser) {
+      await db.auditLog.create({
+        data: {
+          userId: sessionUser.id,
+          accion: 'EDITAR_USUARIO',
+          recurso: `Usuario ${user.email}`,
+          detalles: `Campos modificados: ${Object.keys(dataToUpdate).join(', ')}`,
+        },
+      }).catch(() => null);
+    }
+
     return NextResponse.json({ ok: true, user });
   } catch (error) {
     return handleError(error, 'ADMIN_USERS_PATCH');
@@ -232,10 +258,23 @@ export async function PUT(req: NextRequest) {
     const { hashPassword } = await import('@/lib/auth/password');
     const hashedPassword = await hashPassword(newPassword);
 
-    await db.user.update({
+    const user = await db.user.update({
       where: { id },
       data: { password: hashedPassword },
     });
+
+    // Registrar en auditoría
+    const sessionUser = await getSessionUser();
+    if (sessionUser) {
+      await db.auditLog.create({
+        data: {
+          userId: sessionUser.id,
+          accion: 'RESET_PASSWORD',
+          recurso: `Usuario ${user.email}`,
+          detalles: `Contraseña restablecida directamente por Superadmin`,
+        },
+      }).catch(() => null);
+    }
 
     return NextResponse.json({ ok: true, message: 'Contraseña restablecida exitosamente' });
   } catch (error) {

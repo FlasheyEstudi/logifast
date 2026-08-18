@@ -222,6 +222,8 @@ export default function ModuleSuperAdmin() {
             accion: a.accion,
             recurso: a.recurso,
             detalles: a.detalles || 'Acción realizada en el sistema',
+            ip: a.ip || '192.168.1.1',
+            dispositivo: a.dispositivo || 'Web / Dashboard',
             createdAt: new Date(a.createdAt).toISOString().replace('T', ' ').slice(0, 16),
           }));
           setLocalAudit(apiAudit);
