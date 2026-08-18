@@ -127,7 +127,7 @@ export default function ClientInicio({
         tipo: 'compra' as const,
         destino: oc.tiendaNombre ? `Pedido en ${oc.tiendaNombre}` : oc.direccionEntrega,
         repartidor: oc.repartidorNombre,
-        codigoPin: oc.codigoPin || '1234',
+        codigoPin: oc.codigoPin || '',
         estado: oc.estado,
       }));
     return [...enviosActivos, ...comprasActivas];

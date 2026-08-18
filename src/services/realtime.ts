@@ -46,6 +46,7 @@ export type RealtimeEvent =
   | 'repartidor:orden:nueva'           // nueva orden asignada (repartidor recibe)
   | 'repartidor:posicion:update'       // posición del repartidor actualizada (cliente/admin reciben)
   | 'repartidor:estado:update'         // estado del repartidor cambió (cliente recibe)
+  | 'orden:estado:update'              // estado o repartidor de la orden cambió en vivo
   | 'chat:mensaje:nuevo'               // nuevo mensaje de chat
   | 'admin:flota:snapshot'             // snapshot inicial de flota (admin recibe)
   | 'admin:repartidor:offline'         // repartidor se desconectó (admin recibe)

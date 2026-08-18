@@ -85,6 +85,7 @@ export async function GET(
           tamano: ordenServicio.tamano,
           monto: ordenServicio.monto,
           metodoPago: ordenServicio.metodoPago,
+          codigoPin: ordenServicio.codigoPin,
           createdAt: ordenServicio.createdAt,
           aceptadoEn: ordenServicio.aceptadoEn,
           recogidoEn: ordenServicio.recogidoEn,
@@ -128,6 +129,7 @@ export async function GET(
       if (ordenCompra.repartidorId) {
         const profile = await db.repartidorProfile.findUnique({
           where: { id: ordenCompra.repartidorId },
+          include: { user: { select: { name: true, telefono: true, fotoUrl: true } } },
         });
         if (profile) {
           repartidorPos = {
@@ -135,9 +137,10 @@ export async function GET(
             lng: profile.lng ?? -86.2581,
           };
           repartidorInfo = {
-            nombre: profile.nombre,
-            telefono: profile.telefono ?? '',
-            calificacion: profile.calificacion,
+            nombre: profile.nombre || profile.user?.name || 'Repartidor',
+            telefono: profile.telefono || profile.user?.telefono || '',
+            calificacion: profile.calificacion || 5.0,
+            fotoUrl: profile.user?.fotoUrl || null,
           };
         }
       }
@@ -156,7 +159,7 @@ export async function GET(
           total: ordenCompra.total,
           items: ordenCompra.items,
           metodoPago: ordenCompra.metodoPago,
-          codigoPin: ordenCompra.codigoPin ?? '1234',
+          codigoPin: ordenCompra.codigoPin ?? '',
           createdAt: ordenCompra.createdAt,
         },
         repartidor: repartidorInfo,

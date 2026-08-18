@@ -116,14 +116,14 @@ export default function RepartidorServicio() {
       HAPTIC_PATTERNS.error();
       return;
     }
-    // Si la orden tiene PIN específico, validarlo. De lo contrario, o si se ingresa 1234, permitir la entrega
-    if (!targetPin || cleanInput === String(targetPin) || cleanInput === '1234') {
+    const realPin = targetPin ? String(targetPin).trim() : '';
+    if (realPin && cleanInput === realPin) {
       confirmarEntrega();
       setShowPinModal(false);
       setPinInput('');
       setPinError(false);
       HAPTIC_PATTERNS.success();
-      showSnackbar({ message: 'Entrega confirmada con éxito.' });
+      showSnackbar({ message: 'Entrega confirmada con éxito con PIN de seguridad.' });
     } else {
       setPinError(true);
       HAPTIC_PATTERNS.error();
@@ -478,7 +478,7 @@ export default function RepartidorServicio() {
                 <button onClick={() => setShowPinModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
               </div>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Solicita al cliente su PIN de 4 dígitos.</p>
-              <input type="text" maxLength={4} placeholder="1234" value={pinInput}
+              <input type="text" maxLength={4} placeholder="••••" value={pinInput}
                 onChange={e => { setPinInput(e.target.value); setPinError(false); }}
                 style={{ ...inputStyle, textAlign: 'center', fontSize: 28, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 10, padding: '16px' }}
               />

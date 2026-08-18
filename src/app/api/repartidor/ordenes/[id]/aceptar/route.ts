@@ -81,6 +81,32 @@ export async function PATCH(
       }).catch(() => null);
     }
 
+    // Emitir evento en tiempo real al cliente y al admin con los datos reales del repartidor
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitirEventoRealtime({
+        room: `orden:${id}`,
+        event: 'orden:estado:update',
+        data: {
+          id,
+          estado: 'aceptado',
+          repartidorId: profile.id,
+          repartidor: {
+            nombre: profile.nombre || rp.user.name || 'Repartidor',
+            telefono: profile.telefono || rp.user.telefono || '',
+            calificacion: profile.calificacion || 5.0,
+            totalEntregas: profile.totalEntregas || 0,
+            fotoUrl: rp.user.fotoUrl || null,
+          },
+        },
+      });
+      emitirEventoRealtime({
+        room: 'admin',
+        event: 'admin:orden:actualizada',
+        data: { id, estado: 'aceptado', repartidorId: profile.id },
+      });
+    } catch {}
+
     return NextResponse.json({
       ok: true,
       estado: 'aceptado',

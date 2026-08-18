@@ -63,7 +63,7 @@ function mapCompraToActiva(c: any): OrdenActiva | null {
     ganancia: gananciaCalculada,
     kmEstimados: 3.5,
     tiempoEstimado: 25,
-    codigoPin: c.codigoPin || '1234',
+    codigoPin: c.codigoPin ?? undefined,
   };
 }
 
