@@ -17,6 +17,7 @@ import {
 } from '@/components/icons';
 import dynamic from 'next/dynamic';
 import { useStore } from '@/lib/store';
+import PullToRefresh from '@/components/ui/PullToRefresh';
 
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), {
   ssr: false,
@@ -75,7 +76,7 @@ const btnGhost: React.CSSProperties = {
 };
 
 export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }: ClientEnviosProps) {
-  const { orders, clientEnvioTab, setClientEnvioTab, addToast } = useStore();
+  const { orders, clientEnvioTab, setClientEnvioTab, addToast, fetchOrders } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterState, setFilterState] = useState<'todos' | 'entregados' | 'incidencia'>('todos');
   const [reportModal, setReportModal] = useState<ReportModalState>({ open: false, orderId: '', reason: 'retraso', description: '' });
@@ -98,7 +99,8 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600, margin: '0 auto', padding: '0 4px 120px 4px', fontFamily: "'DM Sans', sans-serif" }}>
+    <PullToRefresh onRefresh={async () => { await fetchOrders(); }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600, margin: '0 auto', padding: '0 4px 120px 4px', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 }}>
@@ -320,6 +322,7 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }

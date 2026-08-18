@@ -50,6 +50,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "sileo";
+import NetworkStatusIndicator from "@/components/ui/NetworkStatusIndicator";
 
 export default function RootLayout({
   children,
@@ -127,6 +128,7 @@ export default function RootLayout({
         className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <ThemeProvider>
+          <NetworkStatusIndicator />
           <Toaster
             position="top-center"
             theme="light"

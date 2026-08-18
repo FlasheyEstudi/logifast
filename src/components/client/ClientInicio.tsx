@@ -24,6 +24,7 @@ import {
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
+import PullToRefresh from '@/components/ui/PullToRefresh';
 
 interface ClientInicioProps {
   isDark?: boolean;
@@ -143,20 +144,32 @@ export default function ClientInicio({
     onNavigate('explorar');
   };
 
+  const handleRefresh = async () => {
+    try {
+      await Promise.all([
+        useStore.getState().fetchOrders(),
+        useMarketplaceStore.getState().fetchTiendas(),
+        useMarketplaceStore.getState().fetchOrdenesCompra(),
+        useMarketplaceStore.getState().fetchFavoritos(),
+      ]);
+    } catch {}
+  };
+
   const puntos = fidelizacion?.puntos ?? 2450;
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 20,
-        maxWidth: 600,
-        margin: '0 auto',
-        padding: '0 4px 120px 4px',
-        fontFamily: "'DM Sans', sans-serif",
-      }}
-    >
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
+          maxWidth: 600,
+          margin: '0 auto',
+          padding: '0 4px 120px 4px',
+          fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
       {/* ── HEADER NATIVO DE BIENVENIDA ── */}
       <div
         style={{
@@ -989,6 +1002,7 @@ export default function ClientInicio({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }

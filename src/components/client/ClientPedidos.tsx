@@ -8,6 +8,7 @@ import {
 } from '@/components/icons';
 import { useStore, type Order } from '@/lib/store';
 import { useMarketplaceStore, type OrdenCompra } from '@/lib/marketplace-store';
+import PullToRefresh from '@/components/ui/PullToRefresh';
 
 interface ClientPedidosProps {
   isDark: boolean;
@@ -315,8 +316,18 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
     { key: 'historial' as TabKey, label: `Historial (${deliveredCompras.length})` },
   ];
 
+  const handleRefresh = async () => {
+    try {
+      await Promise.all([
+        useStore.getState().fetchOrders(),
+        useMarketplaceStore.getState().fetchOrdenesCompra(),
+      ]);
+    } catch {}
+  };
+
   return (
-    <div style={{ width: '100%', maxWidth: 640, margin: '0 auto', fontFamily: "'DM Sans', sans-serif" }}>
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div style={{ width: '100%', maxWidth: 640, margin: '0 auto', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingTop: 4 }}>
@@ -458,6 +469,7 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }
