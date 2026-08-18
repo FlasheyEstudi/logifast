@@ -190,6 +190,26 @@ export async function POST(req: NextRequest) {
     // Emitir evento en tiempo real a Admin y Repartidores
     emitOrdenCreada(orden);
 
+    // Auto-aprender y guardar dirección para futuras entregas inteligentes
+    if (user.id && user.id !== 'usr_cliente_demo' && finalDestLat && finalDestLng) {
+      db.direccionCliente.findFirst({
+        where: { clienteId: user.id, direccion: destino },
+      }).then((existing) => {
+        if (!existing) {
+          db.direccionCliente.create({
+            data: {
+              clienteId: user.id,
+              etiqueta: destino.split(',')[0].slice(0, 30),
+              direccion: destino,
+              lat: finalDestLat,
+              lng: finalDestLng,
+              predeterminada: false,
+            },
+          }).catch(() => null);
+        }
+      }).catch(() => null);
+    }
+
     // Notificar a repartidores conectados
     const repartidoresConectados = await db.repartidorProfile.findMany({
       where: { conectado: true },
