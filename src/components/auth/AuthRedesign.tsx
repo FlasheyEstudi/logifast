@@ -554,42 +554,21 @@ function LandingView({
               whileTap={{ scale: 0.95 }}
               onClick={onLogin}
               style={{
-                background: 'transparent',
-                border: 'none',
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: specularBorder,
                 color: textColor,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 700,
                 cursor: 'pointer',
-                padding: '6px 10px',
-                borderRadius: 100,
-                flexShrink: 0,
-              }}
-            >
-              Iniciar
-            </motion.button>
-            
-            {/* 3. Botón Registrar */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={onRegister}
-              style={{
-                background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
-                color: '#FFFFFF',
-                border: '1px solid rgba(255,255,255,0.3)',
                 padding: '6px 14px',
                 borderRadius: 100,
-                fontSize: 12,
-                fontWeight: 800,
-                cursor: 'pointer',
-                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 4px 14px rgba(0,102,255,0.42)',
                 flexShrink: 0,
-                whiteSpace: 'nowrap',
               }}
             >
-              Registrar
+              Iniciar sesión
             </motion.button>
 
-            {/* 4. Botón Mini Pantalla / Menú Lateral Derecho */}
+            {/* 3. Botón Mini Pantalla / Menú Lateral Derecho */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setSideDrawerOpen(true)}
