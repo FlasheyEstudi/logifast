@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   },
 };
 
-import { Toaster } from "sileo";
+import SileoToaster from "@/components/ui/SileoToaster";
 import NetworkStatusIndicator from "@/components/ui/NetworkStatusIndicator";
 
 export default function RootLayout({
@@ -129,14 +129,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <NetworkStatusIndicator />
-          <Toaster
-            position="top-center"
-            theme="light"
-            options={{
-              duration: 4000,
-              roundness: 18,
-            }}
-          />
+          <SileoToaster />
           {children}
         </ThemeProvider>
       </body>

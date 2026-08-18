@@ -9047,92 +9047,177 @@ body {
   }
 }
 /* ═══════════════════════════════════════════════════════
-   SILEO TOAST — Override mínimo (no romper diseño nativo)
+   SILEO TOAST — Ultra-Fluid Apple Dynamic Island Polish
    ═══════════════════════════════════════════════════════ */
 
-/* El viewport debe estar por encima de todo */
+:root {
+  /* Fast, responsive spring duration (300ms instead of 600ms) */
+  --sileo-duration: 300ms !important;
+  --sileo-height: 42px !important;
+  --sileo-spring-easing: cubic-bezier(0.16, 1, 0.3, 1) !important;
+  
+  /* State Colors */
+  --sileo-state-success: #10B981 !important;
+  --sileo-state-loading: #94A3B8 !important;
+  --sileo-state-error: #EF4444 !important;
+  --sileo-state-warning: #F59E0B !important;
+  --sileo-state-info: #3B82F6 !important;
+  --sileo-state-action: #FF5722 !important;
+}
+
+/* Viewport positioning and floating behavior */
 [data-sileo-viewport] {
-  z-index: 99999 !important;
+  z-index: 999999 !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  padding: 1rem !important;
+  pointer-events: none !important;
 }
 
-/* El toast nativo de sileo es transparente con canvas SVG.
-   NO forzar background ni border — eso causa el "cuadrado blanco". */
-[data-sileo-toast],
-[data-sileo-card],
-[data-sileo-toast] > div,
-[data-sileo-viewport] > div {
-  font-family: var(--font-dm-sans, system-ui, sans-serif) !important;
+/* Toast Card Container */
+[data-sileo-toast] {
+  font-family: var(--font-dm-sans, 'DM Sans', -apple-system, sans-serif) !important;
   background: transparent !important;
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
+  cursor: pointer !important;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.4)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25)) !important;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease !important;
 }
 
-[data-sileo-toast]::before,
-[data-sileo-toast]::after,
-[data-sileo-card]::before,
-[data-sileo-card]::after {
-  display: none !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+[data-sileo-toast]:hover {
+  transform: scale(1.02) !important;
 }
 
-/* Título más legible */
+[data-sileo-toast]:active {
+  transform: scale(0.98) !important;
+}
+
+/* Header & Title */
+[data-sileo-header] {
+  font-family: var(--font-dm-sans, 'DM Sans', sans-serif) !important;
+}
+
 [data-sileo-title] {
-  font-weight: 600 !important;
+  font-family: var(--font-dm-sans, 'DM Sans', sans-serif) !important;
+  font-weight: 700 !important;
   font-size: 0.875rem !important;
   letter-spacing: -0.01em !important;
 }
 
-/* Descripción */
+/* Description Text */
 [data-sileo-description] {
+  font-family: var(--font-dm-sans, 'DM Sans', sans-serif) !important;
   font-size: 0.8125rem !important;
   line-height: 1.4 !important;
-  padding-top: 0.5rem !important;
-  padding-bottom: 0.75rem !important;
+  padding: 0.625rem 1rem 0.875rem 1rem !important;
 }
 
-/* Botón de acción */
-[data-sileo-button] {
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
-  font-size: 0.6875rem !important;
-}
-
-/* Badge (icono) más grande */
+/* Badges / State Icons */
 [data-sileo-badge] {
-  width: 28px !important;
-  height: 28px !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 9999px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s ease !important;
 }
 
-/* Dark mode: ajustar texto */
-:root[data-theme='dark'] [data-sileo-viewport][data-theme='light'] [data-sileo-description] {
-  color: rgba(0, 0, 0, 0.6) !important;
+/* Action button inside toast */
+[data-sileo-button] {
+  font-family: var(--font-dm-sans, 'DM Sans', sans-serif) !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.02em !important;
+  padding: 0.35rem 0.85rem !important;
+  border-radius: 9999px !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
 }
 
-/* Responsive: adaptación premium para móviles */
+[data-sileo-button]:hover {
+  filter: brightness(1.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   THEMES: DARK & LIGHT ACCURACY
+   ═══════════════════════════════════════════════════════ */
+
+/* DARK MODE THEME */
+[data-sileo-viewport][data-theme="dark"] [data-sileo-title] {
+  color: #FFFFFF !important;
+}
+
+[data-sileo-viewport][data-theme="dark"] [data-sileo-description] {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+[data-sileo-viewport][data-theme="dark"] [data-sileo-pill],
+[data-sileo-viewport][data-theme="dark"] [data-sileo-body] {
+  fill: #161622 !important;
+  stroke: rgba(255, 255, 255, 0.18) !important;
+  stroke-width: 1.2px !important;
+}
+
+/* LIGHT MODE THEME */
+[data-sileo-viewport][data-theme="light"] [data-sileo-title] {
+  color: #FFFFFF !important;
+}
+
+[data-sileo-viewport][data-theme="light"] [data-sileo-description] {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+[data-sileo-viewport][data-theme="light"] [data-sileo-pill],
+[data-sileo-viewport][data-theme="light"] [data-sileo-body] {
+  fill: #181824 !important;
+  stroke: rgba(255, 255, 255, 0.14) !important;
+  stroke-width: 1px !important;
+}
+
+/* STATE-SPECIFIC ACCENT GLOWS */
+[data-sileo-toast][data-state="success"] [data-sileo-badge] {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  color: #10B981 !important;
+}
+
+[data-sileo-toast][data-state="error"] [data-sileo-badge] {
+  background-color: rgba(239, 68, 68, 0.22) !important;
+  color: #EF4444 !important;
+}
+
+[data-sileo-toast][data-state="warning"] [data-sileo-badge] {
+  background-color: rgba(245, 158, 11, 0.22) !important;
+  color: #F59E0B !important;
+}
+
+[data-sileo-toast][data-state="info"] [data-sileo-badge] {
+  background-color: rgba(59, 130, 246, 0.22) !important;
+  color: #3B82F6 !important;
+}
+
+[data-sileo-toast][data-state="action"] [data-sileo-badge] {
+  background-color: rgba(255, 87, 34, 0.22) !important;
+  color: #FF5722 !important;
+}
+
+/* Mobile Responsive */
 @media (max-width: 480px) {
   [data-sileo-viewport] {
+    top: 0.5rem !important;
     left: 50% !important;
     right: auto !important;
     transform: translateX(-50%) !important;
-    width: calc(100% - 32px) !important;
-    max-width: 400px !important;
-    box-sizing: border-box !important;
+    width: calc(100% - 24px) !important;
+    max-width: 380px !important;
+    padding: 0 !important;
   }
   [data-sileo-toast] {
     width: 100% !important;
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
   }
 }
 

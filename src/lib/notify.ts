@@ -28,7 +28,7 @@ function emit(variant: NotifyVariant, message: string, opts?: NotifyOptions): st
   const args = {
     title: opts?.title ?? message,
     description: opts?.description ?? (opts?.title ? message : undefined),
-    duration: opts?.duration ?? 4000,
+    duration: opts?.duration ?? 3200,
     type: variant,
   };
    
