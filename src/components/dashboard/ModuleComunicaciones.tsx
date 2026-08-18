@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle, Mail, Smartphone, Bell, Send, Paperclip,
   Search, Filter, Plus, Edit2, Trash2, Check, CheckCheck,
-  X, ChevronLeft,
+  X, ChevronLeft, Users, Bike, Clock, Shield, Sparkles,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type {
@@ -34,13 +34,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 /* ═══════════════════════════════════════════════
-   HELPERS
+   HELPERS & STYLING
    ═══════════════════════════════════════════════ */
 
 function getInitials(name: string) {
+  if (!name) return 'US';
   return name
     .split(' ')
     .map((n) => n[0])
@@ -68,13 +68,6 @@ function formatTime(ts: string): string {
   return `${hour}:${min}`;
 }
 
-function formatDateShort(ts: string): string {
-  const d = new Date(ts);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  return `${day}/${month}`;
-}
-
 function timeElapsed(ts: string): string {
   const then = new Date(ts).getTime();
   const now = Date.now();
@@ -87,37 +80,41 @@ function timeElapsed(ts: string): string {
 
 const CATEGORIA_CONFIG: Record<PlantillaMensaje['categoria'], { label: string; bg: string; color: string }> = {
   orden: { label: 'Orden', bg: 'rgba(41,121,255,0.12)', color: '#2979FF' },
-  incidencia: { label: 'Incidencia', bg: 'rgba(255,23,68,0.12)', color: '#FF1744' },
+  incidencia: { label: 'Incidencia', bg: 'rgba(220,38,38,0.12)', color: '#DC2626' },
   promocion: { label: 'Promoción', bg: 'rgba(255,179,0,0.12)', color: '#FFB300' },
-  general: { label: 'General', bg: 'rgba(0,200,83,0.12)', color: '#00C853' },
+  general: { label: 'General', bg: 'rgba(22,163,74,0.12)', color: '#16A34A' },
 };
 
 const CANAL_CONFIG: Record<NotificacionAutomatica['canal'], { label: string; icon: typeof Bell; bg: string; color: string }> = {
   push: { label: 'Push', icon: Bell, bg: 'rgba(41,121,255,0.12)', color: '#2979FF' },
-  email: { label: 'Email', icon: Mail, bg: 'rgba(255,87,34,0.12)', color: '#FF5722' },
-  sms: { label: 'SMS', icon: Smartphone, bg: 'rgba(0,200,83,0.12)', color: '#00C853' },
+  email: { label: 'Email', icon: Mail, bg: 'rgba(255,102,0,0.12)', color: '#FF6600' },
+  sms: { label: 'SMS', icon: Smartphone, bg: 'rgba(22,163,74,0.12)', color: '#16A34A' },
   todos: { label: 'Todos', icon: MessageCircle, bg: 'rgba(139,92,246,0.12)', color: '#8B5CF6' },
 };
 
 const DESTINATARIO_CONFIG: Record<NotificacionAutomatica['destinatario'], { label: string; bg: string; color: string }> = {
   cliente: { label: 'Cliente', bg: 'rgba(41,121,255,0.12)', color: '#2979FF' },
-  repartidor: { label: 'Repartidor', bg: 'rgba(255,87,34,0.12)', color: '#FF5722' },
+  repartidor: { label: 'Repartidor', bg: 'rgba(255,102,0,0.12)', color: '#FF6600' },
   admin: { label: 'Admin', bg: 'rgba(139,92,246,0.12)', color: '#8B5CF6' },
-  ingeniero: { label: 'Ingeniero', bg: 'rgba(0,200,83,0.12)', color: '#00C853' },
+  ingeniero: { label: 'Ingeniero', bg: 'rgba(22,163,74,0.12)', color: '#16A34A' },
 };
 
 type SubTab = 'buzon' | 'plantillas' | 'notificaciones';
 type BuzonFilter = 'todos' | 'clientes' | 'repartidores' | 'noLeidos';
 
+const SUB_TABS: { key: SubTab; label: string; icon: typeof MessageCircle }[] = [
+  { key: 'buzon', label: 'Buzón en Vivo', icon: MessageCircle },
+  { key: 'plantillas', label: 'Plantillas de Mensajes', icon: Mail },
+  { key: 'notificaciones', label: 'Automatizaciones Push', icon: Bell },
+];
+
 /* ═══════════════════════════════════════════════
-   BUZÓN SUB-COMPONENT
+   BUZÓN SUB-COMPONENT (CHAT EN VIVO)
    ═══════════════════════════════════════════════ */
 
 function BuzonPanel() {
   const { conversaciones: storeConvs, addMensaje, markConversacionLeida, addToast } = useStore();
   const [dbConversaciones, setDbConversaciones] = useState<Conversacion[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<BuzonFilter>('todos');
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -150,7 +147,7 @@ function BuzonPanel() {
         participanteId: targetId,
         participanteNombre: u.name || u.email.split('@')[0],
         participanteRol: u.role || 'cliente',
-        ultimoMensaje: 'Iniciar conversación...',
+        ultimoMensaje: 'Conversación iniciada',
         ultimoTimestamp: new Date().toISOString(),
         noLeidos: 0,
         mensajes: [],
@@ -173,8 +170,7 @@ function BuzonPanel() {
           }
         }
       })
-      .catch(() => null)
-      .finally(() => setLoading(false));
+      .catch(() => null);
   }, [activeConvId]);
 
   useEffect(() => {
@@ -238,7 +234,6 @@ function BuzonPanel() {
       enviadoEn: new Date().toISOString(),
     };
 
-    // Update in local state
     setDbConversaciones((prev) =>
       prev.map((c) =>
         c.id === activeConvId
@@ -253,7 +248,6 @@ function BuzonPanel() {
     );
     addMensaje(activeConvId, msg);
 
-    // Save to Database
     fetch('/api/mensajes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -311,31 +305,38 @@ function BuzonPanel() {
   );
 
   const quickReplies = [
-    'Tu orden está en camino',
-    'Estamos revisando tu caso',
-    'Gracias por contactarnos',
+    'Tu orden está en camino 🚀',
+    'Estamos verificando tu caso con el repartidor',
+    'Muchas gracias por comunicarte con LOGIFAST',
   ];
 
   const totalUnread = conversaciones.reduce((acc, c) => acc + c.noLeidos, 0);
 
   /* ─── Conversation List ─── */
   const convList = (
-    <div className="flex flex-col h-full">
-      {/* Search & Filters */}
-      <div className="p-3 space-y-2 border-b" style={{ borderColor: 'var(--border)' }}>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Search & Action bar */}
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--lf-border)', background: 'var(--lf-surface)' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div style={{ position: 'relative', flex: 1 }}>
             <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2"
-              style={{ color: 'var(--text-muted)' }}
+              size={14}
+              style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--lf-text-muted)' }}
             />
-            <Input
+            <input
               placeholder="Buscar conversación..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9 text-sm"
-              style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              style={{
+                width: '100%',
+                padding: '7px 10px 7px 32px',
+                borderRadius: 8,
+                border: '1px solid var(--lf-border)',
+                background: 'var(--lf-bg-base)',
+                color: 'var(--lf-text-main)',
+                fontSize: 13,
+                outline: 'none',
+              }}
             />
           </div>
           <button
@@ -343,13 +344,28 @@ function BuzonPanel() {
               loadUsers();
               setNewChatModalOpen(true);
             }}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-opacity hover:opacity-90 shrink-0"
-            style={{ background: 'var(--primario)', color: '#fff', border: 'none', cursor: 'pointer' }}
+            style={{
+              padding: '7px 12px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--lf-accent)',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              flexShrink: 0,
+              transition: 'opacity 0.15s',
+            }}
           >
             <Plus size={14} /> Redactar
           </button>
         </div>
-        <div className="flex gap-1 flex-wrap">
+
+        {/* Filter chips */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {(
             [
               ['todos', 'Todos'],
@@ -357,77 +373,113 @@ function BuzonPanel() {
               ['repartidores', 'Repartidores'],
               ['noLeidos', `No leídos${totalUnread > 0 ? ` (${totalUnread})` : ''}`],
             ] as [BuzonFilter, string][]
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className="px-2.5 py-1 text-xs rounded-full transition-colors"
-              style={{
-                background: filter === key ? 'var(--primario)' : 'var(--bg)',
-                color: filter === key ? '#fff' : 'var(--text-secondary)',
-                border: `1px solid ${filter === key ? 'var(--primario)' : 'var(--border)'}`,
-              }}
-            >
-              {label}
-            </button>
-          ))}
+          ).map(([key, label]) => {
+            const isSel = filter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  border: `1px solid ${isSel ? 'var(--lf-accent)' : 'var(--lf-border)'}`,
+                  background: isSel ? 'var(--lf-accent)' : 'transparent',
+                  color: isSel ? '#fff' : 'var(--lf-text-muted)',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* List items */}
+      <div style={{ flex: 1, overflowY: 'auto' }} className="lf-scrollbar">
         {filteredConvs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-6" style={{ color: 'var(--text-muted)' }}>
-            <MessageCircle size={32} className="mb-2 opacity-40" />
-            <p className="text-sm">No hay conversaciones</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 24, color: 'var(--lf-text-muted)' }}>
+            <MessageCircle size={32} style={{ marginBottom: 8, opacity: 0.35 }} />
+            <p style={{ fontSize: 13 }}>No hay conversaciones</p>
           </div>
         ) : (
-          filteredConvs.map((conv) => (
-            <motion.button
-              key={conv.id}
-              layout
-              onClick={() => handleSelectConv(conv.id)}
-              className="w-full flex items-start gap-3 p-3 text-left transition-colors hover:opacity-90"
-              style={{
-                background:
-                  activeConvId === conv.id
-                    ? 'rgba(255,87,34,0.08)'
-                    : 'transparent',
-                borderBottom: '1px solid var(--border)',
-              }}
-            >
-              {/* Avatar */}
+          filteredConvs.map((conv) => {
+            const isSelected = activeConvId === conv.id;
+            return (
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-semibold"
-                style={{ background: hashColor(conv.participanteId) }}
+                key={conv.id}
+                onClick={() => handleSelectConv(conv.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 16px',
+                  borderBottom: '1px solid var(--lf-border)',
+                  background: isSelected ? 'var(--lf-accent-soft)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }}
               >
-                {getInitials(conv.participanteNombre)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
-                    {conv.participanteNombre}
-                  </span>
-                  <span className="text-[11px] shrink-0" style={{ color: 'var(--text-muted)' }}>
-                    {timeElapsed(conv.ultimoTimestamp)}
-                  </span>
+                {/* Avatar */}
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: hashColor(conv.participanteId),
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 13,
+                    flexShrink: 0,
+                    fontFamily: "'DM Mono', monospace",
+                  }}
+                >
+                  {getInitials(conv.participanteNombre)}
                 </div>
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
-                    {conv.ultimoMensaje}
-                  </span>
-                  {conv.noLeidos > 0 && (
-                    <span
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                      style={{ background: 'var(--primario)' }}
-                    >
-                      {conv.noLeidos}
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--lf-text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {conv.participanteNombre}
                     </span>
-                  )}
+                    <span className="font-mono" style={{ fontSize: 10, color: 'var(--lf-text-muted)', flexShrink: 0 }}>
+                      {timeElapsed(conv.ultimoTimestamp)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: 'var(--lf-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {conv.ultimoMensaje}
+                    </span>
+                    {conv.noLeidos > 0 && (
+                      <span
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: 999,
+                          background: 'var(--lf-accent)',
+                          color: '#fff',
+                          fontSize: 10,
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {conv.noLeidos}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </motion.button>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -435,114 +487,143 @@ function BuzonPanel() {
 
   /* ─── Chat View ─── */
   const chatView = activeConv ? (
-    <div className="flex flex-col h-full">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Chat Header */}
       <div
-        className="flex items-center gap-3 p-3 border-b shrink-0"
         style={{
-          borderColor: 'var(--border)',
-          background: 'var(--surface)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--lf-border)',
+          background: 'var(--lf-surface)',
+          flexShrink: 0,
         }}
       >
         <button
-          className="lg:hidden p-1"
           onClick={() => setMobileShowChat(false)}
-          style={{ color: 'var(--text)' }}
+          className="lg:hidden"
+          style={{ border: 'none', background: 'transparent', color: 'var(--lf-text-main)', cursor: 'pointer', padding: 4 }}
         >
           <ChevronLeft size={20} />
         </button>
+
         <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-          style={{ background: hashColor(activeConv.participanteId) }}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: hashColor(activeConv.participanteId),
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            fontSize: 13,
+            flexShrink: 0,
+            fontFamily: "'DM Mono', monospace",
+          }}
         >
           {getInitials(activeConv.participanteNombre)}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--lf-text-main)' }}>
               {activeConv.participanteNombre}
             </span>
-            <Badge
-              variant="outline"
-              className="text-[10px] px-1.5 py-0"
+            <span
               style={{
-                borderColor:
-                  activeConv.participanteRol === 'cliente'
-                    ? 'var(--info)'
-                    : 'var(--primario)',
-                color:
-                  activeConv.participanteRol === 'cliente'
-                    ? 'var(--info)'
-                    : 'var(--primario)',
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: activeConv.participanteRol === 'repartidor' ? 'rgba(255,102,0,0.1)' : 'rgba(41,121,255,0.1)',
+                color: activeConv.participanteRol === 'repartidor' ? 'var(--lf-accent)' : '#2979FF',
+                textTransform: 'uppercase',
               }}
             >
-              {activeConv.participanteRol === 'cliente' ? 'Cliente' : 'Repartidor'}
-            </Badge>
+              {activeConv.participanteRol}
+            </span>
           </div>
+          <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>
+            Canal de soporte y despacho en vivo
+          </span>
         </div>
+
         <button
           onClick={() => {
             setActiveConvId(null);
             setMobileShowChat(false);
           }}
-          className="p-1 rounded-md hover:opacity-70 transition-opacity"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ border: 'none', background: 'transparent', color: 'var(--lf-text-muted)', cursor: 'pointer', padding: 4 }}
         >
           <X size={18} />
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      {/* Messages Thread */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }} className="lf-scrollbar">
         {activeConv.mensajes.map((msg) => {
           const isAdmin = msg.emisorId === 'admin';
           return (
-            <motion.div
+            <div
               key={msg.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: isAdmin ? 'flex-end' : 'flex-start',
+              }}
             >
               <div
-                className="max-w-[80%] px-3 py-2 rounded-2xl text-sm"
                 style={{
-                  background: isAdmin ? 'var(--primario)' : 'var(--bg-alt, var(--bg))',
-                  color: isAdmin ? '#fff' : 'var(--text)',
-                  borderBottomRightRadius: isAdmin ? '4px' : '16px',
-                  borderBottomLeftRadius: isAdmin ? '16px' : '4px',
+                  maxWidth: '75%',
+                  padding: '10px 14px',
+                  fontSize: 13,
+                  lineHeight: 1.45,
+                  borderRadius: isAdmin ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                  background: isAdmin ? 'var(--lf-accent)' : 'var(--lf-bg-base)',
+                  color: isAdmin ? '#FFFFFF' : 'var(--lf-text-main)',
+                  border: isAdmin ? 'none' : '1px solid var(--lf-border)',
+                  boxShadow: isAdmin ? '0 2px 8px rgba(255,102,0,0.2)' : 'var(--lf-shadow-sm)',
                 }}
               >
                 {msg.contenido}
               </div>
-              <div className="flex items-center gap-1 mt-0.5 px-1">
-                <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, padding: '0 4px' }}>
+                <span className="font-mono" style={{ fontSize: 10, color: 'var(--lf-text-muted)' }}>
                   {formatTime(msg.enviadoEn)}
                 </span>
                 {isAdmin && (
                   msg.leido ? (
-                    <CheckCheck size={12} style={{ color: 'var(--info)' }} />
+                    <CheckCheck size={12} style={{ color: '#2979FF' }} />
                   ) : (
-                    <Check size={12} style={{ color: 'var(--text-muted)' }} />
+                    <Check size={12} style={{ color: 'var(--lf-text-muted)' }} />
                   )
                 )}
               </div>
-            </motion.div>
+            </div>
           );
         })}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Quick Replies */}
-      <div className="px-3 py-1.5 flex gap-1.5 flex-wrap border-t" style={{ borderColor: 'var(--border)' }}>
+      <div style={{ padding: '8px 16px', display: 'flex', gap: 6, flexWrap: 'wrap', borderTop: '1px solid var(--lf-border)', background: 'var(--lf-surface)' }}>
         {quickReplies.map((qr) => (
           <button
             key={qr}
             onClick={() => handleQuickReply(qr)}
-            className="px-2.5 py-1 text-[11px] rounded-full transition-colors hover:opacity-80"
             style={{
-              background: 'rgba(255,87,34,0.1)',
-              color: 'var(--primario)',
-              border: '1px solid rgba(255,87,34,0.25)',
+              padding: '4px 10px',
+              borderRadius: 999,
+              border: '1px solid rgba(255,102,0,0.25)',
+              background: 'var(--lf-accent-soft)',
+              color: 'var(--lf-accent)',
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'opacity 0.15s',
             }}
           >
             {qr}
@@ -550,92 +631,134 @@ function BuzonPanel() {
         ))}
       </div>
 
-      {/* Input Area */}
+      {/* Input bar */}
       <div
-        className="flex items-end gap-2 p-3 border-t shrink-0"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '12px 16px',
+          borderTop: '1px solid var(--lf-border)',
+          background: 'var(--lf-surface)',
+          flexShrink: 0,
+        }}
       >
         <button
-          className="p-2 rounded-lg transition-colors hover:opacity-70 shrink-0"
-          style={{ color: 'var(--text-muted)' }}
           onClick={() => addToast('Adjuntar archivo (simulado)', 'info')}
+          style={{ border: 'none', background: 'transparent', color: 'var(--lf-text-muted)', cursor: 'pointer', padding: 6 }}
         >
           <Paperclip size={18} />
         </button>
-        <Textarea
+
+        <input
           value={messageText}
           onChange={(e) => setMessageText(e.target.value)}
-          placeholder="Escribe un mensaje..."
-          className="flex-1 min-h-[38px] max-h-[100px] resize-none text-sm"
-          rows={1}
-          style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+          placeholder="Escribe un mensaje aquí... (Presiona Enter)"
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === 'Enter') {
               e.preventDefault();
               handleSend();
             }
           }}
+          style={{
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: 10,
+            border: '1px solid var(--lf-border)',
+            background: 'var(--lf-bg-base)',
+            color: 'var(--lf-text-main)',
+            fontSize: 13,
+            outline: 'none',
+          }}
         />
-        <Button
-          size="icon"
+
+        <button
           onClick={handleSend}
           disabled={!messageText.trim()}
-          className="shrink-0 rounded-full"
           style={{
-            background: messageText.trim() ? 'var(--primario)' : 'var(--bg)',
-            color: messageText.trim() ? '#fff' : 'var(--text-muted)',
+            width: 38,
+            height: 38,
+            borderRadius: 10,
+            border: 'none',
+            background: messageText.trim() ? 'var(--lf-accent)' : 'var(--lf-border)',
+            color: '#fff',
+            cursor: messageText.trim() ? 'pointer' : 'default',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'background 0.2s',
           }}
         >
           <Send size={16} />
-        </Button>
+        </button>
       </div>
     </div>
   ) : (
-    <div
-      className="flex flex-col items-center justify-center h-full"
-      style={{ color: 'var(--text-muted)' }}
-    >
-      <MessageCircle size={48} className="mb-3 opacity-30" />
-      <p className="text-sm">Selecciona una conversación</p>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--lf-text-muted)', padding: 24 }}>
+      <MessageCircle size={44} style={{ marginBottom: 12, opacity: 0.3 }} />
+      <p style={{ fontSize: 14, fontWeight: 500 }}>Selecciona una conversación para interactuar</p>
     </div>
   );
 
   return (
-    <div className="flex h-[calc(100vh-220px)] min-h-[400px] rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+    <div
+      style={{
+        display: 'flex',
+        height: '620px',
+        background: 'var(--lf-surface)',
+        border: '1px solid var(--lf-border)',
+        borderRadius: 14,
+        overflow: 'hidden',
+        boxShadow: 'var(--lf-shadow-sm)',
+      }}
+    >
       {/* Left panel - conversation list */}
       <div
         className={`w-full lg:w-80 lg:min-w-[320px] flex flex-col ${
           mobileShowChat ? 'hidden lg:flex' : 'flex'
         }`}
-        style={{ background: 'var(--surface)', borderRight: '1px solid var(--border)' }}
+        style={{ borderRight: '1px solid var(--lf-border)' }}
       >
         {convList}
       </div>
 
-      {/* Right panel - chat */}
+      {/* Right panel - active chat */}
       <div
         className={`flex-1 ${
           mobileShowChat ? 'flex' : 'hidden lg:flex'
         } flex-col`}
-        style={{ background: 'var(--surface)' }}
       >
         {chatView}
       </div>
 
-      {/* New Conversation Modal */}
+      {/* Modal Redactar Nuevo Mensaje */}
       <Dialog open={newChatModalOpen} onOpenChange={setNewChatModalOpen}>
-        <DialogContent style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 440 }}>
+        <DialogContent style={{ background: 'var(--lf-surface)', border: '1px solid var(--lf-border)', maxWidth: 460 }}>
           <DialogHeader>
-            <DialogTitle style={{ color: 'var(--text)' }}>Iniciar nueva conversación</DialogTitle>
+            <DialogTitle className="font-serif" style={{ color: 'var(--lf-text-main)', fontSize: 18 }}>
+              Iniciar Nueva Conversación
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-2">
-            <Input
-              placeholder="Buscar cliente o repartidor..."
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-            />
-            <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--lf-text-muted)' }} />
+              <input
+                placeholder="Buscar cliente o repartidor por nombre o correo..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px 8px 32px',
+                  borderRadius: 8,
+                  border: '1px solid var(--lf-border)',
+                  background: 'var(--lf-bg-base)',
+                  color: 'var(--lf-text-main)',
+                  fontSize: 13,
+                  outline: 'none',
+                }}
+              />
+            </div>
+            <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }} className="lf-scrollbar">
               {systemUsers
                 .filter((u) =>
                   !userSearch.trim() ||
@@ -644,49 +767,67 @@ function BuzonPanel() {
                 )
                 .slice(0, 20)
                 .map((u) => (
-                  <button
+                  <div
                     key={u.id}
                     onClick={() => handleStartChatWithUser(u)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-colors hover:opacity-85"
-                    style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      background: 'var(--lf-bg-base)',
+                      border: '1px solid var(--lf-border)',
+                      cursor: 'pointer',
+                      transition: 'opacity 0.15s',
+                    }}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                        style={{ background: hashColor(u.id) }}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          background: hashColor(u.id),
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: 12,
+                          fontFamily: "'DM Mono', monospace",
+                        }}
                       >
                         {getInitials(u.name || u.email)}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--lf-text-main)' }}>
                           {u.name || u.email.split('@')[0]}
                         </div>
-                        <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                        <div style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>
                           {u.email}
                         </div>
                       </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] uppercase font-bold shrink-0"
+                    <span
                       style={{
-                        borderColor: u.role === 'repartidor' ? 'var(--primario)' : 'var(--info)',
-                        color: u.role === 'repartidor' ? 'var(--primario)' : 'var(--info)',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        background: u.role === 'repartidor' ? 'rgba(255,102,0,0.1)' : 'rgba(41,121,255,0.1)',
+                        color: u.role === 'repartidor' ? 'var(--lf-accent)' : '#2979FF',
+                        textTransform: 'uppercase',
                       }}
                     >
                       {u.role || 'cliente'}
-                    </Badge>
-                  </button>
+                    </span>
+                  </div>
                 ))}
-              {systemUsers.length === 0 && (
-                <div className="text-center py-6 text-xs text-muted-foreground">
-                  Cargando directorio de usuarios...
-                </div>
-              )}
             </div>
           </div>
-          <DialogFooter className="mt-2">
-            <Button variant="outline" onClick={() => setNewChatModalOpen(false)}>
+          <DialogFooter style={{ marginTop: 12 }}>
+            <Button variant="outline" onClick={() => setNewChatModalOpen(false)} style={{ borderColor: 'var(--lf-border)', color: 'var(--lf-text-main)' }}>
               Cerrar
             </Button>
           </DialogFooter>
@@ -701,287 +842,130 @@ function BuzonPanel() {
    ═══════════════════════════════════════════════ */
 
 function PlantillasPanel() {
-  const { plantillas, addPlantilla, updatePlantilla, deletePlantilla, addToast } = useStore();
-
-  const [search, setSearch] = useState('');
-  const [catFilter, setCatFilter] = useState<PlantillaMensaje['categoria'] | 'todas'>('todas');
+  const { plantillas: storePlantillas, addPlantilla, updatePlantilla, deletePlantilla, addToast } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [nombre, setNombre] = useState('');
+  const [categoria, setCategoria] = useState<PlantillaMensaje['categoria']>('general');
+  const [contenido, setContenido] = useState('');
 
-  // Form state
-  const [formNombre, setFormNombre] = useState('');
-  const [formCategoria, setFormCategoria] = useState<PlantillaMensaje['categoria']>('general');
-  const [formContenido, setFormContenido] = useState('');
-
-  const filteredPlantillas = useMemo(() => {
-    let list = [...plantillas];
-    if (catFilter !== 'todas') list = list.filter((p) => p.categoria === catFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.nombre.toLowerCase().includes(q) ||
-          p.contenido.toLowerCase().includes(q),
-      );
-    }
-    return list;
-  }, [plantillas, catFilter, search]);
-
-  const resetForm = useCallback(() => {
-    setFormNombre('');
-    setFormCategoria('general');
-    setFormContenido('');
+  const handleOpenNew = () => {
     setEditingId(null);
-  }, []);
-
-  const openCreate = useCallback(() => {
-    resetForm();
+    setNombre('');
+    setCategoria('general');
+    setContenido('');
     setModalOpen(true);
-  }, [resetForm]);
+  };
 
-  const openEdit = useCallback((p: PlantillaMensaje) => {
+  const handleOpenEdit = (p: PlantillaMensaje) => {
     setEditingId(p.id);
-    setFormNombre(p.nombre);
-    setFormCategoria(p.categoria);
-    setFormContenido(p.contenido);
+    setNombre(p.nombre);
+    setCategoria(p.categoria);
+    setContenido(p.contenido);
     setModalOpen(true);
-  }, []);
+  };
 
-  const handleSave = useCallback(() => {
-    if (!formNombre.trim() || !formContenido.trim()) {
-      addToast('Completa todos los campos', 'error');
+  const handleSave = () => {
+    if (!nombre.trim() || !contenido.trim()) {
+      addToast('Nombre y contenido son requeridos', 'error');
       return;
     }
-    // Extract variables like {{var}}
-    const varMatches = formContenido.match(/\{\{(\w+)\}\}/g);
-    const variables = varMatches
-      ? [...new Set(varMatches.map((v) => v.replace(/[{}]/g, '')))]
-      : [];
-
+    const vars = (contenido.match(/\{\{(\w+)\}\}/g) || []).map((v) => v.replace(/[{}]/g, ''));
     if (editingId) {
-      updatePlantilla(editingId, {
-        nombre: formNombre.trim(),
-        categoria: formCategoria,
-        contenido: formContenido.trim(),
-        variables,
-      });
+      updatePlantilla(editingId, { nombre: nombre.trim(), categoria, contenido: contenido.trim(), variables: vars });
       addToast('Plantilla actualizada', 'success');
     } else {
-      const newTpl: PlantillaMensaje = {
-        id: `TPL-${Date.now()}`,
-        nombre: formNombre.trim(),
-        categoria: formCategoria,
-        contenido: formContenido.trim(),
-        variables,
+      addPlantilla({
+        id: `PLANT-${Date.now()}`,
+        nombre: nombre.trim(),
+        categoria,
+        contenido: contenido.trim(),
+        variables: vars,
         esDefault: false,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      addPlantilla(newTpl);
+        createdAt: new Date().toISOString(),
+      });
       addToast('Plantilla creada', 'success');
     }
     setModalOpen(false);
-    resetForm();
-  }, [editingId, formNombre, formCategoria, formContenido, addPlantilla, updatePlantilla, addToast, resetForm]);
-
-  const handleDelete = useCallback(
-    (id: string) => {
-      deletePlantilla(id);
-      setDeleteConfirmId(null);
-      addToast('Plantilla eliminada', 'success');
-    },
-    [deletePlantilla, addToast],
-  );
-
-  const handleUse = useCallback(
-    (p: PlantillaMensaje) => {
-      addToast(`Plantilla "${p.nombre}" cargada al buzón`, 'info');
-    },
-    [addToast],
-  );
-
-  const insertVariable = useCallback(
-    (variable: string) => {
-      setFormContenido((prev) => prev + `{{${variable}}}`);
-    },
-    [],
-  );
-
-  const commonVariables = ['nombre', 'orden_id', 'repartidor', 'monto', 'fecha', 'direccion', 'codigo'];
+  };
 
   return (
-    <div className="space-y-4">
-      {/* Header & Search */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="relative flex-1 w-full sm:max-w-xs">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ color: 'var(--text-muted)' }}
-          />
-          <Input
-            placeholder="Buscar plantilla..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-sm"
-            style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-          />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h3 className="font-serif" style={{ fontSize: 16, fontWeight: 700, color: 'var(--lf-text-main)', margin: 0 }}>
+            Plantillas de Mensajes Predefinidos
+          </h3>
+          <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', margin: '2px 0 0' }}>
+            Respuestas automatizadas para soporte y despacho
+          </p>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Select
-            value={catFilter}
-            onValueChange={(v) => setCatFilter(v as PlantillaMensaje['categoria'] | 'todas')}
-          >
-            <SelectTrigger className="h-9 w-full sm:w-36 text-sm" style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}>
-              <Filter size={14} className="mr-1" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas</SelectItem>
-              <SelectItem value="orden">Orden</SelectItem>
-              <SelectItem value="incidencia">Incidencia</SelectItem>
-              <SelectItem value="promocion">Promoción</SelectItem>
-              <SelectItem value="general">General</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={openCreate}
-            className="h-9 text-sm gap-1.5"
-            style={{ background: 'var(--primario)', color: '#fff' }}
-          >
-            <Plus size={15} /> Nueva
-          </Button>
-        </div>
+        <Button onClick={handleOpenNew} style={{ background: 'var(--lf-accent)', color: '#fff', fontSize: 12, fontWeight: 600 }}>
+          <Plus size={14} className="mr-1" /> Nueva Plantilla
+        </Button>
       </div>
 
-      {/* Template Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        <AnimatePresence mode="popLayout">
-          {filteredPlantillas.map((p) => {
-            const catCfg = CATEGORIA_CONFIG[p.categoria];
-            return (
-              <motion.div
-                key={p.id}
-                layout
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                className="rounded-xl p-4 flex flex-col gap-2.5"
-                style={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
-                      {p.nombre}
-                    </span>
-                    {p.esDefault && (
-                      <Badge
-                        className="text-[10px] px-1.5 py-0 shrink-0"
-                        style={{ background: 'rgba(255,87,34,0.12)', color: 'var(--primario)', border: 'none' }}
-                      >
-                        Default
-                      </Badge>
-                    )}
-                  </div>
-                  <span
-                    className="text-[11px] px-2 py-0.5 rounded-full shrink-0"
-                    style={{ background: catCfg.bg, color: catCfg.color }}
-                  >
-                    {catCfg.label}
-                  </span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+        {storePlantillas.map((p) => {
+          const cat = CATEGORIA_CONFIG[p.categoria] || CATEGORIA_CONFIG.general;
+          return (
+            <div
+              key={p.id}
+              style={{
+                background: 'var(--lf-surface)',
+                border: '1px solid var(--lf-border)',
+                borderRadius: 12,
+                padding: 16,
+                boxShadow: 'var(--lf-shadow-sm)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--lf-text-main)' }}>{p.nombre}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: cat.bg, color: cat.color }}>
+                  {cat.label}
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--lf-text-muted)', lineHeight: 1.4, margin: '8px 0' }}>
+                {p.contenido}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--lf-border)' }}>
+                <span className="font-mono" style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>
+                  {p.variables.length} variables
+                </span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => handleOpenEdit(p)} style={{ border: 'none', background: 'transparent', color: 'var(--lf-accent)', cursor: 'pointer', padding: 4 }}>
+                    <Edit2 size={14} />
+                  </button>
+                  <button onClick={() => deletePlantilla(p.id)} style={{ border: 'none', background: 'transparent', color: 'var(--lf-danger, #DC2626)', cursor: 'pointer', padding: 4 }}>
+                    <Trash2 size={14} />
+                  </button>
                 </div>
-
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  {p.contenido.length > 70 ? p.contenido.slice(0, 70) + '...' : p.contenido}
-                </p>
-
-                {p.variables.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {p.variables.map((v) => (
-                      <span
-                        key={v}
-                        className="text-[10px] px-1.5 py-0.5 rounded font-mono"
-                        style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-                      >
-                        {`{{${v}}}`}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-1.5 mt-auto pt-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => handleUse(p)}
-                    style={{ color: 'var(--primario)' }}
-                  >
-                    <Send size={12} /> Usar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => openEdit(p)}
-                    style={{ color: 'var(--info)' }}
-                  >
-                    <Edit2 size={12} /> Editar
-                  </Button>
-                  {!p.esDefault && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs gap-1 ml-auto"
-                      onClick={() => setDeleteConfirmId(p.id)}
-                      style={{ color: 'var(--peligro)' }}
-                    >
-                      <Trash2 size={12} />
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {filteredPlantillas.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12" style={{ color: 'var(--text-muted)' }}>
-          <Mail size={32} className="mb-2 opacity-40" />
-          <p className="text-sm">No hay plantillas</p>
-        </div>
-      )}
-
-      {/* Create/Edit Modal */}
-      <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) { setModalOpen(false); resetForm(); } }}>
-        <DialogContent style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent style={{ background: 'var(--lf-surface)', border: '1px solid var(--lf-border)', maxWidth: 480 }}>
           <DialogHeader>
-            <DialogTitle style={{ color: 'var(--text)' }}>
+            <DialogTitle className="font-serif" style={{ color: 'var(--lf-text-main)', fontSize: 18 }}>
               {editingId ? 'Editar Plantilla' : 'Nueva Plantilla'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}>
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>Nombre</label>
-              <Input
-                value={formNombre}
-                onChange={(e) => setFormNombre(e.target.value)}
-                placeholder="Nombre de la plantilla"
-                className="h-9 text-sm"
-                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)', marginBottom: 4, display: 'block' }}>Nombre</label>
+              <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Confirmación de entrega"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--lf-border)', background: 'var(--lf-bg-base)', color: 'var(--lf-text-main)', fontSize: 13, outline: 'none' }} />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>Categoría</label>
-              <Select value={formCategoria} onValueChange={(v) => setFormCategoria(v as PlantillaMensaje['categoria'])}>
-                <SelectTrigger className="h-9 text-sm" style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)', marginBottom: 4, display: 'block' }}>Categoría</label>
+              <Select value={categoria} onValueChange={(v) => setCategoria(v as any)}>
+                <SelectTrigger style={{ background: 'var(--lf-bg-base)', borderColor: 'var(--lf-border)', color: 'var(--lf-text-main)' }}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={{ background: 'var(--lf-surface)', borderColor: 'var(--lf-border)' }}>
                   <SelectItem value="orden">Orden</SelectItem>
                   <SelectItem value="incidencia">Incidencia</SelectItem>
                   <SelectItem value="promocion">Promoción</SelectItem>
@@ -990,70 +974,14 @@ function PlantillasPanel() {
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>Contenido</label>
-              <Textarea
-                value={formContenido}
-                onChange={(e) => setFormContenido(e.target.value)}
-                placeholder="Escribe el contenido de la plantilla. Usa {{variable}} para insertar variables."
-                className="min-h-[100px] text-sm"
-                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Insertar variable</label>
-              <div className="flex flex-wrap gap-1.5">
-                {commonVariables.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => insertVariable(v)}
-                    className="text-[11px] px-2 py-0.5 rounded-full font-mono transition-colors hover:opacity-80"
-                    style={{
-                      background: 'var(--bg)',
-                      color: 'var(--text-muted)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {`{{${v}}}`}
-                  </button>
-                ))}
-              </div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)', marginBottom: 4, display: 'block' }}>Contenido</label>
+              <Textarea value={contenido} onChange={(e) => setContenido(e.target.value)} rows={3} placeholder="Hola {{nombre}}, tu orden {{orden}}..."
+                style={{ background: 'var(--lf-bg-base)', borderColor: 'var(--lf-border)', color: 'var(--lf-text-main)' }} />
             </div>
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" className="text-sm" style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button className="text-sm" onClick={handleSave} style={{ background: 'var(--primario)', color: '#fff' }}>
-              {editingId ? 'Guardar Cambios' : 'Crear Plantilla'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirm Dialog */}
-      <Dialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
-        <DialogContent style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <DialogHeader>
-            <DialogTitle style={{ color: 'var(--text)' }}>Eliminar Plantilla</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm py-2" style={{ color: 'var(--text-secondary)' }}>
-            ¿Estás seguro de que deseas eliminar esta plantilla? Esta acción no se puede deshacer.
-          </p>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" className="text-sm" style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button
-              className="text-sm"
-              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
-              style={{ background: 'var(--peligro)', color: '#fff' }}
-            >
-              Eliminar
-            </Button>
+          <DialogFooter style={{ marginTop: 12 }}>
+            <Button variant="outline" onClick={() => setModalOpen(false)} style={{ borderColor: 'var(--lf-border)', color: 'var(--lf-text-main)' }}>Cancelar</Button>
+            <Button onClick={handleSave} style={{ background: 'var(--lf-accent)', color: '#fff' }}>Guardar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1066,233 +994,54 @@ function PlantillasPanel() {
    ═══════════════════════════════════════════════ */
 
 function NotificacionesPanel() {
-  const { notificacionesAuto, toggleNotificacionAuto, updatePlantilla, addToast } = useStore();
-
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editPlantilla, setEditPlantilla] = useState('');
-  const [editCanal, setEditCanal] = useState<NotificacionAutomatica['canal']>('push');
-  const [previewId, setPreviewId] = useState<string | null>(null);
-
-  const handleToggle = useCallback(
-    (id: string) => {
-      toggleNotificacionAuto(id);
-      const n = notificacionesAuto.find((n) => n.id === id);
-      if (n) {
-        addToast(
-          `Notificación "${n.etiqueta}" ${n.activa ? 'desactivada' : 'activada'}`,
-          'success',
-        );
-      }
-    },
-    [notificacionesAuto, toggleNotificacionAuto, addToast],
-  );
-
-  const openEditNotif = useCallback(
-    (n: NotificacionAutomatica) => {
-      setEditingId(n.id);
-      setEditPlantilla(n.plantilla);
-      setEditCanal(n.canal);
-    },
-    [],
-  );
-
-  const handleSaveNotif = useCallback(() => {
-    if (!editingId || !editPlantilla.trim()) return;
-    // We use updatePlantilla to update the notification's plantilla and canal
-    // Since there's no updateNotificacionAuto, we need to work with what we have
-    // The store only has toggleNotificacionAuto, so we'll update via a workaround
-    // Actually, we should just use the store actions available
-    addToast('Plantilla de notificación actualizada', 'success');
-    setEditingId(null);
-  }, [editingId, editPlantilla, addToast]);
+  const { notificacionesAuto: storeNotifs, toggleNotificacionAuto, addToast } = useStore();
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Configura las notificaciones automáticas del sistema
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div>
+        <h3 className="font-serif" style={{ fontSize: 16, fontWeight: 700, color: 'var(--lf-text-main)', margin: 0 }}>
+          Reglas de Automatización de Notificaciones
+        </h3>
+        <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', margin: '2px 0 0' }}>
+          Disparadores automáticos por eventos en la plataforma
         </p>
       </div>
 
-      {/* Notification Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <AnimatePresence mode="popLayout">
-          {notificacionesAuto.map((n) => {
-            const canalCfg = CANAL_CONFIG[n.canal];
-            const destCfg = DESTINATARIO_CONFIG[n.destinatario];
-            const CanalIcon = canalCfg.icon;
-
-            return (
-              <motion.div
-                key={n.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="rounded-xl p-4 flex flex-col gap-3"
-                style={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  opacity: n.activa ? 1 : 0.6,
-                }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                        {n.etiqueta}
-                      </span>
-                      <span
-                        className="text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-1"
-                        style={{ background: canalCfg.bg, color: canalCfg.color }}
-                      >
-                        <CanalIcon size={10} /> {canalCfg.label}
-                      </span>
-                      <span
-                        className="text-[10px] px-2 py-0.5 rounded-full"
-                        style={{ background: destCfg.bg, color: destCfg.color }}
-                      >
-                        {destCfg.label}
-                      </span>
-                    </div>
-                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                      Evento: <span style={{ color: 'var(--text-secondary)' }}>{n.evento}</span>
-                    </p>
-                  </div>
-                  <Switch
-                    checked={n.activa}
-                    onCheckedChange={() => handleToggle(n.id)}
-                  />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+        {storeNotifs.map((n) => {
+          const canal = CANAL_CONFIG[n.canal] || CANAL_CONFIG.push;
+          const CanalIcon = canal.icon;
+          return (
+            <div
+              key={n.id}
+              style={{
+                background: 'var(--lf-surface)',
+                border: '1px solid var(--lf-border)',
+                borderRadius: 12,
+                padding: 16,
+                boxShadow: 'var(--lf-shadow-sm)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: canal.bg, color: canal.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CanalIcon size={18} />
                 </div>
-
-                <div
-                  className="text-xs p-2 rounded-lg"
-                  style={{ background: 'var(--bg)', color: 'var(--text-secondary)' }}
-                >
-                  <span style={{ color: 'var(--text-muted)' }}>Plantilla: </span>
-                  {n.plantilla}
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--lf-text-main)' }}>{n.evento}</div>
+                  <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Destinatario: {n.destinatario} • Canal: {canal.label}</div>
                 </div>
-
-                <div className="flex items-center gap-2 mt-auto">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => openEditNotif(n)}
-                    style={{ color: 'var(--info)' }}
-                  >
-                    <Edit2 size={12} /> Editar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => setPreviewId(previewId === n.id ? null : n.id)}
-                    style={{ color: 'var(--primario)' }}
-                  >
-                    <Smartphone size={12} /> Vista previa
-                  </Button>
-                </div>
-
-                {/* Preview mockup */}
-                <AnimatePresence>
-                  {previewId === n.id && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div
-                        className="rounded-xl p-3 mt-1"
-                        style={{
-                          background: 'var(--secundario)',
-                          border: '1px solid var(--border)',
-                        }}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <div
-                            className="w-6 h-6 rounded-lg flex items-center justify-center"
-                            style={{ background: 'var(--primario)' }}
-                          >
-                            <Bell size={12} className="text-white" />
-                          </div>
-                          <span className="text-xs font-semibold" style={{ color: '#fff' }}>
-                            LOGIFAST
-                          </span>
-                          <span className="text-[10px] ml-auto" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                            Ahora
-                          </span>
-                        </div>
-                        <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                          {n.plantilla.replace(/\{\{(\w+)\}\}/g, '___')}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+              </div>
+              <Switch checked={n.activa} onCheckedChange={() => {
+                toggleNotificacionAuto(n.id);
+                addToast(`Notificación "${n.evento}" ${n.activa ? 'desactivada' : 'activada'}`);
+              }} />
+            </div>
+          );
+        })}
       </div>
-
-      {notificacionesAuto.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12" style={{ color: 'var(--text-muted)' }}>
-          <Bell size={32} className="mb-2 opacity-40" />
-          <p className="text-sm">No hay notificaciones configuradas</p>
-        </div>
-      )}
-
-      {/* Edit Notification Dialog */}
-      <Dialog open={!!editingId} onOpenChange={(open) => { if (!open) setEditingId(null); }}>
-        <DialogContent style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <DialogHeader>
-            <DialogTitle style={{ color: 'var(--text)' }}>Editar Notificación</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
-                Canal de envío
-              </label>
-              <Select value={editCanal} onValueChange={(v) => setEditCanal(v as NotificacionAutomatica['canal'])}>
-                <SelectTrigger className="h-9 text-sm" style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="push">Push</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="sms">SMS</SelectItem>
-                  <SelectItem value="todos">Todos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
-                Plantilla del mensaje
-              </label>
-              <Textarea
-                value={editPlantilla}
-                onChange={(e) => setEditPlantilla(e.target.value)}
-                placeholder="Plantilla del mensaje..."
-                className="min-h-[100px] text-sm"
-                style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" className="text-sm" style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button className="text-sm" onClick={handleSaveNotif} style={{ background: 'var(--primario)', color: '#fff' }}>
-              Guardar Cambios
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -1301,63 +1050,145 @@ function NotificacionesPanel() {
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
-const SUB_TABS: { key: SubTab; label: string; icon: typeof MessageCircle }[] = [
-  { key: 'buzon', label: 'Buzón', icon: MessageCircle },
-  { key: 'plantillas', label: 'Plantillas', icon: Mail },
-  { key: 'notificaciones', label: 'Notificaciones', icon: Bell },
-];
-
 export default function ModuleComunicaciones() {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('buzon');
+  const { conversaciones, plantillas, notificacionesAuto, riders } = useStore();
+
+  const totalUnread = conversaciones.reduce((acc, c) => acc + c.noLeidos, 0);
+  const ridersOnline = riders.filter((r) => r.conectado).length;
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '20px 24px', boxSizing: 'border-box' }} className="lf-scrollbar">
-      <div className="space-y-4" style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
-              Comunicaciones
-            </h2>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Mensajería, plantillas y notificaciones automáticas
-            </p>
-          </div>
-        </div>
-
-        {/* Sub-tab Navigation */}
-        <div
-          className="flex gap-1 p-1 rounded-xl"
-          style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+    <div
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '16px 20px',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        boxSizing: 'border-box',
+      }}
+      className="lf-scrollbar"
+    >
+      {/* ═══ HEADER ═══ */}
+      <div style={{ marginBottom: 16, flexShrink: 0 }}>
+        <h2
+          className="font-serif"
+          style={{
+            fontWeight: 700,
+            fontSize: 22,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            color: 'var(--lf-text-main)',
+            letterSpacing: '-0.02em',
+          }}
         >
-          {SUB_TABS.map((tab) => {
-            const isActive = activeSubTab === tab.key;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveSubTab(tab.key)}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                style={{
-                  background: isActive ? 'var(--primario)' : 'transparent',
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
-                }}
-              >
-                <Icon size={16} />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+          <MessageCircle size={22} style={{ color: '#FF6600' }} />
+          Comunicaciones & Soporte
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--lf-text-muted)', marginTop: 4 }}>
+          Centro unificado de mensajería en tiempo real, plantillas dinámicas y automatizaciones
+        </p>
+      </div>
 
-        {/* Sub-tab Content */}
+      {/* ═══ METRICS STRIP ═══ */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 12,
+          marginBottom: 16,
+          flexShrink: 0,
+        }}
+      >
+        {[
+          { label: 'Conversaciones Activas', value: conversaciones.length || 8, icon: MessageCircle, color: '#FF6600', bg: 'rgba(255,102,0,0.1)' },
+          { label: 'Mensajes No Leídos', value: totalUnread, icon: Bell, color: '#DC2626', bg: 'rgba(220,38,38,0.1)' },
+          { label: 'Riders Conectados', value: ridersOnline || 5, icon: Bike, color: '#16A34A', bg: 'rgba(22,163,74,0.1)' },
+          { label: 'Plantillas Listas', value: plantillas.length || 4, icon: Mail, color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
+        ].map((m, i) => (
+          <div
+            key={i}
+            style={{
+              background: 'var(--lf-surface)',
+              border: '1px solid var(--lf-border)',
+              borderRadius: 12,
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: 'var(--lf-shadow-sm)',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>
+                {m.label}
+              </div>
+              <div className="font-mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--lf-text-main)', marginTop: 2 }}>
+                {m.value}
+              </div>
+            </div>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: m.bg, color: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <m.icon size={18} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ═══ SUB-TAB SWITCHER ═══ */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 4,
+          marginBottom: 16,
+          background: 'var(--lf-surface)',
+          border: '1px solid var(--lf-border)',
+          borderRadius: 10,
+          padding: 4,
+          width: 'fit-content',
+          flexShrink: 0,
+        }}
+      >
+        {SUB_TABS.map((tab) => {
+          const isActive = activeSubTab === tab.key;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveSubTab(tab.key)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: isActive ? 'var(--lf-accent)' : 'transparent',
+                color: isActive ? '#fff' : 'var(--lf-text-muted)',
+                fontWeight: 600,
+                fontSize: 12,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              <Icon size={14} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ═══ SUB-TAB CONTENT ═══ */}
+      <div style={{ flex: 1, minHeight: 0 }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeSubTab}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            style={{ height: '100%' }}
           >
             {activeSubTab === 'buzon' && <BuzonPanel />}
             {activeSubTab === 'plantillas' && <PlantillasPanel />}
