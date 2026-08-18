@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { emitirEventoRealtime } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -210,6 +211,38 @@ export async function POST(request: NextRequest) {
         leida: false,
       },
     }).catch(() => null);
+
+    // Emit Realtime event to specific user room and broad channels
+    emitirEventoRealtime({
+      room: `usuario:${receptorId}`,
+      event: 'chat:mensaje:nuevo',
+      data: {
+        ...mensaje,
+        emisor: sessionUser.role === 'admin' ? 'admin' : sessionUser.role,
+        emisorNombre: sessionUser.name || 'Soporte LOGIFAST',
+        esAdmin: sessionUser.role === 'admin',
+      },
+    });
+    emitirEventoRealtime({
+      room: `cliente:${receptorId}`,
+      event: 'chat:mensaje:nuevo',
+      data: {
+        ...mensaje,
+        emisor: sessionUser.role === 'admin' ? 'admin' : sessionUser.role,
+        emisorNombre: sessionUser.name || 'Soporte LOGIFAST',
+        esAdmin: sessionUser.role === 'admin',
+      },
+    });
+    emitirEventoRealtime({
+      room: `repartidor:${receptorId}`,
+      event: 'chat:mensaje:nuevo',
+      data: {
+        ...mensaje,
+        emisor: sessionUser.role === 'admin' ? 'admin' : sessionUser.role,
+        emisorNombre: sessionUser.name || 'Soporte LOGIFAST',
+        esAdmin: sessionUser.role === 'admin',
+      },
+    });
 
     return NextResponse.json({ data: mensaje }, { status: 201 });
   } catch (error) {

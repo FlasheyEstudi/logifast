@@ -521,12 +521,17 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           mensajes: [...state.mensajes, msg]
         });
       }
-      if (msg.emisor === 'cliente') {
+      const isFromAdmin = msg.emisor === 'admin' || msg.emisorId === 'admin' || msg.esAdmin;
+      const isFromClient = msg.emisor === 'cliente';
+
+      if (isFromAdmin || isFromClient) {
         reproducirSonido('mensaje', 90);
         HAPTIC_PATTERNS.light();
         if (!state.chatAbierto) {
           showSnackbar({
-            message: `Mensaje de cliente: "${(msg.contenido || '').slice(0, 45)}${(msg.contenido || '').length > 45 ? '...' : ''}"`,
+            message: isFromAdmin
+              ? `💬 Despacho Central (Admin): "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`
+              : `Mensaje de cliente: "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`,
             action: 'Ver chat',
             onAction: () => state.toggleChat(msg.ordenId),
           });

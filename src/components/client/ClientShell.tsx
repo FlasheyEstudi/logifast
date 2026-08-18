@@ -401,7 +401,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   useEffect(() => {
     const cleanupChat = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
-      if (msg && msg.emisor === 'repartidor') {
+      if (!msg) return;
+      const isFromAdmin = msg.emisor === 'admin' || msg.emisorId === 'admin' || msg.esAdmin;
+      const isFromRider = msg.emisor === 'repartidor';
+
+      if (isFromAdmin || isFromRider) {
         reproducirSonido('mensaje', 90);
         if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
           try {
@@ -410,12 +414,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         }
         const isChatCurrentlyOpen = useStore.getState().chatOpen;
         const currentChatOrderId = useStore.getState().chatOrderId;
-        if (!isChatCurrentlyOpen || currentChatOrderId !== msg.ordenId) {
+        if (!isChatCurrentlyOpen || (msg.ordenId && currentChatOrderId !== msg.ordenId)) {
           showSnackbar({
-            message: `Mensaje de tu repartidor: "${(msg.contenido || '').slice(0, 45)}${(msg.contenido || '').length > 45 ? '...' : ''}"`,
-            action: 'Abrir Chat',
+            message: isFromAdmin
+              ? `💬 Soporte LOGIFAST: "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`
+              : `Mensaje de tu repartidor: "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`,
+            action: 'Responder',
             onAction: () => {
-              setChatOrderId(msg.ordenId);
+              if (msg.ordenId) setChatOrderId(msg.ordenId);
               setChatOpen(true);
             },
           });
