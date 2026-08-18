@@ -5,9 +5,15 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0A0A0F",
-  "theme_color": "#FF5722",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "orientation": "any",
+  "background_color": "#08080C",
+  "theme_color": "#0066FF",
   "icons": [
     {
       "src": "/icons/icon-192.png",
