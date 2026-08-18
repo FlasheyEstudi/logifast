@@ -17,13 +17,13 @@ interface AuthRedesignProps {
 const Icon = {
   Mail: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="4" width="20" height="16" rx="3"/>
+      <rect x="2" y="4" width="20" height="16" rx="3.5"/>
       <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
     </svg>
   ),
   Lock: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="3"/>
+      <rect x="3" y="11" width="18" height="11" rx="3.5"/>
       <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
     </svg>
   ),
@@ -48,13 +48,13 @@ const Icon = {
     </svg>
   ),
   ArrowRight: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <line x1="5" y1="12" x2="19" y2="12"/>
       <polyline points="12 5 19 12 12 19"/>
     </svg>
   ),
   ArrowLeft: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <line x1="19" y1="12" x2="5" y2="12"/>
       <polyline points="12 19 5 12 12 5"/>
     </svg>
@@ -149,7 +149,7 @@ const Icon = {
         width: size,
         height: size,
         objectFit: 'contain',
-        filter: 'drop-shadow(0 4px 14px rgba(0,102,255,0.45))',
+        filter: 'drop-shadow(0 6px 16px rgba(0,102,255,0.5))',
       }}
     />
   ),
@@ -179,23 +179,26 @@ const SLIDES = [
 ];
 
 function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
-  const cardBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
-  const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
-  const textColor = isDark ? '#FFFFFF' : 'var(--text)';
-  const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
+  const cardBg = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)';
+  const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.8)';
+  const innerShadow = isDark
+    ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.15), 0 14px 36px rgba(0,0,0,0.35)'
+    : 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.95), 0 12px 30px rgba(0,102,255,0.06)';
+  const textColor = isDark ? '#FFFFFF' : '#1C1C1E';
+  const subColor = isDark ? '#8E8E93' : '#6E6E73';
 
   if (type === 'order_widget') {
     return (
-      <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }}>
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 700, color: '#00C853' }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 10px #00C853' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 800, color: '#00C853' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 12px #00C853' }} />
             EN CAMINO • ETA 12 MIN
           </div>
-          <span style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 700, color: textColor }}>C$ 240.00</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 800, color: textColor }}>C$ 240.00</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(0, 102, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(0, 102, 255, 0.15)', border: '1px solid rgba(0,102,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,102,255,0.2)' }}>
             <Icon.FoodBag />
           </div>
           <div>
@@ -203,12 +206,12 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
             <div style={{ fontSize: 11, color: subColor }}>Repartidor: Carlos M. (Honda Wave #LF-04)</div>
           </div>
         </div>
-        <div style={{ height: 5, background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0,0,0,0.08)', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: '75%', background: 'linear-gradient(90deg, #0066FF, #00C853)', borderRadius: 10 }} />
+        <div style={{ height: 6, background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.06)', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: '75%', background: 'linear-gradient(90deg, #0066FF, #00C853)', borderRadius: 10, boxShadow: '0 0 10px rgba(0,200,83,0.5)' }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: subColor, fontWeight: 600 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: subColor, fontWeight: 700 }}>
           <span>Tienda</span>
-          <span>En camino</span>
+          <span style={{ color: '#0066FF' }}>En camino</span>
           <span>Entregado</span>
         </div>
       </div>
@@ -217,30 +220,30 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
 
   if (type === 'map_widget') {
     return (
-      <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }}>
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: textColor }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 8px #0066FF' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: textColor }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 10px #0066FF' }} />
             Motorizado a 1.2 km
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', background: 'rgba(0, 102, 255, 0.15)', padding: '3px 10px', borderRadius: 100 }}>28 km/h</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#0066FF', background: 'rgba(0, 102, 255, 0.15)', border: '1px solid rgba(0,102,255,0.25)', padding: '3px 10px', borderRadius: 100 }}>28 km/h</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.04)', borderRadius: 14, padding: '12px 14px', fontSize: 12, border }}>
-          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 5 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isDark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.7)', borderRadius: 14, padding: '12px 14px', fontSize: 12, border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)' }}>
+          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
             <Icon.MapPin /> Burger Boss
           </span>
           <span style={{ flex: 1, borderTop: '1px dashed #0066FF', margin: '0 10px' }} />
-          <span style={{ color: '#0066FF', display: 'flex', alignItems: 'center' }}>
+          <span style={{ color: '#0066FF', display: 'flex', alignItems: 'center', filter: 'drop-shadow(0 0 6px rgba(0,102,255,0.6))' }}>
             <Icon.Bike />
           </span>
           <span style={{ flex: 1, borderTop: '1px dashed rgba(0,102,255,0.3)', margin: '0 10px' }} />
-          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
             <Icon.Home /> Los Robles
           </span>
         </div>
-        <div style={{ fontSize: 12, color: textColor, background: 'rgba(0, 102, 255, 0.12)', padding: '10px 14px', borderRadius: 12, borderLeft: '3px solid #0066FF', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 12, color: textColor, background: 'rgba(0, 102, 255, 0.12)', border: '1px solid rgba(0,102,255,0.2)', padding: '10px 14px', borderRadius: 14, borderLeft: '4px solid #0066FF', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Icon.Message />
-          <span>Carlos: "¡Ya voy llegando a la entrada principal!"</span>
+          <span style={{ fontWeight: 500 }}>Carlos: "¡Ya voy llegando a la entrada principal!"</span>
         </div>
       </div>
     );
@@ -248,33 +251,33 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
 
   if (type === 'wallet_widget') {
     return (
-      <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,102,255,0.15))' : 'linear-gradient(135deg, rgba(0,102,255,0.08), rgba(0,102,255,0.03))', border, borderRadius: 20, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }}>
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: '#0066FF' }}>LOGIFAST PAY</div>
-        <div style={{ fontFamily: 'monospace', fontSize: 17, fontWeight: 700, letterSpacing: 2, color: textColor, margin: '4px 0' }}>•••• •••• •••• 4920</div>
+      <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(0,102,255,0.18) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(0,102,255,0.1) 100%)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.14em', color: '#0066FF' }}>LOGIFAST PAY</div>
+        <div style={{ fontFamily: 'monospace', fontSize: 17, fontWeight: 800, letterSpacing: 2, color: textColor, margin: '4px 0' }}>•••• •••• •••• 4920</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <div style={{ fontSize: 9, color: subColor, fontWeight: 600 }}>TITULAR</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: textColor }}>MARÍA LÓPEZ</div>
+            <div style={{ fontSize: 9, color: subColor, fontWeight: 700 }}>TITULAR</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: textColor }}>MARÍA LÓPEZ</div>
           </div>
           <div style={{ fontSize: 16, fontWeight: 800, fontStyle: 'italic', color: textColor }}>VISA</div>
         </div>
-        <div style={{ fontSize: 11, color: '#00C853', fontWeight: 600 }}>✓ Pago de C$ 180.00 verificado sin comisiones</div>
+        <div style={{ fontSize: 11, color: '#00C853', fontWeight: 700 }}>✓ Pago de C$ 180.00 verificado sin comisiones</div>
       </div>
     );
   }
 
   return (
-    <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 18, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }}>
+    <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, boxShadow: innerShadow }}>
       <div style={{ display: 'flex', gap: 4, color: '#FFB300' }}>
         {[...Array(5)].map((_, i) => <Icon.Star key={i} size={18} fill="#FFB300" />)}
       </div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: textColor }}>5.0 Excelente Servicio</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color: textColor }}>5.0 Excelente Servicio</div>
       <div style={{ fontSize: 12, color: subColor, fontStyle: 'italic', lineHeight: 1.5 }}>
         "El servicio llegó súper rápido a Los Robles y el empaque impecable. ¡10/10!"
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: textColor, marginTop: 4 }}>
-        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0066FF', color: 'white', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>ML</div>
-        <span>María L. • Cliente Verificado</span>
+        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0066FF', color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,102,255,0.4)' }}>ML</div>
+        <span style={{ fontWeight: 600 }}>María L. • Cliente Verificado</span>
       </div>
     </div>
   );
@@ -333,24 +336,55 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
     return () => clearInterval(interval);
   }, [view]);
 
-  const bg = isDark ? '#0A0A0C' : 'var(--bg)';
-  const textColor = isDark ? '#F5F5F7' : 'var(--text)';
+  const bg = isDark ? '#08080C' : '#F5F5F9';
+  const textColor = isDark ? '#F5F5F7' : '#1C1C1E';
 
   return (
     <div style={{
       minHeight: '100vh',
       background: bg,
       color: textColor,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "DM Sans", sans-serif',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "DM Sans", sans-serif',
       position: 'relative',
       overflowX: 'hidden',
-      transition: 'background 0.3s ease, color 0.3s ease',
+      transition: 'background 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease',
+      WebkitFontSmoothing: 'antialiased',
     }}>
-      {/* Background ambient lighting effects */}
+      {/* Dynamic Liquid Glass Background Lighting */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: -120, left: '12%', width: 550, height: 550, background: isDark ? 'radial-gradient(circle, rgba(0, 102, 255, 0.2) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 102, 255, 0.09) 0%, transparent 70%)', filter: 'blur(150px)' }} />
-        <div style={{ position: 'absolute', top: '38%', right: -90, width: 500, height: 500, background: isDark ? 'radial-gradient(circle, rgba(124, 58, 237, 0.16) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(124, 58, 237, 0.07) 0%, transparent 70%)', filter: 'blur(150px)' }} />
-        <div style={{ position: 'absolute', bottom: -100, left: '20%', width: 600, height: 600, background: isDark ? 'radial-gradient(circle, rgba(0, 200, 83, 0.12) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 200, 83, 0.05) 0%, transparent 70%)', filter: 'blur(160px)' }} />
+        <div style={{
+          position: 'absolute',
+          top: -140,
+          left: '10%',
+          width: 580,
+          height: 580,
+          background: isDark
+            ? 'radial-gradient(circle, rgba(0, 122, 255, 0.22) 0%, rgba(88, 86, 214, 0.12) 50%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(0, 122, 255, 0.12) 0%, rgba(88, 86, 214, 0.05) 50%, transparent 70%)',
+          filter: 'blur(140px)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: '36%',
+          right: -100,
+          width: 520,
+          height: 520,
+          background: isDark
+            ? 'radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, rgba(255, 149, 0, 0.08) 60%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(255, 149, 0, 0.04) 60%, transparent 70%)',
+          filter: 'blur(150px)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: -80,
+          left: '25%',
+          width: 620,
+          height: 620,
+          background: isDark
+            ? 'radial-gradient(circle, rgba(0, 200, 83, 0.14) 0%, rgba(0, 122, 255, 0.1) 60%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(0, 200, 83, 0.06) 0%, rgba(0, 122, 255, 0.04) 60%, transparent 70%)',
+          filter: 'blur(160px)',
+        }} />
       </div>
 
       <AnimatePresence mode="wait">
@@ -378,9 +412,9 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
         {view === 'login' && (
           <motion.div
             key="login"
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            exit={{ opacity: 0, y: -14 }}
             transition={{ duration: 0.3 }}
             style={{ position: 'relative', zIndex: 10 }}
           >
@@ -396,9 +430,9 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
         {view === 'register' && (
           <motion.div
             key="register"
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            exit={{ opacity: 0, y: -14 }}
             transition={{ duration: 0.3 }}
             style={{ position: 'relative', zIndex: 10 }}
           >
@@ -436,24 +470,31 @@ function LandingView({
   setMobileMenuOpen: (b: boolean) => void;
 }) {
   const slide = SLIDES[currentSlide];
-  const textColor = isDark ? '#FFFFFF' : 'var(--text)';
-  const subColor = isDark ? '#8E8E93' : 'var(--text-secondary)';
-  const navBg = isDark ? 'rgba(10, 10, 14, 0.82)' : 'rgba(250, 248, 245, 0.85)';
-  const border = isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)';
+  const textColor = isDark ? '#FFFFFF' : '#1C1C1E';
+  const subColor = isDark ? '#98989D' : '#636366';
+  
+  // Real frosted glass tokens
+  const navBg = isDark ? 'rgba(12, 12, 16, 0.72)' : 'rgba(255, 255, 255, 0.78)';
+  const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
+  const specularBorder = isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)';
+  const glassCardBg = isDark ? 'rgba(22, 22, 30, 0.68)' : 'rgba(255, 255, 255, 0.82)';
+  const glassShadow = isDark
+    ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 24px 60px rgba(0,0,0,0.5)'
+    : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 20px 50px rgba(0,102,255,0.07)';
 
   return (
     <div>
-      {/* Floating Glass Navbar */}
+      {/* Ultra-Refined Liquid Glass Floating Navbar */}
       <header style={{
         position: 'sticky',
         top: 0,
         zIndex: 1000,
         background: navBg,
-        backdropFilter: 'blur(30px)',
-        WebkitBackdropFilter: 'blur(30px)',
+        backdropFilter: 'blur(36px) saturate(190%)',
+        WebkitBackdropFilter: 'blur(36px) saturate(190%)',
         borderBottom: border,
         padding: '14px 24px',
-        transition: 'all 0.3s ease',
+        boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : '0 4px 20px rgba(0,0,0,0.03)',
       }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -462,39 +503,63 @@ function LandingView({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               onClick={toggleTheme}
               style={{
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 borderRadius: '50%',
-                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.08)',
+                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                border: specularBorder,
                 color: isDark ? '#FFB300' : '#0066FF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
+                boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.2)' : 'inset 0 1px 1px rgba(255,255,255,0.9)',
                 transition: 'all 0.25s ease',
               }}
               title={isDark ? 'Cambiar a Modo Día (Claro)' : 'Cambiar a Modo Noche (Oscuro)'}
               aria-label="Toggle Theme"
             >
               {isDark ? <Icon.Sun /> : <Icon.Moon />}
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={onLogin}
-              style={{ background: 'transparent', border: 'none', color: textColor, fontSize: 14, fontWeight: 600, cursor: 'pointer', padding: '8px 16px', borderRadius: 100, transition: 'background 0.2s ease' }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: textColor,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: '9px 18px',
+                borderRadius: 100,
+              }}
             >
               Iniciar sesión
-            </button>
-            <button
+            </motion.button>
+            
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={onRegister}
-              style={{ background: '#0066FF', color: '#FFFFFF', border: 'none', padding: '10px 22px', borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 18px rgba(0,102,255,0.4)', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}
+              style={{
+                background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255,255,255,0.2)',
+                padding: '10px 24px',
+                borderRadius: 100,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.35), 0 6px 20px rgba(0,102,255,0.45)',
+              }}
             >
               Registrarse
-            </button>
+            </motion.button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -514,107 +579,152 @@ function LandingView({
         )}
       </header>
 
-      {/* HERO SECTION REDISEÑADA */}
+      {/* HERO SECTION CON CRISTAL LÍQUIDO */}
       <section style={{ padding: '56px 24px 80px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 48, alignItems: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Hero Pill Badge con resplandor */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,102,255,0.12)', border: '1px solid rgba(0,102,255,0.3)', color: '#0066FF', padding: '6px 18px', borderRadius: 100, fontSize: 13, fontWeight: 700, width: 'fit-content', boxShadow: '0 2px 10px rgba(0,102,255,0.15)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            
+            {/* Pill Badge con resplandor líquido */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: isDark ? 'rgba(0, 102, 255, 0.15)' : 'rgba(0, 102, 255, 0.08)',
+              border: isDark ? '1px solid rgba(0, 122, 255, 0.35)' : '1px solid rgba(0, 102, 255, 0.25)',
+              color: '#007AFF',
+              padding: '7px 20px',
+              borderRadius: 100,
+              fontSize: 13,
+              fontWeight: 700,
+              width: 'fit-content',
+              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 16px rgba(0,102,255,0.2)',
+              backdropFilter: 'blur(20px)',
+            }}>
               <Icon.Sparkles />
               <span>Tecnología que mueve tu logística</span>
             </div>
 
-            {/* Titular Hero Corregido & Rediseñado */}
-            <h1 style={{ fontSize: 'clamp(36px, 5.8vw, 56px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
+            {/* Titular Principal Hero */}
+            <h1 style={{ fontSize: 'clamp(38px, 6vw, 58px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
               El control total de tu logística
             </h1>
 
             {/* Subtítulo Hero */}
-            <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', lineHeight: 1.6, color: subColor, margin: 0, maxWidth: 520 }}>
+            <p style={{ fontSize: 'clamp(16px, 2.1vw, 18px)', lineHeight: 1.6, color: subColor, margin: 0, maxWidth: 540 }}>
               Automatiza tus envíos, asigna repartidores, monitorea cada entrega en tiempo real y administra toda tu operación desde una plataforma inteligente diseñada para hacer crecer tu negocio.
             </p>
 
-            {/* Botones de acción */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 6 }}>
-              <button
+            {/* Botones táctiles nativos */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 8 }}>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={onRegister}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0066FF', color: 'white', border: 'none', padding: '16px 34px', borderRadius: 100, fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 8px 26px rgba(0,102,255,0.42)', transition: 'all 0.2s ease' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  padding: '16px 36px',
+                  borderRadius: 100,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 30px rgba(0,102,255,0.45)',
+                }}
               >
                 <span>Comenzar ahora</span>
                 <Icon.ArrowRight />
-              </button>
-              <button
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={onLogin}
-                style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: textColor, border: border, padding: '16px 28px', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(20px)', transition: 'all 0.2s ease' }}
+                style={{
+                  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)',
+                  color: textColor,
+                  border: specularBorder,
+                  padding: '16px 30px',
+                  borderRadius: 100,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(24px)',
+                  boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.1)' : 'inset 0 1px 1.5px rgba(255,255,255,0.9), 0 4px 14px rgba(0,0,0,0.04)',
+                }}
               >
                 Explorar Demo
-              </button>
+              </motion.button>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 12, paddingTop: 24, borderTop: border }}>
-              <div>
+            {/* Quick Stats Grid con textura de vidrio */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 14, paddingTop: 24, borderTop: border }}>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '12px 14px', borderRadius: 16, border: border, backdropFilter: 'blur(16px)' }}>
                 <div style={{ fontSize: 24, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>2.5k+</div>
-                <div style={{ fontSize: 12, color: subColor, marginTop: 2 }}>Envíos completados</div>
+                <div style={{ fontSize: 11, color: subColor, fontWeight: 600, marginTop: 2 }}>Envíos realizados</div>
               </div>
-              <div>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '12px 14px', borderRadius: 16, border: border, backdropFilter: 'blur(16px)' }}>
                 <div style={{ fontSize: 24, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>15 min</div>
-                <div style={{ fontSize: 12, color: subColor, marginTop: 2 }}>Tiempo promedio</div>
+                <div style={{ fontSize: 11, color: subColor, fontWeight: 600, marginTop: 2 }}>Tiempo promedio</div>
               </div>
-              <div>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '12px 14px', borderRadius: 16, border: border, backdropFilter: 'blur(16px)' }}>
                 <div style={{ fontSize: 24, fontWeight: 800, color: textColor, display: 'flex', alignItems: 'center', gap: 4, letterSpacing: '-0.02em' }}>
                   <span>4.9</span>
                   <Icon.Star size={18} fill="#FFB300" />
                 </div>
-                <div style={{ fontSize: 12, color: subColor, marginTop: 2 }}>Calificación</div>
+                <div style={{ fontSize: 11, color: subColor, fontWeight: 600, marginTop: 2 }}>Calificación</div>
               </div>
             </div>
           </div>
 
-          {/* Carrusel interactivo y widgets (Preservado fielmente) */}
+          {/* Carrusel Interactivo dentro de Marco Cristalino Realista */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{
               width: '100%',
-              maxWidth: 460,
-              padding: 26,
-              borderRadius: 32,
-              background: isDark ? 'rgba(22, 22, 29, 0.85)' : 'rgba(255, 255, 255, 0.92)',
-              backdropFilter: 'blur(40px)',
-              WebkitBackdropFilter: 'blur(40px)',
-              border: border,
-              boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.65)' : '0 20px 60px rgba(0,0,0,0.08)',
+              maxWidth: 470,
+              padding: 28,
+              borderRadius: 36,
+              background: glassCardBg,
+              backdropFilter: 'blur(40px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+              border: specularBorder,
+              boxShadow: glassShadow,
               textAlign: 'center',
+              position: 'relative',
             }}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentSlide}
-                  initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96, y: -10 }}
-                  transition={{ duration: 0.4 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                 >
-                  <div style={{ width: '100%', marginBottom: 22 }}>
+                  <div style={{ width: '100%', marginBottom: 24 }}>
                     <AppleSlideWidget type={slide.widgetType} isDark={isDark} />
                   </div>
-                  <h2 style={{ fontSize: 22, fontWeight: 700, color: textColor, margin: '0 0 6px' }}>{slide.title}</h2>
-                  <p style={{ fontSize: 14, color: subColor, margin: '0 0 20px', lineHeight: 1.5 }}>{slide.subtitle}</p>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: textColor, margin: '0 0 6px', letterSpacing: '-0.02em' }}>{slide.title}</h2>
+                  <p style={{ fontSize: 14, color: subColor, margin: '0 0 22px', lineHeight: 1.5 }}>{slide.subtitle}</p>
                 </motion.div>
               </AnimatePresence>
 
+              {/* Indicadores de Píldora tipo iOS */}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
                 {SLIDES.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentSlide(i)}
                     style={{
-                      width: i === currentSlide ? 24 : 8,
-                      height: 8,
+                      width: i === currentSlide ? 28 : 8,
+                      height: 7,
                       borderRadius: 100,
-                      background: i === currentSlide ? '#0066FF' : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'),
+                      background: i === currentSlide ? '#007AFF' : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)'),
+                      boxShadow: i === currentSlide ? '0 0 10px rgba(0,122,255,0.6)' : 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      transition: 'all 0.3s ease',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                     aria-label={`Slide ${i + 1}`}
                   />
@@ -626,143 +736,221 @@ function LandingView({
       </section>
 
       {/* SECCIÓN ALIADOS ESTRATÉGICOS */}
-      <section id="aliados" style={{ padding: '52px 24px', borderTop: border, borderBottom: border, background: isDark ? 'rgba(15,15,20,0.45)' : 'rgba(0,0,0,0.015)' }}>
+      <section id="aliados" style={{ padding: '54px 24px', borderTop: border, borderBottom: border, background: isDark ? 'rgba(12,12,18,0.45)' : 'rgba(255,255,255,0.4)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#0066FF', letterSpacing: '0.12em', marginBottom: 8 }}>ALIADOS ESTRATÉGICOS</div>
-          <h2 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: textColor, margin: '0 0 30px', letterSpacing: '-0.02em' }}>Comercios Verificados en Managua</h2>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em', marginBottom: 8 }}>ALIADOS ESTRATÉGICOS</div>
+          <h2 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: textColor, margin: '0 0 32px', letterSpacing: '-0.02em' }}>Comercios Verificados en Managua</h2>
           <div style={{ overflow: 'hidden', display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             {PARTNERS.map((partner, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 22px', borderRadius: 20, background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)', border: border, minWidth: 185, transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}>
+              <motion.div
+                key={idx}
+                whileHover={{ y: -4, scale: 1.02 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  padding: '14px 24px',
+                  borderRadius: 22,
+                  background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)',
+                  backdropFilter: 'blur(20px)',
+                  border: specularBorder,
+                  minWidth: 190,
+                  boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.1), 0 8px 24px rgba(0,0,0,0.3)' : 'inset 0 1px 1.5px rgba(255,255,255,0.9), 0 8px 20px rgba(0,0,0,0.03)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
                 <img src={partner.src} alt={partner.name} style={{ width: 34, height: 34, objectFit: 'contain' }} />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: textColor }}>{partner.name}</div>
-                  <div style={{ fontSize: 11, color: subColor }}>{partner.sector}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: textColor }}>{partner.name}</div>
+                  <div style={{ fontSize: 11, color: subColor, fontWeight: 500 }}>{partner.sector}</div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* SECCIÓN: TODO TU ECOSISTEMA LOGÍSTICO (4 TARJETAS REDISEÑADAS) */}
-      <section id="ecosistema" style={{ padding: '80px 24px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#0066FF', letterSpacing: '0.12em' }}>ROLES Y HERRAMIENTAS</span>
-          <h2 style={{ fontSize: 'clamp(28px, 4.5vw, 38px)', fontWeight: 800, color: textColor, margin: '10px 0 0', letterSpacing: '-0.03em' }}>
+      {/* SECCIÓN ECOSISTEMA (4 TARJETAS CON CRISTAL LÍQUIDO ESPECULAR) */}
+      <section id="ecosistema" style={{ padding: '84px 24px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 52 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em' }}>ROLES Y HERRAMIENTAS</span>
+          <h2 style={{ fontSize: 'clamp(28px, 4.5vw, 40px)', fontWeight: 800, color: textColor, margin: '10px 0 0', letterSpacing: '-0.03em' }}>
             Todo tu ecosistema logístico en una sola plataforma.
           </h2>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
           {/* Card 1: Portal de Clientes */}
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.72)' : 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(30px)', border: border, borderRadius: 26, padding: 30, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}>
+          <motion.div
+            whileHover={{ y: -6, scale: 1.01 }}
+            style={{
+              background: glassCardBg,
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: specularBorder,
+              borderRadius: 28,
+              padding: 32,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: glassShadow,
+              transition: 'all 0.25s ease',
+            }}
+          >
             <div>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(0, 102, 255, 0.12)', color: '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 16, background: 'rgba(0, 122, 255, 0.14)', border: '1px solid rgba(0,122,255,0.3)', color: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 6px 16px rgba(0,122,255,0.25)' }}>
                 <Icon.User />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Portal de Clientes</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
+              <h3 style={{ fontSize: 21, fontWeight: 800, color: textColor, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Portal de Clientes</h3>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.65 }}>
                 Gestiona tus envíos desde un solo lugar. Cotiza al instante, programa entregas y consulta el estado de cada pedido con total transparencia.
               </p>
             </div>
-            <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: '#00C853', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00C853' }} /> Monitoreo en vivo
+            <div style={{ marginTop: 26, fontSize: 12, fontWeight: 800, color: '#00C853', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 10px #00C853' }} /> Monitoreo en vivo
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 2: Panel de Repartidores */}
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.72)' : 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(30px)', border: border, borderRadius: 26, padding: 30, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}>
+          <motion.div
+            whileHover={{ y: -6, scale: 1.01 }}
+            style={{
+              background: glassCardBg,
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: specularBorder,
+              borderRadius: 28,
+              padding: 32,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: glassShadow,
+              transition: 'all 0.25s ease',
+            }}
+          >
             <div>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(0, 200, 83, 0.12)', color: '#00C853', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 16, background: 'rgba(0, 200, 83, 0.14)', border: '1px solid rgba(0,200,83,0.3)', color: '#00C853', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 6px 16px rgba(0,200,83,0.25)' }}>
                 <Icon.Bike />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Panel de Repartidores</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
+              <h3 style={{ fontSize: 21, fontWeight: 800, color: textColor, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Panel de Repartidores</h3>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.65 }}>
                 Recibe pedidos cercanos, optimiza tus recorridos y administra tus ganancias desde una interfaz rápida, intuitiva y conectada en tiempo real.
               </p>
             </div>
-            <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0066FF' }} /> Rutas satelitales
+            <div style={{ marginTop: 26, fontSize: 12, fontWeight: 800, color: '#007AFF', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#007AFF', boxShadow: '0 0 10px #007AFF' }} /> Rutas satelitales
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 3: Consola de Control */}
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.72)' : 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(30px)', border: border, borderRadius: 26, padding: 30, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}>
+          <motion.div
+            whileHover={{ y: -6, scale: 1.01 }}
+            style={{
+              background: glassCardBg,
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: specularBorder,
+              borderRadius: 28,
+              padding: 32,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: glassShadow,
+              transition: 'all 0.25s ease',
+            }}
+          >
             <div>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 16, background: 'rgba(124, 58, 237, 0.14)', border: '1px solid rgba(124,58,237,0.3)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 6px 16px rgba(124,58,237,0.25)' }}>
                 <Icon.Shield />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Consola de Control</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
+              <h3 style={{ fontSize: 21, fontWeight: 800, color: textColor, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Consola de Control</h3>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.65 }}>
                 Supervisa toda la operación desde un solo panel. Controla pedidos, repartidores, indicadores y rendimiento operativo en tiempo real.
               </p>
             </div>
-            <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED' }} /> Auditoría total
+            <div style={{ marginTop: 26, fontSize: 12, fontWeight: 800, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#7C3AED', boxShadow: '0 0 10px #7C3AED' }} /> Auditoría total
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 4: Gestión Inteligente de Flota */}
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.72)' : 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(30px)', border: border, borderRadius: 26, padding: 30, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}>
+          <motion.div
+            whileHover={{ y: -6, scale: 1.01 }}
+            style={{
+              background: glassCardBg,
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: specularBorder,
+              borderRadius: 28,
+              padding: 32,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: glassShadow,
+              transition: 'all 0.25s ease',
+            }}
+          >
             <div>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255, 149, 0, 0.12)', color: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 16, background: 'rgba(255, 149, 0, 0.14)', border: '1px solid rgba(255,149,0,0.3)', color: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: '0 6px 16px rgba(255,149,0,0.25)' }}>
                 <Icon.Wrench />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Gestión Inteligente de Flota</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
+              <h3 style={{ fontSize: 21, fontWeight: 800, color: textColor, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Gestión Inteligente de Flota</h3>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.65 }}>
                 Programa mantenimientos preventivos, controla el estado de cada motocicleta y reduce tiempos de inactividad mediante alertas automáticas. Controla tu flota, supervisa mantenimientos y administra repuestos desde un solo lugar.
               </p>
             </div>
-            <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF9500' }} /> Telemetría preventiva
+            <div style={{ marginTop: 26, fontSize: 12, fontWeight: 800, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF9500', boxShadow: '0 0 10px #FF9500' }} /> Telemetría preventiva
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* SECCIÓN CTA DE CIERRE */}
-      <section id="cta" style={{ padding: '40px 24px 90px', maxWidth: 1200, margin: '0 auto' }}>
+      {/* SUPER BANNER CTA CRISTALINO */}
+      <section id="cta" style={{ padding: '40px 24px 96px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{
           background: isDark
-            ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.18) 0%, rgba(22, 22, 29, 0.95) 100%)'
-            : 'linear-gradient(135deg, rgba(0, 102, 255, 0.09) 0%, rgba(255, 255, 255, 0.95) 100%)',
-          backdropFilter: 'blur(40px)',
-          border: border,
+            ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.22) 0%, rgba(22, 22, 32, 0.85) 100%)'
+            : 'linear-gradient(135deg, rgba(0, 102, 255, 0.12) 0%, rgba(255, 255, 255, 0.92) 100%)',
+          backdropFilter: 'blur(40px) saturate(190%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+          border: specularBorder,
           borderRadius: 36,
-          padding: '56px 36px',
+          padding: '58px 36px',
           textAlign: 'center',
-          boxShadow: isDark ? '0 25px 70px rgba(0,0,0,0.5)' : '0 25px 60px rgba(0,102,255,0.09)',
+          boxShadow: glassShadow,
         }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4.8vw, 42px)', fontWeight: 800, color: textColor, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
+          <h2 style={{ fontSize: 'clamp(30px, 5vw, 44px)', fontWeight: 800, color: textColor, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
             Tecnología que mueve tu logística.
           </h2>
-          <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', color: subColor, maxWidth: 650, margin: '0 auto 32px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', color: subColor, maxWidth: 660, margin: '0 auto 34px', lineHeight: 1.65 }}>
             Centraliza tus envíos, automatiza tus procesos y mantén el control de cada entrega desde una plataforma inteligente creada para impulsar el crecimiento de tu negocio.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={onRegister}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                background: '#0066FF',
+                background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
                 color: 'white',
-                border: 'none',
-                padding: '16px 38px',
+                border: '1px solid rgba(255,255,255,0.3)',
+                padding: '16px 40px',
                 borderRadius: 100,
                 fontSize: 15,
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '0 8px 26px rgba(0,102,255,0.42)',
-                transition: 'transform 0.2s ease',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 30px rgba(0,102,255,0.45)',
               }}
             >
               <span>Comenzar ahora</span>
               <Icon.ArrowRight />
-            </button>
-            <a
+            </motion.button>
+            <motion.a
+              whileTap={{ scale: 0.95 }}
               href="https://wa.me/50588888888?text=Hola%20LOGIFAST,%20deseo%20m%C3%A1s%20informaci%C3%B3n"
               target="_blank"
               rel="noopener noreferrer"
@@ -770,27 +958,28 @@ function LandingView({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)',
                 color: textColor,
-                border: border,
-                padding: '16px 30px',
+                border: specularBorder,
+                padding: '16px 32px',
                 borderRadius: 100,
                 fontSize: 15,
-                fontWeight: 600,
+                fontWeight: 700,
                 textDecoration: 'none',
                 cursor: 'pointer',
-                backdropFilter: 'blur(20px)',
+                backdropFilter: 'blur(24px)',
+                boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.1)' : 'inset 0 1px 1.5px rgba(255,255,255,0.9)',
               }}
             >
               <Icon.Headphones />
               <span>Contactar a soporte</span>
-            </a>
+            </motion.a>
           </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer style={{ padding: '40px 24px', background: isDark ? '#060608' : 'var(--bg-alt)', borderTop: border, textAlign: 'center', color: subColor, fontSize: 13 }}>
+      <footer style={{ padding: '40px 24px', background: isDark ? '#06060A' : '#EBEBF0', borderTop: border, textAlign: 'center', color: subColor, fontSize: 13 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
           <Icon.Logo size={28} />
           <span style={{ fontWeight: 800, color: textColor }}>LOGIFAST</span>
@@ -820,9 +1009,11 @@ function LoginView({
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  const textColor = isDark ? '#FFFFFF' : 'var(--text)';
-  const subColor = isDark ? '#8E8E93' : 'var(--text-secondary)';
-  const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
+  const textColor = isDark ? '#FFFFFF' : '#1C1C1E';
+  const subColor = isDark ? '#98989D' : '#636366';
+  const specularBorder = isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)';
+  const glassBg = isDark ? 'rgba(20, 20, 28, 0.78)' : 'rgba(255, 255, 255, 0.88)';
+  const inputBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.035)';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -890,38 +1081,45 @@ function LoginView({
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', position: 'relative' }}>
       <div style={{ position: 'absolute', top: 24, left: 24, right: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
-        <button
+        <motion.button
+          whileTap={{ scale: 0.95 }}
           onClick={onBack}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', color: subColor, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', color: subColor, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
         >
           <Icon.ArrowLeft />
           <span>Volver a la portada</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.92 }}
           onClick={toggleTheme}
-          style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ width: 42, height: 42, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', border: specularBorder, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           {isDark ? <Icon.Sun /> : <Icon.Moon />}
-        </button>
+        </motion.button>
       </div>
 
-      <div style={{
-        width: '100%',
-        maxWidth: 440,
-        background: isDark ? 'rgba(22, 22, 29, 0.92)' : 'rgba(255, 255, 255, 0.96)',
-        backdropFilter: 'blur(40px)',
-        WebkitBackdropFilter: 'blur(40px)',
-        border: border,
-        borderRadius: 36,
-        padding: '42px 32px',
-        boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.75)' : '0 20px 60px rgba(0,0,0,0.1)',
-        textAlign: 'center',
-        marginTop: 40,
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 26 }}>
-          <Icon.Logo size={48} />
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: textColor, margin: '14px 0 4px', letterSpacing: '-0.02em' }}>Iniciar Sesión</h2>
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        style={{
+          width: '100%',
+          maxWidth: 440,
+          background: glassBg,
+          backdropFilter: 'blur(40px) saturate(190%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+          border: specularBorder,
+          borderRadius: 36,
+          padding: '44px 34px',
+          boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.18), 0 30px 80px rgba(0,0,0,0.7)' : 'inset 0 1px 1.5px rgba(255,255,255,0.95), 0 20px 60px rgba(0,0,0,0.08)',
+          textAlign: 'center',
+          marginTop: 40,
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
+          <Icon.Logo size={52} />
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: textColor, margin: '14px 0 4px', letterSpacing: '-0.03em' }}>Iniciar Sesión</h2>
           <p style={{ fontSize: 13, color: subColor, margin: 0 }}>Ingresa tus credenciales para acceder a LOGIFAST</p>
         </div>
 
@@ -935,10 +1133,10 @@ function LoginView({
                 placeholder="ejemplo@logifast.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{ width: '100%', height: 48, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px 0 44px', color: textColor, fontSize: 15, outline: 'none' }}
+                style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px 0 46px', color: textColor, fontSize: 15, outline: 'none' }}
               />
             </div>
-            {errors.email && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.email}</span>}
+            {errors.email && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.email}</span>}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -950,31 +1148,47 @@ function LoginView({
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', height: 48, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 44px 0 44px', color: textColor, fontSize: 15, outline: 'none' }}
+                style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 46px 0 46px', color: textColor, fontSize: 15, outline: 'none' }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{ position: 'absolute', right: 14, background: 'transparent', border: 'none', color: subColor, cursor: 'pointer' }}
+                style={{ position: 'absolute', right: 14, background: 'transparent', border: 'none', color: subColor, cursor: 'pointer', display: 'flex', padding: 4 }}
               >
                 {showPassword ? <Icon.EyeOff /> : <Icon.Eye />}
               </button>
             </div>
-            {errors.password && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.password}</span>}
+            {errors.password && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.password}</span>}
           </div>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             type="submit"
             disabled={loading}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 18px rgba(0,102,255,0.42)' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              height: 50,
+              borderRadius: 100,
+              background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.25)',
+              fontSize: 15,
+              fontWeight: 800,
+              cursor: 'pointer',
+              marginTop: 8,
+              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 8px 24px rgba(0,102,255,0.45)',
+            }}
           >
             {loading ? <MiniSpinner size={18} color="white" /> : 'Ingresar a mi cuenta'}
             {!loading && <Icon.ArrowRight />}
-          </button>
+          </motion.button>
         </form>
 
-        <div style={{ textAlign: 'center', margin: '26px 0 16px' }}>
-          <span style={{ fontSize: 11, color: subColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Acceso Demo Instantáneo</span>
+        <div style={{ textAlign: 'center', margin: '28px 0 16px' }}>
+          <span style={{ fontSize: 11, color: subColor, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Acceso Demo Instantáneo</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -984,23 +1198,39 @@ function LoginView({
             { role: 'admin' as const, label: 'Admin', icon: <Icon.Shield /> },
             { role: 'ingeniero' as const, label: 'Ingeniero', icon: <Icon.Store /> },
           ].map((d) => (
-            <button
+            <motion.button
               key={d.role}
+              whileTap={{ scale: 0.94 }}
               onClick={() => demoLogin(d.role)}
               disabled={loading}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 12, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', border: border, color: textColor, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s ease' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 7,
+                padding: 12,
+                borderRadius: 16,
+                background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)',
+                border: specularBorder,
+                color: textColor,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.1)' : 'inset 0 1px 1.5px rgba(255,255,255,0.9)',
+                transition: 'all 0.2s ease',
+              }}
             >
               <span>{d.icon}</span>
               <span>{d.label}</span>
-            </button>
+            </motion.button>
           ))}
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 26 }}>
+        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 28 }}>
           ¿No tienes cuenta?{' '}
-          <button type="button" onClick={onSwitchToRegister} style={{ background: 'none', border: 'none', color: '#0066FF', fontWeight: 700, cursor: 'pointer' }}>Regístrate gratis</button>
+          <button type="button" onClick={onSwitchToRegister} style={{ background: 'none', border: 'none', color: '#007AFF', fontWeight: 800, cursor: 'pointer' }}>Regístrate gratis</button>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -1049,9 +1279,11 @@ function RegisterView({
   const [gpsCaptured, setGpsCaptured] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const textColor = isDark ? '#FFFFFF' : 'var(--text)';
-  const subColor = isDark ? '#8E8E93' : 'var(--text-secondary)';
-  const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
+  const textColor = isDark ? '#FFFFFF' : '#1C1C1E';
+  const subColor = isDark ? '#98989D' : '#636366';
+  const specularBorder = isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)';
+  const glassBg = isDark ? 'rgba(20, 20, 28, 0.78)' : 'rgba(255, 255, 255, 0.88)';
+  const inputBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.035)';
 
   const DEPARTAMENTOS = [
     'Managua', 'Masaya', 'León', 'Granada', 'Estelí', 'Chinandega',
@@ -1212,56 +1444,64 @@ function RegisterView({
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', position: 'relative' }}>
       <div style={{ position: 'absolute', top: 24, left: 24, right: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
-        <button
+        <motion.button
+          whileTap={{ scale: 0.95 }}
           onClick={onBack}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', color: subColor, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', color: subColor, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
         >
           <Icon.ArrowLeft />
           <span>Volver a la portada</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.92 }}
           onClick={toggleTheme}
-          style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ width: 42, height: 42, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', border: specularBorder, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           {isDark ? <Icon.Sun /> : <Icon.Moon />}
-        </button>
+        </motion.button>
       </div>
 
-      <div style={{
-        width: '100%',
-        maxWidth: 500,
-        background: isDark ? 'rgba(22, 22, 29, 0.92)' : 'rgba(255, 255, 255, 0.96)',
-        backdropFilter: 'blur(40px)',
-        WebkitBackdropFilter: 'blur(40px)',
-        border: border,
-        borderRadius: 36,
-        padding: '40px 32px',
-        boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.75)' : '0 20px 60px rgba(0,0,0,0.1)',
-        textAlign: 'center',
-        marginTop: 40,
-      }}>
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        style={{
+          width: '100%',
+          maxWidth: 500,
+          background: glassBg,
+          backdropFilter: 'blur(40px) saturate(190%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+          border: specularBorder,
+          borderRadius: 36,
+          padding: '42px 34px',
+          boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.18), 0 30px 80px rgba(0,0,0,0.7)' : 'inset 0 1px 1.5px rgba(255,255,255,0.95), 0 20px 60px rgba(0,0,0,0.08)',
+          textAlign: 'center',
+          marginTop: 40,
+        }}
+      >
         {/* Step Header */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <Icon.Logo size={44} />
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: textColor, margin: '12px 0 4px', letterSpacing: '-0.02em' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 26 }}>
+          <Icon.Logo size={46} />
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: textColor, margin: '12px 0 4px', letterSpacing: '-0.03em' }}>
             {step === 1 ? 'Paso 1: Identificación Legal' : step === 2 ? 'Paso 2: Foto de Perfil & GPS' : 'Paso 3: Perfil & Vehículo'}
           </h2>
           <p style={{ fontSize: 13, color: subColor, margin: 0 }}>
             {step === 1 ? 'Datos personales y cédula de Nicaragua' : step === 2 ? 'Fotografía verificada y ubicación GPS' : 'Selecciona tu rol y vehículo'}
           </p>
 
-          {/* Stepper Dots */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          {/* Dynamic iOS Pills Stepper */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
                 style={{
-                  width: s === step ? 30 : 10,
+                  width: s === step ? 32 : 10,
                   height: 6,
                   borderRadius: 100,
-                  background: s <= step ? '#0066FF' : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'),
-                  transition: 'all 0.3s ease',
+                  background: s <= step ? '#007AFF' : (isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.15)'),
+                  boxShadow: s === step ? '0 0 10px rgba(0,122,255,0.6)' : 'none',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
               />
             ))}
@@ -1278,9 +1518,9 @@ function RegisterView({
                 placeholder="María López Vanegas"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
               />
-              {errors.name && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.name}</span>}
+              {errors.name && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.name}</span>}
             </div>
 
             <div>
@@ -1290,9 +1530,9 @@ function RegisterView({
                 placeholder="maria@empresa.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
               />
-              {errors.email && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.email}</span>}
+              {errors.email && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.email}</span>}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1303,9 +1543,9 @@ function RegisterView({
                   placeholder="8888-8888"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
                 />
-                {errors.phone && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.phone}</span>}
+                {errors.phone && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.phone}</span>}
               </div>
 
               <div>
@@ -1315,9 +1555,9 @@ function RegisterView({
                   placeholder="001-120495-0002E"
                   value={form.cedula}
                   onChange={(e) => setForm({ ...form, cedula: e.target.value.toUpperCase() })}
-                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
                 />
-                {errors.cedula && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.cedula}</span>}
+                {errors.cedula && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.cedula}</span>}
               </div>
             </div>
 
@@ -1329,9 +1569,9 @@ function RegisterView({
                   placeholder="••••••••"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
                 />
-                {errors.password && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.password}</span>}
+                {errors.password && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.password}</span>}
               </div>
 
               <div>
@@ -1341,15 +1581,19 @@ function RegisterView({
                   placeholder="••••••••"
                   value={form.confirm}
                   onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
                 />
-                {errors.confirm && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.confirm}</span>}
+                {errors.confirm && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.confirm}</span>}
               </div>
             </div>
 
-            <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 12, boxShadow: '0 4px 18px rgba(0,102,255,0.42)' }}>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              type="submit"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 50, borderRadius: 100, background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', fontSize: 15, fontWeight: 800, cursor: 'pointer', marginTop: 12, boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 8px 24px rgba(0,102,255,0.45)' }}
+            >
               Siguiente: Foto & Ubicación <Icon.ArrowRight />
-            </button>
+            </motion.button>
           </form>
         )}
 
@@ -1374,7 +1618,7 @@ function RegisterView({
                   className="w-24 h-24"
                 />
               </div>
-              {errors.fotoUrl && <span style={{ fontSize: 11, color: '#FF453A', textAlign: 'center', display: 'block', marginTop: 4 }}>{errors.fotoUrl}</span>}
+              {errors.fotoUrl && <span style={{ fontSize: 11, color: '#FF3B30', textAlign: 'center', display: 'block', marginTop: 4 }}>{errors.fotoUrl}</span>}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1387,10 +1631,10 @@ function RegisterView({
                     const muns = MUNICIPIOS[dep] || [dep];
                     setForm({ ...form, departamento: dep, municipio: muns[0] });
                   }}
-                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? '#1C1C24' : '#F5F5F7', border: border, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
                 >
                   {DEPARTAMENTOS.map((d) => (
-                    <option key={d} value={d}>{d}</option>
+                    <option key={d} value={d} style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>{d}</option>
                   ))}
                 </select>
               </div>
@@ -1400,20 +1644,21 @@ function RegisterView({
                 <select
                   value={form.municipio}
                   onChange={(e) => setForm({ ...form, municipio: e.target.value })}
-                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? '#1C1C24' : '#F5F5F7', border: border, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
                 >
                   {(MUNICIPIOS[form.departamento] || [form.departamento]).map((m) => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m} style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>{m}</option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Captura de Ubicación GPS */}
+            {/* Captura de Ubicación GPS con estilo satelital */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Dirección y Referencia Residencial *</label>
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.93 }}
                   type="button"
                   onClick={handleGetGps}
                   disabled={gettingGps}
@@ -1421,41 +1666,46 @@ function RegisterView({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
-                    background: gpsCaptured ? 'rgba(76,175,80,0.15)' : 'rgba(0,102,255,0.12)',
-                    border: gpsCaptured ? '1px solid #4CAF50' : '1px solid rgba(0,102,255,0.3)',
-                    color: gpsCaptured ? '#4CAF50' : '#0066FF',
-                    padding: '5px 12px',
+                    background: gpsCaptured ? 'rgba(76,175,80,0.18)' : 'rgba(0,122,255,0.15)',
+                    border: gpsCaptured ? '1px solid #4CAF50' : '1px solid rgba(0,122,255,0.35)',
+                    color: gpsCaptured ? '#4CAF50' : '#007AFF',
+                    padding: '6px 14px',
                     borderRadius: 100,
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    boxShadow: gpsCaptured ? '0 0 12px rgba(76,175,80,0.3)' : '0 0 10px rgba(0,122,255,0.2)',
                   }}
                 >
                   <span>{gettingGps ? 'Capturando GPS...' : gpsCaptured ? 'GPS Confirmado' : 'Capturar GPS'}</span>
-                </button>
+                </motion.button>
               </div>
               <textarea
                 placeholder="De la Estatua de Montoya 1c abajo, 2c al sur, casa portón negro"
                 value={form.direccion}
                 onChange={(e) => setForm({ ...form, direccion: e.target.value })}
                 rows={2}
-                style={{ width: '100%', borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '12px 14px', color: textColor, fontSize: 14, outline: 'none' }}
+                style={{ width: '100%', borderRadius: 14, background: inputBg, border: specularBorder, padding: '12px 16px', color: textColor, fontSize: 14, outline: 'none' }}
               />
-              {errors.direccion && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.direccion}</span>}
+              {errors.direccion && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.direccion}</span>}
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={() => setStep(1)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 20px', height: 48, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 22px', height: 50, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: specularBorder, color: textColor, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 <Icon.ArrowLeft /> Atrás
-              </button>
-              <button type="submit" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 18px rgba(0,102,255,0.42)' }}>
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                type="submit"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 50, borderRadius: 100, background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 8px 24px rgba(0,102,255,0.45)' }}
+              >
                 Siguiente: Seleccionar Perfil <Icon.ArrowRight />
-              </button>
+              </motion.button>
             </div>
           </form>
         )}
@@ -1468,35 +1718,37 @@ function RegisterView({
                 { value: 'cliente' as const, label: 'Cliente', desc: 'Pido envíos y productos', icon: <Icon.User /> },
                 { value: 'repartidor' as const, label: 'Repartidor', icon: <Icon.Bike />, desc: 'Realizo entregas con mi vehículo' },
               ].map((r) => (
-                <button
+                <motion.button
                   key={r.value}
+                  whileTap={{ scale: 0.96 }}
                   type="button"
                   onClick={() => setForm({ ...form, role: r.value })}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    padding: '16px 12px',
-                    borderRadius: 18,
-                    background: form.role === r.value ? 'rgba(0,102,255,0.15)' : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
-                    border: form.role === r.value ? '1.5px solid #0066FF' : border,
+                    padding: '18px 14px',
+                    borderRadius: 20,
+                    background: form.role === r.value ? (isDark ? 'rgba(0,122,255,0.18)' : 'rgba(0,122,255,0.1)') : inputBg,
+                    border: form.role === r.value ? '2px solid #007AFF' : specularBorder,
+                    boxShadow: form.role === r.value ? '0 0 16px rgba(0,122,255,0.3)' : 'none',
                     color: textColor,
                     cursor: 'pointer',
                     textAlign: 'center',
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  <div style={{ color: '#0066FF', marginBottom: 6 }}>{r.icon}</div>
+                  <div style={{ color: '#007AFF', marginBottom: 6 }}>{r.icon}</div>
                   <div style={{ fontSize: 14, fontWeight: 800 }}>{r.label}</div>
                   <div style={{ fontSize: 11, color: subColor, marginTop: 2 }}>{r.desc}</div>
-                </button>
+                </motion.button>
               ))}
             </div>
 
             {/* SECCIÓN REPARTIDOR */}
             {form.role === 'repartidor' && (
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', padding: 16, borderRadius: 18, border: border, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0066FF' }}>Registro Técnico del Vehículo</div>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.025)', padding: 18, borderRadius: 20, border: specularBorder, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#007AFF' }}>Registro Técnico del Vehículo</div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
@@ -1504,11 +1756,11 @@ function RegisterView({
                     <select
                       value={form.vehiculoTipo}
                       onChange={(e) => setForm({ ...form, vehiculoTipo: e.target.value })}
-                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? '#1C1C24' : '#FFFFFF', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 42, borderRadius: 12, background: inputBg, border: specularBorder, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
                     >
-                      <option value="moto">Moto</option>
-                      <option value="bicicleta">Bicicleta</option>
-                      <option value="auto">Auto / Camioneta</option>
+                      <option value="moto" style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>Moto</option>
+                      <option value="bicicleta" style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>Bicicleta</option>
+                      <option value="auto" style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>Auto / Camioneta</option>
                     </select>
                   </div>
 
@@ -1519,9 +1771,9 @@ function RegisterView({
                       placeholder="M-123456"
                       value={form.vehiculoPlaca}
                       onChange={(e) => setForm({ ...form, vehiculoPlaca: e.target.value.toUpperCase() })}
-                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 12px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 42, borderRadius: 12, background: inputBg, border: specularBorder, padding: '0 12px', color: textColor, fontSize: 13, outline: 'none' }}
                     />
-                    {errors.vehiculoPlaca && <span style={{ fontSize: 10, color: '#FF453A' }}>{errors.vehiculoPlaca}</span>}
+                    {errors.vehiculoPlaca && <span style={{ fontSize: 10, color: '#FF3B30' }}>{errors.vehiculoPlaca}</span>}
                   </div>
                 </div>
 
@@ -1533,7 +1785,7 @@ function RegisterView({
                       placeholder="Honda/TVS"
                       value={form.vehiculoMarca}
                       onChange={(e) => setForm({ ...form, vehiculoMarca: e.target.value })}
-                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 42, borderRadius: 12, background: inputBg, border: specularBorder, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
                     />
                   </div>
 
@@ -1544,7 +1796,7 @@ function RegisterView({
                       placeholder="Wave 110"
                       value={form.vehiculoModelo}
                       onChange={(e) => setForm({ ...form, vehiculoModelo: e.target.value })}
-                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 42, borderRadius: 12, background: inputBg, border: specularBorder, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
                     />
                   </div>
 
@@ -1555,7 +1807,7 @@ function RegisterView({
                       placeholder="2023"
                       value={form.vehiculoAnio}
                       onChange={(e) => setForm({ ...form, vehiculoAnio: Number(e.target.value) })}
-                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 42, borderRadius: 12, background: inputBg, border: specularBorder, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
                     />
                   </div>
                 </div>
@@ -1563,27 +1815,37 @@ function RegisterView({
             )}
 
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginTop: 4 }}>
-              <input type="checkbox" checked={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.checked })} style={{ accentColor: '#0066FF' }} />
-              <span style={{ fontSize: 12, color: subColor }}>Acepto el <a href="#" style={{ color: '#0066FF' }}>Contrato de Servicio</a> y la <a href="#" style={{ color: '#0066FF' }}>Privacidad</a>.</span>
+              <input type="checkbox" checked={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.checked })} style={{ accentColor: '#007AFF', width: 16, height: 16 }} />
+              <span style={{ fontSize: 12, color: subColor }}>Acepto el <a href="#" style={{ color: '#007AFF', fontWeight: 600 }}>Contrato de Servicio</a> y la <a href="#" style={{ color: '#007AFF', fontWeight: 600 }}>Privacidad</a>.</span>
             </label>
-            {errors.terms && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.terms}</span>}
+            {errors.terms && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.terms}</span>}
 
             <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-              <button type="button" onClick={() => setStep(2)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 20px', height: 48, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                type="button"
+                onClick={() => setStep(2)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 22px', height: 50, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: specularBorder, color: textColor, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
                 <Icon.ArrowLeft /> Atrás
-              </button>
-              <button type="submit" disabled={loading} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 18px rgba(0,102,255,0.42)' }}>
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                type="submit"
+                disabled={loading}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 50, borderRadius: 100, background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 8px 24px rgba(0,102,255,0.45)' }}
+              >
                 {loading ? <MiniSpinner size={18} color="white" /> : 'Finalizar Registro'} {!loading && <Icon.ArrowRight />}
-              </button>
+              </motion.button>
             </div>
           </form>
         )}
 
-        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 24 }}>
+        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 26 }}>
           ¿Ya tienes cuenta?{' '}
-          <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#0066FF', fontWeight: 700, cursor: 'pointer' }}>Inicia sesión</button>
+          <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#007AFF', fontWeight: 800, cursor: 'pointer' }}>Inicia sesión</button>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
