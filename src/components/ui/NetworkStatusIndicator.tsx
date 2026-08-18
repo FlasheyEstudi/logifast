@@ -51,16 +51,16 @@ export default function NetworkStatusIndicator() {
     <AnimatePresence>
       {showIndicator && (
         <motion.div
-          initial={{ opacity: 0, y: -24, scale: 0.92 }}
+          initial={{ opacity: 0, y: 20, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.92 }}
+          exit={{ opacity: 0, y: 16, scale: 0.92 }}
           transition={{ type: 'spring', damping: 24, stiffness: 300 }}
           style={{
             position: 'fixed',
-            top: 'calc(env(safe-area-inset-top, 12px) + 8px)',
+            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 74px)',
             left: '50%',
             transform: 'translateX(-50%)',
-            zIndex: 100000,
+            zIndex: 9995,
             pointerEvents: 'none',
             display: 'flex',
             alignItems: 'center',
