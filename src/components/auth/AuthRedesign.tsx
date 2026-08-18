@@ -131,12 +131,6 @@ const Icon = {
       <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
     </svg>
   ),
-  CheckCircle: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00C853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-      <polyline points="22 4 12 14.01 9 11.01"/>
-    </svg>
-  ),
   Star: ({ size = 16, fill = "#FFB300" }: { size?: number; fill?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="1">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -155,7 +149,7 @@ const Icon = {
         width: size,
         height: size,
         objectFit: 'contain',
-        filter: 'drop-shadow(0 4px 12px rgba(0,102,255,0.45))',
+        filter: 'drop-shadow(0 4px 14px rgba(0,102,255,0.45))',
       }}
     />
   ),
@@ -192,16 +186,16 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
 
   if (type === 'order_widget') {
     return (
-      <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 16, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+      <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#00C853' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px #00C853' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 700, color: '#00C853' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 10px #00C853' }} />
             EN CAMINO • ETA 12 MIN
           </div>
           <span style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 700, color: textColor }}>C$ 240.00</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(0, 102, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(0, 102, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Icon.FoodBag />
           </div>
           <div>
@@ -209,8 +203,8 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
             <div style={{ fontSize: 11, color: subColor }}>Repartidor: Carlos M. (Honda Wave #LF-04)</div>
           </div>
         </div>
-        <div style={{ height: 4, background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0,0,0,0.1)', borderRadius: 4, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: '75%', background: 'linear-gradient(90deg, #0066FF, #00C853)', borderRadius: 4 }} />
+        <div style={{ height: 5, background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0,0,0,0.08)', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: '75%', background: 'linear-gradient(90deg, #0066FF, #00C853)', borderRadius: 10 }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: subColor, fontWeight: 600 }}>
           <span>Tienda</span>
@@ -223,16 +217,16 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
 
   if (type === 'map_widget') {
     return (
-      <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 16, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+      <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: textColor }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0066FF' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: textColor }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 8px #0066FF' }} />
             Motorizado a 1.2 km
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', background: 'rgba(0, 102, 255, 0.15)', padding: '2px 8px', borderRadius: 100 }}>28 km/h</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', background: 'rgba(0, 102, 255, 0.15)', padding: '3px 10px', borderRadius: 100 }}>28 km/h</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.04)', borderRadius: 12, padding: '10px 14px', fontSize: 12, border }}>
-          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.04)', borderRadius: 14, padding: '12px 14px', fontSize: 12, border }}>
+          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 5 }}>
             <Icon.MapPin /> Burger Boss
           </span>
           <span style={{ flex: 1, borderTop: '1px dashed #0066FF', margin: '0 10px' }} />
@@ -240,11 +234,11 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
             <Icon.Bike />
           </span>
           <span style={{ flex: 1, borderTop: '1px dashed rgba(0,102,255,0.3)', margin: '0 10px' }} />
-          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 5 }}>
             <Icon.Home /> Los Robles
           </span>
         </div>
-        <div style={{ fontSize: 12, color: textColor, background: 'rgba(0, 102, 255, 0.12)', padding: '8px 12px', borderRadius: 10, borderLeft: '3px solid #0066FF', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontSize: 12, color: textColor, background: 'rgba(0, 102, 255, 0.12)', padding: '10px 14px', borderRadius: 12, borderLeft: '3px solid #0066FF', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Icon.Message />
           <span>Carlos: "¡Ya voy llegando a la entrada principal!"</span>
         </div>
@@ -254,15 +248,15 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
 
   if (type === 'wallet_widget') {
     return (
-      <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,102,255,0.15))' : 'linear-gradient(135deg, rgba(0,102,255,0.08), rgba(0,102,255,0.03))', border, borderRadius: 20, padding: 16, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#0066FF' }}>LOGIFAST PAY</div>
-        <div style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 2, color: textColor, margin: '6px 0' }}>•••• •••• •••• 4920</div>
+      <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,102,255,0.15))' : 'linear-gradient(135deg, rgba(0,102,255,0.08), rgba(0,102,255,0.03))', border, borderRadius: 20, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }}>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: '#0066FF' }}>LOGIFAST PAY</div>
+        <div style={{ fontFamily: 'monospace', fontSize: 17, fontWeight: 700, letterSpacing: 2, color: textColor, margin: '4px 0' }}>•••• •••• •••• 4920</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <div style={{ fontSize: 9, color: subColor }}>TITULAR</div>
+            <div style={{ fontSize: 9, color: subColor, fontWeight: 600 }}>TITULAR</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: textColor }}>MARÍA LÓPEZ</div>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700, fontStyle: 'italic', color: textColor }}>VISA</div>
+          <div style={{ fontSize: 16, fontWeight: 800, fontStyle: 'italic', color: textColor }}>VISA</div>
         </div>
         <div style={{ fontSize: 11, color: '#00C853', fontWeight: 600 }}>✓ Pago de C$ 180.00 verificado sin comisiones</div>
       </div>
@@ -270,16 +264,16 @@ function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
   }
 
   return (
-    <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 16, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+    <div style={{ width: '100%', background: cardBg, border, borderRadius: 20, padding: 18, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }}>
       <div style={{ display: 'flex', gap: 4, color: '#FFB300' }}>
         {[...Array(5)].map((_, i) => <Icon.Star key={i} size={18} fill="#FFB300" />)}
       </div>
       <div style={{ fontSize: 15, fontWeight: 700, color: textColor }}>5.0 Excelente Servicio</div>
-      <div style={{ fontSize: 12, color: subColor, fontStyle: 'italic' }}>
+      <div style={{ fontSize: 12, color: subColor, fontStyle: 'italic', lineHeight: 1.5 }}>
         "El servicio llegó súper rápido a Los Robles y el empaque impecable. ¡10/10!"
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: textColor, marginTop: 4 }}>
-        <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#0066FF', color: 'white', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>ML</div>
+        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0066FF', color: 'white', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>ML</div>
         <span>María L. • Cliente Verificado</span>
       </div>
     </div>
@@ -354,8 +348,9 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
     }}>
       {/* Background ambient lighting effects */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: -100, left: '15%', width: 500, height: 500, background: isDark ? 'radial-gradient(circle, rgba(0, 102, 255, 0.18) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 102, 255, 0.08) 0%, transparent 70%)', filter: 'blur(140px)' }} />
-        <div style={{ position: 'absolute', top: '35%', right: -80, width: 450, height: 450, background: isDark ? 'radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%)', filter: 'blur(140px)' }} />
+        <div style={{ position: 'absolute', top: -120, left: '12%', width: 550, height: 550, background: isDark ? 'radial-gradient(circle, rgba(0, 102, 255, 0.2) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 102, 255, 0.09) 0%, transparent 70%)', filter: 'blur(150px)' }} />
+        <div style={{ position: 'absolute', top: '38%', right: -90, width: 500, height: 500, background: isDark ? 'radial-gradient(circle, rgba(124, 58, 237, 0.16) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(124, 58, 237, 0.07) 0%, transparent 70%)', filter: 'blur(150px)' }} />
+        <div style={{ position: 'absolute', bottom: -100, left: '20%', width: 600, height: 600, background: isDark ? 'radial-gradient(circle, rgba(0, 200, 83, 0.12) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 200, 83, 0.05) 0%, transparent 70%)', filter: 'blur(160px)' }} />
       </div>
 
       <AnimatePresence mode="wait">
@@ -383,9 +378,9 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
         {view === 'login' && (
           <motion.div
             key="login"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.3 }}
             style={{ position: 'relative', zIndex: 10 }}
           >
@@ -401,9 +396,9 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
         {view === 'register' && (
           <motion.div
             key="register"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.3 }}
             style={{ position: 'relative', zIndex: 10 }}
           >
@@ -442,27 +437,28 @@ function LandingView({
 }) {
   const slide = SLIDES[currentSlide];
   const textColor = isDark ? '#FFFFFF' : 'var(--text)';
-  const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
-  const navBg = isDark ? 'rgba(10, 10, 12, 0.85)' : 'rgba(250, 248, 245, 0.88)';
+  const subColor = isDark ? '#8E8E93' : 'var(--text-secondary)';
+  const navBg = isDark ? 'rgba(10, 10, 14, 0.82)' : 'rgba(250, 248, 245, 0.85)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)';
 
   return (
     <div>
-      {/* Top Floating / Sticky Apple Blur Navbar */}
+      {/* Floating Glass Navbar */}
       <header style={{
         position: 'sticky',
         top: 0,
         zIndex: 1000,
         background: navBg,
-        backdropFilter: 'blur(28px)',
-        WebkitBackdropFilter: 'blur(28px)',
+        backdropFilter: 'blur(30px)',
+        WebkitBackdropFilter: 'blur(30px)',
         borderBottom: border,
-        padding: '14px 20px',
+        padding: '14px 24px',
+        transition: 'all 0.3s ease',
       }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Icon.Logo size={36} />
-            <span style={{ fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', color: textColor }}>LOGIFAST</span>
+            <span style={{ fontWeight: 800, fontSize: 21, letterSpacing: '-0.03em', color: textColor }}>LOGIFAST</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -489,20 +485,20 @@ function LandingView({
 
             <button
               onClick={onLogin}
-              style={{ background: 'transparent', border: 'none', color: textColor, fontSize: 14, fontWeight: 600, cursor: 'pointer', padding: '8px 14px' }}
+              style={{ background: 'transparent', border: 'none', color: textColor, fontSize: 14, fontWeight: 600, cursor: 'pointer', padding: '8px 16px', borderRadius: 100, transition: 'background 0.2s ease' }}
             >
               Iniciar sesión
             </button>
             <button
               onClick={onRegister}
-              style={{ background: '#0066FF', color: '#FFFFFF', border: 'none', padding: '9px 22px', borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,102,255,0.4)', transition: 'transform 0.2s ease' }}
+              style={{ background: '#0066FF', color: '#FFFFFF', border: 'none', padding: '10px 22px', borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 18px rgba(0,102,255,0.4)', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}
             >
               Registrarse
             </button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{ background: 'transparent', border: 'none', color: textColor, cursor: 'pointer', display: 'flex', padding: 4 }}
+              style={{ background: 'transparent', border: 'none', color: textColor, cursor: 'pointer', display: 'flex', padding: 6, borderRadius: 8 }}
             >
               {mobileMenuOpen ? <Icon.Close /> : <Icon.Menu />}
             </button>
@@ -518,59 +514,59 @@ function LandingView({
         )}
       </header>
 
-      {/* HERO SECTION */}
-      <section style={{ padding: '48px 20px 70px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 40, alignItems: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {/* Hero Pill Badge corregido */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,102,255,0.12)', border: '1px solid rgba(0,102,255,0.3)', color: '#0066FF', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, width: 'fit-content' }}>
+      {/* HERO SECTION REDISEÑADA */}
+      <section style={{ padding: '56px 24px 80px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 48, alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Hero Pill Badge con resplandor */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,102,255,0.12)', border: '1px solid rgba(0,102,255,0.3)', color: '#0066FF', padding: '6px 18px', borderRadius: 100, fontSize: 13, fontWeight: 700, width: 'fit-content', boxShadow: '0 2px 10px rgba(0,102,255,0.15)' }}>
               <Icon.Sparkles />
               <span>Tecnología que mueve tu logística</span>
             </div>
 
-            {/* Titular Hero Corregido */}
-            <h1 style={{ fontSize: 'clamp(34px, 5.5vw, 54px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
+            {/* Titular Hero Corregido & Rediseñado */}
+            <h1 style={{ fontSize: 'clamp(36px, 5.8vw, 56px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
               El control total de tu logística
             </h1>
 
-            {/* Subtítulo Hero Corregido */}
-            <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', lineHeight: 1.55, color: subColor, margin: 0, maxWidth: 520 }}>
+            {/* Subtítulo Hero */}
+            <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', lineHeight: 1.6, color: subColor, margin: 0, maxWidth: 520 }}>
               Automatiza tus envíos, asigna repartidores, monitorea cada entrega en tiempo real y administra toda tu operación desde una plataforma inteligente diseñada para hacer crecer tu negocio.
             </p>
 
-            {/* Acciones principales */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 6 }}>
+            {/* Botones de acción */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 6 }}>
               <button
                 onClick={onRegister}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0066FF', color: 'white', border: 'none', padding: '16px 32px', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 24px rgba(0,102,255,0.4)', transition: 'transform 0.2s ease' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0066FF', color: 'white', border: 'none', padding: '16px 34px', borderRadius: 100, fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 8px 26px rgba(0,102,255,0.42)', transition: 'all 0.2s ease' }}
               >
                 <span>Comenzar ahora</span>
                 <Icon.ArrowRight />
               </button>
               <button
                 onClick={onLogin}
-                style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: textColor, border: border, padding: '16px 26px', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(20px)' }}
+                style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: textColor, border: border, padding: '16px 28px', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(20px)', transition: 'all 0.2s ease' }}
               >
                 Explorar Demo
               </button>
             </div>
 
-            {/* Indicadores / Quick Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 12, paddingTop: 20, borderTop: border }}>
+            {/* Quick Stats Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 12, paddingTop: 24, borderTop: border }}>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: textColor }}>2.5k+</div>
-                <div style={{ fontSize: 11, color: subColor }}>Envíos completados</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>2.5k+</div>
+                <div style={{ fontSize: 12, color: subColor, marginTop: 2 }}>Envíos completados</div>
               </div>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: textColor }}>15 min</div>
-                <div style={{ fontSize: 11, color: subColor }}>Tiempo promedio</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>15 min</div>
+                <div style={{ fontSize: 12, color: subColor, marginTop: 2 }}>Tiempo promedio</div>
               </div>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: textColor, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: textColor, display: 'flex', alignItems: 'center', gap: 4, letterSpacing: '-0.02em' }}>
                   <span>4.9</span>
                   <Icon.Star size={18} fill="#FFB300" />
                 </div>
-                <div style={{ fontSize: 11, color: subColor }}>Calificación</div>
+                <div style={{ fontSize: 12, color: subColor, marginTop: 2 }}>Calificación</div>
               </div>
             </div>
           </div>
@@ -579,14 +575,14 @@ function LandingView({
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{
               width: '100%',
-              maxWidth: 450,
-              padding: 24,
+              maxWidth: 460,
+              padding: 26,
               borderRadius: 32,
-              background: isDark ? 'rgba(22, 22, 29, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+              background: isDark ? 'rgba(22, 22, 29, 0.85)' : 'rgba(255, 255, 255, 0.92)',
               backdropFilter: 'blur(40px)',
               WebkitBackdropFilter: 'blur(40px)',
               border: border,
-              boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.6)' : '0 20px 60px rgba(0,0,0,0.1)',
+              boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.65)' : '0 20px 60px rgba(0,0,0,0.08)',
               textAlign: 'center',
             }}>
               <AnimatePresence mode="wait">
@@ -598,11 +594,11 @@ function LandingView({
                   transition={{ duration: 0.4 }}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                 >
-                  <div style={{ width: '100%', marginBottom: 20 }}>
+                  <div style={{ width: '100%', marginBottom: 22 }}>
                     <AppleSlideWidget type={slide.widgetType} isDark={isDark} />
                   </div>
                   <h2 style={{ fontSize: 22, fontWeight: 700, color: textColor, margin: '0 0 6px' }}>{slide.title}</h2>
-                  <p style={{ fontSize: 14, color: subColor, margin: '0 0 20px', lineHeight: 1.45 }}>{slide.subtitle}</p>
+                  <p style={{ fontSize: 14, color: subColor, margin: '0 0 20px', lineHeight: 1.5 }}>{slide.subtitle}</p>
                 </motion.div>
               </AnimatePresence>
 
@@ -630,14 +626,14 @@ function LandingView({
       </section>
 
       {/* SECCIÓN ALIADOS ESTRATÉGICOS */}
-      <section id="aliados" style={{ padding: '48px 20px', borderTop: border, borderBottom: border, background: isDark ? 'rgba(15,15,20,0.5)' : 'rgba(0,0,0,0.02)' }}>
+      <section id="aliados" style={{ padding: '52px 24px', borderTop: border, borderBottom: border, background: isDark ? 'rgba(15,15,20,0.45)' : 'rgba(0,0,0,0.015)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', letterSpacing: '0.1em', marginBottom: 6 }}>ALIADOS ESTRATÉGICOS</div>
-          <h2 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 700, color: textColor, margin: '0 0 28px' }}>Comercios Verificados en Managua</h2>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#0066FF', letterSpacing: '0.12em', marginBottom: 8 }}>ALIADOS ESTRATÉGICOS</div>
+          <h2 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: textColor, margin: '0 0 30px', letterSpacing: '-0.02em' }}>Comercios Verificados en Managua</h2>
           <div style={{ overflow: 'hidden', display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             {PARTNERS.map((partner, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRadius: 16, background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.8)', border: border, minWidth: 180 }}>
-                <img src={partner.src} alt={partner.name} style={{ width: 32, height: 32, objectFit: 'contain' }} />
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 22px', borderRadius: 20, background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)', border: border, minWidth: 185, transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}>
+                <img src={partner.src} alt={partner.name} style={{ width: 34, height: 34, objectFit: 'contain' }} />
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: textColor }}>{partner.name}</div>
                   <div style={{ fontSize: 11, color: subColor }}>{partner.sector}</div>
@@ -648,103 +644,103 @@ function LandingView({
         </div>
       </section>
 
-      {/* SECCIÓN: TODO TU ECOSISTEMA LOGÍSTICO (4 TARJETAS) */}
-      <section id="ecosistema" style={{ padding: '70px 20px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 44 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', letterSpacing: '0.1em' }}>ROLES Y HERRAMIENTAS</span>
-          <h2 style={{ fontSize: 'clamp(26px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.02em' }}>
+      {/* SECCIÓN: TODO TU ECOSISTEMA LOGÍSTICO (4 TARJETAS REDISEÑADAS) */}
+      <section id="ecosistema" style={{ padding: '80px 24px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#0066FF', letterSpacing: '0.12em' }}>ROLES Y HERRAMIENTAS</span>
+          <h2 style={{ fontSize: 'clamp(28px, 4.5vw, 38px)', fontWeight: 800, color: textColor, margin: '10px 0 0', letterSpacing: '-0.03em' }}>
             Todo tu ecosistema logístico en una sola plataforma.
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
           {/* Card 1: Portal de Clientes */}
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.72)' : 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(30px)', border: border, borderRadius: 26, padding: 30, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}>
             <div>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0, 102, 255, 0.12)', color: '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(0, 102, 255, 0.12)', color: '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                 <Icon.User />
               </div>
               <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Portal de Clientes</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.55 }}>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
                 Gestiona tus envíos desde un solo lugar. Cotiza al instante, programa entregas y consulta el estado de cada pedido con total transparencia.
               </p>
             </div>
-            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#00C853', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: '#00C853', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00C853' }} /> Monitoreo en vivo
             </div>
           </div>
 
           {/* Card 2: Panel de Repartidores */}
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.72)' : 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(30px)', border: border, borderRadius: 26, padding: 30, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}>
             <div>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0, 200, 83, 0.12)', color: '#00C853', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(0, 200, 83, 0.12)', color: '#00C853', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                 <Icon.Bike />
               </div>
               <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Panel de Repartidores</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.55 }}>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
                 Recibe pedidos cercanos, optimiza tus recorridos y administra tus ganancias desde una interfaz rápida, intuitiva y conectada en tiempo real.
               </p>
             </div>
-            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0066FF' }} /> Rutas satelitales
             </div>
           </div>
 
           {/* Card 3: Consola de Control */}
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.72)' : 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(30px)', border: border, borderRadius: 26, padding: 30, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}>
             <div>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                 <Icon.Shield />
               </div>
               <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Consola de Control</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.55 }}>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
                 Supervisa toda la operación desde un solo panel. Controla pedidos, repartidores, indicadores y rendimiento operativo en tiempo real.
               </p>
             </div>
-            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED' }} /> Auditoría total
             </div>
           </div>
 
           {/* Card 4: Gestión Inteligente de Flota */}
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.72)' : 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(30px)', border: border, borderRadius: 26, padding: 30, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', transition: 'all 0.25s ease' }}>
             <div>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255, 149, 0, 0.12)', color: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255, 149, 0, 0.12)', color: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                 <Icon.Wrench />
               </div>
               <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Gestión Inteligente de Flota</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.55 }}>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
                 Programa mantenimientos preventivos, controla el estado de cada motocicleta y reduce tiempos de inactividad mediante alertas automáticas. Controla tu flota, supervisa mantenimientos y administra repuestos desde un solo lugar.
               </p>
             </div>
-            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ marginTop: 24, fontSize: 11, fontWeight: 700, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF9500' }} /> Telemetría preventiva
             </div>
           </div>
         </div>
       </section>
 
-      {/* SECCIÓN CTA DE CIERRE CORREGIDA */}
-      <section id="cta" style={{ padding: '40px 20px 80px', maxWidth: 1200, margin: '0 auto' }}>
+      {/* SECCIÓN CTA DE CIERRE */}
+      <section id="cta" style={{ padding: '40px 24px 90px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{
           background: isDark
-            ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.15) 0%, rgba(22, 22, 29, 0.95) 100%)'
-            : 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%)',
+            ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.18) 0%, rgba(22, 22, 29, 0.95) 100%)'
+            : 'linear-gradient(135deg, rgba(0, 102, 255, 0.09) 0%, rgba(255, 255, 255, 0.95) 100%)',
           backdropFilter: 'blur(40px)',
           border: border,
-          borderRadius: 32,
-          padding: '48px 32px',
+          borderRadius: 36,
+          padding: '56px 36px',
           textAlign: 'center',
-          boxShadow: isDark ? '0 20px 60px rgba(0,0,0,0.5)' : '0 20px 50px rgba(0,102,255,0.08)',
+          boxShadow: isDark ? '0 25px 70px rgba(0,0,0,0.5)' : '0 25px 60px rgba(0,102,255,0.09)',
         }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4.5vw, 40px)', fontWeight: 800, color: textColor, margin: '0 0 14px', letterSpacing: '-0.03em' }}>
+          <h2 style={{ fontSize: 'clamp(28px, 4.8vw, 42px)', fontWeight: 800, color: textColor, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
             Tecnología que mueve tu logística.
           </h2>
-          <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', color: subColor, maxWidth: 640, margin: '0 auto 28px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', color: subColor, maxWidth: 650, margin: '0 auto 32px', lineHeight: 1.6 }}>
             Centraliza tus envíos, automatiza tus procesos y mantén el control de cada entrega desde una plataforma inteligente creada para impulsar el crecimiento de tu negocio.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
             <button
               onClick={onRegister}
               style={{
@@ -754,12 +750,12 @@ function LandingView({
                 background: '#0066FF',
                 color: 'white',
                 border: 'none',
-                padding: '16px 36px',
+                padding: '16px 38px',
                 borderRadius: 100,
                 fontSize: 15,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(0,102,255,0.4)',
+                boxShadow: '0 8px 26px rgba(0,102,255,0.42)',
                 transition: 'transform 0.2s ease',
               }}
             >
@@ -777,7 +773,7 @@ function LandingView({
                 background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                 color: textColor,
                 border: border,
-                padding: '16px 28px',
+                padding: '16px 30px',
                 borderRadius: 100,
                 fontSize: 15,
                 fontWeight: 600,
@@ -794,10 +790,10 @@ function LandingView({
       </section>
 
       {/* FOOTER */}
-      <footer style={{ padding: '40px 20px', background: isDark ? '#060608' : 'var(--bg-alt)', borderTop: border, textAlign: 'center', color: subColor, fontSize: 13 }}>
+      <footer style={{ padding: '40px 24px', background: isDark ? '#060608' : 'var(--bg-alt)', borderTop: border, textAlign: 'center', color: subColor, fontSize: 13 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
           <Icon.Logo size={28} />
-          <span style={{ fontWeight: 700, color: textColor }}>LOGIFAST</span>
+          <span style={{ fontWeight: 800, color: textColor }}>LOGIFAST</span>
         </div>
         <p>© {new Date().getFullYear()} LOGIFAST Nicaragua. Todos los derechos reservados.</p>
       </footer>
@@ -825,7 +821,7 @@ function LoginView({
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const textColor = isDark ? '#FFFFFF' : 'var(--text)';
-  const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
+  const subColor = isDark ? '#8E8E93' : 'var(--text-secondary)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -892,8 +888,8 @@ function LoginView({
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 24, left: 20, right: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 24, left: 24, right: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
         <button
           onClick={onBack}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', color: subColor, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
@@ -904,7 +900,7 @@ function LoginView({
 
         <button
           onClick={toggleTheme}
-          style={{ width: 38, height: 38, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           {isDark ? <Icon.Sun /> : <Icon.Moon />}
         </button>
@@ -912,54 +908,54 @@ function LoginView({
 
       <div style={{
         width: '100%',
-        maxWidth: 420,
-        background: isDark ? 'rgba(22, 22, 29, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+        maxWidth: 440,
+        background: isDark ? 'rgba(22, 22, 29, 0.92)' : 'rgba(255, 255, 255, 0.96)',
         backdropFilter: 'blur(40px)',
         WebkitBackdropFilter: 'blur(40px)',
         border: border,
-        borderRadius: 32,
-        padding: '40px 28px',
-        boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.7)' : '0 20px 60px rgba(0,0,0,0.1)',
+        borderRadius: 36,
+        padding: '42px 32px',
+        boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.75)' : '0 20px 60px rgba(0,0,0,0.1)',
         textAlign: 'center',
         marginTop: 40,
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <Icon.Logo size={46} />
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: textColor, margin: '12px 0 4px' }}>Iniciar Sesión</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 26 }}>
+          <Icon.Logo size={48} />
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: textColor, margin: '14px 0 4px', letterSpacing: '-0.02em' }}>Iniciar Sesión</h2>
           <p style={{ fontSize: 13, color: subColor, margin: 0 }}>Ingresa tus credenciales para acceder a LOGIFAST</p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Correo Electrónico</label>
+            <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Correo Electrónico</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: 14, color: subColor }}><Icon.Mail /></span>
+              <span style={{ position: 'absolute', left: 16, color: subColor }}><Icon.Mail /></span>
               <input
                 type="email"
                 placeholder="ejemplo@logifast.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{ width: '100%', height: 48, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px 0 42px', color: textColor, fontSize: 16, outline: 'none' }}
+                style={{ width: '100%', height: 48, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px 0 44px', color: textColor, fontSize: 15, outline: 'none' }}
               />
             </div>
             {errors.email && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.email}</span>}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Contraseña</label>
+            <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Contraseña</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: 14, color: subColor }}><Icon.Lock /></span>
+              <span style={{ position: 'absolute', left: 16, color: subColor }}><Icon.Lock /></span>
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', height: 48, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 42px 0 42px', color: textColor, fontSize: 16, outline: 'none' }}
+                style={{ width: '100%', height: 48, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 44px 0 44px', color: textColor, fontSize: 15, outline: 'none' }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{ position: 'absolute', right: 12, background: 'transparent', border: 'none', color: subColor, cursor: 'pointer' }}
+                style={{ position: 'absolute', right: 14, background: 'transparent', border: 'none', color: subColor, cursor: 'pointer' }}
               >
                 {showPassword ? <Icon.EyeOff /> : <Icon.Eye />}
               </button>
@@ -970,15 +966,15 @@ function LoginView({
           <button
             type="submit"
             disabled={loading}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 18px rgba(0,102,255,0.42)' }}
           >
             {loading ? <MiniSpinner size={18} color="white" /> : 'Ingresar a mi cuenta'}
             {!loading && <Icon.ArrowRight />}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', margin: '24px 0 16px' }}>
-          <span style={{ fontSize: 11, color: subColor, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Acceso Demo Instantáneo</span>
+        <div style={{ textAlign: 'center', margin: '26px 0 16px' }}>
+          <span style={{ fontSize: 11, color: subColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Acceso Demo Instantáneo</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -992,7 +988,7 @@ function LoginView({
               key={d.role}
               onClick={() => demoLogin(d.role)}
               disabled={loading}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 10, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', border: border, color: textColor, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 12, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', border: border, color: textColor, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s ease' }}
             >
               <span>{d.icon}</span>
               <span>{d.label}</span>
@@ -1000,9 +996,9 @@ function LoginView({
           ))}
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 24 }}>
+        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 26 }}>
           ¿No tienes cuenta?{' '}
-          <button type="button" onClick={onSwitchToRegister} style={{ background: 'none', border: 'none', color: '#0066FF', fontWeight: 600, cursor: 'pointer' }}>Regístrate gratis</button>
+          <button type="button" onClick={onSwitchToRegister} style={{ background: 'none', border: 'none', color: '#0066FF', fontWeight: 700, cursor: 'pointer' }}>Regístrate gratis</button>
         </p>
       </div>
     </div>
@@ -1037,7 +1033,6 @@ function RegisterView({
     lng: -86.2514,
     fotoUrl: '',
     role: 'cliente' as 'cliente' | 'repartidor',
-    // Vehículo para repartidores
     vehiculoTipo: 'moto',
     vehiculoMarca: '',
     vehiculoModelo: '',
@@ -1055,7 +1050,7 @@ function RegisterView({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const textColor = isDark ? '#FFFFFF' : 'var(--text)';
-  const subColor = isDark ? '#86868B' : 'var(--text-secondary)';
+  const subColor = isDark ? '#8E8E93' : 'var(--text-secondary)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)';
 
   const DEPARTAMENTOS = [
@@ -1215,8 +1210,8 @@ function RegisterView({
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 24, left: 20, right: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 24, left: 24, right: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
         <button
           onClick={onBack}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', color: subColor, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
@@ -1227,7 +1222,7 @@ function RegisterView({
 
         <button
           onClick={toggleTheme}
-          style={{ width: 38, height: 38, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           {isDark ? <Icon.Sun /> : <Icon.Moon />}
         </button>
@@ -1235,21 +1230,21 @@ function RegisterView({
 
       <div style={{
         width: '100%',
-        maxWidth: 480,
-        background: isDark ? 'rgba(22, 22, 29, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+        maxWidth: 500,
+        background: isDark ? 'rgba(22, 22, 29, 0.92)' : 'rgba(255, 255, 255, 0.96)',
         backdropFilter: 'blur(40px)',
         WebkitBackdropFilter: 'blur(40px)',
         border: border,
-        borderRadius: 32,
-        padding: '36px 28px',
-        boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.7)' : '0 20px 60px rgba(0,0,0,0.1)',
+        borderRadius: 36,
+        padding: '40px 32px',
+        boxShadow: isDark ? '0 30px 80px rgba(0,0,0,0.75)' : '0 20px 60px rgba(0,0,0,0.1)',
         textAlign: 'center',
         marginTop: 40,
       }}>
         {/* Step Header */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
-          <Icon.Logo size={42} />
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: textColor, margin: '10px 0 4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
+          <Icon.Logo size={44} />
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: textColor, margin: '12px 0 4px', letterSpacing: '-0.02em' }}>
             {step === 1 ? 'Paso 1: Identificación Legal' : step === 2 ? 'Paso 2: Foto de Perfil & GPS' : 'Paso 3: Perfil & Vehículo'}
           </h2>
           <p style={{ fontSize: 13, color: subColor, margin: 0 }}>
@@ -1257,12 +1252,12 @@ function RegisterView({
           </p>
 
           {/* Stepper Dots */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
                 style={{
-                  width: s === step ? 28 : 10,
+                  width: s === step ? 30 : 10,
                   height: 6,
                   borderRadius: 100,
                   background: s <= step ? '#0066FF' : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'),
@@ -1275,84 +1270,84 @@ function RegisterView({
 
         {/* PASO 1 */}
         {step === 1 && (
-          <form onSubmit={(e) => { e.preventDefault(); if (validateStep1()) setStep(2); }} style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}>
+          <form onSubmit={(e) => { e.preventDefault(); if (validateStep1()) setStep(2); }} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Nombre Completo *</label>
+              <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Nombre Completo *</label>
               <input
                 type="text"
                 placeholder="María López Vanegas"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
               />
               {errors.name && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.name}</span>}
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Correo Electrónico *</label>
+              <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Correo Electrónico *</label>
               <input
                 type="email"
                 placeholder="maria@empresa.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
               />
               {errors.email && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.email}</span>}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Teléfono Móvil *</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Teléfono Móvil *</label>
                 <input
                   type="tel"
                   placeholder="8888-8888"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
                 />
                 {errors.phone && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.phone}</span>}
               </div>
 
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Cédula NI *</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Cédula NI *</label>
                 <input
                   type="text"
                   placeholder="001-120495-0002E"
                   value={form.cedula}
                   onChange={(e) => setForm({ ...form, cedula: e.target.value.toUpperCase() })}
-                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
                 />
                 {errors.cedula && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.cedula}</span>}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Contraseña *</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Contraseña *</label>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
                 />
                 {errors.password && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.password}</span>}
               </div>
 
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Confirmar Contraseña *</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Confirmar Contraseña *</label>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={form.confirm}
                   onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 14px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 16px', color: textColor, fontSize: 15, outline: 'none', marginTop: 4 }}
                 />
                 {errors.confirm && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.confirm}</span>}
               </div>
             </div>
 
-            <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 10, boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}>
+            <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 12, boxShadow: '0 4px 18px rgba(0,102,255,0.42)' }}>
               Siguiente: Foto & Ubicación <Icon.ArrowRight />
             </button>
           </form>
@@ -1362,7 +1357,7 @@ function RegisterView({
         {step === 2 && (
           <form onSubmit={(e) => { e.preventDefault(); if (validateStep2()) setStep(3); }} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: textColor, display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: textColor, display: 'block', marginBottom: 8 }}>
                 Foto de Perfil Verificada * (Requerida)
               </label>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1382,9 +1377,9 @@ function RegisterView({
               {errors.fotoUrl && <span style={{ fontSize: 11, color: '#FF453A', textAlign: 'center', display: 'block', marginTop: 4 }}>{errors.fotoUrl}</span>}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Departamento *</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Departamento *</label>
                 <select
                   value={form.departamento}
                   onChange={(e) => {
@@ -1392,7 +1387,7 @@ function RegisterView({
                     const muns = MUNICIPIOS[dep] || [dep];
                     setForm({ ...form, departamento: dep, municipio: muns[0] });
                   }}
-                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? '#1C1C24' : '#F5F5F7', border: border, padding: '0 12px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? '#1C1C24' : '#F5F5F7', border: border, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
                 >
                   {DEPARTAMENTOS.map((d) => (
                     <option key={d} value={d}>{d}</option>
@@ -1401,11 +1396,11 @@ function RegisterView({
               </div>
 
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Municipio *</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Municipio *</label>
                 <select
                   value={form.municipio}
                   onChange={(e) => setForm({ ...form, municipio: e.target.value })}
-                  style={{ width: '100%', height: 44, borderRadius: 12, background: isDark ? '#1C1C24' : '#F5F5F7', border: border, padding: '0 12px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
+                  style={{ width: '100%', height: 46, borderRadius: 14, background: isDark ? '#1C1C24' : '#F5F5F7', border: border, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4 }}
                 >
                   {(MUNICIPIOS[form.departamento] || [form.departamento]).map((m) => (
                     <option key={m} value={m}>{m}</option>
@@ -1416,8 +1411,8 @@ function RegisterView({
 
             {/* Captura de Ubicación GPS */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: textColor }}>Dirección y Referencia Residencial *</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: textColor }}>Dirección y Referencia Residencial *</label>
                 <button
                   type="button"
                   onClick={handleGetGps}
@@ -1429,11 +1424,12 @@ function RegisterView({
                     background: gpsCaptured ? 'rgba(76,175,80,0.15)' : 'rgba(0,102,255,0.12)',
                     border: gpsCaptured ? '1px solid #4CAF50' : '1px solid rgba(0,102,255,0.3)',
                     color: gpsCaptured ? '#4CAF50' : '#0066FF',
-                    padding: '4px 10px',
+                    padding: '5px 12px',
                     borderRadius: 100,
                     fontSize: 11,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     cursor: 'pointer',
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   <span>{gettingGps ? 'Capturando GPS...' : gpsCaptured ? 'GPS Confirmado' : 'Capturar GPS'}</span>
@@ -1444,20 +1440,20 @@ function RegisterView({
                 value={form.direccion}
                 onChange={(e) => setForm({ ...form, direccion: e.target.value })}
                 rows={2}
-                style={{ width: '100%', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '10px 14px', color: textColor, fontSize: 14, outline: 'none' }}
+                style={{ width: '100%', borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '12px 14px', color: textColor, fontSize: 14, outline: 'none' }}
               />
               {errors.direccion && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.direccion}</span>}
             </div>
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px', height: 46, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 20px', height: 48, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 <Icon.ArrowLeft /> Atrás
               </button>
-              <button type="submit" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}>
+              <button type="submit" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 18px rgba(0,102,255,0.42)' }}>
                 Siguiente: Seleccionar Perfil <Icon.ArrowRight />
               </button>
             </div>
@@ -1466,7 +1462,7 @@ function RegisterView({
 
         {/* PASO 3 */}
         {step === 3 && (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[
                 { value: 'cliente' as const, label: 'Cliente', desc: 'Pido envíos y productos', icon: <Icon.User /> },
@@ -1480,34 +1476,35 @@ function RegisterView({
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    padding: '14px 10px',
-                    borderRadius: 16,
+                    padding: '16px 12px',
+                    borderRadius: 18,
                     background: form.role === r.value ? 'rgba(0,102,255,0.15)' : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
                     border: form.role === r.value ? '1.5px solid #0066FF' : border,
                     color: textColor,
                     cursor: 'pointer',
                     textAlign: 'center',
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  <div style={{ color: '#0066FF', marginBottom: 4 }}>{r.icon}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{r.label}</div>
-                  <div style={{ fontSize: 11, color: subColor }}>{r.desc}</div>
+                  <div style={{ color: '#0066FF', marginBottom: 6 }}>{r.icon}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800 }}>{r.label}</div>
+                  <div style={{ fontSize: 11, color: subColor, marginTop: 2 }}>{r.desc}</div>
                 </button>
               ))}
             </div>
 
             {/* SECCIÓN REPARTIDOR */}
             {form.role === 'repartidor' && (
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', padding: 14, borderRadius: 16, border: border, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0066FF' }}>Registro Técnico del Vehículo</div>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', padding: 16, borderRadius: 18, border: border, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0066FF' }}>Registro Técnico del Vehículo</div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Tipo de Vehículo *</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: textColor }}>Tipo de Vehículo *</label>
                     <select
                       value={form.vehiculoTipo}
                       onChange={(e) => setForm({ ...form, vehiculoTipo: e.target.value })}
-                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? '#1C1C24' : '#FFFFFF', border: border, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? '#1C1C24' : '#FFFFFF', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
                     >
                       <option value="moto">Moto</option>
                       <option value="bicicleta">Bicicleta</option>
@@ -1516,13 +1513,13 @@ function RegisterView({
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Placa Oficial *</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: textColor }}>Placa Oficial *</label>
                     <input
                       type="text"
                       placeholder="M-123456"
                       value={form.vehiculoPlaca}
                       onChange={(e) => setForm({ ...form, vehiculoPlaca: e.target.value.toUpperCase() })}
-                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 12px', color: textColor, fontSize: 13, outline: 'none' }}
                     />
                     {errors.vehiculoPlaca && <span style={{ fontSize: 10, color: '#FF453A' }}>{errors.vehiculoPlaca}</span>}
                   </div>
@@ -1530,35 +1527,35 @@ function RegisterView({
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Marca *</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: textColor }}>Marca *</label>
                     <input
                       type="text"
                       placeholder="Honda/TVS"
                       value={form.vehiculoMarca}
                       onChange={(e) => setForm({ ...form, vehiculoMarca: e.target.value })}
-                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Modelo *</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: textColor }}>Modelo *</label>
                     <input
                       type="text"
                       placeholder="Wave 110"
                       value={form.vehiculoModelo}
                       onChange={(e) => setForm({ ...form, vehiculoModelo: e.target.value })}
-                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: textColor }}>Año</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: textColor }}>Año</label>
                     <input
                       type="number"
                       placeholder="2023"
                       value={form.vehiculoAnio}
                       onChange={(e) => setForm({ ...form, vehiculoAnio: Number(e.target.value) })}
-                      style={{ width: '100%', height: 38, borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none' }}
+                      style={{ width: '100%', height: 40, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', border: border, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none' }}
                     />
                   </div>
                 </div>
@@ -1571,20 +1568,20 @@ function RegisterView({
             </label>
             {errors.terms && <span style={{ fontSize: 11, color: '#FF453A' }}>{errors.terms}</span>}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-              <button type="button" onClick={() => setStep(2)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px', height: 46, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+              <button type="button" onClick={() => setStep(2)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 20px', height: 48, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: border, color: textColor, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                 <Icon.ArrowLeft /> Atrás
               </button>
-              <button type="submit" disabled={loading} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}>
+              <button type="submit" disabled={loading} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 100, background: '#0066FF', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 18px rgba(0,102,255,0.42)' }}>
                 {loading ? <MiniSpinner size={18} color="white" /> : 'Finalizar Registro'} {!loading && <Icon.ArrowRight />}
               </button>
             </div>
           </form>
         )}
 
-        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 20 }}>
+        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 24 }}>
           ¿Ya tienes cuenta?{' '}
-          <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#0066FF', fontWeight: 600, cursor: 'pointer' }}>Inicia sesión</button>
+          <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#0066FF', fontWeight: 700, cursor: 'pointer' }}>Inicia sesión</button>
         </p>
       </div>
     </div>
