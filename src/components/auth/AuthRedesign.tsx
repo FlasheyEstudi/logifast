@@ -7,7 +7,6 @@ import { useConfigStore } from '@/store/configStore';
 import { MiniSpinner } from '@/components/ui/loaders';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 
-
 type View = 'landing' | 'login' | 'register';
 
 interface AuthRedesignProps {
@@ -77,6 +76,11 @@ const Icon = {
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
     </svg>
   ),
+  Wrench: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+    </svg>
+  ),
   Sun: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="5"/>
@@ -121,6 +125,18 @@ const Icon = {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   ),
+  Headphones: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+    </svg>
+  ),
+  CheckCircle: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00C853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+  ),
   Star: ({ size = 16, fill = "#FFB300" }: { size?: number; fill?: string }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="1">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -139,7 +155,7 @@ const Icon = {
         width: size,
         height: size,
         objectFit: 'contain',
-        filter: 'drop-shadow(0 4px 12px rgba(0,102,255,0.5))',
+        filter: 'drop-shadow(0 4px 12px rgba(0,102,255,0.45))',
       }}
     />
   ),
@@ -314,7 +330,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
     }
   }, [view]);
 
-  // Auto-advance carrusel (CONSERVACIÓN MANDATORIA DE LÓGICA)
+  // Auto-advance carrusel interactivo cada 5s
   useEffect(() => {
     if (view !== 'landing') return;
     const interval = setInterval(() => {
@@ -336,6 +352,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
       overflowX: 'hidden',
       transition: 'background 0.3s ease, color 0.3s ease',
     }}>
+      {/* Background ambient lighting effects */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
         <div style={{ position: 'absolute', top: -100, left: '15%', width: 500, height: 500, background: isDark ? 'radial-gradient(circle, rgba(0, 102, 255, 0.18) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 102, 255, 0.08) 0%, transparent 70%)', filter: 'blur(140px)' }} />
         <div style={{ position: 'absolute', top: '35%', right: -80, width: 450, height: 450, background: isDark ? 'radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%)', filter: 'blur(140px)' }} />
@@ -431,6 +448,7 @@ function LandingView({
 
   return (
     <div>
+      {/* Top Floating / Sticky Apple Blur Navbar */}
       <header style={{
         position: 'sticky',
         top: 0,
@@ -477,7 +495,7 @@ function LandingView({
             </button>
             <button
               onClick={onRegister}
-              style={{ background: '#0066FF', color: '#FFFFFF', border: 'none', padding: '9px 20px', borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,102,255,0.4)' }}
+              style={{ background: '#0066FF', color: '#FFFFFF', border: 'none', padding: '9px 22px', borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,102,255,0.4)', transition: 'transform 0.2s ease' }}
             >
               Registrarse
             </button>
@@ -493,34 +511,40 @@ function LandingView({
 
         {mobileMenuOpen && (
           <div style={{ padding: '16px 0', borderTop: border, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <a href="#ecosistema" onClick={() => setMobileMenuOpen(false)} style={{ color: textColor, textDecoration: 'none', fontSize: 15, fontWeight: 600 }}>Plataforma</a>
+            <a href="#ecosistema" onClick={() => setMobileMenuOpen(false)} style={{ color: textColor, textDecoration: 'none', fontSize: 15, fontWeight: 600 }}>Ecosistema</a>
             <a href="#aliados" onClick={() => setMobileMenuOpen(false)} style={{ color: textColor, textDecoration: 'none', fontSize: 15, fontWeight: 600 }}>Aliados</a>
+            <a href="#cta" onClick={() => setMobileMenuOpen(false)} style={{ color: textColor, textDecoration: 'none', fontSize: 15, fontWeight: 600 }}>Contacto</a>
           </div>
         )}
       </header>
 
+      {/* HERO SECTION */}
       <section style={{ padding: '48px 20px 70px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 40, alignItems: 'center' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {/* Hero Pill Badge corregido */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,102,255,0.12)', border: '1px solid rgba(0,102,255,0.3)', color: '#0066FF', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, width: 'fit-content' }}>
               <Icon.Sparkles />
-              <span>Logística & Marketplace Pro v2.0</span>
+              <span>Tecnología que mueve tu logística</span>
             </div>
 
-            <h1 style={{ fontSize: 'clamp(32px, 5.5vw, 54px)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
-              Envíos ultrarrápidos y compras en Managua.
+            {/* Titular Hero Corregido */}
+            <h1 style={{ fontSize: 'clamp(34px, 5.5vw, 54px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
+              El control total de tu logística
             </h1>
 
-            <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', lineHeight: 1.5, color: subColor, margin: 0, maxWidth: 480 }}>
-              La red que integra clientes, comercios, motorizados en tiempo real y gestión de flota mecánica en una sola experiencia fluida.
+            {/* Subtítulo Hero Corregido */}
+            <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', lineHeight: 1.55, color: subColor, margin: 0, maxWidth: 520 }}>
+              Automatiza tus envíos, asigna repartidores, monitorea cada entrega en tiempo real y administra toda tu operación desde una plataforma inteligente diseñada para hacer crecer tu negocio.
             </p>
 
+            {/* Acciones principales */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 6 }}>
               <button
                 onClick={onRegister}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0066FF', color: 'white', border: 'none', padding: '16px 30px', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 24px rgba(0,102,255,0.4)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0066FF', color: 'white', border: 'none', padding: '16px 32px', borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 24px rgba(0,102,255,0.4)', transition: 'transform 0.2s ease' }}
               >
-                <span>Comenzar gratis</span>
+                <span>Comenzar ahora</span>
                 <Icon.ArrowRight />
               </button>
               <button
@@ -531,6 +555,7 @@ function LandingView({
               </button>
             </div>
 
+            {/* Indicadores / Quick Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 12, paddingTop: 20, borderTop: border }}>
               <div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: textColor }}>2.5k+</div>
@@ -550,10 +575,11 @@ function LandingView({
             </div>
           </div>
 
+          {/* Carrusel interactivo y widgets (Preservado fielmente) */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{
               width: '100%',
-              maxWidth: 440,
+              maxWidth: 450,
               padding: 24,
               borderRadius: 32,
               background: isDark ? 'rgba(22, 22, 29, 0.85)' : 'rgba(255, 255, 255, 0.9)',
@@ -603,6 +629,7 @@ function LandingView({
         </div>
       </section>
 
+      {/* SECCIÓN ALIADOS ESTRATÉGICOS */}
       <section id="aliados" style={{ padding: '48px 20px', borderTop: border, borderBottom: border, background: isDark ? 'rgba(15,15,20,0.5)' : 'rgba(0,0,0,0.02)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', letterSpacing: '0.1em', marginBottom: 6 }}>ALIADOS ESTRATÉGICOS</div>
@@ -621,33 +648,152 @@ function LandingView({
         </div>
       </section>
 
+      {/* SECCIÓN: TODO TU ECOSISTEMA LOGÍSTICO (4 TARJETAS) */}
       <section id="ecosistema" style={{ padding: '70px 20px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', letterSpacing: '0.1em' }}>ECOSISTEMA UNIFICADO</span>
-          <h2 style={{ fontSize: 'clamp(26px, 4vw, 34px)', fontWeight: 700, color: textColor, margin: '6px 0 0' }}>Diseñado para máxima velocidad y control</h2>
+        <div style={{ textAlign: 'center', marginBottom: 44 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', letterSpacing: '0.1em' }}>ROLES Y HERRAMIENTAS</span>
+          <h2 style={{ fontSize: 'clamp(26px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.02em' }}>
+            Todo tu ecosistema logístico en una sola plataforma.
+          </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#0066FF', letterSpacing: '0.08em', marginBottom: 8, display: 'block' }}>MARKETPLACE</span>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>Comida y Productos</h3>
-            <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.5 }}>Compra directamente de comercios verificados con entrega directa a tu ubicación.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+          {/* Card 1: Portal de Clientes */}
+          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0, 102, 255, 0.12)', color: '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <Icon.User />
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Portal de Clientes</h3>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.55 }}>
+                Gestiona tus envíos desde un solo lugar. Cotiza al instante, programa entregas y consulta el estado de cada pedido con total transparencia.
+              </p>
+            </div>
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#00C853', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00C853' }} /> Monitoreo en vivo
+            </div>
           </div>
 
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#0066FF', letterSpacing: '0.08em', marginBottom: 8, display: 'block' }}>WEBSOCKET GPS</span>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>Rastreo Satelital</h3>
-            <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.5 }}>Sigue el avance de la moto sobre el mapa en tiempo real con latencia de 12ms.</p>
+          {/* Card 2: Panel de Repartidores */}
+          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0, 200, 83, 0.12)', color: '#00C853', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <Icon.Bike />
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Panel de Repartidores</h3>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.55 }}>
+                Recibe pedidos cercanos, optimiza tus recorridos y administra tus ganancias desde una interfaz rápida, intuitiva y conectada en tiempo real.
+              </p>
+            </div>
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#0066FF', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0066FF' }} /> Rutas satelitales
+            </div>
           </div>
 
-          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#0066FF', letterSpacing: '0.08em', marginBottom: 8, display: 'block' }}>TALLER PRO</span>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>Ingeniería de Flota</h3>
-            <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.5 }}>Alertas automáticas por kilometraje y consumo de repuestos para mecánicos.</p>
+          {/* Card 3: Consola de Control */}
+          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <Icon.Shield />
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Consola de Control</h3>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.55 }}>
+                Supervisa toda la operación desde un solo panel. Controla pedidos, repartidores, indicadores y rendimiento operativo en tiempo real.
+              </p>
+            </div>
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7C3AED' }} /> Auditoría total
+            </div>
+          </div>
+
+          {/* Card 4: Gestión Inteligente de Flota */}
+          <div style={{ background: isDark ? 'rgba(22, 22, 29, 0.7)' : 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(30px)', border: border, borderRadius: 24, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255, 149, 0, 0.12)', color: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <Icon.Wrench />
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 10px' }}>Gestión Inteligente de Flota</h3>
+              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.55 }}>
+                Programa mantenimientos preventivos, controla el estado de cada motocicleta y reduce tiempos de inactividad mediante alertas automáticas. Controla tu flota, supervisa mantenimientos y administra repuestos desde un solo lugar.
+              </p>
+            </div>
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF9500' }} /> Telemetría preventiva
+            </div>
           </div>
         </div>
       </section>
 
+      {/* SECCIÓN CTA DE CIERRE CORREGIDA */}
+      <section id="cta" style={{ padding: '40px 20px 80px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{
+          background: isDark
+            ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.15) 0%, rgba(22, 22, 29, 0.95) 100%)'
+            : 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%)',
+          backdropFilter: 'blur(40px)',
+          border: border,
+          borderRadius: 32,
+          padding: '48px 32px',
+          textAlign: 'center',
+          boxShadow: isDark ? '0 20px 60px rgba(0,0,0,0.5)' : '0 20px 50px rgba(0,102,255,0.08)',
+        }}>
+          <h2 style={{ fontSize: 'clamp(28px, 4.5vw, 40px)', fontWeight: 800, color: textColor, margin: '0 0 14px', letterSpacing: '-0.03em' }}>
+            Tecnología que mueve tu logística.
+          </h2>
+          <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', color: subColor, maxWidth: 640, margin: '0 auto 28px', lineHeight: 1.6 }}>
+            Centraliza tus envíos, automatiza tus procesos y mantén el control de cada entrega desde una plataforma inteligente creada para impulsar el crecimiento de tu negocio.
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <button
+              onClick={onRegister}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: '#0066FF',
+                color: 'white',
+                border: 'none',
+                padding: '16px 36px',
+                borderRadius: 100,
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px rgba(0,102,255,0.4)',
+                transition: 'transform 0.2s ease',
+              }}
+            >
+              <span>Comenzar ahora</span>
+              <Icon.ArrowRight />
+            </button>
+            <a
+              href="https://wa.me/50588888888?text=Hola%20LOGIFAST,%20deseo%20m%C3%A1s%20informaci%C3%B3n"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                color: textColor,
+                border: border,
+                padding: '16px 28px',
+                borderRadius: 100,
+                fontSize: 15,
+                fontWeight: 600,
+                textDecoration: 'none',
+                cursor: 'pointer',
+                backdropFilter: 'blur(20px)',
+              }}
+            >
+              <Icon.Headphones />
+              <span>Contactar a soporte</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
       <footer style={{ padding: '40px 20px', background: isDark ? '#060608' : 'var(--bg-alt)', borderTop: border, textAlign: 'center', color: subColor, fontSize: 13 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
           <Icon.Logo size={28} />
@@ -747,7 +893,7 @@ function LoginView({
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 24, left: 20, right: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ position: 'absolute', top: 24, left: 20, right: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
         <button
           onClick={onBack}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', color: subColor, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
@@ -1070,7 +1216,7 @@ function RegisterView({
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 24, left: 20, right: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ position: 'absolute', top: 24, left: 20, right: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
         <button
           onClick={onBack}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', color: subColor, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
@@ -1109,7 +1255,6 @@ function RegisterView({
           <p style={{ fontSize: 13, color: subColor, margin: 0 }}>
             {step === 1 ? 'Datos personales y cédula de Nicaragua' : step === 2 ? 'Fotografía verificada y ubicación GPS' : 'Selecciona tu rol y vehículo'}
           </p>
-
 
           {/* Stepper Dots */}
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
@@ -1216,7 +1361,6 @@ function RegisterView({
         {/* PASO 2 */}
         {step === 2 && (
           <form onSubmit={(e) => { e.preventDefault(); if (validateStep2()) setStep(3); }} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
-            {/* Subir Foto de Perfil */}
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: textColor, display: 'block', marginBottom: 6 }}>
                 Foto de Perfil Verificada * (Requerida)
@@ -1446,4 +1590,3 @@ function RegisterView({
     </div>
   );
 }
-
