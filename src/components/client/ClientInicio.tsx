@@ -98,6 +98,12 @@ export default function ClientInicio({
   const [adModalOpen, setAdModalOpen] = useState(false);
   const [adSuccessMsg, setAdSuccessMsg] = useState('');
 
+  /* Load real banners & feed on mount */
+  useEffect(() => {
+    useStore.getState().fetchBanners?.();
+    useStore.getState().fetchFeed?.();
+  }, []);
+
   /* Banner auto-scroll */
   useEffect(() => {
     if (banners.length <= 1) return;
@@ -148,6 +154,8 @@ export default function ClientInicio({
     try {
       await Promise.all([
         useStore.getState().fetchOrders(),
+        useStore.getState().fetchBanners?.(),
+        useStore.getState().fetchFeed?.(),
         useMarketplaceStore.getState().fetchTiendas(),
         useMarketplaceStore.getState().fetchOrdenesCompra(),
         useMarketplaceStore.getState().fetchFavoritos(),

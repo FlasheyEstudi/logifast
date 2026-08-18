@@ -217,8 +217,8 @@ export default function ModuleSuperAdmin() {
         if (data && Array.isArray(data.auditLogs) && data.auditLogs.length > 0) {
           const apiAudit: AuditLogEntry[] = data.auditLogs.map((a: any) => ({
             id: a.id,
-            userId: a.userId,
-            usuario: a.user?.name || a.userId,
+            userId: a.userId || 'admin',
+            usuario: a.usuario || a.userId || 'Super Admin',
             accion: a.accion,
             recurso: a.recurso,
             detalles: a.detalles || 'Acción realizada en el sistema',

@@ -755,9 +755,12 @@ interface AppState {
   addBanner: (banner: Banner) => void;
   updateBanner: (id: string, updates: Partial<Banner>) => void;
   deleteBanner: (id: string) => void;
+  fetchBanners: () => Promise<void>;
   addFeedItem: (item: FeedItem) => void;
   updateFeedItem: (id: string, updates: Partial<FeedItem>) => void;
   deleteFeedItem: (id: string) => void;
+  fetchFeed: () => Promise<void>;
+  fetchCodigos: () => Promise<void>;
 
   /* Communications Actions */
   addMensaje: (convId: string, mensaje: MensajeDirecto) => void;
@@ -1352,11 +1355,47 @@ export const useStore = create<AppState>((set, get) => ({
     banners: state.banners.map((b) => b.id === id ? { ...b, ...updates } : b),
   })),
   deleteBanner: (id) => set((state) => ({ banners: state.banners.filter((b) => b.id !== id) })),
+  fetchBanners: async () => {
+    try {
+      const res = await fetch('/api/banners?estado=activo');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+        set({ banners: json.data });
+      }
+    } catch (err) {
+      console.error('[fetchBanners error]', err);
+    }
+  },
   addFeedItem: (item) => set((state) => ({ feedItems: [item, ...state.feedItems] })),
   updateFeedItem: (id, updates) => set((state) => ({
     feedItems: state.feedItems.map((f) => f.id === id ? { ...f, ...updates } : f),
   })),
   deleteFeedItem: (id) => set((state) => ({ feedItems: state.feedItems.filter((f) => f.id !== id) })),
+  fetchFeed: async () => {
+    try {
+      const res = await fetch('/api/feed?estado=activo');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+        set({ feedItems: json.data });
+      }
+    } catch (err) {
+      console.error('[fetchFeed error]', err);
+    }
+  },
+  fetchCodigos: async () => {
+    try {
+      const res = await fetch('/api/codigos');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.data && Array.isArray(json.data)) {
+        set({ codigos: json.data });
+      }
+    } catch (err) {
+      console.error('[fetchCodigos error]', err);
+    }
+  },
 
   /* Communications Actions */
   addMensaje: (convId, mensaje) => set((state) => ({

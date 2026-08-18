@@ -114,7 +114,9 @@ type BuzonFilter = 'todos' | 'clientes' | 'repartidores' | 'noLeidos';
    ═══════════════════════════════════════════════ */
 
 function BuzonPanel() {
-  const { conversaciones, addMensaje, markConversacionLeida, addToast } = useStore();
+  const { conversaciones: storeConvs, addMensaje, markConversacionLeida, addToast } = useStore();
+  const [dbConversaciones, setDbConversaciones] = useState<Conversacion[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<BuzonFilter>('todos');
@@ -122,6 +124,27 @@ function BuzonPanel() {
   const [messageText, setMessageText] = useState('');
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const fetchConvs = useCallback(() => {
+    fetch('/api/mensajes')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.data && Array.isArray(data.data)) {
+          setDbConversaciones(data.data);
+          if (!activeConvId && data.data.length > 0) {
+            setActiveConvId(data.data[0].id);
+          }
+        }
+      })
+      .catch(() => null)
+      .finally(() => setLoading(false));
+  }, [activeConvId]);
+
+  useEffect(() => {
+    fetchConvs();
+  }, [fetchConvs]);
+
+  const conversaciones = dbConversaciones.length > 0 ? dbConversaciones : storeConvs;
 
   const activeConv = useMemo(
     () => conversaciones.find((c) => c.id === activeConvId) ?? null,
@@ -177,18 +200,31 @@ function BuzonPanel() {
       leido: false,
       enviadoEn: new Date().toISOString(),
     };
+
+    // Update in local state
+    setDbConversaciones((prev) =>
+      prev.map((c) =>
+        c.id === activeConvId
+          ? {
+              ...c,
+              ultimoMensaje: trimmed,
+              ultimoTimestamp: new Date().toISOString(),
+              mensajes: [...c.mensajes, msg],
+            }
+          : c
+      )
+    );
     addMensaje(activeConvId, msg);
 
-    fetch('/api/admin/send-push', {
+    // Save to Database
+    fetch('/api/mensajes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        userIds: [conv.participanteId],
-        titulo: 'Mensaje de Soporte LogiFast',
+        receptorId: conv.participanteId,
         contenido: trimmed,
-        tipo: 'chat',
       }),
-    }).catch((err) => console.error('[ModuleComunicaciones API push error]', err));
+    }).catch((err) => console.error('[POST /api/mensajes error]', err));
 
     setMessageText('');
   }, [activeConvId, messageText, conversaciones, addMensaje]);
@@ -208,18 +244,29 @@ function BuzonPanel() {
         leido: false,
         enviadoEn: new Date().toISOString(),
       };
+
+      setDbConversaciones((prev) =>
+        prev.map((c) =>
+          c.id === activeConvId
+            ? {
+                ...c,
+                ultimoMensaje: text,
+                ultimoTimestamp: new Date().toISOString(),
+                mensajes: [...c.mensajes, msg],
+              }
+            : c
+        )
+      );
       addMensaje(activeConvId, msg);
 
-      fetch('/api/admin/send-push', {
+      fetch('/api/mensajes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userIds: [conv.participanteId],
-          titulo: 'Mensaje de Soporte LogiFast',
+          receptorId: conv.participanteId,
           contenido: text,
-          tipo: 'chat',
         }),
-      }).catch((err) => console.error('[ModuleComunicaciones API push error]', err));
+      }).catch((err) => console.error('[POST /api/mensajes error]', err));
 
       addToast('Respuesta rápida enviada', 'success');
     },
@@ -1144,58 +1191,60 @@ export default function ModuleComunicaciones() {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('buzon');
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
-            Comunicaciones
-          </h2>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Mensajería, plantillas y notificaciones automáticas
-          </p>
+    <div style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '20px 24px', boxSizing: 'border-box' }} className="lf-scrollbar">
+      <div className="space-y-4" style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
+              Comunicaciones
+            </h2>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Mensajería, plantillas y notificaciones automáticas
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Sub-tab Navigation */}
-      <div
-        className="flex gap-1 p-1 rounded-xl"
-        style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
-      >
-        {SUB_TABS.map((tab) => {
-          const isActive = activeSubTab === tab.key;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveSubTab(tab.key)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-              style={{
-                background: isActive ? 'var(--primario)' : 'transparent',
-                color: isActive ? '#fff' : 'var(--text-secondary)',
-              }}
-            >
-              <Icon size={16} />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Sub-tab Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeSubTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2 }}
+        {/* Sub-tab Navigation */}
+        <div
+          className="flex gap-1 p-1 rounded-xl"
+          style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
         >
-          {activeSubTab === 'buzon' && <BuzonPanel />}
-          {activeSubTab === 'plantillas' && <PlantillasPanel />}
-          {activeSubTab === 'notificaciones' && <NotificacionesPanel />}
-        </motion.div>
-      </AnimatePresence>
+          {SUB_TABS.map((tab) => {
+            const isActive = activeSubTab === tab.key;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveSubTab(tab.key)}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  background: isActive ? 'var(--primario)' : 'transparent',
+                  color: isActive ? '#fff' : 'var(--text-secondary)',
+                }}
+              >
+                <Icon size={16} />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sub-tab Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSubTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeSubTab === 'buzon' && <BuzonPanel />}
+            {activeSubTab === 'plantillas' && <PlantillasPanel />}
+            {activeSubTab === 'notificaciones' && <NotificacionesPanel />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

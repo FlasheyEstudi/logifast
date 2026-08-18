@@ -169,7 +169,11 @@ export async function DELETE(
 
     const ordenCancelada = await db.ordenServicio.update({
       where: { id },
-      data: { estado: 'cancelado' },
+      data: {
+        estado: 'cancelado',
+        incidenciaTipo: 'cancelacion',
+        incidenciaDesc: `Cancelado por ${user.name || user.email} (${user.role})`,
+      },
     });
 
     return NextResponse.json({ ok: true, orden: ordenCancelada });
