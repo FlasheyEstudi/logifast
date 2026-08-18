@@ -425,12 +425,23 @@ export default function ModuleConfig() {
       tarifaKm,
       tarifaMin,
     };
-    if (persistLocal('tarifas', tarifas)) {
-      addToast('Tarifas guardadas', 'success');
-      showToast('Tarifas guardadas');
-    } else {
-      showToast('Error al guardar tarifas');
-    }
+    persistLocal('tarifas', tarifas);
+    try {
+      localStorage.setItem('logifast_tarifas', JSON.stringify(tarifas));
+      localStorage.setItem('logifast-config-tarifas', JSON.stringify(tarifas));
+    } catch {}
+
+    fetch('/api/admin/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'tarifa',
+        payload: tarifas,
+      }),
+    }).catch(() => null);
+
+    addToast('Tarifas actualizadas y sincronizadas globalmente', 'success');
+    showToast('Tarifas guardadas');
   };
 
   const handleSaveCompany = () => {

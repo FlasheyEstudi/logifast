@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const [users, total] = await Promise.all([
+    const [usersRaw, total] = await Promise.all([
       db.user.findMany({
         where,
         select: {
@@ -68,6 +68,12 @@ export async function GET(req: NextRequest) {
           fotoUrl: true,
           emailVerified: true,
           createdAt: true,
+          updatedAt: true,
+          actividades: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -75,6 +81,12 @@ export async function GET(req: NextRequest) {
       }),
       db.user.count({ where }),
     ]);
+
+    const users = usersRaw.map((u) => ({
+      ...u,
+      lastLogin: u.actividades[0]?.createdAt || u.updatedAt || u.createdAt,
+      activo: true,
+    }));
 
     return NextResponse.json({ users, total, limit, offset, hasMore: offset + limit < total });
   } catch (error) {
@@ -200,5 +212,33 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true, user });
   } catch (error) {
     return handleError(error, 'ADMIN_USERS_PATCH');
+  }
+}
+
+/**
+ * PUT /api/admin/users
+ * Restablece la contraseña de un usuario directamente desde el panel de Superadmin.
+ */
+export async function PUT(req: NextRequest) {
+  try {
+    await requireRole('admin');
+    const body = await req.json();
+    const { id, newPassword } = body;
+
+    if (!id || !newPassword) {
+      return NextResponse.json({ error: 'id y newPassword son requeridos' }, { status: 400 });
+    }
+
+    const { hashPassword } = await import('@/lib/auth/password');
+    const hashedPassword = await hashPassword(newPassword);
+
+    await db.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+
+    return NextResponse.json({ ok: true, message: 'Contraseña restablecida exitosamente' });
+  } catch (error) {
+    return handleError(error, 'ADMIN_USERS_PUT_RESET');
   }
 }

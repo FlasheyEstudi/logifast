@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const sessionUser = await getSessionUser();
-    if (!sessionUser || sessionUser.role !== 'admin') {
+    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'ingeniero')) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 

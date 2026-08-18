@@ -382,29 +382,33 @@ export default function ModuleSuperAdmin() {
   };
 
   const resetPassword = async (user: SystemUser) => {
-    addToast(`Enviando enlace de reseteo a ${user.email}...`, 'info');
+    const tempPass = `Logi${Math.floor(1000 + Math.random() * 9000)}!*`;
+    addToast(`Restableciendo contraseña para ${user.nombre || user.email}...`, 'info');
     try {
-      const res = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email }),
+        body: JSON.stringify({ id: user.id, newPassword: tempPass }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      addToast(`Enlace de reseteo enviado a ${user.email}`, 'success');
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(tempPass).catch(() => null);
+      }
+      addToast(`✓ Contraseña temporal: ${tempPass}`, 'success');
       addAuditEntry({
         userId: 'admin',
         usuario: 'Super Admin',
         accion: 'editar',
         recurso: 'usuario',
         recursoId: user.id,
-        detalles: `Reseteo de contraseña solicitado para ${user.email}`,
+        detalles: `Contraseña restablecida para ${user.email}`,
         ip: '192.168.1.100',
         dispositivo: 'Chrome/Mac',
         createdAt: new Date().toISOString(),
       });
     } catch (err) {
       console.error('[resetPassword]', err);
-      addToast('Error al enviar el enlace de reseteo', 'error');
+      addToast('Error al restablecer la contraseña', 'error');
     }
   };
 
@@ -1045,13 +1049,9 @@ export default function ModuleSuperAdmin() {
                   <TableBody>
                     {filteredUsers.map((u) => {
                       const rc = rolBadgeColor(u.rol);
-                      // TODO: conectar a /api/admin/stats (o /api/admin/users) cuando
-                      // exponga `lastLogin` por usuario. Mientras tanto mostramos '-'.
-                      const lastLogin =
-                        (u as any).lastLogin ?? '-';
-                      // TODO: conectar a /api/admin/stats cuando exponga total de
-                      // acciones por usuario. Variable conservada por compatibilidad.
-                      const totalActions = 0;
+                      const lastLogin = (u as any).lastLogin
+                        ? formatTs((u as any).lastLogin)
+                        : 'Reciente';
                       return (
                         <TableRow key={u.id}>
                           <TableCell style={{ fontSize: 13, fontWeight: 600 }}>

@@ -57,6 +57,7 @@ interface CostBreakdown {
   deliveryDistanceKm: number;
   size: number;
   fragile: number;
+  nightSurcharge: number;
   subtotal: number;
   promoDiscount: number;
   total: number;
@@ -892,14 +893,19 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     let PER_KM = 15;
     let BASE = 0;
     let MIN_PRICE = 0;
+    let NIGHT_SURCHARGE_CONFIG = 20;
+
     try {
-      const savedTarifas = typeof window !== 'undefined' ? localStorage.getItem('logifast_tarifas') : null;
+      const savedTarifas =
+        (typeof window !== 'undefined' ? localStorage.getItem('logifast_tarifas') : null) ||
+        (typeof window !== 'undefined' ? localStorage.getItem('logifast-config-tarifas') : null);
       if (savedTarifas) {
         const parsed = JSON.parse(savedTarifas);
         if (parsed) {
           if (parsed.tarifaKm) PER_KM = Number(parsed.tarifaKm) || 15;
           if (parsed.tarifaBase) BASE = Number(parsed.tarifaBase) || 0;
           if (parsed.tarifaMin) MIN_PRICE = Number(parsed.tarifaMin) || 0;
+          if (parsed.recargoNocturno) NIGHT_SURCHARGE_CONFIG = Number(parsed.recargoNocturno) || 20;
         }
       }
     } catch {}
@@ -918,7 +924,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     const distanceCost = Math.round(totalDist * PER_KM);
     const sizeSurcharge = SIZE_OPTIONS.find((s) => s.key === solicitudEnvio.tamano)?.surcharge ?? 0;
     const fragileSurcharge = solicitudEnvio.fragil ? 10 : 0;
-    const subtotal = BASE + distanceCost + sizeSurcharge + fragileSurcharge;
+
+    const nowHour = new Date().getHours();
+    const isNight = nowHour >= 20 || nowHour < 6;
+    const nightSurcharge = isNight ? NIGHT_SURCHARGE_CONFIG : 0;
+
+    const subtotal = BASE + distanceCost + sizeSurcharge + fragileSurcharge + nightSurcharge;
 
     let discount = 0;
     if (promoDiscount > 0) {
@@ -943,6 +954,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       deliveryDistanceKm: deliveryDist,
       size: sizeSurcharge,
       fragile: fragileSurcharge,
+      nightSurcharge,
       subtotal,
       promoDiscount: discount,
       total,
@@ -2339,6 +2351,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                     <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: 'var(--exito)' }}>
                       {solicitudEnvio.codigoPromo}
                     </span>
+                  </div>
+                )}
+                {costBreakdown.nightSurcharge > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', fontSize: 13, color: 'var(--warning)', fontFamily: "'DM Sans', sans-serif" }}>
+                    <span>🌙 Recargo nocturno</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>+C${costBreakdown.nightSurcharge}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1.5px solid var(--border)' }}>

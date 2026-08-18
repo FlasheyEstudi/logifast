@@ -157,6 +157,7 @@ export default function ModuleFinanzas() {
   const [activeTab, setActiveTab] = useState<'overview' | 'valuation'>('overview');
   const [developmentMonths, setDevelopmentMonths] = useState(6);
   const [profitMargin, setProfitMargin] = useState(50);
+  const [dbConciliations, setDbConciliations] = useState<any[]>([]);
 
   /* ─── Real financial stats from /api/admin/finanzas ─── */
   const [stats, setStats] = useState<any>(null);
@@ -165,10 +166,36 @@ export default function ModuleFinanzas() {
     fetch('/api/admin/finanzas')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data) setStats(data);
+        if (data) {
+          setStats(data);
+          if (data.paymentConciliations && Array.isArray(data.paymentConciliations)) {
+            setDbConciliations(data.paymentConciliations);
+          }
+        }
       })
       .catch(() => {});
   }, []);
+
+  const conciliationList = dbConciliations.length > 0 ? dbConciliations : paymentConciliations;
+
+  const handleConciliate = (pc: any) => {
+    conciliatePayment(pc.id);
+    setDbConciliations((prev) =>
+      prev.map((item) =>
+        item.id === pc.id ? { ...item, estado: 'conciliado' } : item
+      )
+    );
+    fetch('/api/admin/finanzas', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conciliationId: pc.id,
+        repartidorId: pc.repartidorId,
+        monto: pc.monto,
+      }),
+    }).catch(() => null);
+    showToast(`✓ Pago de ${pc.repartidor} conciliado (C$${pc.monto.toLocaleString()})`);
+  };
 
   // Total monthly operating cost (USD). The /api/admin/finanzas endpoint
   // does not expose a direct USD costos operativos mensuales field yet, so
@@ -948,7 +975,7 @@ export default function ModuleFinanzas() {
               </tr>
             </thead>
             <tbody>
-              {paymentConciliations.map((pc) => (
+              {conciliationList.map((pc) => (
                 <tr
                   key={pc.id}
                   style={{ borderBottom: '1px solid var(--lf-border)' }}
@@ -1009,12 +1036,7 @@ export default function ModuleFinanzas() {
                   >
                     {pc.estado === 'pendiente' && (
                       <button
-                        onClick={() => {
-                          conciliatePayment(pc.id);
-                          showToast(
-                            `✓ Pago de ${pc.repartidor} conciliado (C$${pc.monto.toLocaleString()})`
-                          );
-                        }}
+                        onClick={() => handleConciliate(pc)}
                         style={{
                           padding: '5px 12px',
                           borderRadius: 6,

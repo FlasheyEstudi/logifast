@@ -123,7 +123,44 @@ function BuzonPanel() {
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [newChatModalOpen, setNewChatModalOpen] = useState(false);
+  const [systemUsers, setSystemUsers] = useState<any[]>([]);
+  const [userSearch, setUserSearch] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const loadUsers = useCallback(() => {
+    fetch('/api/admin/users?limit=100')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.users) setSystemUsers(data.users);
+      })
+      .catch(() => null);
+  }, []);
+
+  const handleStartChatWithUser = (u: any) => {
+    const targetId = u.id;
+    const existing = conversaciones.find(
+      (c) => c.participanteId === targetId || c.id === `CONV-${targetId}`
+    );
+    if (existing) {
+      setActiveConvId(existing.id);
+    } else {
+      const newConv: Conversacion = {
+        id: `CONV-${targetId}`,
+        participanteId: targetId,
+        participanteNombre: u.name || u.email.split('@')[0],
+        participanteRol: u.role || 'cliente',
+        ultimoMensaje: 'Iniciar conversación...',
+        ultimoTimestamp: new Date().toISOString(),
+        noLeidos: 0,
+        mensajes: [],
+      };
+      setDbConversaciones((prev) => [newConv, ...prev]);
+      setActiveConvId(newConv.id);
+    }
+    setMobileShowChat(true);
+    setNewChatModalOpen(false);
+  };
 
   const fetchConvs = useCallback(() => {
     fetch('/api/mensajes')
@@ -286,19 +323,31 @@ function BuzonPanel() {
     <div className="flex flex-col h-full">
       {/* Search & Filters */}
       <div className="p-3 space-y-2 border-b" style={{ borderColor: 'var(--border)' }}>
-        <div className="relative">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ color: 'var(--text-muted)' }}
-          />
-          <Input
-            placeholder="Buscar conversación..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-sm"
-            style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: 'var(--text-muted)' }}
+            />
+            <Input
+              placeholder="Buscar conversación..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm"
+              style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+            />
+          </div>
+          <button
+            onClick={() => {
+              loadUsers();
+              setNewChatModalOpen(true);
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-opacity hover:opacity-90 shrink-0"
+            style={{ background: 'var(--primario)', color: '#fff', border: 'none', cursor: 'pointer' }}
+          >
+            <Plus size={14} /> Redactar
+          </button>
         </div>
         <div className="flex gap-1 flex-wrap">
           {(
@@ -572,6 +621,77 @@ function BuzonPanel() {
       >
         {chatView}
       </div>
+
+      {/* New Conversation Modal */}
+      <Dialog open={newChatModalOpen} onOpenChange={setNewChatModalOpen}>
+        <DialogContent style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 440 }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: 'var(--text)' }}>Iniciar nueva conversación</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <Input
+              placeholder="Buscar cliente o repartidor..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              style={{ background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+            />
+            <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+              {systemUsers
+                .filter((u) =>
+                  !userSearch.trim() ||
+                  u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                  u.email?.toLowerCase().includes(userSearch.toLowerCase())
+                )
+                .slice(0, 20)
+                .map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => handleStartChatWithUser(u)}
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-colors hover:opacity-85"
+                    style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                        style={{ background: hashColor(u.id) }}
+                      >
+                        {getInitials(u.name || u.email)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
+                          {u.name || u.email.split('@')[0]}
+                        </div>
+                        <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                          {u.email}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] uppercase font-bold shrink-0"
+                      style={{
+                        borderColor: u.role === 'repartidor' ? 'var(--primario)' : 'var(--info)',
+                        color: u.role === 'repartidor' ? 'var(--primario)' : 'var(--info)',
+                      }}
+                    >
+                      {u.role || 'cliente'}
+                    </Badge>
+                  </button>
+                ))}
+              {systemUsers.length === 0 && (
+                <div className="text-center py-6 text-xs text-muted-foreground">
+                  Cargando directorio de usuarios...
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="mt-2">
+            <Button variant="outline" onClick={() => setNewChatModalOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

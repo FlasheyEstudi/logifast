@@ -13,12 +13,17 @@ import type { Incident } from '@/lib/store';
    HELPERS
    ═══════════════════════════════════════════════ */
 
-const TIPO_LABELS: Record<Incident['tipo'], string> = {
+const TIPO_LABELS: Record<string, string> = {
   falla_mecanica: 'Falla mecánica',
   problema_cliente: 'Problema con cliente',
   accidente: 'Accidente',
   retraso: 'Retraso',
   paquete_danado: 'Paquete dañado',
+  cancelacion: 'Cancelación de orden',
+  mecanica: 'Falla mecánica',
+  cliente_no_responde: 'Cliente no responde',
+  direccion_incorrecta: 'Dirección incorrecta',
+  otro: 'Incidencia operativa',
 };
 
 const GRAVEDAD_CONFIG: Record<Incident['gravedad'], { label: string; bg: string; color: string }> = {
@@ -74,31 +79,44 @@ export default function ModuleIncidencias() {
 
   const [dbIncidents, setDbIncidents] = useState<Incident[]>([]);
 
-  useEffect(() => {
+  const fetchIncidents = useCallback(() => {
     fetch('/api/admin/incidencias')
       .then((r) => r.json())
       .then((d) => {
         if (d.incidencias && Array.isArray(d.incidencias)) {
-          const formatted: Incident[] = d.incidencias.map((item: any) => ({
-            id: `INC-${item.id.slice(-4)}`,
-            orderId: item.id,
-            tipo: item.incidenciaTipo || 'retraso',
-            descripcion: item.incidenciaDesc || 'Incidencia reportada en orden',
-            cliente: item.cliente?.name || item.clienteNombre || 'Cliente',
-            repartidor: item.repartidor?.nombre || 'Repartidor',
-            origen: item.origen || 'Managua',
-            destino: item.destino || 'Managua',
-            monto: item.monto || 0,
-            gravedad: 'alta',
-            estado: item.estado === 'incidencia' ? 'activa' : 'resuelta',
-            fecha: new Date(item.createdAt).toISOString().split('T')[0],
-            tiempoResolucion: item.estado === 'incidencia' ? undefined : '15 min',
-          }));
+          const formatted: Incident[] = d.incidencias.map((item: any) => {
+            const rawTipo = String(item.incidenciaTipo || 'retraso').toLowerCase().replace(/ /g, '_');
+            return {
+              id: `INC-${item.id.slice(-4).toUpperCase()}`,
+              orderId: item.id,
+              tipo: (TIPO_LABELS[rawTipo] ? rawTipo : 'retraso') as any,
+              titulo: item.incidenciaTipo ? `Incidencia: ${item.incidenciaTipo}` : `Incidencia en Orden #${item.id.slice(-4)}`,
+              descripcion: item.incidenciaDesc || 'Incidencia reportada en orden de despacho',
+              cliente: item.cliente?.name || item.clienteNombre || 'Cliente',
+              repartidor: item.repartidor?.nombre || 'Sin asignar',
+              motoId: 'MOTO-01',
+              origen: item.origen || 'Managua',
+              destino: item.destino || 'Managua',
+              monto: item.monto || 0,
+              gravedad: item.estado === 'cancelado' ? 'alta' : 'media',
+              estado: item.estado === 'incidencia' ? 'activa' : 'resuelta',
+              lat: 12.1364,
+              lng: -86.2514,
+              timestamp: item.updatedAt || item.createdAt || new Date().toISOString(),
+              fecha: new Date(item.createdAt || Date.now()).toISOString().split('T')[0],
+              resolucion: item.estado !== 'incidencia' ? (item.incidenciaDesc || 'Resuelto') : undefined,
+              tiempoResolucion: item.estado !== 'incidencia' ? '15 min' : undefined,
+            };
+          });
           setDbIncidents(formatted);
         }
       })
       .catch(() => null);
   }, []);
+
+  useEffect(() => {
+    fetchIncidents();
+  }, [fetchIncidents]);
 
   const incidents = dbIncidents.length > 0 ? dbIncidents : storeIncidents;
 
@@ -215,22 +233,39 @@ export default function ModuleIncidencias() {
     addActivityEvent({
       tipo: 'incidencia',
       titulo: `Incidencia resuelta: ${inc?.titulo || id}`,
-      detalle: `${inc?.tipo ? TIPO_LABELS[inc.tipo] : ''} · ${inc?.repartidor || ''} · ${resolutionText.trim()}`,
+      detalle: `${inc?.tipo ? TIPO_LABELS[inc.tipo] || inc.tipo : ''} · ${inc?.repartidor || ''} · ${resolutionText.trim()}`,
       timestamp: new Date().toISOString(),
       leido: false,
     });
 
     if (inc?.orderId) {
       try {
-        await fetch(`/api/ordenes/${inc.orderId}`, {
+        await fetch('/api/admin/incidencias', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ estado: 'resuelto', incidenciaDesc: resolutionText.trim() }),
+          body: JSON.stringify({
+            orderId: inc.orderId,
+            estado: 'entregado',
+            resolucion: resolutionText.trim(),
+          }),
         });
       } catch (e) {
         console.warn('[ModuleIncidencias resolve API error]:', e);
       }
     }
+
+    setDbIncidents((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? {
+              ...i,
+              estado: 'resuelta',
+              resolucion: resolutionText.trim(),
+              tiempoResolucion: '10 min',
+            }
+          : i
+      )
+    );
 
     setResolutionText('');
     setResolvingId(null);
@@ -300,8 +335,11 @@ export default function ModuleIncidencias() {
         display: 'flex',
         flexDirection: 'column',
         padding: '16px 20px',
-        overflow: 'hidden',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        boxSizing: 'border-box',
       }}
+      className="lf-scrollbar"
     >
       {/* ═══ HEADER ═══ */}
       <div style={{ marginBottom: 16, flexShrink: 0 }}>
