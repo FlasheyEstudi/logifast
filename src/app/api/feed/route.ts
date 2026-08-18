@@ -30,10 +30,56 @@ export async function GET(request: NextRequest) {
     if (tipo) where.tipo = tipo;
     if (segmento) where.segmento = segmento;
 
-    const data = await db.feedItem.findMany({
+    let data = await db.feedItem.findMany({
       where,
       orderBy: { posicion: 'asc' },
     });
+
+    // Auto-seed default feed items if database is empty
+    if (data.length === 0 && (!estado || estado === 'activo')) {
+      const countTotal = await db.feedItem.count();
+      if (countTotal === 0) {
+        await db.feedItem.createMany({
+          data: [
+            {
+              tipo: 'promocion',
+              titulo: '🎉 Cupón de Bienvenida: C$50 de Descuento',
+              descripcion: 'Usa el código LOGIFAST50 en tu próximo encargo o compra en restaurantes.',
+              codigoPromo: 'LOGIFAST50',
+              botonTexto: 'Copiar Cupón',
+              icono: 'tag',
+              segmento: 'todos',
+              posicion: 1,
+              estado: 'activo',
+              creadoPor: 'admin',
+            },
+            {
+              tipo: 'novedad',
+              titulo: '⚡ Cobertura Extendida a Masaya y Tipitapa',
+              descripcion: 'Ahora puedes solicitar encomiendas intermunicipales con seguimiento GPS en vivo.',
+              botonTexto: 'Cotizar Envío',
+              botonLink: '/solicitar',
+              icono: 'zap',
+              segmento: 'todos',
+              posicion: 2,
+              estado: 'activo',
+              creadoPor: 'admin',
+            },
+            {
+              tipo: 'anuncio',
+              titulo: '💳 Pagos con Billetera Digital y Tarjeta',
+              descripcion: 'Aceptamos transferencias LAFISE/BAC y efectivo al recibir tu paquete.',
+              icono: 'credit-card',
+              segmento: 'todos',
+              posicion: 3,
+              estado: 'activo',
+              creadoPor: 'admin',
+            },
+          ],
+        });
+        data = await db.feedItem.findMany({ where, orderBy: { posicion: 'asc' } });
+      }
+    }
 
     return NextResponse.json({ data });
 } catch (error) {

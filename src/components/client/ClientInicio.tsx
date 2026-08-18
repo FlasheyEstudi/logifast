@@ -21,6 +21,7 @@ import {
   ShoppingBag,
   Pill,
   Zap,
+  Tag,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
@@ -91,7 +92,7 @@ export default function ClientInicio({
   onNavigate,
   onOpenTracking,
 }: ClientInicioProps) {
-  const { orders, banners = [], fidelizacion } = useStore();
+  const { orders, banners = [], feedItems = [], fidelizacion, addToast } = useStore();
   const { tiendas = [], setExplorarCategoria, setTiendaSeleccionada } = useMarketplaceStore();
 
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
@@ -424,93 +425,137 @@ export default function ClientInicio({
       </AnimatePresence>
 
       {/* ── CARRUSEL BANNER PROMOCIONAL ── */}
-      <div
-        style={{
-          ...sectionCard,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span
-            style={{
-              padding: '4px 12px',
-              borderRadius: 'var(--lf-pill-radius, 100px)',
-              background: 'var(--primario-soft)',
-              color: 'var(--primario)',
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-              fontFamily: "'DM Sans', sans-serif",
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Sparkles size={13} /> Promoción
-          </span>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {banners.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveBannerIdx(idx)}
-                style={{
-                  height: 6,
-                  borderRadius: 100,
-                  width: activeBannerIdx === idx ? 22 : 6,
-                  background: activeBannerIdx === idx ? 'var(--primario)' : 'var(--border)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                }}
-              />
-            ))}
-          </div>
-        </div>
+      {(() => {
+        const currentBanner = banners[activeBannerIdx] || {
+          titulo: '50% OFF en tu Primer Envío',
+          subtitulo: 'Aplica cupón BIENVENIDO50 y ahorra hasta C$80 en tu primera entrega.',
+          botonTexto: 'Usar Cupón',
+          colorFondo: '#FF5722',
+          colorTexto: '#FFFFFF',
+          accionTipo: 'aplicar_codigo',
+          accionValor: 'BIENVENIDO50',
+        };
 
-        <div>
-          <h2
-            style={{
-              fontSize: 18,
-              fontWeight: 700,
-              fontFamily: "'Syne', sans-serif",
+        const bannerStyle = currentBanner.gradiente
+          ? {
+              background: `linear-gradient(${currentBanner.gradiente.direction || 'to right'}, ${currentBanner.gradiente.from}, ${currentBanner.gradiente.to})`,
+              color: currentBanner.colorTexto || '#FFFFFF',
+            }
+          : currentBanner.colorFondo && currentBanner.colorFondo.startsWith('#')
+          ? {
+              background: currentBanner.colorFondo === '#FF5722'
+                ? 'linear-gradient(135deg, #FF5722 0%, #FF7043 100%)'
+                : currentBanner.colorFondo,
+              color: currentBanner.colorTexto || '#FFFFFF',
+            }
+          : {
+              background: 'var(--surface)',
               color: 'var(--text)',
-              margin: '0 0 6px 0',
-              lineHeight: 1.3,
-            }}
-          >
-            {banners[activeBannerIdx]?.titulo || 'Envíos Express & Compras Rápidas'}
-          </h2>
-          <p
-            style={{
-              fontSize: 13,
-              color: 'var(--text-muted)',
-              fontFamily: "'DM Sans', sans-serif",
-              margin: 0,
-              lineHeight: 1.4,
-            }}
-          >
-            {(banners[activeBannerIdx] as any)?.descripcion || 'Tu mensajería y delivery de confianza en toda Managua con cobertura total.'}
-          </p>
-        </div>
+              border: '1px solid var(--border)',
+            };
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6 }}>
-          <button
-            onClick={() => handleBannerAction(banners[activeBannerIdx])}
-            style={btnPrimary}
+        return (
+          <div
+            style={{
+              borderRadius: 'var(--lf-card-radius, 18px)',
+              padding: '20px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: 'var(--lf-shadow-card)',
+              ...bannerStyle,
+            }}
           >
-            <span>{banners[activeBannerIdx]?.botonTexto || 'Pedir Ahora'}</span>
-            <ChevronRight size={14} />
-          </button>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
-            LogiFast Nicaragua
-          </span>
-        </div>
-      </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span
+                style={{
+                  padding: '4px 12px',
+                  borderRadius: 'var(--lf-pill-radius, 100px)',
+                  background: 'rgba(255, 255, 255, 0.22)',
+                  color: currentBanner.colorTexto || '#FFFFFF',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  backdropFilter: 'blur(6px)',
+                }}
+              >
+                <Sparkles size={13} /> Promoción Exclusiva
+              </span>
+              {banners.length > 1 && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {banners.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveBannerIdx(idx)}
+                      style={{
+                        height: 6,
+                        borderRadius: 100,
+                        width: activeBannerIdx === idx ? 22 : 6,
+                        background: activeBannerIdx === idx ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h2
+                style={{
+                  fontSize: 19,
+                  fontWeight: 800,
+                  fontFamily: "'Syne', sans-serif",
+                  color: currentBanner.colorTexto || '#FFFFFF',
+                  margin: '0 0 6px 0',
+                  lineHeight: 1.3,
+                }}
+              >
+                {currentBanner.titulo}
+              </h2>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: currentBanner.colorTexto || '#FFFFFF',
+                  opacity: 0.9,
+                  fontFamily: "'DM Sans', sans-serif",
+                  margin: 0,
+                  lineHeight: 1.4,
+                }}
+              >
+                {currentBanner.subtitulo || (currentBanner as any).descripcion || 'Tu mensajería y delivery de confianza en toda Managua con cobertura total.'}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6 }}>
+              <button
+                onClick={() => handleBannerAction(currentBanner)}
+                style={{
+                  ...btnPrimary,
+                  background: '#FFFFFF',
+                  color: currentBanner.colorFondo === '#FF5722' ? '#FF5722' : '#1B1B2F',
+                  fontWeight: 700,
+                }}
+              >
+                <span>{currentBanner.botonTexto || 'Aprovechar'}</span>
+                <ChevronRight size={14} />
+              </button>
+              <span style={{ fontSize: 12, color: currentBanner.colorTexto || '#FFFFFF', opacity: 0.8, fontFamily: "'DM Sans', sans-serif" }}>
+                LogiFast Nicaragua
+              </span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── CATEGORÍAS POPULARES ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -706,6 +751,135 @@ export default function ClientInicio({
           </button>
         </div>
       </div>
+
+      {/* ── FEED & PROMOCIONES DEL DÍA ── */}
+      {feedItems.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: 0.8,
+                color: 'var(--text-muted)',
+                fontFamily: "'DM Sans', sans-serif",
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Sparkles size={14} style={{ color: 'var(--primario)' }} /> Promociones & Novedades
+            </h3>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+              {feedItems.length} activas
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {feedItems.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: 'var(--lf-card-radius, 16px)',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  boxShadow: 'var(--lf-shadow-card)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        background:
+                          item.tipo === 'promocion'
+                            ? 'rgba(255, 87, 34, 0.12)'
+                            : item.tipo === 'novedad'
+                            ? 'rgba(0, 200, 83, 0.12)'
+                            : 'rgba(41, 121, 255, 0.12)',
+                        color:
+                          item.tipo === 'promocion'
+                            ? 'var(--primario)'
+                            : item.tipo === 'novedad'
+                            ? 'var(--exito)'
+                            : 'var(--info)',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {item.tipo}
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                      {item.titulo}
+                    </span>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                  {item.descripcion}
+                </p>
+
+                {(item.codigoPromo || item.botonTexto) && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 4, flexWrap: 'wrap' }}>
+                    {item.codigoPromo ? (
+                      <button
+                        onClick={() => {
+                          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                            navigator.clipboard.writeText(item.codigoPromo!);
+                          }
+                          addToast(`¡Cupón ${item.codigoPromo} copiado!`, 'success');
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '4px 10px',
+                          borderRadius: 8,
+                          background: 'var(--primario-soft)',
+                          border: '1px dashed var(--primario)',
+                          color: 'var(--primario)',
+                          fontFamily: 'monospace',
+                          fontWeight: 700,
+                          fontSize: 12,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Tag size={12} /> {item.codigoPromo} (Toca para copiar)
+                      </button>
+                    ) : <div />}
+
+                    {item.botonTexto && (
+                      <button
+                        onClick={() => onNavigate('solicitar')}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 8,
+                          background: 'var(--primario)',
+                          color: '#fff',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {item.botonTexto}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── TIENDAS DESTACADAS ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

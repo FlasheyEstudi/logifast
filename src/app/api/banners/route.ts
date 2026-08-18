@@ -41,10 +41,67 @@ export async function GET(request: NextRequest) {
     if (segmento) where.segmento = segmento;
     if (mostrarEn) where.mostrarEn = mostrarEn;
 
-    const data = await db.banner.findMany({
+    let data = await db.banner.findMany({
       where,
       orderBy: { posicion: 'asc' },
     });
+
+    // Auto-seed default banners if database has none
+    if (data.length === 0 && (!estado || estado === 'activo')) {
+      const countTotal = await db.banner.count();
+      if (countTotal === 0) {
+        await db.banner.createMany({
+          data: [
+            {
+              titulo: '50% OFF en tu Primer Envío',
+              subtitulo: 'Aplica cupón BIENVENIDO50 y ahorra hasta C$80 en tu primera entrega.',
+              tipo: 'promo_grande',
+              colorFondo: '#FF5722',
+              colorTexto: '#FFFFFF',
+              botonTexto: 'Usar Cupón',
+              accionTipo: 'aplicar_codigo',
+              accionValor: 'BIENVENIDO50',
+              segmento: 'todos',
+              mostrarEn: 'app',
+              posicion: 1,
+              estado: 'activo',
+              creadoPor: 'admin',
+            },
+            {
+              titulo: 'Envíos Express en 30 Minutos',
+              subtitulo: 'Flota activa con geolocalización en vivo en Managua y Ciudad Sandino.',
+              tipo: 'promo_grande',
+              colorFondo: '#1B1B2F',
+              colorTexto: '#FFFFFF',
+              botonTexto: 'Pedir Envío',
+              accionTipo: 'abrir_modulo',
+              accionValor: 'solicitar',
+              segmento: 'todos',
+              mostrarEn: 'app',
+              posicion: 2,
+              estado: 'activo',
+              creadoPor: 'admin',
+            },
+            {
+              titulo: 'Restaurantes y Comida Caliente',
+              subtitulo: 'Pide de tus locales favoritos con tarifa plana de entrega.',
+              tipo: 'slider',
+              colorFondo: '#0F172A',
+              colorTexto: '#FFFFFF',
+              botonTexto: 'Ver Menús',
+              accionTipo: 'abrir_categoria',
+              accionValor: 'restaurantes',
+              segmento: 'todos',
+              mostrarEn: 'app',
+              posicion: 3,
+              estado: 'activo',
+              creadoPor: 'admin',
+            },
+          ],
+        });
+        data = await db.banner.findMany({ where, orderBy: { posicion: 'asc' } });
+      }
+    }
 
     return NextResponse.json({ data });
   } catch (error) {
