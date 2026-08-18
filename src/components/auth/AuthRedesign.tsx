@@ -82,7 +82,7 @@ const Icon = {
     </svg>
   ),
   Sun: () => (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="5"/>
       <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
       <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -91,18 +91,21 @@ const Icon = {
     </svg>
   ),
   Moon: () => (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
     </svg>
   ),
   Menu: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="4" y1="12" x2="20" y2="12"/>
+      <line x1="4" y1="6" x2="20" y2="6"/>
+      <line x1="4" y1="18" x2="20" y2="18"/>
     </svg>
   ),
   Close: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   ),
   Sparkles: () => (
@@ -141,7 +144,7 @@ const Icon = {
       <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
     </svg>
   ),
-  Logo: ({ size = 32 }: { size?: number }) => (
+  Logo: ({ size = 28 }: { size?: number }) => (
     <img
       src="/logo.png"
       alt="Logifast"
@@ -149,7 +152,7 @@ const Icon = {
         width: size,
         height: size,
         objectFit: 'contain',
-        filter: 'drop-shadow(0 4px 14px rgba(0,102,255,0.45))',
+        filter: 'drop-shadow(0 4px 12px rgba(0,102,255,0.45))',
       }}
     />
   ),
@@ -295,7 +298,7 @@ const PARTNERS = [
 export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }: AuthRedesignProps) {
   const [view, setView] = useState<View>(currentView);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sideDrawerOpen, setSideDrawerOpen] = useState(false);
 
   const tema = useConfigStore((s) => s.tema);
   const setTema = useConfigStore((s) => s.setTema);
@@ -404,8 +407,8 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
               onRegister={() => setView('register')}
               isDark={isDark}
               toggleTheme={toggleTheme}
-              mobileMenuOpen={mobileMenuOpen}
-              setMobileMenuOpen={setMobileMenuOpen}
+              sideDrawerOpen={sideDrawerOpen}
+              setSideDrawerOpen={setSideDrawerOpen}
             />
           </motion.div>
         )}
@@ -457,8 +460,8 @@ function LandingView({
   onRegister,
   isDark,
   toggleTheme,
-  mobileMenuOpen,
-  setMobileMenuOpen,
+  sideDrawerOpen,
+  setSideDrawerOpen,
 }: {
   currentSlide: number;
   setCurrentSlide: (n: number) => void;
@@ -466,8 +469,8 @@ function LandingView({
   onRegister: () => void;
   isDark: boolean;
   toggleTheme: () => void;
-  mobileMenuOpen: boolean;
-  setMobileMenuOpen: (b: boolean) => void;
+  sideDrawerOpen: boolean;
+  setSideDrawerOpen: (b: boolean) => void;
 }) {
   const slide = SLIDES[currentSlide];
   const textColor = isDark ? '#FFFFFF' : '#1C1C1E';
@@ -482,14 +485,14 @@ function LandingView({
 
   return (
     <div>
-      {/* ─── ISLA FLOTANTE DE CRISTAL LÍQUIDO (CAPSULA HEADER) ─── */}
-      <div style={{
+      {/* ─── ISLA FLOTANTE DE CRISTAL LÍQUIDO (CAPSULA COMPLETA) ─── */}
+      <header style={{
         position: 'fixed',
-        top: 14,
+        top: 12,
         left: 0,
         right: 0,
         zIndex: 1000,
-        padding: '0 16px',
+        padding: '0 12px',
         display: 'flex',
         justifyContent: 'center',
         pointerEvents: 'none',
@@ -498,43 +501,37 @@ function LandingView({
           pointerEvents: 'auto',
           width: '100%',
           maxWidth: 1060,
-          height: 60,
+          height: 52,
           borderRadius: 100,
-          background: isDark ? 'rgba(14, 14, 20, 0.78)' : 'rgba(255, 255, 255, 0.82)',
+          background: isDark ? 'rgba(14, 14, 20, 0.82)' : 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(36px) saturate(200%)',
           WebkitBackdropFilter: 'blur(36px) saturate(200%)',
           border: specularBorder,
           boxShadow: isDark
-            ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.22), 0 16px 44px rgba(0, 0, 0, 0.55)'
-            : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 14px 38px rgba(0, 102, 255, 0.1)',
-          padding: '0 12px 0 18px',
+            ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.22), 0 12px 36px rgba(0, 0, 0, 0.55)'
+            : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 12px 32px rgba(0, 102, 255, 0.1)',
+          padding: '0 8px 0 12px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 12,
+          gap: 6,
+          boxSizing: 'border-box',
         }}>
-          {/* Logo & Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <Icon.Logo size={30} />
-            <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.03em', color: textColor }}>LOGIFAST</span>
+          {/* Logo & Texto LOGIFAST */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <Icon.Logo size={28} />
+            <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em', color: textColor }}>LOGIFAST</span>
           </div>
 
-          {/* Center Links (Desktop only) */}
-          <div className="hidden md:flex" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <a href="#ecosistema" style={{ color: subColor, textDecoration: 'none', fontSize: 13, fontWeight: 700, transition: 'color 0.2s ease' }}>Ecosistema</a>
-            <a href="#aliados" style={{ color: subColor, textDecoration: 'none', fontSize: 13, fontWeight: 700, transition: 'color 0.2s ease' }}>Aliados</a>
-            <a href="#cta" style={{ color: subColor, textDecoration: 'none', fontSize: 13, fontWeight: 700, transition: 'color 0.2s ease' }}>Contacto</a>
-          </div>
-
-          {/* Right Action Controls (Never wraps, never overflows) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            {/* Theme Switcher Pill Button */}
+          {/* Opciones en línea (Modo Noche - Iniciar - Registrar - Drawer) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {/* 1. Botón Modo Noche / Día */}
             <motion.button
-              whileTap={{ scale: 0.92 }}
+              whileTap={{ scale: 0.9 }}
               onClick={toggleTheme}
               style={{
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 borderRadius: '50%',
                 background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                 border: specularBorder,
@@ -547,31 +544,31 @@ function LandingView({
                 flexShrink: 0,
               }}
               title={isDark ? 'Modo Día' : 'Modo Noche'}
-              aria-label="Toggle Theme"
+              aria-label="Alternar Modo Oscuro / Claro"
             >
               {isDark ? <Icon.Sun /> : <Icon.Moon />}
             </motion.button>
 
-            {/* Iniciar sesión (Hidden on tiny screens to avoid clipping) */}
+            {/* 2. Botón Iniciar */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onLogin}
-              className="hidden sm:inline-flex"
               style={{
                 background: 'transparent',
                 border: 'none',
                 color: textColor,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 700,
                 cursor: 'pointer',
-                padding: '8px 14px',
+                padding: '6px 10px',
                 borderRadius: 100,
+                flexShrink: 0,
               }}
             >
-              Entrar
+              Iniciar
             </motion.button>
             
-            {/* Registrarse Primary Pill Button */}
+            {/* 3. Botón Registrar */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onRegister}
@@ -579,23 +576,23 @@ function LandingView({
                 background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
                 color: '#FFFFFF',
                 border: '1px solid rgba(255,255,255,0.3)',
-                padding: '8px 18px',
+                padding: '6px 14px',
                 borderRadius: 100,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 4px 16px rgba(0,102,255,0.45)',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 4px 14px rgba(0,102,255,0.42)',
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
               }}
             >
-              Registrarse
+              Registrar
             </motion.button>
 
-            {/* Mobile Menu Trigger */}
+            {/* 4. Botón Mini Pantalla / Menú Lateral Derecho */}
             <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setSideDrawerOpen(true)}
               style={{
                 background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                 border: specularBorder,
@@ -604,102 +601,225 @@ function LandingView({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 borderRadius: '50%',
                 flexShrink: 0,
               }}
+              title="Abrir menú"
+              aria-label="Abrir Menú"
             >
-              {mobileMenuOpen ? <Icon.Close /> : <Icon.Menu />}
+              <Icon.Menu />
             </motion.button>
           </div>
         </nav>
-      </div>
+      </header>
 
-      {/* Mobile Drawer Dropdown Card */}
+      {/* ─── MINI PANTALLA DESPLEGABLE A LA DERECHA (SIDE DRAWER CRISTALINO) ─── */}
       <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.25 }}
-            style={{
-              position: 'fixed',
-              top: 84,
-              left: 16,
-              right: 16,
-              maxWidth: 500,
-              margin: '0 auto',
-              zIndex: 999,
-              background: isDark ? 'rgba(16, 16, 24, 0.92)' : 'rgba(255, 255, 255, 0.94)',
-              backdropFilter: 'blur(40px) saturate(200%)',
-              WebkitBackdropFilter: 'blur(40px) saturate(200%)',
-              border: specularBorder,
-              borderRadius: 28,
-              padding: '24px 20px',
-              boxShadow: isDark ? '0 20px 60px rgba(0,0,0,0.7)' : '0 20px 50px rgba(0,0,0,0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.06)', paddingBottom: 16 }}>
-              <a href="#ecosistema" onClick={() => setMobileMenuOpen(false)} style={{ color: textColor, textDecoration: 'none', fontSize: 16, fontWeight: 700, padding: '6px 8px' }}>Ecosistema</a>
-              <a href="#aliados" onClick={() => setMobileMenuOpen(false)} style={{ color: textColor, textDecoration: 'none', fontSize: 16, fontWeight: 700, padding: '6px 8px' }}>Aliados Estratégicos</a>
-              <a href="#cta" onClick={() => setMobileMenuOpen(false)} style={{ color: textColor, textDecoration: 'none', fontSize: 16, fontWeight: 700, padding: '6px 8px' }}>Contacto & Soporte</a>
-            </div>
+        {sideDrawerOpen && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 2000 }}>
+            {/* Backdrop Blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSideDrawerOpen(false)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.55)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+              }}
+            />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button
-                onClick={() => { setMobileMenuOpen(false); onLogin(); }}
-                style={{
-                  width: '100%',
-                  height: 46,
-                  borderRadius: 100,
-                  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            {/* Drawer Panel que entra desde la derecha */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: '85%',
+                maxWidth: 340,
+                background: isDark ? 'rgba(16, 16, 24, 0.94)' : 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(40px) saturate(200%)',
+                WebkitBackdropFilter: 'blur(40px) saturate(200%)',
+                borderLeft: specularBorder,
+                boxShadow: '-10px 0 40px rgba(0,0,0,0.5)',
+                padding: '24px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                boxSizing: 'border-box',
+                zIndex: 2001,
+              }}
+            >
+              {/* Header Drawer */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, paddingBottom: 14, borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Icon.Logo size={30} />
+                    <span style={{ fontWeight: 800, fontSize: 18, color: textColor }}>LOGIFAST</span>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                      border: specularBorder,
+                      color: textColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Icon.Close />
+                  </motion.button>
+                </div>
+
+                {/* Switcher Modo Noche / Día en el Menú */}
+                <div style={{
+                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                  padding: 12,
+                  borderRadius: 18,
                   border: specularBorder,
-                  color: textColor,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Iniciar sesión
-              </button>
-              <button
-                onClick={() => { setMobileMenuOpen(false); onRegister(); }}
-                style={{
-                  width: '100%',
-                  height: 46,
-                  borderRadius: 100,
-                  background: '#0066FF',
-                  color: 'white',
-                  border: 'none',
-                  fontSize: 14,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 18px rgba(0,102,255,0.4)',
-                }}
-              >
-                Crear cuenta nueva
-              </button>
-            </div>
-          </motion.div>
+                  marginBottom: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: textColor }}>
+                    <span style={{ color: isDark ? '#FFB300' : '#007AFF' }}>{isDark ? <Icon.Moon /> : <Icon.Sun />}</span>
+                    <span>{isDark ? 'Modo Oscuro' : 'Modo Claro'}</span>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    onClick={toggleTheme}
+                    style={{
+                      background: isDark ? '#FFB300' : '#007AFF',
+                      color: isDark ? '#000000' : '#FFFFFF',
+                      border: 'none',
+                      padding: '6px 14px',
+                      borderRadius: 100,
+                      fontSize: 11,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cambiar
+                  </motion.button>
+                </div>
+
+                {/* Botones Principales de Acceso */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => { setSideDrawerOpen(false); onRegister(); }}
+                    style={{
+                      width: '100%',
+                      height: 48,
+                      borderRadius: 100,
+                      background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.25)',
+                      fontSize: 14,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 6px 20px rgba(0,102,255,0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <span>Crear Cuenta Gratis</span>
+                    <Icon.ArrowRight />
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => { setSideDrawerOpen(false); onLogin(); }}
+                    style={{
+                      width: '100%',
+                      height: 48,
+                      borderRadius: 100,
+                      background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      border: specularBorder,
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <Icon.User />
+                    <span>Iniciar Sesión</span>
+                  </motion.button>
+                </div>
+
+                {/* Enlaces de Secciones */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.1em', marginBottom: 4 }}>NAVEGACIÓN RÁPIDA</div>
+                  <a
+                    href="#ecosistema"
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 14, fontWeight: 600, padding: '10px 12px', borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <Icon.Shield /> <span>Ecosistema Logístico</span>
+                  </a>
+                  <a
+                    href="#aliados"
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 14, fontWeight: 600, padding: '10px 12px', borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <Icon.Store /> <span>Aliados Comerciales</span>
+                  </a>
+                  <a
+                    href="#cta"
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 14, fontWeight: 600, padding: '10px 12px', borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <Icon.Headphones /> <span>Contacto & Soporte</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Footer Drawer */}
+              <div style={{ paddingTop: 16, borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#00C853', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px #00C853' }} />
+                  <span>LOGIFAST Managua • En línea</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* HERO SECTION CON CRISTAL LÍQUIDO */}
       <section style={{
-        paddingTop: 'calc(94px + env(safe-area-inset-top, 0px))',
-        paddingBottom: 70,
-        paddingLeft: 20,
-        paddingRight: 20,
+        paddingTop: 'calc(84px + env(safe-area-inset-top, 0px))',
+        paddingBottom: 64,
+        paddingLeft: 18,
+        paddingRight: 18,
         maxWidth: 1200,
         margin: '0 auto',
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 40, alignItems: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 36, alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             
             {/* Pill Badge con resplandor líquido */}
             <div style={{
@@ -709,9 +829,9 @@ function LandingView({
               background: isDark ? 'rgba(0, 102, 255, 0.15)' : 'rgba(0, 102, 255, 0.08)',
               border: isDark ? '1px solid rgba(0, 122, 255, 0.35)' : '1px solid rgba(0, 102, 255, 0.25)',
               color: '#007AFF',
-              padding: '6px 18px',
+              padding: '6px 16px',
               borderRadius: 100,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 700,
               width: 'fit-content',
               boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 16px rgba(0,102,255,0.2)',
@@ -722,7 +842,7 @@ function LandingView({
             </div>
 
             {/* Titular Principal Hero */}
-            <h1 style={{ fontSize: 'clamp(34px, 5.8vw, 56px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
+            <h1 style={{ fontSize: 'clamp(32px, 5.5vw, 54px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
               El control total de tu logística
             </h1>
 
@@ -743,12 +863,12 @@ function LandingView({
                   background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
                   color: 'white',
                   border: '1px solid rgba(255,255,255,0.25)',
-                  padding: '15px 32px',
+                  padding: '14px 30px',
                   borderRadius: 100,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: 700,
                   cursor: 'pointer',
-                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 28px rgba(0,102,255,0.42)',
+                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 26px rgba(0,102,255,0.42)',
                 }}
               >
                 <span>Comenzar ahora</span>
@@ -762,9 +882,9 @@ function LandingView({
                   background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)',
                   color: textColor,
                   border: specularBorder,
-                  padding: '15px 26px',
+                  padding: '14px 24px',
                   borderRadius: 100,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: 600,
                   cursor: 'pointer',
                   backdropFilter: 'blur(24px)',
@@ -776,21 +896,21 @@ function LandingView({
             </div>
 
             {/* Quick Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 10, paddingTop: 20, borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 12px', borderRadius: 16, border: specularBorder, backdropFilter: 'blur(16px)' }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>2.5k+</div>
-                <div style={{ fontSize: 11, color: subColor, fontWeight: 600, marginTop: 2 }}>Envíos</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 8, paddingTop: 18, borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 10px', borderRadius: 14, border: specularBorder, backdropFilter: 'blur(16px)' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>2.5k+</div>
+                <div style={{ fontSize: 10, color: subColor, fontWeight: 600, marginTop: 2 }}>Envíos</div>
               </div>
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 12px', borderRadius: 16, border: specularBorder, backdropFilter: 'blur(16px)' }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>15 min</div>
-                <div style={{ fontSize: 11, color: subColor, fontWeight: 600, marginTop: 2 }}>Promedio</div>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 10px', borderRadius: 14, border: specularBorder, backdropFilter: 'blur(16px)' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>15 min</div>
+                <div style={{ fontSize: 10, color: subColor, fontWeight: 600, marginTop: 2 }}>Promedio</div>
               </div>
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 12px', borderRadius: 16, border: specularBorder, backdropFilter: 'blur(16px)' }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: textColor, display: 'flex', alignItems: 'center', gap: 4, letterSpacing: '-0.02em' }}>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 10px', borderRadius: 14, border: specularBorder, backdropFilter: 'blur(16px)' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: textColor, display: 'flex', alignItems: 'center', gap: 4, letterSpacing: '-0.02em' }}>
                   <span>4.9</span>
-                  <Icon.Star size={16} fill="#FFB300" />
+                  <Icon.Star size={14} fill="#FFB300" />
                 </div>
-                <div style={{ fontSize: 11, color: subColor, fontWeight: 600, marginTop: 2 }}>Calificación</div>
+                <div style={{ fontSize: 10, color: subColor, fontWeight: 600, marginTop: 2 }}>Calificación</div>
               </div>
             </div>
           </div>
@@ -799,9 +919,9 @@ function LandingView({
           <div style={{ display: 'flex', justifyContent: 'center', width: '100%', maxWidth: '100%' }}>
             <div style={{
               width: '100%',
-              maxWidth: 450,
-              padding: 24,
-              borderRadius: 32,
+              maxWidth: 440,
+              padding: 22,
+              borderRadius: 30,
               background: glassCardBg,
               backdropFilter: 'blur(40px) saturate(190%)',
               WebkitBackdropFilter: 'blur(40px) saturate(190%)',
@@ -820,26 +940,26 @@ function LandingView({
                   transition={{ duration: 0.35, ease: 'easeOut' }}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                 >
-                  <div style={{ width: '100%', marginBottom: 20 }}>
+                  <div style={{ width: '100%', marginBottom: 18 }}>
                     <AppleSlideWidget type={slide.widgetType} isDark={isDark} />
                   </div>
-                  <h2 style={{ fontSize: 21, fontWeight: 800, color: textColor, margin: '0 0 6px', letterSpacing: '-0.02em' }}>{slide.title}</h2>
-                  <p style={{ fontSize: 14, color: subColor, margin: '0 0 20px', lineHeight: 1.5 }}>{slide.subtitle}</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 800, color: textColor, margin: '0 0 6px', letterSpacing: '-0.02em' }}>{slide.title}</h2>
+                  <p style={{ fontSize: 13, color: subColor, margin: '0 0 18px', lineHeight: 1.5 }}>{slide.subtitle}</p>
                 </motion.div>
               </AnimatePresence>
 
               {/* Indicadores de Píldora tipo iOS */}
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                 {SLIDES.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentSlide(i)}
                     style={{
-                      width: i === currentSlide ? 26 : 8,
-                      height: 7,
+                      width: i === currentSlide ? 24 : 7,
+                      height: 6,
                       borderRadius: 100,
                       background: i === currentSlide ? '#007AFF' : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)'),
-                      boxShadow: i === currentSlide ? '0 0 10px rgba(0,122,255,0.6)' : 'none',
+                      boxShadow: i === currentSlide ? '0 0 8px rgba(0,122,255,0.6)' : 'none',
                       border: 'none',
                       cursor: 'pointer',
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -854,11 +974,11 @@ function LandingView({
       </section>
 
       {/* SECCIÓN ALIADOS ESTRATÉGICOS */}
-      <section id="aliados" style={{ padding: '48px 20px', borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', background: isDark ? 'rgba(12,12,18,0.45)' : 'rgba(255,255,255,0.4)' }}>
+      <section id="aliados" style={{ padding: '44px 18px', borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', background: isDark ? 'rgba(12,12,18,0.45)' : 'rgba(255,255,255,0.4)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em', marginBottom: 8 }}>ALIADOS ESTRATÉGICOS</div>
-          <h2 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: textColor, margin: '0 0 28px', letterSpacing: '-0.02em' }}>Comercios Verificados en Managua</h2>
-          <div style={{ overflow: 'hidden', display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <h2 style={{ fontSize: 'clamp(22px, 3.8vw, 30px)', fontWeight: 800, color: textColor, margin: '0 0 24px', letterSpacing: '-0.02em' }}>Comercios Verificados en Managua</h2>
+          <div style={{ overflow: 'hidden', display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {PARTNERS.map((partner, idx) => (
               <motion.div
                 key={idx}
@@ -866,21 +986,21 @@ function LandingView({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 12,
-                  padding: '12px 20px',
-                  borderRadius: 20,
+                  gap: 10,
+                  padding: '10px 18px',
+                  borderRadius: 18,
                   background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)',
                   backdropFilter: 'blur(20px)',
                   border: specularBorder,
-                  minWidth: 175,
+                  minWidth: 165,
                   boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.1), 0 8px 24px rgba(0,0,0,0.3)' : 'inset 0 1px 1.5px rgba(255,255,255,0.9), 0 8px 20px rgba(0,0,0,0.03)',
                   transition: 'all 0.2s ease',
                 }}
               >
-                <img src={partner.src} alt={partner.name} style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                <img src={partner.src} alt={partner.name} style={{ width: 28, height: 28, objectFit: 'contain' }} />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: textColor }}>{partner.name}</div>
-                  <div style={{ fontSize: 11, color: subColor, fontWeight: 500 }}>{partner.sector}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: textColor }}>{partner.name}</div>
+                  <div style={{ fontSize: 10, color: subColor, fontWeight: 500 }}>{partner.sector}</div>
                 </div>
               </motion.div>
             ))}
@@ -889,15 +1009,15 @@ function LandingView({
       </section>
 
       {/* SECCIÓN ECOSISTEMA (4 TARJETAS CON CRISTAL LÍQUIDO ESPECULAR) */}
-      <section id="ecosistema" style={{ padding: '74px 20px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 44 }}>
+      <section id="ecosistema" style={{ padding: '68px 18px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em' }}>ROLES Y HERRAMIENTAS</span>
-          <h2 style={{ fontSize: 'clamp(26px, 4.5vw, 38px)', fontWeight: 800, color: textColor, margin: '10px 0 0', letterSpacing: '-0.03em' }}>
+          <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.03em' }}>
             Todo tu ecosistema logístico en una sola plataforma.
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 18 }}>
           {/* Card 1: Portal de Clientes */}
           <motion.div
             whileHover={{ y: -6, scale: 1.01 }}
@@ -906,8 +1026,8 @@ function LandingView({
               backdropFilter: 'blur(36px) saturate(190%)',
               WebkitBackdropFilter: 'blur(36px) saturate(190%)',
               border: specularBorder,
-              borderRadius: 26,
-              padding: 28,
+              borderRadius: 24,
+              padding: 26,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -916,15 +1036,15 @@ function LandingView({
             }}
           >
             <div>
-              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(0, 122, 255, 0.14)', border: '1px solid rgba(0,122,255,0.3)', color: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, boxShadow: '0 6px 16px rgba(0,122,255,0.25)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(0, 122, 255, 0.14)', border: '1px solid rgba(0,122,255,0.3)', color: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 6px 16px rgba(0,122,255,0.25)' }}>
                 <Icon.User />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Portal de Clientes</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
+              <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Portal de Clientes</h3>
+              <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>
                 Gestiona tus envíos desde un solo lugar. Cotiza al instante, programa entregas y consulta el estado de cada pedido con total transparencia.
               </p>
             </div>
-            <div style={{ marginTop: 22, fontSize: 12, fontWeight: 800, color: '#00C853', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 800, color: '#00C853', display: 'flex', alignItems: 'center', gap: 7 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 10px #00C853' }} /> Monitoreo en vivo
             </div>
           </motion.div>
@@ -937,8 +1057,8 @@ function LandingView({
               backdropFilter: 'blur(36px) saturate(190%)',
               WebkitBackdropFilter: 'blur(36px) saturate(190%)',
               border: specularBorder,
-              borderRadius: 26,
-              padding: 28,
+              borderRadius: 24,
+              padding: 26,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -947,15 +1067,15 @@ function LandingView({
             }}
           >
             <div>
-              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(0, 200, 83, 0.14)', border: '1px solid rgba(0,200,83,0.3)', color: '#00C853', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, boxShadow: '0 6px 16px rgba(0,200,83,0.25)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(0, 200, 83, 0.14)', border: '1px solid rgba(0,200,83,0.3)', color: '#00C853', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 6px 16px rgba(0,200,83,0.25)' }}>
                 <Icon.Bike />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Panel de Repartidores</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
+              <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Panel de Repartidores</h3>
+              <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>
                 Recibe pedidos cercanos, optimiza tus recorridos y administra tus ganancias desde una interfaz rápida, intuitiva y conectada en tiempo real.
               </p>
             </div>
-            <div style={{ marginTop: 22, fontSize: 12, fontWeight: 800, color: '#007AFF', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 800, color: '#007AFF', display: 'flex', alignItems: 'center', gap: 7 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#007AFF', boxShadow: '0 0 10px #007AFF' }} /> Rutas satelitales
             </div>
           </motion.div>
@@ -968,8 +1088,8 @@ function LandingView({
               backdropFilter: 'blur(36px) saturate(190%)',
               WebkitBackdropFilter: 'blur(36px) saturate(190%)',
               border: specularBorder,
-              borderRadius: 26,
-              padding: 28,
+              borderRadius: 24,
+              padding: 26,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -978,15 +1098,15 @@ function LandingView({
             }}
           >
             <div>
-              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(124, 58, 237, 0.14)', border: '1px solid rgba(124,58,237,0.3)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, boxShadow: '0 6px 16px rgba(124,58,237,0.25)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(124, 58, 237, 0.14)', border: '1px solid rgba(124,58,237,0.3)', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 6px 16px rgba(124,58,237,0.25)' }}>
                 <Icon.Shield />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Consola de Control</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
+              <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Consola de Control</h3>
+              <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>
                 Supervisa toda la operación desde un solo panel. Controla pedidos, repartidores, indicadores y rendimiento operativo en tiempo real.
               </p>
             </div>
-            <div style={{ marginTop: 22, fontSize: 12, fontWeight: 800, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 800, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 7 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#7C3AED', boxShadow: '0 0 10px #7C3AED' }} /> Auditoría total
             </div>
           </motion.div>
@@ -999,8 +1119,8 @@ function LandingView({
               backdropFilter: 'blur(36px) saturate(190%)',
               WebkitBackdropFilter: 'blur(36px) saturate(190%)',
               border: specularBorder,
-              borderRadius: 26,
-              padding: 28,
+              borderRadius: 24,
+              padding: 26,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -1009,15 +1129,15 @@ function LandingView({
             }}
           >
             <div>
-              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255, 149, 0, 0.14)', border: '1px solid rgba(255,149,0,0.3)', color: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, boxShadow: '0 6px 16px rgba(255,149,0,0.25)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(255, 149, 0, 0.14)', border: '1px solid rgba(255,149,0,0.3)', color: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 6px 16px rgba(255,149,0,0.25)' }}>
                 <Icon.Wrench />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Gestión Inteligente de Flota</h3>
-              <p style={{ fontSize: 14, color: subColor, margin: 0, lineHeight: 1.6 }}>
+              <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Gestión Inteligente de Flota</h3>
+              <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>
                 Programa mantenimientos preventivos, controla el estado de cada motocicleta y reduce tiempos de inactividad mediante alertas automáticas. Controla tu flota, supervisa mantenimientos y administra repuestos desde un solo lugar.
               </p>
             </div>
-            <div style={{ marginTop: 22, fontSize: 12, fontWeight: 800, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 800, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 7 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF9500', boxShadow: '0 0 10px #FF9500' }} /> Telemetría preventiva
             </div>
           </motion.div>
@@ -1025,7 +1145,7 @@ function LandingView({
       </section>
 
       {/* SUPER BANNER CTA CRISTALINO */}
-      <section id="cta" style={{ padding: '36px 20px 84px', maxWidth: 1200, margin: '0 auto' }}>
+      <section id="cta" style={{ padding: '32px 18px 80px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{
           background: isDark
             ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.22) 0%, rgba(20, 20, 30, 0.85) 100%)'
@@ -1033,19 +1153,19 @@ function LandingView({
           backdropFilter: 'blur(40px) saturate(190%)',
           WebkitBackdropFilter: 'blur(40px) saturate(190%)',
           border: specularBorder,
-          borderRadius: 32,
-          padding: '50px 24px',
+          borderRadius: 30,
+          padding: '44px 20px',
           textAlign: 'center',
           boxShadow: glassShadow,
         }}>
-          <h2 style={{ fontSize: 'clamp(28px, 4.8vw, 42px)', fontWeight: 800, color: textColor, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
+          <h2 style={{ fontSize: 'clamp(26px, 4.5vw, 40px)', fontWeight: 800, color: textColor, margin: '0 0 14px', letterSpacing: '-0.03em' }}>
             Tecnología que mueve tu logística.
           </h2>
-          <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', color: subColor, maxWidth: 640, margin: '0 auto 30px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 'clamp(14px, 2vw, 16px)', color: subColor, maxWidth: 620, margin: '0 auto 28px', lineHeight: 1.6 }}>
             Centraliza tus envíos, automatiza tus procesos y mantén el control de cada entrega desde una plataforma inteligente creada para impulsar el crecimiento de tu negocio.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onRegister}
@@ -1056,12 +1176,12 @@ function LandingView({
                 background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
                 color: 'white',
                 border: '1px solid rgba(255,255,255,0.3)',
-                padding: '16px 36px',
+                padding: '15px 32px',
                 borderRadius: 100,
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 28px rgba(0,102,255,0.42)',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 26px rgba(0,102,255,0.42)',
               }}
             >
               <span>Comenzar ahora</span>
@@ -1079,9 +1199,9 @@ function LandingView({
                 background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)',
                 color: textColor,
                 border: specularBorder,
-                padding: '16px 28px',
+                padding: '15px 26px',
                 borderRadius: 100,
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: 700,
                 textDecoration: 'none',
                 cursor: 'pointer',
@@ -1097,9 +1217,9 @@ function LandingView({
       </section>
 
       {/* FOOTER */}
-      <footer style={{ padding: '40px 20px', background: isDark ? '#06060A' : '#EBEBF0', borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', textAlign: 'center', color: subColor, fontSize: 13 }}>
+      <footer style={{ padding: '36px 18px', background: isDark ? '#06060A' : '#EBEBF0', borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', textAlign: 'center', color: subColor, fontSize: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-          <Icon.Logo size={28} />
+          <Icon.Logo size={26} />
           <span style={{ fontWeight: 800, color: textColor }}>LOGIFAST</span>
         </div>
         <p>© {new Date().getFullYear()} LOGIFAST Nicaragua. Todos los derechos reservados.</p>
@@ -1197,16 +1317,16 @@ function LoginView({
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 18px', position: 'relative' }}>
       {/* Floating Top Nav Pill in Login */}
-      <div style={{ position: 'absolute', top: 18, left: 16, right: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1060, margin: '0 auto' }}>
+      <div style={{ position: 'absolute', top: 16, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1060, margin: '0 auto' }}>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onBack}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 6,
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.85)',
             border: specularBorder,
             color: textColor,
@@ -1225,7 +1345,7 @@ function LoginView({
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={toggleTheme}
-          style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)', border: specularBorder, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(20px)' }}
+          style={{ width: 38, height: 38, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)', border: specularBorder, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(20px)' }}
         >
           {isDark ? <Icon.Sun /> : <Icon.Moon />}
         </motion.button>
@@ -1237,22 +1357,22 @@ function LoginView({
         transition={{ duration: 0.35, ease: 'easeOut' }}
         style={{
           width: '100%',
-          maxWidth: 440,
+          maxWidth: 430,
           background: glassBg,
           backdropFilter: 'blur(40px) saturate(190%)',
           WebkitBackdropFilter: 'blur(40px) saturate(190%)',
           border: specularBorder,
-          borderRadius: 32,
-          padding: '38px 26px',
+          borderRadius: 30,
+          padding: '36px 24px',
           boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.18), 0 30px 80px rgba(0,0,0,0.7)' : 'inset 0 1px 1.5px rgba(255,255,255,0.95), 0 20px 60px rgba(0,0,0,0.08)',
           textAlign: 'center',
-          marginTop: 48,
+          marginTop: 44,
           boxSizing: 'border-box',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <Icon.Logo size={48} />
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: textColor, margin: '12px 0 4px', letterSpacing: '-0.03em' }}>Iniciar Sesión</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 22 }}>
+          <Icon.Logo size={46} />
+          <h2 style={{ fontSize: 23, fontWeight: 800, color: textColor, margin: '10px 0 4px', letterSpacing: '-0.03em' }}>Iniciar Sesión</h2>
           <p style={{ fontSize: 13, color: subColor, margin: 0 }}>Ingresa tus credenciales para acceder a LOGIFAST</p>
         </div>
 
@@ -1320,7 +1440,7 @@ function LoginView({
           </motion.button>
         </form>
 
-        <div style={{ textAlign: 'center', margin: '24px 0 14px' }}>
+        <div style={{ textAlign: 'center', margin: '22px 0 12px' }}>
           <span style={{ fontSize: 11, color: subColor, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Acceso Demo Instantáneo</span>
         </div>
 
@@ -1359,7 +1479,7 @@ function LoginView({
           ))}
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 24 }}>
+        <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 22 }}>
           ¿No tienes cuenta?{' '}
           <button type="button" onClick={onSwitchToRegister} style={{ background: 'none', border: 'none', color: '#007AFF', fontWeight: 800, cursor: 'pointer' }}>Regístrate gratis</button>
         </p>
@@ -1575,16 +1695,16 @@ function RegisterView({
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 18px', position: 'relative' }}>
       {/* Floating Top Nav Pill in Register */}
-      <div style={{ position: 'absolute', top: 18, left: 16, right: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1060, margin: '0 auto' }}>
+      <div style={{ position: 'absolute', top: 16, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1060, margin: '0 auto' }}>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onBack}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 6,
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.85)',
             border: specularBorder,
             color: textColor,
@@ -1603,7 +1723,7 @@ function RegisterView({
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={toggleTheme}
-          style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)', border: specularBorder, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(20px)' }}
+          style={{ width: 38, height: 38, borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)', border: specularBorder, color: isDark ? '#FFB300' : '#0066FF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(20px)' }}
         >
           {isDark ? <Icon.Sun /> : <Icon.Moon />}
         </motion.button>
@@ -1615,23 +1735,23 @@ function RegisterView({
         transition={{ duration: 0.35, ease: 'easeOut' }}
         style={{
           width: '100%',
-          maxWidth: 490,
+          maxWidth: 480,
           background: glassBg,
           backdropFilter: 'blur(40px) saturate(190%)',
           WebkitBackdropFilter: 'blur(40px) saturate(190%)',
           border: specularBorder,
-          borderRadius: 32,
-          padding: '38px 26px',
+          borderRadius: 30,
+          padding: '36px 24px',
           boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.18), 0 30px 80px rgba(0,0,0,0.7)' : 'inset 0 1px 1.5px rgba(255,255,255,0.95), 0 20px 60px rgba(0,0,0,0.08)',
           textAlign: 'center',
-          marginTop: 48,
+          marginTop: 44,
           boxSizing: 'border-box',
         }}
       >
         {/* Step Header */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 22 }}>
-          <Icon.Logo size={44} />
-          <h2 style={{ fontSize: 23, fontWeight: 800, color: textColor, margin: '12px 0 4px', letterSpacing: '-0.03em' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
+          <Icon.Logo size={42} />
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: textColor, margin: '10px 0 4px', letterSpacing: '-0.03em' }}>
             {step === 1 ? 'Paso 1: Identificación Legal' : step === 2 ? 'Paso 2: Foto & Ubicación' : 'Paso 3: Perfil & Vehículo'}
           </h2>
           <p style={{ fontSize: 13, color: subColor, margin: 0 }}>
@@ -1639,12 +1759,12 @@ function RegisterView({
           </p>
 
           {/* Dynamic iOS Pills Stepper */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
                 style={{
-                  width: s === step ? 30 : 10,
+                  width: s === step ? 28 : 8,
                   height: 6,
                   borderRadius: 100,
                   background: s <= step ? '#007AFF' : (isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.15)'),
@@ -1843,7 +1963,7 @@ function RegisterView({
                 whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={() => setStep(1)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 20px', height: 48, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: specularBorder, color: textColor, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px', height: 48, borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', border: specularBorder, color: textColor, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 <Icon.ArrowLeft /> Atrás
               </motion.button>
