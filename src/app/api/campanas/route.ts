@@ -9,6 +9,8 @@ const postSchema = z.object({
   tipo: z.enum(['push', 'email', 'sms']),
   segmento: z.string().min(1, 'segmento requerido').max(50),
   contenido: z.string().min(1, 'contenido requerido'),
+  triggerTipo: z.enum(['manual', 'inactividad_10d', 'bienvenida_nuevo', 'primer_pedido_completado']).optional().default('manual'),
+  variables: z.string().optional().default('[]'),
   estado: z.enum(['borrador', 'programada', 'enviada', 'fallida']).optional(),
   programadaPara: z.string().min(1).optional().nullable(),
   creadoPor: z.string().min(1, 'creadoPor requerido'),
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ data });
-} catch (error) {
+  } catch (error) {
     return handleError(error, 'CAMPANAS_GET');
   }
 }
@@ -53,17 +55,12 @@ export async function POST(request: NextRequest) {
       tipo,
       segmento,
       contenido,
+      triggerTipo = 'manual',
+      variables = '[]',
       estado,
       programadaPara,
       creadoPor,
     } = body;
-
-    if (!titulo || !tipo || !segmento || !contenido || !creadoPor) {
-      return NextResponse.json(
-        { error: 'Faltan campos requeridos: titulo, tipo, segmento, contenido, creadoPor' },
-        { status: 400 }
-      );
-    }
 
     const campana = await db.campana.create({
       data: {
@@ -71,6 +68,8 @@ export async function POST(request: NextRequest) {
         tipo,
         segmento,
         contenido,
+        triggerTipo: triggerTipo || 'manual',
+        variables: typeof variables === 'string' ? variables : JSON.stringify(variables),
         estado: estado || 'borrador',
         programadaPara: programadaPara ? new Date(programadaPara) : null,
         creadoPor,
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: campana }, { status: 201 });
-} catch (error) {
+  } catch (error) {
     return handleError(error, 'CAMPANAS_POST');
   }
 }

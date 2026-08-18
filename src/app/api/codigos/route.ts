@@ -8,8 +8,11 @@ const postSchema = z.object({
   codigo: z.string().min(1, 'codigo requerido').max(50),
   tipoDescuento: z.enum(['porcentaje', 'monto']),
   valor: z.number().min(0, 'valor debe ser >= 0'),
-  aplicableA: z.enum(['todos', 'primer_envio', 'envio_minimo']),
+  aplicableA: z.string().optional().default('todos'),
   montoMinimo: z.number().min(0).optional().nullable(),
+  descuentoMaximo: z.number().min(0).optional().nullable(),
+  primerPedidoSolo: z.boolean().optional().default(false),
+  tipoServicio: z.enum(['envio', 'marketplace', 'ambos']).optional().default('ambos'),
   maxUsos: z.number().int().min(0).optional(),
   segmento: z.string().max(50).optional(),
   vigenciaInicio: z.string().min(1, 'vigenciaInicio requerido'),
@@ -36,7 +39,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ data });
-} catch (error) {
+  } catch (error) {
     return handleError(error, 'CODIGOS_GET');
   }
 }
@@ -56,8 +59,11 @@ export async function POST(request: NextRequest) {
       codigo,
       tipoDescuento,
       valor,
-      aplicableA,
+      aplicableA = 'todos',
       montoMinimo,
+      descuentoMaximo,
+      primerPedidoSolo = false,
+      tipoServicio = 'ambos',
       maxUsos,
       segmento,
       vigenciaInicio,
@@ -66,21 +72,17 @@ export async function POST(request: NextRequest) {
       creadoPor,
     } = body;
 
-    if (!codigo || !tipoDescuento || valor === undefined || !aplicableA || !vigenciaInicio || !vigenciaFin || !creadoPor) {
-      return NextResponse.json(
-        { error: 'Faltan campos requeridos: codigo, tipoDescuento, valor, aplicableA, vigenciaInicio, vigenciaFin, creadoPor' },
-        { status: 400 }
-      );
-    }
-
     const codigoPromo = await db.codigoPromocional.create({
       data: {
-        codigo,
+        codigo: codigo.trim().toUpperCase(),
         tipoDescuento,
-        valor,
+        valor: Number(valor),
         aplicableA,
-        montoMinimo: montoMinimo ?? null,
-        maxUsos: maxUsos ?? 0,
+        montoMinimo: montoMinimo ? Number(montoMinimo) : null,
+        descuentoMaximo: descuentoMaximo ? Number(descuentoMaximo) : null,
+        primerPedidoSolo: Boolean(primerPedidoSolo),
+        tipoServicio: tipoServicio || 'ambos',
+        maxUsos: maxUsos ? Number(maxUsos) : 0,
         segmento: segmento || 'todos',
         vigenciaInicio: new Date(vigenciaInicio),
         vigenciaFin: new Date(vigenciaFin),
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: codigoPromo }, { status: 201 });
-} catch (error) {
+  } catch (error) {
     return handleError(error, 'CODIGOS_POST');
   }
 }

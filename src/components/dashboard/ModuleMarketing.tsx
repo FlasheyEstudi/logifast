@@ -149,6 +149,7 @@ function SubCampanas() {
   const [titulo, setTitulo] = useState('');
   const [tipo, setTipo] = useState<Campana['tipo']>('push');
   const [segmento, setSegmento] = useState('todos');
+  const [triggerTipo, setTriggerTipo] = useState('manual');
   const [contTitulo, setContTitulo] = useState('');
   const [contCuerpo, setContCuerpo] = useState('');
   const [contBoton, setContBoton] = useState('');
@@ -156,7 +157,7 @@ function SubCampanas() {
 
   const openCreate = () => {
     setEditing(null);
-    setTitulo(''); setTipo('push'); setSegmento('todos');
+    setTitulo(''); setTipo('push'); setSegmento('todos'); setTriggerTipo('manual');
     setContTitulo(''); setContCuerpo(''); setContBoton('');
     setProgramadaPara('');
     setModalOpen(true);
@@ -164,10 +165,14 @@ function SubCampanas() {
 
   const openEdit = (c: Campana) => {
     setEditing(c);
-    setTitulo(c.titulo); setTipo(c.tipo); setSegmento(c.segmento);
+    setTitulo(c.titulo); setTipo(c.tipo); setSegmento(c.segmento); setTriggerTipo((c as any).triggerTipo || 'manual');
     setContTitulo(c.contenido.titulo || ''); setContCuerpo(c.contenido.cuerpo);
     setContBoton(c.contenido.boton || ''); setProgramadaPara(c.programadaPara || '');
     setModalOpen(true);
+  };
+
+  const insertVariable = (tag: string) => {
+    setContCuerpo((prev) => prev + ` {{${tag}}}`);
   };
 
   const handleSubmit = async () => {
@@ -181,14 +186,14 @@ function SubCampanas() {
       addToast('Campaña actualizada', 'success');
     } else {
       const newCampana = {
-        id: genId(), titulo, tipo, segmento, contenido,
+        id: genId(), titulo, tipo, segmento, contenido, triggerTipo,
         estado: (programadaPara ? 'programada' : 'borrador') as Campana['estado'],
         programadaPara: programadaPara || undefined,
         destinatarios: 0, abiertos: 0, clicks: 0,
         creadoPor: 'admin', createdAt: new Date().toISOString(),
       };
       addCampana(newCampana);
-      addToast('Campaña creada', 'success');
+      addToast('Campaña creada con éxito', 'success');
       try {
         await fetch('/api/campanas', {
           method: 'POST',
@@ -198,6 +203,7 @@ function SubCampanas() {
             tipo,
             segmento,
             contenido: contCuerpo,
+            triggerTipo,
             estado: programadaPara ? 'programada' : 'borrador',
             programadaPara: programadaPara || null,
             creadoPor: 'admin',
@@ -221,7 +227,7 @@ function SubCampanas() {
 
   const handleSendNow = (c: Campana) => {
     updateCampana(c.id, { estado: 'enviada', enviadaEn: new Date().toISOString(), destinatarios: Math.floor(Math.random() * 150) + 30 });
-    addToast('Campaña enviada', 'success');
+    addToast('Campaña enviada en tiempo real', 'success');
   };
 
   const handleDelete = (id: string) => {
@@ -240,8 +246,8 @@ function SubCampanas() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Campañas de notificación</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>Gestiona campañas push, email y SMS</p>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Campañas de automatización & marketing</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>Triggers inteligentes, push notifications y SMS masivos</p>
         </div>
         <Button onClick={openCreate} style={{ background: 'var(--primario)', color: '#fff', border: 'none', gap: 6, borderRadius: 8 }}>
           <Plus size={16} /> Nueva campaña
@@ -281,6 +287,11 @@ function SubCampanas() {
                   <Badge style={{ background: 'rgba(142,142,160,0.1)', color: 'var(--text-secondary)', border: 'none', fontSize: 10 }}>
                     {SEGMENT_LABELS[c.segmento] || c.segmento}
                   </Badge>
+                  {(c as any).triggerTipo && (c as any).triggerTipo !== 'manual' && (
+                    <Badge style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--exito)', border: 'none', fontSize: 10 }}>
+                      ⚡ Disparador: {(c as any).triggerTipo}
+                    </Badge>
+                  )}
                   <CampanaStatusBadge estado={c.estado} />
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, marginBottom: 6, lineHeight: 1.4 }}>
@@ -288,14 +299,9 @@ function SubCampanas() {
                 </p>
                 <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                   {c.enviadaEn && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {new Date(c.enviadaEn).toLocaleDateString('es-NI')}</span>}
-                  {c.programadaPara && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Calendar size={12} /> Programada: {new Date(c.programadaPara).toLocaleDateString('es-NI')}</span>}
-                  {c.estado === 'enviada' && (
-                    <>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} /> {c.destinatarios} enviados</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Eye size={12} /> {c.abiertos} abiertos</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MousePointer size={12} /> {c.clicks} clicks</span>
-                    </>
-                  )}
+                  {c.destinatarios > 0 && <span><strong>{c.destinatarios}</strong> destinatarios</span>}
+                  {c.abiertos > 0 && <span><strong>{c.abiertos}</strong> abiertos</span>}
+                  {c.clicks > 0 && <span><strong>{c.clicks}</strong> clicks</span>}
                 </div>
               </div>
 
@@ -330,18 +336,18 @@ function SubCampanas() {
 
       {/* Create/Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 520 }}>
+        <DialogContent style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 540 }}>
           <DialogHeader>
-            <DialogTitle style={{ color: 'var(--text)' }}>{editing ? 'Editar campaña' : 'Nueva campaña'}</DialogTitle>
+            <DialogTitle style={{ color: 'var(--text)' }}>{editing ? 'Editar campaña' : 'Nueva campaña comercial'}</DialogTitle>
           </DialogHeader>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}>
             <div>
-              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Título</Label>
-              <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Nombre de la campaña" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Título de campaña</Label>
+              <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej: Reactivación Fin de Semana" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ flex: 1 }}>
-                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Tipo</Label>
+                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Canal</Label>
                 <Select value={tipo} onValueChange={(v) => setTipo(v as Campana['tipo'])}>
                   <SelectTrigger style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)', width: '100%' }}>
                     <SelectValue />
@@ -354,7 +360,7 @@ function SubCampanas() {
                 </Select>
               </div>
               <div style={{ flex: 1 }}>
-                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Segmento</Label>
+                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Segmento objetivo</Label>
                 <Select value={segmento} onValueChange={setSegmento}>
                   <SelectTrigger style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)', width: '100%' }}>
                     <SelectValue />
@@ -367,21 +373,43 @@ function SubCampanas() {
                 </Select>
               </div>
             </div>
+
             <div>
-              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Título del contenido</Label>
-              <Input value={contTitulo} onChange={(e) => setContTitulo(e.target.value)} placeholder="Opcional" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Disparador automático (Trigger)</Label>
+              <Select value={triggerTipo} onValueChange={setTriggerTipo}>
+                <SelectTrigger style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)', width: '100%' }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                  <SelectItem value="manual" style={{ color: 'var(--text)' }}>Envío manual / Programado</SelectItem>
+                  <SelectItem value="inactividad_10d" style={{ color: 'var(--text)' }}>Tras 10 días de inactividad</SelectItem>
+                  <SelectItem value="bienvenida_nuevo" style={{ color: 'var(--text)' }}>Bienvenida al registrarse</SelectItem>
+                  <SelectItem value="primer_pedido_completado" style={{ color: 'var(--text)' }}>Tras primer pedido entregado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
             <div>
-              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Cuerpo del mensaje</Label>
-              <Textarea value={contCuerpo} onChange={(e) => setContCuerpo(e.target.value)} placeholder="Escribe el mensaje..." rows={3} style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <Label style={{ color: 'var(--text-secondary)' }}>Cuerpo del mensaje</Label>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button type="button" onClick={() => insertVariable('nombre')} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--primario-soft)', color: 'var(--primario)', border: 'none', cursor: 'pointer' }}>+ {'{{nombre}}'}</button>
+                  <button type="button" onClick={() => insertVariable('codigo')} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--primario-soft)', color: 'var(--primario)', border: 'none', cursor: 'pointer' }}>+ {'{{codigo}}'}</button>
+                  <button type="button" onClick={() => insertVariable('descuento')} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--primario-soft)', color: 'var(--primario)', border: 'none', cursor: 'pointer' }}>+ {'{{descuento}}'}</button>
+                </div>
+              </div>
+              <Textarea value={contCuerpo} onChange={(e) => setContCuerpo(e.target.value)} placeholder="Hola {{nombre}}, tenemos un cupón exclusivo {{codigo}} para ti..." rows={3} style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
             </div>
-            <div>
-              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Texto del botón</Label>
-              <Input value={contBoton} onChange={(e) => setContBoton(e.target.value)} placeholder="Opcional" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
-            </div>
-            <div>
-              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Programar envío</Label>
-              <Input type="datetime-local" value={programadaPara} onChange={(e) => setProgramadaPara(e.target.value)} style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Texto del botón</Label>
+                <Input value={contBoton} onChange={(e) => setContBoton(e.target.value)} placeholder="Ej: Pedir con descuento" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Fecha y hora de envío</Label>
+                <Input type="datetime-local" value={programadaPara} onChange={(e) => setProgramadaPara(e.target.value)} style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+              </div>
             </div>
           </div>
           <DialogFooter style={{ marginTop: 16 }}>
@@ -410,6 +438,9 @@ function SubCodigos() {
   const [valor, setValor] = useState('');
   const [aplicableA, setAplicableA] = useState('Todos los envíos');
   const [montoMinimo, setMontoMinimo] = useState('');
+  const [descuentoMaximo, setDescuentoMaximo] = useState('');
+  const [primerPedidoSolo, setPrimerPedidoSolo] = useState(false);
+  const [tipoServicio, setTipoServicio] = useState('ambos');
   const [maxUsos, setMaxUsos] = useState('100');
   const [segmento, setSegmento] = useState('todos');
   const [vigenciaInicio, setVigenciaInicio] = useState('');
@@ -418,7 +449,8 @@ function SubCodigos() {
   const openCreate = () => {
     setEditing(null);
     setCodigo(genPromoCode()); setTipoDescuento('porcentaje'); setValor('');
-    setAplicableA('Todos los envíos'); setMontoMinimo(''); setMaxUsos('100');
+    setAplicableA('Todos los envíos'); setMontoMinimo(''); setDescuentoMaximo('');
+    setPrimerPedidoSolo(false); setTipoServicio('ambos'); setMaxUsos('100');
     setSegmento('todos'); setVigenciaInicio(''); setVigenciaFin('');
     setModalOpen(true);
   };
@@ -427,6 +459,9 @@ function SubCodigos() {
     setEditing(c);
     setCodigo(c.codigo); setTipoDescuento(c.tipoDescuento); setValor(String(c.valor));
     setAplicableA(c.aplicableA); setMontoMinimo(c.montoMinimo ? String(c.montoMinimo) : '');
+    setDescuentoMaximo((c as any).descuentoMaximo ? String((c as any).descuentoMaximo) : '');
+    setPrimerPedidoSolo(Boolean((c as any).primerPedidoSolo));
+    setTipoServicio((c as any).tipoServicio || 'ambos');
     setMaxUsos(String(c.maxUsos)); setSegmento(c.segmento);
     setVigenciaInicio(c.vigenciaInicio); setVigenciaFin(c.vigenciaFin);
     setModalOpen(true);
@@ -440,6 +475,8 @@ function SubCodigos() {
     const valorNum = parseFloat(valor);
     const maxUsosNum = parseInt(maxUsos) || 100;
     const montoMinNum = montoMinimo ? parseFloat(montoMinimo) : undefined;
+    const descMaxNum = descuentoMaximo ? parseFloat(descuentoMaximo) : undefined;
+
     if (editing) {
       updateCodigo(editing.id, {
         codigo, tipoDescuento, valor: valorNum, aplicableA, montoMinimo: montoMinNum,
@@ -452,7 +489,7 @@ function SubCodigos() {
         maxUsos: maxUsosNum, usosActuales: 0, segmento, vigenciaInicio, vigenciaFin,
         estado: 'activo', creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
       });
-      addToast('Código creado', 'success');
+      addToast('Código creado con éxito', 'success');
 
       fetch('/api/codigos', {
         method: 'POST',
@@ -463,6 +500,9 @@ function SubCodigos() {
           valor: valorNum,
           aplicableA,
           montoMinimo: montoMinNum ?? 0,
+          descuentoMaximo: descMaxNum ?? null,
+          primerPedidoSolo,
+          tipoServicio,
           maxUsos: maxUsosNum,
           segmento,
           vigenciaInicio: vigenciaInicio || new Date().toISOString().split('T')[0],
@@ -490,8 +530,8 @@ function SubCodigos() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Códigos promocionales</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>Gestiona descuentos y promociones</p>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Códigos de descuento y fidelización</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>Topes comerciales, primer pedido y cupones por servicio</p>
         </div>
         <Button onClick={openCreate} style={{ background: 'var(--primario)', color: '#fff', border: 'none', gap: 6, borderRadius: 8 }}>
           <Plus size={16} /> Nuevo código
@@ -534,10 +574,22 @@ function SubCodigos() {
                   </span>
                 </div>
 
-                {/* Segment */}
-                <Badge style={{ background: 'rgba(142,142,160,0.1)', color: 'var(--text-secondary)', border: 'none', fontSize: 10 }}>
-                  {SEGMENT_LABELS[c.segmento] || c.segmento}
-                </Badge>
+                {/* Badges */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <Badge style={{ background: 'rgba(142,142,160,0.1)', color: 'var(--text-secondary)', border: 'none', fontSize: 10 }}>
+                    {SEGMENT_LABELS[c.segmento] || c.segmento}
+                  </Badge>
+                  {(c as any).primerPedidoSolo && (
+                    <Badge style={{ background: 'rgba(255,87,34,0.12)', color: 'var(--primario)', border: 'none', fontSize: 10 }}>
+                      🌟 Solo 1er pedido
+                    </Badge>
+                  )}
+                  {(c as any).descuentoMaximo && (
+                    <Badge style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--info)', border: 'none', fontSize: 10 }}>
+                      Tope C${(c as any).descuentoMaximo}
+                    </Badge>
+                  )}
+                </div>
 
                 {/* Usages */}
                 <div style={{ flex: 1, minWidth: 100 }}>
@@ -584,9 +636,9 @@ function SubCodigos() {
 
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 520 }}>
+        <DialogContent style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 540 }}>
           <DialogHeader>
-            <DialogTitle style={{ color: 'var(--text)' }}>{editing ? 'Editar código' : 'Nuevo código promocional'}</DialogTitle>
+            <DialogTitle style={{ color: 'var(--text)' }}>{editing ? 'Editar código' : 'Nuevo código comercial'}</DialogTitle>
           </DialogHeader>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}>
             <div>
@@ -616,10 +668,35 @@ function SubCodigos() {
                 <Input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={tipoDescuento === 'porcentaje' ? '20' : '50'} style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
               </div>
             </div>
-            <div>
-              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Aplicable a</Label>
-              <Input value={aplicableA} onChange={(e) => setAplicableA(e.target.value)} placeholder="Todos los envíos" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Tope máx. descuento (C$)</Label>
+                <Input type="number" value={descuentoMaximo} onChange={(e) => setDescuentoMaximo(e.target.value)} placeholder="Ej: 80 (Opcional)" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Servicio aplicable</Label>
+                <Select value={tipoServicio} onValueChange={setTipoServicio}>
+                  <SelectTrigger style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)', width: '100%' }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                    <SelectItem value="ambos" style={{ color: 'var(--text)' }}>Ambos (Envíos y Tiendas)</SelectItem>
+                    <SelectItem value="envio" style={{ color: 'var(--text)' }}>Solo Envíos Express</SelectItem>
+                    <SelectItem value="marketplace" style={{ color: 'var(--text)' }}>Solo Compras en Tiendas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Solo primer pedido</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Exclusivo para nuevos clientes en su primera compra</div>
+              </div>
+              <Switch checked={primerPedidoSolo} onCheckedChange={setPrimerPedidoSolo} />
+            </div>
+
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Monto mínimo (C$)</Label>
@@ -630,6 +707,7 @@ function SubCodigos() {
                 <Input type="number" value={maxUsos} onChange={(e) => setMaxUsos(e.target.value)} placeholder="100" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
               </div>
             </div>
+
             <div>
               <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Segmento</Label>
               <Select value={segmento} onValueChange={setSegmento}>
@@ -666,7 +744,7 @@ function SubCodigos() {
   );
 }
 
-/* Simple Pause icon since lucide Pause might conflict */
+/* Simple Pause icon */
 function PauseIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -695,6 +773,8 @@ function SubBanners() {
   const [gradTo, setGradTo] = useState('#FF5722');
   const [gradDirection, setGradDirection] = useState('to right');
   const [botonTexto, setBotonTexto] = useState('');
+  const [accionTipo, setAccionTipo] = useState('ninguna');
+  const [accionValor, setAccionValor] = useState('');
   const [icono, setIcono] = useState('');
   const [segmento, setSegmento] = useState('todos');
   const [mostrarEn, setMostrarEn] = useState('app');
@@ -707,7 +787,7 @@ function SubBanners() {
     setTitulo(''); setSubtitulo(''); setTipo('promo_grande');
     setColorFondo('#FF5722'); setColorTexto('#FFFFFF');
     setUseGradient(false); setGradFrom('var(--text)'); setGradTo('#FF5722');
-    setGradDirection('to right'); setBotonTexto(''); setIcono('');
+    setGradDirection('to right'); setBotonTexto(''); setAccionTipo('ninguna'); setAccionValor(''); setIcono('');
     setSegmento('todos'); setMostrarEn('app'); setPosicion(String(banners.length + 1));
     setModalOpen(true);
   };
@@ -718,7 +798,8 @@ function SubBanners() {
     setColorFondo(b.colorFondo); setColorTexto(b.colorTexto);
     setUseGradient(!!b.gradiente); setGradFrom(b.gradiente?.from || 'var(--text)');
     setGradTo(b.gradiente?.to || '#FF5722'); setGradDirection(b.gradiente?.direction || 'to right');
-    setBotonTexto(b.botonTexto || ''); setIcono(b.icono || '');
+    setBotonTexto(b.botonTexto || ''); setAccionTipo((b as any).accionTipo || 'ninguna');
+    setAccionValor((b as any).accionValor || ''); setIcono(b.icono || '');
     setSegmento(b.segmento); setMostrarEn(b.mostrarEn); setPosicion(String(b.posicion));
     setModalOpen(true);
   };
@@ -734,6 +815,7 @@ function SubBanners() {
         titulo, subtitulo: subtitulo || undefined, tipo, colorFondo, colorTexto, gradiente,
         botonTexto: botonTexto || undefined, icono: icono || undefined,
         segmento, mostrarEn, posicion: parseInt(posicion) || 1,
+        accionTipo, accionValor: accionValor || undefined,
       });
       addToast('Banner actualizado', 'success');
     } else {
@@ -742,9 +824,10 @@ function SubBanners() {
         botonTexto: botonTexto || undefined, icono: icono || undefined,
         segmento, mostrarEn, posicion: parseInt(posicion) || 1,
         estado: 'activo', impresiones: 0, clicks: 0,
+        accionTipo, accionValor: accionValor || undefined,
         creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
       });
-      addToast('Banner creado', 'success');
+      addToast('Banner creado con éxito', 'success');
 
       fetch('/api/banners', {
         method: 'POST',
@@ -756,6 +839,8 @@ function SubBanners() {
           colorFondo,
           colorTexto,
           botonTexto: botonTexto || null,
+          accionTipo,
+          accionValor: accionValor || null,
           segmento,
           mostrarEn,
           posicion: parseInt(posicion) || 1,
@@ -786,9 +871,9 @@ function SubBanners() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Banners y promociones</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Banners promocionales & deep links</h3>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>
-            {activeBanners}/5 banners activos
+            {activeBanners} de 5 banners activos en la App del Cliente
           </p>
         </div>
         <Button onClick={openCreate} style={{ background: 'var(--primario)', color: '#fff', border: 'none', gap: 6, borderRadius: 8 }}>
@@ -846,6 +931,13 @@ function SubBanners() {
                     <BannerStatusBadge estado={b.estado} />
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Pos. {b.posicion}</span>
                   </div>
+                  {(b as any).accionTipo && (b as any).accionTipo !== 'ninguna' && (
+                    <div style={{ marginBottom: 6 }}>
+                      <Badge style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--info)', border: 'none', fontSize: 10 }}>
+                        🔗 {(b as any).accionTipo}: {(b as any).accionValor || 'Defecto'}
+                      </Badge>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--text-muted)' }}>
                     <span><Eye size={11} /> {b.impresiones}</span>
                     <span><MousePointer size={11} /> {b.clicks}</span>
@@ -917,7 +1009,7 @@ function SubBanners() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }}>
           <DialogHeader>
-            <DialogTitle style={{ color: 'var(--text)' }}>{editing ? 'Editar banner' : 'Nuevo banner'}</DialogTitle>
+            <DialogTitle style={{ color: 'var(--text)' }}>{editing ? 'Editar banner' : 'Nuevo banner interactivo'}</DialogTitle>
           </DialogHeader>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -947,9 +1039,33 @@ function SubBanners() {
               <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Subtítulo</Label>
               <Input value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} placeholder="Opcional" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
             </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Acción al pulsar (Deep Link)</Label>
+                <Select value={accionTipo} onValueChange={setAccionTipo}>
+                  <SelectTrigger style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)', width: '100%' }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                    <SelectItem value="ninguna" style={{ color: 'var(--text)' }}>Solo informativo</SelectItem>
+                    <SelectItem value="abrir_tienda" style={{ color: 'var(--text)' }}>Abrir menú de Tienda</SelectItem>
+                    <SelectItem value="aplicar_codigo" style={{ color: 'var(--text)' }}>Aplicar Cupón</SelectItem>
+                    <SelectItem value="abrir_categoria" style={{ color: 'var(--text)' }}>Abrir Categoría</SelectItem>
+                    <SelectItem value="abrir_modulo" style={{ color: 'var(--text)' }}>Abrir Módulo</SelectItem>
+                    <SelectItem value="link_externo" style={{ color: 'var(--text)' }}>Enlace Web Externo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Destino / Valor</Label>
+                <Input value={accionValor} onChange={(e) => setAccionValor(e.target.value)} placeholder="ID de tienda, cupón o URL" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+              </div>
+            </div>
+
             <div>
               <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Texto del botón</Label>
-              <Input value={botonTexto} onChange={(e) => setBotonTexto(e.target.value)} placeholder="Opcional" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+              <Input value={botonTexto} onChange={(e) => setBotonTexto(e.target.value)} placeholder="Ej: Pedir ahora" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
             </div>
 
             {/* Color Pickers */}
@@ -1067,10 +1183,6 @@ function SubBanners() {
     </div>
   );
 }
-
-/* ═══════════════════════════════════════════════
-   FEED SUB-TAB (7D)
-   ═══════════════════════════════════════════════ */
 
 const FEED_ICONS: Record<string, typeof Star> = {
   star: Star, tag: Tag, clock: Clock, heart: Heart, 'map-pin': MapPin,

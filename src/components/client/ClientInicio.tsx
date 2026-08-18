@@ -165,6 +165,34 @@ export default function ClientInicio({
 
   const puntos = fidelizacion?.puntos ?? 2450;
 
+  const handleBannerAction = (banner: any) => {
+    if (!banner) {
+      onNavigate('solicitar');
+      return;
+    }
+    const { accionTipo, accionValor, botonLink } = banner;
+    if (accionTipo === 'abrir_tienda' && accionValor) {
+      const targetTienda = tiendas.find((t) => t.id === accionValor || t.nombre.toLowerCase().includes(accionValor.toLowerCase()));
+      if (targetTienda) {
+        setTiendaSeleccionada(targetTienda.id);
+        onNavigate('explorar');
+      } else {
+        onNavigate('explorar');
+      }
+    } else if (accionTipo === 'abrir_categoria' && accionValor) {
+      setExplorarCategoria(accionValor as any);
+      onNavigate('explorar');
+    } else if (accionTipo === 'aplicar_codigo' && accionValor) {
+      onNavigate('solicitar');
+    } else if (accionTipo === 'abrir_modulo' && accionValor) {
+      onNavigate(accionValor as any);
+    } else if (accionTipo === 'link_externo' && (accionValor || botonLink)) {
+      window.open(accionValor || botonLink, '_blank');
+    } else {
+      onNavigate('solicitar');
+    }
+  };
+
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div
@@ -472,10 +500,10 @@ export default function ClientInicio({
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6 }}>
           <button
-            onClick={() => onNavigate('solicitar')}
+            onClick={() => handleBannerAction(banners[activeBannerIdx])}
             style={btnPrimary}
           >
-            <span>Pedir Ahora</span>
+            <span>{banners[activeBannerIdx]?.botonTexto || 'Pedir Ahora'}</span>
             <ChevronRight size={14} />
           </button>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>

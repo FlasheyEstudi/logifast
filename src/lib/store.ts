@@ -202,6 +202,7 @@ export interface Campana {
   tipo: 'push' | 'email' | 'sms';
   segmento: string;
   contenido: { titulo?: string; cuerpo: string; boton?: string };
+  triggerTipo?: string;
   estado: 'borrador' | 'programada' | 'enviada' | 'fallida';
   programadaPara?: string;
   enviadaEn?: string;
@@ -219,6 +220,9 @@ export interface CodigoPromocional {
   valor: number;
   aplicableA: string;
   montoMinimo?: number;
+  descuentoMaximo?: number;
+  primerPedidoSolo?: boolean;
+  tipoServicio?: string;
   maxUsos: number;
   usosActuales: number;
   segmento: string;
@@ -241,6 +245,8 @@ export interface Banner {
   botonTexto?: string;
   botonAccion?: string;
   botonLink?: string;
+  accionTipo?: string;
+  accionValor?: string;
   icono?: string;
   segmento: string;
   mostrarEn: string;

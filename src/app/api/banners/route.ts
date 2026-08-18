@@ -15,6 +15,8 @@ const postSchema = z.object({
   botonTexto: z.string().max(50).optional().nullable(),
   botonAccion: z.string().max(100).optional().nullable(),
   botonLink: z.string().max(500).optional().nullable(),
+  accionTipo: z.enum(['ninguna', 'abrir_tienda', 'aplicar_codigo', 'abrir_categoria', 'abrir_modulo', 'link_externo']).optional(),
+  accionValor: z.string().max(200).optional().nullable(),
   icono: z.string().max(50).optional().nullable(),
   segmento: z.string().max(50).optional(),
   mostrarEn: z.enum(['app', 'dashboard', 'ambos']).optional(),
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ data });
-} catch (error) {
+  } catch (error) {
     return handleError(error, 'BANNERS_GET');
   }
 }
@@ -72,6 +74,8 @@ export async function POST(request: NextRequest) {
       botonTexto,
       botonAccion,
       botonLink,
+      accionTipo = 'ninguna',
+      accionValor,
       icono,
       segmento,
       mostrarEn,
@@ -81,13 +85,6 @@ export async function POST(request: NextRequest) {
       programadoHasta,
       creadoPor,
     } = body;
-
-    if (!titulo || !tipo || !creadoPor) {
-      return NextResponse.json(
-        { error: 'Faltan campos requeridos: titulo, tipo, creadoPor' },
-        { status: 400 }
-      );
-    }
 
     const banner = await db.banner.create({
       data: {
@@ -101,6 +98,8 @@ export async function POST(request: NextRequest) {
         botonTexto: botonTexto || null,
         botonAccion: botonAccion || null,
         botonLink: botonLink || null,
+        accionTipo: accionTipo || 'ninguna',
+        accionValor: accionValor || null,
         icono: icono || null,
         segmento: segmento || 'todos',
         mostrarEn: mostrarEn || 'app',
@@ -113,7 +112,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: banner }, { status: 201 });
-} catch (error) {
+  } catch (error) {
     return handleError(error, 'BANNERS_POST');
   }
 }

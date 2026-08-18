@@ -122,6 +122,8 @@ model Campana {
   tipo           String
   segmento       String
   contenido      String
+  triggerTipo    String?   @default("manual")
+  variables      String?   @default("[]")
   estado         String    @default("borrador")
   programadaPara DateTime?
   enviadaEn      DateTime?
@@ -134,21 +136,24 @@ model Campana {
 }
 
 model CodigoPromocional {
-  id             String      @id @default(cuid())
-  codigo         String      @unique
-  tipoDescuento  String
-  valor          Float
-  aplicableA     String
-  montoMinimo    Float?
-  maxUsos        Int         @default(0)
-  usosActuales   Int         @default(0)
-  segmento       String      @default("todos")
-  vigenciaInicio DateTime
-  vigenciaFin    DateTime
-  estado         String      @default("activo")
-  creadoPor      String
-  createdAt      DateTime    @default(now())
-  usos           UsoCodigo[]
+  id               String      @id @default(cuid())
+  codigo           String      @unique
+  tipoDescuento    String
+  valor            Float
+  aplicableA       String
+  montoMinimo      Float?
+  descuentoMaximo  Float?
+  primerPedidoSolo Boolean     @default(false)
+  tipoServicio     String      @default("ambos")
+  maxUsos          Int         @default(0)
+  usosActuales     Int         @default(0)
+  segmento         String      @default("todos")
+  vigenciaInicio   DateTime
+  vigenciaFin      DateTime
+  estado           String      @default("activo")
+  creadoPor        String
+  createdAt        DateTime    @default(now())
+  usos             UsoCodigo[]
 }
 
 model UsoCodigo {
@@ -177,6 +182,8 @@ model Banner {
   botonTexto      String?
   botonAccion     String?
   botonLink       String?
+  accionTipo      String?   @default("ninguna")
+  accionValor     String?
   icono           String?
   segmento        String    @default("todos")
   mostrarEn       String    @default("app")
