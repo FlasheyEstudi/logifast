@@ -523,31 +523,8 @@ function LandingView({
             <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em', color: textColor }}>LOGIFAST</span>
           </div>
 
-          {/* Opciones en línea (Modo Noche - Iniciar - Registrar - Drawer) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {/* 1. Botón Modo Noche / Día */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={toggleTheme}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                border: specularBorder,
-                color: isDark ? '#FFB300' : '#007AFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.2)' : 'inset 0 1px 1px rgba(255,255,255,0.9)',
-                flexShrink: 0,
-              }}
-              title={isDark ? 'Modo Día' : 'Modo Noche'}
-              aria-label="Alternar Modo Oscuro / Claro"
-            >
-              {isDark ? <Icon.Sun /> : <Icon.Moon />}
-            </motion.button>
+          {/* Opciones en línea (Iniciar sesión y Menú Lateral) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
 
             {/* 2. Botón Iniciar */}
             <motion.button
