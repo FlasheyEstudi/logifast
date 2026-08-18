@@ -782,13 +782,15 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
             display: 'flex',
             alignItems: 'center',
             gap: 4,
-            padding: '4px 4px 4px 14px',
+            padding: '5px 6px 5px 14px',
             borderRadius: 100,
-            background: 'color-mix(in srgb, var(--surface, var(--ios-bg-elevated)) 92%, transparent)',
-            backdropFilter: 'saturate(200%) blur(28px)',
-            WebkitBackdropFilter: 'saturate(200%) blur(28px)',
-            border: '1px solid color-mix(in srgb, var(--ios-blue, var(--primario)) 20%, transparent)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
+            background: isDark ? 'rgba(20, 20, 28, 0.82)' : 'rgba(255, 255, 255, 0.86)',
+            backdropFilter: 'blur(36px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: isDark
+              ? 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.18), 0 8px 32px rgba(0,0,0,0.45)'
+              : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 8px 28px rgba(0, 102, 255, 0.08)',
             transition: 'all 0.3s ease',
           }}
         >
@@ -811,7 +813,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           </button>
 
           {/* Acciones en sub-cápsula */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'color-mix(in srgb, var(--ios-text-primary) 7%, transparent)', borderRadius: 100, padding: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: 100, padding: '2px', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.05)' }}>
             <button
               onClick={toggleTheme}
               aria-label={isDark ? 'Claro' : 'Oscuro'}
@@ -883,13 +885,16 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
             gap: 2,
             padding: '6px 8px',
             borderRadius: 100,
-            background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--border) 80%, transparent)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
-            width: 'auto',
-            maxWidth: 440,
-            backdropFilter: 'saturate(200%) blur(28px)',
-            WebkitBackdropFilter: 'saturate(200%) blur(28px)',
+            background: isDark ? 'rgba(20, 20, 28, 0.85)' : 'rgba(255, 255, 255, 0.88)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: isDark
+              ? 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.18), 0 16px 48px rgba(0,0,0,0.5)'
+              : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 14px 36px rgba(0, 102, 255, 0.12)',
+            width: 'calc(100vw - 28px)',
+            maxWidth: 420,
+            backdropFilter: 'blur(40px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+            boxSizing: 'border-box',
           }}
           aria-label="Navegación repartidor flotante"
         >
@@ -923,6 +928,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
                   fontFamily: 'var(--ios-font, sans-serif)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   WebkitTapHighlightColor: 'transparent',
+                  flexShrink: 0,
                 }}
               >
                 {isActive && (
@@ -935,7 +941,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
                       borderRadius: 100,
                       background: 'var(--ios-blue, var(--primario))',
                       boxShadow: '0 4px 14px color-mix(in srgb, var(--ios-blue, var(--primario)) 50%, transparent)',
-                      zIndex: -1,
+                      zIndex: 0,
                     }}
                   />
                 )}

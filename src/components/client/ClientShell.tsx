@@ -663,7 +663,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           />
         </div>
 
-        {/* ═══════ HEADER FLOTANTE CÁPSULA PREMIUM ═══════ */}
+        {/* ═══════ HEADER FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
         {clientActiveModule !== 'tienda' && (
           <header
             style={{
@@ -679,11 +679,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               justifyContent: 'space-between',
               padding: '7px 8px 7px 18px',
               borderRadius: 100,
-              background: 'color-mix(in srgb, var(--surface) 90%, transparent)',
-              backdropFilter: 'saturate(180%) blur(28px)',
-              WebkitBackdropFilter: 'saturate(180%) blur(28px)',
-              border: '1px solid color-mix(in srgb, var(--primario) 20%, transparent)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
+              background: isDark ? 'rgba(20, 20, 28, 0.82)' : 'rgba(255, 255, 255, 0.86)',
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: isDark
+                ? 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.18), 0 8px 32px rgba(0,0,0,0.45)'
+                : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 8px 28px rgba(0, 102, 255, 0.08)',
               transition: 'all 0.3s ease',
             }}
           >
@@ -693,7 +695,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             </span>
 
             {/* Right: acciones en cápsula compacta */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'color-mix(in srgb, var(--text-muted) 8%, transparent)', borderRadius: 100, padding: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: 100, padding: '4px', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.05)' }}>
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -787,15 +789,18 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               alignItems: 'center',
               justifyContent: 'space-around',
               gap: 2,
-              padding: '6px 8px',
+              padding: '5px 6px',
               borderRadius: 100,
-              background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--border) 80%, transparent)',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
-              width: 'auto',
-              maxWidth: 480,
-              backdropFilter: 'saturate(200%) blur(28px)',
-              WebkitBackdropFilter: 'saturate(200%) blur(28px)',
+              background: isDark ? 'rgba(20, 20, 28, 0.85)' : 'rgba(255, 255, 255, 0.88)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: isDark
+                ? 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.18), 0 16px 48px rgba(0,0,0,0.5)'
+                : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 14px 36px rgba(0, 102, 255, 0.12)',
+              width: 'calc(100vw - 24px)',
+              maxWidth: 460,
+              backdropFilter: 'blur(40px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+              boxSizing: 'border-box',
             }}
             aria-label="Navegación principal flotante"
           >
@@ -813,8 +818,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                   position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: isActive ? 6 : 0,
-                  padding: isActive ? '8px 16px' : '8px 12px',
+                  gap: isActive ? 5 : 0,
+                  padding: isActive ? '7px 13px' : '7px 9px',
                   borderRadius: 100,
                   border: 'none',
                   background: 'transparent',
@@ -824,11 +829,12 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                     ? '#CBD5E1'
                     : '#334155',
                   cursor: 'pointer',
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 700,
                   fontFamily: 'var(--ios-font, sans-serif)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   WebkitTapHighlightColor: 'transparent',
+                  flexShrink: 0,
                 }}
               >
                 {isActive && (
