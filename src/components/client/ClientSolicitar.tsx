@@ -863,6 +863,17 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   const [confirming, setConfirming] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState('');
 
+  const todasSugerencias = useMemo(() => {
+    const tiendasAsSuggestions: DireccionSugerencia[] = (tiendasMapa || []).map((t) => ({
+      id: `tienda-${t.id}`,
+      direccion: t.nombre,
+      barrio: `${t.categoria} • ${t.direccion}`,
+      lat: t.lat,
+      lng: t.lng,
+    }));
+    return [...tiendasAsSuggestions, ...direccionesSugerencias];
+  }, [tiendasMapa, direccionesSugerencias]);
+
   // Promo code state
   const [promoInput, setPromoInput] = useState('');
   const [promoExpanded, setPromoExpanded] = useState(false);
@@ -1305,7 +1316,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 }
                 onUseMyLocation={() => handleUseMyLocation('origen')}
                 dotColor="var(--exito)"
-                suggestions={direccionesSugerencias}
+                suggestions={todasSugerencias}
                 placeholder="Ej: Metrocentro, Managua"
               />
 
@@ -1347,7 +1358,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 }
                 onUseMyLocation={() => handleUseMyLocation('destino')}
                 dotColor="var(--primario)"
-                suggestions={direccionesSugerencias}
+                suggestions={todasSugerencias}
                 placeholder="Ej: Col. Los Robles, Managua"
               />
             </div>
