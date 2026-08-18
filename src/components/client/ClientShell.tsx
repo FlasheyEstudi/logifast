@@ -256,12 +256,62 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount, fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, ordenesCompra } = useMarketplaceStore();
 
-  /* ─── Sync Dynamic URL Hash ─── */
+  /* ─── Sync Dynamic URL Hash & Soporte para Gesto Atrás Móvil (popstate) ─── */
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.location.hash = `#/cliente/${clientActiveModule}`;
+    if (typeof window === 'undefined') return;
+
+    // Inicializar estado del historial si es la primera carga
+    if (!window.history.state || window.history.state.type !== 'client_module') {
+      window.history.replaceState({ type: 'client_module', module: clientActiveModule }, '', `#/cliente/${clientActiveModule}`);
     }
-  }, [clientActiveModule]);
+
+    const handlePopState = (e: PopStateEvent) => {
+      // 1. Si hay sub-vistas / modales abiertos, el gesto atrás los cierra primero
+      const mState = useMarketplaceStore.getState();
+      const sState = useStore.getState();
+
+      if (mState.carritoOpen) {
+        mState.setCarritoOpen(false);
+        return;
+      }
+      if (mState.tiendaSeleccionada) {
+        mState.setTiendaSeleccionada(null);
+        return;
+      }
+      if (sState.trackingOrderId) {
+        sState.setTrackingOrder(null);
+        return;
+      }
+      if (sState.chatOpen) {
+        sState.setChatOpen(false);
+        return;
+      }
+      if (sState.ratingModalOpen) {
+        sState.setRatingModalOpen(false);
+        return;
+      }
+      if (sState.clientNotifOpen) {
+        sState.setClientNotifOpen(false);
+        return;
+      }
+
+      // 2. Si es cambio de módulo por navegación de historial
+      if (e.state && e.state.type === 'client_module' && e.state.module) {
+        setClientActiveModule(e.state.module);
+        if (e.state.module !== 'explorar') {
+          mState.setTiendaSeleccionada(null);
+        }
+      } else {
+        // Si retrocede al inicio
+        if (clientActiveModule !== 'inicio') {
+          setClientActiveModule('inicio');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [clientActiveModule, setClientActiveModule]);
 
   /* ─── Cargar datos del backend al montar y sincronizar en segundo plano ─── */
   useEffect(() => {
@@ -395,7 +445,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   }, [setClientNotifOpen]);
 
   const handleNav = useCallback(
-    (mod: ClientModuleKey) => {
+    (mod: ClientModuleKey, pushHistory = true) => {
+      if (mod === clientActiveModule) return;
+
+      if (pushHistory && typeof window !== 'undefined') {
+        window.history.pushState({ type: 'client_module', module: mod }, '', `#/cliente/${mod}`);
+      }
+
       setClientActiveModule(mod);
       setTrackingOrder(null);
       if (mod !== 'explorar') {
@@ -406,7 +462,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         try { navigator.vibrate(20); } catch { /* ignore */ }
       }
     },
-    [setClientActiveModule, setTrackingOrder, setTiendaSeleccionada]
+    [clientActiveModule, setClientActiveModule, setTrackingOrder, setTiendaSeleccionada]
   );
 
   const handleOpenTracking = useCallback(
@@ -706,10 +762,10 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             <AnimatePresence mode="wait">
               <motion.div
                 key={clientActiveModule}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: clientModuleFade ? 0 : 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
+                initial={{ opacity: 0, y: 10, scale: 0.99 }}
+                animate={{ opacity: clientModuleFade ? 0 : 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.99 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                 className="lf-ios-screen-transition"
               >
                 {renderModule()}

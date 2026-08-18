@@ -572,9 +572,63 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     return () => clearInterval(i);
   }, []);
 
-  /* ─── handleNav — MANTENER firma, extender para 'ganancias' ─── */
+  /* ─── Sync Dynamic URL Hash & Soporte para Gesto Atrás Móvil (popstate) ─── */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Inicializar estado del historial si es la primera carga
+    if (!window.history.state || window.history.state.type !== 'repartidor_tab') {
+      window.history.replaceState({ type: 'repartidor_tab', tab: activeTab }, '', `#/repartidor/${activeTab}`);
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      const rState = useRepartidorStore.getState();
+
+      // 1. Si hay sub-vistas / modales abiertos (Chat, Incidencia, Detalle, etc.), el gesto atrás los cierra primero
+      if (rState.chatAbierto) {
+        rState.toggleChat();
+        return;
+      }
+      if (rState.incidenciaAbierta) {
+        rState.toggleIncidencia(false);
+        return;
+      }
+      if (rState.servicioDetalle) {
+        rState.cerrarDetalle();
+        return;
+      }
+
+      // 2. Si es cambio de tab por historial
+      if (e.state && e.state.type === 'repartidor_tab' && e.state.tab) {
+        const tab = e.state.tab as RepartidorTabKey;
+        if (tab === 'ganancias') {
+          setGananciasActive(true);
+        } else {
+          setGananciasActive(false);
+          setPantalla(tab as StorePantalla);
+        }
+      } else {
+        // Si retrocede a la raíz, ir a 'servicio'
+        if (activeTab !== 'servicio') {
+          setGananciasActive(false);
+          setPantalla('servicio');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeTab, setPantalla]);
+
+  /* ─── handleNav — Con soporte de historial para gesto atrás ─── */
   const handleNav = useCallback(
-    (tab: RepartidorTabKey) => {
+    (tab: RepartidorTabKey, pushHistory = true) => {
+      if (tab === activeTab) return;
+
+      if (pushHistory && typeof window !== 'undefined') {
+        window.history.pushState({ type: 'repartidor_tab', tab }, '', `#/repartidor/${tab}`);
+      }
+
       if (tab === 'ganancias') {
         setGananciasActive(true);
       } else {
@@ -583,7 +637,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
       }
       HAPTIC_PATTERNS.light();
     },
-    [setPantalla]
+    [activeTab, setPantalla]
   );
 
   /* ─── Connection toggle from header pill — usa conectar/desconectar existentes ─── */
@@ -784,10 +838,10 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.99 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               className={`lf-ios-screen-transition${activeTab === 'servicio' ? '' : ' lf-rep-pad'}`}
               style={
                 activeTab === 'servicio'
