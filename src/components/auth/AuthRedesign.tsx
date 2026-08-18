@@ -765,7 +765,7 @@ function LandingView({
         )}
       </AnimatePresence>
 
-      {/* HERO SECTION CON CRISTAL LÍQUIDO */}
+      {/* HERO SECTION CON CRISTAL LÍQUIDO Y ANIMACIONES DE ENTRADA */}
       <section style={{
         paddingTop: 'calc(84px + env(safe-area-inset-top, 0px))',
         paddingBottom: 64,
@@ -775,40 +775,75 @@ function LandingView({
         margin: '0 auto',
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 36, alignItems: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            
+          {/* Columna Izquierda Texto Hero con Stagger */}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.12, delayChildren: 0.1 },
+              },
+            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+          >
             {/* Pill Badge con resplandor líquido */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              background: isDark ? 'rgba(0, 102, 255, 0.15)' : 'rgba(0, 102, 255, 0.08)',
-              border: isDark ? '1px solid rgba(0, 122, 255, 0.35)' : '1px solid rgba(0, 102, 255, 0.25)',
-              color: '#007AFF',
-              padding: '6px 16px',
-              borderRadius: 100,
-              fontSize: 12,
-              fontWeight: 700,
-              width: 'fit-content',
-              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 16px rgba(0,102,255,0.2)',
-              backdropFilter: 'blur(20px)',
-            }}>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: -16 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: isDark ? 'rgba(0, 102, 255, 0.15)' : 'rgba(0, 102, 255, 0.08)',
+                border: isDark ? '1px solid rgba(0, 122, 255, 0.35)' : '1px solid rgba(0, 102, 255, 0.25)',
+                color: '#007AFF',
+                padding: '6px 16px',
+                borderRadius: 100,
+                fontSize: 12,
+                fontWeight: 700,
+                width: 'fit-content',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 16px rgba(0,102,255,0.2)',
+                backdropFilter: 'blur(20px)',
+              }}
+            >
               <Icon.Sparkles />
               <span>Tecnología que mueve tu logística</span>
-            </div>
+            </motion.div>
 
             {/* Titular Principal Hero */}
-            <h1 style={{ fontSize: 'clamp(32px, 5.5vw, 54px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.04em', color: textColor, margin: 0 }}>
+            <motion.h1
+              variants={{
+                hidden: { opacity: 0, y: 22 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+              }}
+              style={{ fontSize: 'clamp(32px, 5.5vw, 54px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.04em', color: textColor, margin: 0 }}
+            >
               El control total de tu logística
-            </h1>
+            </motion.h1>
 
             {/* Subtítulo Hero */}
-            <p style={{ fontSize: 'clamp(15px, 2vw, 17px)', lineHeight: 1.6, color: subColor, margin: 0, maxWidth: 520 }}>
+            <motion.p
+              variants={{
+                hidden: { opacity: 0, y: 16 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: 'easeOut' } },
+              }}
+              style={{ fontSize: 'clamp(15px, 2vw, 17px)', lineHeight: 1.6, color: subColor, margin: 0, maxWidth: 520 }}
+            >
               Automatiza tus envíos, asigna repartidores, monitorea cada entrega en tiempo real y administra toda tu operación desde una plataforma inteligente diseñada para hacer crecer tu negocio.
-            </p>
+            </motion.p>
 
             {/* Botones táctiles nativos */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 4 }}>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 14 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 4 }}
+            >
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={onRegister}
@@ -849,10 +884,16 @@ function LandingView({
               >
                 Explorar Demo
               </motion.button>
-            </div>
+            </motion.div>
 
             {/* Quick Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 8, paddingTop: 18, borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, scale: 0.94 },
+                visible: { opacity: 1, scale: 1, transition: { duration: 0.55, ease: 'easeOut' } },
+              }}
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 8, paddingTop: 18, borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}
+            >
               <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 10px', borderRadius: 14, border: specularBorder, backdropFilter: 'blur(16px)' }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>2.5k+</div>
                 <div style={{ fontSize: 10, color: subColor, fontWeight: 600, marginTop: 2 }}>Envíos</div>
@@ -868,11 +909,16 @@ function LandingView({
                 </div>
                 <div style={{ fontSize: 10, color: subColor, fontWeight: 600, marginTop: 2 }}>Calificación</div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* Carrusel Interactivo dentro de Marco Cristalino Realista */}
-          <div style={{ display: 'flex', justifyContent: 'center', width: '100%', maxWidth: '100%' }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            style={{ display: 'flex', justifyContent: 'center', width: '100%', maxWidth: '100%' }}
+          >
             <div style={{
               width: '100%',
               maxWidth: 440,
@@ -925,19 +971,31 @@ function LandingView({
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* SECCIÓN ALIADOS ESTRATÉGICOS */}
+      {/* SECCIÓN ALIADOS ESTRATÉGICOS CON SCROLL ANIMATION LATERAL */}
       <section id="aliados" style={{ padding: '44px 18px', borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', background: isDark ? 'rgba(12,12,18,0.45)' : 'rgba(255,255,255,0.4)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em', marginBottom: 8 }}>ALIADOS ESTRATÉGICOS</div>
-          <h2 style={{ fontSize: 'clamp(22px, 3.8vw, 30px)', fontWeight: 800, color: textColor, margin: '0 0 24px', letterSpacing: '-0.02em' }}>Comercios Verificados en Managua</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em', marginBottom: 8 }}>ALIADOS ESTRATÉGICOS</div>
+            <h2 style={{ fontSize: 'clamp(22px, 3.8vw, 30px)', fontWeight: 800, color: textColor, margin: '0 0 24px', letterSpacing: '-0.02em' }}>Comercios Verificados en Managua</h2>
+          </motion.div>
+
           <div style={{ overflow: 'hidden', display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {PARTNERS.map((partner, idx) => (
               <motion.div
                 key={idx}
+                initial={{ opacity: 0, x: idx % 2 === 0 ? -30 : 30, scale: 0.94 }}
+                whileInView={{ opacity: 1, x: 0, scale: 1 }}
+                viewport={{ once: false, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: idx * 0.05, ease: 'easeOut' }}
                 whileHover={{ y: -4, scale: 1.02 }}
                 style={{
                   display: 'flex',
@@ -964,18 +1022,28 @@ function LandingView({
         </div>
       </section>
 
-      {/* SECCIÓN ECOSISTEMA (4 TARJETAS CON CRISTAL LÍQUIDO ESPECULAR) */}
+      {/* SECCIÓN ECOSISTEMA (4 TARJETAS CON ANIMACIONES BIDIRECCIONALES AL SCROLLEAR) */}
       <section id="ecosistema" style={{ padding: '68px 18px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.3 }}
+          transition={{ duration: 0.5 }}
+          style={{ textAlign: 'center', marginBottom: 40 }}
+        >
           <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em' }}>ROLES Y HERRAMIENTAS</span>
           <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.03em' }}>
             Todo tu ecosistema logístico en una sola plataforma.
           </h2>
-        </div>
+        </motion.div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 18 }}>
-          {/* Card 1: Portal de Clientes */}
+          {/* Card 1: Portal de Clientes (Desliza desde la izquierda) */}
           <motion.div
+            initial={{ opacity: 0, x: -45, y: 20 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
+            viewport={{ once: false, amount: 0.25 }}
+            transition={{ duration: 0.55, ease: 'easeOut' }}
             whileHover={{ y: -6, scale: 1.01 }}
             style={{
               background: glassCardBg,
@@ -1005,8 +1073,12 @@ function LandingView({
             </div>
           </motion.div>
 
-          {/* Card 2: Panel de Repartidores */}
+          {/* Card 2: Panel de Repartidores (Desliza desde la derecha) */}
           <motion.div
+            initial={{ opacity: 0, x: 45, y: 20 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
+            viewport={{ once: false, amount: 0.25 }}
+            transition={{ duration: 0.55, delay: 0.1, ease: 'easeOut' }}
             whileHover={{ y: -6, scale: 1.01 }}
             style={{
               background: glassCardBg,
@@ -1036,8 +1108,12 @@ function LandingView({
             </div>
           </motion.div>
 
-          {/* Card 3: Consola de Control */}
+          {/* Card 3: Consola de Control (Desliza desde la izquierda) */}
           <motion.div
+            initial={{ opacity: 0, x: -45, y: 20 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
+            viewport={{ once: false, amount: 0.25 }}
+            transition={{ duration: 0.55, delay: 0.15, ease: 'easeOut' }}
             whileHover={{ y: -6, scale: 1.01 }}
             style={{
               background: glassCardBg,
@@ -1067,8 +1143,12 @@ function LandingView({
             </div>
           </motion.div>
 
-          {/* Card 4: Gestión Inteligente de Flota */}
+          {/* Card 4: Gestión Inteligente de Flota (Desliza desde la derecha) */}
           <motion.div
+            initial={{ opacity: 0, x: 45, y: 20 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
+            viewport={{ once: false, amount: 0.25 }}
+            transition={{ duration: 0.55, delay: 0.2, ease: 'easeOut' }}
             whileHover={{ y: -6, scale: 1.01 }}
             style={{
               background: glassCardBg,
@@ -1100,20 +1180,26 @@ function LandingView({
         </div>
       </section>
 
-      {/* SUPER BANNER CTA CRISTALINO */}
+      {/* SUPER BANNER CTA CRISTALINO CON EXPANSION BIDIRECCIONAL AL SCROLL */}
       <section id="cta" style={{ padding: '32px 18px 80px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{
-          background: isDark
-            ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.22) 0%, rgba(20, 20, 30, 0.85) 100%)'
-            : 'linear-gradient(135deg, rgba(0, 102, 255, 0.12) 0%, rgba(255, 255, 255, 0.92) 100%)',
-          backdropFilter: 'blur(40px) saturate(190%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(190%)',
-          border: specularBorder,
-          borderRadius: 30,
-          padding: '44px 20px',
-          textAlign: 'center',
-          boxShadow: glassShadow,
-        }}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 40 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.25 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            background: isDark
+              ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.22) 0%, rgba(20, 20, 30, 0.85) 100%)'
+              : 'linear-gradient(135deg, rgba(0, 102, 255, 0.12) 0%, rgba(255, 255, 255, 0.92) 100%)',
+            backdropFilter: 'blur(40px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+            border: specularBorder,
+            borderRadius: 30,
+            padding: '44px 20px',
+            textAlign: 'center',
+            boxShadow: glassShadow,
+          }}
+        >
           <h2 style={{ fontSize: 'clamp(26px, 4.5vw, 40px)', fontWeight: 800, color: textColor, margin: '0 0 14px', letterSpacing: '-0.03em' }}>
             Tecnología que mueve tu logística.
           </h2>
@@ -1169,7 +1255,7 @@ function LandingView({
               <span>Contactar a soporte</span>
             </motion.a>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* FOOTER */}
