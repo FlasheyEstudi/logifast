@@ -570,6 +570,10 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     const actuales = get().ordenesActivas || [];
     if (actuales.length >= 3) return;
 
+    const prevActivas = actuales;
+    const prevActiva = get().ordenActiva;
+    const prevEstado = get().estado;
+
     const nuevasActivas = [...actuales.filter((o) => o.id !== orden.id), orden];
 
     set({
@@ -587,6 +591,19 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
     fetch(`/api/repartidor/ordenes/${orden.id}/aceptar`, {
       method: 'PATCH',
+    }).then(async (res) => {
+      if (!res.ok) {
+        // Rollback state si otro repartidor ya la tomó
+        console.warn('[aceptarOrden] No se pudo aceptar la orden (ya asignada a otro repartidor)');
+        set({
+          ordenesActivas: prevActivas,
+          ordenActiva: prevActiva,
+          ordenAsignadaPendiente: null,
+          estado: prevActiva ? prevEstado : 'EN_LINEA',
+          enServicio: !!prevActiva,
+        });
+        dispararFeedback('toggle_off', 40);
+      }
     }).catch((err) => console.error('[aceptarOrden API error]', err));
   },
 
@@ -594,8 +611,13 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     const actuales = get().ordenesActivas || [];
     if (actuales.length >= 3) return;
 
+    const prevActivas = actuales;
+    const prevActiva = get().ordenActiva;
+    const prevEstado = get().estado;
+    const prevOfertas = get().ofertasDisponibles || [];
+
     const nuevasActivas = [...actuales.filter((o) => o.id !== orden.id), orden];
-    const nuevasOfertas = (get().ofertasDisponibles || []).filter((o) => o.id !== orden.id);
+    const nuevasOfertas = prevOfertas.filter((o) => o.id !== orden.id);
 
     set({
       ordenesActivas: nuevasActivas,
@@ -613,6 +635,19 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
     fetch(`/api/repartidor/ordenes/${orden.id}/aceptar`, {
       method: 'PATCH',
+    }).then(async (res) => {
+      if (!res.ok) {
+        // Rollback state si otro repartidor ya la tomó
+        console.warn('[aceptarOfertaDirecta] No se pudo tomar la oferta (ya tomada por otro repartidor)');
+        set({
+          ordenesActivas: prevActivas,
+          ordenActiva: prevActiva,
+          ofertasDisponibles: prevOfertas.filter((o) => o.id !== orden.id),
+          estado: prevActiva ? prevEstado : 'EN_LINEA',
+          enServicio: !!prevActiva,
+        });
+        dispararFeedback('toggle_off', 40);
+      }
     }).catch((err) => console.error('[aceptarOfertaDirecta API error]', err));
   },
 

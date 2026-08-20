@@ -1,26 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { getOrdenPin, generarPinAleatorio } from '@/lib/utils';
 import { emitOrdenCreada, emitOrdenAsignada, emitirEventoRealtime } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * GET /api/ordenes-compra?clienteId=&estado=&tiendaId=
- * Lista órdenes de compra.
- * - Cliente: solo sus propias órdenes.
- * - Repartidor/Ingeniero: no listado (deben usar /api/repartidor/ordenes).
- * - Admin: puede filtrar por clienteId.
- */
-function getOrdenPin(id: string, existingPin?: string | null): string {
-  if (existingPin && existingPin.trim() && existingPin !== '1234') return existingPin.trim();
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash << 5) - hash + id.charCodeAt(i);
-    hash |= 0;
-  }
-  return String(Math.abs(hash) % 9000 + 1000);
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -336,8 +320,7 @@ export async function POST(req: NextRequest) {
       return { orden, ordenServicio };
     });
 
-    // 1. Emitir eventos en tiempo real al instante (Socket.io WebSocket + Push)
-    emitOrdenCreada(result.ordenServicio);
+    // 1. Emitir eventos a Admin y Tienda
     emitirEventoRealtime({ room: 'admin', event: 'admin:orden:nueva', data: result.orden });
     emitirEventoRealtime({ room: `tienda:${tiendaId}`, event: 'tienda:orden:nueva', data: result.orden });
 
@@ -350,14 +333,21 @@ export async function POST(req: NextRequest) {
       .catch(() => null);
 
     if (repartidorDisponible) {
-      await db.ordenServicio
-        .update({
+      await Promise.all([
+        db.ordenServicio.update({
           where: { id: result.ordenServicio.id },
           data: { repartidorId: repartidorDisponible.id, estado: 'aceptado' },
-        })
-        .catch(() => null);
+        }).catch(() => null),
+        db.ordenCompra.update({
+          where: { id: result.orden.id },
+          data: { repartidorId: repartidorDisponible.id },
+        }).catch(() => null),
+      ]);
 
-      emitOrdenAsignada(repartidorDisponible.id, result.ordenServicio);
+      emitOrdenAsignada(repartidorDisponible.id, {
+        ...result.ordenServicio,
+        repartidorId: repartidorDisponible.id,
+      });
 
       await db.notificacionRepartidor
         .create({
@@ -372,7 +362,9 @@ export async function POST(req: NextRequest) {
         })
         .catch(() => null);
     } else {
-      // Si no hay repartidor libre inmediatamente, notificar a todos los conectados
+      // Si no hay repartidor libre inmediatamente, emitir a la bolsa disponible para todos
+      emitOrdenCreada(result.ordenServicio);
+
       const repartidoresConectados = await db.repartidorProfile
         .findMany({
           where: { conectado: true, pausado: false, contratoAceptado: true },

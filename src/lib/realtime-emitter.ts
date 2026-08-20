@@ -27,14 +27,16 @@ export async function emitirEventoRealtime(payload: { room?: string; event: stri
 
 export function emitOrdenCreada(orden: any) {
   emitirEventoRealtime({ room: 'admin', event: 'admin:orden:nueva', data: orden });
-  emitirEventoRealtime({ room: 'repartidores', event: 'repartidor:orden:nueva', data: orden });
+  // Emitir a la bolsa/pool general de repartidores como oferta disponible (no como asignación directa)
   emitirEventoRealtime({ room: 'repartidores', event: 'repartidor:orden:disponible', data: orden });
-  emitirEventoRealtime({ event: 'repartidor:orden:nueva', data: orden });
 }
 
 export function emitOrdenAsignada(repartidorId: string, orden: any) {
-  emitirEventoRealtime({ room: `repartidor:${repartidorId}`, event: 'repartidor:orden:nueva', data: orden });
+  // Asignación directa ÚNICAMENTE al repartidor específico
+  emitirEventoRealtime({ room: `repartidor:${repartidorId}`, event: 'repartidor:orden:nueva', data: { ...orden, repartidorId } });
   emitirEventoRealtime({ room: 'admin', event: 'admin:orden:asignada', data: { repartidorId, ordenId: orden?.id } });
+  // Notificar a todos los demás repartidores que la orden ya fue asignada/tomada
+  emitirEventoRealtime({ room: 'repartidores', event: 'repartidor:orden:tomada', data: { ordenId: orden?.id, repartidorId } });
 }
 
 export function emitOrdenActualizada(orden: any) {

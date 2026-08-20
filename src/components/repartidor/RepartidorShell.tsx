@@ -540,16 +540,57 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     });
 
     const cleanupOrder = onRealtimeEvent('repartidor:orden:nueva', (orden) => {
+      if (!orden) return;
       const state = useRepartidorStore.getState();
+      const myProfileId = state.perfil.id;
+      // Si la orden viene con repartidorId específico, validar que sea para este motorizado
+      if (orden.repartidorId && myProfileId && orden.repartidorId !== myProfileId) {
+        return;
+      }
       if (!state.ordenActiva && !state.ordenAsignadaPendiente) {
         state.recibirOrdenAsignada(orden);
         HAPTIC_PATTERNS.nuevaOrden();
       }
     });
 
+    const cleanupDisponible = onRealtimeEvent('repartidor:orden:disponible', (orden) => {
+      if (!orden) return;
+      const state = useRepartidorStore.getState();
+      const yaExiste = (state.ofertasDisponibles || []).some((o) => o.id === orden.id);
+      if (!yaExiste) {
+        useRepartidorStore.setState({
+          ofertasDisponibles: [orden, ...(state.ofertasDisponibles || [])],
+        });
+      }
+    });
+
+    const cleanupTomada = onRealtimeEvent('repartidor:orden:tomada', (data: { ordenId: string; repartidorId?: string }) => {
+      if (!data?.ordenId) return;
+      const state = useRepartidorStore.getState();
+      const myProfileId = state.perfil.id;
+      if (data.repartidorId && myProfileId && data.repartidorId === myProfileId) {
+        return; // este repartidor la tomó, mantenerla
+      }
+
+      // Remover de ofertas disponibles
+      const nuevasOfertas = (state.ofertasDisponibles || []).filter((o) => o.id !== data.ordenId);
+      const update: any = { ofertasDisponibles: nuevasOfertas };
+
+      // Si estaba en el modal pendiente de aceptación, cerrarlo
+      if (state.ordenAsignadaPendiente?.id === data.ordenId) {
+        update.ordenAsignadaPendiente = null;
+        if (state.estado === 'ORDEN_ASIGNADA') {
+          update.estado = 'EN_LINEA';
+        }
+      }
+      useRepartidorStore.setState(update);
+    });
+
     return () => {
       cleanupChat();
       cleanupOrder();
+      cleanupDisponible();
+      cleanupTomada();
     };
   }, [conectado, showSnackbar]);
 

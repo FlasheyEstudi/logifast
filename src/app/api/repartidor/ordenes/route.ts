@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import { getOrdenPin } from '@/lib/utils';
 import type { OrdenActiva, ServicioHistorial } from '@/lib/repartidor-store';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ function mapOrdenToActiva(o: Awaited<ReturnType<typeof db.ordenServicio.findFirs
     ganancia: o.ganancia,
     kmEstimados: o.kmEstimados,
     tiempoEstimado: o.tiempoEstimado,
-    codigoPin: o.codigoPin ?? undefined,
+    codigoPin: getOrdenPin(o.id, o.codigoPin),
   };
 }
 
@@ -63,7 +64,7 @@ function mapCompraToActiva(c: any): OrdenActiva | null {
     ganancia: gananciaCalculada,
     kmEstimados: 3.5,
     tiempoEstimado: 25,
-    codigoPin: c.codigoPin ?? undefined,
+    codigoPin: getOrdenPin(c.id, c.codigoPin),
   };
 }
 
@@ -183,7 +184,7 @@ export async function GET(req: NextRequest) {
       db.ordenCompra.findMany({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['asignado', 'aceptado', 'recibido', 'preparando', 'listo', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
+          estado: { in: ['asignado', 'aceptado', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
         },
         include: { tienda: true, cliente: true, items: true },
         orderBy: { createdAt: 'desc' },

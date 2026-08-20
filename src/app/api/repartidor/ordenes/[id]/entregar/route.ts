@@ -98,10 +98,44 @@ export async function PATCH(
     // Actualizar OrdenCompra asociada (si la orden era tipo compra)
     if (orden.tiendaId) {
       await db.ordenCompra.updateMany({
-        where: { tiendaId: orden.tiendaId, clienteId: orden.clienteId, estado: { in: ['recibido', 'preparando', 'listo', 'en_camino'] } },
+        where: {
+          OR: [
+            { id: orden.id },
+            {
+              tiendaId: orden.tiendaId,
+              clienteId: orden.clienteId,
+              estado: { notIn: ['entregado', 'cancelado'] },
+            },
+            {
+              repartidorId: profile.id,
+              tiendaId: orden.tiendaId,
+              estado: { notIn: ['entregado', 'cancelado'] },
+            },
+          ],
+        },
         data: { estado: 'entregado' },
       }).catch(() => null);
     }
+
+    // Emitir eventos en tiempo real al cliente, admin y repartidores
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitirEventoRealtime({
+        room: `orden:${id}`,
+        event: 'orden:estado:update',
+        data: { id, estado: 'entregado' },
+      });
+      emitirEventoRealtime({
+        room: 'admin',
+        event: 'admin:orden:actualizada',
+        data: { id, estado: 'entregado', repartidorId: profile.id },
+      });
+      emitirEventoRealtime({
+        room: 'repartidores',
+        event: 'repartidor:orden:tomada',
+        data: { ordenId: id, repartidorId: profile.id },
+      });
+    } catch {}
 
     return NextResponse.json({
       ok: true,

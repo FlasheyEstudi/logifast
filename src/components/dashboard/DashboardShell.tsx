@@ -230,7 +230,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               estado: o.estado as any,
               metodoPago: o.metodoPago as any,
               estadoPago: 'pagado',
-              codigoPin: o.codigoPin || '1234',
+              codigoPin: o.codigoPin || undefined,
               fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
               hora: new Date(o.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               timeline: [

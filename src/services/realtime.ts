@@ -44,6 +44,8 @@ export function getSocket(): Socket {
 // ─── Event types ───
 export type RealtimeEvent =
   | 'repartidor:orden:nueva'           // nueva orden asignada (repartidor recibe)
+  | 'repartidor:orden:disponible'      // nueva oferta disponible en el pool (todos los repartidores)
+  | 'repartidor:orden:tomada'          // orden tomada por otro repartidor (se retira del pool)
   | 'repartidor:posicion:update'       // posición del repartidor actualizada (cliente/admin reciben)
   | 'repartidor:estado:update'         // estado del repartidor cambió (cliente recibe)
   | 'orden:estado:update'              // estado o repartidor de la orden cambió en vivo

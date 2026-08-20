@@ -30,10 +30,31 @@ export async function PATCH(
         return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
       }
 
-      await db.ordenCompra.update({
-        where: { id },
+      if (ordenCompra.repartidorId && ordenCompra.repartidorId !== profile.id) {
+        return NextResponse.json(
+          { error: 'La orden ya está asignada a otro repartidor' },
+          { status: 409 }
+        );
+      }
+
+      // Asignación atómica en ordenCompra (P0-19)
+      const result = await db.ordenCompra.updateMany({
+        where: {
+          id,
+          OR: [
+            { repartidorId: null },
+            { repartidorId: profile.id },
+          ],
+        },
         data: { repartidorId: profile.id, estado: 'en_camino' },
       });
+
+      if (result.count === 0) {
+        return NextResponse.json(
+          { error: 'La orden ya fue aceptada por otro repartidor o no está disponible' },
+          { status: 409 }
+        );
+      }
     } else {
       // Caso 1: la orden ya está asignada a este repartidor — solo cambiar estado a aceptado
       if (orden.repartidorId === profile.id) {
@@ -51,7 +72,7 @@ export async function PATCH(
         // Ya asignada a otro repartidor
         return NextResponse.json(
           { error: 'La orden ya está asignada a otro repartidor' },
-          { status: 403 }
+          { status: 409 }
         );
       } else {
         // Caso 2: orden sin repartidor — asignación atómica con updateMany (P0-19)
@@ -65,6 +86,18 @@ export async function PATCH(
             { status: 409 }
           );
         }
+      }
+
+      // Sincronizar OrdenCompra vinculada (si aplica)
+      if (orden.tiendaId) {
+        await db.ordenCompra.updateMany({
+          where: {
+            tiendaId: orden.tiendaId,
+            clienteId: orden.clienteId,
+            estado: { in: ['recibido', 'preparando', 'listo', 'pendiente'] },
+          },
+          data: { repartidorId: profile.id, estado: 'en_camino' },
+        }).catch(() => null);
       }
     }
 
@@ -81,9 +114,16 @@ export async function PATCH(
       }).catch(() => null);
     }
 
-    // Emitir evento en tiempo real al cliente y al admin con los datos reales del repartidor
+    // Emitir eventos en tiempo real al cliente, admin y otros repartidores
     try {
       const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      // 1. Notificar a todos los repartidores que esta orden ya fue tomada para que desaparezca de sus pantallas
+      emitirEventoRealtime({
+        room: 'repartidores',
+        event: 'repartidor:orden:tomada',
+        data: { ordenId: id, repartidorId: profile.id },
+      });
+      // 2. Notificar al cliente con los datos reales del repartidor
       emitirEventoRealtime({
         room: `orden:${id}`,
         event: 'orden:estado:update',
@@ -100,6 +140,7 @@ export async function PATCH(
           },
         },
       });
+      // 3. Notificar al admin
       emitirEventoRealtime({
         room: 'admin',
         event: 'admin:orden:actualizada',

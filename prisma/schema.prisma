@@ -100,7 +100,7 @@ model OrdenServicio {
   incidenciaDesc  String?
   clienteNombre   String
   clienteTelefono String?
-  codigoPin       String?                  @default("1234")
+  codigoPin       String?
   aceptadoEn      DateTime?
   recogidoEn      DateTime?
   entregadoEn     DateTime?
@@ -447,7 +447,7 @@ model OrdenCompra {
   descuento        Float             @default(0)
   codigoUsado      String?
   total            Float
-  codigoPin        String?           @default("1234")
+  codigoPin        String?
   programadoPara   DateTime?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
