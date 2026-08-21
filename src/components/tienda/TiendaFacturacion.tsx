@@ -323,7 +323,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             <div>DGI: {regimenDgi}</div>
             <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }} />
             <div>FACTURA POS #{serieFactura}-000104</div>
-            <div>Fecha: {new Date().toLocaleDateString('es-NI')}</div>
+            <div suppressHydrationWarning>Fecha: {new Date().toLocaleDateString('es-NI')}</div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

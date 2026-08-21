@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export interface UploadResult {
   id: string;
@@ -31,6 +31,14 @@ export function useUpload(options: UseUploadOptions = {}) {
   const [result, setResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
   const upload = useCallback(
     async (file: File | null | undefined) => {
       if (!file) return null;
@@ -44,8 +52,9 @@ export function useUpload(options: UseUploadOptions = {}) {
         if (categoria) formData.append('categoria', categoria);
         if (entidadId) formData.append('entidadId', entidadId);
 
-        // Simular progreso (XHR sería más preciso pero FormData+fetch es suficiente)
-        const progressInterval = setInterval(() => {
+        // Simular progreso de subida
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(() => {
           setProgress((p) => Math.min(p + 10, 90));
         }, 100);
 
@@ -54,7 +63,10 @@ export function useUpload(options: UseUploadOptions = {}) {
           body: formData,
         });
 
-        clearInterval(progressInterval);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         setProgress(100);
 
         const responseText = await res.text();
@@ -86,6 +98,10 @@ export function useUpload(options: UseUploadOptions = {}) {
         onError?.(msg);
         return null;
       } finally {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         setLoading(false);
         setTimeout(() => setProgress(0), 500);
       }

@@ -49,11 +49,12 @@ export default function Mantenimientos() {
 
   const writeFotos = useCallback(
     (mantId: string, updater: (prev: Foto[] | undefined) => Foto[]) => {
+      const order = fotosOrderRef.current.filter((k) => k !== mantId);
+      order.push(mantId);
+      fotosOrderRef.current = order;
+
       setSelectedFotos((prev) => {
         const nextFotos = updater(prev[mantId]);
-        const order = fotosOrderRef.current.filter((k) => k !== mantId);
-        order.push(mantId);
-        fotosOrderRef.current = order;
         const next: Record<string, Foto[]> = { ...prev, [mantId]: nextFotos };
         while (fotosOrderRef.current.length > FOTOS_CACHE_MAX) {
           const oldest = fotosOrderRef.current.shift();

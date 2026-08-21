@@ -976,7 +976,7 @@ export default function ModuleConfig() {
                     </tr>
                   </thead>
                   <tbody>
-                    {localHorarios.sort((a, b) => (a.dia === 0 ? 7 : a.dia) - (b.dia === 0 ? 7 : b.dia)).map((horario) => (
+                    {[...localHorarios].sort((a, b) => (a.dia === 0 ? 7 : a.dia) - (b.dia === 0 ? 7 : b.dia)).map((horario) => (
                       <tr key={horario.id} style={{ borderBottom: '1px solid var(--lf-border)', opacity: horario.activo ? 1 : 0.5 }}>
                         <td style={{ padding: '10px 14px', fontWeight: 600, fontSize: 13 }}>{DIA_LABELS[horario.dia] || 'Desconocido'}</td>
                         <td style={{ padding: '10px 14px' }}>

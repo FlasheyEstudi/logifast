@@ -48,7 +48,7 @@ export default function Dashboard() {
             <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--lf-text-main, #1a1a2e)' }}>
               {getSaludo()}, {(store.perfil?.nombre || '').split(' ')[0] || 'Ingeniero'}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--lf-text-muted, #6B7280)', marginTop: 2, textTransform: 'capitalize' }}>
+            <div suppressHydrationWarning style={{ fontSize: 13, color: 'var(--lf-text-muted, #6B7280)', marginTop: 2, textTransform: 'capitalize' }}>
               {new Date().toLocaleDateString('es-NI', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
           </div>

@@ -598,7 +598,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
         </div>
 
         {/* Center: Desktop tabs */}
-        <nav style={{ display: 'flex', gap: 2, alignItems: 'center' }} className="lf-dash-desktop-nav">
+        <nav aria-label="Navegación principal de escritorio" style={{ display: 'flex', gap: 2, alignItems: 'center' }} className="lf-dash-desktop-nav">
           {DESKTOP_NAV.map((item) => {
             const Icon = item.icon;
             const isActive = activeModule === item.key;
@@ -866,7 +866,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       </div>
 
       {/* ═══ BOTTOM NAV (mobile) ═══ */}
-      <nav className="lf-dash-bottom-nav" style={{
+      <nav aria-label="Navegación móvil inferior" className="lf-dash-bottom-nav" style={{
         height: 64, flexShrink: 0, display: 'none', alignItems: 'center', justifyContent: 'space-around',
         background: 'var(--lf-surface)', borderTop: '1px solid var(--lf-border)',
         padding: '0 4px', position: 'relative',

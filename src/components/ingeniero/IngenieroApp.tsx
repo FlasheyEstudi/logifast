@@ -141,7 +141,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
         </div>
 
         {/* Center: Desktop tabs */}
-        <nav style={{ display: 'flex', gap: 2, alignItems: 'center' }} className="lf-dash-desktop-nav">
+        <nav aria-label="Navegación de ingeniero escritorio" style={{ display: 'flex', gap: 2, alignItems: 'center' }} className="lf-dash-desktop-nav">
           {TABS.map((tab) => {
             const isActive = store.tabActiva === tab.id;
             const badge = getBadgeCount(tab.id);
@@ -288,7 +288,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
       </div>
 
       {/* ═══ BOTTOM NAV (Mobile only) ═══ */}
-      <nav className="lf-dash-bottom-nav" style={{
+      <nav aria-label="Navegación de ingeniero móvil" className="lf-dash-bottom-nav" style={{
         height: 64, flexShrink: 0, display: 'none', alignItems: 'center', justifyContent: 'space-around',
         background: 'var(--lf-surface, #ffffff)', borderTop: '1px solid var(--lf-border, #e5e7eb)',
         padding: '0 4px', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100

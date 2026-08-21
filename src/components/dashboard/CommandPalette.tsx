@@ -253,14 +253,14 @@ export default function CommandPalette() {
       setSelectedIdx((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter' && results.length > 0) {
       e.preventDefault();
-      setSelectedIdx((idx) => {
-        if (results[idx]) selectItem(results[idx]);
-        return idx;
-      });
+      const current = results[selectedIdx] ?? results[0];
+      if (current) {
+        selectItem(current);
+      }
     } else if (e.key === 'Escape') {
       closePalette();
     }
-  }, [results, selectItem, closePalette]);
+  }, [results, selectedIdx, selectItem, closePalette]);
 
   /* ── Group results by type ── */
   const grouped = useMemo(() => {

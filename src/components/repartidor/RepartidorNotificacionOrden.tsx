@@ -213,19 +213,16 @@ export default function RepartidorNotificacionOrden() {
 
   /* Countdown */
   useEffect(() => {
+    if (segundos <= 0) {
+      timeoutOrden();
+      showSnackbar({ message: 'La orden expiró por timeout.' });
+      return;
+    }
     const i = setInterval(() => {
-      setSegundos((s) => {
-        if (s <= 1) {
-          clearInterval(i);
-          timeoutOrden();
-          showSnackbar({ message: 'La orden expiró por timeout.' });
-          return 0;
-        }
-        return s - 1;
-      });
+      setSegundos((s) => Math.max(0, s - 1));
     }, 1000);
     return () => clearInterval(i);
-  }, [timeoutOrden, showSnackbar]);
+  }, [segundos, timeoutOrden, showSnackbar]);
 
   /* Vibrate on mount (new order) */
   useEffect(() => {

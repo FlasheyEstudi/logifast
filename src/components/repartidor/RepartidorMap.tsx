@@ -183,6 +183,7 @@ export default function RepartidorMap({
       }
     };
 
+    let isMounted = true;
     if (typeof window !== 'undefined') {
       if (
         typeof (DeviceOrientationEvent as any) !== 'undefined' &&
@@ -191,7 +192,7 @@ export default function RepartidorMap({
         (DeviceOrientationEvent as any)
           .requestPermission()
           .then((res: string) => {
-            if (res === 'granted') {
+            if (isMounted && res === 'granted') {
               window.addEventListener('deviceorientation', handleOrientation, true);
             }
           })
@@ -202,6 +203,7 @@ export default function RepartidorMap({
     }
 
     return () => {
+      isMounted = false;
       if (typeof window !== 'undefined') {
         window.removeEventListener('deviceorientation', handleOrientation, true);
       }
