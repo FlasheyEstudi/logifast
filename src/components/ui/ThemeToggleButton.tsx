@@ -63,7 +63,7 @@ export function ThemeToggleButton({
               initial={{ rotate: -90, scale: 0.4, opacity: 0 }}
               animate={{ rotate: 0, scale: 1, opacity: 1 }}
               exit={{ rotate: 90, scale: 0.4, opacity: 0 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Moon size={iconSize} style={{ color: '#FFD60A' }} />
@@ -74,7 +74,7 @@ export function ThemeToggleButton({
               initial={{ rotate: 90, scale: 0.4, opacity: 0 }}
               animate={{ rotate: 0, scale: 1, opacity: 1 }}
               exit={{ rotate: -90, scale: 0.4, opacity: 0 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Sun size={iconSize} style={{ color: '#FF9500' }} />
@@ -119,7 +119,7 @@ export function ThemeToggleButton({
             initial={{ rotate: -90, scale: 0.5, opacity: 0 }}
             animate={{ rotate: 0, scale: 1, opacity: 1 }}
             exit={{ rotate: 90, scale: 0.5, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             style={{ display: 'flex', alignItems: 'center' }}
           >
             <Moon size={iconSize} style={{ color: '#FFD60A' }} />
@@ -130,7 +130,7 @@ export function ThemeToggleButton({
             initial={{ rotate: 90, scale: 0.5, opacity: 0 }}
             animate={{ rotate: 0, scale: 1, opacity: 1 }}
             exit={{ rotate: -90, scale: 0.5, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             style={{ display: 'flex', alignItems: 'center' }}
           >
             <Sun size={iconSize} style={{ color: '#FF9500' }} />
