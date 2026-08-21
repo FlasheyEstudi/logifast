@@ -50,36 +50,34 @@ export function useLocalStorage<T>(
   }, [key]);
 
 
+  const storedRef = useRef<T>(storedValue);
+  useEffect(() => {
+    storedRef.current = storedValue;
+  }, [storedValue]);
+
   const setValue = useCallback(
     (value: T | ((prev: T) => T)) => {
-      setStoredValue((prev) => {
-        const next =
-          typeof value === 'function'
-            ? (value as (p: T) => T)(prev)
-            : value;
+      const next =
+        typeof value === 'function'
+          ? (value as (p: T) => T)(storedRef.current)
+          : value;
 
-        if (typeof window !== 'undefined') {
-          try {
-            window.localStorage.setItem(key, JSON.stringify(next));
-          } catch (err) {
-            if (
-              err instanceof DOMException &&
-              (err.name === 'QuotaExceededError' ||
-                err.name === 'NS_ERROR_DOM_QUOTA_REACHED')
-            ) {
-              console.warn(
-                `useLocalStorage: quota exceeded for key "${key}"`
-              );
-            } else {
-              console.warn(
-                `useLocalStorage: failed to write key "${key}"`,
-                err
-              );
-            }
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(next));
+        } catch (err) {
+          if (
+            err instanceof DOMException &&
+            (err.name === 'QuotaExceededError' ||
+              err.name === 'NS_ERROR_DOM_QUOTA_REACHED')
+          ) {
+            console.warn(`useLocalStorage: quota exceeded for key "${key}"`);
+          } else {
+            console.warn(`useLocalStorage: failed to write key "${key}"`, err);
           }
         }
-        return next;
-      });
+      }
+      setStoredValue(next);
     },
     [key]
   );

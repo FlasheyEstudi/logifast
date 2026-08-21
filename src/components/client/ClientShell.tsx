@@ -331,17 +331,18 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   }, [fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, fetchOrders]);
 
   /* ─── SPLASH STATE (solo una vez por sesión para fluidez total) ─── */
-  const [showSplash, setShowSplash] = useState(() => {
+  const [showSplash, setShowSplash] = useState(false);
+  const [splashFading, setSplashFading] = useState(false);
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const alreadyShown = sessionStorage.getItem('client_splash_shown');
       if (!alreadyShown) {
         sessionStorage.setItem('client_splash_shown', 'true');
-        return true;
+        setShowSplash(true);
       }
     }
-    return false;
-  });
-  const [splashFading, setSplashFading] = useState(false);
+  }, []);
 
   /* ─── SNACKBAR STATE ─── */
   const [snackbar, setSnackbar] = useState<SnackbarData | null>(null);

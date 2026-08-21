@@ -460,10 +460,14 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
     const handler = (e: MouseEvent) => {
       if (fabRef.current && !fabRef.current.contains(e.target as Node)) setFabOpen(false);
     };
+    let timer: NodeJS.Timeout | null = null;
     if (fabOpen) {
-      setTimeout(() => document.addEventListener('mousedown', handler), 0);
+      timer = setTimeout(() => document.addEventListener('mousedown', handler), 0);
     }
-    return () => document.removeEventListener('mousedown', handler);
+    return () => {
+      if (timer) clearTimeout(timer);
+      document.removeEventListener('mousedown', handler);
+    };
   }, [fabOpen]);
 
   // Close more menu on outside click

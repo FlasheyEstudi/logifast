@@ -198,7 +198,8 @@ export default function CommandPalette() {
   /* ── Focus input when opening ── */
   useEffect(() => {
     if (commandPaletteOpen) {
-      setTimeout(() => inputRef.current?.focus(), 60);
+      const timer = setTimeout(() => inputRef.current?.focus(), 60);
+      return () => clearTimeout(timer);
     }
   }, [commandPaletteOpen]);
 

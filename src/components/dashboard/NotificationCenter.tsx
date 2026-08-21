@@ -144,10 +144,14 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
         close();
       }
     };
+    let timer: NodeJS.Timeout | null = null;
     if (open) {
-      setTimeout(() => document.addEventListener('mousedown', handler), 0);
+      timer = setTimeout(() => document.addEventListener('mousedown', handler), 0);
     }
-    return () => document.removeEventListener('mousedown', handler);
+    return () => {
+      if (timer) clearTimeout(timer);
+      document.removeEventListener('mousedown', handler);
+    };
   }, [open, close]);
 
   /* ── Filtered & grouped events ── */

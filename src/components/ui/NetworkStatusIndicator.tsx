@@ -13,6 +13,7 @@ export default function NetworkStatusIndicator() {
     if (typeof window === 'undefined') return;
 
     setIsOnline(navigator.onLine);
+    let reconnectTimer: NodeJS.Timeout | null = null;
 
     const handleOnline = () => {
       setIsOnline(true);
@@ -20,15 +21,16 @@ export default function NetworkStatusIndicator() {
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try { navigator.vibrate(25); } catch {}
       }
-      const timer = setTimeout(() => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
         setShowReconnected(false);
       }, 3200);
-      return () => clearTimeout(timer);
     };
 
     const handleOffline = () => {
       setIsOnline(false);
       setShowReconnected(false);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try { navigator.vibrate([40, 60, 40]); } catch {}
       }
@@ -38,6 +40,7 @@ export default function NetworkStatusIndicator() {
     window.addEventListener('offline', handleOffline);
 
     return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
