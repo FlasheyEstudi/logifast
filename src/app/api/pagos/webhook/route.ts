@@ -17,8 +17,20 @@ export async function POST(req: NextRequest) {
     const event = body.event ?? 'unknown';
     const data = body.data ?? {};
 
-    // Verificar firma (en producción, cada pasarela tiene su método)
-    // Por ahora solo registramos el evento
+    // Validar firma o secreto del webhook de pagos (VULN-01)
+    const secret = process.env.PAYMENT_WEBHOOK_SECRET || process.env.JWT_SECRET || 'logifast-dev-secret';
+    const authHeader = req.headers.get('authorization') || req.headers.get('x-webhook-secret') || req.headers.get('x-signature');
+    
+    // Si no se proporciona token válido en producción, rechazar
+    if (process.env.NODE_ENV === 'production') {
+      const isAuthorized =
+        authHeader === secret ||
+        authHeader === `Bearer ${secret}`;
+      if (!isAuthorized) {
+        return NextResponse.json({ error: 'Firma o secreto de webhook no válido' }, { status: 401 });
+      }
+    }
+
     console.log(`[PAGOS_WEBHOOK] ${provider}/${event}`, data);
 
     const orderId = data.orderId ?? data.referencia;

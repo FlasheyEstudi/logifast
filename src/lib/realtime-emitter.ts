@@ -12,14 +12,25 @@ export async function emitirEventoRealtime(payload: { room?: string; event: stri
     if (!baseUrl) return;
 
     const endpoint = `${baseUrl.replace(/\/$/, '')}/api/emit`;
+    const serviceKey = process.env.REALTIME_SERVICE_SECRET || process.env.JWT_SECRET || 'logifast-dev-secret';
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
 
     fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+      },
       body: JSON.stringify(payload),
-    }).catch((err) => {
-      console.warn('[REALTIME_HTTP_EMIT_WARN]', err?.message || err);
-    });
+      signal: controller.signal,
+    })
+      .then(() => clearTimeout(timeout))
+      .catch((err) => {
+        clearTimeout(timeout);
+        console.warn('[REALTIME_HTTP_EMIT_WARN]', err?.message || err);
+      });
   } catch (e) {
     console.warn('[REALTIME_EMIT_ERR]', e);
   }

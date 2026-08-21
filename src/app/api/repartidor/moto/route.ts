@@ -88,12 +88,13 @@ export async function GET() {
     }
 
     if (!moto) {
-      // Si no existe ninguna moto en el sistema, crear una por defecto para este repartidor
+      // Si no existe ninguna moto en el sistema, crear una por defecto para este repartidor (BUG-F05)
+      const placaSegura = profile.vehiculoPlaca || `M-${profile.id.slice(-3).toUpperCase()}-${Date.now().toString().slice(-4)}`;
       const nuevaMoto = await db.moto.create({
         data: {
           nombre: `Moto-${profile.nombre.split(' ')[0]}`,
           modelo: profile.vehiculoModelo || 'Honda Wave 110',
-          placa: profile.vehiculoPlaca || `M-${Math.floor(Math.random() * 90000) + 10000}`,
+          placa: placaSegura,
           anio: profile.vehiculoAnio || 2024,
           color: profile.vehiculoColor || 'Rojo',
           estado: 'DISPONIBLE',

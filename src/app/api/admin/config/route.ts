@@ -10,6 +10,11 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'ingeniero')) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
     const [horarios, feriados, featureFlags, zonas] = await Promise.all([
       db.configuracionHorario.findMany({ orderBy: { dia: 'asc' } }),
       db.feriado.findMany({ orderBy: { fecha: 'asc' } }),

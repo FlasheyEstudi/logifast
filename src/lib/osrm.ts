@@ -404,13 +404,19 @@ export async function buscarUbicacionDinamica(query: string): Promise<Array<{ di
     const encodedQuery = encodeURIComponent(`${query.trim()}, Nicaragua`);
     const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&addressdetails=1&limit=4&countrycodes=ni`;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
     try {
       const res = await fetch(url, {
+        signal: controller.signal,
         headers: {
           'Accept-Language': 'es-NI,es;q=0.9',
           'User-Agent': 'LogifastApp/1.0',
         },
       });
+      clearTimeout(timeoutId);
+
       if (res.ok) {
         const data = await res.json();
         data.forEach((item: any) => {
@@ -426,7 +432,9 @@ export async function buscarUbicacionDinamica(query: string): Promise<Array<{ di
           }
         });
       }
-    } catch {}
+    } catch {
+      clearTimeout(timeoutId);
+    }
   }
 
   return results.slice(0, 6);
@@ -439,14 +447,19 @@ export async function buscarUbicacionDinamica(query: string): Promise<Array<{ di
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   if (!lat || !lng || (lat === 0 && lng === 0)) return 'Ubicación seleccionada';
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3500);
+
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
     const res = await fetch(url, {
+      signal: controller.signal,
       headers: {
         'Accept-Language': 'es-NI,es;q=0.9',
         'User-Agent': 'LogifastApp/1.0',
       },
     });
+    clearTimeout(timeoutId);
 
     if (res.ok) {
       const data = await res.json();
@@ -468,6 +481,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
       }
     }
   } catch (err) {
+    clearTimeout(timeoutId);
     console.warn('[reverseGeocode error]', err);
   }
 

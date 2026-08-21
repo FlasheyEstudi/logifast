@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import { getSessionUser } from '@/lib/auth/session';
 import type { CalificacionRepartidor } from '@/lib/repartidor-store';
 
 export const dynamic = 'force-dynamic';
@@ -86,6 +87,11 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   try {
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { ordenId, estrellas, etiquetas = [], comentario } = body;
 
@@ -102,9 +108,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Orden o repartidor no encontrado' }, { status: 404 });
     }
 
+    // Validar que solo el cliente dueño de la orden o un admin pueda calificar (VULN-04)
+    if (user.role !== 'admin' && orden.clienteId !== user.id) {
+      return NextResponse.json(
+        { error: 'Solo el cliente que solicitó la orden puede calificar al repartidor' },
+        { status: 403 }
+      );
+    }
+
+    // Verificar si ya fue calificada previamente para evitar duplicados
+    const yaCalificada = await db.calificacionRepartidor.findFirst({
+      where: { ordenId: orden.id, clienteId: user.id },
+    });
+    if (yaCalificada) {
+      return NextResponse.json(
+        { error: 'Esta orden ya fue calificada previamente' },
+        { status: 400 }
+      );
+    }
+
     const nuevaCalificacion = await db.calificacionRepartidor.create({
       data: {
-        clienteId: orden.clienteId || 'c0',
+        clienteId: user.id,
         repartidorId: orden.repartidorId,
         ordenId: orden.id,
         estrellas: Number(estrellas),

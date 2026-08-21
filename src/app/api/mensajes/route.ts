@@ -55,28 +55,44 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data: mensajes });
     }
 
-    // List all conversations for the session user
-    const [mensajes, allUsers] = await Promise.all([
-      db.mensajeDirecto.findMany({
-        where: sessionUser.role === 'admin'
-          ? {}
-          : { OR: [{ emisorId: myId }, { receptorId: myId }] },
-        select: {
-          id: true,
-          emisorId: true,
-          receptorId: true,
-          contenido: true,
-          leido: true,
-          enviadoEn: true,
-        },
-        orderBy: { enviadoEn: 'desc' },
-        take: 200,
-      }),
-      db.user.findMany({
-        select: { id: true, name: true, email: true, role: true },
-        take: 100,
-      }),
-    ]);
+    // List conversations for the session user (VULN-11: No exponer directorio global a usuarios regulares)
+    const mensajes = await db.mensajeDirecto.findMany({
+      where: sessionUser.role === 'admin'
+        ? {}
+        : { OR: [{ emisorId: myId }, { receptorId: myId }] },
+      select: {
+        id: true,
+        emisorId: true,
+        receptorId: true,
+        contenido: true,
+        leido: true,
+        enviadoEn: true,
+      },
+      orderBy: { enviadoEn: 'desc' },
+      take: 200,
+    });
+
+    // Identificar solo usuarios relevantes para este cliente/repartidor
+    const relevantUserIds = new Set<string>();
+    mensajes.forEach((m) => {
+      relevantUserIds.add(m.emisorId);
+      relevantUserIds.add(m.receptorId);
+    });
+
+    const userWhere = sessionUser.role === 'admin'
+      ? undefined
+      : {
+          OR: [
+            { id: { in: Array.from(relevantUserIds) } },
+            { role: 'admin' },
+          ],
+        };
+
+    const allUsers = await db.user.findMany({
+      where: userWhere,
+      take: sessionUser.role === 'admin' ? 100 : 50,
+      select: { id: true, name: true, email: true, role: true },
+    });
 
     const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
@@ -101,7 +117,7 @@ export async function GET(request: NextRequest) {
       }>;
     }>();
 
-    // Default seed with users if no messages yet
+    // Default seed with relevant contacts (soporte o participantes)
     allUsers.forEach((u) => {
       if (u.id !== myId) {
         convsMap.set(u.id, {

@@ -50,20 +50,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'El carrito POS no contiene productos' }, { status: 400 });
     }
 
+    // Validar productos, consultar precio oficial en BD y armar items (VULN-02)
     let subtotal = 0;
-    const itemsFormatted = itemsInput.map((it) => {
+    const itemsFormatted: Array<{
+      productoId: string;
+      nombreProducto: string;
+      cantidad: number;
+      precioUnitario: number;
+      costoUnitario: number;
+      subtotal: number;
+    }> = [];
+
+    for (const it of itemsInput) {
       const cant = Math.max(1, Number(it.cantidad) || 1);
-      const precio = Number(it.precioUnitario) || 0;
-      const sub = cant * precio;
+      if (!it.productoId) {
+        return NextResponse.json({ ok: false, error: 'Cada item debe tener productoId' }, { status: 400 });
+      }
+
+      const prod = await db.producto.findUnique({
+        where: { id: it.productoId },
+      });
+
+      if (!prod || prod.tiendaId !== tienda.id) {
+        return NextResponse.json(
+          { ok: false, error: `Producto no encontrado o no pertenece a la tienda: ${it.nombreProducto || it.productoId}` },
+          { status: 400 }
+        );
+      }
+
+      // PRECIO AUTORITATIVO DEL SERVIDOR (ignora el enviado por el cliente para evitar parameter tampering)
+      const precioOficial = prod.precio;
+      const sub = cant * precioOficial;
       subtotal += sub;
-      return {
-        productoId: it.productoId,
-        nombreProducto: it.nombreProducto,
+
+      itemsFormatted.push({
+        productoId: prod.id,
+        nombreProducto: prod.nombre,
         cantidad: cant,
-        precioUnitario: precio,
+        precioUnitario: precioOficial,
+        costoUnitario: prod.costo || 0,
         subtotal: sub,
-      };
-    });
+      });
+    }
 
     const descNum = Math.max(0, Number(descuento) || 0);
     const total = Math.max(0, subtotal - descNum);
@@ -72,51 +100,50 @@ export async function POST(req: NextRequest) {
 
     const comprobanteNum = `POS-${Date.now().toString().slice(-6)}`;
 
-    // 1. Crear la venta POS
-    const venta = await db.ventaPOS.create({
-      data: {
-        tiendaId: tienda.id,
-        numeroComprobante: comprobanteNum,
-        clienteNombre,
-        clienteRuc,
-        clienteTelefono,
-        metodoPago,
-        subtotal,
-        descuento: descNum,
-        total,
-        montoRecibido: montoRecibidoNum,
-        cambioDado,
-        notas,
-        vendedorId: user.id,
-        items: {
-          create: itemsFormatted.map((it) => ({
-            productoId: it.productoId,
-            nombreProducto: it.nombreProducto,
-            cantidad: it.cantidad,
-            precioUnitario: it.precioUnitario,
-            subtotal: it.subtotal,
-          })),
+    // 1 y 2. Crear venta y decrementar stock en una transacción atómica (ACID)
+    const venta = await db.$transaction(async (tx) => {
+      const v = await tx.ventaPOS.create({
+        data: {
+          tiendaId: tienda.id,
+          numeroComprobante: comprobanteNum,
+          clienteNombre,
+          clienteRuc,
+          clienteTelefono,
+          metodoPago,
+          subtotal,
+          descuento: descNum,
+          total,
+          montoRecibido: montoRecibidoNum,
+          cambioDado,
+          notas,
+          vendedorId: user.id,
+          items: {
+            create: itemsFormatted.map((it) => ({
+              productoId: it.productoId,
+              nombreProducto: it.nombreProducto,
+              cantidad: it.cantidad,
+              precioUnitario: it.precioUnitario,
+              subtotal: it.subtotal,
+            })),
+          },
         },
-      },
-      include: {
-        items: true,
-      },
-    });
+        include: {
+          items: true,
+        },
+      });
 
-    // 2. Descontar stock y registrar salidas en Kardex
-    for (const item of itemsFormatted) {
-      if (item.productoId) {
-        const prod = await db.producto.findUnique({ where: { id: item.productoId } });
+      for (const item of itemsFormatted) {
+        const prod = await tx.producto.findUnique({ where: { id: item.productoId } });
         if (prod) {
           const stockActual = prod.stock ?? 0;
           const nuevoStock = Math.max(0, stockActual - item.cantidad);
 
-          await db.producto.update({
+          await tx.producto.update({
             where: { id: item.productoId },
-            data: { stock: nuevoStock },
+            data: { stock: { decrement: item.cantidad } },
           });
 
-          await db.kardexMovimiento.create({
+          await tx.kardexMovimiento.create({
             data: {
               tiendaId: tienda.id,
               productoId: item.productoId,
@@ -124,15 +151,17 @@ export async function POST(req: NextRequest) {
               cantidad: item.cantidad,
               stockAnterior: stockActual,
               stockNuevo: nuevoStock,
-              costoUnitario: prod.costo || 0,
+              costoUnitario: item.costoUnitario,
               precioVenta: item.precioUnitario,
               motivo: `Venta POS #${comprobanteNum}`,
               usuarioId: user.id,
             },
-          }).catch((e) => console.warn('[KARDEX_POS_LOG_ERROR]', e));
+          });
         }
       }
-    }
+
+      return v;
+    });
 
     // 3. Devolver datos estructurados de la factura/comprobante
     return NextResponse.json({

@@ -88,39 +88,70 @@ export async function POST(req: NextRequest) {
       }
       const montoFinal = codigoPromo.valor;
 
-      // Verificar si el repartidor ya usó este código
-      const yaUsado = await db.recargaSaldo.findFirst({
-        where: { repartidorId: profile.id, codigo, estado: 'completada' },
-      });
-      if (yaUsado) {
-        return NextResponse.json({ error: 'Ya usaste este código' }, { status: 400 });
-      }
+      // Transacción atómica: validar uso previo + incrementar usos + crear recarga + incrementar saldo (VULN-07)
+      let recarga;
+      let nuevoSaldoCalculado = profile.saldo;
 
-      // Transacción: incrementar usos + crear recarga + incrementar saldo
-      const [recarga] = await db.$transaction([
-        db.recargaSaldo.create({
-          data: {
-            repartidorId: profile.id,
-            monto: montoFinal,
-            metodo: 'codigo',
-            codigo,
-            estado: 'completada',
-            referencia: codigoPromo.id,
-          },
-        }),
-        db.repartidorProfile.update({
-          where: { id: profile.id },
-          data: { saldo: { increment: montoFinal } },
-        }),
-        db.codigoPromocional.update({
-          where: { id: codigoPromo.id },
-          data: { usosActuales: { increment: 1 } },
-        }),
-      ]);
+      try {
+        const result = await db.$transaction(async (tx) => {
+          // 1. Validar si ya fue usado dentro de la transacción
+          const yaUsadoTx = await tx.recargaSaldo.findFirst({
+            where: { repartidorId: profile.id, codigo, estado: 'completada' },
+          });
+          if (yaUsadoTx) {
+            throw new Error('CODIGO_YA_USADO');
+          }
+
+          // 2. Validar límite de usos
+          const promoActual = await tx.codigoPromocional.findUnique({
+            where: { id: codigoPromo.id },
+          });
+          if (!promoActual || (promoActual.maxUsos > 0 && promoActual.usosActuales >= promoActual.maxUsos)) {
+            throw new Error('CODIGO_AGOTADO');
+          }
+
+          // 3. Crear recarga
+          const r = await tx.recargaSaldo.create({
+            data: {
+              repartidorId: profile.id,
+              monto: montoFinal,
+              metodo: 'codigo',
+              codigo,
+              estado: 'completada',
+              referencia: codigoPromo.id,
+            },
+          });
+
+          // 4. Acreditar saldo
+          const profUpdated = await tx.repartidorProfile.update({
+            where: { id: profile.id },
+            data: { saldo: { increment: montoFinal } },
+          });
+
+          // 5. Incrementar usos
+          await tx.codigoPromocional.update({
+            where: { id: codigoPromo.id },
+            data: { usosActuales: { increment: 1 } },
+          });
+
+          return { recarga: r, nuevoSaldo: profUpdated.saldo };
+        });
+
+        recarga = result.recarga;
+        nuevoSaldoCalculado = result.nuevoSaldo;
+      } catch (err: any) {
+        if (err?.message === 'CODIGO_YA_USADO') {
+          return NextResponse.json({ error: 'Ya usaste este código' }, { status: 400 });
+        }
+        if (err?.message === 'CODIGO_AGOTADO') {
+          return NextResponse.json({ error: 'Código agotado' }, { status: 400 });
+        }
+        throw err;
+      }
 
       return NextResponse.json({
         ok: true,
-        nuevoSaldo: profile.saldo + montoFinal,
+        nuevoSaldo: nuevoSaldoCalculado,
         recarga,
         estado: 'completada',
       });

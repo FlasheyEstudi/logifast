@@ -40,6 +40,14 @@ export function rateLimit(
   windowMs: number = 60 * 1000
 ): RateLimitResult {
   const now = Date.now();
+
+  // Limpieza preventiva si el mapa crece excesivamente
+  if (limits.size > 2000) {
+    for (const [k, v] of limits.entries()) {
+      if (v.resetAt < now) limits.delete(k);
+    }
+  }
+
   const entry = limits.get(key);
 
   if (!entry || entry.resetAt < now) {
@@ -56,11 +64,20 @@ export function rateLimit(
   return { success: true, limit, remaining: limit - entry.count, resetAt: entry.resetAt };
 }
 
-/** Helper para obtener IP del request. */
+/** Helper para obtener IP del request de manera segura. */
 export function getClientIP(req: Request): string {
+  // Priorizar Cloudflare / Railway / Vercel direct client IP headers
+  const cfConnectingIp = req.headers.get('cf-connecting-ip');
+  if (cfConnectingIp) return cfConnectingIp.trim();
+
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+
   const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  const real = req.headers.get('x-real-ip');
-  if (real) return real;
-  return 'unknown';
+  if (forwarded) {
+    const parts = forwarded.split(',');
+    return parts[0].trim();
+  }
+
+  return '127.0.0.1';
 }

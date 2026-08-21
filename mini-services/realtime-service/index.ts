@@ -22,8 +22,17 @@ const httpServer = createServer((req, res) => {
     return;
   }
 
-  // Realtime Broadcast Endpoint for Serverless Next.js API routes
+  // Realtime Broadcast Endpoint for Serverless Next.js API routes (VULN-03)
   if (req.url === '/api/emit' && req.method === 'POST') {
+    const authHeader = req.headers['authorization'] || req.headers['x-service-key'];
+    const serviceKey = process.env.REALTIME_SERVICE_SECRET || process.env.JWT_SECRET || 'logifast-dev-secret';
+
+    if (process.env.NODE_ENV === 'production' && authHeader !== serviceKey && authHeader !== `Bearer ${serviceKey}`) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'No autorizado para emitir eventos' }));
+      return;
+    }
+
     let body = '';
     req.on('data', (chunk) => { body += chunk; });
     req.on('end', () => {
@@ -86,14 +95,24 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ─── ADMIN: unirse a sala de admin ───
-  socket.on('admin:conectar', () => {
+  // ─── ADMIN: unirse a sala de admin (VULN-03) ───
+  socket.on('admin:conectar', (data?: { token?: string }) => {
+    // Validar token o handshake si estamos en producción
+    const token = data?.token || socket.handshake.auth?.token;
+    const secret = process.env.JWT_SECRET || 'logifast-dev-secret';
+    
+    // En producción requiere token admin para unirse al canal y recibir snapshot de flota
+    if (process.env.NODE_ENV === 'production' && (!token || token !== secret)) {
+      console.warn(`[realtime] Intento no autorizado de unirse a sala admin desde ${socket.id}`);
+      return socket.emit('error', { message: 'No autorizado para acceder al panel admin' });
+    }
+
     socket.join('admin');
     socket.emit('admin:flota:snapshot', Array.from(repartidoresConectados.entries()).map(([id, p]) => ({ repartidorId: id, ...p })));
   });
 
   // ─── ADMIN: asignar orden a repartidor ───
-  socket.on('admin:asignar:orden', (data: { repartidorId: string; orden: any }) => {
+  socket.on('admin:asignar:orden', (data: { repartidorId: string; orden: any; token?: string }) => {
     io.to(`repartidor:${data.repartidorId}`).emit('repartidor:orden:nueva', data.orden);
     io.to('admin').emit('admin:asignacion:confirmada', { repartidorId: data.repartidorId, ordenId: data.orden?.id });
   });

@@ -43,7 +43,7 @@ export async function GET() {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=20',
+          'Cache-Control': 'private, no-cache, no-store, must-revalidate',
         },
       }
     );

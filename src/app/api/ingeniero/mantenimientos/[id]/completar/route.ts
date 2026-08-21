@@ -25,19 +25,33 @@ export async function PATCH(
       );
     }
 
-    // Decrementar stock de repuestos transaccionalmente
+    // Decrementar stock de repuestos transaccionalmente y validar existencias (BUG-F03 & BUG-F04)
     let costoRepuestos = 0;
     if (Array.isArray(repuestosUsados) && repuestosUsados.length > 0) {
       await prisma.$transaction(async (tx) => {
         for (const ru of repuestosUsados) {
           const cantidad = Math.max(1, Math.floor(Number(ru.cantidad ?? 1)));
-          const repuesto = await tx.repuesto.update({
+          const repuesto = await tx.repuesto.findUnique({
+            where: { id: ru.repuestoId },
+          });
+
+          if (!repuesto) {
+            throw new Error(`Repuesto no encontrado: ${ru.repuestoId}`);
+          }
+
+          if (repuesto.stock < cantidad) {
+            throw new Error(`Stock insuficiente para "${repuesto.nombre}". Disponible: ${repuesto.stock}, Requerido: ${cantidad}`);
+          }
+
+          await tx.repuesto.update({
             where: { id: ru.repuestoId },
             data: { stock: { decrement: cantidad } },
           });
+
           const precioUnitario = repuesto.precioUnitario;
           const subtotalRep = precioUnitario * cantidad;
           costoRepuestos += subtotalRep;
+
           await tx.repuestoUsado.create({
             data: {
               mantenimientoId: id,
@@ -46,7 +60,7 @@ export async function PATCH(
               precioUnitario,
               subtotal: subtotalRep,
             },
-          }).catch(() => null);
+          });
         }
       });
     }

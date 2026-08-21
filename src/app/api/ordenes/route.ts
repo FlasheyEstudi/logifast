@@ -87,25 +87,9 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    let user = await getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
-      const demoClient = await db.user.findFirst({ where: { role: 'cliente' } }).catch(() => null);
-      if (demoClient) {
-        user = {
-          id: demoClient.id,
-          email: demoClient.email,
-          name: demoClient.name,
-          role: 'cliente',
-          telefono: demoClient.telefono,
-        };
-      } else {
-        user = {
-          id: 'usr_cliente_demo',
-          email: 'cliente@logifast.com',
-          name: 'Cliente LogiFast',
-          role: 'cliente',
-        };
-      }
+      return NextResponse.json({ error: 'Debes iniciar sesión para solicitar un envío' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -130,10 +114,6 @@ export async function POST(req: NextRequest) {
       tiendaId,
       tiendaNombre,
       metodoPago = 'efectivo',
-      monto = 0,
-      ganancia = 0,
-      kmEstimados = 0,
-      tiempoEstimado = 0,
     } = body;
 
     if (!origen || !destino) {
@@ -142,7 +122,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
 
     const rawOrigLat = Number(origenLat) || 0;
     const rawOrigLng = Number(origenLng) || 0;
@@ -156,6 +135,32 @@ export async function POST(req: NextRequest) {
     const [finalDestLat, finalDestLng] = (rawDestLat !== 0 && rawDestLng !== 0)
       ? [rawDestLat, rawDestLng]
       : geocodeAddress(destino, [12.1402, -86.2954]);
+
+    // Cálculo server-side de distancia Haversine y tarifas oficiales (BUG-F02)
+    const R = 6371;
+    const dLat = ((finalDestLat - finalOrigLat) * Math.PI) / 180;
+    const dLng = ((finalDestLng - finalOrigLng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((finalOrigLat * Math.PI) / 180) *
+        Math.cos((finalDestLat * Math.PI) / 180) *
+        Math.sin(dLng / 2) ** 2;
+    const kmReales = Math.max(1.5, Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10);
+    const tiempoEstimadoMin = Math.max(10, Math.round(kmReales * 3.5));
+
+    // Tarifa base C$40 (cubre primeros 2km) + C$15 por km adicional
+    let tarifaCalculada = 40;
+    if (kmReales > 2) {
+      tarifaCalculada += Math.round((kmReales - 2) * 15);
+    }
+    if (fragil) tarifaCalculada += 20;
+    if (tamano === 'Grande') tarifaCalculada += 30;
+    if (tamano === 'Mediano') tarifaCalculada += 15;
+
+    // Si el body provee un monto mayor o igual a la tarifa calculada, respetarlo; de lo contrario usar la tarifa oficial
+    const montoBody = Number(body.monto) || 0;
+    const montoFinal = montoBody >= tarifaCalculada * 0.8 ? montoBody : tarifaCalculada;
+    const gananciaRepartidor = Math.round(montoFinal * 0.7);
 
     const pinGenerado = String(Math.floor(1000 + Math.random() * 9000));
 
@@ -177,10 +182,10 @@ export async function POST(req: NextRequest) {
         tiendaId: tiendaId ?? null,
         tiendaNombre: tiendaNombre ?? null,
         metodoPago,
-        monto: Number(monto) || 0,
-        ganancia: Number(ganancia) || 0,
-        kmEstimados: Number(kmEstimados) || 0,
-        tiempoEstimado: Number(tiempoEstimado) || 0,
+        monto: montoFinal,
+        ganancia: gananciaRepartidor,
+        kmEstimados: kmReales,
+        tiempoEstimado: tiempoEstimadoMin,
         clienteNombre: user.name,
         clienteTelefono: user.telefono ?? null,
         codigoPin: pinGenerado,
