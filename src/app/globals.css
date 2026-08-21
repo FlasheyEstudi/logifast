@@ -16123,13 +16123,55 @@ button[class*="btn-primary"] {
   box-shadow: none !important;
 }
 
-* {
+/* ═══════════════════════════════════════════════
+   CIRCULAR RIPPLE THEME TRANSITION (View Transitions API 2026)
+   ═══════════════════════════════════════════════ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  display: block;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 999999;
+}
+
+/* Transición suave global de colores de interfaz */
+body,
+.lf-card,
+.lf-input,
+header,
+nav,
+aside,
+main,
+button {
   transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-  transition-duration: 0.25s;
-  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition-duration: 0.22s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Excluir mapas interactivos, canvas y WebGL para máxima fluidez a 60/120fps */
+.maplibregl-map,
+.maplibregl-map *,
+.leaflet-container,
+.leaflet-container *,
+canvas,
+video,
+.no-theme-transition {
+  transition: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

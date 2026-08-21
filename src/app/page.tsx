@@ -6,6 +6,7 @@ import ClientDashboard from './client-dashboard';
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
+import { toggleThemeWithTransition } from '@/lib/theme-transition';
 import { sileo } from "sileo";
 import { Transition } from '@headlessui/react';
 import { RoleLoader, MiniSpinner } from '@/components/ui/loaders';
@@ -20,6 +21,7 @@ import {
   SocialNetworkIllustration,
 } from '@/components/illustrations';
 import AuthRedesign from '@/components/auth/AuthRedesign';
+import { ThemeToggleButton } from '@/components/ui/ThemeToggleButton';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false, loading: () => <RoleLoader role="repartidor" /> });
 const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false, loading: () => <RoleLoader role="ingeniero" /> });
@@ -477,9 +479,9 @@ export default function Home() {
     aplicarTema(tema);
   }, [tema]);
 
-  const toggleTheme = useCallback(() => {
-    useConfigStore.getState().setTema(isDark ? 'light' : 'dark');
-  }, [isDark]);
+  const toggleTheme = useCallback((event?: React.MouseEvent | MouseEvent | { clientX: number; clientY: number }) => {
+    toggleThemeWithTransition(event);
+  }, []);
 
   /* ─── Navbar scroll effect ─── */
   useEffect(() => {
@@ -1439,13 +1441,7 @@ export default function Home() {
             </ul>
 
             <div className="flex items-center gap-3">
-              <button 
-                onClick={toggleTheme} 
-                className="btn btn-circle btn-ghost btn-sm text-white"
-                aria-label="Alternar tema"
-              >
-                {isDark ? <IconSun /> : <IconMoon />}
-              </button>
+              <ThemeToggleButton isDark={isDark} size="sm" variant="circle" />
 
               <button className="apple-nav-btn-secondary text-white hidden sm:inline-flex" onClick={() => navigateTo('login')}>
                 Ingresar
