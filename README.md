@@ -26,11 +26,11 @@
 
 <br/>
 
-| ⚡ Métrica | 📊 Valor Auditado | ⚡ Métrica | 📊 Valor Auditado |
+| ⚡ Métrica | 📊 Valor Auditado y Verificado | ⚡ Métrica | 📊 Valor Auditado y Verificado |
 | :--- | :--- | :--- | :--- |
 | **Archivos de Rutas API** | `108 Route Files` | **Operaciones HTTP Totales** | `190 Endpoints Activos` |
-| **Modelos Prisma ORM** | `47 Modelos Relacionales` | **Componentes React TSX** | `133 Módulos UI` |
-| **Líneas de Código (LOC)** | `122,000+ Líneas` | **Errores TypeScript (`tsc`)** | `0 (Compilación Limpia)` |
+| **Modelos Prisma ORM** | `55 Modelos Relacionales` | **Componentes React TSX** | `133 Módulos UI` |
+| **Líneas de Código (LOC)** | `122,000+ Líneas` | **Errores TypeScript (`tsc`)** | `0 (Compilación Limpia 100%)` |
 | **Módulos de Usuario** | `5 Portales Integrados` | **Microservicios Satélite** | `Socket.IO Realtime Gateway` |
 
 </div>
@@ -47,8 +47,8 @@
   - [4. 🔧 Taller de Flota & Mantenimiento (Ingeniería)](#4--taller-de-flota--mantenimiento-ingeniería)
   - [5. 👑 Central de Despacho & SuperAdmin](#5--central-de-despacho--superadmin)
 - [📡 Microservicio en Tiempo Real (Socket.IO)](#-microservicio-en-tiempo-real-socketio)
-- [🗄️ Atlas de Base de Datos (47 Modelos Prisma)](#️-atlas-de-base-de-datos-47-modelos-prisma)
-- [🔌 Inventario Exhaustivo de APIs (190 Operaciones)](#-inventario-exhaustivo-de-apis-190-operaciones)
+- [🗄️ Atlas de Base de Datos (55 Modelos Prisma)](#️-atlas-de-base-de-datos-55-modelos-prisma)
+- [🔌 Inventario Exhaustivo de APIs (108 Rutas / 190 Handlers)](#-inventario-exhaustivo-de-apis-108-rutas--190-handlers)
 - [🔒 Seguridad Defensiva, Criptografía & GDPR](#-seguridad-defensiva-criptografía--gdpr)
 - [🛠️ Pila Tecnológica Detallada](#️-pila-tecnológica-detallada)
 - [👥 Matriz de Roles y Credenciales Demo](#-matriz-de-roles-y-credenciales-demo)
@@ -159,7 +159,7 @@ Ubicado en [`mini-services/realtime-service`](file:///home/flashey/Documentos/li
 
 ---
 
-## 🗄️ Atlas de Base de Datos (47 Modelos Prisma)
+## 🗄️ Atlas de Base de Datos (55 Modelos Prisma)
 
 El esquema de datos en [`prisma/schema.prisma`](file:///home/flashey/Documentos/linux/logifast/prisma/schema.prisma) modela el negocio con integridad referencial estricta:
 
@@ -192,11 +192,11 @@ erDiagram
     Repuesto ||--o{ RepuestoUsado : "inventario"
 ```
 
-### Clasificación de Modelos por Dominio:
+### Clasificación de los 55 Modelos por Dominio:
 
-| Dominio | Modelos Prisma | Descripción Funcional |
+| Dominio | Modelos Prisma Implementados | Descripción Funcional |
 | :--- | :--- | :--- |
-| **🔐 Autenticación & Usuarios** | `User`, `PasswordReset`, `LoginAudit`, `AuditLog`, `ActividadUsuario` | Manejo de identidades, sesiones, 2FA, reseteo seguro y bitácoras inmutables. |
+| **🔐 Autenticación & Usuarios** | `User`, `Post`, `PasswordReset`, `LoginAudit`, `AuditLog`, `ActividadUsuario` | Manejo de identidades, sesiones, publicaciones, reseteo seguro y bitácoras inmutables. |
 | **🛍️ Marketplace & Catálogo** | `Tienda`, `Producto`, `OrdenCompra`, `ItemOrdenCompra`, `CarritoItem`, `FavoritoTienda`, `FavoritoProducto`, `ResenaTienda` | Comercio B2C, gestión de carritos sincronizados, favoritos y calificaciones. |
 | **🏪 Punto de Venta (POS) & Stock**| `VentaPOS`, `ItemVentaPOS`, `KardexMovimiento` | Facturación en mostrador, tickets fiscales y control de entradas/salidas de inventario. |
 | **🛵 Logística & Envíos** | `OrdenServicio`, `SolicitudEnvio`, `PosicionRepartidor`, `ZonaCobertura` | Despacho punto a punto, cálculo de distancias y polígonos de servicio. |
@@ -208,62 +208,79 @@ erDiagram
 
 ---
 
-## 🔌 Inventario Exhaustivo de APIs (190 Operaciones)
+## 🔌 Inventario Exhaustivo de APIs (108 Rutas / 190 Handlers)
 
-El backend de Next.js App Router expone **108 archivos de ruta** que implementan **190 manejadores HTTP** fuertemente tipados:
+El backend de Next.js App Router expone **108 archivos de ruta** que implementan **190 manejadores HTTP** verificados:
 
 ```
-├── 🔐 Autenticación & Seguridad (/api/auth)
-│   ├── POST   /api/auth/login                  ──> Autenticación con cookies httpOnly y anti-timing attack
-│   ├── POST   /api/auth/register               ──> Registro de nuevos clientes con rate limit
-│   ├── POST   /api/auth/logout                 ──> Invalidación de sesión y borrado de cookie
-│   ├── GET    /api/auth/me                     ──> Datos del usuario autenticado en la sesión actual
-│   ├── POST   /api/auth/forgot-password        ──> Emisión de token temporal para reseteo
-│   ├── POST   /api/auth/reset-password         ──> Actualización de clave mediante token válido
-│   ├── POST   /api/auth/change-password        ──> Cambio de clave autenticado con verificación de anterior
-│   ├── POST   /api/auth/delete-account         ──> Derecho al olvido: eliminación irreversible (GDPR)
-│   └── GET    /api/auth/export-data            ──> Descarga de volcado integral de datos en JSON (GDPR)
+├── 🔐 Autenticación & Seguridad
+│   ├── POST          /api/auth/login                  ──> Login con cookies httpOnly y dummy password verification
+│   ├── POST          /api/auth/register               ──> Registro con rate limit defensivo
+│   ├── POST          /api/auth/logout                 ──> Invalidación de cookie lf-session
+│   ├── GET           /api/auth/me                     ──> Perfil y sesión del usuario activo
+│   ├── POST          /api/auth/forgot-password        ──> Emisión de token temporal de reseteo
+│   ├── POST          /api/auth/reset-password         ──> Actualización de clave con token
+│   ├── POST          /api/auth/change-password        ──> Cambio de clave verificando contraseña previa
+│   ├── POST          /api/auth/delete-account         ──> Derecho al olvido: eliminación irreversible (GDPR)
+│   └── GET           /api/auth/export-data            ──> Exportación de expediente completo en JSON (GDPR)
 │
-├── 🛒 Marketplace & Tiendas (/api/tiendas, /api/productos, /api/carrito)
-│   ├── GET/POST         /api/tiendas           ──> Listado con filtros de distancia / Creación de comercio
-│   ├── GET/PATCH/DELETE /api/tiendas/[id]      ──> Detalle, actualización y borrado de tienda
-│   ├── GET/POST         /api/tiendas/[id]/productos ──> Catálogo de productos por tienda
-│   ├── GET              /api/productos         ──> Catálogo global con paginación y búsqueda
-│   ├── GET/POST/PATCH/DELETE /api/carrito      ──> Carrito persistente multi-producto
-│   └── GET/POST         /api/ordenes-compra    ──> Creación y consulta de órdenes de compra
+├── 🛒 Marketplace & Cliente PWA
+│   ├── GET, POST     /api/tiendas                     ──> Listado y creación de comercios
+│   ├── GET, PATCH, DELETE /api/tiendas/[id]           ──> Detalle, actualización y baja de comercio
+│   ├── GET, POST     /api/tiendas/[id]/productos      ──> Catálogo de productos por comercio
+│   ├── GET           /api/productos                   ──> Búsqueda global de productos
+│   ├── GET, POST, PATCH, DELETE /api/carrito          ──> Carrito de compra persistente
+│   ├── GET, POST     /api/ordenes-compra              ──> Creación y consulta de pedidos en tiendas
+│   ├── GET, POST, PATCH, DELETE /api/direcciones      ──> Libreta de direcciones del cliente
+│   ├── GET, POST, DELETE /api/metodos-pago            ──> Billetera y tarjetas del cliente
+│   ├── GET, POST     /api/cliente/fidelizacion        ──> Puntos acumulados y canjes
+│   ├── GET           /api/cliente/referidos           ──> Sistema de afiliados y referidos
+│   ├── GET, POST     /api/solicitudes-envio           ──> Envíos directos punto a punto
+│   └── GET, PATCH, POST /api/stories                  ──> Historias interactivas y registro de vistas
 │
-├── 🛵 Repartidor & Telemetría (/api/repartidor)
-│   ├── GET/PATCH        /api/repartidor/perfil ──> Perfil del conductor y parámetros de vehículo
-│   ├── GET/PATCH        /api/repartidor/conexion ──> Alternar estado Online / Offline / En Pausa
-│   ├── GET              /api/repartidor/ordenes ──> Órdenes disponibles y asignadas
-│   ├── PATCH            /api/repartidor/ordenes/[id]/aceptar   ──> Aceptación atómica de pedido
-│   ├── PATCH            /api/repartidor/ordenes/[id]/recoger   ──> Confirmación de retiro en tienda
-│   ├── PATCH            /api/repartidor/ordenes/[id]/entregar  ──> Validación obligatoria por PIN Dinámico
-│   ├── PATCH            /api/repartidor/ordenes/[id]/incidencia ──> Reporte de problemas en ruta
-│   ├── POST             /api/repartidor/posicion ──> Ingesta de coordenadas GPS
-│   └── GET/POST         /api/recargas          ──> Recarga de billetera mediante código prepago
+├── 🛵 Conductor & Repartidor PWA
+│   ├── GET, PATCH    /api/repartidor/perfil           ──> Datos de repartidor y vehículo
+│   ├── GET, PATCH    /api/repartidor/conexion         ──> Estado Online / Offline / Pausado
+│   ├── GET           /api/repartidor/ordenes          ──> Pool de órdenes para entrega
+│   ├── PATCH         /api/repartidor/ordenes/[id]/aceptar   ──> Aceptación atómica de pedido
+│   ├── PATCH         /api/repartidor/ordenes/[id]/recoger   ──> Confirmación de retiro en tienda
+│   ├── PATCH         /api/repartidor/ordenes/[id]/entregar  ──> Validación por PIN Dinámico
+│   ├── PATCH         /api/repartidor/ordenes/[id]/incidencia ──> Notificación de contratiempos
+│   ├── PATCH         /api/repartidor/ordenes/[id]/rechazar  ──> Liberación de orden a la central
+│   ├── POST          /api/repartidor/posicion         ──> Streaming de telemetría GPS
+│   ├── GET, POST     /api/repartidor/chat             ──> Chat bidireccional por orden
+│   └── GET, POST     /api/recargas                    ──> Canje de códigos de saldo
 │
-├── 🏪 Comercio, POS & Kardex (/api/tienda)
-│   ├── GET/POST/PATCH   /api/cliente/tienda    ──> Configuración de marca, RUC, WhatsApp y membretes
-│   ├── GET/POST         /api/cliente/tienda/pedidos ──> Tablero KDS de comandas entrantes
-│   ├── GET/POST         /api/cliente/tienda/productos ──> Administración de existencias y precios
-│   └── POST             /api/upload            ──> Pipeline de optimización de imágenes Sharp WebP
+├── 🏪 Comercio, POS & Kardex
+│   ├── GET, POST     /api/cliente/tienda              ──> Identidad comercial, RUC y DGI
+│   ├── GET, PATCH    /api/cliente/tienda/pedidos      ──> Comandera KDS de pedidos entrantes
+│   ├── GET, PATCH, POST, DELETE /api/cliente/tienda/productos ──> Gestión de catálogo y stock
+│   ├── GET, POST     /api/tienda/kardex               ──> Kardex de entradas, salidas y ajustes
+│   ├── POST          /api/tienda/pos                  ──> Facturación de mostrador en punto de venta
+│   ├── GET           /api/tienda/reportes/excel       ──> Exportación de reportes de ventas
+│   └── POST          /api/upload                      ──> Procesamiento y compresión WebP (Sharp)
 │
-├── 🔧 Ingeniería & Taller de Flota (/api/ingeniero)
-│   ├── GET/POST         /api/ingeniero/motos   ──> Parque de vehículos y kilometrajes acumulados
-│   ├── GET/POST         /api/ingeniero/mantenimientos ──> Programación de órdenes de mantenimiento
-│   ├── PATCH            /api/ingeniero/mantenimientos/[id]/iniciar   ──> Paso a estado EN_PROCESO
-│   ├── PATCH            /api/ingeniero/mantenimientos/[id]/completar ──> Cierre y deducción de repuestos
-│   ├── GET/POST         /api/ingeniero/repuestos ──> Inventario de repuestos y control de SKUs
-│   └── GET              /api/ingeniero/alertas ──> Notificaciones automáticas de mantenimiento
+├── 🔧 Ingeniería & Mantenimiento de Flota
+│   ├── GET, PATCH, POST, DELETE /api/ingeniero/motos  ──> Parque de motos y kilometrajes
+│   ├── GET, POST     /api/ingeniero/mantenimientos    ──> Planificación de servicios mecánicos
+│   ├── PATCH         /api/ingeniero/mantenimientos/[id]/iniciar   ──> Transición a EN_PROCESO
+│   ├── PATCH         /api/ingeniero/mantenimientos/[id]/completar ──> Cierre y descarga de repuestos
+│   ├── PATCH         /api/ingeniero/mantenimientos/[id]/cancelar  ──> Anulación de mantenimiento
+│   ├── GET, PATCH, POST, DELETE /api/ingeniero/repuestos ──> Stock de repuestos y umbrales mínimos
+│   ├── GET, PATCH, POST /api/ingeniero/alertas        ──> Alertas preventivas automáticas
+│   └── GET, POST     /api/mantenimientos/[id]/fotos   ──> Galería de evidencias antes/después
 │
-└── 👑 Administración & Torre de Despacho (/api/admin)
-    ├── GET              /api/admin/stats       ──> KPIs en tiempo real (Ingresos, Flota, Órdenes)
-    ├── GET/POST         /api/admin/despacho    ──> Asignación manual/automática de pedidos a motos
-    ├── GET/POST/PATCH/DELETE /api/admin/marketing ──> Motor de campañas, banners y cupones
-    ├── POST             /api/admin/send-push   ──> Notificaciones push masivas a usuarios segmentados
-    ├── GET              /api/admin/audit       ──> Bitácora de auditoría administrativa
-    └── GET              /api/login-audit       ──> Registro de intentos y bloqueos de seguridad
+└── 👑 Administración & Torre de Control
+    ├── GET           /api/admin/stats                 ──> Métricas y analíticas globales
+    ├── GET, POST     /api/admin/despacho              ──> Torre de asignación y despacho en vivo
+    ├── GET, PATCH    /api/admin/incidencias           ──> Centro de resolución de disputas
+    ├── GET, PATCH, POST /api/admin/finanzas           ──> Balances, liquidaciones y comisiones
+    ├── GET, PATCH    /api/admin/recargas              ──> Aprobación de recargas manuales
+    ├── GET, POST     /api/admin/comunicaciones        ──> Disparador de mensajes y avisos
+    ├── POST          /api/admin/send-push             ──> Envío masivo de notificaciones push
+    ├── GET, PATCH, POST, PUT /api/admin/users         ──> Administración de usuarios y roles
+    ├── GET           /api/admin/audit                 ──> Bitácora de auditoría administrativa
+    └── GET           /api/login-audit                 ──> Registro de auditoría de logins
 ```
 
 ---
