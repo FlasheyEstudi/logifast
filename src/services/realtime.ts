@@ -9,9 +9,12 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    const socketUrl = process.env.NEXT_PUBLIC_REALTIME_URL || (typeof window !== 'undefined'
-      ? `${window.location.protocol}//${window.location.hostname}:3003`
-      : '/');
+    const socketUrl =
+      process.env.NEXT_PUBLIC_REALTIME_URL ||
+      process.env.NEXT_PUBLIC_WS_URL ||
+      (typeof window !== 'undefined'
+        ? `${window.location.protocol}//${window.location.hostname}:3003`
+        : '/');
 
     socket = io(socketUrl, {
       // NOTE: We intentionally do NOT set `path: '/'`.
