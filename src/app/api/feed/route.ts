@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
           data: [
             {
               tipo: 'promocion',
-              titulo: '🎉 Cupón de Bienvenida: C$50 de Descuento',
+              titulo: 'Cupón de Bienvenida: C$50 de Descuento',
               descripcion: 'Usa el código LOGIFAST50 en tu próximo encargo o compra en restaurantes.',
               codigoPromo: 'LOGIFAST50',
               botonTexto: 'Copiar Cupón',
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
             },
             {
               tipo: 'novedad',
-              titulo: '⚡ Cobertura Extendida a Masaya y Tipitapa',
+              titulo: 'Cobertura Extendida a Masaya y Tipitapa',
               descripcion: 'Ahora puedes solicitar encomiendas intermunicipales con seguimiento GPS en vivo.',
               botonTexto: 'Cotizar Envío',
               botonLink: '/solicitar',
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
             },
             {
               tipo: 'anuncio',
-              titulo: '💳 Pagos con Billetera Digital y Tarjeta',
+              titulo: 'Pagos con Billetera Digital y Tarjeta',
               descripcion: 'Aceptamos transferencias LAFISE/BAC y efectivo al recibir tu paquete.',
               icono: 'credit-card',
               segmento: 'todos',

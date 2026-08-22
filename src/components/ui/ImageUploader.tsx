@@ -3,6 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useUpload } from '@/hooks/useUpload';
 import { notify } from '@/lib/notify';
+import { compressImage, cacheImageLocally } from '@/lib/image-compressor';
 
 interface ImageUploaderProps {
   categoria: string;
@@ -88,29 +89,42 @@ export function ImageUploader({
   }, []);
 
   const handleFile = useCallback(
-    (file: File | null | undefined) => {
+    async (file: File | null | undefined) => {
       if (!file) return;
-      // Limpiar blob URL previo antes de crear uno nuevo (P0-36)
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
       }
-      const url = URL.createObjectURL(file);
-      objectUrlRef.current = url;
-      setLocalPreview(url);
 
-      // Notificar inmediatamente la vista previa de imagen en base64 para evitar errores de campo obligatorio
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const dataUrl = evt.target?.result as string;
-        if (dataUrl) {
-          onUploaded(dataUrl, 'temp-id');
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Comprimir imagen en el navegador reduciendo de 5MB a ~30-50KB
+        const { file: compressedFile, dataUrl, sizeKB } = await compressImage(file, {
+          maxWidth: maxWidth || 800,
+          maxHeight: maxHeight || 800,
+          quality: 0.75,
+          format: 'image/webp',
+        });
 
-      upload(file);
+        // Guardar en caché local para carga instantánea
+        cacheImageLocally(`${categoria}_${Date.now()}`, dataUrl);
+
+        const url = URL.createObjectURL(compressedFile);
+        objectUrlRef.current = url;
+        setLocalPreview(url);
+
+        // Notificar inmediatamente la versión optimizada
+        onUploaded(dataUrl, 'temp-id');
+
+        // Subir versión comprimida al servidor
+        upload(compressedFile);
+      } catch (err) {
+        // Fallback a archivo original si falla canvas
+        const url = URL.createObjectURL(file);
+        objectUrlRef.current = url;
+        setLocalPreview(url);
+        upload(file);
+      }
     },
-    [upload, onUploaded]
+    [upload, onUploaded, categoria, maxWidth, maxHeight]
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

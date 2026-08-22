@@ -305,7 +305,7 @@ function BuzonPanel() {
   );
 
   const quickReplies = [
-    'Tu orden está en camino 🚀',
+    'Tu orden está en camino',
     'Estamos verificando tu caso con el repartidor',
     'Muchas gracias por comunicarte con LOGIFAST',
   ];

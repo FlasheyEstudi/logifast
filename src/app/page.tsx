@@ -1077,7 +1077,9 @@ export default function Home() {
                           <input type="checkbox" defaultChecked className="w-3.5 h-3.5 rounded border-gray-600 bg-transparent accent-[#FF5722]" />
                           <span>Mantener sesión activa</span>
                         </label>
-                        <span className="text-gray-500 text-[10px]">🔒 Conexión segura</span>
+                        <span className="text-gray-500 text-[10px] inline-flex items-center gap-1">
+                          <IconLock /> Conexión segura
+                        </span>
                       </div>
 
                       <button type="submit" className="apple-btn-filled justify-center w-full mt-3 py-3.5 text-sm font-bold bg-gradient-to-r from-[#FF5722] to-[#FF8A65] shadow-lg shadow-[#FF5722]/30 hover:shadow-[#FF5722]/50 hover:-translate-y-0.5 transition-all" disabled={loginLoading}>

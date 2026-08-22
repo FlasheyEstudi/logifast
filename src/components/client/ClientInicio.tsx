@@ -22,6 +22,7 @@ import {
   Pill,
   Zap,
   Tag,
+  Check,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
@@ -92,17 +93,28 @@ export default function ClientInicio({
   onNavigate,
   onOpenTracking,
 }: ClientInicioProps) {
-  const { orders, banners = [], feedItems = [], fidelizacion, addToast } = useStore();
+  const {
+    orders,
+    banners = [],
+    feedItems = [],
+    fidelizacion,
+    addToast,
+    cuponesBilletera = [],
+    fetchCuponesBilletera,
+    reclamarCupon,
+    setCuponAplicado,
+  } = useStore();
   const { tiendas = [], setExplorarCategoria, setTiendaSeleccionada } = useMarketplaceStore();
 
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [adModalOpen, setAdModalOpen] = useState(false);
   const [adSuccessMsg, setAdSuccessMsg] = useState('');
 
-  /* Load real banners & feed on mount */
+  /* Load real banners, feed & wallet on mount */
   useEffect(() => {
     useStore.getState().fetchBanners?.();
     useStore.getState().fetchFeed?.();
+    useStore.getState().fetchCuponesBilletera?.();
   }, []);
 
   /* Banner auto-scroll */
@@ -110,7 +122,7 @@ export default function ClientInicio({
     if (banners.length <= 1) return;
     const interval = setInterval(() => {
       setActiveBannerIdx((prev) => (prev + 1) % banners.length);
-    }, 4500);
+    }, 5000);
     return () => clearInterval(interval);
   }, [banners.length]);
 
@@ -166,14 +178,57 @@ export default function ClientInicio({
 
   const puntos = fidelizacion?.puntos ?? 2450;
 
-  const handleBannerAction = (banner: any) => {
+  const getCuponStatus = (codigoPromo?: string | null) => {
+    if (!codigoPromo) return null;
+    const found = cuponesBilletera.find(
+      (c) => c.codigoPromo.toUpperCase() === codigoPromo.toUpperCase()
+    );
+    if (!found) return 'unclaimed';
+    return found.estado; // 'disponible' | 'usado' | 'expirado'
+  };
+
+  const handleReclamarPromo = async (promo: {
+    codigoPromo: string;
+    titulo?: string;
+    descripcion?: string;
+    tipoDescuento?: string;
+    valor?: number;
+    montoMinimo?: number;
+  }) => {
+    const res = await reclamarCupon(promo);
+    if (res.ok) {
+      addToast(
+        res.yaReclamado
+          ? 'Este cupón ya está guardado en tu billetera'
+          : '¡Cupón guardado en tu Billetera con éxito!',
+        'success'
+      );
+    } else {
+      addToast(res.message, 'error');
+    }
+  };
+
+  const handleBannerAction = async (banner: any) => {
     if (!banner) {
       onNavigate('solicitar');
       return;
     }
-    const { accionTipo, accionValor, botonLink } = banner;
+    const { accionTipo, accionValor, botonLink, codigoPromo, titulo, subtitulo } = banner;
+
+    // Si tiene código promocional o es de tipo aplicar código, guardarlo en billetera
+    const promoCode = codigoPromo || (accionTipo === 'aplicar_codigo' ? accionValor : null);
+    if (promoCode) {
+      await handleReclamarPromo({
+        codigoPromo: promoCode,
+        titulo: titulo || `Cupón ${promoCode}`,
+        descripcion: subtitulo || 'Promoción de banner',
+      });
+    }
+
     if (accionTipo === 'abrir_tienda' && accionValor) {
-      const targetTienda = tiendas.find((t) => t.id === accionValor || t.nombre.toLowerCase().includes(accionValor.toLowerCase()));
+      const targetTienda = tiendas.find(
+        (t) => t.id === accionValor || t.nombre.toLowerCase().includes(accionValor.toLowerCase())
+      );
       if (targetTienda) {
         setTiendaSeleccionada(targetTienda.id);
         onNavigate('explorar');
@@ -183,7 +238,7 @@ export default function ClientInicio({
     } else if (accionTipo === 'abrir_categoria' && accionValor) {
       setExplorarCategoria(accionValor as any);
       onNavigate('explorar');
-    } else if (accionTipo === 'aplicar_codigo' && accionValor) {
+    } else if (accionTipo === 'aplicar_codigo') {
       onNavigate('solicitar');
     } else if (accionTipo === 'abrir_modulo' && accionValor) {
       onNavigate(accionValor as any);
@@ -242,7 +297,7 @@ export default function ClientInicio({
               margin: 0,
             }}
           >
-            ¡Hola, {userName.split(' ')[0]}! 👋
+            ¡Hola, {userName.split(' ')[0]}!
           </h1>
         </div>
 
@@ -424,7 +479,7 @@ export default function ClientInicio({
         )}
       </AnimatePresence>
 
-      {/* ── CARRUSEL BANNER PROMOCIONAL ── */}
+      {/* ── CARRUSEL BANNER PROMOCIONAL AL 100% ANCHO ── */}
       {(() => {
         const currentBanner = banners[activeBannerIdx] || {
           titulo: '50% OFF en tu Primer Envío',
@@ -434,11 +489,18 @@ export default function ClientInicio({
           colorTexto: '#FFFFFF',
           accionTipo: 'aplicar_codigo',
           accionValor: 'BIENVENIDO50',
+          codigoPromo: 'BIENVENIDO50',
         };
+
+        const promoCode = (currentBanner as any).codigoPromo || (currentBanner.accionTipo === 'aplicar_codigo' ? currentBanner.accionValor : null);
+        const couponStatus = getCuponStatus(promoCode);
+        const bannerImg = (currentBanner as any).imagenUrl;
 
         const bannerStyle = currentBanner.gradiente
           ? {
-              background: `linear-gradient(${currentBanner.gradiente.direction || 'to right'}, ${currentBanner.gradiente.from}, ${currentBanner.gradiente.to})`,
+              background: typeof currentBanner.gradiente === 'object'
+                ? `linear-gradient(${currentBanner.gradiente.direction || '135deg'}, ${currentBanner.gradiente.from}, ${currentBanner.gradiente.to})`
+                : currentBanner.gradiente,
               color: currentBanner.colorTexto || '#FFFFFF',
             }
           : currentBanner.colorFondo && currentBanner.colorFondo.startsWith('#')
@@ -449,47 +511,80 @@ export default function ClientInicio({
               color: currentBanner.colorTexto || '#FFFFFF',
             }
           : {
-              background: 'var(--surface)',
-              color: 'var(--text)',
+              background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+              color: '#FFFFFF',
               border: '1px solid var(--border)',
             };
 
         return (
           <div
             style={{
-              borderRadius: 'var(--lf-card-radius, 18px)',
-              padding: '20px 20px',
+              width: '100%',
+              borderRadius: 24,
+              minHeight: 190,
               display: 'flex',
               flexDirection: 'column',
-              gap: 12,
+              justifyContent: 'space-between',
+              gap: 14,
               position: 'relative',
               overflow: 'hidden',
-              boxShadow: 'var(--lf-shadow-card)',
+              boxShadow: '0 12px 36px rgba(0, 0, 0, 0.18)',
+              padding: '22px 22px',
               ...bannerStyle,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            {/* Capa de imagen de fondo con difuminado suave si existe imagenUrl */}
+            {bannerImg && (
+              <>
+                <img
+                  src={bannerImg}
+                  alt={currentBanner.titulo}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    zIndex: 0,
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.6) 45%, rgba(0, 0, 0, 0.25) 100%)',
+                    backdropFilter: 'blur(1px)',
+                    zIndex: 1,
+                  }}
+                />
+              </>
+            )}
+
+            {/* Top Bar: Pill & Dots */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 2 }}>
               <span
                 style={{
                   padding: '4px 12px',
-                  borderRadius: 'var(--lf-pill-radius, 100px)',
-                  background: 'rgba(255, 255, 255, 0.22)',
+                  borderRadius: 100,
+                  background: 'rgba(255, 255, 255, 0.24)',
                   color: currentBanner.colorTexto || '#FFFFFF',
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 800,
                   textTransform: 'uppercase',
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.6,
                   fontFamily: "'DM Sans', sans-serif",
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 4,
-                  backdropFilter: 'blur(6px)',
+                  gap: 5,
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
                 }}
               >
-                <Sparkles size={13} /> Promoción Exclusiva
+                <Sparkles size={12} /> Promoción Exclusiva
               </span>
+
               {banners.length > 1 && (
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   {banners.map((_, idx) => (
                     <button
                       key={idx}
@@ -498,7 +593,7 @@ export default function ClientInicio({
                         height: 6,
                         borderRadius: 100,
                         width: activeBannerIdx === idx ? 22 : 6,
-                        background: activeBannerIdx === idx ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)',
+                        background: activeBannerIdx === idx ? '#FFFFFF' : 'rgba(255, 255, 255, 0.45)',
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.3s ease',
@@ -509,15 +604,17 @@ export default function ClientInicio({
               )}
             </div>
 
-            <div>
+            {/* Middle: Content */}
+            <div style={{ position: 'relative', zIndex: 2 }}>
               <h2
                 style={{
-                  fontSize: 19,
+                  fontSize: 20,
                   fontWeight: 800,
                   fontFamily: "'Syne', sans-serif",
                   color: currentBanner.colorTexto || '#FFFFFF',
                   margin: '0 0 6px 0',
-                  lineHeight: 1.3,
+                  lineHeight: 1.25,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.3)',
                 }}
               >
                 {currentBanner.titulo}
@@ -526,30 +623,102 @@ export default function ClientInicio({
                 style={{
                   fontSize: 13,
                   color: currentBanner.colorTexto || '#FFFFFF',
-                  opacity: 0.9,
+                  opacity: 0.92,
                   fontFamily: "'DM Sans', sans-serif",
                   margin: 0,
                   lineHeight: 1.4,
+                  maxWidth: 480,
+                  textShadow: '0 1px 4px rgba(0,0,0,0.3)',
                 }}
               >
                 {currentBanner.subtitulo || (currentBanner as any).descripcion || 'Tu mensajería y delivery de confianza en toda Managua con cobertura total.'}
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6 }}>
-              <button
-                onClick={() => handleBannerAction(currentBanner)}
-                style={{
-                  ...btnPrimary,
-                  background: '#FFFFFF',
-                  color: currentBanner.colorFondo === '#FF5722' ? '#FF5722' : '#1B1B2F',
-                  fontWeight: 700,
-                }}
-              >
-                <span>{currentBanner.botonTexto || 'Aprovechar'}</span>
-                <ChevronRight size={14} />
-              </button>
-              <span style={{ fontSize: 12, color: currentBanner.colorTexto || '#FFFFFF', opacity: 0.8, fontFamily: "'DM Sans', sans-serif" }}>
+            {/* Bottom Actions: Claim / Wallet Status */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, position: 'relative', zIndex: 2, flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  onClick={() => handleBannerAction(currentBanner)}
+                  style={{
+                    ...btnPrimary,
+                    background: '#FFFFFF',
+                    color: currentBanner.colorFondo === '#FF5722' ? '#FF5722' : '#0F172A',
+                    fontWeight: 800,
+                    padding: '8px 16px',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  <span>{currentBanner.botonTexto || 'Aprovechar'}</span>
+                  <ChevronRight size={14} />
+                </button>
+
+                {promoCode && (
+                  couponStatus === 'disponible' ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '6px 12px',
+                        borderRadius: 10,
+                        background: 'rgba(52, 199, 89, 0.28)',
+                        border: '1px solid rgba(52, 199, 89, 0.6)',
+                        color: '#FFFFFF',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        fontFamily: "'DM Sans', sans-serif",
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      <Check size={13} style={{ color: '#4ADE80' }} /> En tu Billetera
+                    </span>
+                  ) : couponStatus === 'usado' ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '6px 12px',
+                        borderRadius: 10,
+                        background: 'rgba(148, 163, 184, 0.25)',
+                        color: 'rgba(255,255,255,0.8)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      Canjeado
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleReclamarPromo({
+                        codigoPromo: promoCode,
+                        titulo: currentBanner.titulo,
+                        descripcion: currentBanner.subtitulo || undefined,
+                      })}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '7px 12px',
+                        borderRadius: 10,
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                        color: '#FFFFFF',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      <Tag size={12} /> Guardar Cupón
+                    </button>
+                  )
+                )}
+              </div>
+
+              <span style={{ fontSize: 11, color: currentBanner.colorTexto || '#FFFFFF', opacity: 0.85, fontFamily: "'DM Sans', sans-serif" }}>
                 LogiFast Nicaragua
               </span>
             </div>
@@ -752,9 +921,9 @@ export default function ClientInicio({
         </div>
       </div>
 
-      {/* ── FEED & PROMOCIONES DEL DÍA ── */}
+      {/* ── FEED & PROMOCIONES DEL DÍA AL 100% ANCHO ── */}
       {feedItems.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h3
               style={{
@@ -777,106 +946,172 @@ export default function ClientInicio({
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {feedItems.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: 'var(--lf-card-radius, 16px)',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  boxShadow: 'var(--lf-shadow-card)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span
-                      style={{
-                        padding: '3px 8px',
-                        borderRadius: 6,
-                        background:
-                          item.tipo === 'promocion'
-                            ? 'rgba(255, 87, 34, 0.12)'
-                            : item.tipo === 'novedad'
-                            ? 'rgba(0, 200, 83, 0.12)'
-                            : 'rgba(41, 121, 255, 0.12)',
-                        color:
-                          item.tipo === 'promocion'
-                            ? 'var(--primario)'
-                            : item.tipo === 'novedad'
-                            ? 'var(--exito)'
-                            : 'var(--info)',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {item.tipo}
-                    </span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                      {item.titulo}
-                    </span>
-                  </div>
-                </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+            {feedItems.map((item) => {
+              const itemStatus = getCuponStatus(item.codigoPromo);
 
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                  {item.descripcion}
-                </p>
-
-                {(item.codigoPromo || item.botonTexto) && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 4, flexWrap: 'wrap' }}>
-                    {item.codigoPromo ? (
-                      <button
-                        onClick={() => {
-                          if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                            navigator.clipboard.writeText(item.codigoPromo!);
-                          }
-                          addToast(`¡Cupón ${item.codigoPromo} copiado!`, 'success');
-                        }}
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    width: '100%',
+                    padding: '16px 18px',
+                    borderRadius: 20,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    boxShadow: 'var(--lf-shadow-card)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span
                         style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
                           padding: '4px 10px',
                           borderRadius: 8,
-                          background: 'var(--primario-soft)',
-                          border: '1px dashed var(--primario)',
-                          color: 'var(--primario)',
-                          fontFamily: 'monospace',
-                          fontWeight: 700,
-                          fontSize: 12,
-                          cursor: 'pointer',
+                          background:
+                            item.tipo === 'promocion'
+                              ? 'rgba(255, 87, 34, 0.12)'
+                              : item.tipo === 'novedad'
+                              ? 'rgba(52, 199, 89, 0.12)'
+                              : 'rgba(59, 130, 246, 0.12)',
+                          color:
+                            item.tipo === 'promocion'
+                              ? 'var(--primario)'
+                              : item.tipo === 'novedad'
+                              ? 'var(--exito)'
+                              : 'var(--info)',
+                          fontSize: 10,
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.5,
                         }}
                       >
-                        <Tag size={12} /> {item.codigoPromo} (Toca para copiar)
-                      </button>
-                    ) : <div />}
-
-                    {item.botonTexto && (
-                      <button
-                        onClick={() => onNavigate('solicitar')}
-                        style={{
-                          padding: '6px 14px',
-                          borderRadius: 8,
-                          background: 'var(--primario)',
-                          color: '#fff',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          border: 'none',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {item.botonTexto}
-                      </button>
-                    )}
+                        {item.tipo}
+                      </span>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif" }}>
+                        {item.titulo}
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                    {item.descripcion}
+                  </p>
+
+                  {(item.codigoPromo || item.botonTexto) && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 6, flexWrap: 'wrap', borderTop: '1px solid var(--border)' }}>
+                      {item.codigoPromo ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              padding: '5px 10px',
+                              borderRadius: 8,
+                              background: 'var(--primario-soft)',
+                              border: '1px dashed var(--primario)',
+                              color: 'var(--primario)',
+                              fontFamily: "'JetBrains Mono', monospace",
+                              fontWeight: 800,
+                              fontSize: 12,
+                            }}
+                          >
+                            <Tag size={12} /> {item.codigoPromo}
+                          </span>
+
+                          {itemStatus === 'disponible' ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '4px 10px',
+                                borderRadius: 8,
+                                background: 'rgba(52, 199, 89, 0.12)',
+                                color: '#16A34A',
+                                fontSize: 11,
+                                fontWeight: 800,
+                              }}
+                            >
+                              <Check size={12} /> En tu Billetera
+                            </span>
+                          ) : itemStatus === 'usado' ? (
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+                              Cupón Canjeado
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleReclamarPromo({
+                                codigoPromo: item.codigoPromo!,
+                                titulo: item.titulo,
+                                descripcion: item.descripcion,
+                              })}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                padding: '6px 12px',
+                                borderRadius: 8,
+                                background: 'var(--primario)',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <Wallet size={12} /> Guardar en Billetera
+                            </button>
+                          )}
+                        </div>
+                      ) : <div />}
+
+                      {item.botonTexto && (
+                        <button
+                          onClick={() => {
+                            if (item.codigoPromo && itemStatus === 'disponible') {
+                              setCuponAplicado({
+                                id: `CUPON-${Date.now()}`,
+                                clienteId: 'me',
+                                codigoPromo: item.codigoPromo,
+                                titulo: item.titulo,
+                                tipoDescuento: 'fijo',
+                                valor: 50,
+                                estado: 'disponible',
+                                reclamadoEn: new Date().toISOString(),
+                              });
+                            }
+                            if (item.botonLink === '/solicitar' || !item.botonLink) {
+                              onNavigate('solicitar');
+                            } else if (item.botonLink.includes('explorar')) {
+                              onNavigate('explorar');
+                            } else {
+                              onNavigate('solicitar');
+                            }
+                          }}
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: 8,
+                            background: item.tipo === 'novedad' ? 'var(--exito)' : 'var(--primario)',
+                            color: '#FFFFFF',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {item.botonTexto}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

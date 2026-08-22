@@ -418,7 +418,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         if (!isChatCurrentlyOpen || (msg.ordenId && currentChatOrderId !== msg.ordenId)) {
           showSnackbar({
             message: isFromAdmin
-              ? `💬 Soporte LOGIFAST: "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`
+              ? `Soporte LOGIFAST: "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`
               : `Mensaje de tu repartidor: "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`,
             action: 'Responder',
             onAction: () => {

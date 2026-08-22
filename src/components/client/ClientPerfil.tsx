@@ -213,7 +213,11 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   /* ─── Add address state ─── */
   const [addingAddr, setAddingAddr] = useState(false);
   const [newAddr, setNewAddr] = useState('');
-  const [newAddrLabel, setNewAddrLabel] = useState<'Casa' | 'Trabajo' | 'Otro'>('Casa');
+  const [newAddrRef, setNewAddrRef] = useState('');
+  const [newAddrLat, setNewAddrLat] = useState<number | null>(null);
+  const [newAddrLng, setNewAddrLng] = useState<number | null>(null);
+  const [detectingGps, setDetectingGps] = useState(false);
+  const [newAddrLabel, setNewAddrLabel] = useState<'Casa' | 'Trabajo' | 'Pareja' | 'Familiar' | 'Otro'>('Casa');
   const [newAddrSuggestions, setNewAddrSuggestions] = useState<string[]>([]);
   const [showNewAddrSugg, setShowNewAddrSugg] = useState(false);
   const [showMiTiendaEnv, setShowMiTiendaEnv] = useState(false);
@@ -500,15 +504,41 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
     reader.readAsDataURL(file);
   };
 
-  /* ─── Save address ─── */
+  /* ─── Save address with GPS & Reference ─── */
+  const handleDetectGPS = () => {
+    if (!navigator.geolocation) {
+      notify.error('Geolocalización no soportada en este dispositivo');
+      return;
+    }
+    setDetectingGps(true);
+    notify.info('Obteniendo coordenadas GPS en alta precisión...');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setNewAddrLat(pos.coords.latitude);
+        setNewAddrLng(pos.coords.longitude);
+        if (!newAddr.trim()) {
+          setNewAddr(`Ubicación GPS (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
+        }
+        setDetectingGps(false);
+        notify.success('¡Punto GPS capturado con éxito!');
+      },
+      (err) => {
+        setDetectingGps(false);
+        notify.error('No se pudo obtener la ubicación GPS');
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
   const handleAddAddress = () => {
     if (!newAddr.trim()) return;
     const match = direccionesSugerencias.find((d) => d.direccion === newAddr);
     const newDirData = {
       etiqueta: newAddrLabel,
       direccion: newAddr,
-      lat: match?.lat ?? 12.12,
-      lng: match?.lng ?? -86.25,
+      referencia: newAddrRef.trim() || undefined,
+      lat: newAddrLat ?? match?.lat ?? 12.1365,
+      lng: newAddrLng ?? match?.lng ?? -86.2514,
     };
 
     addDireccionGuardada({
@@ -520,9 +550,17 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newDirData),
-    }).catch((err) => console.error('[handleAddAddress API error]', err));
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then(() => {
+        notify.success('¡Dirección privada guardada con éxito!');
+      })
+      .catch((err) => console.error('[handleAddAddress API error]', err));
 
     setNewAddr('');
+    setNewAddrRef('');
+    setNewAddrLat(null);
+    setNewAddrLng(null);
     setNewAddrLabel('Casa');
     setAddingAddr(false);
   };
@@ -1288,16 +1326,74 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
             >
               <div
                 style={{
-                  padding: 16, borderRadius: 14,
+                  padding: 16, borderRadius: 16,
                   background: 'var(--bg-alt)', border: '1px solid var(--border)',
-                  display: 'flex', flexDirection: 'column', gap: 10,
+                  display: 'flex', flexDirection: 'column', gap: 12,
                 }}
               >
+                {/* Selector de Etiqueta */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                    Tipo de Destino
+                  </label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {(['Casa', 'Trabajo', 'Pareja', 'Familiar', 'Otro'] as const).map((lbl) => (
+                      <button
+                        key={lbl}
+                        onClick={() => setNewAddrLabel(lbl)}
+                        style={{
+                          padding: '6px 12px', borderRadius: 10,
+                          border: '1px solid',
+                          borderColor: newAddrLabel === lbl ? 'var(--primario)' : 'var(--border)',
+                          background: newAddrLabel === lbl ? 'var(--primario-soft)' : 'var(--surface)',
+                          color: newAddrLabel === lbl ? 'var(--primario)' : 'var(--text-secondary)',
+                          fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                          fontFamily: "'DM Sans', sans-serif",
+                          transition: 'all 0.15s ease',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                        }}
+                      >
+                        {lbl === 'Casa' ? <Home size={13} /> : lbl === 'Trabajo' ? <Building size={13} /> : lbl === 'Pareja' ? <Heart size={13} /> : lbl === 'Familiar' ? <Users size={13} /> : <MapPin size={13} />}
+                        <span>{lbl}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dirección y botón GPS */}
                 <div style={{ position: 'relative' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                      Dirección Física
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleDetectGPS}
+                      disabled={detectingGps}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--primario)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: 0,
+                      }}
+                    >
+                      <MapPin size={13} />
+                      <span>{detectingGps ? 'Detectando...' : 'Detectar mi GPS'}</span>
+                    </button>
+                  </div>
+
                   <input
                     className="lf-input"
                     style={inputStyle}
-                    placeholder="Buscar direccion..."
+                    placeholder="Ej. Col. Los Robles, de la Vicky 2c al sur..."
                     value={newAddr}
                     onChange={(e) => handleNewAddrChange(e.target.value)}
                     onBlur={() => setTimeout(() => setShowNewAddrSugg(false), 200)}
@@ -1313,9 +1409,10 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         style={{
-                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20,
                           background: 'var(--surface)', border: '1px solid var(--border)',
                           borderRadius: 12, marginTop: 4, overflow: 'hidden',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                         }}
                       >
                         {newAddrSuggestions.map((s, i) => (
@@ -1339,31 +1436,41 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                     )}
                   </AnimatePresence>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {(['Casa', 'Trabajo', 'Otro'] as const).map((lbl) => (
-                    <button
-                      key={lbl}
-                      onClick={() => setNewAddrLabel(lbl)}
-                      style={{
-                        padding: '6px 14px', borderRadius: 10,
-                        border: '1px solid',
-                        borderColor: newAddrLabel === lbl ? 'var(--primario)' : 'var(--border)',
-                        background: newAddrLabel === lbl ? 'var(--primario-soft)' : 'transparent',
-                        color: newAddrLabel === lbl ? 'var(--primario)' : 'var(--text-secondary)',
-                        fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                        fontFamily: "'DM Sans', sans-serif",
-                      }}
-                    >
-                      {lbl}
-                    </button>
-                  ))}
+
+                {/* Punto de Referencia */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                    Punto de Referencia / Instrucciones
+                  </label>
+                  <input
+                    className="lf-input"
+                    style={inputStyle}
+                    placeholder="Ej. Casa de 2 plantas con portón blanco frente a pulpería..."
+                    value={newAddrRef}
+                    onChange={(e) => setNewAddrRef(e.target.value)}
+                  />
                 </div>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                  <button style={{ ...btnGhost, padding: '8px 14px' }} onClick={() => { setAddingAddr(false); setNewAddr(''); }}>
+
+                {/* GPS Indicator Badge */}
+                {newAddrLat && newAddrLng && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#34C759', fontWeight: 700 }}>
+                    <MapPin size={12} />
+                    <span>Coordenadas GPS fijadas: {newAddrLat.toFixed(5)}, {newAddrLng.toFixed(5)}</span>
+                  </div>
+                )}
+
+                {/* Privacy Badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-muted)', background: 'var(--surface)', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', lineHeight: 1.3 }}>
+                  <Shield size={14} style={{ color: '#34C759', flexShrink: 0 }} />
+                  <span><strong>Privacidad total:</strong> Esta dirección y coordenadas son exclusivas de tu cuenta y nunca se hacen públicas.</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                  <button style={{ ...btnGhost, padding: '8px 14px' }} onClick={() => { setAddingAddr(false); setNewAddr(''); setNewAddrRef(''); }}>
                     Cancelar
                   </button>
-                  <button style={{ ...btnPrimary, padding: '8px 14px' }} onClick={handleAddAddress} disabled={!newAddr.trim()}>
-                    <Plus size={14} /> Agregar
+                  <button style={{ ...btnPrimary, padding: '8px 16px' }} onClick={handleAddAddress} disabled={!newAddr.trim()}>
+                    <Plus size={14} /> Guardar Dirección
                   </button>
                 </div>
               </div>

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, DollarSign, Bike, AlertTriangle, UserCheck, X,
   ChevronRight, Plus, BarChart3, Layers, Crosshair,
-  Maximize2, Minimize2, Eye, EyeOff, Route, Flame, Satellite,
+  Maximize2, Minimize2, Eye, EyeOff, Route, Flame, Satellite, Search,
 } from '@/components/icons';
 import { Store, Navigation, MapPin, Phone, Check, Star } from 'lucide-react';
 import { useStore, type Order, type Moto, type ZonePolygon } from '@/lib/store';
@@ -553,7 +553,7 @@ function MapInner({
             boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
           }}
         >
-          <span style={{ fontSize: 15, marginRight: 8 }}>🔍</span>
+          <Search size={16} style={{ color: 'var(--text-muted)', marginRight: 8 }} />
           <input
             type="text"
             value={searchQuery}

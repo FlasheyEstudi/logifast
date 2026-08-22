@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Bike, ChevronDown, ChevronUp, Plus, X, Wrench, MapPin,
+  Bike, ChevronDown, ChevronUp, Plus, X, Wrench, MapPin, Search,
 } from '@/components/icons';
 import { Store, Navigation, Phone } from 'lucide-react';
 import { useStore, type Moto, type MotoStatus } from '@/lib/store';
@@ -74,7 +74,7 @@ function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders
             boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
           }}
         >
-          <span style={{ fontSize: 13, marginRight: 6 }}>🔍</span>
+          <Search size={14} style={{ color: 'var(--text-muted)', marginRight: 6 }} />
           <input
             type="text"
             value={searchQuery}

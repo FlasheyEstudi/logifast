@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -48,7 +48,25 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
   } = useMarketplaceStore();
 
   const { setCartDescuento } = useMarketplaceStore();
-  const { addOrder } = useStore();
+  const {
+    addOrder,
+    cuponesBilletera = [],
+    marcarCuponUsado,
+    cuponAplicado,
+    validateCodigoPromo,
+  } = useStore();
+
+  const cuponesDisponibles = useMemo(() => {
+    return cuponesBilletera.filter((c) => c.estado === 'disponible');
+  }, [cuponesBilletera]);
+
+  // Si hay un cupón preaplicado desde el inicio o feed
+  useEffect(() => {
+    if (cuponAplicado && cuponAplicado.estado === 'disponible' && !cartCodigoPromo) {
+      setCartCodigoPromo(cuponAplicado.codigoPromo);
+      setCartDescuento(cuponAplicado.valor);
+    }
+  }, [cuponAplicado, cartCodigoPromo, setCartCodigoPromo, setCartDescuento]);
 
   const [codigoPromoInput, setCodigoPromoInput] = useState('');
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
@@ -137,17 +155,35 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
   };
 
   const handleAplicarCodigo = () => {
-    if (!codigoPromoInput.trim()) return;
-    if (codigoPromoInput.trim().toUpperCase() === 'LOGIFAST20') {
+    const code = codigoPromoInput.trim().toUpperCase();
+    if (!code) return;
+
+    // Buscar en cupones de la billetera
+    const enBilletera = cuponesDisponibles.find((c) => c.codigoPromo.toUpperCase() === code);
+    if (enBilletera) {
+      setCartCodigoPromo(enBilletera.codigoPromo);
+      setCartDescuento(enBilletera.valor);
+      notify.success(`¡Cupón ${enBilletera.codigoPromo} aplicado (-C$ ${enBilletera.valor})!`);
+      setCodigoPromoInput('');
+      return;
+    }
+
+    // Buscar en cupones maestros
+    const valid = validateCodigoPromo(code);
+    if (valid.valid) {
+      setCartCodigoPromo(code);
+      setCartDescuento(valid.descuento);
+      notify.success(`¡Cupón ${code} aplicado (-C$ ${valid.descuento})!`);
+    } else if (code === 'LOGIFAST20') {
       setCartCodigoPromo('LOGIFAST20');
       setCartDescuento(20);
       notify.success('¡Cupón LOGIFAST20 aplicado (-C$ 20)!');
-    } else if (codigoPromoInput.trim().toUpperCase() === 'PROMO50') {
-      setCartCodigoPromo('PROMO50');
+    } else if (code === 'PROMO50' || code === 'BIENVENIDO50' || code === 'LOGIFAST50') {
+      setCartCodigoPromo(code);
       setCartDescuento(50);
-      notify.success('¡Cupón PROMO50 aplicado (-C$ 50)!');
+      notify.success(`¡Cupón ${code} aplicado (-C$ 50)!`);
     } else {
-      notify.error('Código promocional no válido');
+      notify.error('Código promocional no válido o expirado');
     }
     setCodigoPromoInput('');
   };
@@ -192,6 +228,11 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       }
 
       const ordenCreada = data.orden;
+
+      // Si usó un cupón, marcarlo como usado en la billetera
+      if (cartCodigoPromo) {
+        marcarCuponUsado(cartCodigoPromo, ordenCreada?.id);
+      }
 
       // Recargar órdenes de compra en store de Marketplace
       useMarketplaceStore.getState().fetchOrdenesCompra();
@@ -539,39 +580,78 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                   </button>
 
                   {mostrarCodigo && (
-                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <input
-                        type="text"
-                        value={codigoPromoInput}
-                        onChange={(e) => setCodigoPromoInput(e.target.value.toUpperCase())}
-                        placeholder="Ej. LOGIFAST20"
-                        style={{
-                          flex: 1,
-                          padding: '10px 14px',
-                          borderRadius: 12,
-                          background: 'rgba(15, 23, 42, 0.6)',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          color: '#F8FAFC',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          outline: 'none',
-                        }}
-                      />
-                      <button
-                        onClick={handleAplicarCodigo}
-                        style={{
-                          padding: '10px 18px',
-                          borderRadius: 12,
-                          background: '#007AFF',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Aplicar
-                      </button>
+                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          type="text"
+                          value={codigoPromoInput}
+                          onChange={(e) => setCodigoPromoInput(e.target.value.toUpperCase())}
+                          placeholder="Ej. LOGIFAST20"
+                          style={{
+                            flex: 1,
+                            padding: '10px 14px',
+                            borderRadius: 12,
+                            background: 'rgba(15, 23, 42, 0.6)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: '#F8FAFC',
+                            fontSize: 13,
+                            fontWeight: 600,
+                            outline: 'none',
+                          }}
+                        />
+                        <button
+                          onClick={handleAplicarCodigo}
+                          style={{
+                            padding: '10px 18px',
+                            borderRadius: 12,
+                            background: '#007AFF',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Aplicar
+                        </button>
+                      </div>
+
+                      {/* Lista de cupones guardados en la billetera */}
+                      {cuponesDisponibles.length > 0 && (
+                        <div style={{ paddingTop: 4 }}>
+                          <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+                            Tus cupones en billetera:
+                          </span>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {cuponesDisponibles.map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => {
+                                  setCartCodigoPromo(c.codigoPromo);
+                                  setCartDescuento(c.valor);
+                                  notify.success(`¡Cupón ${c.codigoPromo} aplicado (-C$ ${c.valor})!`);
+                                }}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '5px 12px',
+                                  borderRadius: 10,
+                                  background: cartCodigoPromo === c.codigoPromo ? 'rgba(52, 199, 89, 0.25)' : 'rgba(0, 122, 255, 0.15)',
+                                  border: `1px solid ${cartCodigoPromo === c.codigoPromo ? '#34C759' : 'rgba(0, 122, 255, 0.4)'}`,
+                                  color: '#FFFFFF',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Tag size={11} /> {c.codigoPromo} (-C${c.valor})
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

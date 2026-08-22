@@ -57,6 +57,7 @@ model User {
   valoracionesProducto ValoracionProducto[]
   tiendasPropias       Tienda[]                 @relation("TiendaPropietario")
   posts                Post[]
+  cupones              CuponCliente[]
 }
 
 model Post {
@@ -1035,3 +1036,23 @@ model LoginAudit {
   @@index([email, createdAt])
   @@index([ip, createdAt])
 }
+
+model CuponCliente {
+  id            String    @id @default(cuid())
+  clienteId     String
+  codigoPromo   String
+  titulo        String?
+  descripcion   String?
+  tipoDescuento String    @default("fijo") // "fijo" | "porcentaje"
+  valor         Float     @default(50)
+  montoMinimo   Float?
+  estado        String    @default("disponible") // "disponible" | "usado" | "expirado"
+  reclamadoEn   DateTime  @default(now())
+  usadoEn       DateTime?
+  ordenId       String?
+  cliente       User      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@unique([clienteId, codigoPromo])
+  @@index([clienteId])
+}
+

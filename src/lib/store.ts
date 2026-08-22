@@ -278,6 +278,21 @@ export interface FeedItem {
   createdAt: string;
 }
 
+export interface CuponCliente {
+  id: string;
+  clienteId: string;
+  codigoPromo: string;
+  titulo?: string | null;
+  descripcion?: string | null;
+  tipoDescuento: string;
+  valor: number;
+  montoMinimo?: number | null;
+  estado: 'disponible' | 'usado' | 'expirado';
+  reclamadoEn: string;
+  usadoEn?: string | null;
+  ordenId?: string | null;
+}
+
 export interface PlantillaMensaje {
   id: string;
   nombre: string;
@@ -768,6 +783,21 @@ interface AppState {
   fetchFeed: () => Promise<void>;
   fetchCodigos: () => Promise<void>;
 
+  /* Wallet / Cupones Cliente Actions */
+  cuponesBilletera: CuponCliente[];
+  cuponAplicado: CuponCliente | null;
+  fetchCuponesBilletera: () => Promise<void>;
+  reclamarCupon: (promo: {
+    codigoPromo: string;
+    titulo?: string;
+    descripcion?: string;
+    tipoDescuento?: string;
+    valor?: number;
+    montoMinimo?: number;
+  }) => Promise<{ ok: boolean; message: string; yaReclamado?: boolean }>;
+  marcarCuponUsado: (codigoPromo: string, ordenId?: string) => Promise<void>;
+  setCuponAplicado: (cupon: CuponCliente | null) => void;
+
   /* Communications Actions */
   addMensaje: (convId: string, mensaje: MensajeDirecto) => void;
   markConversacionLeida: (convId: string) => void;
@@ -850,6 +880,8 @@ export const useStore = create<AppState>((set, get) => ({
   banners: [],
   feedItems: [],
   marketingKPI: MOCK_MARKETING_KPI,
+  cuponesBilletera: [],
+  cuponAplicado: null,
 
   /* Communications Data */
   conversaciones: [],
@@ -1402,6 +1434,66 @@ export const useStore = create<AppState>((set, get) => ({
       console.error('[fetchCodigos error]', err);
     }
   },
+
+  /* Wallet / Cupones Cliente Implementation */
+  fetchCuponesBilletera: async () => {
+    try {
+      const res = await fetch('/api/cliente/cupones');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.ok && Array.isArray(json.cupones)) {
+        set({ cuponesBilletera: json.cupones });
+      }
+    } catch (err) {
+      console.error('[fetchCuponesBilletera error]', err);
+    }
+  },
+
+  reclamarCupon: async (promo) => {
+    try {
+      const res = await fetch('/api/cliente/cupones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(promo),
+      });
+      const data = await res.json();
+      if (data.ok && data.cupon) {
+        set((state) => {
+          const exists = state.cuponesBilletera.some((c) => c.codigoPromo === data.cupon.codigoPromo);
+          return {
+            cuponesBilletera: exists
+              ? state.cuponesBilletera.map((c) => c.codigoPromo === data.cupon.codigoPromo ? data.cupon : c)
+              : [data.cupon, ...state.cuponesBilletera],
+          };
+        });
+        return { ok: true, message: data.message || '¡Cupón guardado!', yaReclamado: data.yaReclamado };
+      }
+      return { ok: false, message: data.error || 'No se pudo guardar el cupón' };
+    } catch (err) {
+      console.error('[reclamarCupon error]', err);
+      return { ok: false, message: 'Error de conexión al reclamar cupón' };
+    }
+  },
+
+  marcarCuponUsado: async (codigoPromo, ordenId) => {
+    try {
+      await fetch('/api/cliente/cupones', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigoPromo, ordenId }),
+      });
+      set((state) => ({
+        cuponesBilletera: state.cuponesBilletera.map((c) =>
+          c.codigoPromo === codigoPromo ? { ...c, estado: 'usado', usadoEn: new Date().toISOString(), ordenId } : c
+        ),
+        cuponAplicado: state.cuponAplicado?.codigoPromo === codigoPromo ? null : state.cuponAplicado,
+      }));
+    } catch (err) {
+      console.error('[marcarCuponUsado error]', err);
+    }
+  },
+
+  setCuponAplicado: (cupon) => set({ cuponAplicado: cupon }),
 
   /* Communications Actions */
   addMensaje: (convId, mensaje) => set((state) => ({

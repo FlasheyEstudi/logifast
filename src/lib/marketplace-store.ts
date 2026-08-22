@@ -45,10 +45,14 @@ export interface Producto {
   precio: number;
   precioOriginal?: number;
   imagenColor: string;
+  imagenUrl?: string | null;
+  portadaUrl?: string | null;
   disponible: boolean;
   esNuevo: boolean;
   esPopular: boolean;
   stock: number | null;
+  stockMinimo?: number;
+  unidadMedida?: string;
 }
 
 export interface CartItem {
@@ -97,10 +101,15 @@ export interface FavoritoProducto {
 export interface ResenaTienda {
   id: string;
   tiendaId: string;
+  clienteId?: string;
   clienteNombre: string;
+  clienteFoto?: string | null;
+  clienteInitials?: string;
+  clienteColor?: string;
   estrellas: number;
   comentario: string;
   fecha: string;
+  createdAt?: string;
 }
 
 export interface CategoriaInfo {
@@ -200,6 +209,8 @@ interface MarketplaceState {
   /* Async API sync */
   fetchTiendas: () => Promise<void>;
   fetchProductosTienda: (tiendaId: string) => Promise<void>;
+  fetchResenasTienda: (tiendaId: string) => Promise<void>;
+  crearResenaAsync: (tiendaId: string, estrellas: number, comentario: string) => Promise<{ ok: boolean; error?: string }>;
   fetchOrdenesCompra: () => Promise<void>;
   fetchFavoritos: () => Promise<void>;
   fetchCarrito: () => Promise<void>;
@@ -444,6 +455,50 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       });
     } catch (err) {
       console.error('[fetchProductosTienda]', err);
+    }
+  },
+
+  fetchResenasTienda: async (tiendaId) => {
+    try {
+      const res = await fetch(`/api/tiendas/${tiendaId}/resenas`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const resenasTienda: ResenaTienda[] = data.resenas ?? [];
+      set((state) => {
+        const otras = state.resenas.filter((r) => r.tiendaId !== tiendaId);
+        return { resenas: [...resenasTienda, ...otras] };
+      });
+    } catch (err) {
+      console.error('[fetchResenasTienda]', err);
+    }
+  },
+
+  crearResenaAsync: async (tiendaId, estrellas, comentario) => {
+    try {
+      const res = await fetch(`/api/tiendas/${tiendaId}/resenas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estrellas, comentario }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        return { ok: false, error: data?.error || 'No se pudo guardar la reseña.' };
+      }
+
+      // Actualizar la reseña en el store
+      if (data.resena) {
+        set((state) => ({
+          resenas: [data.resena, ...state.resenas],
+          tiendas: state.tiendas.map((t) =>
+            t.id === tiendaId ? { ...t, calificacion: data.nuevaCalificacion ?? t.calificacion } : t
+          ),
+        }));
+      }
+
+      return { ok: true };
+    } catch (err) {
+      console.error('[crearResenaAsync]', err);
+      return { ok: false, error: 'Error de conexión al enviar reseña.' };
     }
   },
 

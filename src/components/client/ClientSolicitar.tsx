@@ -27,6 +27,7 @@ import {
   Locate,
   Navigation,
   Camera,
+  Moon,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
@@ -855,7 +856,14 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     setScheduleMode,
     setScheduleDate,
     setScheduleTime,
+    cuponesBilletera = [],
+    marcarCuponUsado,
+    cuponAplicado,
   } = useStore();
+
+  const cuponesDisponibles = useMemo(() => {
+    return cuponesBilletera.filter((c) => c.estado === 'disponible');
+  }, [cuponesBilletera]);
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -2186,30 +2194,71 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                       Aplicar
                     </button>
                   </div>
-                  {promoMessage && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        background: promoStatus === 'valid' ? 'rgba(0,200,83,0.08)' : 'rgba(255,23,68,0.06)',
-                        border: `1px solid ${promoStatus === 'valid' ? 'rgba(0,200,83,0.2)' : 'rgba(255,23,68,0.15)'}`,
-                        fontSize: 13,
-                        fontFamily: "'DM Sans', sans-serif",
-                        color: promoStatus === 'valid' ? 'var(--exito)' : 'var(--peligro)',
-                      }}
-                    >
-                      {promoStatus === 'valid' ? <Check size={14} /> : <AlertCircle size={14} />}
-                      {promoMessage}
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-            </div>
+                    {promoMessage && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '10px 14px',
+                          borderRadius: 10,
+                          background: promoStatus === 'valid' ? 'rgba(0,200,83,0.08)' : 'rgba(255,23,68,0.06)',
+                          border: `1px solid ${promoStatus === 'valid' ? 'rgba(0,200,83,0.2)' : 'rgba(255,23,68,0.15)'}`,
+                          fontSize: 13,
+                          fontFamily: "'DM Sans', sans-serif",
+                          color: promoStatus === 'valid' ? 'var(--exito)' : 'var(--peligro)',
+                        }}
+                      >
+                        {promoStatus === 'valid' ? <Check size={14} /> : <AlertCircle size={14} />}
+                        {promoMessage}
+                      </motion.div>
+                    )}
+
+                    {/* Selector de cupones de billetera */}
+                    {cuponesDisponibles.length > 0 && (
+                      <div style={{ paddingTop: 6 }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+                          Cupones guardados en tu billetera:
+                        </span>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {cuponesDisponibles.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => {
+                                setPromoInput(c.codigoPromo);
+                                setPromoDiscount(c.valor);
+                                setPromoTipo(c.tipoDescuento);
+                                setPromoStatus('valid');
+                                setSolicitudEnvio({ codigoPromo: c.codigoPromo, descuento: c.valor });
+                                setPromoMessage(`¡Cupón ${c.codigoPromo} aplicado (-C$ ${c.valor})!`);
+                                showToast(`¡Cupón ${c.codigoPromo} aplicado!`, 'success');
+                              }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                padding: '5px 12px',
+                                borderRadius: 8,
+                                background: solicitudEnvio.codigoPromo === c.codigoPromo ? 'var(--primario-soft)' : 'var(--surface)',
+                                border: `1px solid ${solicitudEnvio.codigoPromo === c.codigoPromo ? 'var(--primario)' : 'var(--border)'}`,
+                                color: solicitudEnvio.codigoPromo === c.codigoPromo ? 'var(--primario)' : 'var(--text)',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <Tag size={11} /> {c.codigoPromo} (-C${c.valor})
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
 
             {/* Final cost summary */}
             <CostCard breakdown={costBreakdown} showPromo />
@@ -2366,7 +2415,9 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 )}
                 {costBreakdown.nightSurcharge > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', fontSize: 13, color: 'var(--warning)', fontFamily: "'DM Sans', sans-serif" }}>
-                    <span>🌙 Recargo nocturno</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Moon size={13} /> Recargo nocturno
+                    </span>
                     <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>+C${costBreakdown.nightSurcharge}</span>
                   </div>
                 )}

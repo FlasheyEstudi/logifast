@@ -57,10 +57,14 @@ export async function GET(
       precio: p.precio,
       precioOriginal: p.precioOriginal ?? undefined,
       imagenColor: p.imagenColor,
+      imagenUrl: p.imagenUrl ?? null,
+      portadaUrl: p.portadaUrl ?? null,
       disponible: p.disponible,
       esNuevo: p.esNuevo,
       esPopular: p.esPopular,
       stock: p.stock,
+      stockMinimo: p.stockMinimo ?? 5,
+      unidadMedida: p.unidadMedida ?? 'unidad',
     }));
 
     // Agrupar por categoriaNombre
@@ -106,10 +110,14 @@ export async function POST(
       precio,
       precioOriginal,
       imagenColor = 'var(--border)',
+      imagenUrl,
+      portadaUrl,
       disponible = true,
       esNuevo = false,
       esPopular = false,
       stock = null,
+      stockMinimo = 5,
+      unidadMedida = 'unidad',
       posicion = 0,
     } = body;
 
@@ -129,10 +137,14 @@ export async function POST(
         precio: Number(precio),
         precioOriginal: precioOriginal ? Number(precioOriginal) : null,
         imagenColor,
+        imagenUrl: imagenUrl || null,
+        portadaUrl: portadaUrl || null,
         disponible,
         esNuevo,
         esPopular,
         stock: stock !== null ? Number(stock) : null,
+        stockMinimo: Number(stockMinimo) || 5,
+        unidadMedida,
         posicion: Number(posicion) || 0,
       },
     });

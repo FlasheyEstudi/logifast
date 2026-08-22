@@ -530,7 +530,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
         if (!state.chatAbierto) {
           showSnackbar({
             message: isFromAdmin
-              ? `💬 Despacho Central (Admin): "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`
+              ? `Despacho Central (Admin): "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`
               : `Mensaje de cliente: "${(msg.contenido || '').slice(0, 40)}${(msg.contenido || '').length > 40 ? '...' : ''}"`,
             action: 'Ver chat',
             onAction: () => state.toggleChat(msg.ordenId),

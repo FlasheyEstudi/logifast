@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -288,8 +289,8 @@ function SubCampanas() {
                     {SEGMENT_LABELS[c.segmento] || c.segmento}
                   </Badge>
                   {(c as any).triggerTipo && (c as any).triggerTipo !== 'manual' && (
-                    <Badge style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--exito)', border: 'none', fontSize: 10 }}>
-                      ⚡ Disparador: {(c as any).triggerTipo}
+                    <Badge style={{ background: 'rgba(22,163,74,0.12)', color: 'var(--exito)', border: 'none', fontSize: 10, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <Zap size={10} /> Disparador: {(c as any).triggerTipo}
                     </Badge>
                   )}
                   <CampanaStatusBadge estado={c.estado} />
@@ -580,8 +581,8 @@ function SubCodigos() {
                     {SEGMENT_LABELS[c.segmento] || c.segmento}
                   </Badge>
                   {(c as any).primerPedidoSolo && (
-                    <Badge style={{ background: 'rgba(255,87,34,0.12)', color: 'var(--primario)', border: 'none', fontSize: 10 }}>
-                      🌟 Solo 1er pedido
+                    <Badge style={{ background: 'rgba(255,87,34,0.12)', color: 'var(--primario)', border: 'none', fontSize: 10, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <Sparkles size={10} /> Solo 1er pedido
                     </Badge>
                   )}
                   {(c as any).descuentoMaximo && (
@@ -768,6 +769,8 @@ function SubBanners() {
   const [tipo, setTipo] = useState<Banner['tipo']>('promo_grande');
   const [colorFondo, setColorFondo] = useState('#FF5722');
   const [colorTexto, setColorTexto] = useState('#FFFFFF');
+  const [imagenUrl, setImagenUrl] = useState<string | null>(null);
+  const [codigoPromo, setCodigoPromo] = useState('');
   const [useGradient, setUseGradient] = useState(false);
   const [gradFrom, setGradFrom] = useState('var(--text)');
   const [gradTo, setGradTo] = useState('#FF5722');
@@ -785,7 +788,7 @@ function SubBanners() {
   const openCreate = () => {
     setEditing(null);
     setTitulo(''); setSubtitulo(''); setTipo('promo_grande');
-    setColorFondo('#FF5722'); setColorTexto('#FFFFFF');
+    setColorFondo('#FF5722'); setColorTexto('#FFFFFF'); setImagenUrl(null); setCodigoPromo('');
     setUseGradient(false); setGradFrom('var(--text)'); setGradTo('#FF5722');
     setGradDirection('to right'); setBotonTexto(''); setAccionTipo('ninguna'); setAccionValor(''); setIcono('');
     setSegmento('todos'); setMostrarEn('app'); setPosicion(String(banners.length + 1));
@@ -796,6 +799,8 @@ function SubBanners() {
     setEditing(b);
     setTitulo(b.titulo); setSubtitulo(b.subtitulo || ''); setTipo(b.tipo);
     setColorFondo(b.colorFondo); setColorTexto(b.colorTexto);
+    setImagenUrl((b as any).imagenUrl || null);
+    setCodigoPromo((b as any).codigoPromo || '');
     setUseGradient(!!b.gradiente); setGradFrom(b.gradiente?.from || 'var(--text)');
     setGradTo(b.gradiente?.to || '#FF5722'); setGradDirection(b.gradiente?.direction || 'to right');
     setBotonTexto(b.botonTexto || ''); setAccionTipo((b as any).accionTipo || 'ninguna');
@@ -813,20 +818,24 @@ function SubBanners() {
     if (editing) {
       updateBanner(editing.id, {
         titulo, subtitulo: subtitulo || undefined, tipo, colorFondo, colorTexto, gradiente,
+        imagenUrl: imagenUrl || undefined,
         botonTexto: botonTexto || undefined, icono: icono || undefined,
         segmento, mostrarEn, posicion: parseInt(posicion) || 1,
         accionTipo, accionValor: accionValor || undefined,
-      });
+        ...(codigoPromo ? { codigoPromo } : {}),
+      } as any);
       addToast('Banner actualizado', 'success');
     } else {
       addBanner({
         id: genId(), titulo, subtitulo: subtitulo || undefined, tipo, colorFondo, colorTexto, gradiente,
+        imagenUrl: imagenUrl || undefined,
         botonTexto: botonTexto || undefined, icono: icono || undefined,
         segmento, mostrarEn, posicion: parseInt(posicion) || 1,
         estado: 'activo', impresiones: 0, clicks: 0,
         accionTipo, accionValor: accionValor || undefined,
         creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
-      });
+        ...(codigoPromo ? { codigoPromo } : {}),
+      } as any);
       addToast('Banner creado con éxito', 'success');
 
       fetch('/api/banners', {
@@ -838,6 +847,7 @@ function SubBanners() {
           tipo,
           colorFondo,
           colorTexto,
+          imagenUrl: imagenUrl || null,
           botonTexto: botonTexto || null,
           accionTipo,
           accionValor: accionValor || null,
@@ -933,8 +943,8 @@ function SubBanners() {
                   </div>
                   {(b as any).accionTipo && (b as any).accionTipo !== 'ninguna' && (
                     <div style={{ marginBottom: 6 }}>
-                      <Badge style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--info)', border: 'none', fontSize: 10 }}>
-                        🔗 {(b as any).accionTipo}: {(b as any).accionValor || 'Defecto'}
+                      <Badge style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--info)', border: 'none', fontSize: 10, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <Tag size={10} /> {(b as any).accionTipo}: {(b as any).accionValor || 'Defecto'}
                       </Badge>
                     </div>
                   )}
@@ -1038,6 +1048,30 @@ function SubBanners() {
             <div>
               <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Subtítulo</Label>
               <Input value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} placeholder="Opcional" style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)' }} />
+            </div>
+
+            {/* Imagen de fondo / portada para el banner */}
+            <div>
+              <Label style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>Imagen de Fondo / Portada (Opcional)</Label>
+              <ImageUploader
+                categoria="banners"
+                aspectRatio="wide"
+                previewUrl={imagenUrl}
+                onUploaded={(url) => setImagenUrl(url)}
+                label="Subir Imagen Panorámica para el Banner"
+                hint="Se comprimirá automáticamente en alta calidad"
+              />
+            </div>
+
+            {/* Código Promocional Vinculado */}
+            <div>
+              <Label style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>Código Promocional Vinculado (Opcional)</Label>
+              <Input
+                value={codigoPromo}
+                onChange={(e) => setCodigoPromo(e.target.value.toUpperCase())}
+                placeholder="Ej. BIENVENIDO50"
+                style={{ background: 'var(--bg)', color: 'var(--text)', borderColor: 'var(--border)', fontFamily: "'JetBrains Mono', monospace" }}
+              />
             </div>
 
             <div style={{ display: 'flex', gap: 12 }}>
@@ -1155,17 +1189,36 @@ function SubBanners() {
             <div style={{ marginTop: 4 }}>
               <Label style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>Vista previa</Label>
               <div style={{
+                position: 'relative',
+                overflow: 'hidden',
                 ...(useGradient
                   ? { background: `linear-gradient(${gradDirection}, ${gradFrom}, ${gradTo})` }
                   : { background: colorFondo }),
-                borderRadius: 12, padding: 18, minHeight: 60,
+                borderRadius: 14, padding: 18, minHeight: 80,
               }}>
-                <div style={{ color: colorTexto }}>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{titulo || 'Título del banner'}</div>
-                  {subtitulo && <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>{subtitulo}</div>}
+                {imagenUrl && (
+                  <>
+                    <img
+                      src={imagenUrl}
+                      alt="Banner Preview"
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+                    />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.4) 100%)', zIndex: 1 }} />
+                  </>
+                )}
+                <div style={{ color: colorTexto, position: 'relative', zIndex: 2 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>{titulo || 'Título del banner'}</div>
+                  {subtitulo && <div style={{ fontSize: 12, opacity: 0.9, marginTop: 3 }}>{subtitulo}</div>}
+                  {codigoPromo && (
+                    <div style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700 }}>
+                      <Tag size={10} /> {codigoPromo}
+                    </div>
+                  )}
                   {botonTexto && (
-                    <div style={{ marginTop: 8, display: 'inline-block', background: 'rgba(255,255,255,0.25)', padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                      {botonTexto}
+                    <div style={{ marginTop: 10, display: 'block' }}>
+                      <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.25)', padding: '5px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
+                        {botonTexto}
+                      </span>
                     </div>
                   )}
                 </div>
