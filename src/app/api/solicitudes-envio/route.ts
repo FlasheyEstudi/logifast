@@ -71,38 +71,59 @@ export async function POST(req: NextRequest) {
         metodoPago: metodoPago || 'efectivo',
         monto: Number(monto) || 0,
         notas: notas ?? null,
+        repartidorId: null, // Queda disponible en la bolsa de ofertas
       },
     });
 
-    // Auto-asignar repartidor conectado
-    const repartidor = await db.repartidorProfile.findFirst({
-      where: {
-        conectado: true,
-        enServicio: false,
-        pausado: false,
-        contratoAceptado: true,
-        saldo: { gt: 0 },
+    // Crear orden de servicio unificada para la bolsa de ofertas
+    const pinGenerado = String(Math.floor(1000 + Math.random() * 9000));
+    await db.ordenServicio.create({
+      data: {
+        id: solicitud.id,
+        clienteId: user.id,
+        tipo: 'envio',
+        estado: 'pendiente',
+        origen,
+        destino,
+        origenLat: Number(origenLat) || 0,
+        origenLng: Number(origenLng) || 0,
+        destinoLat: Number(destinoLat) || 0,
+        destinoLng: Number(destinoLng) || 0,
+        paquete: paquete ?? null,
+        tamano: tamano ?? 'Mediano',
+        fragil: Boolean(fragil),
+        metodoPago: metodoPago || 'efectivo',
+        monto: Number(monto) || 0,
+        ganancia: Math.round((Number(monto) || 0) * 0.7),
+        kmEstimados: 3.5,
+        tiempoEstimado: 20,
+        clienteNombre: user.name,
+        clienteTelefono: user.telefono ?? null,
+        codigoPin: pinGenerado,
+        repartidorId: null, // No auto-asignar a nadie; sale en Ofertas Disponibles
       },
-      orderBy: { totalEntregas: 'asc' },
-    });
+    }).catch(() => null);
 
-    if (repartidor) {
-      await db.solicitudEnvio.update({
-        where: { id: solicitud.id },
-        data: { repartidorId: repartidor.id, estado: 'aceptada' },
-      });
+    // Notificar a todos los repartidores conectados sobre la nueva oferta disponible
+    const repartidoresConectados = await db.repartidorProfile.findMany({
+      where: { conectado: true, pausado: false },
+      take: 25,
+    }).catch(() => []);
+
+    for (const rep of repartidoresConectados) {
       await db.notificacionRepartidor.create({
         data: {
-          repartidorId: repartidor.id,
-          tipo: 'orden_asignada',
-          titulo: 'Nueva solicitud de envío',
-          contenido: `${solicitud.id} — ${origen} → ${destino}`,
+          repartidorId: rep.id,
+          tipo: 'nueva_orden_disponible',
+          titulo: 'Nueva oferta disponible',
+          contenido: `Envío disponible: ${origen} → ${destino} (C$ ${monto})`,
           leido: false,
+          ordenId: solicitud.id,
         },
-      });
+      }).catch(() => null);
     }
 
-    return NextResponse.json({ ok: true, solicitud });
+    return NextResponse.json({ ok: true, solicitud, status: 'disponible_en_ofertas' });
   } catch (error) {
     console.error('[SOLICITUDES_ENVIO_POST]', error);
     return NextResponse.json({ error: 'Error' }, { status: 500 });

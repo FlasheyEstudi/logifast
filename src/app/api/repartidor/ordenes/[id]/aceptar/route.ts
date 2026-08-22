@@ -88,6 +88,12 @@ export async function PATCH(
         }
       }
 
+      // Sincronizar SolicitudEnvio vinculada (si aplica)
+      await db.solicitudEnvio.updateMany({
+        where: { id },
+        data: { repartidorId: profile.id, estado: 'aceptada' },
+      }).catch(() => null);
+
       // Sincronizar OrdenCompra vinculada (si aplica)
       if (orden.tiendaId) {
         await db.ordenCompra.updateMany({

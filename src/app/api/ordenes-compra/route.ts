@@ -324,68 +324,29 @@ export async function POST(req: NextRequest) {
     emitirEventoRealtime({ room: 'admin', event: 'admin:orden:nueva', data: result.orden });
     emitirEventoRealtime({ room: `tienda:${tiendaId}`, event: 'tienda:orden:nueva', data: result.orden });
 
-    // 2. Auto-asignar a repartidor disponible conectado (si existe)
-    const repartidorDisponible = await db.repartidorProfile
-      .findFirst({
-        where: { conectado: true, enServicio: false, pausado: false, contratoAceptado: true },
-        orderBy: { totalEntregas: 'asc' },
+    // 2. Publicar a la bolsa de Ofertas Disponibles para todos los repartidores
+    emitOrdenCreada(result.ordenServicio);
+
+    const repartidoresConectados = await db.repartidorProfile
+      .findMany({
+        where: { conectado: true, pausado: false, contratoAceptado: true },
+        take: 25,
       })
-      .catch(() => null);
+      .catch(() => []);
 
-    if (repartidorDisponible) {
-      await Promise.all([
-        db.ordenServicio.update({
-          where: { id: result.ordenServicio.id },
-          data: { repartidorId: repartidorDisponible.id, estado: 'aceptado' },
-        }).catch(() => null),
-        db.ordenCompra.update({
-          where: { id: result.orden.id },
-          data: { repartidorId: repartidorDisponible.id },
-        }).catch(() => null),
-      ]);
-
-      emitOrdenAsignada(repartidorDisponible.id, {
-        ...result.ordenServicio,
-        repartidorId: repartidorDisponible.id,
-      });
-
+    for (const rep of repartidoresConectados) {
       await db.notificacionRepartidor
         .create({
           data: {
-            repartidorId: repartidorDisponible.id,
-            tipo: 'orden_asignada',
-            titulo: 'Nueva compra asignada al instante',
-            contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre} — C$${total}`,
+            repartidorId: rep.id,
+            tipo: 'nueva_orden_disponible',
+            titulo: 'Nueva oferta de tienda disponible',
+            contenido: `Pedido de ${tienda.nombre} — Total: C$${total} — Ganancia: +C$${Math.round(costoEnvio || (total * 0.2))}`,
             leido: false,
             ordenId: result.ordenServicio.id,
           },
         })
         .catch(() => null);
-    } else {
-      // Si no hay repartidor libre inmediatamente, emitir a la bolsa disponible para todos
-      emitOrdenCreada(result.ordenServicio);
-
-      const repartidoresConectados = await db.repartidorProfile
-        .findMany({
-          where: { conectado: true, pausado: false, contratoAceptado: true },
-          take: 15,
-        })
-        .catch(() => []);
-
-      for (const rep of repartidoresConectados) {
-        await db.notificacionRepartidor
-          .create({
-            data: {
-              repartidorId: rep.id,
-              tipo: 'nueva_orden_disponible',
-              titulo: 'Nueva compra disponible',
-              contenido: `Orden #${result.orden.id.slice(-6)} — ${tienda.nombre} — Total: C$${total}`,
-              leido: false,
-              ordenId: result.ordenServicio.id,
-            },
-          })
-          .catch(() => null);
-      }
     }
 
     return NextResponse.json(
