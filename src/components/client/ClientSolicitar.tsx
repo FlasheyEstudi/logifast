@@ -310,22 +310,32 @@ function SolicitarMapPreview({
   }, [rutaCoords]);
 
   useEffect(() => {
-    if (mapRef.current && hasOrigen && hasDestino) {
-      const minLng = Math.min(origenLng, destinoLng);
-      const maxLng = Math.max(origenLng, destinoLng);
-      const minLat = Math.min(origenLat, destinoLat);
-      const maxLat = Math.max(origenLat, destinoLat);
+    if (mapRef.current) {
+      if (hasOrigen && hasDestino) {
+        const minLng = Math.min(origenLng, destinoLng);
+        const maxLng = Math.max(origenLng, destinoLng);
+        const minLat = Math.min(origenLat, destinoLat);
+        const maxLat = Math.max(origenLat, destinoLat);
 
-      try {
-        mapRef.current.fitBounds(
-          [
-            [minLng, minLat],
-            [maxLng, maxLat],
-          ],
-          { padding: 45, duration: 800 }
-        );
-      } catch (e) {
-        // ignore
+        try {
+          mapRef.current.fitBounds(
+            [
+              [minLng, minLat],
+              [maxLng, maxLat],
+            ],
+            { padding: 50, duration: 800 }
+          );
+        } catch (e) {
+          // ignore
+        }
+      } else if (hasOrigen) {
+        try {
+          mapRef.current.flyTo({ center: [origenLng, origenLat], zoom: 14.5, duration: 600 });
+        } catch (e) {}
+      } else if (hasDestino) {
+        try {
+          mapRef.current.flyTo({ center: [destinoLng, destinoLat], zoom: 14.5, duration: 600 });
+        } catch (e) {}
       }
     }
   }, [hasOrigen, hasDestino, origenLat, origenLng, destinoLat, destinoLng]);
@@ -846,6 +856,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     setSolicitudEnvio,
     resetSolicitudEnvio,
     confirmarEnvio,
+    envioConfirmado,
     direccionesSugerencias,
     validateCodigoPromo,
     addOrder,
@@ -860,6 +871,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     marcarCuponUsado,
     cuponAplicado,
   } = useStore();
+
+  useEffect(() => {
+    if (envioConfirmado) {
+      resetSolicitudEnvio();
+    }
+  }, [envioConfirmado, resetSolicitudEnvio]);
 
   const cuponesDisponibles = useMemo(() => {
     return cuponesBilletera.filter((c) => c.estado === 'disponible');
@@ -910,8 +927,8 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   /* ─── Cost calculation ─── */
   const costBreakdown = useMemo<CostBreakdown>(() => {
     let PER_KM = 15;
-    let BASE = 0;
-    let MIN_PRICE = 0;
+    let BASE = 40;
+    let MIN_PRICE = 40;
     let NIGHT_SURCHARGE_CONFIG = 20;
 
     try {
@@ -922,33 +939,70 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         const parsed = JSON.parse(savedTarifas);
         if (parsed) {
           if (parsed.tarifaKm) PER_KM = Number(parsed.tarifaKm) || 15;
-          if (parsed.tarifaBase) BASE = Number(parsed.tarifaBase) || 0;
-          if (parsed.tarifaMin) MIN_PRICE = Number(parsed.tarifaMin) || 0;
+          if (parsed.tarifaBase) BASE = Number(parsed.tarifaBase) || 40;
+          if (parsed.tarifaMin) MIN_PRICE = Number(parsed.tarifaMin) || 40;
           if (parsed.recargoNocturno) NIGHT_SURCHARGE_CONFIG = Number(parsed.recargoNocturno) || 20;
         }
       }
     } catch {}
 
-    const pickupDist =
-      solicitudEnvio.origenLat
-        ? haversineKm(12.1364, -86.2581, solicitudEnvio.origenLat, solicitudEnvio.origenLng)
-        : 0;
+    const hasValidCoords =
+      solicitudEnvio.origenLat !== 0 &&
+      solicitudEnvio.origenLng !== 0 &&
+      solicitudEnvio.destinoLat !== 0 &&
+      solicitudEnvio.destinoLng !== 0;
 
-    const deliveryDist =
-      solicitudEnvio.origenLat && solicitudEnvio.destinoLat
-        ? haversineKm(solicitudEnvio.origenLat, solicitudEnvio.origenLng, solicitudEnvio.destinoLat, solicitudEnvio.destinoLng)
-        : 0;
+    const hasAddresses =
+      Boolean(solicitudEnvio.origen && solicitudEnvio.origen.trim().length > 0) &&
+      Boolean(solicitudEnvio.destino && solicitudEnvio.destino.trim().length > 0);
 
-    const totalDist = pickupDist + deliveryDist;
-    const distanceCost = Math.round(totalDist * PER_KM);
+    let rawDistance = 0;
+    if (hasValidCoords) {
+      rawDistance = haversineKm(
+        solicitudEnvio.origenLat,
+        solicitudEnvio.origenLng,
+        solicitudEnvio.destinoLat,
+        solicitudEnvio.destinoLng
+      );
+    } else if (hasAddresses) {
+      rawDistance = 1.5;
+    }
+
+    const totalDist = Math.max(0, Math.round(rawDistance * 10) / 10);
+
+    // Si no hay direcciones ingresadas, costo es 0
+    if (!hasAddresses && totalDist === 0) {
+      return {
+        base: 0,
+        distance: 0,
+        distanceKm: 0,
+        pickupDistanceKm: 0,
+        deliveryDistanceKm: 0,
+        size: 0,
+        fragile: 0,
+        nightSurcharge: 0,
+        subtotal: 0,
+        promoDiscount: 0,
+        total: 0,
+        estimatedTime: '—',
+      };
+    }
+
+    // Tarifa base (cubre los primeros 2 km) + C$15/km adicional
+    const baseFare = BASE > 0 ? BASE : 40;
+    let distanceCost = baseFare;
+    if (totalDist > 2) {
+      distanceCost = Math.round(baseFare + (totalDist - 2) * PER_KM);
+    }
+
     const sizeSurcharge = SIZE_OPTIONS.find((s) => s.key === solicitudEnvio.tamano)?.surcharge ?? 0;
-    const fragileSurcharge = solicitudEnvio.fragil ? 10 : 0;
+    const fragileSurcharge = solicitudEnvio.fragil ? 15 : 0;
 
     const nowHour = new Date().getHours();
     const isNight = nowHour >= 20 || nowHour < 6;
     const nightSurcharge = isNight ? NIGHT_SURCHARGE_CONFIG : 0;
 
-    const subtotal = BASE + distanceCost + sizeSurcharge + fragileSurcharge + nightSurcharge;
+    const subtotal = distanceCost + sizeSurcharge + fragileSurcharge + nightSurcharge;
 
     let discount = 0;
     if (promoDiscount > 0) {
@@ -959,18 +1013,15 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       }
     }
 
-    let total = Math.max(0, subtotal - discount);
-    if (MIN_PRICE > 0 && total < MIN_PRICE && (solicitudEnvio.origen || solicitudEnvio.destino)) {
-      total = MIN_PRICE;
-    }
-    const estimatedMinutes = Math.max(8, Math.round(totalDist * 4));
+    let total = Math.max(MIN_PRICE, subtotal - discount);
+    const estimatedMinutes = Math.max(8, Math.round(totalDist * 3.5));
 
     return {
-      base: BASE,
+      base: baseFare,
       distance: distanceCost,
       distanceKm: totalDist,
-      pickupDistanceKm: pickupDist,
-      deliveryDistanceKm: deliveryDist,
+      pickupDistanceKm: 0,
+      deliveryDistanceKm: totalDist,
       size: sizeSurcharge,
       fragile: fragileSurcharge,
       nightSurcharge,
@@ -1317,7 +1368,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 label="Dirección de recogida"
                 value={solicitudEnvio.origen}
                 onChange={(v) => {
-                  setSolicitudEnvio({ origen: v });
+                  if (!v || v.trim() === '') {
+                    setSolicitudEnvio({ origen: '', origenLat: 0, origenLng: 0 });
+                  } else {
+                    const [autoLat, autoLng] = geocodeAddress(v);
+                    setSolicitudEnvio({ origen: v, origenLat: autoLat, origenLng: autoLng });
+                  }
                 }}
                 onSelect={(s) =>
                   setSolicitudEnvio({ origen: s.direccion, origenLat: s.lat, origenLng: s.lng })
@@ -1359,7 +1415,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 label="Dirección de entrega"
                 value={solicitudEnvio.destino}
                 onChange={(v) => {
-                  setSolicitudEnvio({ destino: v });
+                  if (!v || v.trim() === '') {
+                    setSolicitudEnvio({ destino: '', destinoLat: 0, destinoLng: 0 });
+                  } else {
+                    const [autoLat, autoLng] = geocodeAddress(v);
+                    setSolicitudEnvio({ destino: v, destinoLat: autoLat, destinoLng: autoLng });
+                  }
                 }}
                 onSelect={(s) =>
                   setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng })
@@ -1373,10 +1434,10 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
 
             {/* Interactive Map preview */}
             <SolicitarMapPreview
-              origenLat={solicitudEnvio.origenLat || 12.1264}
-              origenLng={solicitudEnvio.origenLng || -86.2652}
-              destinoLat={solicitudEnvio.destinoLat || 12.1402}
-              destinoLng={solicitudEnvio.destinoLng || -86.2954}
+              origenLat={solicitudEnvio.origenLat || 0}
+              origenLng={solicitudEnvio.origenLng || 0}
+              destinoLat={solicitudEnvio.destinoLat || 0}
+              destinoLng={solicitudEnvio.destinoLng || 0}
               onDragOrigen={handleDragOrigen}
               onDragDestino={handleDragDestino}
             />
