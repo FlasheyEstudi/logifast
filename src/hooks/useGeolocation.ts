@@ -53,6 +53,26 @@ function getErrorMessage(err: GeolocationPositionError): string {
   }
 }
 
+export async function obtenerGpsNavegador(): Promise<{ lat: number; lng: number } | null> {
+  if (typeof window === 'undefined' || !navigator.geolocation) return null;
+
+  return new Promise((resolve) => {
+    // 1. Intentar primero con alta precisión (GPS por hardware)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        // 2. Fallback inmediato con precisión estándar (WiFi / red móvil / IP)
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          () => resolve(null),
+          { enableHighAccuracy: false, timeout: 7000, maximumAge: 60000 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+    );
+  });
+}
+
 export function useGeolocation(
   options: UseGeolocationOptions = {}
 ): GeoState & { start: () => void; stop: () => void } {
@@ -84,8 +104,19 @@ export function useGeolocation(
   }, []);
 
   const onError = useCallback((err: GeolocationPositionError) => {
+    // Fallback a baja precisión si falla la alta precisión por timeout
+    if (enableHighAccuracy && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (fallbackErr) => {
+          setState((s) => ({ ...s, error: getErrorMessage(fallbackErr), loading: false }));
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      );
+      return;
+    }
     setState((s) => ({ ...s, error: getErrorMessage(err), loading: false }));
-  }, []);
+  }, [enableHighAccuracy, onSuccess]);
 
   const start = useCallback(() => {
     if (!isSupported) {
@@ -136,15 +167,18 @@ export function useGeolocation(
     }
   }, [isSupported]);
 
-  // Cleanup watch on unmount
+  // Auto-start on mount if watch is enabled
   useEffect(() => {
+    if (watch) {
+      start();
+    }
     return () => {
       if (isSupported && watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
     };
-  }, [isSupported]);
+  }, [watch, start, isSupported]);
 
   return { ...state, start, stop };
 }

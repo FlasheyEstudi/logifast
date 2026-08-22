@@ -80,17 +80,30 @@ export default function RepartidorServicio() {
   useEffect(() => {
     if (!ordenActiva) { setRutaCoordenadas([]); return; }
     let cancelled = false;
-    const destino = estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA'
-      ? { lat: ordenActiva.origenLat || 12.1264, lng: ordenActiva.origenLng || -86.2652 }
-      : { lat: ordenActiva.destinoLat || 12.1402, lng: ordenActiva.destinoLng || -86.2954 };
+
+    const targetDestinoLat = (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA')
+      ? (ordenActiva.origenLat || lat)
+      : (ordenActiva.destinoLat || lat);
+    const targetDestinoLng = (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA')
+      ? (ordenActiva.origenLng || lng)
+      : (ordenActiva.destinoLng || lng);
+
+    const destino = { lat: targetDestinoLat, lng: targetDestinoLng };
+
     obtenerRuta({ lat, lng }, destino)
       .then(res => { if (cancelled) return; setRutaCoordenadas(res.exito && res.coordenadas.length > 1 ? res.coordenadas : rutaLineaRecta({ lat, lng }, destino)); })
       .catch(() => { if (cancelled) return; setRutaCoordenadas(rutaLineaRecta({ lat, lng }, destino)); });
     return () => { cancelled = true; };
   }, [ordenActiva, estado, lat, lng]);
 
-  const origenPos: [number,number]|undefined = ordenActiva ? [ordenActiva.origenLat||12.1264, ordenActiva.origenLng||-86.2652] : undefined;
-  const destinoPos: [number,number]|undefined = ordenActiva ? [ordenActiva.destinoLat||12.1402, ordenActiva.destinoLng||-86.2954] : undefined;
+  const origenPos: [number, number] | undefined =
+    ordenActiva && ordenActiva.origenLat && ordenActiva.origenLng
+      ? [ordenActiva.origenLat, ordenActiva.origenLng]
+      : undefined;
+  const destinoPos: [number, number] | undefined =
+    ordenActiva && ordenActiva.destinoLat && ordenActiva.destinoLng
+      ? [ordenActiva.destinoLat, ordenActiva.destinoLng]
+      : undefined;
 
   const handleToggleConnection = () => {
     if (conectado) {

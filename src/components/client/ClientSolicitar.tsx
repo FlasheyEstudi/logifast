@@ -32,6 +32,7 @@ import {
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
 import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta, reverseGeocode } from '@/lib/osrm';
+import { obtenerGpsNavegador } from '@/hooks/useGeolocation';
 import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, MarkerLabel } from '@/components/ui/map';
 import { PinRecogida, PinEntrega, PinTienda } from '@/components/ui/MapPins';
 import { useMapaPuntos } from '@/hooks/useMapaPuntos';
@@ -1081,42 +1082,33 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
 
   /* ─── Use GPS Location ─── */
   const handleUseMyLocation = useCallback(
-    (field: 'origen' | 'destino') => {
-      if (typeof window === 'undefined' || !navigator.geolocation) {
-        showToast('La geolocalización no está disponible en este navegador.', 'error');
+    async (field: 'origen' | 'destino') => {
+      showToast('Obteniendo tu posición GPS...', 'info');
+
+      const pos = await obtenerGpsNavegador();
+      if (!pos) {
+        showToast('No se pudo obtener la ubicación GPS. Verifica los permisos en tu navegador.', 'error');
         return;
       }
 
-      showToast('Obteniendo tu posición GPS...', 'info');
+      const { lat, lng } = pos;
+      const tempLabel = `Mi ubicación GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
 
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const tempLabel = `Ubicación GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+      // Set state immediately with real GPS coords
+      if (field === 'origen') {
+        setSolicitudEnvio({ origen: tempLabel, origenLat: lat, origenLng: lng });
+      } else {
+        setSolicitudEnvio({ destino: tempLabel, destinoLat: lat, destinoLng: lng });
+      }
 
-          // Immediately update state so text field and coordinates populate right away
-          if (field === 'origen') {
-            setSolicitudEnvio({ origen: tempLabel, origenLat: lat, origenLng: lng });
-          } else {
-            setSolicitudEnvio({ destino: tempLabel, destinoLat: lat, destinoLng: lng });
-          }
-
-          // Then reverse geocode to refine address label cleanly
-          const realAddress = await reverseGeocode(lat, lng);
-          if (field === 'origen') {
-            setSolicitudEnvio({ origen: realAddress, origenLat: lat, origenLng: lng });
-          } else {
-            setSolicitudEnvio({ destino: realAddress, destinoLat: lat, destinoLng: lng });
-          }
-          showToast('Ubicación actual establecida correctamente.', 'success');
-        },
-        (err) => {
-          console.error('[geolocation error]', err);
-          showToast('No se pudo obtener la ubicación GPS. Revisa tus permisos.', 'error');
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
+      // Then reverse geocode to refine address label cleanly without losing exact GPS coords
+      const realAddress = await reverseGeocode(lat, lng);
+      if (field === 'origen') {
+        setSolicitudEnvio({ origen: realAddress, origenLat: lat, origenLng: lng });
+      } else {
+        setSolicitudEnvio({ destino: realAddress, destinoLat: lat, destinoLng: lng });
+      }
+      showToast('Ubicación GPS establecida correctamente.', 'success');
     },
     [setSolicitudEnvio, showToast]
   );

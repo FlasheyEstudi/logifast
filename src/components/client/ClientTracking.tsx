@@ -1096,9 +1096,9 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         className="md:!h-full md:!w-[60%]"
       >
         <RepartidorMap
-          repartidorPos={driverPos || (order ? [order.origenLat, order.origenLng] : [12.1149926, -86.2361742])}
-          origenPos={order ? [order.origenLat, order.origenLng] : undefined}
-          destinoPos={order ? [order.destinoLat, order.destinoLng] : undefined}
+          repartidorPos={driverPos || (order && order.origenLat ? [order.origenLat, order.origenLng] : [12.1364, -86.2581])}
+          origenPos={order && order.origenLat && order.origenLng ? [order.origenLat, order.origenLng] : undefined}
+          destinoPos={order && order.destinoLat && order.destinoLng ? [order.destinoLat, order.destinoLng] : undefined}
           rutaCoordenadas={rutaCoords}
           estado={driverEstado}
           altura="100%"

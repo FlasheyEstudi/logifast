@@ -481,9 +481,11 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
 
   // Update store coordinates on real GPS updates
   useEffect(() => {
-    if (conectado && geo.lat !== null && geo.lng !== null) {
+    if (geo.lat !== null && geo.lng !== null) {
       actualizarPosicion(geo.lat, geo.lng);
-      actualizarPosicionAsync(geo.lat, geo.lng);
+      if (conectado) {
+        actualizarPosicionAsync(geo.lat, geo.lng);
+      }
     }
   }, [conectado, geo.lat, geo.lng, actualizarPosicion, actualizarPosicionAsync]);
 

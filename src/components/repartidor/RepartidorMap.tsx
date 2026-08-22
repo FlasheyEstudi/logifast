@@ -267,11 +267,27 @@ export default function RepartidorMap({
     }
   }, [mapReady, origen, destino, animatedPos, is3DMode, shouldFollow]);
 
+  const isActiveDelivery = ['EN_CAMINO_RECOGER', 'EN_PUNTO_RECOGIDA', 'RECOGIDO', 'EN_CAMINO_ENTREGAR', 'EN_PUNTO_ENTREGA', 'ORDEN_ASIGNADA', 'encamino'].includes(estado || '');
+
+  // Reset route, navigation HUD, and 3D mode when order is completed or idle
+  useEffect(() => {
+    if (!isActiveDelivery) {
+      setOsrmRouteCoords([]);
+      setRouteDistanceKm(null);
+      setRouteDurationMin(null);
+      setRouteSteps([]);
+      setIs3DMode(false);
+      lastFetchedPosRef.current = null;
+    }
+  }, [isActiveDelivery]);
+
   // Fetch OSRM driving route - Stable, no jitter
   const lastFetchedPosRef = useRef<{ lat: number; lng: number; targetLat: number; targetLng: number; estado?: string } | null>(null);
   const routeRequestIdRef = useRef(0);
 
   useEffect(() => {
+    if (!isActiveDelivery) return;
+
     const targetPos = (estado === 'EN_CAMINO_RECOGER' || estado === 'ORDEN_ASIGNADA') ? origen : (destino || origen);
     if (!targetPos || !isValidPos(targetPos) || !isValidPos(targetDriverPos)) return;
 
@@ -327,14 +343,15 @@ export default function RepartidorMap({
         setRouteDistanceKm(directKm);
         setRouteDurationMin(Math.max(1, Math.round(directKm * 2.8)));
       });
-  }, [targetDriverPos, origen, destino, estado, rutaCoordenadas]);
+  }, [targetDriverPos, origen, destino, estado, rutaCoordenadas, isActiveDelivery]);
 
   // MapLibre route coordinates [lng, lat][]
   const mapLibreRoute = useMemo(() => {
+    if (!isActiveDelivery) return [];
     const raw = (rutaCoordenadas && rutaCoordenadas.length >= 2) ? rutaCoordenadas : osrmRouteCoords;
     if (!raw || raw.length < 2) return [];
     return raw.map((c) => [c[1], c[0]] as [number, number]);
-  }, [rutaCoordenadas, osrmRouteCoords]);
+  }, [isActiveDelivery, rutaCoordenadas, osrmRouteCoords]);
 
   // Handle map click
   useEffect(() => {
@@ -549,7 +566,7 @@ export default function RepartidorMap({
         )}
 
         {/* Origin / Store Marker */}
-        {origen && (
+        {isActiveDelivery && origen && (
           <MapMarker longitude={origen[1]} latitude={origen[0]}>
             {isCompra ? (
               <PinTienda nombre={pickupLabel} logoColor={pickupColor} />
@@ -568,7 +585,7 @@ export default function RepartidorMap({
         )}
 
         {/* Destination Marker */}
-        {destino && (
+        {isActiveDelivery && destino && (
           <MapMarker longitude={destino[1]} latitude={destino[0]}>
             <PinEntrega label={isCompra ? 'Cliente' : 'Entrega'} />
             <MarkerPopup>

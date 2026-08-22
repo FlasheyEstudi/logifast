@@ -145,8 +145,8 @@ export async function POST(req: NextRequest) {
       Math.cos((finalOrigLat * Math.PI) / 180) *
         Math.cos((finalDestLat * Math.PI) / 180) *
         Math.sin(dLng / 2) ** 2;
-    const kmReales = Math.max(1.5, Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10);
-    const tiempoEstimadoMin = Math.max(10, Math.round(kmReales * 3.5));
+    const kmReales = Math.max(0.05, Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10);
+    const tiempoEstimadoMin = Math.max(5, Math.round(kmReales * 3.5));
 
     // Tarifa base C$40 (cubre primeros 2km) + C$15 por km adicional
     let tarifaCalculada = 40;
