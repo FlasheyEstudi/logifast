@@ -150,31 +150,29 @@ export default function RepartidorServicio() {
         />
       </div>
 
-      {/* ── CÁPSULA SUPERIOR IZQUIERDA — Estado */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          position: 'absolute', top: 70, left: 16, zIndex: 20,
-          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 100,
-          background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
-          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-          border: `1px solid ${estadoColor}40`, boxShadow: `0 6px 20px rgba(0,0,0,0.3), 0 0 12px ${estadoColor}20`,
-        }}
-      >
-        <span style={{ width: 9, height: 9, borderRadius: '50%', background: estadoColor, boxShadow: `0 0 10px ${estadoColor}` }} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: 0.3 }}>
-          {estadoLabel}
-        </span>
-        {ordenActiva && (
-          <>
-            <span style={{ width: 1, height: 12, background: 'var(--border)' }} />
-            <span style={{ fontSize: 12, color: 'var(--primario)', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
-              ETA ~{eta}min
-            </span>
-          </>
-        )}
-      </motion.div>
+      {/* ── CÁPSULA SUPERIOR IZQUIERDA — Solo con orden activa */}
+      {ordenActiva && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            position: 'absolute', top: 70, left: 16, zIndex: 20,
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 100,
+            background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
+            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: `1px solid ${estadoColor}40`, boxShadow: `0 6px 20px rgba(0,0,0,0.3), 0 0 12px ${estadoColor}20`,
+          }}
+        >
+          <span style={{ width: 9, height: 9, borderRadius: '50%', background: estadoColor, boxShadow: `0 0 10px ${estadoColor}` }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: 0.3 }}>
+            {estadoLabel}
+          </span>
+          <span style={{ width: 1, height: 12, background: 'var(--border)' }} />
+          <span style={{ fontSize: 12, color: 'var(--primario)', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+            ETA ~{eta}min
+          </span>
+        </motion.div>
+      )}
 
       {/* ── CÁPSULAS DERECHA — Acciones rápidas (solo con orden activa) */}
       {ordenActiva && (
@@ -218,31 +216,52 @@ export default function RepartidorServicio() {
       )}
 
       {/* ── CONTROL 3D — cápsula inferior derecha (solo mapa) */}
-      <div style={{ position: 'absolute', right: 16, bottom: drawerOpen ? 310 : 100, zIndex: 20 }}>
+      <div
+        style={{
+          position: 'absolute',
+          right: 16,
+          bottom: drawerOpen ? 'calc(var(--ios-tabbar-height, 65px) + 290px)' : 'calc(var(--ios-tabbar-height, 65px) + 20px)',
+          zIndex: 20,
+          transition: 'bottom 0.3s ease',
+        }}
+      >
         <button
           onClick={() => setMapTilt(!mapTilt)}
-          style={{ width: 40, height: 40, borderRadius: '50%', background: 'color-mix(in srgb, var(--surface) 92%, transparent)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--border)', color: mapTilt ? 'var(--primario)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
+          style={{ width: 42, height: 42, borderRadius: '50%', background: 'color-mix(in srgb, var(--surface) 92%, transparent)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--border)', color: mapTilt ? 'var(--primario)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
           title="Modo 3D"
-        ><Layers size={16} /></button>
+        ><Layers size={18} /></button>
       </div>
 
-      {/* ── HANDLE visible cuando drawer está cerrado */}
+      {/* ── HANDLE visible cuando drawer está cerrado (colapsado a la izquierda) */}
       {!drawerOpen && (
         <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
           onClick={() => setDrawerOpen(true)}
           style={{
-            position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 30,
-            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 100,
+            position: 'absolute',
+            bottom: 'calc(var(--ios-tabbar-height, 65px) + 20px)',
+            left: 16,
+            zIndex: 30,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 18px',
+            borderRadius: 100,
             background: 'color-mix(in srgb, var(--surface) 96%, transparent)',
-            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-            color: 'var(--text)', fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", cursor: 'pointer',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+            color: 'var(--text)',
+            fontSize: 13,
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            cursor: 'pointer',
           }}
         >
           <ChevronUp size={16} style={{ color: 'var(--primario)' }} />
-          {ordenActiva ? `${ordenActiva.cliente} • Ver detalles` : 'Ver panel'}
+          <span>{ordenActiva ? `${ordenActiva.cliente} • Ver detalles` : 'Ver panel'}</span>
         </motion.button>
       )}
 
@@ -254,7 +273,15 @@ export default function RepartidorServicio() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ type: 'spring', damping: 22, stiffness: 280 }}
-            style={{ position: 'absolute', bottom: 80, left: 12, right: 12, zIndex: 30, maxWidth: 580, margin: '0 auto' }}
+            style={{
+              position: 'absolute',
+              bottom: 'calc(var(--ios-tabbar-height, 65px) + 16px)',
+              left: 12,
+              right: 12,
+              zIndex: 30,
+              maxWidth: 580,
+              margin: '0 auto',
+            }}
           >
             {/* DESCONECTADO */}
             {estado === 'DESCONECTADO' && (
@@ -284,7 +311,17 @@ export default function RepartidorServicio() {
                       Ofertas Disponibles ({ordenAsignadaPendiente ? 1 : ofertasDisponibles.length})
                     </span>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>Toca para aceptar</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>Toca para aceptar</span>
+                    <button
+                      type="button"
+                      onClick={() => setDrawerOpen(false)}
+                      title="Colapsar panel"
+                      style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', cursor: 'pointer' }}
+                    >
+                      <ChevronDown size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 {(ordenAsignadaPendiente ? [ordenAsignadaPendiente] : ofertasDisponibles).map((oferta) => (
@@ -354,7 +391,17 @@ export default function RepartidorServicio() {
                     <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 10px #34C759' }} />
                     <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)' }}>En Línea • Escaneando zona</span>
                   </div>
-                  <button onClick={handleToggleConnection} style={{ background: 'none', border: 'none', color: '#FF3B30', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Salir</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => setDrawerOpen(false)}
+                      title="Colapsar panel"
+                      style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-alt)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', cursor: 'pointer' }}
+                    >
+                      <ChevronDown size={16} />
+                    </button>
+                    <button onClick={handleToggleConnection} style={{ background: 'none', border: 'none', color: '#FF3B30', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Salir</button>
+                  </div>
                 </div>
 
                 {/* Selector de Periodo: Hoy / Semana / Mes */}

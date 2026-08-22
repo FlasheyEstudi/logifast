@@ -855,7 +855,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
             }}
           >
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: conectado ? '#34C759' : '#FF3B30', boxShadow: conectado ? '0 0 8px #34C759' : 'none' }} />
-            {conectado ? 'En línea' : 'Offline'}
+            {conectado ? 'En línea' : 'Desconectado'}
           </button>
 
           {/* Acciones en sub-cápsula */}
