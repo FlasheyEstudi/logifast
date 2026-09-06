@@ -23,9 +23,38 @@ import { X, Minus, Plus, Locate, Maximize, Loader2 } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 
+export const MAP_STYLES = {
+  voyager: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  liberty: "https://tiles.openfreemap.org/styles/liberty",
+};
+
+export const ESRI_SATELLITE_STYLE: MapLibreGL.StyleSpecification = {
+  version: 8,
+  sources: {
+    "esri-world-imagery": {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      attribution: "© Esri, DigitalGlobe, GeoEye, Earthstar Geographics",
+    },
+  },
+  layers: [
+    {
+      id: "esri-imagery-layer",
+      type: "raster",
+      source: "esri-world-imagery",
+      minzoom: 0,
+      maxzoom: 19,
+    },
+  ],
+};
+
 const defaultStyles = {
   dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-  light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  light: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
 };
 
 // A tile-less, dependency-free style with a transparent background. Use it for

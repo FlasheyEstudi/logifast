@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { getOrdenPin, generarPinAleatorio } from '@/lib/utils';
 import { emitOrdenCreada, emitOrdenAsignada, emitirEventoRealtime } from '@/lib/realtime-emitter';
+import { geocodeAddress, calcularDistanciaHaversine, calcularTiempoEstimado } from '@/lib/osrm';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ total: 0, ordenes: [] });
     }
 
-    const ordenes = await db.ordenCompra.findMany({
+    const ordenes = await (db.ordenCompra.findMany as any)({
       where,
       orderBy: { createdAt: 'desc' },
       take: 100,
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const result = ordenes.map((o) => {
+    const result = (ordenes as any[]).map((o: any) => {
       const repNombre = o.repartidor?.nombre || o.repartidor?.user?.name || null;
       const repInitials = repNombre
         ? repNombre.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
@@ -58,10 +59,10 @@ export async function GET(req: NextRequest) {
         tiendaColor: o.tienda?.logoColor ?? '#FF5722',
         estado: o.estado,
         direccionEntrega: o.direccionEntrega,
-        origenLat: o.tienda?.lat ?? 12.1264,
-        origenLng: o.tienda?.lng ?? -86.2652,
-        destinoLat: o.lat ?? 12.1421,
-        destinoLng: o.lng ?? -86.2287,
+        origenLat: o.tienda?.lat ?? 0,
+        origenLng: o.tienda?.lng ?? 0,
+        destinoLat: o.lat ?? 0,
+        destinoLng: o.lng ?? 0,
         metodoPago: o.metodoPago,
         codigoPin: getOrdenPin(o.id, o.codigoPin),
         repartidorNombre: repNombre,
@@ -232,27 +233,29 @@ export async function POST(req: NextRequest) {
 
     // Transacción: crear orden + items + decrementar stock + usar código + crear OrdenServicio
     const result = await db.$transaction(async (tx) => {
-      // 1. Crear orden de compra
-      const orden = await tx.ordenCompra.create({
-        data: {
-          clienteId: user.id,
-          tiendaId,
-          estado: 'recibido',
-          direccionEntrega,
-          lat: Number(lat) || 0,
-          lng: Number(lng) || 0,
-          instrucciones: instrucciones ?? null,
-          metodoPago,
-          subtotal,
-          costoEnvio,
-          descuento: descuentoValidado,
-          codigoUsado,
-          total,
-          codigoPin: pinGenerado,
-          items: {
-            create: itemsData,
-          },
+      const ordenData: any = {
+        clienteId: user.id,
+        tiendaId,
+        estado: 'recibido',
+        direccionEntrega,
+        lat: Number(lat) || 0,
+        lng: Number(lng) || 0,
+        instrucciones: instrucciones ?? null,
+        metodoPago,
+        subtotal,
+        costoEnvio,
+        descuento: descuentoValidado,
+        codigoUsado,
+        total,
+        codigoPin: pinGenerado,
+        items: {
+          create: itemsData,
         },
+      };
+
+      // 1. Crear orden de compra
+      const orden = await (tx.ordenCompra.create as any)({
+        data: ordenData,
         include: { items: true, tienda: true },
       });
 
@@ -293,28 +296,53 @@ export async function POST(req: NextRequest) {
       });
 
       // 5. Crear OrdenServicio para el repartidor (tipo compra)
+      const rawDestLat = Number(lat) || 0;
+      const rawDestLng = Number(lng) || 0;
+      let finalDestLat = rawDestLat;
+      let finalDestLng = rawDestLng;
+      if (finalDestLat === 0 && finalDestLng === 0) {
+        const [gcLat, gcLng] = geocodeAddress(direccionEntrega);
+        finalDestLat = gcLat;
+        finalDestLng = gcLng;
+      }
+
+      let tLat = tienda.lat || 0;
+      let tLng = tienda.lng || 0;
+      if (tLat === 0 && tLng === 0 && tienda.direccion) {
+        const [gcTLat, gcTLng] = geocodeAddress(tienda.direccion);
+        tLat = gcTLat;
+        tLng = gcTLng;
+      }
+
+      const km = (tLat !== 0 && tLng !== 0 && finalDestLat !== 0 && finalDestLng !== 0)
+        ? calcularDistanciaHaversine(tLat, tLng, finalDestLat, finalDestLng)
+        : 0;
+      const tiempoEst = km > 0 ? calcularTiempoEstimado(km) : 0;
+
+      const ordenServicioData: any = {
+        clienteId: user.id,
+        tipo: 'compra',
+        estado: 'pendiente',
+        origen: tienda.direccion,
+        destino: direccionEntrega,
+        origenLat: tLat,
+        origenLng: tLng,
+        destinoLat: finalDestLat,
+        destinoLng: finalDestLng,
+        tiendaId: tienda.id,
+        tiendaNombre: tienda.nombre,
+        metodoPago,
+        monto: total,
+        ganancia: Math.round(costoEnvio * 0.7),
+        kmEstimados: km,
+        tiempoEstimado: tiempoEst,
+        codigoPin: pinGenerado,
+        clienteNombre: user.name,
+        clienteTelefono: user.telefono ?? null,
+      };
+
       const ordenServicio = await tx.ordenServicio.create({
-        data: {
-          clienteId: user.id,
-          tipo: 'compra',
-          estado: 'pendiente',
-          origen: tienda.direccion,
-          destino: direccionEntrega,
-          origenLat: tienda.lat,
-          origenLng: tienda.lng,
-          destinoLat: Number(lat) || 0,
-          destinoLng: Number(lng) || 0,
-          tiendaId: tienda.id,
-          tiendaNombre: tienda.nombre,
-          metodoPago,
-          monto: total,
-          ganancia: Math.round(costoEnvio * 0.7),
-          kmEstimados: 0,
-          tiempoEstimado: 0,
-          codigoPin: pinGenerado,
-          clienteNombre: user.name,
-          clienteTelefono: user.telefono ?? null,
-        },
+        data: ordenServicioData,
       });
 
       return { orden, ordenServicio };
@@ -349,16 +377,17 @@ export async function POST(req: NextRequest) {
         .catch(() => null);
     }
 
+    const createdOrden = result.orden as any;
     return NextResponse.json(
       {
         message: 'Orden creada exitosamente',
         orden: {
-          id: result.orden.id,
-          tiendaId: result.orden.tiendaId,
-          tiendaNombre: result.orden.tienda?.nombre ?? '',
-          estado: result.orden.estado,
-          total: result.orden.total,
-          items: result.orden.items.map((it) => ({
+          id: createdOrden.id,
+          tiendaId: createdOrden.tiendaId,
+          tiendaNombre: createdOrden.tienda?.nombre ?? '',
+          estado: createdOrden.estado,
+          total: createdOrden.total,
+          items: (createdOrden.items || []).map((it: any) => ({
             nombreProducto: it.nombreProducto,
             cantidad: it.cantidad,
             precioUnitario: it.precioUnitario,

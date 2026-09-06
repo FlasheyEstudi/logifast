@@ -229,8 +229,8 @@ export default function RepartidorHistorial() {
                   {/* Métricas + Botones */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><MapPin size={11} />{oferta.kmEstimados}km</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={11} />~{oferta.tiempoEstimado}min</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><MapPin size={11} />{(oferta.kmEstimados && oferta.kmEstimados > 0 ? oferta.kmEstimados : 2.5).toFixed(1)}km</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={11} />~{oferta.tiempoEstimado && oferta.tiempoEstimado > 0 ? oferta.tiempoEstimado : 15}min</span>
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button onClick={() => rechazarOfertaDirecta(oferta.id)} style={{ ...pill, background: 'rgba(255,59,48,.15)', color: '#FF3B30', border: 'none', cursor: 'pointer' }}>

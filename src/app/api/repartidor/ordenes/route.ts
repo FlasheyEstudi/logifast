@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getRepartidorProfile } from '@/lib/repartidor/helpers';
 import { getOrdenPin } from '@/lib/utils';
 import type { OrdenActiva, ServicioHistorial } from '@/lib/repartidor-store';
+import { calcularDistanciaHaversine, calcularTiempoEstimado } from '@/lib/osrm';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,19 @@ function horaString(date: Date): string {
 
 function mapOrdenToActiva(o: Awaited<ReturnType<typeof db.ordenServicio.findFirst>>): OrdenActiva | null {
   if (!o) return null;
+
+  const hasCoords = typeof o.origenLat === 'number' && typeof o.origenLng === 'number' &&
+                    typeof o.destinoLat === 'number' && typeof o.destinoLng === 'number' &&
+                    (o.origenLat !== 0 || o.origenLng !== 0) && (o.destinoLat !== 0 || o.destinoLng !== 0);
+
+  const validKm = (o.kmEstimados && o.kmEstimados > 0)
+    ? o.kmEstimados
+    : (hasCoords ? calcularDistanciaHaversine(o.origenLat!, o.origenLng!, o.destinoLat!, o.destinoLng!) : 0);
+
+  const validTiempo = (o.tiempoEstimado && o.tiempoEstimado > 0)
+    ? o.tiempoEstimado
+    : (validKm > 0 ? calcularTiempoEstimado(validKm) : 0);
+
   return {
     id: o.id,
     tipo: o.tipo as 'envio' | 'compra',
@@ -20,10 +34,10 @@ function mapOrdenToActiva(o: Awaited<ReturnType<typeof db.ordenServicio.findFirs
     tiendaNombre: o.tiendaNombre ?? undefined,
     origen: o.origen,
     destino: o.destino,
-    origenLat: o.origenLat,
-    origenLng: o.origenLng,
-    destinoLat: o.destinoLat,
-    destinoLng: o.destinoLng,
+    origenLat: o.origenLat ?? 0,
+    origenLng: o.origenLng ?? 0,
+    destinoLat: o.destinoLat ?? 0,
+    destinoLng: o.destinoLng ?? 0,
     paquete: o.paquete ?? undefined,
     paqueteFotoUrl: o.incidenciaDesc ?? undefined,
     tamano: o.tamano ?? undefined,
@@ -31,20 +45,32 @@ function mapOrdenToActiva(o: Awaited<ReturnType<typeof db.ordenServicio.findFirs
     metodoPago: o.metodoPago as 'efectivo' | 'transferencia',
     monto: o.monto,
     ganancia: o.ganancia,
-    kmEstimados: o.kmEstimados,
-    tiempoEstimado: o.tiempoEstimado,
-    codigoPin: getOrdenPin(o.id, o.codigoPin),
+    kmEstimados: validKm,
+    tiempoEstimado: validTiempo,
+    codigoPin: getOrdenPin(o.id, (o as any).codigoPin),
   };
 }
 
 function mapCompraToActiva(c: any): OrdenActiva | null {
   if (!c) return null;
   const origenNombre = c.tienda?.nombre || 'Tienda Partner';
-  const origenLat = Number(c.tienda?.lat || 12.1264);
-  const origenLng = Number(c.tienda?.lng || -86.2652);
+  const origenLat = c.tienda?.lat != null ? Number(c.tienda.lat) : 0;
+  const origenLng = c.tienda?.lng != null ? Number(c.tienda.lng) : 0;
   const totalMonto = Number(c.total || 0);
   const costoEnvio = Number(c.costoEnvio || 0);
   const gananciaCalculada = Math.round(costoEnvio > 0 ? costoEnvio : (totalMonto * 0.2));
+
+  const destinoLat = c.lat != null ? Number(c.lat) : 0;
+  const destinoLng = c.lng != null ? Number(c.lng) : 0;
+
+  const hasCoords = origenLat !== 0 && origenLng !== 0 && destinoLat !== 0 && destinoLng !== 0;
+  const validKm = (c.kmEstimados && Number(c.kmEstimados) > 0)
+    ? Number(c.kmEstimados)
+    : (hasCoords ? calcularDistanciaHaversine(origenLat, origenLng, destinoLat, destinoLng) : 0);
+
+  const validTiempo = (c.tiempoEstimado && Number(c.tiempoEstimado) > 0)
+    ? Number(c.tiempoEstimado)
+    : (validKm > 0 ? calcularTiempoEstimado(validKm) : 0);
 
   return {
     id: c.id,
@@ -56,14 +82,14 @@ function mapCompraToActiva(c: any): OrdenActiva | null {
     destino: c.direccionEntrega || 'Managua',
     origenLat,
     origenLng,
-    destinoLat: Number(c.lat || 12.1421),
-    destinoLng: Number(c.lng || -86.2287),
+    destinoLat,
+    destinoLng,
     paquete: `Pedido #${c.id.slice(-5).toUpperCase()}`,
     metodoPago: (c.metodoPago === 'efectivo' ? 'efectivo' : 'transferencia') as 'efectivo' | 'transferencia',
     monto: totalMonto,
     ganancia: gananciaCalculada,
-    kmEstimados: 3.5,
-    tiempoEstimado: 25,
+    kmEstimados: validKm,
+    tiempoEstimado: validTiempo,
     codigoPin: getOrdenPin(c.id, c.codigoPin),
   };
 }
@@ -120,7 +146,7 @@ export async function GET(req: NextRequest) {
         origen: s.origen,
         destino: s.destino,
         hora: horaString(s.createdAt),
-        kmRecorridos: s.kmRecorridos || s.kmEstimados || 3.5,
+        kmRecorridos: s.kmRecorridos || s.kmEstimados || 0,
         ganancia: s.ganancia,
         tiempoTotal: s.tiempoTotal,
         estado: (s.estado === 'incidencia' ? 'incidencia' : 'entregado') as 'entregado' | 'incidencia',
@@ -142,9 +168,9 @@ export async function GET(req: NextRequest) {
         origen: c.tienda?.nombre || 'Tienda Partner',
         destino: c.direccionEntrega || 'Managua',
         hora: horaString(c.createdAt),
-        kmRecorridos: 3.5,
+        kmRecorridos: Number(c.kmEstimados || 0),
         ganancia: Math.round(c.costoEnvio > 0 ? c.costoEnvio : (c.total * 0.2)),
-        tiempoTotal: 20,
+        tiempoTotal: Number(c.tiempoEstimado || 0),
         estado: 'entregado' as const,
         calificacion: 5,
       }));

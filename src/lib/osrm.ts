@@ -76,11 +76,9 @@ export async function obtenerRuta(
     (destino.lat === 0 && destino.lng === 0) ||
     (origen.lat === destino.lat && origen.lng === destino.lng)
   ) {
+    const hasValidPoints = origen && destino && origen.lat !== 0 && origen.lng !== 0 && destino.lat !== 0 && destino.lng !== 0;
     return {
-      coordenadas: [
-        [origen?.lat || 12.1264, origen?.lng || -86.2652],
-        [destino?.lat || 12.1402, destino?.lng || -86.2954],
-      ],
+      coordenadas: hasValidPoints ? [[origen.lat, origen.lng], [destino.lat, destino.lng]] : [],
       distanciaKm: 0,
       duracionMin: 0,
       exito: false,
@@ -251,6 +249,49 @@ export function rutaLineaRecta(
 }
 
 /**
+ * Calculates accurate road-adjusted distance in kilometers between two GPS coordinates in Nicaragua.
+ * Uses the Haversine formula multiplied by an urban winding factor (1.35x for Managua street grids/rotondas).
+ * Always returns at least 1.2 km to prevent 0km delivery orders.
+ */
+export function calcularDistanciaHaversine(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+  factorUrbano: number = 1.35
+): number {
+  if (!lat1 || !lng1 || !lat2 || !lng2) return 2.8;
+  if (lat1 === 0 && lng1 === 0) return 2.8;
+  if (lat2 === 0 && lng2 === 0) return 2.8;
+  if (Math.abs(lat1 - lat2) < 0.0001 && Math.abs(lng1 - lng2) < 0.0001) return 1.2;
+
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const linealKm = R * c;
+
+  // Apply urban traffic / routing winding factor
+  const distCalculada = Math.round(linealKm * factorUrbano * 10) / 10;
+  return Math.max(1.2, distCalculada);
+}
+
+/**
+ * Calculates estimated motorcycle delivery time in minutes given distance in km.
+ */
+export function calcularTiempoEstimado(km: number): number {
+  const kmSeguro = km > 0 ? km : 2.5;
+  // ~26 km/h city average + 5 min traffic/pickup buffer
+  return Math.max(8, Math.round((kmSeguro / 26) * 60 + 5));
+}
+
+/**
  * Master Reference Points of Nicaragua (POIs Nicas Nativos).
  * Exhaustive database of landmarks, malls, roundabouts, hospitals, universities, markets and cities.
  */
@@ -347,6 +388,7 @@ export const NICARAGUA_MASTER_POIS: NicaraguaPuntoReferencia[] = [
 
 /**
  * Resolves Managua and Nicaragua addresses to latitude & longitude coordinates.
+ * Covers all major rotondas, shopping centers, neighborhoods, and departments.
  */
 export function geocodeAddress(
   address: string,
@@ -362,11 +404,61 @@ export function geocodeAddress(
     }
   }
 
+  // Rotondas principales de Managua
+  if (q.includes('rotonda metrocentro') || q.includes('rubén darío') || q.includes('ruben dario')) return [12.1264, -86.2652];
+  if (q.includes('rotonda cristo rey') || q.includes('cristo rey')) return [12.1332, -86.2512];
+  if (q.includes('rotonda el güegüense') || q.includes('rotonda gueguense') || q.includes('plaza españa')) return [12.1348, -86.2825];
+  if (q.includes('jean paul genie') || q.includes('galerias') || q.includes('galerías')) return [12.1008, -86.2536];
+  if (q.includes('rotonda bello horizonte')) return [12.1465, -86.2305];
+  if (q.includes('rotonda la virgen')) return [12.1485, -86.2215];
+  if (q.includes('rotonda universitaria') || q.includes('unan')) return [12.1125, -86.2735];
+  if (q.includes('rotonda centroamérica') || q.includes('centroamerica')) return [12.1120, -86.2480];
+  if (q.includes('santo domingo')) return [12.0970, -86.2420];
+  if (q.includes('hugo chávez') || q.includes('plaza inter') || q.includes('bolonia')) return [12.1432, -86.2758];
+
+  // Zonas y Barrios de Managua
+  if (q.includes('robles') || q.includes('hippos') || q.includes('zona viva')) return [12.1264, -86.2652];
+  if (q.includes('altamira')) return [12.1158, -86.2589];
+  if (q.includes('villa fontana')) return [12.1110, -86.2685];
+  if (q.includes('bello horizonte')) return [12.1415, -86.2301];
+  if (q.includes('linda vista')) return [12.1489, -86.3021];
+  if (q.includes('multicentro') || q.includes('americas') || q.includes('américas')) return [12.1384, -86.2189];
+  if (q.includes('monseñor') || q.includes('batahola') || q.includes('lezcano')) return [12.1402, -86.2954];
+  if (q.includes('colinas') || q.includes('las colinas')) return [12.0850, -86.2250];
+  if (q.includes('oriental') || q.includes('mercado oriental')) return [12.1410, -86.2520];
+  if (q.includes('huembes') || q.includes('roberto huembes')) return [12.1205, -86.2435];
+  if (q.includes('mayoreo')) return [12.1450, -86.2050];
+  if (q.includes('ciudad jardín') || q.includes('ciudad jardin')) return [12.1390, -86.2550];
+  if (q.includes('reparto san juan')) return [12.1210, -86.2690];
+  if (q.includes('san judas')) return [12.1120, -86.2980];
+  if (q.includes('altagracia')) return [12.1310, -86.2890];
+  if (q.includes('carretera a masaya') || q.includes('km 9') || q.includes('km 10') || q.includes('km 11')) return [12.0750, -86.2150];
+  if (q.includes('carretera norte') || q.includes('aeropuerto')) return [12.1480, -86.1750];
+  if (q.includes('carretera sur') || q.includes('el crucero')) return [12.0950, -86.3120];
+  if (q.includes('ciudad sandino')) return [12.1580, -86.3450];
+  if (q.includes('tipitapa')) return [12.1980, -86.0950];
+  if (q.includes('ticuantepe')) return [12.0220, -86.2050];
+
+  // Departamentos y Municipios de Nicaragua
+  if (q.includes('masaya')) return [11.9744, -86.0942];
+  if (q.includes('granada')) return [11.9299, -85.9560];
+  if (q.includes('león') || q.includes('leon')) return [12.4379, -86.8780];
+  if (q.includes('chinandega')) return [12.6294, -87.1311];
+  if (q.includes('matagalpa')) return [12.9256, -85.9175];
+  if (q.includes('estelí') || q.includes('esteli')) return [13.0919, -86.3538];
+  if (q.includes('jinotega')) return [13.0997, -85.9992];
+  if (q.includes('rivas') || q.includes('san juan del sur')) return [11.4372, -85.8263];
+  if (q.includes('carazo') || q.includes('jinotepe') || q.includes('diriamba')) return [11.8496, -86.1994];
+  if (q.includes('juigalpa') || q.includes('chontales')) return [12.1063, -85.3645];
+  if (q.includes('bluefields')) return [12.0137, -83.7635];
+  if (q.includes('puerto cabezas') || q.includes('bilwi')) return [14.0350, -83.3888];
+  if (q.includes('central') || q.includes('managua')) return [12.1365, -86.2514];
+
   // 2. Hash-based fallback with deterministic regional jitter
   let hash = 0;
   for (let i = 0; i < address.length; i++) hash = (hash * 31 + address.charCodeAt(i)) >>> 0;
-  const latOffset = ((hash % 100) - 50) * 0.0006;
-  const lngOffset = (((hash >> 3) % 100) - 50) * 0.0006;
+  const latOffset = ((hash % 100) - 50) * 0.0005;
+  const lngOffset = (((hash >> 3) % 100) - 50) * 0.0005;
 
   return [fallback[0] + latOffset, fallback[1] + lngOffset];
 }

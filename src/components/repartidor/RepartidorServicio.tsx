@@ -59,7 +59,7 @@ const btnGhost: React.CSSProperties = {
 export default function RepartidorServicio() {
   const {
     estado, conectado, ordenActiva, ordenesActivas = [], ordenAsignadaPendiente, ofertasDisponibles = [], lat, lng, eta, perfil,
-    conectar, desconectar, optimizarRutaAutomatica, llegarRecogida, recogerPaquete,
+    conectar, desconectar, optimizarRutaAutomatica, seleccionarOrdenActiva, llegarRecogida, recogerPaquete,
     llegarEntrega, confirmarEntrega, toggleChat, toggleIncidencia,
     aceptarOfertaDirecta, rechazarOfertaDirecta, obtenerStats,
   } = useRepartidorStore();
@@ -80,16 +80,14 @@ export default function RepartidorServicio() {
   useEffect(() => {
     if (!ordenActiva) { setRutaCoordenadas([]); return; }
     let cancelled = false;
+    const hasOrigCoords = typeof ordenActiva.origenLat === 'number' && typeof ordenActiva.origenLng === 'number' && (ordenActiva.origenLat !== 0 || ordenActiva.origenLng !== 0);
+    const hasDestCoords = typeof ordenActiva.destinoLat === 'number' && typeof ordenActiva.destinoLng === 'number' && (ordenActiva.destinoLat !== 0 || ordenActiva.destinoLng !== 0);
 
-    const targetDestinoLat = (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA')
-      ? (ordenActiva.origenLat || lat)
-      : (ordenActiva.destinoLat || lat);
-    const targetDestinoLng = (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA')
-      ? (ordenActiva.origenLng || lng)
-      : (ordenActiva.destinoLng || lng);
+    const destino = (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA')
+      ? (hasOrigCoords ? { lat: ordenActiva.origenLat, lng: ordenActiva.origenLng } : null)
+      : (hasDestCoords ? { lat: ordenActiva.destinoLat, lng: ordenActiva.destinoLng } : null);
 
-    const destino = { lat: targetDestinoLat, lng: targetDestinoLng };
-
+    if (!destino) { setRutaCoordenadas([]); return; }
     obtenerRuta({ lat, lng }, destino)
       .then(res => { if (cancelled) return; setRutaCoordenadas(res.exito && res.coordenadas.length > 1 ? res.coordenadas : rutaLineaRecta({ lat, lng }, destino)); })
       .catch(() => { if (cancelled) return; setRutaCoordenadas(rutaLineaRecta({ lat, lng }, destino)); });
@@ -156,6 +154,9 @@ export default function RepartidorServicio() {
           origenPos={origenPos}
           destinoPos={destinoPos}
           rutaCoordenadas={rutaCoordenadas.length > 1 ? rutaCoordenadas : undefined}
+          ordenesActivas={ordenesActivas}
+          ordenActivaId={ordenActiva?.id}
+          onSelectOrden={seleccionarOrdenActiva}
           estado={estado}
           altura="100%"
           seguirRepartidor
@@ -163,29 +164,137 @@ export default function RepartidorServicio() {
         />
       </div>
 
-      {/* ── CÁPSULA SUPERIOR IZQUIERDA — Solo con orden activa */}
-      {ordenActiva && (
+      {/* ── BARRA DE RUTA MULTI-PEDIDOS OPTIMIZADA (3/3 PEDIDOS) ── */}
+      {ordenesActivas && ordenesActivas.length > 1 && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
-            position: 'absolute', top: 70, left: 16, zIndex: 20,
-            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 100,
-            background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
-            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-            border: `1px solid ${estadoColor}40`, boxShadow: `0 6px 20px rgba(0,0,0,0.3), 0 0 12px ${estadoColor}20`,
+            position: 'absolute',
+            top: 118,
+            left: 16,
+            right: 16,
+            maxWidth: 580,
+            margin: '0 auto',
+            zIndex: 25,
+            background: 'rgba(15, 23, 42, 0.88)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: 16,
+            padding: '8px 12px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
           }}
         >
-          <span style={{ width: 9, height: 9, borderRadius: '50%', background: estadoColor, boxShadow: `0 0 10px ${estadoColor}` }} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: 0.3 }}>
-            {estadoLabel}
-          </span>
-          <span style={{ width: 1, height: 12, background: 'var(--border)' }} />
-          <span style={{ fontSize: 12, color: 'var(--primario)', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
-            ETA ~{eta}min
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 8px #34C759' }} />
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#F8FAFC', fontFamily: "'Syne', sans-serif", letterSpacing: 0.3 }}>
+                Ruta Optimizada ({ordenesActivas.length}/3 pedidos)
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                optimizarRutaAutomatica();
+                showSnackbar({ message: 'Ruta reorganizada: mas cercana primero.' });
+              }}
+              style={{
+                background: 'rgba(0, 122, 255, 0.25)',
+                color: '#38BDF8',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                borderRadius: 100,
+                padding: '3px 9px',
+                fontSize: 10,
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Reoptimizar</span>
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+            {ordenesActivas.map((ord, idx) => {
+              const isSelected = ord.id === ordenActiva?.id;
+              const km = ord.kmEstimados && ord.kmEstimados > 0 ? `${ord.kmEstimados.toFixed(1)}km` : '';
+              return (
+                <button
+                  key={ord.id}
+                  onClick={() => seleccionarOrdenActiva(ord.id)}
+                  style={{
+                    flex: '1 0 auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '5px 10px',
+                    borderRadius: 10,
+                    background: isSelected ? 'rgba(0, 122, 255, 0.35)' : 'rgba(255, 255, 255, 0.06)',
+                    border: isSelected ? '1.5px solid #007AFF' : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: isSelected ? '#FFFFFF' : '#94A3B8',
+                    cursor: 'pointer',
+                    fontSize: 11,
+                    fontWeight: isSelected ? 800 : 600,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      background: isSelected ? '#007AFF' : 'rgba(255,255,255,0.15)',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 10,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {idx + 1}
+                  </span>
+                  <span>{ord.cliente?.split(' ')[0] || `Orden #${idx + 1}`}</span>
+                  {km && (
+                    <span style={{ color: isSelected ? '#67E8F9' : '#64748B', fontFamily: 'monospace', fontSize: 10 }}>
+                      {km}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </motion.div>
       )}
+
+      {/* ── CÁPSULA SUPERIOR IZQUIERDA — Estado */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          position: 'absolute', top: 70, left: 16, zIndex: 20,
+          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 100,
+          background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          border: `1px solid ${estadoColor}40`, boxShadow: `0 6px 20px rgba(0,0,0,0.3), 0 0 12px ${estadoColor}20`,
+        }}
+      >
+        <span style={{ width: 9, height: 9, borderRadius: '50%', background: estadoColor, boxShadow: `0 0 10px ${estadoColor}` }} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: 0.3 }}>
+          {estadoLabel}
+        </span>
+        {ordenActiva && (
+          <>
+            <span style={{ width: 1, height: 12, background: 'var(--border)' }} />
+            <span style={{ fontSize: 12, color: 'var(--primario)', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+              ETA ~{eta}min
+            </span>
+          </>
+        )}
+      </motion.div>
 
       {/* ── CÁPSULAS DERECHA — Acciones rápidas (solo con orden activa) */}
       {ordenActiva && (
@@ -487,7 +596,14 @@ export default function RepartidorServicio() {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>+C$ {(ordenActiva.ganancia||ordenActiva.monto||0).toFixed(2)}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{ordenActiva.kmEstimados||3.5}km • ~{ordenActiva.tiempoEstimado||15}min</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                      {ordenesActivas.length > 1 && (
+                        <span style={{ color: '#007AFF', fontWeight: 800 }}>
+                          Parada {ordenesActivas.findIndex(o => o.id === ordenActiva.id) + 1}/{ordenesActivas.length} •
+                        </span>
+                      )}
+                      <span>{(ordenActiva.kmEstimados && ordenActiva.kmEstimados > 0 ? ordenActiva.kmEstimados : 2.5).toFixed(1)}km • ~{ordenActiva.tiempoEstimado && ordenActiva.tiempoEstimado > 0 ? ordenActiva.tiempoEstimado : 15}min</span>
+                    </div>
                   </div>
                 </div>
 

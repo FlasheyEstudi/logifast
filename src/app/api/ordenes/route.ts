@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
-import { geocodeAddress } from '@/lib/osrm';
+import { geocodeAddress, calcularDistanciaHaversine, calcularTiempoEstimado } from '@/lib/osrm';
 import { emitOrdenCreada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
@@ -128,25 +128,26 @@ export async function POST(req: NextRequest) {
     const rawDestLat = Number(destinoLat) || 0;
     const rawDestLng = Number(destinoLng) || 0;
 
-    const [finalOrigLat, finalOrigLng] = (rawOrigLat !== 0 && rawOrigLng !== 0)
-      ? [rawOrigLat, rawOrigLng]
-      : geocodeAddress(origen, [12.1264, -86.2652]);
+    let finalOrigLat = rawOrigLat;
+    let finalOrigLng = rawOrigLng;
+    if (finalOrigLat === 0 && finalOrigLng === 0) {
+      const [gcLat, gcLng] = geocodeAddress(origen);
+      finalOrigLat = gcLat;
+      finalOrigLng = gcLng;
+    }
 
-    const [finalDestLat, finalDestLng] = (rawDestLat !== 0 && rawDestLng !== 0)
-      ? [rawDestLat, rawDestLng]
-      : geocodeAddress(destino, [12.1402, -86.2954]);
+    let finalDestLat = rawDestLat;
+    let finalDestLng = rawDestLng;
+    if (finalDestLat === 0 && finalDestLng === 0) {
+      const [gcLat, gcLng] = geocodeAddress(destino);
+      finalDestLat = gcLat;
+      finalDestLng = gcLng;
+    }
 
-    // Cálculo server-side de distancia Haversine y tarifas oficiales (BUG-F02)
-    const R = 6371;
-    const dLat = ((finalDestLat - finalOrigLat) * Math.PI) / 180;
-    const dLng = ((finalDestLng - finalOrigLng) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((finalOrigLat * Math.PI) / 180) *
-        Math.cos((finalDestLat * Math.PI) / 180) *
-        Math.sin(dLng / 2) ** 2;
-    const kmReales = Math.max(0.05, Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10);
-    const tiempoEstimadoMin = Math.max(5, Math.round(kmReales * 3.5));
+    const hasCoords = finalOrigLat !== 0 && finalOrigLng !== 0 && finalDestLat !== 0 && finalDestLng !== 0;
+    const kmCalc = hasCoords ? calcularDistanciaHaversine(finalOrigLat, finalOrigLng, finalDestLat, finalDestLng) : 0;
+    const kmReales = (Number(body.kmEstimados) > 0) ? Number(body.kmEstimados) : kmCalc;
+    const tiempoEstimadoMin = (Number(body.tiempoEstimado) > 0) ? Number(body.tiempoEstimado) : (kmReales > 0 ? calcularTiempoEstimado(kmReales) : 0);
 
     // Tarifa base C$40 (cubre primeros 2km) + C$15 por km adicional
     let tarifaCalculada = 40;
@@ -164,32 +165,34 @@ export async function POST(req: NextRequest) {
 
     const pinGenerado = String(Math.floor(1000 + Math.random() * 9000));
 
+    const createData: any = {
+      clienteId: user.id,
+      tipo,
+      estado: 'pendiente',
+      origen,
+      destino,
+      origenLat: finalOrigLat,
+      origenLng: finalOrigLng,
+      destinoLat: finalDestLat,
+      destinoLng: finalDestLng,
+      paquete: paquete ?? null,
+      tamano: tamano ?? null,
+      fragil: Boolean(fragil),
+      incidenciaDesc: body.paqueteFotoUrl ?? null,
+      tiendaId: tiendaId ?? null,
+      tiendaNombre: tiendaNombre ?? null,
+      metodoPago,
+      monto: montoFinal,
+      ganancia: gananciaRepartidor,
+      kmEstimados: kmReales,
+      tiempoEstimado: tiempoEstimadoMin,
+      clienteNombre: user.name,
+      clienteTelefono: user.telefono ?? null,
+      codigoPin: pinGenerado,
+    };
+
     const orden = await db.ordenServicio.create({
-      data: {
-        clienteId: user.id,
-        tipo,
-        estado: 'pendiente',
-        origen,
-        destino,
-        origenLat: finalOrigLat,
-        origenLng: finalOrigLng,
-        destinoLat: finalDestLat,
-        destinoLng: finalDestLng,
-        paquete: paquete ?? null,
-        tamano: tamano ?? null,
-        fragil: Boolean(fragil),
-        incidenciaDesc: body.paqueteFotoUrl ?? null,
-        tiendaId: tiendaId ?? null,
-        tiendaNombre: tiendaNombre ?? null,
-        metodoPago,
-        monto: montoFinal,
-        ganancia: gananciaRepartidor,
-        kmEstimados: kmReales,
-        tiempoEstimado: tiempoEstimadoMin,
-        clienteNombre: user.name,
-        clienteTelefono: user.telefono ?? null,
-        codigoPin: pinGenerado,
-      },
+      data: createData,
     });
 
     // Emitir evento en tiempo real a Admin y Repartidores

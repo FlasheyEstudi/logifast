@@ -140,6 +140,7 @@ export interface OrdenActiva {
   tiempoEstimado: number;
   codigoPin?: string;
   productos?: ProductoChecklist[];
+  estado?: string;
 }
 
 export interface ServicioHistorial {
@@ -179,7 +180,7 @@ export interface CalificacionRepartidor {
 
 export interface NotificacionRepartidor {
   id: string;
-  tipo: 'orden_asignada' | 'mensaje' | 'entrega_calificada' | 'incidencia' | 'cancelacion' | 'reasignacion';
+  tipo: 'orden_asignada' | 'mensaje' | 'entrega_calificada' | 'incidencia' | 'cancelacion' | 'reasignacion' | 'sistema';
   titulo: string;
   contenido: string;
   leido: boolean;
@@ -391,6 +392,86 @@ function calcularETA(kmRestantes: number): number {
   return Math.max(1, Math.round((kmRestantes / velocidadPromedio) * 60));
 }
 
+/**
+ * Algoritmo TSP (Nearest Neighbor) para repartidores:
+ * A partir de la posición actual del repartidor (lat, lng), ordena las órdenes activas
+ * de modo que siempre se visite primero el destino pendiente más cercano (recogida si aún
+ * no se ha recogido, o entrega si ya está a bordo), y de ahí a la siguiente parada más cercana.
+ */
+export function optimizarSecuenciaRuta(
+  ordenes: OrdenActiva[],
+  startLat?: number,
+  startLng?: number
+): { ordenes: OrdenActiva[]; distanciaTotal: number; primerDestinoKm: number } {
+  if (!ordenes || ordenes.length <= 1) {
+    const o0 = ordenes?.[0];
+    let d0 = (o0?.kmEstimados && o0.kmEstimados > 0) ? o0.kmEstimados : 0;
+    if (d0 <= 0 && o0 && typeof startLat === 'number' && typeof startLng === 'number' && typeof o0.origenLat === 'number' && typeof o0.origenLng === 'number' && (o0.origenLat !== 0 || o0.origenLng !== 0)) {
+      d0 = calcularDistancia(startLat, startLng, o0.origenLat, o0.origenLng) * 1.35;
+    }
+    const finalD0 = Math.round(d0 * 10) / 10;
+    return {
+      ordenes: ordenes || [],
+      distanciaTotal: finalD0,
+      primerDestinoKm: finalD0,
+    };
+  }
+
+  const getTargetPoint = (o: OrdenActiva) => {
+    const yaRecogido = o.estado === 'recogido' || o.estado === 'EN_PUNTO_ENTREGA';
+    const lat = yaRecogido ? o.destinoLat : o.origenLat;
+    const lng = yaRecogido ? o.destinoLng : o.origenLng;
+    const hasCoords = typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0);
+    return { lat, lng, hasCoords, yaRecogido };
+  };
+
+  const pool = [...ordenes];
+  const resultado: OrdenActiva[] = [];
+  let currLat = (typeof startLat === 'number' && !isNaN(startLat) && startLat !== 0) ? startLat : null;
+  let currLng = (typeof startLng === 'number' && !isNaN(startLng) && startLng !== 0) ? startLng : null;
+  let distanciaAcumulada = 0;
+  let primerKm = 0;
+
+  while (pool.length > 0) {
+    let bestIdx = 0;
+    let minD = Infinity;
+
+    for (let i = 0; i < pool.length; i++) {
+      const tgt = getTargetPoint(pool[i]);
+      let d = (pool[i].kmEstimados && pool[i].kmEstimados > 0) ? pool[i].kmEstimados : 2.0;
+
+      if (currLat !== null && currLng !== null && tgt.hasCoords) {
+        d = calcularDistancia(currLat, currLng, tgt.lat, tgt.lng) * 1.35;
+      }
+
+      if (d < minD) {
+        minD = d;
+        bestIdx = i;
+      }
+    }
+
+    const [nextOrder] = pool.splice(bestIdx, 1);
+    resultado.push(nextOrder);
+    distanciaAcumulada += minD;
+
+    if (resultado.length === 1) {
+      primerKm = Math.round(minD * 10) / 10;
+    }
+
+    const nextTgt = getTargetPoint(nextOrder);
+    if (nextTgt.hasCoords) {
+      currLat = nextTgt.lat;
+      currLng = nextTgt.lng;
+    }
+  }
+
+  return {
+    ordenes: resultado,
+    distanciaTotal: Math.round(distanciaAcumulada * 10) / 10,
+    primerDestinoKm: primerKm,
+  };
+}
+
 /* ═══════════════════════════════════════════════════════
    STORE
    ═══════════════════════════════════════════════════════ */
@@ -574,20 +655,60 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     const prevActiva = get().ordenActiva;
     const prevEstado = get().estado;
 
-    const nuevasActivas = [...actuales.filter((o) => o.id !== orden.id), orden];
+    // Asegurar kmEstimados valido a partir de datos reales
+    const hasCoords = typeof orden.origenLat === 'number' && typeof orden.origenLng === 'number' && typeof orden.destinoLat === 'number' && typeof orden.destinoLng === 'number' && (orden.origenLat !== 0 || orden.origenLng !== 0);
+    const kmSeguro = (orden.kmEstimados && orden.kmEstimados > 0)
+      ? orden.kmEstimados
+      : (hasCoords ? Math.round(calcularDistancia(orden.origenLat, orden.origenLng, orden.destinoLat, orden.destinoLng) * 1.35 * 10) / 10 : 2.5);
+    const ordenConKm = { ...orden, kmEstimados: kmSeguro };
 
-    set({
-      ordenesActivas: nuevasActivas,
-      ordenActiva: orden,
-      ordenAsignadaPendiente: null,
-      estado: 'EN_CAMINO_RECOGER',
-      enServicio: true,
-      tiempoTranscurrido: 0,
-      kmRecorridos: 0,
-      eta: calcularETA(orden.kmEstimados),
-      moto: { ...get().moto, estado: 'EN_SERVICIO' },
-    });
-    dispararFeedback('orden_aceptada', 80);
+    const nuevasActivas = [...actuales.filter((o) => o.id !== orden.id), ordenConKm];
+
+    // Si se completan 3/3 pedidos (o >= 2), optimizar la ruta automáticamente hacia el más cercano
+    if (nuevasActivas.length >= 3) {
+      const { ordenes: optimizadas, primerDestinoKm, distanciaTotal } = optimizarSecuenciaRuta(
+        nuevasActivas,
+        get().lat,
+        get().lng
+      );
+      const primera = optimizadas[0];
+
+      const notifOpt: NotificacionRepartidor = {
+        id: `ntf-opt-${Date.now()}`,
+        tipo: 'sistema',
+        titulo: 'Ruta 3/3 Optimizada',
+        contenido: `Se organizaron los 3 pedidos por cercanía para ahorrar tiempo. Primera parada: ${primera.cliente} (${primera.origen}) a ~${primerDestinoKm} km. Distancia total ruta: ${distanciaTotal} km.`,
+        leido: false,
+        tiempo: 'ahora',
+      };
+
+      set({
+        ordenesActivas: optimizadas,
+        ordenActiva: primera,
+        ordenAsignadaPendiente: null,
+        estado: 'EN_CAMINO_RECOGER',
+        enServicio: true,
+        tiempoTranscurrido: 0,
+        kmRecorridos: 0,
+        eta: calcularETA(primera.kmEstimados || primerDestinoKm),
+        moto: { ...get().moto, estado: 'EN_SERVICIO' },
+        notificaciones: [notifOpt, ...get().notificaciones],
+      });
+      dispararFeedback('ruta_optimizada', [80, 40, 80, 40, 160]);
+    } else {
+      set({
+        ordenesActivas: nuevasActivas,
+        ordenActiva: ordenConKm,
+        ordenAsignadaPendiente: null,
+        estado: 'EN_CAMINO_RECOGER',
+        enServicio: true,
+        tiempoTranscurrido: 0,
+        kmRecorridos: 0,
+        eta: calcularETA(ordenConKm.kmEstimados),
+        moto: { ...get().moto, estado: 'EN_SERVICIO' },
+      });
+      dispararFeedback('orden_aceptada', 80);
+    }
 
     fetch(`/api/repartidor/ordenes/${orden.id}/aceptar`, {
       method: 'PATCH',
@@ -616,22 +737,63 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     const prevEstado = get().estado;
     const prevOfertas = get().ofertasDisponibles || [];
 
-    const nuevasActivas = [...actuales.filter((o) => o.id !== orden.id), orden];
+    // Asegurar kmEstimados valido a partir de datos reales
+    const hasCoords = typeof orden.origenLat === 'number' && typeof orden.origenLng === 'number' && typeof orden.destinoLat === 'number' && typeof orden.destinoLng === 'number' && (orden.origenLat !== 0 || orden.origenLng !== 0);
+    const kmSeguro = (orden.kmEstimados && orden.kmEstimados > 0)
+      ? orden.kmEstimados
+      : (hasCoords ? Math.round(calcularDistancia(orden.origenLat, orden.origenLng, orden.destinoLat, orden.destinoLng) * 1.35 * 10) / 10 : 2.5);
+    const ordenConKm = { ...orden, kmEstimados: kmSeguro };
+
+    const nuevasActivas = [...actuales.filter((o) => o.id !== orden.id), ordenConKm];
     const nuevasOfertas = prevOfertas.filter((o) => o.id !== orden.id);
 
-    set({
-      ordenesActivas: nuevasActivas,
-      ordenActiva: orden,
-      ofertasDisponibles: nuevasOfertas,
-      ordenAsignadaPendiente: get().ordenAsignadaPendiente?.id === orden.id ? null : get().ordenAsignadaPendiente,
-      estado: 'EN_CAMINO_RECOGER',
-      enServicio: true,
-      tiempoTranscurrido: 0,
-      kmRecorridos: 0,
-      eta: calcularETA(orden.kmEstimados || 3),
-      moto: { ...get().moto, estado: 'EN_SERVICIO' },
-    });
-    dispararFeedback('orden_aceptada', 80);
+    // Si se completan 3/3 pedidos (o >= 2), optimizar la ruta automáticamente hacia el más cercano
+    if (nuevasActivas.length >= 3) {
+      const { ordenes: optimizadas, primerDestinoKm, distanciaTotal } = optimizarSecuenciaRuta(
+        nuevasActivas,
+        get().lat,
+        get().lng
+      );
+      const primera = optimizadas[0];
+
+      const notifOpt: NotificacionRepartidor = {
+        id: `ntf-opt-${Date.now()}`,
+        tipo: 'sistema',
+        titulo: 'Ruta 3/3 Optimizada',
+        contenido: `Se organizaron los 3 pedidos por cercanía para ahorrar tiempo. Primera parada: ${primera.cliente} (${primera.origen}) a ~${primerDestinoKm} km. Distancia total ruta: ${distanciaTotal} km.`,
+        leido: false,
+        tiempo: 'ahora',
+      };
+
+      set({
+        ordenesActivas: optimizadas,
+        ordenActiva: primera,
+        ofertasDisponibles: nuevasOfertas,
+        ordenAsignadaPendiente: get().ordenAsignadaPendiente?.id === orden.id ? null : get().ordenAsignadaPendiente,
+        estado: 'EN_CAMINO_RECOGER',
+        enServicio: true,
+        tiempoTranscurrido: 0,
+        kmRecorridos: 0,
+        eta: calcularETA(primera.kmEstimados || primerDestinoKm),
+        moto: { ...get().moto, estado: 'EN_SERVICIO' },
+        notificaciones: [notifOpt, ...get().notificaciones],
+      });
+      dispararFeedback('ruta_optimizada', [80, 40, 80, 40, 160]);
+    } else {
+      set({
+        ordenesActivas: nuevasActivas,
+        ordenActiva: ordenConKm,
+        ofertasDisponibles: nuevasOfertas,
+        ordenAsignadaPendiente: get().ordenAsignadaPendiente?.id === orden.id ? null : get().ordenAsignadaPendiente,
+        estado: 'EN_CAMINO_RECOGER',
+        enServicio: true,
+        tiempoTranscurrido: 0,
+        kmRecorridos: 0,
+        eta: calcularETA(ordenConKm.kmEstimados || 3),
+        moto: { ...get().moto, estado: 'EN_SERVICIO' },
+      });
+      dispararFeedback('orden_aceptada', 80);
+    }
 
     fetch(`/api/repartidor/ordenes/${orden.id}/aceptar`, {
       method: 'PATCH',
@@ -673,23 +835,29 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     const { ordenesActivas, lat, lng } = get();
     if (!ordenesActivas || ordenesActivas.length <= 1) return;
 
-    const calcDist = (oLat: number, oLng: number) => {
-      const dLat = (oLat - lat) * (Math.PI / 180);
-      const dLng = (oLng - lng) * (Math.PI / 180);
-      return Math.sqrt(dLat * dLat + dLng * dLng);
-    };
+    const { ordenes: optimizadas, primerDestinoKm, distanciaTotal } = optimizarSecuenciaRuta(
+      ordenesActivas,
+      lat,
+      lng
+    );
 
-    const optimizadas = [...ordenesActivas].sort((a, b) => {
-      const distA = calcDist(a.origenLat, a.origenLng);
-      const distB = calcDist(b.origenLat, b.origenLng);
-      return distA - distB;
-    });
+    const primera = optimizadas[0];
+    const notifOpt: NotificacionRepartidor = {
+      id: `ntf-opt-${Date.now()}`,
+      tipo: 'sistema',
+      titulo: 'Ruta Reoptimizada',
+      contenido: `Se reorganizaron las paradas por cercanía. Primera parada: ${primera.cliente} a ~${primerDestinoKm} km.`,
+      leido: false,
+      tiempo: 'ahora',
+    };
 
     set({
       ordenesActivas: optimizadas,
-      ordenActiva: optimizadas[0],
+      ordenActiva: primera,
+      eta: calcularETA(primera.kmEstimados || primerDestinoKm),
+      notificaciones: [notifOpt, ...get().notificaciones],
     });
-    dispararFeedback('orden_aceptada', 80);
+    dispararFeedback('ruta_optimizada', [80, 40, 80, 40, 160]);
   },
 
   reordenarRutaOptimizada: (ordenesOptimizadas) => {

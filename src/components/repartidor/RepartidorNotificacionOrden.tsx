@@ -394,12 +394,12 @@ export default function RepartidorNotificacionOrden() {
             <DetailRow
               icon={<Navigation size={14} />}
               label="Distancia"
-              value={`${orden.kmEstimados.toFixed(1)} km`}
+              value={`${(orden.kmEstimados && orden.kmEstimados > 0 ? orden.kmEstimados : 2.5).toFixed(1)} km`}
             />
             <DetailRow
               icon={<Clock size={14} />}
               label="Tiempo estimado"
-              value={`${orden.tiempoEstimado} min`}
+              value={`${orden.tiempoEstimado && orden.tiempoEstimado > 0 ? orden.tiempoEstimado : 15} min`}
             />
             <DetailRow
               icon={<DollarSign size={14} />}

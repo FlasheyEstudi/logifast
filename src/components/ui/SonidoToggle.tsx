@@ -242,38 +242,49 @@ export function SonidoToggle() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleProbar}
-            style={{
-              alignSelf: 'flex-start',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 14px',
-              borderRadius: 10,
-              border: '1px solid var(--border, var(--border))',
-              background: 'var(--bg-alt, var(--bg-alt))',
-              color: 'var(--text, var(--text))',
-              fontSize: 13,
-              fontWeight: 600,
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-              transition: 'background 0.18s ease, transform 0.12s ease',
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.97)';
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            {SpeakerOnIcon}
-            Probar sonido
-          </button>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>
+              Probar nuevos efectos de sonido:
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {[
+                { id: 'nueva_orden', label: 'Nueva Orden' },
+                { id: 'ruta_optimizada', label: 'Ruta Optimizada' },
+                { id: 'orden_aceptada', label: 'Aceptada' },
+                { id: 'orden_entregada', label: 'Entregada' },
+                { id: 'notificacion', label: 'Notificacion' },
+              ].map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => reproducirSonido(s.id as any, volumenSonido)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 11px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border, var(--border))',
+                    background: 'var(--bg-alt, var(--bg-alt))',
+                    color: 'var(--text, var(--text))',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseDown={(e) => {
+                    e.currentTarget.style.transform = 'scale(0.96)';
+                  }}
+                  onMouseUp={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </>
       )}
     </div>

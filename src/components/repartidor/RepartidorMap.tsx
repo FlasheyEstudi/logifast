@@ -8,11 +8,13 @@ import {
   MarkerPopup,
   MapRoute,
   MapRef,
+  MAP_STYLES,
+  ESRI_SATELLITE_STYLE,
 } from '@/components/ui/map';
-import { obtenerRuta, type PasoRuta } from '@/lib/osrm';
+import { obtenerRuta, obtenerRutaMultiples, type PasoRuta } from '@/lib/osrm';
 import { PinRecogida, PinEntrega, PinTienda, PinRepartidorMoto } from '@/components/ui/MapPins';
 
-const MANAGUA_CENTER: [number, number] = [12.1149926, -86.2361742];
+const MANAGUA_CENTER: [number, number] = [12.1365, -86.2514];
 
 function isValidPos(p: [number, number] | undefined): p is [number, number] {
   if (!p) return false;
@@ -60,6 +62,22 @@ export interface RepartidorMapProps {
   origenPos?: [number, number];
   destinoPos?: [number, number];
   rutaCoordenadas?: [number, number][];
+  ordenesActivas?: Array<{
+    id: string;
+    cliente: string;
+    origen: string;
+    destino: string;
+    origenLat?: number;
+    origenLng?: number;
+    destinoLat?: number;
+    destinoLng?: number;
+    estado?: string;
+    tipo?: 'envio' | 'compra';
+    kmEstimados?: number;
+    ganancia?: number;
+  }>;
+  ordenActivaId?: string;
+  onSelectOrden?: (id: string) => void;
   estado: string;
   tipoServicio?: 'envio' | 'compra';
   altura?: number | string;
@@ -75,6 +93,9 @@ export default function RepartidorMap({
   origenPos,
   destinoPos,
   rutaCoordenadas,
+  ordenesActivas,
+  ordenActivaId,
+  onSelectOrden,
   estado,
   tipoServicio = 'envio',
   altura = 280,
@@ -288,15 +309,50 @@ export default function RepartidorMap({
   useEffect(() => {
     if (!isActiveDelivery) return;
 
-    const targetPos = (estado === 'EN_CAMINO_RECOGER' || estado === 'ORDEN_ASIGNADA') ? origen : (destino || origen);
-    if (!targetPos || !isValidPos(targetPos) || !isValidPos(targetDriverPos)) return;
-
     if (rutaCoordenadas && rutaCoordenadas.length >= 2) {
-      const d = Math.max(0.1, Math.round(calcularDistanciaKm(targetDriverPos[0], targetDriverPos[1], targetPos[0], targetPos[1]) * 1.25 * 10) / 10);
-      setRouteDistanceKm(d);
-      setRouteDurationMin(Math.max(1, Math.round(d * 2.8)));
+      const targetPos = (estado === 'EN_CAMINO_RECOGER' || estado === 'ORDEN_ASIGNADA') ? origen : (destino || origen);
+      if (targetPos && isValidPos(targetPos) && isValidPos(targetDriverPos)) {
+        const d = Math.max(0.1, Math.round(calcularDistanciaKm(targetDriverPos[0], targetDriverPos[1], targetPos[0], targetPos[1]) * 1.25 * 10) / 10);
+        setRouteDistanceKm(d);
+        setRouteDurationMin(Math.max(1, Math.round(d * 2.8)));
+      }
       return;
     }
+
+    if (ordenesActivas && ordenesActivas.length > 1) {
+      let cancelled = false;
+      const waypoints: Array<{ lat: number; lng: number }> = [];
+      if (isValidPos(targetDriverPos)) {
+        waypoints.push({ lat: targetDriverPos[0], lng: targetDriverPos[1] });
+      }
+
+      for (const ord of ordenesActivas) {
+        const isRecogido = ord.estado === 'recogido' || ord.estado === 'EN_PUNTO_ENTREGA';
+        const lat = isRecogido ? ord.destinoLat : ord.origenLat;
+        const lng = isRecogido ? ord.destinoLng : ord.origenLng;
+        if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+          waypoints.push({ lat, lng });
+        }
+      }
+
+      obtenerRutaMultiples(waypoints)
+        .then((res) => {
+          if (!cancelled && res && res.exito && res.coordenadas && res.coordenadas.length > 1) {
+            setOsrmRouteCoords(res.coordenadas);
+            setRouteDistanceKm(res.distanciaKm);
+            setRouteDurationMin(res.duracionMin);
+            if (res.pasos) setRouteSteps(res.pasos);
+          }
+        })
+        .catch(() => null);
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const targetPos = (estado === 'EN_CAMINO_RECOGER' || estado === 'ORDEN_ASIGNADA') ? origen : (destino || origen);
+    if (!targetPos || !isValidPos(targetPos) || !isValidPos(targetDriverPos)) return;
 
     const last = lastFetchedPosRef.current;
     if (last) {
@@ -343,7 +399,7 @@ export default function RepartidorMap({
         setRouteDistanceKm(directKm);
         setRouteDurationMin(Math.max(1, Math.round(directKm * 2.8)));
       });
-  }, [targetDriverPos, origen, destino, estado, rutaCoordenadas, isActiveDelivery]);
+  }, [targetDriverPos, origen, destino, estado, rutaCoordenadas, isActiveDelivery, ordenesActivas]);
 
   // MapLibre route coordinates [lng, lat][]
   const mapLibreRoute = useMemo(() => {
@@ -387,6 +443,22 @@ export default function RepartidorMap({
       } catch {}
     }
   };
+
+  const [mapLayer, setMapLayer] = useState<'calles' | 'satelite' | 'nocturno'>('calles');
+
+  const selectedMapStyle = useMemo(() => {
+    if (mapLayer === 'satelite') return ESRI_SATELLITE_STYLE;
+    if (mapLayer === 'nocturno') return MAP_STYLES.dark;
+    return MAP_STYLES.voyager;
+  }, [mapLayer]);
+
+  // Activar modo 3D automáticamente cuando el repartidor inicia viaje / navegación
+  useEffect(() => {
+    if (estado === 'EN_CAMINO_RECOGER' || estado === 'RECOGIDO' || estado === 'EN_CAMINO_ENTREGAR') {
+      setIs3DMode(true);
+      setShouldFollow(true);
+    }
+  }, [estado]);
 
   const isCompra = tipoServicio === 'compra';
   const isRecolectando = estado === 'EN_CAMINO_RECOGER' || estado === 'ORDEN_ASIGNADA';
@@ -540,6 +612,7 @@ export default function RepartidorMap({
         pitch={is3DMode ? 66 : 0}
         bearing={is3DMode ? activeBearing : 0}
         maxPitch={85}
+        styles={{ light: selectedMapStyle, dark: selectedMapStyle }}
         className="rounded-2xl overflow-hidden"
         onLoad={() => setMapReady(true)}
         dragPan={true}
@@ -560,43 +633,125 @@ export default function RepartidorMap({
           <MapRoute
             coordinates={mapLibreRoute}
             color={routeColor}
-            width={5}
+            width={5.5}
             opacity={0.95}
           />
         )}
 
-        {/* Origin / Store Marker */}
-        {isActiveDelivery && origen && (
-          <MapMarker longitude={origen[1]} latitude={origen[0]}>
-            {isCompra ? (
-              <PinTienda nombre={pickupLabel} logoColor={pickupColor} />
-            ) : (
-              <PinRecogida label="Recogida" />
-            )}
-            <MarkerPopup>
-              <div className="maplibre-popup-content">
-                <strong>{pickupLabel}</strong>
-                <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
-                  {isCompra ? 'Ubicación de la Tienda' : 'Origen del paquete'}
-                </div>
-              </div>
-            </MarkerPopup>
-          </MapMarker>
-        )}
+        {/* Marcadores de múltiples órdenes activas optimizadas (si hay más de 1 orden) */}
+        {ordenesActivas && ordenesActivas.length > 1 ? (
+          ordenesActivas.map((ord, idx) => {
+            const isRecogido = ord.estado === 'recogido' || ord.estado === 'EN_PUNTO_ENTREGA';
+            const lat = isRecogido ? ord.destinoLat : ord.origenLat;
+            const lng = isRecogido ? ord.destinoLng : ord.origenLng;
+            if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) {
+              return null;
+            }
+            const isSelected = ord.id === (ordenActivaId || ordenesActivas[0]?.id);
+            const stopNumber = idx + 1;
+            const stopColor = idx === 0 ? '#007AFF' : idx === 1 ? '#FF9500' : '#AF52DE';
+            const stopLabel = isRecogido ? `ENTREGA #${stopNumber}` : `RECOGIDA #${stopNumber}`;
 
-        {/* Destination Marker */}
-        {isActiveDelivery && destino && (
-          <MapMarker longitude={destino[1]} latitude={destino[0]}>
-            <PinEntrega label={isCompra ? 'Cliente' : 'Entrega'} />
-            <MarkerPopup>
-              <div className="maplibre-popup-content">
-                <strong>{isCompra ? 'Cliente' : 'Punto de entrega'}</strong>
-                <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
-                  Destino final
+            return (
+              <MapMarker key={ord.id} longitude={lng} latitude={lat}>
+                <div
+                  onClick={() => onSelectOrden?.(ord.id)}
+                  style={{
+                    position: 'relative',
+                    width: isSelected ? 42 : 34,
+                    height: isSelected ? 42 : 34,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                >
+                  {isSelected && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        width: 54,
+                        height: 54,
+                        borderRadius: '50%',
+                        background: `${stopColor}35`,
+                        animation: 'marker-pulse 1.8s ease-out infinite',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  )}
+
+                  <div
+                    style={{
+                      width: isSelected ? 40 : 32,
+                      height: isSelected ? 40 : 32,
+                      borderRadius: '50%',
+                      background: stopColor,
+                      border: `${isSelected ? 3.5 : 2.5}px solid #FFFFFF`,
+                      boxShadow: isSelected
+                        ? `0 0 16px ${stopColor}90, 0 4px 12px rgba(0,0,0,0.35)`
+                        : '0 2px 8px rgba(0,0,0,0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      fontWeight: 900,
+                      fontSize: isSelected ? 15 : 12,
+                      fontFamily: "'Syne', sans-serif",
+                    }}
+                  >
+                    {stopNumber}
+                  </div>
                 </div>
-              </div>
-            </MarkerPopup>
-          </MapMarker>
+
+                <MarkerPopup>
+                  <div className="maplibre-popup-content">
+                    <strong style={{ color: stopColor }}>{stopLabel}</strong>
+                    <div style={{ fontWeight: 600, marginTop: 2 }}>{ord.cliente}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                      {isRecogido ? ord.destino : ord.origen}
+                    </div>
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+            );
+          })
+        ) : (
+          <>
+            {/* Origin / Store Marker */}
+            {isActiveDelivery && origen && (
+              <MapMarker longitude={origen[1]} latitude={origen[0]}>
+                {isCompra ? (
+                  <PinTienda nombre={pickupLabel} logoColor={pickupColor} />
+                ) : (
+                  <PinRecogida label="Recogida" />
+                )}
+                <MarkerPopup>
+                  <div className="maplibre-popup-content">
+                    <strong>{pickupLabel}</strong>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
+                      {isCompra ? 'Ubicación de la Tienda' : 'Origen del paquete'}
+                    </div>
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+            )}
+
+            {/* Destination Marker */}
+            {isActiveDelivery && destino && (
+              <MapMarker longitude={destino[1]} latitude={destino[0]}>
+                <PinEntrega label={isCompra ? 'Cliente' : 'Entrega'} />
+                <MarkerPopup>
+                  <div className="maplibre-popup-content">
+                    <strong>{isCompra ? 'Cliente' : 'Punto de entrega'}</strong>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
+                      Destino final
+                    </div>
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+            )}
+          </>
         )}
 
         {/* Driver Marker with Smooth Orientation & Clean Beacon Aura */}
@@ -618,7 +773,78 @@ export default function RepartidorMap({
 
       {mostrarNavegacionDriver && mapReady && (
         <>
-          {/* 3D View Toggle */}
+          {/* Selector de capa: Calles detalladas, Satelite o Nocturno */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              zIndex: 40,
+              display: 'flex',
+              background: 'rgba(19, 24, 34, 0.88)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '0.5px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 100,
+              padding: 3,
+              gap: 3,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            }}
+          >
+            {[
+              { id: 'calles', label: 'Calles' },
+              { id: 'satelite', label: 'Satelite' },
+              { id: 'nocturno', label: 'Noche' },
+            ].map((capa) => (
+              <button
+                key={capa.id}
+                onClick={() => setMapLayer(capa.id as any)}
+                style={{
+                  background: mapLayer === capa.id ? '#007AFF' : 'transparent',
+                  color: mapLayer === capa.id ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
+                  border: 'none',
+                  borderRadius: 100,
+                  padding: '5px 11px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {capa.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Leyenda flotante para identificación inmediata */}
+          <div className="map-legend-box">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#16A34A', display: 'inline-block', boxShadow: '0 0 6px #16A34A' }} />
+              <span>TÚ</span>
+            </div>
+            {ordenesActivas && ordenesActivas.length > 1 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#007AFF' }} />
+                <span>Ruta 3/3 Activa</span>
+              </div>
+            ) : (
+              <>
+                {origen && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: pickupColor, display: 'inline-block' }} />
+                    <span>{pickupLabel}</span>
+                  </div>
+                )}
+                {destino && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#DC2626', display: 'inline-block' }} />
+                    <span>{isCompra ? 'CLIENTE' : 'ENTREGAR'}</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
           <button
             onClick={() => {
               setIs3DMode((prev) => !prev);
