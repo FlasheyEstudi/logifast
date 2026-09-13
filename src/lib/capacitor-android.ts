@@ -143,8 +143,15 @@ export async function initCapacitorAndroid(handlers?: AndroidBackHandlers) {
   // 5. Soporte y Polyfill de GPS Nativo Capacitor para Android
   try {
     const geoPlugin = (window as any).Capacitor?.Plugins?.Geolocation;
-    if (typeof navigator !== 'undefined') {
-      const originalGetCurrent = navigator.geolocation?.getCurrentPosition?.bind(navigator.geolocation);
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      const originalGetCurrent = navigator.geolocation.getCurrentPosition?.bind(navigator.geolocation);
+      const originalWatchPosition = navigator.geolocation.watchPosition?.bind(navigator.geolocation);
+      const originalClearWatch = navigator.geolocation.clearWatch?.bind(navigator.geolocation);
+
+      if (originalGetCurrent) (navigator.geolocation as any).__rawGetCurrentPosition = originalGetCurrent;
+      if (originalWatchPosition) (navigator.geolocation as any).__rawWatchPosition = originalWatchPosition;
+      if (originalClearWatch) (navigator.geolocation as any).__rawClearWatch = originalClearWatch;
+
       (navigator.geolocation as any).getCurrentPosition = async (
         successCallback: PositionCallback,
         errorCallback?: PositionErrorCallback | null,
@@ -178,8 +185,8 @@ export async function initCapacitorAndroid(handlers?: AndroidBackHandlers) {
 
           throw new Error(res.error || 'No se pudo obtener la posición GPS.');
         } catch (err: any) {
-          console.warn('[Capacitor GPS] Error obteniendo GPS:', err);
-          if (originalGetCurrent && !isNative) {
+          console.warn('[Capacitor GPS] Error obteniendo GPS vía motor unificado, intentando fallback:', err);
+          if (originalGetCurrent) {
             originalGetCurrent(successCallback, errorCallback, options);
           } else if (errorCallback) {
             errorCallback({
@@ -204,52 +211,91 @@ export async function initCapacitorAndroid(handlers?: AndroidBackHandlers) {
           options?: PositionOptions
         ) => {
           const localId = watchCounter++;
-          geoPlugin.watchPosition(
-            {
-              enableHighAccuracy: options?.enableHighAccuracy ?? true,
-              timeout: options?.timeout ?? 10000,
-              maximumAge: options?.maximumAge ?? 5000,
-            },
-            (pos: any, err: any) => {
-              if (err) {
-                if (errorCallback) {
-                  errorCallback({
-                    code: 2,
-                    message: err?.message || 'Error en seguimiento GPS',
-                    PERMISSION_DENIED: 1,
-                    POSITION_UNAVAILABLE: 2,
-                    TIMEOUT: 3,
-                  });
-                }
-              } else if (pos?.coords) {
-                const syntheticPos: GeolocationPosition = {
-                  coords: {
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                    accuracy: pos.coords.accuracy ?? 15,
-                    altitude: pos.coords.altitude ?? null,
-                    altitudeAccuracy: pos.coords.altitudeAccuracy ?? null,
-                    heading: pos.coords.heading ?? null,
-                    speed: pos.coords.speed ?? null,
-                    toJSON: () => ({}),
-                  },
-                  timestamp: pos.timestamp || Date.now(),
+
+          const onPos = (pos: any) => {
+            if (pos?.coords) {
+              const syntheticPos: GeolocationPosition = {
+                coords: {
+                  latitude: pos.coords.latitude,
+                  longitude: pos.coords.longitude,
+                  accuracy: pos.coords.accuracy ?? 15,
+                  altitude: pos.coords.altitude ?? null,
+                  altitudeAccuracy: pos.coords.altitudeAccuracy ?? null,
+                  heading: pos.coords.heading ?? null,
+                  speed: pos.coords.speed ?? null,
                   toJSON: () => ({}),
-                };
-                successCallback(syntheticPos);
-              }
+                },
+                timestamp: pos.timestamp || Date.now(),
+                toJSON: () => ({}),
+              };
+              successCallback(syntheticPos);
             }
-          ).then((pluginWatchId: string) => {
-            activeWatches.set(localId, pluginWatchId);
-          }).catch(() => {});
+          };
+
+          const onErr = (err: any) => {
+            if (errorCallback) {
+              errorCallback({
+                code: 2,
+                message: err?.message || 'Error en seguimiento GPS',
+                PERMISSION_DENIED: 1,
+                POSITION_UNAVAILABLE: 2,
+                TIMEOUT: 3,
+              });
+            }
+          };
+
+          try {
+            const watchPromiseOrId = geoPlugin.watchPosition(
+              {
+                enableHighAccuracy: options?.enableHighAccuracy ?? true,
+                timeout: options?.timeout ?? 10000,
+                maximumAge: options?.maximumAge ?? 5000,
+              },
+              (pos: any, err: any) => {
+                if (err) onErr(err);
+                else if (pos) onPos(pos);
+              }
+            );
+
+            // En Capacitor Android nativo, watchPosition devuelve un ID sincrónicamente (string).
+            // Soportar tanto retorno sincrónico como Promesa para eliminar el error "then is not a function":
+            if (watchPromiseOrId && typeof watchPromiseOrId.then === 'function') {
+              watchPromiseOrId
+                .then((pluginWatchId: any) => {
+                  const resolvedId = typeof pluginWatchId === 'object' && pluginWatchId?.id ? pluginWatchId.id : pluginWatchId;
+                  if (resolvedId) activeWatches.set(localId, String(resolvedId));
+                })
+                .catch((e: any) => {
+                  console.warn('[Capacitor GPS] Error en watch nativo, usando fallback:', e);
+                  if (originalWatchPosition) {
+                    const fallbackId = originalWatchPosition(successCallback, errorCallback, options);
+                    activeWatches.set(localId, `orig_${fallbackId}`);
+                  }
+                });
+            } else if (watchPromiseOrId) {
+              const resolvedId = typeof watchPromiseOrId === 'object' && watchPromiseOrId?.id ? watchPromiseOrId.id : watchPromiseOrId;
+              activeWatches.set(localId, String(resolvedId));
+            }
+          } catch (watchErr) {
+            console.warn('[Capacitor GPS] Excepción en geoPlugin.watchPosition, usando fallback:', watchErr);
+            if (originalWatchPosition) {
+              const fallbackId = originalWatchPosition(successCallback, errorCallback, options);
+              activeWatches.set(localId, `orig_${fallbackId}`);
+            }
+          }
 
           return localId;
         };
 
         (navigator.geolocation as any).clearWatch = (watchId: number) => {
-          const pluginWatchId = activeWatches.get(watchId);
-          if (pluginWatchId && geoPlugin.clearWatch) {
-            geoPlugin.clearWatch({ id: pluginWatchId }).catch(() => {});
+          const storedId = activeWatches.get(watchId);
+          if (storedId) {
+            if (storedId.startsWith('orig_') && originalClearWatch) {
+              const origId = parseInt(storedId.replace('orig_', ''), 10);
+              if (!isNaN(origId)) originalClearWatch(origId);
+            } else if (geoPlugin.clearWatch) {
+              geoPlugin.clearWatch({ id: storedId }).catch(() => {});
+            }
             activeWatches.delete(watchId);
           }
         };

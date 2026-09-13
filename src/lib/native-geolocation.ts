@@ -189,10 +189,14 @@ export async function obtenerUbicacionActual(
   // 2. VÍA NAVEGADOR / WEB: navigator.geolocation con doble intento
   // ═══════════════════════════════════════════════════════════════
   if (typeof navigator !== 'undefined' && navigator.geolocation) {
+    const rawGetCurrent =
+      (navigator.geolocation as any)?.__rawGetCurrentPosition ||
+      navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+
     return new Promise((resolve) => {
       // Intento 1: Alta precisión
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
+      rawGetCurrent(
+        (pos: GeolocationPosition) => {
           triggerHapticSuccess();
           resolve({
             ok: true,
@@ -204,10 +208,10 @@ export async function obtenerUbicacionActual(
             source: 'browser_high',
           });
         },
-        (err) => {
+        (err: GeolocationPositionError) => {
           // Intento 2: Precisión estándar de red
-          navigator.geolocation.getCurrentPosition(
-            (pos2) => {
+          rawGetCurrent(
+            (pos2: GeolocationPosition) => {
               triggerHapticSuccess();
               resolve({
                 ok: true,
@@ -219,7 +223,7 @@ export async function obtenerUbicacionActual(
                 source: 'browser_low',
               });
             },
-            (fallbackErr) => {
+            (fallbackErr: GeolocationPositionError) => {
               let msg = 'No se pudo obtener la posición GPS.';
               if (fallbackErr.code === 1 || err.code === 1) {
                 msg = 'Permiso denegado. Permite el acceso a la ubicación en los ajustes del dispositivo.';

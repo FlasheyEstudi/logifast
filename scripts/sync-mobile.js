@@ -59,6 +59,17 @@ function syncProject(projectName, targetDir, htmlSource) {
   console.log(`  → Instalando index.html nativo desde ${path.basename(htmlSource)}...`);
   fs.copyFileSync(htmlSource, path.join(targetPublic, 'index.html'));
 
+  // 4.5 Asegurar soporte nativo de GPS para Huawei (sin Google Play Services)
+  const geoJavaDest = path.join(
+    targetDir,
+    'node_modules/@capacitor/geolocation/android/src/main/java/com/capacitorjs/plugins/geolocation/Geolocation.java'
+  );
+  const geoPatchSrc = path.join(ROOT_DIR, 'scripts/patches/Geolocation.java');
+  if (fs.existsSync(geoPatchSrc) && fs.existsSync(path.dirname(geoJavaDest))) {
+    console.log('  → Asegurando parche nativo GPS para Huawei (LocationManager)...');
+    fs.copyFileSync(geoPatchSrc, geoJavaDest);
+  }
+
   // 5. Ejecutar npx cap sync android
   console.log('  → Ejecutando npx cap sync android...');
   try {
