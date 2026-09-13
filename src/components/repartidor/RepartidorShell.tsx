@@ -674,6 +674,34 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     return () => window.removeEventListener('popstate', handlePopState);
   }, [activeTab, setPantalla]);
 
+  const REPARTIDOR_NAV_ORDER: RepartidorTabKey[] = ['servicio', 'historial', 'ganancias', 'perfil'];
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    if (Math.abs(deltaX) > 65 && Math.abs(deltaY) < 45) {
+      const currentIndex = REPARTIDOR_NAV_ORDER.indexOf(activeTab);
+      if (currentIndex !== -1) {
+        if (deltaX < 0 && currentIndex < REPARTIDOR_NAV_ORDER.length - 1) {
+          handleNav(REPARTIDOR_NAV_ORDER[currentIndex + 1]);
+        } else if (deltaX > 0 && currentIndex > 0) {
+          handleNav(REPARTIDOR_NAV_ORDER[currentIndex - 1]);
+        }
+      }
+    }
+  };
+
   /* ─── handleNav — Con soporte de historial para gesto atrás ─── */
   const handleNav = useCallback(
     (tab: RepartidorTabKey, pushHistory = true) => {
@@ -878,9 +906,11 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           </div>
         </header>
 
-        {/* ═══════ CONTENT AREA ═══════ */}
+        {/* ═══════ CONTENT AREA (Con soporte para deslizar entre pestañas) ═══════ */}
         <main
-          className="lf-rep-content lf-ios-content"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="lf-rep-content lf-ios-content touch-pan-y"
           style={{
             flex: 1,
             paddingTop: 'calc(96px + env(safe-area-inset-top, 0px))',

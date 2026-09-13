@@ -461,6 +461,37 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     return () => document.removeEventListener('keydown', handleKey);
   }, [setClientNotifOpen]);
 
+  const CLIENT_NAV_ORDER: ClientModuleKey[] = ['inicio', 'solicitar', 'explorar', 'envios', 'perfil'];
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    // Solo si el deslizamiento es predominantemente horizontal (> 65px) y no un scroll vertical
+    if (Math.abs(deltaX) > 65 && Math.abs(deltaY) < 45) {
+      const currentIndex = CLIENT_NAV_ORDER.indexOf(clientActiveModule);
+      if (currentIndex !== -1) {
+        if (deltaX < 0 && currentIndex < CLIENT_NAV_ORDER.length - 1) {
+          // Deslizar izquierda -> Siguiente módulo
+          handleNav(CLIENT_NAV_ORDER[currentIndex + 1]);
+        } else if (deltaX > 0 && currentIndex > 0) {
+          // Deslizar derecha -> Módulo anterior
+          handleNav(CLIENT_NAV_ORDER[currentIndex - 1]);
+        }
+      }
+    }
+  };
+
   const handleNav = useCallback(
     (mod: ClientModuleKey, pushHistory = true) => {
       if (mod === clientActiveModule) return;
@@ -755,8 +786,10 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           </header>
         )}
 
-        {/* ─── CONTENT AREA ─── */}
+        {/* ─── CONTENT AREA (Con soporte para deslizar entre módulos) ─── */}
         <main
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           style={{
             flex: 1,
             paddingTop: clientActiveModule === 'tienda' ? 0 : 'calc(96px + env(safe-area-inset-top, 0px))',
@@ -765,7 +798,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             backgroundColor: 'var(--ios-bg)',
             transition: 'padding 0.3s ease, background-color 0.3s ease',
           }}
-          className="lf-client-content-padded lf-ios-content"
+          className="lf-client-content-padded lf-ios-content touch-pan-y"
         >
           <div
             style={{

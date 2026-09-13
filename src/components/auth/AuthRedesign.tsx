@@ -1611,12 +1611,46 @@ function RegisterView({
     'Nueva Segovia': ['Ocotal', 'Jalapa', 'Jícaro'],
   };
 
-  const handleGetGps = () => {
+  const handleGetGps = async () => {
+    setGettingGps(true);
+
+    // 1. Si está en Capacitor Nativo (Android/iOS)
+    if (typeof window !== 'undefined' && (window as any).Capacitor?.Plugins?.Geolocation) {
+      const geoPlugin = (window as any).Capacitor.Plugins.Geolocation;
+      try {
+        if (geoPlugin.checkPermissions) {
+          const perm = await geoPlugin.checkPermissions().catch(() => null);
+          if (perm?.location !== 'granted' && geoPlugin.requestPermissions) {
+            await geoPlugin.requestPermissions().catch(() => null);
+          }
+        }
+        const pos = await geoPlugin.getCurrentPosition({ enableHighAccuracy: true, timeout: 12000 });
+        if (pos?.coords) {
+          setForm((prev) => ({
+            ...prev,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          }));
+          setGpsCaptured(true);
+          setGettingGps(false);
+          sileo.success({
+            title: 'GPS Capturado (Nativo)',
+            description: `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`,
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn('Fallo GPS nativo Capacitor, probando navegador:', err);
+      }
+    }
+
+    // 2. Fallback estándar navigator.geolocation
     if (!navigator.geolocation) {
-      sileo.error({ title: 'Tu navegador no soporta geolocalización GPS' });
+      setGettingGps(false);
+      sileo.error({ title: 'Tu dispositivo o navegador no soporta geolocalización GPS' });
       return;
     }
-    setGettingGps(true);
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm((prev) => ({
@@ -1632,10 +1666,32 @@ function RegisterView({
         });
       },
       () => {
-        setGettingGps(false);
-        sileo.error({ title: 'Error al obtener la ubicación GPS' });
+        // Fallback a baja precisión (red celular / wifi)
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setForm((prev) => ({
+              ...prev,
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            }));
+            setGpsCaptured(true);
+            setGettingGps(false);
+            sileo.success({
+              title: 'GPS Capturado (Red)',
+              description: `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`,
+            });
+          },
+          (err) => {
+            setGettingGps(false);
+            sileo.error({
+              title: 'Error al obtener GPS',
+              description: err.code === 1 ? 'Permiso denegado. Activa la ubicación en Ajustes de Android.' : 'Asegúrate de tener el GPS activado en la barra superior de Android.',
+            });
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+        );
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 8000 }
     );
   };
 

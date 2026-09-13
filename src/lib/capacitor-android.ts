@@ -136,5 +136,73 @@ export async function initCapacitorAndroid(handlers?: AndroidBackHandlers) {
         });
       }
     } catch {}
+  // 5. Soporte y Polyfill de GPS Nativo Capacitor para Android
+  try {
+    const geoPlugin = (window as any).Capacitor?.Plugins?.Geolocation;
+    if (geoPlugin) {
+      // Auto-solicitar permisos de GPS al iniciar en Android nativo
+      if (isNative) {
+        geoPlugin.checkPermissions().then((perm: any) => {
+          if (perm?.location !== 'granted' && geoPlugin.requestPermissions) {
+            geoPlugin.requestPermissions().catch(() => null);
+          }
+        }).catch(() => null);
+      }
+
+      // Polyfill directo de navigator.geolocation
+      if (typeof navigator !== 'undefined') {
+        const originalGetCurrent = navigator.geolocation?.getCurrentPosition?.bind(navigator.geolocation);
+        (navigator.geolocation as any).getCurrentPosition = async (
+          successCallback: PositionCallback,
+          errorCallback?: PositionErrorCallback | null,
+          options?: PositionOptions
+        ) => {
+          try {
+            if (isNative && geoPlugin.checkPermissions) {
+              const perm = await geoPlugin.checkPermissions().catch(() => null);
+              if (perm?.location !== 'granted' && geoPlugin.requestPermissions) {
+                await geoPlugin.requestPermissions().catch(() => null);
+              }
+            }
+
+            const pos = await geoPlugin.getCurrentPosition({
+              enableHighAccuracy: options?.enableHighAccuracy ?? true,
+              timeout: options?.timeout ?? 10000,
+              maximumAge: options?.maximumAge ?? 5000,
+            });
+
+            const syntheticPos: GeolocationPosition = {
+              coords: {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy ?? 15,
+                altitude: pos.coords.altitude ?? null,
+                altitudeAccuracy: pos.coords.altitudeAccuracy ?? null,
+                heading: pos.coords.heading ?? null,
+                speed: pos.coords.speed ?? null,
+                toJSON: () => ({}),
+              },
+              timestamp: pos.timestamp || Date.now(),
+            };
+            successCallback(syntheticPos);
+          } catch (err: any) {
+            console.warn('[Capacitor GPS] Error en plugin nativo, usando fallback:', err);
+            if (originalGetCurrent) {
+              originalGetCurrent(successCallback, errorCallback, options);
+            } else if (errorCallback) {
+              errorCallback({
+                code: 1,
+                message: err?.message || 'Error obteniendo posición GPS',
+                PERMISSION_DENIED: 1,
+                POSITION_UNAVAILABLE: 2,
+                TIMEOUT: 3,
+              });
+            }
+          }
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[Capacitor GPS] Error configurando bridge:', err);
   }
 }

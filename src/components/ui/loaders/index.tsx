@@ -344,69 +344,122 @@ export function RepartidorRadarLoader({ message }: { message?: string }) {
 
 /**
  * Pantalla de carga completa para transición entre roles.
- * Muestra logo + spinner + mensaje + barra de progreso.
+ * Muestra logo.png + doble anillo orbital girando + badge en vivo + barra shimmer animada.
  */
 export function RoleLoader({ role, message }: { role: 'cliente' | 'repartidor' | 'admin' | 'ingeniero'; message?: string }) {
-  if (role === 'repartidor') {
-    return (
-      <div className="lf-role-loader" style={{ '--role-color': '#34C759' } as React.CSSProperties}>
-        <div className="lf-role-loader-content" style={{ width: '100%', height: '100%' }}>
-          <RepartidorRadarLoader message={message} />
-        </div>
-      </div>
-    );
-  }
-
   const roleConfig = {
     cliente: {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-        </svg>
-      ),
-      label: 'Cliente',
-      color: '#0066FF'
+      label: 'LogiFast Cliente Express',
+      tag: 'Conectando a Marketplace & Envíos',
+      primaryColor: '#0066FF',
+      secondaryColor: '#FF5722',
+      glow: 'rgba(0, 102, 255, 0.35)',
     },
     repartidor: {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-        </svg>
-      ),
-      label: 'Repartidor Express',
-      color: '#34C759'
+      label: 'LogiFast Rider Pro',
+      tag: 'Calibrando Radar GPS & Sincronizando',
+      primaryColor: '#34C759',
+      secondaryColor: '#007AFF',
+      glow: 'rgba(52, 199, 89, 0.35)',
     },
     admin: {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-      ),
-      label: 'Administrador',
-      color: '#7C3AED'
+      label: 'Torre de Control LogiFast',
+      tag: 'Acceso Seguro a Consola',
+      primaryColor: '#7C3AED',
+      secondaryColor: '#007AFF',
+      glow: 'rgba(124, 58, 237, 0.35)',
     },
     ingeniero: {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-        </svg>
-      ),
-      label: 'Ingeniero',
-      color: '#FFB300'
+      label: 'LogiFast Core Engine',
+      tag: 'Telemetría & Servidores en Vivo',
+      primaryColor: '#FFB300',
+      secondaryColor: '#FF5722',
+      glow: 'rgba(255, 179, 0, 0.35)',
     },
   };
-  const cfg = roleConfig[role];
-  const defaultMessage = `Cargando panel de ${cfg.label}...`;
+
+  const cfg = roleConfig[role] || roleConfig.cliente;
 
   return (
-    <div className="lf-role-loader" style={{ '--role-color': cfg.color } as React.CSSProperties}>
-      <div className="lf-role-loader-content">
-        <div className="lf-role-loader-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.color }}>{cfg.icon}</div>
-        <LogoSpinner size={72} />
-        <h2 className="lf-role-loader-title">{cfg.label}</h2>
-        <p className="lf-role-loader-msg">{message || defaultMessage}</p>
-        <div className="lf-role-loader-bar">
-          <div className="lf-role-loader-bar-fill" />
+    <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#07090E] text-white select-none overflow-hidden font-sans">
+      {/* Luces ambientales animadas en el fondo */}
+      <div
+        className="absolute w-[360px] h-[360px] rounded-full blur-[110px] pointer-events-none animate-pulse"
+        style={{ background: cfg.glow, opacity: 0.25 }}
+      />
+      <div className="absolute -bottom-10 right-0 w-72 h-72 rounded-full bg-blue-600/10 blur-3xl pointer-events-none" />
+
+      {/* Contenedor central flotante */}
+      <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-xs w-full">
+        {/* Logo con Doble Anillo Orbital Neón Girando */}
+        <div className="relative w-28 h-28 flex items-center justify-center mb-6">
+          {/* Anillo exterior orbitando a la derecha */}
+          <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '4s' }} viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="46"
+              fill="none"
+              stroke={cfg.primaryColor}
+              strokeWidth="2.5"
+              strokeDasharray="40 180"
+              strokeLinecap="round"
+            />
+          </svg>
+
+          {/* Anillo interior orbitando a la izquierda */}
+          <svg className="absolute inset-2 w-[96px] h-[96px] animate-spin" style={{ animationDuration: '6s', animationDirection: 'reverse' }} viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="44"
+              fill="none"
+              stroke={cfg.secondaryColor}
+              strokeWidth="2"
+              strokeDasharray="30 160"
+              strokeLinecap="round"
+              opacity="0.7"
+            />
+          </svg>
+
+          {/* Logo oficial centrado con respiración y brillo */}
+          <div className="relative w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl flex items-center justify-center shadow-xl shadow-black/60 p-2.5">
+            <img
+              src="/logo.png"
+              alt="LogiFast"
+              className="w-full h-full object-contain filter drop-shadow-[0_0_12px_rgba(0,102,255,0.6)] animate-pulse"
+              style={{ animationDuration: '2s' }}
+            />
+          </div>
+        </div>
+
+        {/* Badge de estado en vivo */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] backdrop-blur-md mb-3 shadow-sm">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: cfg.primaryColor }} />
+            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: cfg.primaryColor }} />
+          </span>
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">
+            {cfg.label}
+          </span>
+        </div>
+
+        {/* Mensaje de carga */}
+        <h3 className="text-sm font-semibold text-slate-200 tracking-tight mb-1">
+          {message || cfg.tag}
+        </h3>
+        <p className="text-[11px] text-slate-500 font-medium">
+          Cargando módulos y servicios en tiempo real...
+        </p>
+
+        {/* Barra de progreso de alta tecnología (Shimmer continuo) */}
+        <div className="w-44 h-1.5 bg-slate-800/80 rounded-full overflow-hidden mt-5 relative border border-white/5">
+          <div
+            className="absolute top-0 bottom-0 rounded-full w-1/2 animate-[lf-shimmer_1.4s_ease-in-out_infinite]"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${cfg.primaryColor}, ${cfg.secondaryColor}, transparent)`,
+            }}
+          />
         </div>
       </div>
     </div>
