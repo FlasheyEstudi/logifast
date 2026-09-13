@@ -8,7 +8,7 @@
  */
 
 import jwt, { type JwtPayload } from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { db } from '@/lib/db';
 
 const COOKIE_NAME = 'lf-session';
@@ -56,8 +56,8 @@ export interface SessionClaims extends JwtPayload {
   bio?: string | null;
 }
 
-/** Firma un JWT para el usuario dado y lo guarda como cookie httpOnly. */
-export async function createSession(user: SessionUser): Promise<void> {
+/** Firma un JWT para el usuario dado, lo guarda como cookie httpOnly y lo retorna como string. */
+export async function createSession(user: SessionUser): Promise<string> {
   // Garantizar que fotoUrl y bio nunca inflen la cookie JWT por encima del límite de 4KB por cookie (RFC 6265).
   // getSessionUser() recupera la fotoUrl y bio de forma segura directamente desde la BD en cada petición.
   const safeFotoUrl =
@@ -81,29 +81,50 @@ export async function createSession(user: SessionUser): Promise<void> {
   };
   const token = jwt.sign(claims, getSecret(), { algorithm: 'HS256' });
 
-  const cookieStore = await cookies();
-  cookieStore.set({
-    name: COOKIE_NAME,
-    value: token,
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: TOKEN_TTL_SECONDS,
-  });
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: COOKIE_NAME,
+      value: token,
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: TOKEN_TTL_SECONDS,
+    });
+  } catch {}
+
+  return token;
 }
 
 /** Elimina la cookie de sesión. */
 export async function destroySession(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete(COOKIE_NAME);
+  } catch {}
 }
 
-/** Lee el token JWT crudo desde la cookie (si existe). */
+/** Lee el token JWT crudo desde el header Authorization (Bearer) o desde la cookie (si existe). */
 export async function readSessionToken(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const cookie = cookieStore.get(COOKIE_NAME);
-  return cookie?.value ?? null;
+  // 1. Prioridad: Header Authorization Bearer (esencial para Capacitor y apps móviles nativas)
+  try {
+    const headerStore = await headers();
+    const authHeader = headerStore.get('authorization') || headerStore.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const bearerToken = authHeader.substring(7).trim();
+      if (bearerToken) return bearerToken;
+    }
+  } catch {}
+
+  // 2. Fallback: Cookie HttpOnly (navegación web tradicional)
+  try {
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get(COOKIE_NAME);
+    return cookie?.value ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** Verifica el JWT y devuelve los claims, o null si es inválido/expirado. */

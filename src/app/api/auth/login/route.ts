@@ -153,8 +153,8 @@ export async function POST(req: NextRequest) {
       } catch (e) {}
     }
 
-    // Crear sesión JWT en cookie httpOnly y responder
-    await createSession({
+    // Crear sesión JWT en cookie httpOnly y obtener el token para apps móviles
+    const sessionToken = await createSession({
       id: user.id,
       email: user.email,
       name: user.name,
@@ -167,6 +167,7 @@ export async function POST(req: NextRequest) {
     }).catch(() => null);
 
     return ok({
+      token: sessionToken,
       user: {
         id: user.id,
         email: user.email,

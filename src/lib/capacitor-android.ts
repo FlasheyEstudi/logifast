@@ -6,6 +6,8 @@
  * Compatible tanto en Web como dentro de la WebView de Capacitor en Android.
  */
 
+import { installCapacitorFetchBridge } from './api-config';
+
 let lastBackPress = 0;
 let backButtonListenerRegistered = false;
 
@@ -18,6 +20,9 @@ export interface AndroidBackHandlers {
 
 export async function initCapacitorAndroid(handlers?: AndroidBackHandlers) {
   if (typeof window === 'undefined') return;
+
+  // 0. Instalar interceptor de peticiones API para evitar errores 404 en Capacitor
+  installCapacitorFetchBridge();
 
   const isNative = (window as any).Capacitor?.isNativePlatform?.() || false;
 

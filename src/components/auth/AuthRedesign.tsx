@@ -1326,6 +1326,10 @@ function LoginView({
         return;
       }
 
+      if (data.token && typeof window !== 'undefined') {
+        localStorage.setItem('lf-jwt-token', data.token);
+      }
+
       sileo.success({ title: `¡Bienvenido, ${data.user.name}!`, description: 'Ingresando al sistema...' });
       onLoginSuccess(data.user.role, data.user.name);
     } catch {
@@ -1354,6 +1358,9 @@ function LoginView({
       const data = await res.json();
       setLoading(false);
       if (res.ok && data.ok) {
+        if (data.token && typeof window !== 'undefined') {
+          localStorage.setItem('lf-jwt-token', data.token);
+        }
         sileo.success({ title: `¡Sesión iniciada como ${cred.name}!` });
         onLoginSuccess(role, cred.name);
       } else {
