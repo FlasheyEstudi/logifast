@@ -12,26 +12,28 @@ const ClientDashboard = dynamic(() => import('@/app/client-dashboard'), {
   loading: () => <RoleLoader role="cliente" />,
 });
 
+import { Package, ShoppingBag, ShieldCheck } from 'lucide-react';
+
 const CLIENT_SLIDES = [
   {
     title: 'Envíos Express en Minutos',
     desc: 'Envía paquetes, documentos o encomiendas con repartidores verificados en toda Nicaragua.',
     badge: 'Rápido & Seguro',
-    icon: '📦',
+    icon: Package,
     color: '#FF5722',
   },
   {
     title: 'Tus Tiendas y Restaurantes',
     desc: 'Explora comida, farmacia y productos locales con entrega directa hasta tu puerta.',
     badge: 'Marketplace Local',
-    icon: '🛍️',
+    icon: ShoppingBag,
     color: '#007AFF',
   },
   {
     title: 'Seguimiento GPS y PIN Seguro',
     desc: 'Observa a tu repartidor en tiempo real y recibe tu pedido mediante código PIN de seguridad.',
     badge: 'Rastreo en Vivo',
-    icon: '📍',
+    icon: ShieldCheck,
     color: '#34C759',
   },
 ];
@@ -150,13 +152,17 @@ export default function ClienteAppPage() {
               className="flex flex-col items-center text-center space-y-4 max-w-xs"
             >
               <div
-                className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl shadow-2xl"
+                className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl transition-all"
                 style={{
                   background: `color-mix(in srgb, ${CLIENT_SLIDES[slideIndex].color} 18%, #131822)`,
                   border: `1.5px solid ${CLIENT_SLIDES[slideIndex].color}40`,
                 }}
               >
-                {CLIENT_SLIDES[slideIndex].icon}
+                {React.createElement(CLIENT_SLIDES[slideIndex].icon, {
+                  size: 44,
+                  strokeWidth: 2,
+                  style: { color: CLIENT_SLIDES[slideIndex].color },
+                })}
               </div>
 
               <span

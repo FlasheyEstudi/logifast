@@ -12,26 +12,28 @@ const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorAp
   loading: () => <RoleLoader role="repartidor" />,
 });
 
+import { Bike, Compass, Wallet } from 'lucide-react';
+
 const DRIVER_SLIDES = [
   {
     title: 'Conduce y Gana con tu Moto',
     desc: 'Horarios 100% libres. Conéctate cuando quieras y recibe solicitudes de envío continuas.',
     badge: 'Ingresos Libres',
-    icon: '🏍️',
+    icon: Bike,
     color: '#007AFF',
   },
   {
     title: 'Navegación GPS Integrada',
     desc: 'Rutas automáticas calculadas con Waze y Google Maps para llegar siempre más rápido.',
     badge: 'Ruta Óptima',
-    icon: '🧭',
+    icon: Compass,
     color: '#34C759',
   },
   {
     title: 'Pagos Seguros y Transparencia',
     desc: 'Visualiza tus ganancias por cada entrega y cobra tus fondos acumulados a tu billetera.',
     badge: 'Ganancia Diaria',
-    icon: '💰',
+    icon: Wallet,
     color: '#FF9500',
   },
 ];
@@ -149,13 +151,17 @@ export default function RepartidorAppPage() {
               className="flex flex-col items-center text-center space-y-4 max-w-xs"
             >
               <div
-                className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl shadow-2xl"
+                className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl transition-all"
                 style={{
                   background: `color-mix(in srgb, ${DRIVER_SLIDES[slideIndex].color} 18%, #131822)`,
                   border: `1.5px solid ${DRIVER_SLIDES[slideIndex].color}40`,
                 }}
               >
-                {DRIVER_SLIDES[slideIndex].icon}
+                {React.createElement(DRIVER_SLIDES[slideIndex].icon, {
+                  size: 44,
+                  strokeWidth: 2,
+                  style: { color: DRIVER_SLIDES[slideIndex].color },
+                })}
               </div>
 
               <span
