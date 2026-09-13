@@ -53,24 +53,15 @@ function getErrorMessage(err: GeolocationPositionError): string {
   }
 }
 
-export async function obtenerGpsNavegador(): Promise<{ lat: number; lng: number } | null> {
-  if (typeof window === 'undefined' || !navigator.geolocation) return null;
+export { obtenerUbicacionActual, type UbicacionResult } from '@/lib/native-geolocation';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 
-  return new Promise((resolve) => {
-    // 1. Intentar primero con alta precisión (GPS por hardware)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {
-        // 2. Fallback inmediato con precisión estándar (WiFi / red móvil / IP)
-        navigator.geolocation.getCurrentPosition(
-          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-          () => resolve(null),
-          { enableHighAccuracy: false, timeout: 7000, maximumAge: 60000 }
-        );
-      },
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-    );
-  });
+export async function obtenerGpsNavegador(): Promise<{ lat: number; lng: number } | null> {
+  const res = await obtenerUbicacionActual();
+  if (res.ok && typeof res.lat === 'number' && typeof res.lng === 'number') {
+    return { lat: res.lat, lng: res.lng };
+  }
+  return null;
 }
 
 export function useGeolocation(

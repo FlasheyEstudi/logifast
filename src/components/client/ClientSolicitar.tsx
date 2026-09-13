@@ -33,6 +33,7 @@ import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
 import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta, reverseGeocode } from '@/lib/osrm';
 import { obtenerGpsNavegador } from '@/hooks/useGeolocation';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, MarkerLabel } from '@/components/ui/map';
 import { PinRecogida, PinEntrega, PinTienda } from '@/components/ui/MapPins';
 import { useMapaPuntos } from '@/hooks/useMapaPuntos';
@@ -461,6 +462,8 @@ function AddressInput({
   onChange,
   onSelect,
   onUseMyLocation,
+  isLocating,
+  hasGpsFix,
   dotColor,
   suggestions,
   placeholder,
@@ -470,6 +473,8 @@ function AddressInput({
   onChange: (v: string) => void;
   onSelect: (s: DireccionSugerencia) => void;
   onUseMyLocation?: () => void;
+  isLocating?: boolean;
+  hasGpsFix?: boolean;
   dotColor: string;
   suggestions: DireccionSugerencia[];
   placeholder: string;
@@ -604,27 +609,72 @@ function AddressInput({
       </div>
 
       {onUseMyLocation && (
-        <button
-          type="button"
-          onClick={onUseMyLocation}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'none',
-            border: 'none',
-            color: 'var(--primario)',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginTop: 6,
-            padding: '2px 0',
-            fontFamily: "'DM Sans', sans-serif",
-          }}
-        >
-          <Locate size={14} />
-          <span>Usar mi ubicación actual</span>
-        </button>
+        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+            onClick={onUseMyLocation}
+            disabled={isLocating}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              background: isLocating
+                ? 'rgba(0, 122, 255, 0.14)'
+                : hasGpsFix
+                ? 'rgba(52, 199, 89, 0.15)'
+                : 'rgba(0, 122, 255, 0.08)',
+              border: isLocating
+                ? '1px solid rgba(0, 122, 255, 0.4)'
+                : hasGpsFix
+                ? '1.5px solid #34C759'
+                : '1px solid rgba(0, 122, 255, 0.22)',
+              borderRadius: 100,
+              padding: '6px 14px',
+              color: isLocating
+                ? 'var(--primario)'
+                : hasGpsFix
+                ? '#34C759'
+                : 'var(--primario)',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: isLocating ? 'wait' : 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+              boxShadow: hasGpsFix
+                ? '0 0 14px rgba(52, 199, 89, 0.22)'
+                : isLocating
+                ? '0 0 14px rgba(0, 122, 255, 0.2)'
+                : 'none',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.25s ease',
+            }}
+          >
+            {isLocating ? (
+              <>
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  style={{ display: 'inline-flex' }}
+                >
+                  <Locate size={14} />
+                </motion.span>
+                <span>Buscando señal satelital GPS...</span>
+              </>
+            ) : hasGpsFix ? (
+              <>
+                <Check size={14} strokeWidth={2.5} />
+                <span>Ubicación GPS fijada</span>
+              </>
+            ) : (
+              <>
+                <Locate size={14} />
+                <span>Usar mi ubicación GPS actual</span>
+              </>
+            )}
+          </motion.button>
+        </div>
       )}
 
       <AnimatePresence>
@@ -888,6 +938,9 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   const [direction, setDirection] = useState<1 | -1>(1);
   const [confirmed, setConfirmed] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [locatingField, setLocatingField] = useState<'origen' | 'destino' | null>(null);
+  const [hasGpsOrigen, setHasGpsOrigen] = useState(false);
+  const [hasGpsDestino, setHasGpsDestino] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState('');
   const [confirmedOrderData, setConfirmedOrderData] = useState<{
     id: string;
@@ -1094,32 +1147,42 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   /* ─── Use GPS Location ─── */
   const handleUseMyLocation = useCallback(
     async (field: 'origen' | 'destino') => {
-      showToast('Obteniendo tu posición GPS...', 'info');
+      setLocatingField(field);
+      showToast('Buscando satélites y señal GPS...', 'info');
 
-      const pos = await obtenerGpsNavegador();
-      if (!pos) {
-        showToast('No se pudo obtener la ubicación GPS. Verifica los permisos en tu navegador.', 'error');
-        return;
+      try {
+        const res = await obtenerUbicacionActual();
+        if (!res.ok || typeof res.lat !== 'number' || typeof res.lng !== 'number') {
+          showToast(res.error || 'No se pudo obtener la ubicación GPS.', 'error');
+          setLocatingField(null);
+          return;
+        }
+
+        const { lat, lng } = res;
+        const tempLabel = `Mi ubicación GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+
+        // Set state immediately with real GPS coords
+        if (field === 'origen') {
+          setHasGpsOrigen(true);
+          setSolicitudEnvio({ origen: tempLabel, origenLat: lat, origenLng: lng });
+        } else {
+          setHasGpsDestino(true);
+          setSolicitudEnvio({ destino: tempLabel, destinoLat: lat, destinoLng: lng });
+        }
+        showToast('¡Ubicación GPS capturada con éxito!', 'success');
+
+        // Then reverse geocode to refine address label cleanly without losing exact GPS coords
+        const realAddress = await reverseGeocode(lat, lng);
+        if (field === 'origen') {
+          setSolicitudEnvio({ origen: realAddress, origenLat: lat, origenLng: lng });
+        } else {
+          setSolicitudEnvio({ destino: realAddress, destinoLat: lat, destinoLng: lng });
+        }
+      } catch (err: any) {
+        showToast(err?.message || 'Error obteniendo posición GPS', 'error');
+      } finally {
+        setLocatingField(null);
       }
-
-      const { lat, lng } = pos;
-      const tempLabel = `Mi ubicación GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-
-      // Set state immediately with real GPS coords
-      if (field === 'origen') {
-        setSolicitudEnvio({ origen: tempLabel, origenLat: lat, origenLng: lng });
-      } else {
-        setSolicitudEnvio({ destino: tempLabel, destinoLat: lat, destinoLng: lng });
-      }
-
-      // Then reverse geocode to refine address label cleanly without losing exact GPS coords
-      const realAddress = await reverseGeocode(lat, lng);
-      if (field === 'origen') {
-        setSolicitudEnvio({ origen: realAddress, origenLat: lat, origenLng: lng });
-      } else {
-        setSolicitudEnvio({ destino: realAddress, destinoLat: lat, destinoLng: lng });
-      }
-      showToast('Ubicación GPS establecida correctamente.', 'success');
     },
     [setSolicitudEnvio, showToast]
   );
@@ -1368,11 +1431,33 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     }, 2000);
   }, [orders, userName, solicitudEnvio, costBreakdown.total, addOrder, confirmarEnvio, scheduleMode, scheduleDate, scheduleTime]);
 
-  /* ─── Slide animation variants ─── */
+  /* ─── Apple Fluid Spring slide animation variants ─── */
   const slideVariants = {
-    enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
+    enter: (dir: number) => ({
+      x: dir > 0 ? 55 : -55,
+      opacity: 0,
+      scale: 0.98,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      transition: {
+        type: 'spring',
+        stiffness: 380,
+        damping: 32,
+        mass: 0.85,
+      },
+    },
+    exit: (dir: number) => ({
+      x: dir > 0 ? -55 : 55,
+      opacity: 0,
+      scale: 0.98,
+      transition: {
+        duration: 0.22,
+        ease: 'easeOut',
+      },
+    }),
   };
 
   /* ─── Render step content ─── */
@@ -1393,15 +1478,19 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 onChange={(v) => {
                   if (!v || v.trim() === '') {
                     setSolicitudEnvio({ origen: '', origenLat: 0, origenLng: 0 });
+                    setHasGpsOrigen(false);
                   } else {
                     const [autoLat, autoLng] = geocodeAddress(v);
                     setSolicitudEnvio({ origen: v, origenLat: autoLat, origenLng: autoLng });
                   }
                 }}
-                onSelect={(s) =>
-                  setSolicitudEnvio({ origen: s.direccion, origenLat: s.lat, origenLng: s.lng })
-                }
+                onSelect={(s) => {
+                  setHasGpsOrigen(false);
+                  setSolicitudEnvio({ origen: s.direccion, origenLat: s.lat, origenLng: s.lng });
+                }}
                 onUseMyLocation={() => handleUseMyLocation('origen')}
+                isLocating={locatingField === 'origen'}
+                hasGpsFix={hasGpsOrigen && Boolean(solicitudEnvio.origenLat)}
                 dotColor="var(--exito)"
                 suggestions={todasSugerencias}
                 placeholder="Ej: Metrocentro, Managua"
@@ -1410,13 +1499,14 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
               {/* Swap button */}
               <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 0, zIndex: 10 }}>
                 <motion.button
-                  whileTap={{ rotate: 180 }}
-                  transition={{ duration: 0.3 }}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ rotate: 180, scale: 0.9 }}
+                  transition={{ type: 'spring', stiffness: 450, damping: 24 }}
                   onClick={handleSwap}
                   disabled={!solicitudEnvio.origen && !solicitudEnvio.destino}
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 38,
+                    height: 38,
                     borderRadius: '50%',
                     border: '1.5px solid var(--border)',
                     background: 'var(--surface)',
@@ -1425,12 +1515,13 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'absolute',
-                    top: -18,
-                    boxShadow: 'var(--shadow-sm)',
+                    top: -19,
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+                    backdropFilter: 'blur(12px)',
                     opacity: solicitudEnvio.origen || solicitudEnvio.destino ? 1 : 0.4,
                   }}
                 >
-                  <ArrowUpDown size={16} style={{ color: 'var(--text-secondary)' }} />
+                  <ArrowUpDown size={16} style={{ color: 'var(--primario)' }} />
                 </motion.button>
               </div>
 
@@ -1440,15 +1531,19 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 onChange={(v) => {
                   if (!v || v.trim() === '') {
                     setSolicitudEnvio({ destino: '', destinoLat: 0, destinoLng: 0 });
+                    setHasGpsDestino(false);
                   } else {
                     const [autoLat, autoLng] = geocodeAddress(v);
                     setSolicitudEnvio({ destino: v, destinoLat: autoLat, destinoLng: autoLng });
                   }
                 }}
-                onSelect={(s) =>
-                  setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng })
-                }
+                onSelect={(s) => {
+                  setHasGpsDestino(false);
+                  setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng });
+                }}
                 onUseMyLocation={() => handleUseMyLocation('destino')}
+                isLocating={locatingField === 'destino'}
+                hasGpsFix={hasGpsDestino && Boolean(solicitudEnvio.destinoLat)}
                 dotColor="var(--primario)"
                 suggestions={todasSugerencias}
                 placeholder="Ej: Col. Los Robles, Managua"
@@ -2761,7 +2856,6 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
           {renderStep()}
         </motion.div>
