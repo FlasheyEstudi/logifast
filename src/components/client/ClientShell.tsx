@@ -27,6 +27,7 @@ import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { LogoSpinner } from '@/components/ui/loaders';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
+import { aplicarTema } from '@/store/configStore';
 
 /* ═══════════════════════════════════════════════
    SKELETON COMPONENT (PLACEHOLDER)
@@ -333,23 +334,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   /* ─── THEME SYNC — Asegura que el modo oscuro aplique a todo el DOM y CSS vars ─── */
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-      document.documentElement.setAttribute('data-theme', 'dark');
-      if (document.body) {
-        document.body.classList.add('dark');
-        document.body.setAttribute('data-theme', 'dark');
-      }
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-      document.documentElement.setAttribute('data-theme', 'light');
-      if (document.body) {
-        document.body.classList.remove('dark');
-        document.body.setAttribute('data-theme', 'light');
-      }
-    }
+    aplicarTema(isDark ? 'dark' : 'light');
   }, [isDark]);
 
   /* ─── SPLASH STATE (solo una vez por sesión para fluidez total) ─── */
@@ -605,8 +590,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: 'var(--ios-bg)',
-          color: 'var(--ios-text-primary)',
+          backgroundColor: isDark ? '#000000' : '#F2F2F7',
+          color: isDark ? '#FFFFFF' : '#1C1C1E',
           fontFamily: 'var(--ios-font)',
           transition: 'background-color 0.4s ease, color 0.3s ease',
         }}
@@ -761,7 +746,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             }}
           >
             {/* Left: título del módulo */}
-            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: '-0.02em' }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: isDark ? '#FFFFFF' : '#1C1C1E', fontFamily: "'Syne', sans-serif", letterSpacing: '-0.02em' }}>
               {iosTitle}
             </span>
 
@@ -771,7 +756,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               <button
                 onClick={toggleTheme}
                 aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
-                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: isDark ? '#FFD60A' : '#FF9500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
               >
                 {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
               </button>
@@ -781,7 +766,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 <button
                   onClick={() => { setClientNotifOpen(!clientNotifOpen); setAvatarOpen(false); }}
                   aria-label="Notificaciones"
-                  style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
+                  style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : isDark ? '#98989D' : '#636366', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
                 >
                   <Bell size={16} strokeWidth={1.8} />
                   {unreadCount > 0 && (

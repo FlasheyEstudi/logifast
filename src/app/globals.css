@@ -13,7 +13,10 @@
    LOGIFAST 2.0 — Complete Rebrand Design System
    ======================================== */
 
-:root {
+:root,
+[data-theme="light"],
+.light,
+html.light {
   /* ─── MODO CLARO — Apple System Colors ─── */
   --bg: #F2F2F7;
   --bg-alt: #E5E5EA;
@@ -15523,7 +15526,10 @@ html, body {
    Aplicado a Cliente y Repartidor para consistencia total.
    ═══════════════════════════════════════════════════════ */
 
-:root {
+:root,
+[data-theme="light"],
+.light,
+html.light {
   /* Colores iOS system */
   --ios-blue: #007AFF;
   --ios-green: #34C759;
@@ -15583,6 +15589,21 @@ html.dark {
   --ios-text-quaternary: #EBEBF540;
   --ios-separator: rgba(84, 84, 88, 0.6);
   --ios-separator-opaque: #38383A;
+}
+
+.light,
+[data-theme="light"],
+html.light {
+  --ios-bg: #F2F2F7;
+  --ios-bg-elevated: #FFFFFF;
+  --ios-bg-secondary: #E5E5EA;
+  --ios-bg-tertiary: #C7C7CC;
+  --ios-text-primary: #000000;
+  --ios-text-secondary: #3C3C43;
+  --ios-text-tertiary: #8E8E93;
+  --ios-text-quaternary: #C7C7CC;
+  --ios-separator: rgba(60, 60, 67, 0.29);
+  --ios-separator-opaque: #C6C6C8;
 }
 
 /* Tab Bar iOS — aplicación real, no demo */

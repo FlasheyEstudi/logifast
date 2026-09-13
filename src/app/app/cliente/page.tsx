@@ -34,7 +34,6 @@ export default function ClienteAppPage() {
   }, [tema]);
 
   const isDark =
-    !mounted ||
     tema === 'dark' ||
     (tema === 'system' &&
       typeof window !== 'undefined' &&
@@ -382,7 +381,15 @@ export default function ClienteAppPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white">
+    <div
+      className={`min-h-screen ${isDark ? 'dark' : 'light'}`}
+      data-theme={isDark ? 'dark' : 'light'}
+      style={{
+        backgroundColor: isDark ? '#08080C' : '#F5F5F9',
+        color: isDark ? '#FFFFFF' : '#1C1C1E',
+        transition: 'background-color 0.3s ease, color 0.3s ease',
+      }}
+    >
       <AuthRedesign
         currentView={authMode}
         fixedRole="cliente"

@@ -23,6 +23,7 @@ const RepartidorNotificacionOrden = dynamic(() => import('./RepartidorNotificaci
 const RepartidorChat = dynamic(() => import('./RepartidorChat'), { ssr: false });
 const RepartidorIncidencia = dynamic(() => import('./RepartidorIncidencia'), { ssr: false });
 const RepartidorDetalleServicio = dynamic(() => import('./RepartidorDetalleServicio'), { ssr: false });
+import { aplicarTema } from '@/store/configStore';
 
 /* ═══════════════════════════════════════════════
    SNACKBAR CONTEXT
@@ -679,6 +680,18 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   const touchStartY = useRef<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    // Si estamos en la pestaña de servicio (mapa GPS interactivo) o el toque es sobre el mapa / controles interactivos, NO cambiar de módulo
+    if (activeTab === 'servicio') {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      return;
+    }
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.leaflet-container, .lf-map-container, [data-no-swipe], button, a, input, textarea')) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      return;
+    }
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
   };
@@ -780,23 +793,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   /* ─── THEME SYNC — Asegura que el modo oscuro aplique a todo el DOM y CSS vars ─── */
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-      document.documentElement.setAttribute('data-theme', 'dark');
-      if (document.body) {
-        document.body.classList.add('dark');
-        document.body.setAttribute('data-theme', 'dark');
-      }
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-      document.documentElement.setAttribute('data-theme', 'light');
-      if (document.body) {
-        document.body.classList.remove('dark');
-        document.body.setAttribute('data-theme', 'light');
-      }
-    }
+    aplicarTema(isDark ? 'dark' : 'light');
   }, [isDark]);
 
   return (
@@ -808,8 +805,8 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: 'var(--ios-bg)',
-          color: 'var(--ios-text-primary)',
+          backgroundColor: isDark ? '#000000' : '#F2F2F7',
+          color: isDark ? '#FFFFFF' : '#1C1C1E',
           fontFamily: 'var(--ios-font)',
           transition: 'background-color 0.4s ease, color 0.3s ease',
         }}
@@ -923,7 +920,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
             <button
               onClick={toggleTheme}
               aria-label={isDark ? 'Claro' : 'Oscuro'}
-              style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'transparent', color: 'var(--ios-text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', WebkitTapHighlightColor: 'transparent' }}
+              style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'transparent', color: isDark ? '#FFD60A' : '#FF9500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', WebkitTapHighlightColor: 'transparent' }}
             >
               {isDark ? <Sun size={15} strokeWidth={1.8} /> : <Moon size={15} strokeWidth={1.8} />}
             </button>

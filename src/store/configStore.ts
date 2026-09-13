@@ -50,8 +50,7 @@ export const CONFIG_STORAGE_KEY = 'logifast-config';
  * store (e.g. on first paint before React hydrates).
  */
 export function aplicarTema(tema: Tema): void {
-  if (typeof window === 'undefined') return;
-  if (typeof document === 'undefined') return;
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   let resolved: 'light' | 'dark';
   if (tema === 'system') {
@@ -61,14 +60,29 @@ export function aplicarTema(tema: Tema): void {
   } else {
     resolved = tema;
   }
+
+  const root = document.documentElement;
+  const body = document.body;
+
   if (resolved === 'dark') {
-    document.documentElement.classList.add('dark');
-    document.documentElement.classList.remove('light');
+    root.classList.add('dark');
+    root.classList.remove('light');
+    root.setAttribute('data-theme', 'dark');
+    if (body) {
+      body.classList.add('dark');
+      body.classList.remove('light');
+      body.setAttribute('data-theme', 'dark');
+    }
   } else {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
+    root.classList.remove('dark');
+    root.classList.add('light');
+    root.setAttribute('data-theme', 'light');
+    if (body) {
+      body.classList.remove('dark');
+      body.classList.add('light');
+      body.setAttribute('data-theme', 'light');
+    }
   }
-  document.documentElement.setAttribute('data-theme', resolved);
 }
 
 /**

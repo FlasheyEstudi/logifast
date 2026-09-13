@@ -10,9 +10,18 @@ export function toggleThemeWithTransition(
 ): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
-  const isCurrentlyDark =
-    document.documentElement.classList.contains('dark') ||
-    document.documentElement.getAttribute('data-theme') === 'dark';
+  const currentTema = useConfigStore.getState().tema;
+  let isCurrentlyDark = false;
+  if (currentTema === 'dark') {
+    isCurrentlyDark = true;
+  } else if (currentTema === 'light') {
+    isCurrentlyDark = false;
+  } else {
+    isCurrentlyDark =
+      (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) ||
+      document.documentElement.classList.contains('dark') ||
+      document.documentElement.getAttribute('data-theme') === 'dark';
+  }
 
   const nextTema: Tema = isCurrentlyDark ? 'light' : 'dark';
 

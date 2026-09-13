@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Package, Navigation, Clock, Power, MessageSquare, AlertTriangle,
   Zap, Phone, Compass, Key, Bike, Flame, CheckCircle, X, ArrowRight,
-  Layers, Maximize2, ChevronDown, ChevronUp,
+  Layers, Maximize2, ChevronDown, ChevronUp, Eye, FileText, Check, Store,
+  User, ShieldCheck,
 } from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
@@ -62,7 +63,7 @@ export default function RepartidorServicio() {
     estado, conectado, ordenActiva, ordenesActivas = [], ordenAsignadaPendiente, ofertasDisponibles = [], lat, lng, eta, perfil,
     conectar, desconectar, optimizarRutaAutomatica, seleccionarOrdenActiva, llegarRecogida, recogerPaquete,
     llegarEntrega, confirmarEntrega, toggleChat, toggleIncidencia,
-    aceptarOfertaDirecta, rechazarOfertaDirecta, obtenerStats,
+    aceptarOfertaDirecta, rechazarOfertaDirecta, obtenerStats, verificarProductos,
   } = useRepartidorStore();
 
   const showSnackbar = useRepartidorSnackbar();
@@ -71,6 +72,7 @@ export default function RepartidorServicio() {
   const statsGanancias = obtenerStats(periodoGanancias);
 
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showDetalleModal, setShowDetalleModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
   const [rutaCoordenadas, setRutaCoordenadas] = useState<[number,number][]>([]);
@@ -139,6 +141,39 @@ export default function RepartidorServicio() {
     } else {
       setPinError(true);
       HAPTIC_PATTERNS.error();
+    }
+  };
+
+  const handleNavegarDestino = (tipo: 'recogida' | 'entrega') => {
+    if (!ordenActiva) return;
+    const isPickup = tipo === 'recogida';
+    const targetLat = isPickup ? ordenActiva.origenLat : ordenActiva.destinoLat;
+    const targetLng = isPickup ? ordenActiva.origenLng : ordenActiva.destinoLng;
+    const hasValidCoords = Boolean(targetLat && targetLng && targetLat !== 0 && targetLng !== 0);
+    const label = isPickup ? (ordenActiva.tiendaNombre || ordenActiva.origen) : ordenActiva.destino;
+    const destinationQuery = hasValidCoords ? `${targetLat},${targetLng}` : encodeURIComponent(label || 'Managua, Nicaragua');
+
+    iniciarRastreoFondo(ordenActiva?.id, estado);
+    forzarEnvioPosicionGps(ordenActiva?.id, estado);
+    showSnackbar({ message: `GPS iniciado hacia ${isPickup ? 'Punto de Recogida' : 'Punto de Entrega'}.` });
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destinationQuery}`, '_blank');
+  };
+
+  const handleNavegarWaze = (tipo: 'recogida' | 'entrega') => {
+    if (!ordenActiva) return;
+    const isPickup = tipo === 'recogida';
+    const targetLat = isPickup ? ordenActiva.origenLat : ordenActiva.destinoLat;
+    const targetLng = isPickup ? ordenActiva.origenLng : ordenActiva.destinoLng;
+    const hasValidCoords = Boolean(targetLat && targetLng && targetLat !== 0 && targetLng !== 0);
+    const label = isPickup ? (ordenActiva.tiendaNombre || ordenActiva.origen) : ordenActiva.destino;
+
+    iniciarRastreoFondo(ordenActiva?.id, estado);
+    forzarEnvioPosicionGps(ordenActiva?.id, estado);
+    showSnackbar({ message: `Waze iniciado hacia ${isPickup ? 'Punto de Recogida' : 'Punto de Entrega'}.` });
+    if (hasValidCoords) {
+      window.open(`https://waze.com/ul?ll=${targetLat},${targetLng}&navigate=yes`, '_blank');
+    } else {
+      window.open(`https://waze.com/ul?q=${encodeURIComponent(label || 'Managua, Nicaragua')}&navigate=yes`, '_blank');
     }
   };
 
@@ -504,26 +539,46 @@ export default function RepartidorServicio() {
                   padding: '14px 16px',
                 }}
               >
-                {/* Header: Cliente + Ganancia + Botón Colapsar */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--primario-soft)', color: 'var(--primario)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Package size={17} />
+                {/* Header: Cliente + Ganancia + Botón Ver Detalle + Botón Colapsar */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: ordenActiva.tipo === 'compra' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(175, 82, 222, 0.15)', color: ordenActiva.tipo === 'compra' ? '#007AFF' : '#AF52DE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {ordenActiva.tipo === 'compra' ? <Store size={18} /> : <Package size={18} />}
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {ordenActiva.cliente}
+                        {ordenActiva.tipo === 'compra' && ordenActiva.tiendaNombre ? ordenActiva.tiendaNombre : ordenActiva.cliente}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                        {estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA' ? 'Paso 1: Recogida' : 'Paso 2: Entrega'}
-                        {ordenesActivas.length > 1 && ` (Orden ${ordenesActivas.findIndex((o) => o.id === ordenActiva.id) + 1}/${ordenesActivas.length})`}
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: 700, color: (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? '#007AFF' : '#34C759' }}>
+                          {(estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? 'Paso 1: Recogida' : 'Paso 2: Entrega'}
+                        </span>
+                        {ordenesActivas.length > 1 && <span>• Orden {ordenesActivas.findIndex((o) => o.id === ordenActiva.id) + 1}/{ordenesActivas.length}</span>}
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    {/* Botón Ver Detalle */}
+                    <button
+                      type="button"
+                      onClick={() => setShowDetalleModal(true)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        padding: '5px 10px', borderRadius: 100,
+                        background: 'rgba(0, 122, 255, 0.12)', border: '1px solid rgba(0, 122, 255, 0.25)',
+                        color: '#007AFF', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                      }}
+                      title="Ver información y productos del pedido"
+                    >
+                      <Eye size={13} />
+                      <span>Detalle</span>
+                    </button>
+
+                    <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>
                       +C$ {(ordenActiva.ganancia || ordenActiva.monto || 0).toFixed(2)}
                     </div>
+
                     <button
                       type="button"
                       onClick={() => setDrawerOpen(false)}
@@ -535,42 +590,151 @@ export default function RepartidorServicio() {
                   </div>
                 </div>
 
-                {/* Dirección destino actual */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 10, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
-                  <MapPin size={15} style={{ color: (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? '#007AFF' : '#34C759', flexShrink: 0 }} />
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-                      {(estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? ordenActiva.origen : ordenActiva.destino}
-                    </span>
-                  </div>
-                </div>
+                {/* ─── DESGLOSE DE LAS DOS UBICACIONES (PUNTO 1 Y PUNTO 2) ─── */}
+                {(() => {
+                  const isPickupLeg = estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA';
+                  return (
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 7,
+                      background: 'var(--bg-alt)',
+                      borderRadius: 14,
+                      padding: '10px 12px',
+                      border: '1px solid var(--border)',
+                    }}>
+                      {/* Punto 1: Recogida */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+                          <div style={{
+                            width: 22, height: 22, borderRadius: '50%',
+                            background: isPickupLeg ? '#007AFF' : 'rgba(0, 122, 255, 0.2)',
+                            color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 10, fontWeight: 800, flexShrink: 0
+                          }}>
+                            1
+                          </div>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <span style={{ fontSize: 10, fontWeight: 800, color: '#007AFF', textTransform: 'uppercase' }}>
+                                {ordenActiva.tipo === 'compra' ? 'Tienda / Recogida' : 'Punto 1: Recogida'}
+                              </span>
+                              {isPickupLeg && (
+                                <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(0, 122, 255, 0.18)', color: '#007AFF', padding: '1px 6px', borderRadius: 100 }}>
+                                  ACTUAL
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {ordenActiva.tipo === 'compra' && ordenActiva.tiendaNombre ? `${ordenActiva.tiendaNombre} — ${ordenActiva.origen}` : ordenActiva.origen}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleNavegarDestino('recogida')}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            padding: '5px 9px', borderRadius: 8,
+                            background: isPickupLeg ? '#007AFF' : 'rgba(0, 122, 255, 0.12)',
+                            color: isPickupLeg ? '#FFFFFF' : '#007AFF',
+                            border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, flexShrink: 0,
+                          }}
+                          title="Navegar a Punto de Recogida"
+                        >
+                          <Compass size={13} />
+                          <span>Ir a Recogida</span>
+                        </button>
+                      </div>
 
-                {/* TOOLBAR ERGONÓMICO DE ACCIONES (Navegar, Llamar, Chat, Incidencia) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-                  {/* Navegar en Google Maps / Waze */}
+                      {/* Divisor conector */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 10 }}>
+                        <div style={{ width: 2, height: 8, background: 'var(--border)' }} />
+                      </div>
+
+                      {/* Punto 2: Entrega */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+                          <div style={{
+                            width: 22, height: 22, borderRadius: '50%',
+                            background: !isPickupLeg ? '#34C759' : 'rgba(52, 199, 89, 0.2)',
+                            color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 10, fontWeight: 800, flexShrink: 0
+                          }}>
+                            2
+                          </div>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <span style={{ fontSize: 10, fontWeight: 800, color: '#34C759', textTransform: 'uppercase' }}>
+                                Punto 2: Entrega ({ordenActiva.cliente})
+                              </span>
+                              {!isPickupLeg && (
+                                <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(52, 199, 89, 0.18)', color: '#34C759', padding: '1px 6px', borderRadius: 100 }}>
+                                  ACTUAL
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {ordenActiva.destino}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleNavegarDestino('entrega')}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            padding: '5px 9px', borderRadius: 8,
+                            background: !isPickupLeg ? '#34C759' : 'rgba(52, 199, 89, 0.12)',
+                            color: !isPickupLeg ? '#FFFFFF' : '#34C759',
+                            border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, flexShrink: 0,
+                          }}
+                          title="Navegar a Punto de Entrega"
+                        >
+                          <Compass size={13} />
+                          <span>Ir a Entrega</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* TOOLBAR ERGONÓMICO DE ACCIONES (Detalle, Navegar GPS, Llamar, Chat, Ayuda) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                  {/* Detalle */}
                   <button
                     type="button"
-                    onClick={() => {
-                      const headingToPickup = estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA';
-                      const targetLat = headingToPickup ? ordenActiva.origenLat : ordenActiva.destinoLat;
-                      const targetLng = headingToPickup ? ordenActiva.origenLng : ordenActiva.destinoLng;
-                      const hasValidCoords = Boolean(targetLat && targetLng && targetLat !== 0 && targetLng !== 0);
-                      const val = headingToPickup ? ordenActiva.origen : ordenActiva.destino;
-                      const mapsDest = hasValidCoords ? `${targetLat},${targetLng}` : encodeURIComponent(val || 'Managua, Nicaragua');
-                      iniciarRastreoFondo(ordenActiva?.id, estado);
-                      forzarEnvioPosicionGps(ordenActiva?.id, estado);
-                      showSnackbar({ message: 'GPS activo en segundo plano.' });
-                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${mapsDest}`, '_blank');
-                    }}
+                    onClick={() => setShowDetalleModal(true)}
                     style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
                       padding: '8px 4px', borderRadius: 12, background: 'rgba(0, 122, 255, 0.12)', border: '1px solid rgba(0, 122, 255, 0.25)',
                       color: '#007AFF', cursor: 'pointer', fontSize: 10, fontWeight: 700,
                     }}
-                    title="Navegar en Google Maps"
+                    title="Ver detalle del pedido"
                   >
-                    <Compass size={17} />
-                    <span>Navegar</span>
+                    <FileText size={16} />
+                    <span>Detalle</span>
+                  </button>
+
+                  {/* Navegar a parada actual */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const headingToPickup = estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA';
+                      handleNavegarDestino(headingToPickup ? 'recogida' : 'entrega');
+                    }}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                      padding: '8px 4px', borderRadius: 12,
+                      background: (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? 'rgba(0, 122, 255, 0.18)' : 'rgba(52, 199, 89, 0.18)',
+                      border: (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? '1px solid rgba(0, 122, 255, 0.35)' : '1px solid rgba(52, 199, 89, 0.35)',
+                      color: (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? '#007AFF' : '#34C759',
+                      cursor: 'pointer', fontSize: 10, fontWeight: 700,
+                    }}
+                    title="Navegar al paso actual en Google Maps"
+                  >
+                    <Compass size={16} />
+                    <span>{(estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? 'Nav. Rec.' : 'Nav. Entr.'}</span>
                   </button>
 
                   {/* Llamar */}
@@ -584,7 +748,7 @@ export default function RepartidorServicio() {
                       }}
                       title="Llamar al cliente"
                     >
-                      <Phone size={17} />
+                      <Phone size={16} />
                       <span>Llamar</span>
                     </a>
                   ) : (
@@ -593,7 +757,7 @@ export default function RepartidorServicio() {
                       padding: '8px 4px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)',
                       color: 'var(--text-muted)', opacity: 0.5, fontSize: 10, fontWeight: 700,
                     }}>
-                      <Phone size={17} />
+                      <Phone size={16} />
                       <span>Sin tel.</span>
                     </div>
                   )}
@@ -609,7 +773,7 @@ export default function RepartidorServicio() {
                     }}
                     title="Abrir chat"
                   >
-                    <MessageSquare size={17} />
+                    <MessageSquare size={16} />
                     <span>Chat</span>
                   </button>
 
@@ -624,7 +788,7 @@ export default function RepartidorServicio() {
                     }}
                     title="Reportar problema"
                   >
-                    <AlertTriangle size={17} />
+                    <AlertTriangle size={16} />
                     <span>Ayuda</span>
                   </button>
                 </div>
@@ -663,6 +827,692 @@ export default function RepartidorServicio() {
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setShowPinModal(false)} style={{ ...btnGhost, flex: 1 }}>Cancelar</button>
                 <button onClick={handleConfirmarPin} style={{ ...btnPrimary, flex: 1, background: '#34C759', boxShadow: '0 4px 14px rgba(52,199,89,0.3)' }}>Confirmar</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL DETALLE COMPLETO DEL ENVÍO / PEDIDO */}
+      <AnimatePresence>
+        {showDetalleModal && ordenActiva && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDetalleModal(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 999999,
+              background: 'rgba(0, 0, 0, 0.72)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              padding: '0 0 max(env(safe-area-inset-bottom, 0px), 10px) 0',
+            }}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '100%',
+                maxWidth: 520,
+                maxHeight: '90vh',
+                background: 'var(--surface)',
+                borderTop: '1px solid var(--border)',
+                borderLeft: '1px solid var(--border)',
+                borderRight: '1px solid var(--border)',
+                borderRadius: '28px 28px 20px 20px',
+                boxShadow: '0 -16px 48px rgba(0,0,0,0.4)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Handle bar superior estilo iOS */}
+              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4 }}>
+                <div style={{ width: 42, height: 5, borderRadius: 10, background: 'var(--border)' }} />
+              </div>
+
+              {/* Header del modal */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 20px 14px 20px',
+                borderBottom: '1px solid var(--border)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    background: ordenActiva.tipo === 'compra' ? 'rgba(255, 87, 34, 0.15)' : 'rgba(0, 122, 255, 0.15)',
+                    color: ordenActiva.tipo === 'compra' ? 'var(--primario)' : '#007AFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    {ordenActiva.tipo === 'compra' ? <Store size={20} /> : <Package size={20} />}
+                  </div>
+                  <div>
+                    <h3 style={{
+                      fontSize: 16,
+                      fontWeight: 800,
+                      fontFamily: "'Syne', sans-serif",
+                      color: 'var(--text)',
+                      margin: 0,
+                      lineHeight: 1.2,
+                    }}>
+                      Detalle del {ordenActiva.tipo === 'compra' ? 'Pedido' : 'Envío'}
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+                        #{ordenActiva.id.slice(-6).toUpperCase()}
+                      </span>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        padding: '1px 7px',
+                        borderRadius: 100,
+                        background: 'var(--bg-alt)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-secondary)',
+                        textTransform: 'uppercase',
+                      }}>
+                        {ordenActiva.tipo === 'compra' ? 'Tienda / Compra' : 'Envío Express'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowDetalleModal(false)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: 'var(--bg-alt)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                  title="Cerrar"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Contenido scrolleable */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                padding: '16px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
+              }}>
+                {/* 1. Resumen Financiero y Estado */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 10,
+                  background: 'var(--bg-alt)',
+                  padding: '12px 14px',
+                  borderRadius: 18,
+                  border: '1px solid var(--border)',
+                }}>
+                  <div>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block' }}>
+                      Tu Ganancia Neta
+                    </span>
+                    <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>
+                      +C$ {(ordenActiva.ganancia || ordenActiva.monto || 0).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block' }}>
+                      Cobro al Cliente
+                    </span>
+                    {ordenActiva.metodoPago === 'efectivo' ? (
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span>💵 Cobrar:</span>
+                        <strong style={{ fontFamily: "'JetBrains Mono', monospace" }}>C$ {ordenActiva.monto.toFixed(2)}</strong>
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 12, fontWeight: 800, color: '#34C759', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <ShieldCheck size={14} />
+                        <span>Pagado digital</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. LAS DOS UBICACIONES CON NAVEGACIÓN INDEPENDIENTE (GOOGLE MAPS & WAZE) */}
+                <div style={{
+                  background: 'var(--bg-alt)',
+                  borderRadius: 20,
+                  padding: '14px',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: 0.5 }}>
+                      Ruta de 2 Paradas
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      {ordenActiva.kmEstimados ? `${ordenActiva.kmEstimados} km` : ''} {ordenActiva.tiempoEstimado ? `• ~${ordenActiva.tiempoEstimado} min` : ''}
+                    </span>
+                  </div>
+
+                  {/* PARADA 1: RECOGIDA */}
+                  {(() => {
+                    const isPickupLeg = estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA';
+                    return (
+                      <div style={{
+                        borderRadius: 14,
+                        padding: 12,
+                        background: isPickupLeg ? 'rgba(0, 122, 255, 0.08)' : 'var(--surface)',
+                        border: isPickupLeg ? '1.5px solid rgba(0, 122, 255, 0.4)' : '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: '50%',
+                              background: '#007AFF',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 12,
+                              fontWeight: 800,
+                              flexShrink: 0,
+                              marginTop: 1,
+                            }}>
+                              1
+                            </div>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', textTransform: 'uppercase' }}>
+                                  {ordenActiva.tipo === 'compra' ? 'Punto 1: Tienda / Compra' : 'Punto 1: Recogida (Remitente)'}
+                                </span>
+                                {isPickupLeg && (
+                                  <span style={{ fontSize: 9, fontWeight: 800, background: '#007AFF', color: '#fff', padding: '1px 6px', borderRadius: 100 }}>
+                                    EN CURSO
+                                  </span>
+                                )}
+                              </div>
+                              {ordenActiva.tiendaNombre && (
+                                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>
+                                  {ordenActiva.tiendaNombre}
+                                </div>
+                              )}
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, wordBreak: 'break-word', lineHeight: 1.35 }}>
+                                {ordenActiva.origen}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Botones de navegación para la parada 1 */}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                          <button
+                            type="button"
+                            onClick={() => handleNavegarDestino('recogida')}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              padding: '8px 12px',
+                              borderRadius: 10,
+                              background: '#007AFF',
+                              color: '#FFFFFF',
+                              border: 'none',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(0,122,255,0.3)',
+                            }}
+                          >
+                            <Compass size={14} />
+                            <span>Google Maps</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleNavegarWaze('recogida')}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              padding: '8px 12px',
+                              borderRadius: 10,
+                              background: 'var(--surface)',
+                              color: 'var(--text)',
+                              border: '1px solid var(--border)',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Navigation size={14} />
+                            <span>Waze</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* PARADA 2: ENTREGA */}
+                  {(() => {
+                    const isDeliveryLeg = estado === 'RECOGIDO' || estado === 'EN_PUNTO_ENTREGA';
+                    return (
+                      <div style={{
+                        borderRadius: 14,
+                        padding: 12,
+                        background: isDeliveryLeg ? 'rgba(52, 199, 89, 0.08)' : 'var(--surface)',
+                        border: isDeliveryLeg ? '1.5px solid rgba(52, 199, 89, 0.4)' : '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: '50%',
+                              background: '#34C759',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 12,
+                              fontWeight: 800,
+                              flexShrink: 0,
+                              marginTop: 1,
+                            }}>
+                              2
+                            </div>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: '#34C759', textTransform: 'uppercase' }}>
+                                  Punto 2: Entrega (Cliente)
+                                </span>
+                                {isDeliveryLeg && (
+                                  <span style={{ fontSize: 9, fontWeight: 800, background: '#34C759', color: '#fff', padding: '1px 6px', borderRadius: 100 }}>
+                                    EN CURSO
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>
+                                {ordenActiva.cliente}
+                              </div>
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, wordBreak: 'break-word', lineHeight: 1.35 }}>
+                                {ordenActiva.destino}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Botones de navegación para la parada 2 */}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                          <button
+                            type="button"
+                            onClick={() => handleNavegarDestino('entrega')}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              padding: '8px 12px',
+                              borderRadius: 10,
+                              background: '#34C759',
+                              color: '#FFFFFF',
+                              border: 'none',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(52,199,89,0.3)',
+                            }}
+                          >
+                            <Compass size={14} />
+                            <span>Google Maps</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleNavegarWaze('entrega')}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              padding: '8px 12px',
+                              borderRadius: 10,
+                              background: 'var(--surface)',
+                              color: 'var(--text)',
+                              border: '1px solid var(--border)',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Navigation size={14} />
+                            <span>Waze</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* 3. Contacto con el Cliente */}
+                <div style={{
+                  background: 'var(--bg-alt)',
+                  borderRadius: 18,
+                  padding: '12px 14px',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text)',
+                      flexShrink: 0,
+                    }}>
+                      <User size={18} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {ordenActiva.cliente}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>
+                        {ordenActiva.clienteTelefono || 'Sin teléfono registrado'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    {ordenActiva.clienteTelefono && (
+                      <a
+                        href={`tel:${ordenActiva.clienteTelefono}`}
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 10,
+                          background: 'rgba(52, 199, 89, 0.15)',
+                          border: '1px solid rgba(52, 199, 89, 0.3)',
+                          color: '#34C759',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textDecoration: 'none',
+                        }}
+                        title="Llamar al cliente"
+                      >
+                        <Phone size={16} />
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleChat(ordenActiva.id);
+                        setShowDetalleModal(false);
+                      }}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        background: 'rgba(175, 82, 222, 0.15)',
+                        border: '1px solid rgba(175, 82, 222, 0.3)',
+                        color: '#AF52DE',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                      }}
+                      title="Abrir chat con cliente"
+                    >
+                      <MessageSquare size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. Checklist de Productos o Info del Paquete */}
+                {ordenActiva.productos && ordenActiva.productos.length > 0 ? (
+                  <div style={{
+                    background: 'var(--bg-alt)',
+                    borderRadius: 18,
+                    padding: '14px',
+                    border: '1px solid var(--border)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                        Checklist de Productos ({ordenActiva.productos.filter((p) => p.verificado).length}/{ordenActiva.productos.length})
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primario)' }}>
+                        Toca para verificar
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {ordenActiva.productos.map((prod) => (
+                        <div
+                          key={prod.id}
+                          onClick={() => {
+                            verificarProductos(prod.id);
+                            HAPTIC_PATTERNS.light();
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '9px 12px',
+                            borderRadius: 12,
+                            background: prod.verificado ? 'rgba(52, 199, 89, 0.1)' : 'var(--surface)',
+                            border: prod.verificado ? '1px solid rgba(52, 199, 89, 0.3)' : '1px solid var(--border)',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                            <div style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 6,
+                              background: prod.verificado ? '#34C759' : 'transparent',
+                              border: prod.verificado ? 'none' : '2px solid var(--text-muted)',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              {prod.verificado && <Check size={14} />}
+                            </div>
+                            <span style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: prod.verificado ? 'var(--text)' : 'var(--text-secondary)',
+                              textDecoration: prod.verificado ? 'line-through' : 'none',
+                              opacity: prod.verificado ? 0.75 : 1,
+                            }}>
+                              {prod.nombre}
+                            </span>
+                          </div>
+
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 800,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            padding: '2px 8px',
+                            borderRadius: 100,
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            border: '1px solid var(--border)',
+                          }}>
+                            x{prod.cantidad}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    background: 'var(--bg-alt)',
+                    borderRadius: 18,
+                    padding: '14px',
+                    border: '1px solid var(--border)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                      Detalles del Paquete Express
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                        {ordenActiva.paquete || 'Paquete o sobre sellado'}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {ordenActiva.tamano && (
+                          <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                            {ordenActiva.tamano}
+                          </span>
+                        )}
+                        {ordenActiva.fragil && (
+                          <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: 'rgba(255, 59, 48, 0.15)', border: '1px solid rgba(255, 59, 48, 0.3)', color: '#FF3B30' }}>
+                            ⚠️ Frágil
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {ordenActiva.paqueteFotoUrl && (
+                      <div style={{ marginTop: 6, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img
+                          src={ordenActiva.paqueteFotoUrl}
+                          alt="Foto del paquete"
+                          style={{ width: '100%', maxHeight: 180, objectFit: 'cover' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 5. Código PIN de Seguridad */}
+                <div style={{
+                  background: 'rgba(52, 199, 89, 0.08)',
+                  borderRadius: 18,
+                  padding: '14px',
+                  border: '1px solid rgba(52, 199, 89, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 12,
+                      background: '#34C759',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <Key size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>
+                        PIN de Entrega Requerido
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>
+                        El cliente te facilitará su PIN de 4 dígitos al entregar
+                      </div>
+                    </div>
+                  </div>
+
+                  {(estado === 'RECOGIDO' || estado === 'EN_PUNTO_ENTREGA') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDetalleModal(false);
+                        setShowPinModal(true);
+                      }}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: 100,
+                        background: '#34C759',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontSize: 12,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 2px 10px rgba(52, 199, 89, 0.35)',
+                      }}
+                    >
+                      Ingresar PIN
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Botón inferior de cerrar / volver al mapa */}
+              <div style={{
+                padding: '14px 20px',
+                borderTop: '1px solid var(--border)',
+                background: 'var(--surface)',
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setShowDetalleModal(false)}
+                  style={{
+                    ...btnPrimary,
+                    borderRadius: 14,
+                    padding: '13px',
+                  }}
+                >
+                  Volver al Mapa
+                </button>
               </div>
             </motion.div>
           </motion.div>
