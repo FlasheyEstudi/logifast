@@ -25,7 +25,7 @@ import {
 import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
-import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
+import { obtenerRuta, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
 
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), { ssr: false });
 
@@ -608,8 +608,20 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         .then((data) => {
           if (data?.orden) {
             setBackendTracking(data);
-            if (data.repartidorPos) {
+            if (data.repartidorPos && data.repartidorPos.lat && data.repartidorPos.lng) {
               setDriverPos([data.repartidorPos.lat, data.repartidorPos.lng]);
+            }
+            if (data.driverEstado) {
+              setDriverEstado(data.driverEstado);
+            } else if (data.orden.estado) {
+              const mapped = data.orden.estado === 'recogido'
+                ? 'RECOGIDO'
+                : (data.orden.estado === 'en_camino' || data.orden.estado === 'encamino' || data.orden.estado === 'aceptado')
+                  ? 'EN_CAMINO_RECOGER'
+                  : data.orden.estado === 'entregado'
+                    ? 'ENTREGADO'
+                    : 'ORDEN_ASIGNADA';
+              setDriverEstado(mapped);
             }
           }
         })
@@ -620,14 +632,16 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     const interval = setInterval(fetchTracking, 3000);
 
     const cleanupPos = onRealtimeEvent('repartidor:posicion:update', (data) => {
-      setDriverPos([data.lat, data.lng]);
-      if (data.estado) {
+      if (data?.lat && data?.lng) {
+        setDriverPos([data.lat, data.lng]);
+      }
+      if (data?.estado) {
         setDriverEstado(data.estado);
       }
     });
 
     const cleanupEstado = onRealtimeEvent('repartidor:estado:update', (data) => {
-      if (data.estado) {
+      if (data?.estado) {
         setDriverEstado(data.estado);
       }
       fetchTracking();
@@ -663,8 +677,32 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       const livePin = backendTracking?.orden?.codigoPin || (foundEnvio as any).codigoPin;
       const liveEstado = backendTracking?.orden?.estado || foundEnvio.estado;
 
+      let oLat = (backendTracking?.orden?.origenLat && backendTracking.orden.origenLat !== 0) ? backendTracking.orden.origenLat : foundEnvio.origenLat;
+      let oLng = (backendTracking?.orden?.origenLng && backendTracking.orden.origenLng !== 0) ? backendTracking.orden.origenLng : foundEnvio.origenLng;
+      let dLat = (backendTracking?.orden?.destinoLat && backendTracking.orden.destinoLat !== 0) ? backendTracking.orden.destinoLat : foundEnvio.destinoLat;
+      let dLng = (backendTracking?.orden?.destinoLng && backendTracking.orden.destinoLng !== 0) ? backendTracking.orden.destinoLng : foundEnvio.destinoLng;
+
+      if ((!oLat || oLat === 0) && foundEnvio.origen) {
+        const [gcLat, gcLng] = geocodeAddress(foundEnvio.origen);
+        oLat = gcLat;
+        oLng = gcLng;
+      }
+      if ((!dLat || dLat === 0) && foundEnvio.destino) {
+        const [gcLat, gcLng] = geocodeAddress(foundEnvio.destino);
+        dLat = gcLat;
+        dLng = gcLng;
+      }
+
       return {
         ...foundEnvio,
+        origenLat: oLat,
+        origenLng: oLng,
+        destinoLat: dLat,
+        destinoLng: dLng,
+        tamano: (backendTracking?.orden as any)?.tamano || (foundEnvio as any).tamano || 'Estándar',
+        fragil: (backendTracking?.orden as any)?.fragil ?? (foundEnvio as any).fragil ?? false,
+        kmEstimados: backendTracking?.orden?.kmEstimados || (foundEnvio as any).kmEstimados,
+        tiempoEstimado: backendTracking?.orden?.tiempoEstimado || (foundEnvio as any).tiempoEstimado,
         estado: liveEstado === 'entregado' ? 'entregado' : liveEstado === 'aceptado' || liveEstado === 'en_camino' || liveEstado === 'recogido' ? 'encamino' : foundEnvio.estado,
         repartidor: liveRepartidor,
         repartidorTelefono: liveRepartidorTelefono,
@@ -675,23 +713,51 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
 
     if (currentOrdenCompra) {
       const pinCode = backendTracking?.orden?.codigoPin || (currentOrdenCompra as any).codigoPin || '';
+      let oLat = (currentOrdenCompra as any).origenLat || backendTracking?.orden?.origenLat;
+      let oLng = (currentOrdenCompra as any).origenLng || backendTracking?.orden?.origenLng;
+      let dLat = (currentOrdenCompra as any).destinoLat || backendTracking?.orden?.destinoLat;
+      let dLng = (currentOrdenCompra as any).destinoLng || backendTracking?.orden?.destinoLng;
+
+      const origenText = currentOrdenCompra.tiendaNombre || backendTracking?.orden?.origen || 'Tienda';
+      const destinoText = currentOrdenCompra.direccionEntrega || backendTracking?.orden?.destino || '';
+
+      if ((!oLat || oLat === 0) && origenText) {
+        const [gcLat, gcLng] = geocodeAddress(origenText);
+        oLat = gcLat;
+        oLng = gcLng;
+      }
+      if ((!dLat || dLat === 0) && destinoText) {
+        const [gcLat, gcLng] = geocodeAddress(destinoText);
+        dLat = gcLat;
+        dLng = gcLng;
+      }
+
+      const kmReal = backendTracking?.orden?.kmEstimados || (currentOrdenCompra as any).kmEstimados || 0;
+      const tiempoReal = backendTracking?.orden?.tiempoEstimado || (currentOrdenCompra as any).tiempoEstimado || (kmReal > 0 ? Math.round(kmReal * 4 + 10) : 15);
+
       return {
         id: currentOrdenCompra.id,
         tipo: 'compra',
-        origen: currentOrdenCompra.tiendaNombre || backendTracking?.orden?.origen || 'Tienda',
-        destino: currentOrdenCompra.direccionEntrega || backendTracking?.orden?.destino || 'Managua',
-        origenLat: (currentOrdenCompra as any).origenLat || backendTracking?.orden?.origenLat || 12.1264,
-        origenLng: (currentOrdenCompra as any).origenLng || backendTracking?.orden?.origenLng || -86.2652,
-        destinoLat: (currentOrdenCompra as any).destinoLat || backendTracking?.orden?.destinoLat || 12.1421,
-        destinoLng: (currentOrdenCompra as any).destinoLng || backendTracking?.orden?.destinoLng || -86.2287,
+        origen: origenText,
+        destino: destinoText,
+        origenLat: oLat,
+        origenLng: oLng,
+        destinoLat: dLat,
+        destinoLng: dLng,
         estado: currentOrdenCompra.estado === 'entregado' ? 'entregado' : 'encamino',
         monto: currentOrdenCompra.total,
+        subtotal: (currentOrdenCompra as any).subtotal || backendTracking?.orden?.subtotal || currentOrdenCompra.total,
+        costoEnvio: (currentOrdenCompra as any).costoEnvio || backendTracking?.orden?.costoEnvio || 0,
+        descuento: (currentOrdenCompra as any).descuento || backendTracking?.orden?.descuento || 0,
+        codigoPromo: (currentOrdenCompra as any).codigoUsado || backendTracking?.orden?.codigoUsado || '',
         ganancia: currentOrdenCompra.total * 0.2,
-        kmEstimados: 3.2,
-        tiempoEstimado: 18,
+        kmEstimados: kmReal,
+        tiempoEstimado: tiempoReal,
         cliente: (currentOrdenCompra as any).clienteNombre || backendTracking?.cliente?.nombre || 'Cliente',
         clienteTelefono: (currentOrdenCompra as any).clienteTelefono || backendTracking?.cliente?.telefono || '',
-        descripcion: 'Compra en tienda ' + (currentOrdenCompra.tiendaNombre || 'Marketplace'),
+        descripcion: (currentOrdenCompra as any).instrucciones || ('Compra en ' + origenText),
+        tamano: `${(currentOrdenCompra as any).items?.length || 1} producto(s)`,
+        fragil: false,
         estadoPago: 'pagado',
         fecha: currentOrdenCompra.fecha,
         hora: currentOrdenCompra.hora || '12:00',
@@ -702,31 +768,55 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         metodoPago: currentOrdenCompra.metodoPago,
         codigoPin: pinCode,
         createdAt: currentOrdenCompra.fecha,
+        items: (currentOrdenCompra as any).items || backendTracking?.orden?.items || [],
       };
     }
 
     if (backendTracking?.orden) {
       const bo = backendTracking.orden;
+      let oLat = bo.origenLat;
+      let oLng = bo.origenLng;
+      let dLat = bo.destinoLat;
+      let dLng = bo.destinoLng;
+      if ((!oLat || oLat === 0) && bo.origen) {
+        const [gcLat, gcLng] = geocodeAddress(bo.origen);
+        oLat = gcLat;
+        oLng = gcLng;
+      }
+      if ((!dLat || dLat === 0) && bo.destino) {
+        const [gcLat, gcLng] = geocodeAddress(bo.destino);
+        dLat = gcLat;
+        dLng = gcLng;
+      }
+      const kmReal = bo.kmEstimados || 0;
+      const tiempoReal = bo.tiempoEstimado || (kmReal > 0 ? Math.round(kmReal * 4 + 10) : 15);
+
       return {
         id: bo.id,
         tipo: backendTracking.tipo || 'compra',
         origen: bo.origen || 'Tienda Partner',
         destino: bo.destino || 'Dirección de Entrega',
-        origenLat: bo.origenLat || 12.1264,
-        origenLng: bo.origenLng || -86.2652,
-        destinoLat: bo.destinoLat || 12.1421,
-        destinoLng: bo.destinoLng || -86.2287,
+        origenLat: oLat,
+        origenLng: oLng,
+        destinoLat: dLat,
+        destinoLng: dLng,
         estado: bo.estado === 'entregado' ? 'entregado' : 'encamino',
         monto: bo.monto || bo.total || 0,
+        subtotal: bo.subtotal || bo.total || 0,
+        costoEnvio: bo.costoEnvio || 0,
+        descuento: bo.descuento || 0,
+        codigoPromo: bo.codigoUsado || '',
         ganancia: (bo.total || 0) * 0.2,
-        kmEstimados: 3.5,
-        tiempoEstimado: 20,
-        cliente: backendTracking.cliente?.nombre || 'Cliente',
-        clienteTelefono: backendTracking.cliente?.telefono || '',
-        descripcion: 'Pedido LogiFast #' + bo.id.slice(-5),
+        kmEstimados: kmReal,
+        tiempoEstimado: tiempoReal,
+        cliente: backendTracking.cliente?.nombre || (bo as any).clienteNombre || 'Cliente',
+        clienteTelefono: backendTracking.cliente?.telefono || (bo as any).clienteTelefono || '',
+        descripcion: (bo as any).paquete || (bo as any).instrucciones || ('Pedido LogiFast #' + bo.id.slice(-5)),
+        tamano: (bo as any).tamano || 'Estándar',
+        fragil: (bo as any).fragil ?? false,
         estadoPago: 'pagado',
-        fecha: new Date(bo.createdAt || Date.now()).toISOString().slice(0, 10),
-        hora: '12:00',
+        fecha: bo.createdAt ? new Date(bo.createdAt).toLocaleDateString('es-NI') : 'Hoy',
+        hora: bo.createdAt ? new Date(bo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '12:00',
         timeline: [],
         repartidor: backendTracking.repartidor?.nombre || null,
         repartidorTelefono: backendTracking.repartidor?.telefono || '',
@@ -734,6 +824,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         metodoPago: bo.metodoPago || 'efectivo',
         codigoPin: bo.codigoPin || '',
         createdAt: bo.createdAt,
+        items: bo.items || [],
       };
     }
 
@@ -757,19 +848,60 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       })
     : null;
 
-  // Fetch OSRM route dynamically
+  // Fetch OSRM route dynamically: Driver to Destination (or to Pickup if not yet picked up)
   useEffect(() => {
     if (!order) return;
-    const orig = { lat: order.origenLat, lng: order.origenLng };
-    const dest = { lat: order.destinoLat, lng: order.destinoLng };
-    obtenerRuta(orig, dest).then((res) => {
-      if (res.exito && res.coordenadas) {
-        setRutaCoords(res.coordenadas);
-      } else {
-        setRutaCoords(rutaLineaRecta(orig, dest));
-      }
-    });
-  }, [order]);
+    const origLat = (order.origenLat && order.origenLat !== 0) ? order.origenLat : null;
+    const origLng = (order.origenLng && order.origenLng !== 0) ? order.origenLng : null;
+    const destLat = (order.destinoLat && order.destinoLat !== 0) ? order.destinoLat : null;
+    const destLng = (order.destinoLng && order.destinoLng !== 0) ? order.destinoLng : null;
+
+    if (!destLat || !destLng) return;
+
+    const dest = { lat: destLat, lng: destLng };
+    const orig = (origLat && origLng) ? { lat: origLat, lng: origLng } : dest;
+
+    const isRecogido =
+      order.estado === 'recogido' ||
+      driverEstado === 'RECOGIDO' ||
+      driverEstado === 'EN_CAMINO_ENTREGAR' ||
+      driverEstado === 'EN_PUNTO_ENTREGA';
+
+    const hasDriverGps = Boolean(driverPos && driverPos[0] !== 0 && driverPos[1] !== 0);
+
+    // Punto de inicio: posición en tiempo real del repartidor (o el origen si aún no se conoce)
+    const startPoint = hasDriverGps
+      ? { lat: driverPos![0], lng: driverPos![1] }
+      : orig;
+
+    // Punto destino: hacia la casa del cliente (dest) si ya recogió, o hacia el origen (orig) si aún recolecta
+    const targetPoint = isRecogido ? dest : (hasDriverGps ? orig : dest);
+
+    if (startPoint.lat && startPoint.lng && targetPoint.lat && targetPoint.lng) {
+      // Trazar línea directa inmediata como fallback instantáneo para que jamás esté vacío
+      setRutaCoords(rutaLineaRecta(startPoint, targetPoint));
+
+      obtenerRuta(startPoint, targetPoint)
+        .then((res) => {
+          if (res.exito && res.coordenadas && res.coordenadas.length > 1) {
+            setRutaCoords(res.coordenadas);
+          }
+        })
+        .catch(() => {
+          setRutaCoords(rutaLineaRecta(startPoint, targetPoint));
+        });
+    }
+  }, [
+    order?.id,
+    order?.estado,
+    order?.origenLat,
+    order?.origenLng,
+    order?.destinoLat,
+    order?.destinoLng,
+    driverPos?.[0],
+    driverPos?.[1],
+    driverEstado,
+  ]);
 
   // Current step index
   const currentStepIdx = trackingSteps.findIndex((s) => s.status === 'current');
@@ -1096,13 +1228,14 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         className="md:!h-full md:!w-[60%]"
       >
         <RepartidorMap
-          repartidorPos={driverPos || (order && order.origenLat ? [order.origenLat, order.origenLng] : [12.1364, -86.2581])}
+          repartidorPos={driverPos && driverPos[0] !== 0 && driverPos[1] !== 0 ? driverPos : undefined}
           origenPos={order && order.origenLat && order.origenLng ? [order.origenLat, order.origenLng] : undefined}
           destinoPos={order && order.destinoLat && order.destinoLng ? [order.destinoLat, order.destinoLng] : undefined}
           rutaCoordenadas={rutaCoords}
-          estado={driverEstado}
+          estado={driverEstado !== 'DESCONECTADO' ? driverEstado : (order?.estado === 'recogido' ? 'RECOGIDO' : 'EN_CAMINO_RECOGER')}
           altura="100%"
-          seguirRepartidor={true}
+          seguirRepartidor={false}
+          mostrarNavegacionDriver={false}
         />
 
         {/* ─── Top Left: Back Button ─── */}
@@ -1734,15 +1867,16 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                       }}
                     >
                       {[
-                        { label: 'Descripcion', value: order.descripcion || 'Paquete estandar' },
-                        { label: 'Tamano', value: 'Mediano (30x30x30cm)' },
-                        { label: 'Fragil', value: 'No' },
-                        { label: 'Instrucciones', value: 'Dejar en portería' },
+                        { label: 'Descripción', value: order.descripcion || (order.tipo === 'compra' ? 'Pedido en tienda' : 'Paquete estándar') },
+                        { label: 'Detalles / Tamaño', value: (order as any).tamano || (order.tipo === 'compra' ? `${(order as any).items?.length || 1} producto(s)` : 'Estándar') },
+                        { label: 'Frágil', value: (order as any).fragil ? 'Sí, manipular con cuidado' : 'No' },
+                        { label: 'Instrucciones', value: (order as any).instrucciones || (order as any).notas || 'Entregar en dirección indicada' },
                         {
                           label: 'Pago',
-                          value: `${order.metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia'} — C$${order.monto}`,
+                          value: `${order.metodoPago === 'efectivo' ? 'Efectivo contra entrega' : 'Transferencia / Digital'} — C$${order.monto}`,
                         },
-                        { label: 'Codigo promo', value: '—' },
+                        { label: 'Código promo', value: (order as any).codigoPromo ? `${(order as any).codigoPromo} (-C$${(order as any).descuento || 0})` : '—' },
+                        ...(orderPin ? [{ label: 'PIN de Entrega', value: `${orderPin} (Mostrar al repartidor)` }] : []),
                       ].map((detail, i) => (
                         <div key={i}>
                           <p

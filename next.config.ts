@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   allowedDevOrigins: [
+    '192.168.0.110',
+    '192.168.0.110:3000',
+    'http://192.168.0.110:3000',
     '172.16.26.209',
     '172.16.26.209:3000',
     '172.16.26.209:81',

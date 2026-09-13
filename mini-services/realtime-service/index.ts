@@ -81,7 +81,7 @@ io.on('connection', (socket) => {
   });
 
   // ─── REPARTIDOR: emitir posición ───
-  socket.on('repartidor:posicion', (data: { lat: number; lng: number; heading: number; estado: string }) => {
+  socket.on('repartidor:posicion', (data: { lat: number; lng: number; heading: number; estado: string; ordenId?: string }) => {
     const repartidorId = socket.data.repartidorId;
     if (!repartidorId) return;
     repartidoresConectados.set(repartidorId, { ...data, ultimaActualizacion: Date.now() });
@@ -89,8 +89,9 @@ io.on('connection', (socket) => {
     io.to('admin').emit('repartidor:posicion:update', { repartidorId, ...data });
     io.to(`repartidor:${repartidorId}`).emit('repartidor:posicion:update', { repartidorId, ...data });
 
-    const ordenId = socket.data.ordenId;
+    const ordenId = data.ordenId || socket.data.ordenId;
     if (ordenId) {
+      socket.join(`orden:${ordenId}`);
       io.to(`orden:${ordenId}`).emit('repartidor:posicion:update', { repartidorId, ...data });
     }
   });

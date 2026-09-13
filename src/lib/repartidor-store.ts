@@ -1093,7 +1093,7 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     fetch('/api/repartidor/posicion', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lat, lng, heading }),
+      body: JSON.stringify({ lat, lng, heading, ordenId: orden?.id, estado: get().estado }),
     }).catch((err) => console.error('[actualizarPosicion API error]', err));
   },
 
@@ -1560,10 +1560,14 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
   actualizarPosicionAsync: async (lat, lng) => {
     try {
+      const state = get();
+      const ordenId = state.ordenActiva?.id;
+      const estado = state.estado;
+      const heading = state.heading || 0;
       await fetch('/api/repartidor/posicion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat, lng }),
+        body: JSON.stringify({ lat, lng, heading, ordenId, estado }),
       });
     } catch (err) {
       // Silencioso: la posición es best-effort

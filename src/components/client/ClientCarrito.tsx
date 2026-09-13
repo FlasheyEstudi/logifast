@@ -24,6 +24,7 @@ import { notify } from '@/lib/notify';
 import { LogoSpinner } from '@/components/ui/loaders';
 
 import { reverseGeocode } from '@/lib/osrm';
+import PagoExitoso, { type CompletedOrderData } from './PagoExitoso';
 
 interface ClientCarritoProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ interface ClientCarritoProps {
 }
 
 export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckout }: ClientCarritoProps) {
+  const [completedOrder, setCompletedOrder] = useState<CompletedOrderData | null>(null);
   const {
     cartItems,
     cartCodigoPromo,
@@ -246,28 +248,50 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
           clienteTelefono: ordenCreada.clienteTelefono || ordenCreada.cliente?.telefono || '',
           origen: tiendaNombre,
           destino: direccionEntregaInput.trim(),
-          origenLat: 12.1264,
-          origenLng: -86.2652,
-          destinoLat: deliveryLat || 12.1402,
-          destinoLng: deliveryLng || -86.2954,
+          origenLat: ordenCreada.origenLat || 0,
+          origenLng: ordenCreada.origenLng || 0,
+          destinoLat: ordenCreada.destinoLat || deliveryLat || 0,
+          destinoLng: ordenCreada.destinoLng || deliveryLng || 0,
           repartidor: null,
           repartidorInitials: 'RP',
           descripcion: cartInstrucciones || `Pedido de compra: ${tiendaNombre}`,
-          monto: total,
+          monto: ordenCreada.total ?? total,
+          subtotal: ordenCreada.subtotal ?? subtotal,
+          costoEnvio: ordenCreada.costoEnvio ?? delivery,
+          descuento: ordenCreada.descuento ?? (cartDescuento || 0),
+          codigoPromo: cartCodigoPromo || '',
           estado: 'pendiente',
           metodoPago: cartMetodoPago as any,
           estadoPago: 'pendiente',
           fecha: 'Hoy',
           hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           timeline: [],
+        } as any);
+
+        setCompletedOrder({
+          id: ordenCreada.id,
+          codigoPin: ordenCreada.codigoPin,
+          tiendaNombre,
+          direccionEntrega: direccionEntregaInput.trim(),
+          subtotal: ordenCreada.subtotal ?? subtotal,
+          costoEnvio: ordenCreada.costoEnvio ?? delivery,
+          descuento: ordenCreada.descuento ?? (cartDescuento || 0),
+          total: ordenCreada.total ?? total,
+          metodoPago: cartMetodoPago,
+          kmEstimados: ordenCreada.kmEstimados,
+          tiempoEstimado: ordenCreada.tiempoEstimado,
+          items: cartItems.map((it) => ({
+            nombreProducto: it.nombreProducto || (it as any).nombre || 'Producto',
+            cantidad: it.cantidad,
+            precioUnitario: it.precioUnitario || (it as any).precio || 0,
+          })),
         });
       }
 
       clearCart();
       setIsProcessing(false);
-      notify.success('¡Pedido de compra realizado y guardado con éxito!');
+      notify.success('¡Pedido de compra realizado con éxito!');
       if (onSuccessCheckout) onSuccessCheckout();
-      onClose();
     } catch (err: any) {
       console.error('[handlePagar error]', err);
       setIsProcessing(false);
@@ -888,6 +912,26 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
           )}
         </motion.div>
       </div>
+
+      {completedOrder && (
+        <PagoExitoso
+          order={completedOrder}
+          onClose={() => {
+            setCompletedOrder(null);
+            onClose();
+          }}
+          onTrackOrder={(orderId) => {
+            setCompletedOrder(null);
+            onClose();
+            useStore.getState().setTrackingOrder(orderId);
+          }}
+          setClientActiveModule={(mod) => {
+            setCompletedOrder(null);
+            onClose();
+            useStore.getState().setClientActiveModule(mod);
+          }}
+        />
+      )}
     </AnimatePresence>
   );
 }

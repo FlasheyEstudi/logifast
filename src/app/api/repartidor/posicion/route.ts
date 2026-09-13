@@ -43,12 +43,70 @@ export async function POST(req: NextRequest) {
       data: { lat, lng },
     });
 
-    // Emitir posición GPS en tiempo real al panel de administración y mapa de flota
+    // Buscar orden activa asignada a este repartidor para notificar al cliente en tiempo real
+    const ordenActivaId = body.ordenId || null;
+    let effectiveOrdenId = ordenActivaId;
+    let effectiveEstado = body.estado || null;
+
+    if (!effectiveOrdenId) {
+      const activeOrder = await db.ordenServicio.findFirst({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['aceptado', 'aceptada', 'en_camino', 'encamino', 'recogido'] },
+        },
+        select: { id: true, estado: true },
+      }) || await db.ordenCompra.findFirst({
+        where: {
+          repartidorId: profile.id,
+          estado: { in: ['aceptado', 'en_camino', 'recogido'] },
+        },
+        select: { id: true, estado: true },
+      });
+
+      if (activeOrder) {
+        effectiveOrdenId = activeOrder.id;
+        if (!effectiveEstado) effectiveEstado = activeOrder.estado;
+      }
+    }
+
+    const payload = {
+      repartidorId: profile.id,
+      lat,
+      lng,
+      velocidad,
+      heading,
+      nombre: profile.nombre,
+      estado: effectiveEstado || 'en_camino',
+      ordenId: effectiveOrdenId,
+    };
+
+    // 1. Emitir al panel de administración y mapa de flota
+    emitirEventoRealtime({
+      room: 'admin',
+      event: 'repartidor:posicion:update',
+      data: payload,
+    });
     emitirEventoRealtime({
       room: 'admin',
       event: 'repartidor:posicion',
-      data: { repartidorId: profile.id, lat, lng, velocidad, heading, nombre: profile.nombre },
+      data: payload,
     });
+
+    // 2. Emitir a la sala personal del repartidor
+    emitirEventoRealtime({
+      room: `repartidor:${profile.id}`,
+      event: 'repartidor:posicion:update',
+      data: payload,
+    });
+
+    // 3. Emitir a la sala de la orden para que el CLIENTE lo reciba en tiempo real
+    if (effectiveOrdenId) {
+      emitirEventoRealtime({
+        room: `orden:${effectiveOrdenId}`,
+        event: 'repartidor:posicion:update',
+        data: payload,
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

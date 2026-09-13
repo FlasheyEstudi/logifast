@@ -153,9 +153,9 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
                   {/* MAPA LIMPIO */}
                   <div style={{ position: 'relative', width: '100%', height: 240 }}>
                     <RepartidorMap
-                      repartidorPos={[(order as any).repartidorLat || 12.1364, (order as any).repartidorLng || -86.2581]}
-                      origenPos={[order.origenLat || 12.1264, order.origenLng || -86.2652]}
-                      destinoPos={[order.destinoLat || 12.1402, order.destinoLng || -86.2954]}
+                      repartidorPos={(order as any).repartidorLat && (order as any).repartidorLng ? [(order as any).repartidorLat, (order as any).repartidorLng] : undefined}
+                      origenPos={order.origenLat && order.origenLng ? [order.origenLat, order.origenLng] : undefined}
+                      destinoPos={order.destinoLat && order.destinoLng ? [order.destinoLat, order.destinoLng] : undefined}
                       estado={order.estado === 'encamino' ? 'EN_CAMINO_RECOGER' : order.estado === 'recogido' ? 'RECOGIDO' : 'ORDEN_ASIGNADA'}
                       altura="100%" zoom={13}
                     />

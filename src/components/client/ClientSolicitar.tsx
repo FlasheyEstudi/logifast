@@ -871,6 +871,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     cuponesBilletera = [],
     marcarCuponUsado,
     cuponAplicado,
+    setTrackingOrder,
   } = useStore();
 
   useEffect(() => {
@@ -888,6 +889,16 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   const [confirmed, setConfirmed] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState('');
+  const [confirmedOrderData, setConfirmedOrderData] = useState<{
+    id: string;
+    pin: string;
+    origen: string;
+    destino: string;
+    metodoPago: string;
+    total: number;
+    distanceKm: number;
+    estimatedMinutes: number;
+  } | null>(null);
 
   const todasSugerencias = useMemo(() => {
     const tiendasAsSuggestions: DireccionSugerencia[] = (tiendasMapa || []).map((t) => ({
@@ -1282,7 +1293,17 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         ],
       };
 
-      // Persistir en la base de datos vía API
+      const orderSnapshot = {
+        id: newId,
+        pin: randomPin,
+        origen: solicitudEnvio.origen,
+        destino: solicitudEnvio.destino,
+        metodoPago: solicitudEnvio.metodoPago,
+        total: costBreakdown.total,
+        distanceKm: costBreakdown.distanceKm || 3.5,
+        estimatedMinutes: Math.round((costBreakdown.distanceKm || 3.5) * 4) || 15,
+      };
+
       fetch('/api/ordenes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1310,17 +1331,26 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
         .then((res) => res.json())
         .then((data) => {
           if (data && data.orden) {
+            const finalId = data.orden.id || newId;
+            const finalPin = data.orden.codigoPin || randomPin;
             const persistedOrder: Order = {
               ...newOrder,
-              id: data.orden.id || newId,
+              id: finalId,
+              codigoPin: finalPin,
             };
             addOrder(persistedOrder);
-            confirmarEnvio(data.orden.id || newId);
-            setConfirmedOrderId(data.orden.id || newId);
+            confirmarEnvio(finalId);
+            setConfirmedOrderId(finalId);
+            setConfirmedOrderData({
+              ...orderSnapshot,
+              id: finalId,
+              pin: finalPin,
+            });
           } else {
             addOrder(newOrder);
             confirmarEnvio(newId);
             setConfirmedOrderId(newId);
+            setConfirmedOrderData(orderSnapshot);
           }
         })
         .catch((err) => {
@@ -1328,6 +1358,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
           addOrder(newOrder);
           confirmarEnvio(newId);
           setConfirmedOrderId(newId);
+          setConfirmedOrderData(orderSnapshot);
         })
         .finally(() => {
           setConfirming(false);
@@ -2575,6 +2606,33 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
             </motion.div>
           )}
 
+          {/* Security PIN card */}
+          {confirmedOrderData?.pin && (
+            <div
+              style={{
+                width: '100%',
+                padding: '16px 20px',
+                borderRadius: 14,
+                background: 'rgba(255,179,0,0.12)',
+                border: '1.5px solid rgba(255,179,0,0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'DM Sans', sans-serif" }}>
+                PIN de Seguridad de Entrega
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--warning)', letterSpacing: 6 }}>
+                {confirmedOrderData.pin}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+                Dicta o muestra este código al repartidor al recibir tu envío
+              </div>
+            </div>
+          )}
+
           {/* Quick details */}
           <div
             style={{
@@ -2589,24 +2647,36 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--exito)' }} />
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{solicitudEnvio.origen}</span>
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+                  {confirmedOrderData?.origen || solicitudEnvio.origen}
+                </span>
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primario)' }} />
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{solicitudEnvio.destino}</span>
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+                  {confirmedOrderData?.destino || solicitudEnvio.destino}
+                </span>
               </div>
             </div>
+            {confirmedOrderData?.distanceKm ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+                <span>Distancia y Tiempo Estimado</span>
+                <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+                  {confirmedOrderData.distanceKm.toFixed(1)} km • ~{confirmedOrderData.estimatedMinutes} min
+                </span>
+              </div>
+            ) : null}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {solicitudEnvio.metodoPago === 'efectivo' ? <Banknote size={14} style={{ color: 'var(--exito)' }} /> : <CreditCard size={14} style={{ color: 'var(--info)' }} />}
+                {(confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago) === 'efectivo' ? <Banknote size={14} style={{ color: 'var(--exito)' }} /> : <CreditCard size={14} style={{ color: 'var(--info)' }} />}
                 <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
-                  {solicitudEnvio.metodoPago === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+                  {(confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago) === 'efectivo' ? 'Efectivo' : 'Transferencia'}
                 </span>
               </div>
               <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
-                {formatCordobas(costBreakdown.total)}
+                {formatCordobas(confirmedOrderData?.total || costBreakdown.total)}
               </span>
             </div>
           </div>
@@ -2614,10 +2684,15 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 8 }}>
             <button
               onClick={() => {
+                const targetId = confirmedOrderId || confirmedOrderData?.id;
                 resetSolicitudEnvio();
                 setCurrentStep(1);
                 setConfirmed(false);
-                onNavigate('envios');
+                if (targetId) {
+                  setTrackingOrder(targetId);
+                } else {
+                  onNavigate('envios');
+                }
               }}
               style={{
                 width: '100%',
@@ -2640,7 +2715,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--primario)'; }}
             >
               <Truck size={18} />
-              Rastrear envío
+              Rastrear envío en vivo
             </button>
             <button
               onClick={() => {

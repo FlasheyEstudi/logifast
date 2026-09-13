@@ -10,6 +10,7 @@ import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { useConfigStore } from '@/store/configStore';
 import { reproducirSiActivo, reproducirSonido } from '@/services/audio';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
+import { iniciarRastreoFondo, detenerRastreoFondo } from '@/services/background-tracking';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC MODULE IMPORTS — mantienen todos los overlays
@@ -461,14 +462,25 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   // Initialize browser geolocation — MANTENER watch: true
   const geo = useGeolocation({ watch: true });
 
-  // Start/stop geolocation depending on connected status
+  // Start/stop geolocation and background tracking depending on connected status
+  const ordenId = useRepartidorStore((s) => s.ordenActiva?.id);
+  const storeLat = useRepartidorStore((s) => s.lat);
+  const storeLng = useRepartidorStore((s) => s.lng);
+  const storeHeading = useRepartidorStore((s) => s.heading);
+  const storeEstado = useRepartidorStore((s) => s.estado);
+
   useEffect(() => {
     if (conectado) {
       geo.start();
+      iniciarRastreoFondo(ordenId, storeEstado);
     } else {
       geo.stop();
+      detenerRastreoFondo();
     }
-  }, [conectado, geo.start, geo.stop]);
+    return () => {
+      detenerRastreoFondo();
+    };
+  }, [conectado, ordenId, storeEstado, geo.start, geo.stop]);
 
   // Connect/disconnect socket when driver goes online/offline
   useEffect(() => {
@@ -489,20 +501,14 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     }
   }, [conectado, geo.lat, geo.lng, actualizarPosicion, actualizarPosicionAsync]);
 
-  // Emit driver coordinates to the server on any store coordinate changes
-  const storeLat = useRepartidorStore((s) => s.lat);
-  const storeLng = useRepartidorStore((s) => s.lng);
-  const storeHeading = useRepartidorStore((s) => s.heading);
-  const storeEstado = useRepartidorStore((s) => s.estado);
-
+  // Emit driver coordinates to the server on any store coordinate changes (with ordenId)
   useEffect(() => {
     if (conectado) {
-      realtime.repartidorPosicion(storeLat, storeLng, storeHeading, storeEstado);
+      realtime.repartidorPosicion(storeLat, storeLng, storeHeading, storeEstado, ordenId);
     }
-  }, [conectado, storeLat, storeLng, storeHeading, storeEstado]);
+  }, [conectado, storeLat, storeLng, storeHeading, storeEstado, ordenId]);
 
   // Emit state updates to client tracking room & join order room
-  const ordenId = useRepartidorStore((s) => s.ordenActiva?.id);
   useEffect(() => {
     if (conectado && ordenId) {
       realtime.repartidorEstadoCambio(ordenId, storeEstado);

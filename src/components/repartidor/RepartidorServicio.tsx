@@ -12,6 +12,7 @@ import { useRepartidorStore } from '@/lib/repartidor-store';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
+import { iniciarRastreoFondo, forzarEnvioPosicionGps } from '@/services/background-tracking';
 
 import { RepartidorRadarLoader } from '@/components/ui/loaders';
 
@@ -141,9 +142,6 @@ export default function RepartidorServicio() {
     }
   };
 
-  const estadoColor = ESTADO_COLOR[estado] || '#007AFF';
-  const estadoLabel = ESTADO_LABEL[estado] || estado;
-
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden', background: 'var(--bg)', fontFamily: "'DM Sans', sans-serif" }}>
 
@@ -161,6 +159,13 @@ export default function RepartidorServicio() {
           altura="100%"
           seguirRepartidor
           mostrarNavegacionDriver={true}
+          controlsBottomOffset={
+            drawerOpen
+              ? ordenActiva
+                ? 'calc(var(--ios-tabbar-height, 65px) + 210px)'
+                : 'calc(var(--ios-tabbar-height, 65px) + 85px)'
+              : 'calc(var(--ios-tabbar-height, 65px) + 25px)'
+          }
         />
       </div>
 
@@ -270,89 +275,6 @@ export default function RepartidorServicio() {
         </motion.div>
       )}
 
-      {/* ── CÁPSULA SUPERIOR IZQUIERDA — Estado */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          position: 'absolute', top: 70, left: 16, zIndex: 20,
-          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 100,
-          background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
-          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-          border: `1px solid ${estadoColor}40`, boxShadow: `0 6px 20px rgba(0,0,0,0.3), 0 0 12px ${estadoColor}20`,
-        }}
-      >
-        <span style={{ width: 9, height: 9, borderRadius: '50%', background: estadoColor, boxShadow: `0 0 10px ${estadoColor}` }} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", letterSpacing: 0.3 }}>
-          {estadoLabel}
-        </span>
-        {ordenActiva && (
-          <>
-            <span style={{ width: 1, height: 12, background: 'var(--border)' }} />
-            <span style={{ fontSize: 12, color: 'var(--primario)', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
-              ETA ~{eta}min
-            </span>
-          </>
-        )}
-      </motion.div>
-
-      {/* ── CÁPSULAS DERECHA — Acciones rápidas (solo con orden activa) */}
-      {ordenActiva && (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          style={{ position: 'absolute', right: 16, top: 70, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 10 }}
-        >
-          {/* Navegar */}
-          <button
-            onClick={() => {
-              const headingToPickup = estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA';
-              const targetLat = headingToPickup ? (ordenActiva.origenLat || 12.136) : (ordenActiva.destinoLat || 12.140);
-              const targetLng = headingToPickup ? (ordenActiva.origenLng || -86.258) : (ordenActiva.destinoLng || -86.250);
-              window.open(`https://www.google.com/maps/dir/?api=1&destination=${targetLat},${targetLng}`, '_blank');
-            }}
-            style={{ width: 46, height: 46, borderRadius: '50%', background: '#007AFF', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(0,122,255,0.5)', cursor: 'pointer' }}
-            title="Navegación GPS"
-          ><Compass size={21} /></button>
-          {/* Llamar */}
-          {ordenActiva.clienteTelefono ? (
-            <a
-              href={`tel:${ordenActiva.clienteTelefono}`}
-              style={{ width: 46, height: 46, borderRadius: '50%', background: '#34C759', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(52,199,89,0.5)', cursor: 'pointer', textDecoration: 'none' }}
-              title={`Llamar al cliente (${ordenActiva.clienteTelefono})`}
-            ><Phone size={20} /></a>
-          ) : null}
-          {/* Chat */}
-          <button
-            onClick={() => toggleChat(ordenActiva.id)}
-            style={{ width: 46, height: 46, borderRadius: '50%', background: '#AF52DE', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(175,82,222,0.5)', cursor: 'pointer' }}
-            title="Chat"
-          ><MessageSquare size={20} /></button>
-          {/* Incidencia */}
-          <button
-            onClick={() => toggleIncidencia(true)}
-            style={{ width: 46, height: 46, borderRadius: '50%', background: '#FF3B30', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(255,59,48,0.5)', cursor: 'pointer' }}
-            title="Reportar Incidencia"
-          ><AlertTriangle size={20} /></button>
-        </motion.div>
-      )}
-
-      {/* ── CONTROL 3D — cápsula inferior derecha (solo mapa) */}
-      <div
-        style={{
-          position: 'absolute',
-          right: 16,
-          bottom: drawerOpen ? 'calc(var(--ios-tabbar-height, 65px) + 290px)' : 'calc(var(--ios-tabbar-height, 65px) + 20px)',
-          zIndex: 20,
-          transition: 'bottom 0.3s ease',
-        }}
-      >
-        <button
-          onClick={() => setMapTilt(!mapTilt)}
-          style={{ width: 42, height: 42, borderRadius: '50%', background: 'color-mix(in srgb, var(--surface) 92%, transparent)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--border)', color: mapTilt ? 'var(--primario)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
-          title="Modo 3D"
-        ><Layers size={18} /></button>
-      </div>
 
       {/* ── HANDLE visible cuando drawer está cerrado (colapsado a la izquierda) */}
       {!drawerOpen && (
@@ -407,17 +329,39 @@ export default function RepartidorServicio() {
           >
             {/* DESCONECTADO */}
             {estado === 'DESCONECTADO' && (
-              <div style={{ ...sectionCard, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,59,48,.15)', color: '#FF3B30', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Power size={22} />
-                  </div>
+              <div
+                style={{
+                  ...sectionCard,
+                  padding: '12px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 14,
+                  borderRadius: 20,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF3B30', boxShadow: '0 0 8px #FF3B30' }} />
                   <div>
-                    <h3 style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>Estás Desconectado</h3>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Conéctate para recibir envíos.</p>
+                    <h3 style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+                      Estás Desconectado
+                    </h3>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                      Conéctate para recibir solicitudes de viaje.
+                    </p>
                   </div>
                 </div>
-                <button onClick={handleToggleConnection} style={{ ...btnPrimary, width: 'auto', padding: '12px 22px', background: '#34C759', boxShadow: '0 4px 14px rgba(52,199,89,0.3)' }}>
+                <button
+                  onClick={handleToggleConnection}
+                  style={{
+                    ...btnPrimary,
+                    width: 'auto',
+                    padding: '10px 20px',
+                    background: '#34C759',
+                    fontSize: 13,
+                    boxShadow: '0 4px 14px rgba(52,199,89,0.3)',
+                  }}
+                >
                   Conectar
                 </button>
               </div>
@@ -505,154 +449,187 @@ export default function RepartidorServicio() {
               </div>
             )}
 
-            {/* EN LÍNEA - SIN OFERTAS */}
+            {/* EN LÍNEA - ESCANEANDO ZONA */}
             {estado === 'EN_LINEA' && !ordenActiva && !ordenAsignadaPendiente && ofertasDisponibles.length === 0 && (
-              <div style={{ ...sectionCard, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 10px #34C759' }} />
-                    <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)' }}>En Línea • Escaneando zona</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button
-                      type="button"
-                      onClick={() => setDrawerOpen(false)}
-                      title="Colapsar panel"
-                      style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-alt)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', cursor: 'pointer' }}
-                    >
-                      <ChevronDown size={16} />
-                    </button>
-                    <button onClick={handleToggleConnection} style={{ background: 'none', border: 'none', color: '#FF3B30', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Salir</button>
-                  </div>
-                </div>
-
-                {/* Selector de Periodo: Hoy / Semana / Mes */}
-                <div style={{ display: 'flex', gap: 6, background: 'var(--bg-alt)', padding: 3, borderRadius: 12, border: '1px solid var(--border)' }}>
-                  {(['hoy', 'semana', 'mes'] as const).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setPeriodoGanancias(p)}
-                      style={{
-                        flex: 1,
-                        padding: '6px 8px',
-                        borderRadius: 9,
-                        border: 'none',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        background: periodoGanancias === p ? 'var(--primario)' : 'transparent',
-                        color: periodoGanancias === p ? '#FFFFFF' : 'var(--text-muted)',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      {p === 'hoy' ? 'Hoy' : p === 'semana' ? 'Esta Semana' : 'Este Mes'}
-                    </button>
-                  ))}
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div style={{ padding: '10px 14px', borderRadius: 14, background: 'var(--bg-alt)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                      Ganancias {periodoGanancias === 'hoy' ? 'hoy' : periodoGanancias === 'semana' ? 'semana' : 'mes'}
-                    </span>
-                    <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>
-                      C$ {statsGanancias.ganancias.toFixed(2)}
-                    </span>
-                  </div>
-                  <div style={{ padding: '10px 14px', borderRadius: 14, background: 'var(--bg-alt)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                      Entregas {periodoGanancias === 'hoy' ? 'hoy' : periodoGanancias === 'semana' ? 'semana' : 'mes'}
-                    </span>
-                    <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
-                      {statsGanancias.entregas} {statsGanancias.entregas === 1 ? 'envío' : 'envíos'}
-                    </span>
+              <div
+                style={{
+                  ...sectionCard,
+                  padding: '12px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 14,
+                  borderRadius: 20,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 10px #34C759' }} />
+                  <div>
+                    <h3 style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+                      En Línea • Buscando órdenes
+                    </h3>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                      Hoy: <strong style={{ color: '#34C759', fontFamily: "'JetBrains Mono', monospace" }}>C$ {statsGanancias.ganancias.toFixed(2)}</strong> ({statsGanancias.entregas} {statsGanancias.entregas === 1 ? 'entrega' : 'entregas'})
+                    </p>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleToggleConnection}
+                  style={{
+                    background: 'rgba(255, 59, 48, 0.12)',
+                    color: '#FF3B30',
+                    border: '1px solid rgba(255, 59, 48, 0.25)',
+                    borderRadius: 100,
+                    padding: '8px 16px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Pausar
+                </button>
               </div>
             )}
 
-            {/* CON ORDEN */}
+            {/* CON ORDEN ACTIVA */}
             {ordenActiva && (
-              <div style={{ ...sectionCard, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {/* Header: nombre + código + ganancia + botón colapsar */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {/* Botón colapsar — visible aquí */}
+              <div
+                style={{
+                  ...sectionCard,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  borderRadius: 22,
+                  padding: '14px 16px',
+                }}
+              >
+                {/* Header: Cliente + Ganancia + Botón Colapsar */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--primario-soft)', color: 'var(--primario)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Package size={17} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {ordenActiva.cliente}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                        {estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA' ? 'Paso 1: Recogida' : 'Paso 2: Entrega'}
+                        {ordenesActivas.length > 1 && ` (Orden ${ordenesActivas.findIndex((o) => o.id === ordenActiva.id) + 1}/${ordenesActivas.length})`}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>
+                      +C$ {(ordenActiva.ganancia || ordenActiva.monto || 0).toFixed(2)}
+                    </div>
                     <button
+                      type="button"
                       onClick={() => setDrawerOpen(false)}
-                      style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-alt)', border: '1px solid var(--border)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-                      title="Colapsar panel"
+                      style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-alt)', border: '1px solid var(--border)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                      title="Minimizar panel"
                     >
-                      <ChevronDown size={16} />
+                      <ChevronDown size={15} />
                     </button>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primario-soft)', color: 'var(--primario)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Package size={20} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>#{ordenActiva.id.substring(0,8)}</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{ordenActiva.cliente}</div>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>+C$ {(ordenActiva.ganancia||ordenActiva.monto||0).toFixed(2)}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                      {ordenesActivas.length > 1 && (
-                        <span style={{ color: '#007AFF', fontWeight: 800 }}>
-                          Parada {ordenesActivas.findIndex(o => o.id === ordenActiva.id) + 1}/{ordenesActivas.length} •
-                        </span>
-                      )}
-                      <span>{(ordenActiva.kmEstimados && ordenActiva.kmEstimados > 0 ? ordenActiva.kmEstimados : 2.5).toFixed(1)}km • ~{ordenActiva.tiempoEstimado && ordenActiva.tiempoEstimado > 0 ? ordenActiva.tiempoEstimado : 15}min</span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Foto del paquete a llevar */}
-                {ordenActiva.paqueteFotoUrl && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, borderRadius: 14, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
-                    <img src={ordenActiva.paqueteFotoUrl} alt="Foto del Paquete" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primario)', textTransform: 'uppercase' }}>Foto del Paquete a Entregar</span>
-                      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>{ordenActiva.paquete || 'Objeto a transportar'}</span>
-                    </div>
+                {/* Dirección destino actual */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 10, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
+                  <MapPin size={15} style={{ color: (estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? '#007AFF' : '#34C759', flexShrink: 0 }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+                      {(estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA') ? ordenActiva.origen : ordenActiva.destino}
+                    </span>
                   </div>
-                )}
-
-                {/* Ruta + Botones de Navegación GPS */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[{ color: '#007AFF', label: 'Recogida', val: ordenActiva.origen, lat: ordenActiva.origenLat || 12.136, lng: ordenActiva.origenLng || -86.258 },
-                    { color: '#34C759', label: 'Entrega', val: ordenActiva.destino, lat: ordenActiva.destinoLat || 12.140, lng: ordenActiva.destinoLng || -86.250 }].map(r => (
-                    <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, minWidth: 0, flex: 1 }}>
-                        <MapPin size={16} style={{ color: r.color, flexShrink: 0 }} />
-                        <div style={{ minWidth: 0 }}>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>{r.label}</span>
-                          <span style={{ fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{r.val}</span>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}`, '_blank')}
-                          style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: '#007AFF', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                          title="Google Maps"
-                        >
-                          <Compass size={12} /> Maps
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => window.open(`https://waze.com/ul?ll=${r.lat},${r.lng}&navigate=yes`, '_blank')}
-                          style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: '#33CCFF', color: '#000', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                          title="Waze"
-                        >
-                          <Navigation size={12} /> Waze
-                        </button>
-                      </div>
-                    </div>
-                  ))}
                 </div>
 
-                {/* Botón de paso */}
+                {/* TOOLBAR ERGONÓMICO DE ACCIONES (Navegar, Llamar, Chat, Incidencia) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                  {/* Navegar en Google Maps / Waze */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const headingToPickup = estado === 'EN_CAMINO_RECOGER' || estado === 'EN_PUNTO_RECOGIDA' || estado === 'ORDEN_ASIGNADA';
+                      const targetLat = headingToPickup ? ordenActiva.origenLat : ordenActiva.destinoLat;
+                      const targetLng = headingToPickup ? ordenActiva.origenLng : ordenActiva.destinoLng;
+                      const hasValidCoords = Boolean(targetLat && targetLng && targetLat !== 0 && targetLng !== 0);
+                      const val = headingToPickup ? ordenActiva.origen : ordenActiva.destino;
+                      const mapsDest = hasValidCoords ? `${targetLat},${targetLng}` : encodeURIComponent(val || 'Managua, Nicaragua');
+                      iniciarRastreoFondo(ordenActiva?.id, estado);
+                      forzarEnvioPosicionGps(ordenActiva?.id, estado);
+                      showSnackbar({ message: 'GPS activo en segundo plano.' });
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${mapsDest}`, '_blank');
+                    }}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                      padding: '8px 4px', borderRadius: 12, background: 'rgba(0, 122, 255, 0.12)', border: '1px solid rgba(0, 122, 255, 0.25)',
+                      color: '#007AFF', cursor: 'pointer', fontSize: 10, fontWeight: 700,
+                    }}
+                    title="Navegar en Google Maps"
+                  >
+                    <Compass size={17} />
+                    <span>Navegar</span>
+                  </button>
+
+                  {/* Llamar */}
+                  {ordenActiva.clienteTelefono ? (
+                    <a
+                      href={`tel:${ordenActiva.clienteTelefono}`}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                        padding: '8px 4px', borderRadius: 12, background: 'rgba(52, 199, 89, 0.12)', border: '1px solid rgba(52, 199, 89, 0.25)',
+                        color: '#34C759', cursor: 'pointer', fontSize: 10, fontWeight: 700, textDecoration: 'none',
+                      }}
+                      title="Llamar al cliente"
+                    >
+                      <Phone size={17} />
+                      <span>Llamar</span>
+                    </a>
+                  ) : (
+                    <div style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                      padding: '8px 4px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)',
+                      color: 'var(--text-muted)', opacity: 0.5, fontSize: 10, fontWeight: 700,
+                    }}>
+                      <Phone size={17} />
+                      <span>Sin tel.</span>
+                    </div>
+                  )}
+
+                  {/* Chat */}
+                  <button
+                    type="button"
+                    onClick={() => toggleChat(ordenActiva.id)}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                      padding: '8px 4px', borderRadius: 12, background: 'rgba(175, 82, 222, 0.12)', border: '1px solid rgba(175, 82, 222, 0.25)',
+                      color: '#AF52DE', cursor: 'pointer', fontSize: 10, fontWeight: 700,
+                    }}
+                    title="Abrir chat"
+                  >
+                    <MessageSquare size={17} />
+                    <span>Chat</span>
+                  </button>
+
+                  {/* Incidencia */}
+                  <button
+                    type="button"
+                    onClick={() => toggleIncidencia(true)}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                      padding: '8px 4px', borderRadius: 12, background: 'rgba(255, 59, 48, 0.12)', border: '1px solid rgba(255, 59, 48, 0.25)',
+                      color: '#FF3B30', cursor: 'pointer', fontSize: 10, fontWeight: 700,
+                    }}
+                    title="Reportar problema"
+                  >
+                    <AlertTriangle size={17} />
+                    <span>Ayuda</span>
+                  </button>
+                </div>
+
+                {/* Botón de paso principal */}
                 <div>
                   {estado === 'ORDEN_ASIGNADA' && <button onClick={handleEmpezarViaje} style={btnPrimary}><Bike size={18} /> Iniciar Viaje a Recogida</button>}
                   {estado === 'EN_CAMINO_RECOGER' && <button onClick={llegarRecogida} style={{ ...btnPrimary, background: '#FF9500', boxShadow: '0 4px 14px rgba(255,149,0,0.3)' }}><MapPin size={18} /> Llegué al Punto de Recogida</button>}

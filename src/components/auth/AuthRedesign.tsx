@@ -12,6 +12,7 @@ type View = 'landing' | 'login' | 'register';
 interface AuthRedesignProps {
   onLoginSuccess: (role: string, name: string) => void;
   currentView?: View;
+  fixedRole?: 'cliente' | 'repartidor';
 }
 
 const Icon = {
@@ -295,7 +296,7 @@ const PARTNERS = [
   { src: '/logo.png', name: 'Logifast', sector: 'Logística Express' },
 ];
 
-export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }: AuthRedesignProps) {
+export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', fixedRole }: AuthRedesignProps) {
   const [view, setView] = useState<View>(currentView);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [sideDrawerOpen, setSideDrawerOpen] = useState(false);
@@ -427,6 +428,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
               onSwitchToRegister={() => setView('register')}
               isDark={isDark}
               toggleTheme={toggleTheme}
+              fixedRole={fixedRole}
             />
           </motion.div>
         )}
@@ -445,6 +447,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing' }
               onSwitchToLogin={() => setView('login')}
               isDark={isDark}
               toggleTheme={toggleTheme}
+              fixedRole={fixedRole}
             />
           </motion.div>
         )}
@@ -1276,12 +1279,14 @@ function LoginView({
   onSwitchToRegister,
   isDark,
   toggleTheme,
+  fixedRole,
 }: {
   onBack: () => void;
   onLoginSuccess: (role: string, name: string) => void;
   onSwitchToRegister: () => void;
   isDark: boolean;
   toggleTheme: () => void;
+  fixedRole?: 'cliente' | 'repartidor';
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1486,13 +1491,15 @@ function LoginView({
           <span style={{ fontSize: 11, color: subColor, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Acceso Demo Instantáneo</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: fixedRole ? '1fr' : '1fr 1fr', gap: 8 }}>
           {[
             { role: 'cliente' as const, label: 'Cliente', icon: <Icon.User /> },
             { role: 'repartidor' as const, label: 'Repartidor', icon: <Icon.Bike /> },
             { role: 'admin' as const, label: 'Admin', icon: <Icon.Shield /> },
             { role: 'ingeniero' as const, label: 'Ingeniero', icon: <Icon.Store /> },
-          ].map((d) => (
+          ]
+          .filter((d) => !fixedRole || d.role === fixedRole)
+          .map((d) => (
             <motion.button
               key={d.role}
               whileTap={{ scale: 0.94 }}
@@ -1536,12 +1543,14 @@ function RegisterView({
   onSwitchToLogin,
   isDark,
   toggleTheme,
+  fixedRole,
 }: {
   onBack: () => void;
   onLoginSuccess: (role: string, name: string) => void;
   onSwitchToLogin: () => void;
   isDark: boolean;
   toggleTheme: () => void;
+  fixedRole?: 'cliente' | 'repartidor';
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState({
@@ -1557,7 +1566,7 @@ function RegisterView({
     lat: 12.1365,
     lng: -86.2514,
     fotoUrl: '',
-    role: 'cliente' as 'cliente' | 'repartidor',
+    role: (fixedRole || 'cliente') as 'cliente' | 'repartidor',
     vehiculoTipo: 'moto',
     vehiculoMarca: '',
     vehiculoModelo: '',
@@ -2023,37 +2032,61 @@ function RegisterView({
         {/* PASO 3 */}
         {step === 3 && (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {[
-                { value: 'cliente' as const, label: 'Cliente', desc: 'Pido envíos y productos', icon: <Icon.User /> },
-                { value: 'repartidor' as const, label: 'Repartidor', icon: <Icon.Bike />, desc: 'Realizo entregas con mi moto', },
-              ].map((r) => (
-                <motion.button
-                  key={r.value}
-                  whileTap={{ scale: 0.96 }}
-                  type="button"
-                  onClick={() => setForm({ ...form, role: r.value })}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: '14px 10px',
-                    borderRadius: 18,
-                    background: form.role === r.value ? (isDark ? 'rgba(0,122,255,0.18)' : 'rgba(0,122,255,0.1)') : inputBg,
-                    border: form.role === r.value ? '2px solid #007AFF' : specularBorder,
-                    boxShadow: form.role === r.value ? '0 0 16px rgba(0,122,255,0.3)' : 'none',
-                    color: textColor,
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div style={{ color: '#007AFF', marginBottom: 4 }}>{r.icon}</div>
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>{r.label}</div>
-                  <div style={{ fontSize: 10, color: subColor, marginTop: 2 }}>{r.desc}</div>
-                </motion.button>
-              ))}
-            </div>
+            {!fixedRole ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { value: 'cliente' as const, label: 'Cliente', desc: 'Pido envíos y productos', icon: <Icon.User /> },
+                  { value: 'repartidor' as const, label: 'Repartidor', icon: <Icon.Bike />, desc: 'Realizo entregas con mi moto' },
+                ].map((r) => (
+                  <motion.button
+                    key={r.value}
+                    whileTap={{ scale: 0.96 }}
+                    type="button"
+                    onClick={() => setForm({ ...form, role: r.value })}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: '14px 10px',
+                      borderRadius: 18,
+                      background: form.role === r.value ? (isDark ? 'rgba(0,122,255,0.18)' : 'rgba(0,122,255,0.1)') : inputBg,
+                      border: form.role === r.value ? '2px solid #007AFF' : specularBorder,
+                      boxShadow: form.role === r.value ? '0 0 16px rgba(0,122,255,0.3)' : 'none',
+                      color: textColor,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ color: '#007AFF', marginBottom: 4 }}>{r.icon}</div>
+                    <div style={{ fontSize: 13, fontWeight: 800 }}>{r.label}</div>
+                    <div style={{ fontSize: 10, color: subColor, marginTop: 2 }}>{r.desc}</div>
+                  </motion.button>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                background: isDark ? 'rgba(0,122,255,0.1)' : 'rgba(0,122,255,0.06)',
+                border: '1px solid rgba(0,122,255,0.25)',
+                borderRadius: 18,
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}>
+                <div style={{ color: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', background: isDark ? 'rgba(0,122,255,0.2)' : 'rgba(0,122,255,0.12)' }}>
+                  {fixedRole === 'cliente' ? <Icon.User /> : <Icon.Bike />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: textColor }}>
+                    {fixedRole === 'cliente' ? 'Cuenta de Cliente LogiFast' : 'Registro de Conductor / Repartidor'}
+                  </div>
+                  <div style={{ fontSize: 11, color: subColor }}>
+                    {fixedRole === 'cliente' ? 'Acceso completo para ordenar encomiendas y comida' : 'Flota oficial de repartidores con ruteo GPS'}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* SECCIÓN REPARTIDOR */}
             {form.role === 'repartidor' && (

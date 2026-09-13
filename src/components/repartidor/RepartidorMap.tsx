@@ -58,7 +58,7 @@ function calcularDistanciaKm(lat1: number, lon1: number, lat2: number, lon2: num
 }
 
 export interface RepartidorMapProps {
-  repartidorPos: [number, number];
+  repartidorPos?: [number, number];
   origenPos?: [number, number];
   destinoPos?: [number, number];
   rutaCoordenadas?: [number, number][];
@@ -84,6 +84,7 @@ export interface RepartidorMapProps {
   zoom?: number;
   seguirRepartidor?: boolean;
   mostrarNavegacionDriver?: boolean;
+  controlsBottomOffset?: string | number;
   onMapClick?: (lat: number, lng: number) => void;
   className?: string;
 }
@@ -102,12 +103,15 @@ export default function RepartidorMap({
   zoom = 14,
   seguirRepartidor = false,
   mostrarNavegacionDriver = false,
+  controlsBottomOffset = 'calc(var(--ios-tabbar-height, 65px) + 110px)',
   onMapClick,
   className,
 }: RepartidorMapProps) {
-  const targetDriverPos = safePos(repartidorPos, MANAGUA_CENTER);
+  const hasDriver = isValidPos(repartidorPos);
   const origen = isValidPos(origenPos) ? origenPos : undefined;
   const destino = isValidPos(destinoPos) ? destinoPos : undefined;
+  const initialCenter = hasDriver ? repartidorPos! : (destino || origen || MANAGUA_CENTER);
+  const targetDriverPos = safePos(repartidorPos, initialCenter);
 
   const [mapReady, setMapReady] = useState(false);
   const [shouldFollow, setShouldFollow] = useState(seguirRepartidor);
@@ -233,18 +237,20 @@ export default function RepartidorMap({
 
   const activeBearing = gyroBearing !== null ? gyroBearing : currentBearing;
 
-  // Auto-activate 3D navigation when in active ride
+  // Auto-activate 3D navigation when in active ride ONLY for driver in-app navigation
   useEffect(() => {
     if (
-      estado === 'EN_CAMINO_RECOGER' ||
-      estado === 'RECOGIDO' ||
-      estado === 'EN_CAMINO_ENTREGAR' ||
-      estado === 'encamino'
+      mostrarNavegacionDriver && (
+        estado === 'EN_CAMINO_RECOGER' ||
+        estado === 'RECOGIDO' ||
+        estado === 'EN_CAMINO_ENTREGAR' ||
+        estado === 'encamino'
+      )
     ) {
       setIs3DMode(true);
       setShouldFollow(true);
     }
-  }, [estado]);
+  }, [estado, mostrarNavegacionDriver]);
 
   // Center camera on driver with 3D perspective
   useEffect(() => {
@@ -269,26 +275,59 @@ export default function RepartidorMap({
     }
   }, [animatedPos, shouldFollow, is3DMode, activeBearing, zoom]);
 
-  // Fit bounds when in 2D mode with both markers
+  // Fit bounds in 2D mode (e.g. client tracking view) to show driver AND destination/origin
   useEffect(() => {
-    if (mapRef.current && mapReady && !is3DMode && !shouldFollow) {
-      if (origen && destino && isValidPos(origen) && isValidPos(destino)) {
-        const bounds: [[number, number], [number, number]] = [
-          [Math.min(origen[1], destino[1], animatedPos[1]), Math.min(origen[0], destino[0], animatedPos[0])],
-          [Math.max(origen[1], destino[1], animatedPos[1]), Math.max(origen[0], destino[0], animatedPos[0])],
-        ];
-        mapRef.current.fitBounds(bounds, {
-          padding: { top: 80, bottom: 180, left: 50, right: 50 },
-          duration: 1000,
-          maxZoom: 16,
-          pitch: 0,
-          bearing: 0,
-        });
-      }
-    }
-  }, [mapReady, origen, destino, animatedPos, is3DMode, shouldFollow]);
+    if (!mapRef.current || !mapReady || is3DMode || shouldFollow) return;
 
-  const isActiveDelivery = ['EN_CAMINO_RECOGER', 'EN_PUNTO_RECOGIDA', 'RECOGIDO', 'EN_CAMINO_ENTREGAR', 'EN_PUNTO_ENTREGA', 'ORDEN_ASIGNADA', 'encamino'].includes(estado || '');
+    const points: [number, number][] = [];
+    if (hasDriver && isValidPos(animatedPos)) points.push(animatedPos);
+    if (destino && isValidPos(destino)) points.push(destino);
+    if (origen && isValidPos(origen)) points.push(origen);
+
+    if (points.length >= 2) {
+      const lngs = points.map((p) => p[1]);
+      const lats = points.map((p) => p[0]);
+      const bounds: [[number, number], [number, number]] = [
+        [Math.min(...lngs), Math.min(...lats)],
+        [Math.max(...lngs), Math.max(...lats)],
+      ];
+      mapRef.current.fitBounds(bounds, {
+        padding: { top: 70, bottom: 150, left: 50, right: 50 },
+        duration: 900,
+        maxZoom: 16,
+        pitch: 0,
+        bearing: 0,
+      });
+    } else if (points.length === 1) {
+      mapRef.current.easeTo({
+        center: [points[0][1], points[0][0]],
+        zoom: zoom || 14,
+        duration: 800,
+      });
+    }
+  }, [mapReady, origen, destino, animatedPos, is3DMode, shouldFollow, zoom]);
+
+  const normalizedEstado = (estado || '').toLowerCase().replace(/[-_]/g, '');
+  const isActiveDelivery =
+    [
+      'encaminorecoger',
+      'enpuntorecogida',
+      'recogido',
+      'recogida',
+      'encaminoentregar',
+      'enpuntoentrega',
+      'ordenasignada',
+      'encamino',
+      'aceptado',
+      'aceptada',
+      'asignado',
+      'asignada',
+      'activo',
+      'activa',
+      'pendiente',
+    ].includes(normalizedEstado) ||
+    (!!destino && isValidPos(destino)) ||
+    (!!rutaCoordenadas && rutaCoordenadas.length >= 2);
 
   // Reset route, navigation HUD, and 3D mode when order is completed or idle
   useEffect(() => {
@@ -471,99 +510,57 @@ export default function RepartidorMap({
   return (
     <div className={className} style={{ position: 'relative', width: '100%', height: altura }}>
       <style>{`
-        .marker-pulse-ring {
-          position: absolute;
-          width: 56px; height: 56px;
-          border-radius: 50%;
-          background: rgba(16, 185, 129, 0.35);
-          top: -6px; left: -6px;
-          animation: marker-pulse 2s ease-out infinite;
-        }
-        .marker-pulse-ring-2 {
-          position: absolute;
-          width: 56px; height: 56px;
-          border-radius: 50%;
-          background: rgba(16, 185, 129, 0.18);
-          top: -6px; left: -6px;
-          animation: marker-pulse 2s ease-out infinite 0.7s;
-        }
-        @keyframes marker-pulse {
-          0% { transform: scale(0.7); opacity: 1; }
-          100% { transform: scale(2.2); opacity: 0; }
-        }
         .nav-hud-card {
           position: absolute;
-          top: 14px;
+          top: calc(env(safe-area-inset-top, 16px) + 54px);
           left: 14px;
           right: 14px;
-          background: color-mix(in srgb, var(--surface) 92%, transparent);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid var(--border);
+          background: rgba(15, 23, 42, 0.92);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.16);
           border-radius: 18px;
           padding: 10px 14px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           z-index: 40;
-          box-shadow: var(--lf-shadow-card, 0 8px 32px rgba(0, 0, 0, 0.2));
-          color: var(--text);
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+          color: #FFFFFF;
         }
-        .btn-auto-center {
+        .driver-map-controls {
           position: absolute;
-          bottom: 24px;
-          right: 16px;
-          width: 46px;
-          height: 46px;
+          right: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          z-index: 35;
+          transition: bottom 0.3s ease;
+        }
+        .driver-ctrl-btn {
+          width: 42px;
+          height: 42px;
           border-radius: 14px;
-          background: color-mix(in srgb, var(--surface) 92%, transparent);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid var(--border);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+          background: rgba(15, 23, 42, 0.88);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          z-index: 40;
-          color: var(--text);
-          transition: all 0.2s;
+          color: #94A3B8;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .btn-auto-center:active {
+        .driver-ctrl-btn:active {
           transform: scale(0.92);
         }
-        .btn-auto-center.following {
+        .driver-ctrl-btn.active {
           background: #007AFF;
           color: #FFFFFF;
-          border-color: #007AFF;
-        }
-        .btn-3d-toggle {
-          position: absolute;
-          bottom: 78px;
-          right: 16px;
-          width: 46px;
-          height: 46px;
-          border-radius: 14px;
-          background: color-mix(in srgb, var(--surface) 92%, transparent);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid var(--border);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          z-index: 40;
-          color: var(--text);
-          transition: all 0.2s;
-        }
-        .btn-3d-toggle:active {
-          transform: scale(0.92);
-        }
-        .btn-3d-toggle.active {
-          background: #007AFF;
-          color: #FFFFFF;
-          border-color: #007AFF;
+          border-color: rgba(255, 255, 255, 0.4);
+          box-shadow: 0 0 16px rgba(0, 122, 255, 0.5);
         }
         .maplibre-popup-content {
           font-family: 'DM Sans', sans-serif;
@@ -607,7 +604,7 @@ export default function RepartidorMap({
 
       <Map
         ref={mapRef}
-        center={[animatedPos[1], animatedPos[0]]}
+        center={hasDriver ? [animatedPos[1], animatedPos[0]] : (destino ? [destino[1], destino[0]] : (origen ? [origen[1], origen[0]] : [MANAGUA_CENTER[1], MANAGUA_CENTER[0]]))}
         zoom={is3DMode ? 18.2 : zoom}
         pitch={is3DMode ? 66 : 0}
         bearing={is3DMode ? activeBearing : 0}
@@ -755,129 +752,80 @@ export default function RepartidorMap({
         )}
 
         {/* Driver Marker with Smooth Orientation & Clean Beacon Aura */}
-        <MapMarker longitude={animatedPos[1]} latitude={animatedPos[0]}>
-          <PinRepartidorMoto
-            bearing={activeBearing}
-            label="Repartidor en vivo"
-          />
-          <MarkerPopup>
-            <div className="maplibre-popup-content">
-              <strong>Repartidor</strong>
-              <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
-                Ubicación GPS en tiempo real
+        {hasDriver && isValidPos(animatedPos) && (
+          <MapMarker longitude={animatedPos[1]} latitude={animatedPos[0]}>
+            <PinRepartidorMoto
+              bearing={activeBearing}
+              label="Repartidor en vivo"
+            />
+            <MarkerPopup>
+              <div className="maplibre-popup-content">
+                <strong>Repartidor</strong>
+                <div style={{ fontSize: 11, color: 'var(--text-muted, #64748B)', marginTop: 2 }}>
+                  Ubicación GPS en tiempo real
+                </div>
               </div>
-            </div>
-          </MarkerPopup>
-        </MapMarker>
+            </MarkerPopup>
+          </MapMarker>
+        )}
       </Map>
 
-      {mostrarNavegacionDriver && mapReady && (
-        <>
-          {/* Selector de capa: Calles detalladas, Satelite o Nocturno */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 16,
-              right: 16,
-              zIndex: 40,
-              display: 'flex',
-              background: 'rgba(19, 24, 34, 0.88)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '0.5px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: 100,
-              padding: 3,
-              gap: 3,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-            }}
-          >
-            {[
-              { id: 'calles', label: 'Calles' },
-              { id: 'satelite', label: 'Satelite' },
-              { id: 'nocturno', label: 'Noche' },
-            ].map((capa) => (
-              <button
-                key={capa.id}
-                onClick={() => setMapLayer(capa.id as any)}
-                style={{
-                  background: mapLayer === capa.id ? '#007AFF' : 'transparent',
-                  color: mapLayer === capa.id ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
-                  border: 'none',
-                  borderRadius: 100,
-                  padding: '5px 11px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  fontFamily: "'DM Sans', sans-serif",
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {capa.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Leyenda flotante para identificación inmediata */}
-          <div className="map-legend-box">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#16A34A', display: 'inline-block', boxShadow: '0 0 6px #16A34A' }} />
-              <span>TÚ</span>
-            </div>
-            {ordenesActivas && ordenesActivas.length > 1 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#007AFF' }} />
-                <span>Ruta 3/3 Activa</span>
-              </div>
-            ) : (
-              <>
-                {origen && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: pickupColor, display: 'inline-block' }} />
-                    <span>{pickupLabel}</span>
-                  </div>
-                )}
-                {destino && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#DC2626', display: 'inline-block' }} />
-                    <span>{isCompra ? 'CLIENTE' : 'ENTREGAR'}</span>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+      {/* Panel de Controles Unificado en el Margen Derecho */}
+      {mapReady && (
+        <div
+          className="driver-map-controls"
+          style={{ bottom: controlsBottomOffset }}
+        >
+          {/* Botón de alternar estilo de mapa (Calles -> Satélite -> Noche) */}
           <button
+            type="button"
             onClick={() => {
-              setIs3DMode((prev) => !prev);
-              setShouldFollow(true);
+              setMapLayer((prev) => (prev === 'calles' ? 'satelite' : prev === 'satelite' ? 'nocturno' : 'calles'));
               if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-                try {
-                  navigator.vibrate(12);
-                } catch {}
+                try { navigator.vibrate(8); } catch {}
               }
             }}
-            className={`btn-3d-toggle ${is3DMode ? 'active' : ''}`}
-            title="Vista 3D Navegación"
-            aria-label="Alternar vista de navegación 3D"
+            className={`driver-ctrl-btn ${mapLayer !== 'calles' ? 'active' : ''}`}
+            title={`Capa: ${mapLayer}`}
+            aria-label="Cambiar estilo de mapa"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
               <polyline points="2 17 12 22 22 17"></polyline>
               <polyline points="2 12 12 17 22 12"></polyline>
             </svg>
           </button>
 
-          {/* Re-center button */}
+          {/* Botón Vista 3D */}
           <button
-            onClick={handleRecenterClick}
-            className={`btn-auto-center ${shouldFollow && !is3DMode ? 'following' : ''}`}
-            aria-label="Re-centrar mapa en mi posición"
-            title="Centrar en mi ubicación"
+            type="button"
+            onClick={() => {
+              setIs3DMode((prev) => !prev);
+              setShouldFollow(true);
+              if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                try { navigator.vibrate(10); } catch {}
+              }
+            }}
+            className={`driver-ctrl-btn ${is3DMode ? 'active' : ''}`}
+            title={is3DMode ? 'Vista 2D (Plana)' : 'Vista 3D (Perspectiva)'}
+            aria-label="Alternar vista 3D"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <span style={{ fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono', monospace" }}>3D</span>
+          </button>
+
+          {/* Botón Centrar en mi GPS */}
+          <button
+            type="button"
+            onClick={handleRecenterClick}
+            className={`driver-ctrl-btn ${shouldFollow && !is3DMode ? 'active' : ''}`}
+            title="Centrar en mi ubicación"
+            aria-label="Re-centrar mapa en mi posición"
+          >
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="3 11 22 2 13 21 11 13 3 11" />
             </svg>
           </button>
-        </>
+        </div>
       )}
     </div>
   );

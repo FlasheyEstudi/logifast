@@ -25,6 +25,7 @@ const postSchema = z.object({
   ganancia: z.union([z.number().min(0), z.string()]).optional(),
   kmEstimados: z.union([z.number().min(0), z.string()]).optional(),
   tiempoEstimado: z.union([z.number().int().min(0), z.string()]).optional(),
+  codigoPin: z.string().optional(),
 });
 
 /**
@@ -163,7 +164,8 @@ export async function POST(req: NextRequest) {
     const montoFinal = montoBody >= tarifaCalculada * 0.8 ? montoBody : tarifaCalculada;
     const gananciaRepartidor = Math.round(montoFinal * 0.7);
 
-    const pinGenerado = String(Math.floor(1000 + Math.random() * 9000));
+    const rawPin = body.codigoPin ? String(body.codigoPin).trim() : '';
+    const pinGenerado = (rawPin.length >= 4) ? rawPin.slice(0, 4) : String(Math.floor(1000 + Math.random() * 9000));
 
     const createData: any = {
       clienteId: user.id,

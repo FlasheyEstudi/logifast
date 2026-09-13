@@ -67,8 +67,8 @@ export function onRealtimeEvent(event: RealtimeEvent, handler: (data: any) => vo
 // ─── Emisores (client → server) ───
 export const realtime = {
   repartidorConectar: (repartidorId: string) => getSocket().emit('repartidor:conectar', { repartidorId }),
-  repartidorPosicion: (lat: number, lng: number, heading: number, estado: string) =>
-    getSocket().emit('repartidor:posicion', { lat, lng, heading, estado }),
+  repartidorPosicion: (lat: number, lng: number, heading: number, estado: string, ordenId?: string) =>
+    getSocket().emit('repartidor:posicion', { lat, lng, heading, estado, ordenId }),
   repartidorEstadoCambio: (ordenId: string, estado: string) =>
     getSocket().emit('repartidor:estado:cambio', { ordenId, estado }),
   adminConectar: () => getSocket().emit('admin:conectar'),
