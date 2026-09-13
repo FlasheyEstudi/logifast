@@ -122,10 +122,8 @@ export default function RepartidorAppPage() {
 
         {/* Top Header */}
         <div className="relative z-10 px-6 pt-12 pb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#007AFF] to-[#0055D4] flex items-center justify-center font-black text-white text-sm shadow-lg shadow-[#007AFF]/30">
-              DR
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="LogiFast" className="h-8 w-auto object-contain" />
             <div>
               <span className="font-extrabold text-base tracking-tight text-white block leading-none">LogiFast</span>
               <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Driver / Repartidor</span>

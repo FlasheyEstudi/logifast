@@ -151,8 +151,9 @@ const Icon = {
       src="/logo.png"
       alt="Logifast"
       style={{
-        width: size,
+        width: 'auto',
         height: size,
+        maxHeight: size,
         objectFit: 'contain',
         filter: 'drop-shadow(0 4px 12px rgba(0,102,255,0.45))',
       }}
