@@ -13,6 +13,7 @@ interface AuthRedesignProps {
   onLoginSuccess: (role: string, name: string) => void;
   currentView?: View;
   fixedRole?: 'cliente' | 'repartidor';
+  onBackToWelcome?: () => void;
 }
 
 const Icon = {
@@ -296,7 +297,7 @@ const PARTNERS = [
   { src: '/logo.png', name: 'Logifast', sector: 'Logística Express' },
 ];
 
-export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', fixedRole }: AuthRedesignProps) {
+export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', fixedRole, onBackToWelcome }: AuthRedesignProps) {
   const [view, setView] = useState<View>(currentView);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [sideDrawerOpen, setSideDrawerOpen] = useState(false);
@@ -423,7 +424,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
             style={{ position: 'relative', zIndex: 10 }}
           >
             <LoginView
-              onBack={() => setView('landing')}
+              onBack={() => (onBackToWelcome ? onBackToWelcome() : setView('landing'))}
               onLoginSuccess={onLoginSuccess}
               onSwitchToRegister={() => setView('register')}
               isDark={isDark}
@@ -442,7 +443,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
             style={{ position: 'relative', zIndex: 10 }}
           >
             <RegisterView
-              onBack={() => setView('landing')}
+              onBack={() => (onBackToWelcome ? onBackToWelcome() : setView('landing'))}
               onLoginSuccess={onLoginSuccess}
               onSwitchToLogin={() => setView('login')}
               isDark={isDark}
