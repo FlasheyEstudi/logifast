@@ -8,7 +8,7 @@ import { RoleLoader } from '@/components/ui/loaders';
 import AuthRedesign from '@/components/auth/AuthRedesign';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
 import { toggleThemeWithTransition } from '@/lib/theme-transition';
-import { ChevronRight, ChevronLeft, Bike, Navigation, MessageSquare } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Bike, Navigation, MessageSquare, Check, ArrowRight } from 'lucide-react';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), {
   ssr: false,
@@ -57,7 +57,11 @@ export function AppleDriverSlideWidget({ type, isDark }: { type: string; isDark:
             <Bike size={22} className="text-[#00C853]" />
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: textColor }}>Burger Boss ➔ Las Colinas</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: textColor, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>Burger Boss</span>
+              <ArrowRight size={13} style={{ color: '#00C853' }} />
+              <span>Las Colinas</span>
+            </div>
             <div style={{ fontSize: 11, color: subColor }}>Distancia: 2.8 km • Pago en Efectivo</div>
           </div>
         </div>
@@ -120,7 +124,10 @@ export function AppleDriverSlideWidget({ type, isDark }: { type: string; isDark:
         <span style={{ color: subColor, fontWeight: 600 }}>Propinas recibidas (100%)</span>
         <span style={{ fontWeight: 700, color: '#00C853' }}>+ C$ 200.00</span>
       </div>
-      <div style={{ fontSize: 11, color: '#00C853', fontWeight: 700 }}>✓ Fondos disponibles para retiro inmediato a banco</div>
+      <div style={{ fontSize: 11, color: '#00C853', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+        <Check size={14} />
+        <span>Fondos disponibles para retiro inmediato a banco</span>
+      </div>
     </div>
   );
 }

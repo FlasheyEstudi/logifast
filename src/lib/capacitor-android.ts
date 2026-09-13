@@ -21,15 +21,11 @@ export async function initCapacitorAndroid(handlers?: AndroidBackHandlers) {
 
   const isNative = (window as any).Capacitor?.isNativePlatform?.() || false;
 
-  // 1. Ocultar SplashScreen suavemente cuando el DOM y la UI están listos (elimina destello blanco)
+  // 1. Ocultar SplashScreen nativo inmediatamente para dar paso al loader animado oficial
   try {
     const splash = (window as any).Capacitor?.Plugins?.SplashScreen;
     if (splash) {
-      setTimeout(async () => {
-        try {
-          await splash.hide({ fadeOutDuration: 400 });
-        } catch {}
-      }, 250);
+      splash.hide({ fadeOutDuration: 150 }).catch(() => {});
     }
   } catch {}
 

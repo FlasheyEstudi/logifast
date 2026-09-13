@@ -7,7 +7,7 @@ import {
   MapPin, Package, Navigation, Clock, Power, MessageSquare, AlertTriangle,
   Zap, Phone, Compass, Key, Bike, Flame, CheckCircle, X, ArrowRight,
   Layers, Maximize2, ChevronDown, ChevronUp, Eye, FileText, Check, Store,
-  User, ShieldCheck,
+  User, ShieldCheck, DollarSign,
 } from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
@@ -987,7 +987,8 @@ export default function RepartidorServicio() {
                     </span>
                     {ordenActiva.metodoPago === 'efectivo' ? (
                       <span style={{ fontSize: 13, fontWeight: 800, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span>💵 Cobrar:</span>
+                        <DollarSign size={14} />
+                        <span>Cobrar:</span>
                         <strong style={{ fontFamily: "'JetBrains Mono', monospace" }}>C$ {ordenActiva.monto.toFixed(2)}</strong>
                       </span>
                     ) : (
@@ -1417,8 +1418,9 @@ export default function RepartidorServicio() {
                           </span>
                         )}
                         {ordenActiva.fragil && (
-                          <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: 'rgba(255, 59, 48, 0.15)', border: '1px solid rgba(255, 59, 48, 0.3)', color: '#FF3B30' }}>
-                            ⚠️ Frágil
+                          <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: 'rgba(255, 59, 48, 0.15)', border: '1px solid rgba(255, 59, 48, 0.3)', color: '#FF3B30', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <AlertTriangle size={12} />
+                            <span>Frágil</span>
                           </span>
                         )}
                       </div>
