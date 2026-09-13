@@ -24,6 +24,7 @@ import { notify } from '@/lib/notify';
 import { LogoSpinner } from '@/components/ui/loaders';
 
 import { reverseGeocode } from '@/lib/osrm';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import PagoExitoso, { type CompletedOrderData } from './PagoExitoso';
 
 interface ClientCarritoProps {
@@ -80,6 +81,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
   const [deliveryLng, setDeliveryLng] = useState(0);
   const [addressError, setAddressError] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [hasCartGps, setHasCartGps] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<Array<{ id: string; etiqueta: string; direccion: string; lat?: number; lng?: number }>>([]);
 
   React.useEffect(() => {
@@ -125,35 +127,36 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
     return acc;
   }, [] as Array<{ tiendaId: string; tiendaNombre: string; tiendaLogoIniciales: string; items: typeof cartItems }>);
 
-  const handleUseCartLocation = () => {
-    if (typeof window === 'undefined' || !navigator.geolocation) {
-      notify.error('La geolocalización no está disponible en este navegador.');
-      return;
-    }
+  const handleUseCartLocation = async () => {
     setIsGettingLocation(true);
-    notify.info('Obteniendo tu posición GPS...');
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setDeliveryLat(lat);
-        setDeliveryLng(lng);
-        const tempLabel = `Ubicación GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-        setDireccionEntregaInput(tempLabel);
-        setAddressError(false);
+    notify.info('Buscando satélites y señal GPS...');
 
-        const realAddr = await reverseGeocode(lat, lng);
-        setDireccionEntregaInput(realAddr);
+    try {
+      const res = await obtenerUbicacionActual();
+      if (!res.ok || typeof res.lat !== 'number' || typeof res.lng !== 'number') {
+        notify.error(res.error || 'No se pudo obtener la ubicación GPS.');
         setIsGettingLocation(false);
-        notify.success('Ubicación GPS obtenida para la entrega.');
-      },
-      (err) => {
-        console.error('[cart geolocation error]', err);
-        setIsGettingLocation(false);
-        notify.error('No se pudo obtener la ubicación GPS.');
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+        return;
+      }
+
+      const lat = res.lat;
+      const lng = res.lng;
+      setDeliveryLat(lat);
+      setDeliveryLng(lng);
+      setHasCartGps(true);
+      const tempLabel = `Ubicación GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+      setDireccionEntregaInput(tempLabel);
+      setAddressError(false);
+
+      notify.success('¡Ubicación GPS capturada con precisión!');
+
+      const realAddr = await reverseGeocode(lat, lng);
+      setDireccionEntregaInput(realAddr);
+    } catch (err: any) {
+      notify.error(err?.message || 'Error obteniendo posición GPS');
+    } finally {
+      setIsGettingLocation(false);
+    }
   };
 
   const handleAplicarCodigo = () => {
@@ -696,27 +699,64 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                       <span>Dirección de Entrega</span>
                       <span style={{ fontSize: 11, color: '#EF4444', fontWeight: 600 }}>*Obligatorio</span>
                     </div>
-                    <button
+                    <motion.button
                       type="button"
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.94 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                       onClick={handleUseCartLocation}
                       disabled={isGettingLocation}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: 4,
-                        background: 'rgba(52, 199, 89, 0.15)',
-                        border: '1px solid rgba(52, 199, 89, 0.3)',
+                        gap: 6,
+                        background: isGettingLocation
+                          ? 'rgba(0, 122, 255, 0.18)'
+                          : hasCartGps && deliveryLat
+                          ? 'rgba(52, 199, 89, 0.2)'
+                          : 'rgba(52, 199, 89, 0.12)',
+                        border: isGettingLocation
+                          ? '1px solid rgba(0, 122, 255, 0.4)'
+                          : hasCartGps && deliveryLat
+                          ? '1.5px solid #34C759'
+                          : '1px solid rgba(52, 199, 89, 0.3)',
                         borderRadius: 100,
-                        padding: '4px 10px',
-                        color: '#34C759',
+                        padding: '5px 12px',
+                        color: isGettingLocation
+                          ? '#60A5FA'
+                          : hasCartGps && deliveryLat
+                          ? '#34C759'
+                          : '#34C759',
                         fontSize: 11,
                         fontWeight: 700,
-                        cursor: 'pointer',
+                        cursor: isGettingLocation ? 'wait' : 'pointer',
+                        boxShadow: hasCartGps && deliveryLat ? '0 0 12px rgba(52, 199, 89, 0.3)' : 'none',
+                        transition: 'all 0.25s ease',
                       }}
                     >
-                      <Locate size={12} />
-                      <span>{isGettingLocation ? 'Obteniendo GPS...' : 'Usar mi GPS'}</span>
-                    </button>
+                      {isGettingLocation ? (
+                        <>
+                          <motion.span
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                            style={{ display: 'inline-flex' }}
+                          >
+                            <Locate size={12} />
+                          </motion.span>
+                          <span>Buscando señal GPS...</span>
+                        </>
+                      ) : hasCartGps && deliveryLat ? (
+                        <>
+                          <Check size={12} strokeWidth={2.5} />
+                          <span>GPS Fijado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Locate size={12} />
+                          <span>Usar mi GPS</span>
+                        </>
+                      )}
+                    </motion.button>
                   </div>
 
                   <input

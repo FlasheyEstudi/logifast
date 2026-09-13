@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 export interface SlidingTabItem {
@@ -32,17 +32,32 @@ export default function SlidingPillTabBar({
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // Rastrear toques y arrastres táctiles de forma limpia
-  const startXRef = useRef<number | null>(null);
+  // Estado local para seguimiento visual dinámico sin saturar la app
+  const [previewKey, setPreviewKey] = useState(activeKey);
+  const previewKeyRef = useRef(activeKey);
   const isDraggingRef = useRef(false);
-  const lastKeyRef = useRef(activeKey);
-  lastKeyRef.current = activeKey;
+  const startXRef = useRef<number | null>(null);
+  const startYRef = useRef<number | null>(null);
+  const lastPointerUpTimeRef = useRef(0);
 
-  // Haptic feedback nativo ultrarrápido
+  // Mantener previewKeyRef sincronizado
+  useEffect(() => {
+    previewKeyRef.current = previewKey;
+  }, [previewKey]);
+
+  // Sincronizar estado visual si activeKey cambia externamente (ej: navegación interna)
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setPreviewKey(activeKey);
+      previewKeyRef.current = activeKey;
+    }
+  }, [activeKey]);
+
+  // Haptic feedback nativo ultrarrápido (micro-tick de iPhone)
   const triggerHaptic = useCallback(() => {
     try {
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(12);
+        navigator.vibrate(10);
       }
     } catch {}
   }, []);
@@ -52,7 +67,7 @@ export default function SlidingPillTabBar({
     (clientX: number): number => {
       if (!containerRef.current || items.length === 0) return -1;
 
-      // 1. Detección directa por límites de cada botón
+      // 1. Detección por límites geométricos exactos de cada botón
       for (let i = 0; i < itemRefs.current.length; i++) {
         const el = itemRefs.current[i];
         if (el) {
@@ -63,7 +78,7 @@ export default function SlidingPillTabBar({
         }
       }
 
-      // 2. Si el dedo se sale ligeramente, encontrar el centro más cercano
+      // 2. Si el dedo se sale ligeramente hacia los extremos, encontrar el más cercano
       let closestIdx = 0;
       let minDistance = Infinity;
       itemRefs.current.forEach((el, idx) => {
@@ -82,60 +97,99 @@ export default function SlidingPillTabBar({
     [items.length]
   );
 
-  // Cambio directo de pestaña (para toques inmediatos)
-  const selectTab = useCallback(
-    (key: string) => {
-      if (key === activeKey) return;
-      triggerHaptic();
-      onChange(key);
-    },
-    [activeKey, onChange, triggerHaptic]
-  );
-
-  // ─── GESTOR DE TOQUES / ARRASTRE TÁCTIL ───
+  // ─── GESTOS TÁCTILES ESTILO IPHONE (SCRUBBING FLUIDO) ───
+  // Mientras arrastras: la cápsula visual sigue tu dedo con feedback táctil.
+  // Al soltar: se confirma el módulo seleccionado de forma fija e instantánea.
+  // Al tocar: respuesta inmediata sin retraso.
   const handlePointerDown = (e: React.PointerEvent) => {
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+
     startXRef.current = e.clientX;
+    startYRef.current = e.clientY;
     isDraggingRef.current = false;
+
+    // Feedback visual inmediato en el punto de contacto inicial
+    const initialIdx = getTabIndexAtX(e.clientX);
+    if (initialIdx >= 0 && initialIdx < items.length) {
+      const initialKey = items[initialIdx].key;
+      setPreviewKey(initialKey);
+      previewKeyRef.current = initialKey;
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (startXRef.current === null) return;
     const deltaX = Math.abs(e.clientX - startXRef.current);
+    const deltaY = Math.abs(e.clientY - (startYRef.current ?? 0));
 
-    // Solo activar arrastre si supera 10px horizontales
+    // Si el usuario desliza verticalmente de forma predominante, cancelar gesto
+    if (!isDraggingRef.current && deltaY > 15 && deltaY > deltaX) return;
+
+    // Solo activar scrubbing si el movimiento horizontal supera 10px
     if (deltaX > 10) {
       isDraggingRef.current = true;
       const targetIdx = getTabIndexAtX(e.clientX);
       if (targetIdx >= 0 && targetIdx < items.length) {
         const targetKey = items[targetIdx].key;
-        if (targetKey !== lastKeyRef.current) {
+        if (previewKeyRef.current !== targetKey) {
+          previewKeyRef.current = targetKey;
+          setPreviewKey(targetKey);
           triggerHaptic();
-          onChange(targetKey);
         }
       }
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    if (isDraggingRef.current) {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+
+    lastPointerUpTimeRef.current = Date.now();
+
+    // Determinar la clave final a fijar
+    let finalKey = previewKeyRef.current;
+    if (!isDraggingRef.current) {
       const targetIdx = getTabIndexAtX(e.clientX);
       if (targetIdx >= 0 && targetIdx < items.length) {
-        const targetKey = items[targetIdx].key;
-        if (targetKey !== lastKeyRef.current) {
-          triggerHaptic();
-          onChange(targetKey);
-        }
+        finalKey = items[targetIdx].key;
       }
     }
+
+    if (finalKey) {
+      setPreviewKey(finalKey);
+      previewKeyRef.current = finalKey;
+      triggerHaptic();
+      onChange(finalKey);
+    }
+
     startXRef.current = null;
-    setTimeout(() => {
-      isDraggingRef.current = false;
-    }, 40);
+    startYRef.current = null;
+    isDraggingRef.current = false;
   };
 
-  const handlePointerCancel = () => {
+  const handlePointerCancel = (e: React.PointerEvent) => {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
     startXRef.current = null;
-    isDraggingRef.current = false;
+    startYRef.current = null;
+    if (isDraggingRef.current) {
+      setPreviewKey(activeKey);
+      previewKeyRef.current = activeKey;
+      isDraggingRef.current = false;
+    }
+  };
+
+  // Toque de respaldo (ratón o accesibilidad) si no fue procesado por pointerup
+  const handleTabClick = (key: string) => {
+    if (Date.now() - lastPointerUpTimeRef.current < 400) return;
+    setPreviewKey(key);
+    previewKeyRef.current = key;
+    triggerHaptic();
+    onChange(key);
   };
 
   const layoutId = `pill-${ariaLabel.replace(/[^a-zA-Z0-9]/g, '-')}`;
@@ -170,7 +224,7 @@ export default function SlidingPillTabBar({
       }}
     >
       {items.map((item, idx) => {
-        const isActive = activeKey === item.key;
+        const isSelected = previewKey === item.key;
         const showBadge = (item.badge || 0) > 0;
 
         return (
@@ -181,24 +235,24 @@ export default function SlidingPillTabBar({
             }}
             type="button"
             role="tab"
-            aria-selected={isActive}
+            aria-selected={isSelected}
             aria-label={item.label}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              selectTab(item.key);
+              handleTabClick(item.key);
             }}
             style={{
               position: 'relative',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: isActive ? 6 : 0,
+              gap: isSelected ? 6 : 0,
               padding: '8px 12px',
               borderRadius: 100,
               border: 'none',
               background: 'transparent',
-              color: isActive
+              color: isSelected
                 ? '#FFFFFF'
                 : isDark
                 ? 'rgba(255, 255, 255, 0.65)'
@@ -216,7 +270,7 @@ export default function SlidingPillTabBar({
             }}
           >
             {/* ─── PÍLDORA DESLIZANTE NATIVA CON FÍSICA SPRING DE IPHONE (GPU ACCELERATED) ─── */}
-            {isActive && (
+            {isSelected && (
               <motion.div
                 layoutId={layoutId}
                 style={{
@@ -246,7 +300,7 @@ export default function SlidingPillTabBar({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transform: isActive ? 'scale(1.06)' : 'scale(1)',
+                transform: isSelected ? 'scale(1.06)' : 'scale(1)',
                 transition: 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
@@ -279,7 +333,7 @@ export default function SlidingPillTabBar({
             </span>
 
             {/* Texto de la pestaña */}
-            {isActive && (
+            {isSelected && (
               <motion.span
                 initial={{ opacity: 0, scale: 0.92, x: -3 }}
                 animate={{ opacity: 1, scale: 1, x: 0 }}

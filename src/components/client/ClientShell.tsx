@@ -31,33 +31,17 @@ import { aplicarTema } from '@/store/configStore';
 import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
 
 /* ═══════════════════════════════════════════════
-   SKELETON COMPONENT (PLACEHOLDER)
+   APPLE LIQUID GLASS SKELETON (FALLBACK TRANSLÚCIDO SUTIL)
    ═══════════════════════════════════════════════ */
-function MobileModuleSkeleton() {
+function AppleLiquidGlassSkeleton() {
   return (
-    <div className="w-full space-y-4 p-4 animate-pulse">
-      {/* Banner Skeleton */}
-      <div className="w-full h-44 bg-slate-200 dark:bg-slate-800/60 rounded-3xl" />
-      
-      {/* Categories Grid Skeleton */}
+    <div className="w-full space-y-4 p-4">
+      <div className="w-full h-44 rounded-3xl bg-slate-200/50 dark:bg-white/[0.04] backdrop-blur-xl border border-black/5 dark:border-white/10" />
       <div className="grid grid-cols-4 gap-3 pt-2">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center space-y-2">
-            <div className="w-14 h-14 bg-slate-200 dark:bg-slate-800/60 rounded-2xl" />
-            <div className="w-10 h-3 bg-slate-200 dark:bg-slate-800/60 rounded-full" />
-          </div>
-        ))}
-      </div>
-
-      {/* Cards List Skeleton */}
-      <div className="space-y-3 pt-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="p-4 bg-slate-200 dark:bg-slate-800/40 rounded-2xl flex items-center space-x-3">
-            <div className="w-12 h-12 bg-slate-300 dark:bg-slate-700/60 rounded-xl flex-shrink-0" />
-            <div className="flex-1 space-y-2">
-              <div className="w-3/4 h-4 bg-slate-300 dark:bg-slate-700/60 rounded-full" />
-              <div className="w-1/2 h-3 bg-slate-300 dark:bg-slate-700/60 rounded-full" />
-            </div>
+            <div className="w-14 h-14 rounded-2xl bg-slate-200/50 dark:bg-white/[0.04] backdrop-blur-xl border border-black/5 dark:border-white/10" />
+            <div className="w-10 h-3 rounded-full bg-slate-200/50 dark:bg-white/[0.04]" />
           </div>
         ))}
       </div>
@@ -66,23 +50,23 @@ function MobileModuleSkeleton() {
 }
 
 /* ═══════════════════════════════════════════════
-   DYNAMIC MODULE IMPORTS WITH ELEGANT SKELETON
+   CORE MODULE IMPORTS (INSTANTÁNEOS, 0ms DE LATENCIA)
    ═══════════════════════════════════════════════ */
-const ClientInicio = dynamic(() => import('./ClientInicio'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientSolicitar = dynamic(() => import('./ClientSolicitar'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientEnvios = dynamic(() => import('./ClientEnvios'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientPerfil = dynamic(() => import('./ClientPerfil'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientTracking = dynamic(() => import('./ClientTracking'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientChat = dynamic(() => import('./ClientChat'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientRating = dynamic(() => import('./ClientRating'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientExplorar = dynamic(() => import('./ClientExplorar'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientTienda = dynamic(() => import('./ClientTienda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientCarrito = dynamic(() => import('./ClientCarrito'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientPedidos = dynamic(() => import('./ClientPedidos'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientBusqueda = dynamic(() => import('./ClientBusqueda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientAyuda = dynamic(() => import('./ClientAyuda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientPuntos = dynamic(() => import('./ClientPuntos'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
-const ClientMiTienda = dynamic(() => import('./ClientMiTienda'), { ssr: false, loading: () => <MobileModuleSkeleton /> });
+import ClientInicio from './ClientInicio';
+import ClientSolicitar from './ClientSolicitar';
+import ClientEnvios from './ClientEnvios';
+import ClientPerfil from './ClientPerfil';
+import ClientExplorar from './ClientExplorar';
+import ClientPedidos from './ClientPedidos';
+import ClientTienda from './ClientTienda';
+import ClientCarrito from './ClientCarrito';
+import ClientBusqueda from './ClientBusqueda';
+import ClientAyuda from './ClientAyuda';
+import ClientPuntos from './ClientPuntos';
+import ClientMiTienda from './ClientMiTienda';
+import ClientTracking from './ClientTracking';
+import ClientChat from './ClientChat';
+import ClientRating from './ClientRating';
 
 /* ═══════════════════════════════════════════════
    SNACKBAR CONTEXT
@@ -469,36 +453,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     return () => document.removeEventListener('keydown', handleKey);
   }, [setClientNotifOpen]);
 
-  const CLIENT_NAV_ORDER: ClientModuleKey[] = ['inicio', 'solicitar', 'explorar', 'envios', 'perfil'];
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
-    touchStartX.current = null;
-    touchStartY.current = null;
-
-    // Solo si el deslizamiento es predominantemente horizontal y no un scroll vertical
-    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25) {
-      const currentIndex = CLIENT_NAV_ORDER.indexOf(clientActiveModule);
-      if (currentIndex !== -1) {
-        if (deltaX < 0 && currentIndex < CLIENT_NAV_ORDER.length - 1) {
-          // Deslizar izquierda -> Siguiente módulo
-          handleNav(CLIENT_NAV_ORDER[currentIndex + 1]);
-        } else if (deltaX > 0 && currentIndex > 0) {
-          // Deslizar derecha -> Módulo anterior
-          handleNav(CLIENT_NAV_ORDER[currentIndex - 1]);
-        }
-      }
-    }
-  };
 
   const handleNav = useCallback(
     (mod: ClientModuleKey, pushHistory = true) => {
@@ -549,10 +504,41 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     [setRatingOrderId, setRatingModalOpen]
   );
 
-  const renderModule = () => {
-    const moduleProps = { isDark, userName, onNavigate: handleNav, onOpenTracking: handleOpenTracking, onOpenChat: handleOpenChat, onOpenRating: handleOpenRating };
+  /* ─── NAVEGACIÓN Y KEEP-ALIVE DE PESTAÑAS (TRANSICIONES INSTANTÁNEAS 0ms) ─── */
+  const CORE_CLIENT_TABS: ClientModuleKey[] = ['inicio', 'solicitar', 'explorar', 'envios', 'pedidos', 'perfil'];
+  const [visitedTabs, setVisitedTabs] = useState<Set<ClientModuleKey>>(() => new Set(['inicio', clientActiveModule]));
+
+  useEffect(() => {
+    if (CORE_CLIENT_TABS.includes(clientActiveModule)) {
+      setVisitedTabs((prev) => {
+        if (prev.has(clientActiveModule)) return prev;
+        const next = new Set(prev);
+        next.add(clientActiveModule);
+        return next;
+      });
+    }
+  }, [clientActiveModule]);
+
+  // Refrescar órdenes discretamente en segundo plano al cambiar a envíos o pedidos
+  useEffect(() => {
+    if (clientActiveModule === 'envios') {
+      fetchOrders();
+    } else if (clientActiveModule === 'pedidos') {
+      fetchOrdenesCompra();
+    }
+  }, [clientActiveModule, fetchOrders, fetchOrdenesCompra]);
+
+  const renderCoreTab = (key: ClientModuleKey) => {
+    const moduleProps = {
+      isDark,
+      userName,
+      onNavigate: handleNav,
+      onOpenTracking: handleOpenTracking,
+      onOpenChat: handleOpenChat,
+      onOpenRating: handleOpenRating,
+    };
     const perfilProps = { ...moduleProps, onLogout };
-    switch (clientActiveModule) {
+    switch (key) {
       case 'inicio':
         return <ClientInicio {...moduleProps} />;
       case 'solicitar':
@@ -565,6 +551,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         return <ClientPedidos {...moduleProps} />;
       case 'perfil':
         return <ClientPerfil {...perfilProps} />;
+      default:
+        return null;
+    }
+  };
+
+  const renderSubModule = (key: ClientModuleKey) => {
+    switch (key) {
       case 'tienda':
         return (
           <ClientMiTienda
@@ -578,7 +571,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       case 'puntos':
         return <ClientPuntos isDark={isDark} onClose={() => setClientActiveModule('perfil')} />;
       default:
-        return <ClientInicio {...moduleProps} />;
+        return null;
     }
   };
 
@@ -820,18 +813,29 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             }}
             className="lf-client-inner-pad"
           >
-            <AnimatePresence initial={false}>
-              <motion.div
-                key={clientActiveModule}
-                initial={{ opacity: 0.7, scale: 0.985 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.985, position: 'absolute', width: '100%' }}
-                transition={{ duration: 0.15, ease: [0.25, 1, 0.5, 1] }}
-                className="lf-ios-screen-transition"
-              >
-                {renderModule()}
-              </motion.div>
-            </AnimatePresence>
+            {/* ─── PESTAÑAS PRINCIPALES CON KEEP-ALIVE (0ms DE LATENCIA, SIN SKELETONS) ─── */}
+            {Array.from(visitedTabs).map((tabKey) => {
+              const isCurrent = clientActiveModule === tabKey;
+              return (
+                <div
+                  key={tabKey}
+                  style={{
+                    display: isCurrent ? 'block' : 'none',
+                    width: '100%',
+                  }}
+                  className={isCurrent ? 'lf-screen-fade-in' : ''}
+                >
+                  {renderCoreTab(tabKey)}
+                </div>
+              );
+            })}
+
+            {/* ─── SUBMÓDULOS SECUNDARIOS (Tienda, Ayuda, Puntos) ─── */}
+            {!CORE_CLIENT_TABS.includes(clientActiveModule) && (
+              <div className="lf-screen-fade-in" style={{ width: '100%' }}>
+                {renderSubModule(clientActiveModule)}
+              </div>
+            )}
           </div>
         </main>
 
@@ -1158,6 +1162,21 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           @keyframes lf-splash-text {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
+          }
+
+          /* ─── Keep-alive screen transition (instantáneo 0ms) ─── */
+          @keyframes lfScreenFadeIn {
+            from {
+              opacity: 0.85;
+              transform: scale(0.995);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+          .lf-screen-fade-in {
+            animation: lfScreenFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           }
         `}</style>
       </div>

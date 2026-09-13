@@ -18,6 +18,7 @@ import { useConfigStore } from '@/store/configStore';
 import { TemaToggle } from '@/components/ui/TemaToggle';
 import { SonidoToggle } from '@/components/ui/SonidoToggle';
 import { notify } from '@/lib/notify';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import ClientMiTienda from './ClientMiTienda';
 
 function Camera({ size = 16 }: { size?: number }) {
@@ -505,29 +506,29 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   };
 
   /* ─── Save address with GPS & Reference ─── */
-  const handleDetectGPS = () => {
-    if (!navigator.geolocation) {
-      notify.error('Geolocalización no soportada en este dispositivo');
-      return;
-    }
+  const handleDetectGPS = async () => {
     setDetectingGps(true);
-    notify.info('Obteniendo coordenadas GPS en alta precisión...');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setNewAddrLat(pos.coords.latitude);
-        setNewAddrLng(pos.coords.longitude);
-        if (!newAddr.trim()) {
-          setNewAddr(`Ubicación GPS (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
-        }
+    notify.info('Buscando satélites y señal GPS...');
+
+    try {
+      const res = await obtenerUbicacionActual();
+      if (!res.ok || typeof res.lat !== 'number' || typeof res.lng !== 'number') {
+        notify.error(res.error || 'No se pudo obtener la ubicación GPS');
         setDetectingGps(false);
-        notify.success('¡Punto GPS capturado con éxito!');
-      },
-      (err) => {
-        setDetectingGps(false);
-        notify.error('No se pudo obtener la ubicación GPS');
-      },
-      { enableHighAccuracy: true }
-    );
+        return;
+      }
+
+      setNewAddrLat(res.lat);
+      setNewAddrLng(res.lng);
+      if (!newAddr.trim()) {
+        setNewAddr(`Ubicación GPS (${res.lat.toFixed(4)}, ${res.lng.toFixed(4)})`);
+      }
+      setDetectingGps(false);
+      notify.success('¡Punto GPS capturado con éxito!');
+    } catch (err: any) {
+      setDetectingGps(false);
+      notify.error(err?.message || 'No se pudo obtener la ubicación GPS');
+    }
   };
 
   const handleAddAddress = () => {
