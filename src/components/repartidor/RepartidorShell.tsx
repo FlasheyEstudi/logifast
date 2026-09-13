@@ -676,46 +676,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     return () => window.removeEventListener('popstate', handlePopState);
   }, [activeTab, setPantalla]);
 
-  const REPARTIDOR_NAV_ORDER: RepartidorTabKey[] = ['servicio', 'historial', 'ganancias', 'perfil'];
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    // Si estamos en la pestaña de servicio (mapa GPS interactivo) o el toque es sobre el mapa / controles interactivos, NO cambiar de módulo
-    if (activeTab === 'servicio') {
-      touchStartX.current = null;
-      touchStartY.current = null;
-      return;
-    }
-    const target = e.target as HTMLElement | null;
-    if (target?.closest('.leaflet-container, .lf-map-container, [data-no-swipe], button, a, input, textarea')) {
-      touchStartX.current = null;
-      touchStartY.current = null;
-      return;
-    }
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
-    touchStartX.current = null;
-    touchStartY.current = null;
-
-    // Solo si el deslizamiento es predominantemente horizontal y no un scroll vertical
-    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25) {
-      const currentIndex = REPARTIDOR_NAV_ORDER.indexOf(activeTab);
-      if (currentIndex !== -1) {
-        if (deltaX < 0 && currentIndex < REPARTIDOR_NAV_ORDER.length - 1) {
-          handleNav(REPARTIDOR_NAV_ORDER[currentIndex + 1]);
-        } else if (deltaX > 0 && currentIndex > 0) {
-          handleNav(REPARTIDOR_NAV_ORDER[currentIndex - 1]);
-        }
-      }
-    }
-  };
 
   /* ─── handleNav — Con soporte de historial para gesto atrás ─── */
   const handleNav = useCallback(
@@ -928,11 +889,9 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
           </div>
         </header>
 
-        {/* ═══════ CONTENT AREA (Con soporte para deslizar entre pestañas) ═══════ */}
+        {/* ═══════ CONTENT AREA (Navegación controlada exclusivamente por TabBar) ═══════ */}
         <main
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          className="lf-rep-content lf-ios-content touch-pan-y"
+          className="lf-rep-content lf-ios-content"
           style={{
             flex: 1,
             paddingTop: 'calc(96px + env(safe-area-inset-top, 0px))',

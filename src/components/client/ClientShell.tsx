@@ -788,10 +788,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           </header>
         )}
 
-        {/* ─── CONTENT AREA (Con soporte para deslizar entre módulos) ─── */}
+        {/* ─── CONTENT AREA (Navegación controlada exclusivamente por TabBar) ─── */}
         <main
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
           style={{
             flex: 1,
             paddingTop: clientActiveModule === 'tienda' ? 0 : 'calc(96px + env(safe-area-inset-top, 0px))',
@@ -800,7 +798,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             backgroundColor: 'var(--ios-bg)',
             transition: 'padding 0.3s ease, background-color 0.3s ease',
           }}
-          className="lf-client-content-padded lf-ios-content touch-pan-y"
+          className="lf-client-content-padded lf-ios-content"
         >
           <div
             style={{
