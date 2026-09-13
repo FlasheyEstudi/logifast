@@ -28,6 +28,7 @@ import { LogoSpinner } from '@/components/ui/loaders';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
 import { aplicarTema } from '@/store/configStore';
+import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
 
 /* ═══════════════════════════════════════════════
    SKELETON COMPONENT (PLACEHOLDER)
@@ -819,13 +820,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             }}
             className="lf-client-inner-pad"
           >
-            <AnimatePresence mode="wait">
+            <AnimatePresence initial={false}>
               <motion.div
                 key={clientActiveModule}
-                initial={{ opacity: 0, y: 10, scale: 0.99 }}
-                animate={{ opacity: clientModuleFade ? 0 : 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.99 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0.7, scale: 0.985 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.985, position: 'absolute', width: '100%' }}
+                transition={{ duration: 0.15, ease: [0.25, 1, 0.5, 1] }}
                 className="lf-ios-screen-transition"
               >
                 {renderModule()}
@@ -836,125 +837,35 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
         {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
         {clientActiveModule !== 'tienda' && (
-          <nav
+          <div
             style={{
               position: 'fixed',
-              bottom: 'calc(env(safe-area-inset-bottom, 16px) + 10px)',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 9990,
+              bottom: 'calc(env(safe-area-inset-bottom, 16px) + 8px)',
+              left: 0,
+              right: 0,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-around',
-              gap: 2,
-              padding: '5px 6px',
-              borderRadius: 100,
-              background: isDark ? 'rgba(20, 20, 28, 0.85)' : 'rgba(255, 255, 255, 0.88)',
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)',
-              boxShadow: isDark
-                ? 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.18), 0 16px 48px rgba(0,0,0,0.5)'
-                : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 14px 36px rgba(0, 102, 255, 0.12)',
-              width: 'calc(100vw - 24px)',
-              maxWidth: 460,
-              backdropFilter: 'blur(40px) saturate(190%)',
-              WebkitBackdropFilter: 'blur(40px) saturate(190%)',
-              boxSizing: 'border-box',
+              justifyContent: 'center',
+              zIndex: 9990,
+              padding: '0 12px',
+              pointerEvents: 'none',
             }}
-            aria-label="Navegación principal flotante"
           >
-          {NAV_ITEMS.map((item) => {
-            const isActive = clientActiveModule === item.key;
-            const showPedidosBadge = item.key === 'pedidos' && activeOrdersCount > 0;
-            return (
-              <motion.button
-                key={item.key}
-                whileTap={{ scale: 0.92 }}
-                onClick={() => handleNav(item.key)}
-                aria-label={item.label}
-                aria-current={isActive ? 'page' : undefined}
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: isActive ? 5 : 0,
-                  padding: isActive ? '7px 13px' : '7px 9px',
-                  borderRadius: 100,
-                  border: 'none',
-                  background: 'transparent',
-                  color: isActive
-                    ? '#FFFFFF'
-                    : isDark
-                    ? '#CBD5E1'
-                    : '#334155',
-                  cursor: 'pointer',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  fontFamily: 'var(--ios-font, sans-serif)',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  WebkitTapHighlightColor: 'transparent',
-                  flexShrink: 0,
-                }}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="liquidActiveClient"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: 100,
-                      background: 'var(--primario)',
-                      boxShadow: '0 4px 14px color-mix(in srgb, var(--primario) 50%, transparent)',
-                      zIndex: 0,
-                    }}
-                  />
-                )}
-
-                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', zIndex: 1, color: isActive ? '#FFFFFF' : isDark ? '#CBD5E1' : '#334155' }}>
-                  <item.Icon />
-                  {showPedidosBadge && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: -4,
-                        right: -6,
-                        minWidth: 16,
-                        height: 16,
-                        borderRadius: 8,
-                        background: 'var(--peligro)',
-                        color: '#FFF',
-                        fontSize: 9,
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '0 4px',
-                        border: '2px solid var(--surface, #1E293B)',
-                      }}
-                    >
-                      {activeOrdersCount > 9 ? '9+' : activeOrdersCount}
-                    </span>
-                  )}
-                </span>
-
-                {isActive && (
-                  <motion.span
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: 'auto' }}
-                    exit={{ opacity: 0, width: 0 }}
-                    transition={{ duration: 0.2 }}
-                    style={{
-                      whiteSpace: 'nowrap',
-                      zIndex: 1,
-                    }}
-                  >
-                    {item.label}
-                  </motion.span>
-                )}
-              </motion.button>
-            );
-          })}
-        </nav>
+            <div style={{ pointerEvents: 'auto', width: '100%', maxWidth: 460 }}>
+              <SlidingPillTabBar
+                items={NAV_ITEMS.map((it) => ({
+                  key: it.key,
+                  label: it.label,
+                  icon: <it.Icon />,
+                  badge: it.key === 'pedidos' ? activeOrdersCount : undefined,
+                }))}
+                activeKey={clientActiveModule}
+                onChange={(key) => handleNav(key as ClientModuleKey)}
+                isDark={isDark}
+                accentColor="var(--primario)"
+                ariaLabel="Navegación principal de cliente"
+              />
+            </div>
+          </div>
         )}
 
         {/* ═══════ iOS SNACKBAR ═══════ */}
