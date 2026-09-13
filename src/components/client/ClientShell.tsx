@@ -468,10 +468,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       if (mod !== 'explorar') {
         setTiendaSeleccionada(null);
       }
-      // Haptic feedback on nav tap
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate(20); } catch { /* ignore */ }
-      }
     },
     [clientActiveModule, setClientActiveModule, setTrackingOrder, setTiendaSeleccionada]
   );

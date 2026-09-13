@@ -53,15 +53,6 @@ export default function SlidingPillTabBar({
     }
   }, [activeKey]);
 
-  // Haptic feedback nativo ultrarrápido (micro-tick de iPhone)
-  const triggerHaptic = useCallback(() => {
-    try {
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(10);
-      }
-    } catch {}
-  }, []);
-
   // Encontrar el índice de la pestaña sobre la cual está la coordenada X
   const getTabIndexAtX = useCallback(
     (clientX: number): number => {
@@ -98,7 +89,7 @@ export default function SlidingPillTabBar({
   );
 
   // ─── GESTOS TÁCTILES ESTILO IPHONE (SCRUBBING FLUIDO) ───
-  // Mientras arrastras: la cápsula visual sigue tu dedo con feedback táctil.
+  // Mientras arrastras: la cápsula visual sigue tu dedo suavemente.
   // Al soltar: se confirma el módulo seleccionado de forma fija e instantánea.
   // Al tocar: respuesta inmediata sin retraso.
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -136,7 +127,6 @@ export default function SlidingPillTabBar({
         if (previewKeyRef.current !== targetKey) {
           previewKeyRef.current = targetKey;
           setPreviewKey(targetKey);
-          triggerHaptic();
         }
       }
     }
@@ -161,7 +151,6 @@ export default function SlidingPillTabBar({
     if (finalKey) {
       setPreviewKey(finalKey);
       previewKeyRef.current = finalKey;
-      triggerHaptic();
       onChange(finalKey);
     }
 
@@ -188,7 +177,6 @@ export default function SlidingPillTabBar({
     if (Date.now() - lastPointerUpTimeRef.current < 400) return;
     setPreviewKey(key);
     previewKeyRef.current = key;
-    triggerHaptic();
     onChange(key);
   };
 

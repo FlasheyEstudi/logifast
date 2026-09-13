@@ -693,7 +693,6 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
         setGananciasActive(false);
         setPantalla(tab as StorePantalla);
       }
-      HAPTIC_PATTERNS.light();
     },
     [activeTab, setPantalla]
   );
