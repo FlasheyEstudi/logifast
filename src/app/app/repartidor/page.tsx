@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { initCapacitorAndroid } from '@/lib/capacitor-android';
 import { RoleLoader } from '@/components/ui/loaders';
 import AuthRedesign from '@/components/auth/AuthRedesign';
+import { useConfigStore, aplicarTema } from '@/store/configStore';
+import { toggleThemeWithTransition } from '@/lib/theme-transition';
 import { ChevronRight, ChevronLeft, Bike, Navigation, MessageSquare } from 'lucide-react';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), {
@@ -126,7 +128,31 @@ export function AppleDriverSlideWidget({ type, isDark }: { type: string; isDark:
 export default function RepartidorAppPage() {
   const [sessionUser, setSessionUser] = useState<any | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
-  const [isDark, setIsDark] = useState(true);
+
+  // Sincronización con el tema global del sistema (Día / Noche)
+  const tema = useConfigStore((s) => s.tema);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    aplicarTema(useConfigStore.getState().tema);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    aplicarTema(tema);
+  }, [tema]);
+
+  const isDark =
+    !mounted ||
+    tema === 'dark' ||
+    (tema === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  const toggleTheme = useCallback((event?: any) => {
+    toggleThemeWithTransition(event);
+  }, []);
 
   // Onboarding que solo se muestra 1 vez
   const [welcomeDone, setWelcomeDone] = useState<boolean>(true);
@@ -202,7 +228,7 @@ export default function RepartidorAppPage() {
     return (
       <RepartidorApp
         isDark={isDark}
-        toggleTheme={() => setIsDark((prev) => !prev)}
+        toggleTheme={toggleTheme}
         onLogout={handleLogout}
       />
     );

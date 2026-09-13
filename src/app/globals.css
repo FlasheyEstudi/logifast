@@ -163,7 +163,9 @@
   --lf-shadow-xl: var(--shadow-xl);
 }
 
-[data-theme="dark"] {
+[data-theme="dark"],
+.dark,
+html.dark {
   /* ─── MODO OSCURO — Apple System Colors (Dark) ─── */
   --bg: #000000;
   --bg-alt: #1C1C1E;
@@ -15568,7 +15570,9 @@ html, body {
   --ios-font-mono: 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
 }
 
-.dark {
+.dark,
+[data-theme="dark"],
+html.dark {
   --ios-bg: #000000;
   --ios-bg-elevated: #1C1C1E;
   --ios-bg-secondary: #2C2C2E;

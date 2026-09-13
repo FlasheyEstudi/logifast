@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { initCapacitorAndroid } from '@/lib/capacitor-android';
 import { RoleLoader } from '@/components/ui/loaders';
 import AuthRedesign, { SLIDES, AppleSlideWidget } from '@/components/auth/AuthRedesign';
+import { useConfigStore, aplicarTema } from '@/store/configStore';
+import { toggleThemeWithTransition } from '@/lib/theme-transition';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 const ClientDashboard = dynamic(() => import('@/app/client-dashboard'), {
@@ -16,7 +18,31 @@ const ClientDashboard = dynamic(() => import('@/app/client-dashboard'), {
 export default function ClienteAppPage() {
   const [sessionUser, setSessionUser] = useState<any | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
-  const [isDark, setIsDark] = useState(true);
+
+  // Sincronización con el tema global del sistema (Día / Noche)
+  const tema = useConfigStore((s) => s.tema);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    aplicarTema(useConfigStore.getState().tema);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    aplicarTema(tema);
+  }, [tema]);
+
+  const isDark =
+    !mounted ||
+    tema === 'dark' ||
+    (tema === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  const toggleTheme = useCallback((event?: any) => {
+    toggleThemeWithTransition(event);
+  }, []);
 
   // Onboarding que solo se muestra 1 vez
   const [welcomeDone, setWelcomeDone] = useState<boolean>(true);
@@ -88,7 +114,7 @@ export default function ClienteAppPage() {
     return (
       <ClientDashboard
         isDark={isDark}
-        toggleTheme={() => setIsDark((prev) => !prev)}
+        toggleTheme={toggleTheme}
         onLogout={handleLogout}
         userName={sessionUser.name}
       />

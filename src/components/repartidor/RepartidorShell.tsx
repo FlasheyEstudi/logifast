@@ -777,10 +777,33 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     perfil?.initials || (userName ? userName.charAt(0).toUpperCase() : 'R');
   const avatarColor = perfil?.color || 'var(--ios-blue)';
 
+  /* ─── THEME SYNC — Asegura que el modo oscuro aplique a todo el DOM y CSS vars ─── */
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      if (document.body) {
+        document.body.classList.add('dark');
+        document.body.setAttribute('data-theme', 'dark');
+      }
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.documentElement.setAttribute('data-theme', 'light');
+      if (document.body) {
+        document.body.classList.remove('dark');
+        document.body.setAttribute('data-theme', 'light');
+      }
+    }
+  }, [isDark]);
+
   return (
     <SnackbarContext.Provider value={showSnackbar}>
       <div
-        className="lf-ios-app lf-rep-shell"
+        className={`lf-ios-app lf-rep-shell ${isDark ? 'dark' : 'light'}`}
+        data-theme={isDark ? 'dark' : 'light'}
         style={{
           minHeight: '100vh',
           display: 'flex',

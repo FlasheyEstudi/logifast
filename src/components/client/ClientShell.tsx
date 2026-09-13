@@ -330,6 +330,28 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     return () => clearInterval(pollInterval);
   }, [fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, fetchOrders]);
 
+  /* ─── THEME SYNC — Asegura que el modo oscuro aplique a todo el DOM y CSS vars ─── */
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      if (document.body) {
+        document.body.classList.add('dark');
+        document.body.setAttribute('data-theme', 'dark');
+      }
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.documentElement.setAttribute('data-theme', 'light');
+      if (document.body) {
+        document.body.classList.remove('dark');
+        document.body.setAttribute('data-theme', 'light');
+      }
+    }
+  }, [isDark]);
+
   /* ─── SPLASH STATE (solo una vez por sesión para fluidez total) ─── */
   const [showSplash, setShowSplash] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
@@ -577,7 +599,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   return (
     <SnackbarContext.Provider value={showSnackbar}>
       <div
-        className="cliente-app lf-ios-app"
+        className={`cliente-app lf-ios-app ${isDark ? 'dark' : 'light'}`}
+        data-theme={isDark ? 'dark' : 'light'}
         style={{
           minHeight: '100vh',
           display: 'flex',
