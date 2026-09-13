@@ -690,7 +690,8 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     touchStartX.current = null;
     touchStartY.current = null;
 
-    if (Math.abs(deltaX) > 65 && Math.abs(deltaY) < 45) {
+    // Solo si el deslizamiento es predominantemente horizontal y no un scroll vertical
+    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25) {
       const currentIndex = REPARTIDOR_NAV_ORDER.indexOf(activeTab);
       if (currentIndex !== -1) {
         if (deltaX < 0 && currentIndex < REPARTIDOR_NAV_ORDER.length - 1) {

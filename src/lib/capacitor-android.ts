@@ -136,6 +136,8 @@ export async function initCapacitorAndroid(handlers?: AndroidBackHandlers) {
         });
       }
     } catch {}
+  }
+
   // 5. Soporte y Polyfill de GPS Nativo Capacitor para Android
   try {
     const geoPlugin = (window as any).Capacitor?.Plugins?.Geolocation;
@@ -183,6 +185,7 @@ export async function initCapacitorAndroid(handlers?: AndroidBackHandlers) {
                 toJSON: () => ({}),
               },
               timestamp: pos.timestamp || Date.now(),
+              toJSON: () => ({}),
             };
             successCallback(syntheticPos);
           } catch (err: any) {

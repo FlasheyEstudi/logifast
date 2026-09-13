@@ -6,72 +6,122 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { initCapacitorAndroid } from '@/lib/capacitor-android';
 import { RoleLoader } from '@/components/ui/loaders';
 import AuthRedesign from '@/components/auth/AuthRedesign';
+import { ChevronRight, ChevronLeft, Bike, Navigation, MessageSquare } from 'lucide-react';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), {
   ssr: false,
   loading: () => <RoleLoader role="repartidor" />,
 });
 
-import { Bike, Compass, Wallet, ChevronRight, ChevronLeft } from 'lucide-react';
-
-const DRIVER_SLIDES = [
+export const DRIVER_SLIDES = [
   {
-    title: 'Conduce y Gana con tu Moto',
-    desc: 'Horarios 100% libres. Conéctate cuando quieras y recibe solicitudes de envío continuas.',
-    badge: 'Ingresos Libres',
-    icon: Bike,
-    gradient: 'from-blue-500/20 to-indigo-500/10',
-    border: 'border-blue-500/30',
-    iconColor: 'text-blue-400',
-    badgeBg: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    title: 'Despacho Inteligente en Vivo',
+    subtitle: 'Recibe solicitudes continuas de envío optimizadas según tu cercanía y disponibilidad.',
+    widgetType: 'driver_dispatch',
   },
   {
-    title: 'Navegación GPS Integrada',
-    desc: 'Rutas automáticas calculadas con Waze y Google Maps para llegar siempre más rápido.',
-    badge: 'Ruta Óptima',
-    icon: Compass,
-    gradient: 'from-emerald-500/20 to-teal-500/10',
-    border: 'border-emerald-500/30',
-    iconColor: 'text-emerald-400',
-    badgeBg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    title: 'Navegación GPS y Rutas Óptimas',
+    subtitle: 'Rutas guiadas giro a giro con cálculo de tráfico en tiempo real para llegar más rápido.',
+    widgetType: 'driver_nav',
   },
   {
-    title: 'Pagos Seguros y Transparencia',
-    desc: 'Visualiza tus ganancias por cada entrega y cobra tus fondos acumulados a tu billetera.',
-    badge: 'Ganancia Diaria',
-    icon: Wallet,
-    gradient: 'from-amber-500/20 to-orange-500/10',
-    border: 'border-amber-500/30',
-    iconColor: 'text-amber-400',
-    badgeBg: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    title: 'Ganancias Claras y Retiros Diarios',
+    subtitle: 'Visualiza tus ingresos por cada entrega, conserva el 100% de tus propinas y retira cuando quieras.',
+    widgetType: 'driver_wallet',
   },
 ];
 
-const slideVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 180 : -180,
-    opacity: 0,
-    scale: 0.95,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    scale: 1,
-    transition: {
-      x: { type: 'spring', stiffness: 320, damping: 30 },
-      opacity: { duration: 0.2 },
-    },
-  },
-  exit: (direction: number) => ({
-    x: direction > 0 ? -180 : 180,
-    opacity: 0,
-    scale: 0.95,
-    transition: {
-      x: { type: 'spring', stiffness: 320, damping: 30 },
-      opacity: { duration: 0.2 },
-    },
-  }),
-};
+export function AppleDriverSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
+  const cardBg = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)';
+  const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.8)';
+  const innerShadow = isDark
+    ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.15), 0 14px 36px rgba(0,0,0,0.35)'
+    : 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.95), 0 12px 30px rgba(0,102,255,0.06)';
+  const textColor = isDark ? '#FFFFFF' : '#1C1C1E';
+  const subColor = isDark ? '#8E8E93' : '#6E6E73';
+
+  if (type === 'driver_dispatch') {
+    return (
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 800, color: '#00C853' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 12px #00C853' }} />
+            SOLICITUD DISPONIBLE • ETA 8 MIN
+          </div>
+          <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 800, color: '#00C853' }}>C$ 160.00</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(0, 200, 83, 0.15)', border: '1px solid rgba(0,200,83,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,200,83,0.2)' }}>
+            <Bike size={22} className="text-[#00C853]" />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: textColor }}>Burger Boss ➔ Las Colinas</div>
+            <div style={{ fontSize: 11, color: subColor }}>Distancia: 2.8 km • Pago en Efectivo</div>
+          </div>
+        </div>
+        <div style={{ height: 6, background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.06)', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: '85%', background: 'linear-gradient(90deg, #007AFF, #00C853)', borderRadius: 10, boxShadow: '0 0 10px rgba(0,200,83,0.5)' }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: subColor, fontWeight: 700 }}>
+          <span>Restaurante</span>
+          <span style={{ color: '#00C853' }}>Ruta Optimizada</span>
+          <span>Entrega al Cliente</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'driver_nav') {
+    return (
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: textColor }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#007AFF', boxShadow: '0 0 10px #007AFF' }} />
+            GPS Activo • Tráfico Fluido
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', background: 'rgba(0, 122, 255, 0.15)', border: '1px solid rgba(0,122,255,0.25)', padding: '3px 10px', borderRadius: 100 }}>34 km/h</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isDark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.7)', borderRadius: 14, padding: '12px 14px', fontSize: 12, border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)' }}>
+          <span style={{ fontSize: 11, color: subColor, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+            <Navigation size={13} className="text-[#007AFF]" /> En 200m a la der.
+          </span>
+          <span style={{ flex: 1, borderTop: '1px dashed #007AFF', margin: '0 10px' }} />
+          <span style={{ color: '#007AFF', display: 'flex', alignItems: 'center', filter: 'drop-shadow(0 0 6px rgba(0,122,255,0.6))' }}>
+            <Bike size={16} />
+          </span>
+          <span style={{ flex: 1, borderTop: '1px dashed rgba(0,122,255,0.3)', margin: '0 10px' }} />
+          <span style={{ fontSize: 11, color: subColor, fontWeight: 600 }}>
+            Pista Suburbana
+          </span>
+        </div>
+        <div style={{ fontSize: 12, color: textColor, background: 'rgba(0, 122, 255, 0.12)', border: '1px solid rgba(0,122,255,0.2)', padding: '10px 14px', borderRadius: 14, borderLeft: '4px solid #007AFF', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <MessageSquare size={14} className="text-[#007AFF] flex-shrink-0" />
+          <span style={{ fontWeight: 500, fontSize: 11 }}>Cliente: "Portón blanco frente al minisúper"</span>
+        </div>
+      </div>
+    );
+  }
+
+  // driver_wallet
+  return (
+    <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(0,200,83,0.18) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(0,200,83,0.1) 100%)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.14em', color: '#00C853' }}>BILLETERA CONDUCTOR LOGIFAST</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <div style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 900, letterSpacing: -0.5, color: textColor }}>C$ 1,480.00</div>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#00C853' }}>Hoy • 6 entregas</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.6)', borderRadius: 12, padding: '8px 12px', fontSize: 11 }}>
+        <span style={{ color: subColor, fontWeight: 600 }}>Tarifas de envío</span>
+        <span style={{ fontWeight: 700, color: textColor }}>C$ 1,280.00</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.6)', borderRadius: 12, padding: '8px 12px', fontSize: 11 }}>
+        <span style={{ color: subColor, fontWeight: 600 }}>Propinas recibidas (100%)</span>
+        <span style={{ fontWeight: 700, color: '#00C853' }}>+ C$ 200.00</span>
+      </div>
+      <div style={{ fontSize: 11, color: '#00C853', fontWeight: 700 }}>✓ Fondos disponibles para retiro inmediato a banco</div>
+    </div>
+  );
+}
 
 export default function RepartidorAppPage() {
   const [sessionUser, setSessionUser] = useState<any | null>(null);
@@ -91,7 +141,7 @@ export default function RepartidorAppPage() {
       closeActiveModal: () => {},
     });
 
-    // 2. Comprobar si ya vio la bienvenida única
+    // 2. Comprobar si ya vio la bienvenida de conductor única
     if (typeof window !== 'undefined') {
       const seen = localStorage.getItem('lf_driver_welcome_done');
       setWelcomeDone(seen === 'true');
@@ -154,53 +204,143 @@ export default function RepartidorAppPage() {
         isDark={isDark}
         toggleTheme={() => setIsDark((prev) => !prev)}
         onLogout={handleLogout}
-        userName={sessionUser.name}
       />
     );
   }
 
-  // Pantalla exclusiva de bienvenida móvil con Tailwind & Deslizamiento táctil horizontal
+  // Tokens de diseño Apple Liquid Glass oficiales
+  const textColor = isDark ? '#FFFFFF' : '#1C1C1E';
+  const subColor = isDark ? '#98989D' : '#636366';
+  const specularBorder = isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)';
+  const glassCardBg = isDark ? 'rgba(20, 20, 28, 0.72)' : 'rgba(255, 255, 255, 0.82)';
+  const glassShadow = isDark
+    ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 24px 60px rgba(0,0,0,0.5)'
+    : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 20px 50px rgba(0,200,83,0.07)';
+
+  // Pantalla exclusiva de bienvenida móvil de Repartidores
   if (!welcomeDone) {
-    const currentSlide = DRIVER_SLIDES[slideIndex];
-    const SlideIcon = currentSlide.icon;
+    const slide = DRIVER_SLIDES[slideIndex];
 
     return (
-      <div className="fixed inset-0 bg-[#07090E] text-white flex flex-col justify-between overflow-hidden font-sans select-none">
-        {/* Luces de ambiente en el fondo */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-600/15 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-12 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/3 -left-20 w-64 h-64 bg-amber-500/10 rounded-full blur-[90px] pointer-events-none" />
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: isDark ? '#000000' : '#F2F2F7',
+        color: textColor,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        overflow: 'hidden',
+        fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        userSelect: 'none',
+      }}>
+        {/* Luces ambientales en el fondo */}
+        <div style={{
+          position: 'absolute',
+          top: -40,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 380,
+          height: 380,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0, 200, 83, 0.22) 0%, transparent 70%)',
+          filter: 'blur(120px)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: 20,
+          right: -30,
+          width: 320,
+          height: 320,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0, 102, 255, 0.16) 0%, transparent 70%)',
+          filter: 'blur(120px)',
+          pointerEvents: 'none',
+        }} />
 
-        {/* Barra superior con logo oficial */}
-        <header className="relative z-20 px-6 pt-12 pb-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-md shadow-sm">
-              <img src="/logo.png" alt="LogiFast" className="h-7 w-auto object-contain" />
+        {/* ─── ISLA FLOTANTE DE CRISTAL LÍQUIDO (HEADER) ─── */}
+        <header style={{
+          position: 'relative',
+          zIndex: 100,
+          paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
+          paddingLeft: 16,
+          paddingRight: 16,
+          display: 'flex',
+          justifyContent: 'center',
+        }}>
+          <nav style={{
+            width: '100%',
+            maxWidth: 440,
+            height: 52,
+            borderRadius: 100,
+            background: isDark ? 'rgba(14, 14, 20, 0.82)' : 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(36px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(36px) saturate(200%)',
+            border: specularBorder,
+            boxShadow: isDark
+              ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.22), 0 12px 36px rgba(0, 0, 0, 0.55)'
+              : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 12px 32px rgba(0, 200, 83, 0.1)',
+            padding: '0 8px 0 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxSizing: 'border-box',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src="/logo.png" alt="LogiFast" style={{ height: 26, width: 'auto', objectFit: 'contain' }} />
+              <div>
+                <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.02em', color: textColor, display: 'block', lineHeight: 1 }}>LOGIFAST</span>
+                <span style={{ fontSize: 9, fontWeight: 800, color: '#00C853', letterSpacing: '0.08em', textTransform: 'uppercase' }}>DRIVER</span>
+              </div>
             </div>
-            <div>
-              <span className="font-black text-sm tracking-tight text-white block leading-none">LOGIFAST</span>
-              <span className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase">Driver / Repartidor</span>
-            </div>
-          </div>
-          <button
-            onClick={handleStartLogin}
-            className="text-xs font-semibold text-slate-400 hover:text-white px-3.5 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.09] border border-white/10 backdrop-blur-md transition-all"
-          >
-            Saltar
-          </button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleStartLogin}
+              style={{
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: specularBorder,
+                color: textColor,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '6px 16px',
+                borderRadius: 100,
+              }}
+            >
+              Saltar
+            </motion.button>
+          </nav>
         </header>
 
-        {/* Contenedor central con soporte para arrastrar/deslizar a los lados (Swipe) */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-2 overflow-hidden">
-          <div className="w-full max-w-sm flex items-center justify-center min-h-[360px]">
-            <AnimatePresence initial={false} custom={direction} mode="wait">
+        {/* ─── CARRUSEL CENTRAL CRISTALINO CON WIDGET REAL Y GESTO SWIPE ─── */}
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px 18px',
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 400,
+            padding: 22,
+            borderRadius: 30,
+            background: glassCardBg,
+            backdropFilter: 'blur(40px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+            border: specularBorder,
+            boxShadow: glassShadow,
+            textAlign: 'center',
+            position: 'relative',
+            boxSizing: 'border-box',
+          }}>
+            <AnimatePresence mode="wait">
               <motion.div
                 key={slideIndex}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.4}
@@ -211,90 +351,130 @@ export default function RepartidorAppPage() {
                     paginate(-1);
                   }
                 }}
-                className="w-full p-7 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col items-center text-center cursor-grab active:cursor-grabbing touch-pan-y"
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'grab', touchAction: 'pan-y' }}
               >
-                {/* Ícono dinámico dentro de cápsula iluminada */}
-                <div
-                  className={`relative w-24 h-24 mb-6 rounded-2xl bg-gradient-to-br ${currentSlide.gradient} border ${currentSlide.border} flex items-center justify-center shadow-xl shadow-black/40`}
-                >
-                  <div className="absolute inset-0 rounded-2xl bg-white/[0.02] backdrop-blur-md" />
-                  <SlideIcon className={`relative z-10 w-11 h-11 ${currentSlide.iconColor}`} strokeWidth={2.2} />
+                {/* Widget interactivo oficial del Repartidor */}
+                <div style={{ width: '100%', marginBottom: 18 }}>
+                  <AppleDriverSlideWidget type={slide.widgetType} isDark={isDark} />
                 </div>
 
-                {/* Badge temático */}
-                <span
-                  className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${currentSlide.badgeBg} mb-3`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                  {currentSlide.badge}
-                </span>
-
-                {/* Título de la diapositiva */}
-                <h2 className="text-xl font-black tracking-tight text-white leading-tight mb-2.5">
-                  {currentSlide.title}
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: textColor, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+                  {slide.title}
                 </h2>
-
-                {/* Descripción */}
-                <p className="text-xs text-slate-400 leading-relaxed font-normal max-w-[260px]">
-                  {currentSlide.desc}
+                <p style={{ fontSize: 13, color: subColor, margin: '0 0 16px', lineHeight: 1.5, maxWidth: 300 }}>
+                  {slide.subtitle}
                 </p>
 
-                {/* Pista sutil de gesto táctil */}
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium mt-6">
-                  <ChevronLeft className="w-3.5 h-3.5 animate-pulse text-slate-500" />
+                {/* Pista de deslizamiento táctil */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: subColor, fontSize: 11, fontWeight: 600 }}>
+                  <ChevronLeft size={14} />
                   <span>Desliza para explorar</span>
-                  <ChevronRight className="w-3.5 h-3.5 animate-pulse text-slate-500" />
+                  <ChevronRight size={14} />
                 </div>
               </motion.div>
             </AnimatePresence>
-          </div>
 
-          {/* Indicadores de paginación interactivos (Dots / Pills) */}
-          <div className="flex items-center gap-2 mt-5">
-            {DRIVER_SLIDES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setDirection(i > slideIndex ? 1 : -1);
-                  setSlideIndex(i);
-                }}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  slideIndex === i ? 'w-7 bg-emerald-500 shadow-md shadow-emerald-500/50' : 'w-2 bg-slate-800'
-                }`}
-                aria-label={`Diapositiva ${i + 1}`}
-              />
-            ))}
+            {/* Indicadores de Píldora tipo iOS */}
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center', marginTop: 18 }}>
+              {DRIVER_SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setDirection(i > slideIndex ? 1 : -1);
+                    setSlideIndex(i);
+                  }}
+                  style={{
+                    width: i === slideIndex ? 26 : 7,
+                    height: 6,
+                    borderRadius: 100,
+                    background: i === slideIndex ? '#00C853' : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)'),
+                    boxShadow: i === slideIndex ? '0 0 10px rgba(0,200,83,0.6)' : 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                  aria-label={`Slide ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Botones de acción principales inferiores */}
-        <div className="relative z-20 p-6 space-y-3 bg-gradient-to-t from-[#07090E] via-[#07090E]/95 to-transparent">
-          <button
-            onClick={handleStartRegister}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            <span>Unirme como Repartidor / Registrarme</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        {/* ─── BOTONES DE ACCIÓN DE ALTO NIVEL PARA REPARTIDOR ─── */}
+        <div style={{
+          position: 'relative',
+          zIndex: 100,
+          padding: '20px 20px calc(20px + env(safe-area-inset-bottom, 12px))',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 12,
+          background: isDark
+            ? 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.9) 60%, #000000 100%)'
+            : 'linear-gradient(180deg, transparent 0%, rgba(242,242,247,0.9) 60%, #F2F2F7 100%)',
+        }}>
+          <div style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={handleStartRegister}
+              style={{
+                width: '100%',
+                height: 52,
+                borderRadius: 100,
+                background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.25)',
+                fontSize: 15,
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 6px 20px rgba(0,200,83,0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <span>Unirme como Repartidor / Registro</span>
+              <ChevronRight size={18} />
+            </motion.button>
 
-          <button
-            onClick={handleStartLogin}
-            className="w-full py-3.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] text-slate-200 font-semibold text-sm border border-white/10 active:scale-[0.98] transition-all"
-          >
-            Ya soy Conductor — Iniciar Sesión
-          </button>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={handleStartLogin}
+              style={{
+                width: '100%',
+                height: 48,
+                borderRadius: 100,
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: specularBorder,
+                color: textColor,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              Ya soy Conductor — Iniciar Sesión
+            </motion.button>
 
-          <p className="text-[10px] text-center text-slate-500 pt-1">
-            Rastreo en segundo plano activo únicamente durante entregas en curso
-          </p>
+            <p style={{ fontSize: 11, textAlign: 'center', color: subColor, margin: '4px 0 0' }}>
+              Rastreo en segundo plano activo únicamente durante entregas en curso
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Pantalla directa de Auth para Repartidores (Login / Registro completo sin la landing page web)
+  // Pantalla directa de Auth para Repartidores con rol preconfigurado
   return (
-    <div className="min-h-screen bg-[#07090E] text-white">
+    <div className="min-h-screen bg-[#000000] text-white">
       <AuthRedesign
         currentView={authMode}
         fixedRole="repartidor"

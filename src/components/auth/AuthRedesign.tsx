@@ -161,7 +161,7 @@ const Icon = {
   ),
 };
 
-const SLIDES = [
+export const SLIDES = [
   {
     title: 'Pide. Rastrea. Recibe.',
     subtitle: 'Tu marketplace y servicio de envíos en Managua, en una sola app.',
@@ -184,7 +184,7 @@ const SLIDES = [
   },
 ];
 
-function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
+export function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
   const cardBg = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)';
   const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.8)';
   const innerShadow = isDark

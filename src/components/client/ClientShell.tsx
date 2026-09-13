@@ -477,8 +477,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     touchStartX.current = null;
     touchStartY.current = null;
 
-    // Solo si el deslizamiento es predominantemente horizontal (> 65px) y no un scroll vertical
-    if (Math.abs(deltaX) > 65 && Math.abs(deltaY) < 45) {
+    // Solo si el deslizamiento es predominantemente horizontal y no un scroll vertical
+    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25) {
       const currentIndex = CLIENT_NAV_ORDER.indexOf(clientActiveModule);
       if (currentIndex !== -1) {
         if (deltaX < 0 && currentIndex < CLIENT_NAV_ORDER.length - 1) {

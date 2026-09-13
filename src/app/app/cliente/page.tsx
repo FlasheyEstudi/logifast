@@ -5,73 +5,13 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { initCapacitorAndroid } from '@/lib/capacitor-android';
 import { RoleLoader } from '@/components/ui/loaders';
-import AuthRedesign from '@/components/auth/AuthRedesign';
+import AuthRedesign, { SLIDES, AppleSlideWidget } from '@/components/auth/AuthRedesign';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 const ClientDashboard = dynamic(() => import('@/app/client-dashboard'), {
   ssr: false,
   loading: () => <RoleLoader role="cliente" />,
 });
-
-import { Package, ShoppingBag, ShieldCheck, ChevronRight, ChevronLeft } from 'lucide-react';
-
-const CLIENT_SLIDES = [
-  {
-    title: 'Envíos Express en Minutos',
-    desc: 'Envía paquetes, documentos o encomiendas con repartidores verificados en toda Nicaragua.',
-    badge: 'Rápido & Seguro',
-    icon: Package,
-    gradient: 'from-orange-500/20 to-amber-500/10',
-    border: 'border-orange-500/30',
-    iconColor: 'text-orange-400',
-    badgeBg: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-  },
-  {
-    title: 'Tus Tiendas y Restaurantes',
-    desc: 'Explora comida, farmacia y productos locales con entrega directa hasta tu puerta.',
-    badge: 'Marketplace Local',
-    icon: ShoppingBag,
-    gradient: 'from-blue-500/20 to-cyan-500/10',
-    border: 'border-blue-500/30',
-    iconColor: 'text-blue-400',
-    badgeBg: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-  },
-  {
-    title: 'Seguimiento GPS y PIN Seguro',
-    desc: 'Observa a tu repartidor en tiempo real y recibe tu pedido mediante código PIN de seguridad.',
-    badge: 'Rastreo en Vivo',
-    icon: ShieldCheck,
-    gradient: 'from-emerald-500/20 to-teal-500/10',
-    border: 'border-emerald-500/30',
-    iconColor: 'text-emerald-400',
-    badgeBg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  },
-];
-
-const slideVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 180 : -180,
-    opacity: 0,
-    scale: 0.95,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    scale: 1,
-    transition: {
-      x: { type: 'spring', stiffness: 320, damping: 30 },
-      opacity: { duration: 0.2 },
-    },
-  },
-  exit: (direction: number) => ({
-    x: direction > 0 ? -180 : 180,
-    opacity: 0,
-    scale: 0.95,
-    transition: {
-      x: { type: 'spring', stiffness: 320, damping: 30 },
-      opacity: { duration: 0.2 },
-    },
-  }),
-};
 
 export default function ClienteAppPage() {
   const [sessionUser, setSessionUser] = useState<any | null>(null);
@@ -79,25 +19,22 @@ export default function ClienteAppPage() {
   const [isDark, setIsDark] = useState(true);
 
   // Onboarding que solo se muestra 1 vez
-  const [welcomeDone, setWelcomeDone] = useState<boolean>(true); // default true hasta chequear localStorage
+  const [welcomeDone, setWelcomeDone] = useState<boolean>(true);
   const [slideIndex, setSlideIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
-    // 1. Inicializar plugins nativos de Android (StatusBar, SplashScreen, BackButton, GPS)
     initCapacitorAndroid({
       hasOpenModal: () => false,
       closeActiveModal: () => {},
     });
 
-    // 2. Comprobar si ya vio la bienvenida única
     if (typeof window !== 'undefined') {
       const seen = localStorage.getItem('lf_client_welcome_done');
       setWelcomeDone(seen === 'true');
     }
 
-    // 3. Verificar si ya hay una sesión activa de cliente
     fetch('/api/auth/me')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -113,8 +50,8 @@ export default function ClienteAppPage() {
     setDirection(newDirection);
     setSlideIndex((prev) => {
       const next = prev + newDirection;
-      if (next < 0) return CLIENT_SLIDES.length - 1;
-      if (next >= CLIENT_SLIDES.length) return 0;
+      if (next < 0) return SLIDES.length - 1;
+      if (next >= SLIDES.length) return 0;
       return next;
     });
   };
@@ -147,7 +84,6 @@ export default function ClienteAppPage() {
     return <RoleLoader role="cliente" />;
   }
 
-  // Si ya está autenticado, renderizar la app completa del cliente con todos sus módulos
   if (sessionUser) {
     return (
       <ClientDashboard
@@ -159,48 +95,135 @@ export default function ClienteAppPage() {
     );
   }
 
-  // Pantalla exclusiva de bienvenida móvil con Tailwind & Deslizamiento táctil horizontal
+  // Tokens de cristal líquido del diseño oficial de LogiFast
+  const textColor = isDark ? '#FFFFFF' : '#1C1C1E';
+  const subColor = isDark ? '#98989D' : '#636366';
+  const specularBorder = isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)';
+  const glassCardBg = isDark ? 'rgba(20, 20, 28, 0.72)' : 'rgba(255, 255, 255, 0.82)';
+  const glassShadow = isDark
+    ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 24px 60px rgba(0,0,0,0.5)'
+    : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 20px 50px rgba(0,102,255,0.07)';
+
   if (!welcomeDone) {
-    const currentSlide = CLIENT_SLIDES[slideIndex];
-    const SlideIcon = currentSlide.icon;
+    const slide = SLIDES[slideIndex];
 
     return (
-      <div className="fixed inset-0 bg-[#07090E] text-white flex flex-col justify-between overflow-hidden font-sans select-none">
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: isDark ? '#000000' : '#F2F2F7',
+        color: textColor,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        overflow: 'hidden',
+        fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        userSelect: 'none',
+      }}>
         {/* Luces ambientales en el fondo */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-600/15 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-12 right-0 w-80 h-80 bg-orange-500/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/3 -left-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-[90px] pointer-events-none" />
+        <div style={{
+          position: 'absolute',
+          top: -40,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 380,
+          height: 380,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0, 102, 255, 0.22) 0%, transparent 70%)',
+          filter: 'blur(120px)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: 20,
+          right: -30,
+          width: 320,
+          height: 320,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0, 200, 83, 0.14) 0%, transparent 70%)',
+          filter: 'blur(120px)',
+          pointerEvents: 'none',
+        }} />
 
-        {/* Barra superior con logo oficial */}
-        <header className="relative z-20 px-6 pt-12 pb-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-md shadow-sm">
-              <img src="/logo.png" alt="LogiFast" className="h-7 w-auto object-contain" />
+        {/* ─── ISLA FLOTANTE DE CRISTAL LÍQUIDO (HEADER) ─── */}
+        <header style={{
+          position: 'relative',
+          zIndex: 100,
+          paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
+          paddingLeft: 16,
+          paddingRight: 16,
+          display: 'flex',
+          justifyContent: 'center',
+        }}>
+          <nav style={{
+            width: '100%',
+            maxWidth: 440,
+            height: 52,
+            borderRadius: 100,
+            background: isDark ? 'rgba(14, 14, 20, 0.82)' : 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(36px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(36px) saturate(200%)',
+            border: specularBorder,
+            boxShadow: isDark
+              ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.22), 0 12px 36px rgba(0, 0, 0, 0.55)'
+              : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 12px 32px rgba(0, 102, 255, 0.1)',
+            padding: '0 8px 0 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxSizing: 'border-box',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src="/logo.png" alt="LogiFast" style={{ height: 26, width: 'auto', objectFit: 'contain' }} />
+              <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em', color: textColor }}>LOGIFAST</span>
             </div>
-            <div>
-              <span className="font-black text-sm tracking-tight text-white block leading-none">LOGIFAST</span>
-              <span className="text-[10px] text-blue-400 font-bold tracking-widest uppercase">Cliente Express</span>
-            </div>
-          </div>
-          <button
-            onClick={handleStartLogin}
-            className="text-xs font-semibold text-slate-400 hover:text-white px-3.5 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.09] border border-white/10 backdrop-blur-md transition-all"
-          >
-            Saltar
-          </button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleStartLogin}
+              style={{
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: specularBorder,
+                color: textColor,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '6px 16px',
+                borderRadius: 100,
+              }}
+            >
+              Saltar
+            </motion.button>
+          </nav>
         </header>
 
-        {/* Contenedor central con soporte para arrastrar/deslizar a los lados (Swipe) */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-2 overflow-hidden">
-          <div className="w-full max-w-sm flex items-center justify-center min-h-[360px]">
-            <AnimatePresence initial={false} custom={direction} mode="wait">
+        {/* ─── CARRUSEL CENTRAL CRISTALINO CON WIDGET REAL Y GESTO SWIPE ─── */}
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px 18px',
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 400,
+            padding: 22,
+            borderRadius: 30,
+            background: glassCardBg,
+            backdropFilter: 'blur(40px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+            border: specularBorder,
+            boxShadow: glassShadow,
+            textAlign: 'center',
+            position: 'relative',
+            boxSizing: 'border-box',
+          }}>
+            <AnimatePresence mode="wait">
               <motion.div
                 key={slideIndex}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.4}
@@ -211,90 +234,129 @@ export default function ClienteAppPage() {
                     paginate(-1);
                   }
                 }}
-                className="w-full p-7 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col items-center text-center cursor-grab active:cursor-grabbing touch-pan-y"
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'grab', touchAction: 'pan-y' }}
               >
-                {/* Ícono dinámico dentro de cápsula iluminada */}
-                <div
-                  className={`relative w-24 h-24 mb-6 rounded-2xl bg-gradient-to-br ${currentSlide.gradient} border ${currentSlide.border} flex items-center justify-center shadow-xl shadow-black/40`}
-                >
-                  <div className="absolute inset-0 rounded-2xl bg-white/[0.02] backdrop-blur-md" />
-                  <SlideIcon className={`relative z-10 w-11 h-11 ${currentSlide.iconColor}`} strokeWidth={2.2} />
+                {/* Widget interactivo oficial de AuthRedesign */}
+                <div style={{ width: '100%', marginBottom: 18 }}>
+                  <AppleSlideWidget type={slide.widgetType} isDark={isDark} />
                 </div>
 
-                {/* Badge temático */}
-                <span
-                  className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${currentSlide.badgeBg} mb-3`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                  {currentSlide.badge}
-                </span>
-
-                {/* Título de la diapositiva */}
-                <h2 className="text-xl font-black tracking-tight text-white leading-tight mb-2.5">
-                  {currentSlide.title}
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: textColor, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+                  {slide.title}
                 </h2>
-
-                {/* Descripción */}
-                <p className="text-xs text-slate-400 leading-relaxed font-normal max-w-[260px]">
-                  {currentSlide.desc}
+                <p style={{ fontSize: 13, color: subColor, margin: '0 0 16px', lineHeight: 1.5, maxWidth: 300 }}>
+                  {slide.subtitle}
                 </p>
 
-                {/* Pista sutil de gesto táctil */}
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium mt-6">
-                  <ChevronLeft className="w-3.5 h-3.5 animate-pulse text-slate-500" />
+                {/* Pista de deslizamiento táctil */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: subColor, fontSize: 11, fontWeight: 600 }}>
+                  <ChevronLeft size={14} />
                   <span>Desliza para explorar</span>
-                  <ChevronRight className="w-3.5 h-3.5 animate-pulse text-slate-500" />
+                  <ChevronRight size={14} />
                 </div>
               </motion.div>
             </AnimatePresence>
-          </div>
 
-          {/* Indicadores de paginación interactivos (Dots / Pills) */}
-          <div className="flex items-center gap-2 mt-5">
-            {CLIENT_SLIDES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setDirection(i > slideIndex ? 1 : -1);
-                  setSlideIndex(i);
-                }}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  slideIndex === i ? 'w-7 bg-blue-500 shadow-md shadow-blue-500/50' : 'w-2 bg-slate-800'
-                }`}
-                aria-label={`Diapositiva ${i + 1}`}
-              />
-            ))}
+            {/* Indicadores de Píldora tipo iOS */}
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center', marginTop: 18 }}>
+              {SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setDirection(i > slideIndex ? 1 : -1);
+                    setSlideIndex(i);
+                  }}
+                  style={{
+                    width: i === slideIndex ? 26 : 7,
+                    height: 6,
+                    borderRadius: 100,
+                    background: i === slideIndex ? '#007AFF' : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)'),
+                    boxShadow: i === slideIndex ? '0 0 10px rgba(0,122,255,0.6)' : 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                  aria-label={`Slide ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Botones de acción principales inferiores */}
-        <div className="relative z-20 p-6 space-y-3 bg-gradient-to-t from-[#07090E] via-[#07090E]/95 to-transparent">
-          <button
-            onClick={handleStartRegister}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-blue-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            <span>Comenzar / Crear Cuenta</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        {/* ─── BOTONES DE ACCIÓN DE ALTO NIVEL ─── */}
+        <div style={{
+          position: 'relative',
+          zIndex: 100,
+          padding: '20px 20px calc(20px + env(safe-area-inset-bottom, 12px))',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 12,
+          background: isDark
+            ? 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.9) 60%, #000000 100%)'
+            : 'linear-gradient(180deg, transparent 0%, rgba(242,242,247,0.9) 60%, #F2F2F7 100%)',
+        }}>
+          <div style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={handleStartRegister}
+              style={{
+                width: '100%',
+                height: 52,
+                borderRadius: 100,
+                background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.25)',
+                fontSize: 15,
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 6px 20px rgba(0,102,255,0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <span>Comenzar / Crear Cuenta</span>
+              <ChevronRight size={18} />
+            </motion.button>
 
-          <button
-            onClick={handleStartLogin}
-            className="w-full py-3.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] text-slate-200 font-semibold text-sm border border-white/10 active:scale-[0.98] transition-all"
-          >
-            Ya tengo cuenta — Iniciar Sesión
-          </button>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={handleStartLogin}
+              style={{
+                width: '100%',
+                height: 48,
+                borderRadius: 100,
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: specularBorder,
+                color: textColor,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              Ya tengo cuenta — Iniciar Sesión
+            </motion.button>
 
-          <p className="text-[10px] text-center text-slate-500 pt-1">
-            Al continuar aceptas nuestros Términos de Servicio y Privacidad
-          </p>
+            <p style={{ fontSize: 11, textAlign: 'center', color: subColor, margin: '4px 0 0' }}>
+              Al continuar aceptas nuestros Términos de Servicio y Privacidad
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Pantalla directa de Auth (Login / Registro completo sin la landing page web)
   return (
-    <div className="min-h-screen bg-[#07090E] text-white">
+    <div className="min-h-screen bg-[#000000] text-white">
       <AuthRedesign
         currentView={authMode}
         fixedRole="cliente"
