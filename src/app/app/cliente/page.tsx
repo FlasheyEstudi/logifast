@@ -155,7 +155,7 @@ export default function ClienteAppPage() {
           height: 380,
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(0, 102, 255, 0.22) 0%, transparent 70%)',
-          filter: 'blur(120px)',
+          filter: 'blur(20px)',
           pointerEvents: 'none',
         }} />
         <div style={{
@@ -166,7 +166,7 @@ export default function ClienteAppPage() {
           height: 320,
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(0, 200, 83, 0.14) 0%, transparent 70%)',
-          filter: 'blur(120px)',
+          filter: 'blur(20px)',
           pointerEvents: 'none',
         }} />
 

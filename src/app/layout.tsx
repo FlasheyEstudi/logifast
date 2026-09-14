@@ -71,7 +71,7 @@ export default function RootLayout({
                   var reloadKey = 'lf_chunk_reload';
                   var now = Date.now();
                   var lastReload = Number(sessionStorage.getItem(reloadKey) || 0);
-                  if (now - lastReload > 8000) {
+                  if (now - lastReload > 15000) {
                     sessionStorage.setItem(reloadKey, String(now));
                     window.location.reload();
                   }

@@ -276,7 +276,7 @@ export default function RepartidorAppPage() {
           height: 380,
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(0, 200, 83, 0.22) 0%, transparent 70%)',
-          filter: 'blur(120px)',
+          filter: 'blur(20px)',
           pointerEvents: 'none',
         }} />
         <div style={{
@@ -287,7 +287,7 @@ export default function RepartidorAppPage() {
           height: 320,
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(0, 102, 255, 0.16) 0%, transparent 70%)',
-          filter: 'blur(120px)',
+          filter: 'blur(20px)',
           pointerEvents: 'none',
         }} />
 

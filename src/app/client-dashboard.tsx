@@ -39,25 +39,18 @@ class ClientErrorBoundary extends Component<ClientErrorBoundaryProps, ClientErro
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
-  }  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[Client Dashboard Error Boundary]', error, errorInfo);
     if (error.name === 'ChunkLoadError' || error.message?.includes('Failed to load chunk')) {
-      console.warn('ChunkLoadError catch en ClientErrorBoundary. Limpiando SW...');
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(regs => {
-          for (const reg of regs) {
-            reg.unregister();
-          }
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(keys => {
-          keys.forEach(key => caches.delete(key));
-        });
-      }
-      setTimeout(() => {
+      const reloadKey = 'lf_chunk_reload_client';
+      const now = Date.now();
+      const last = Number(sessionStorage.getItem(reloadKey) || 0);
+      if (now - last > 15000) {
+        sessionStorage.setItem(reloadKey, String(now));
         window.location.reload();
-      }, 300);
+      }
     }
   }
   handleRetry = () => {

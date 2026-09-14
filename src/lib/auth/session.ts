@@ -87,7 +87,7 @@ export async function createSession(user: SessionUser): Promise<string> {
       name: COOKIE_NAME,
       value: token,
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: TOKEN_TTL_SECONDS,

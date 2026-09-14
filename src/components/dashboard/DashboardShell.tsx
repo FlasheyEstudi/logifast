@@ -64,16 +64,22 @@ class ModuleErrorBoundary extends Component<
     console.error('[ModuleErrorBoundary]', error);
     // Si es error de chunk, auto-reload con cuenta regresiva
     if (this.state.isChunkError) {
-      this.timer = setInterval(() => {
-        this.setState(prev => {
-          if (prev.countdown <= 1) {
-            clearInterval(this.timer!);
-            window.location.reload();
-            return prev;
-          }
-          return { ...prev, countdown: prev.countdown - 1 };
-        });
-      }, 1000);
+      const reloadKey = 'lf_chunk_reload_shell';
+      const now = Date.now();
+      const last = Number(sessionStorage.getItem(reloadKey) || 0);
+      if (now - last > 15000) {
+        sessionStorage.setItem(reloadKey, String(now));
+        this.timer = setInterval(() => {
+          this.setState(prev => {
+            if (prev.countdown <= 1) {
+              clearInterval(this.timer!);
+              window.location.reload();
+              return prev;
+            }
+            return { ...prev, countdown: prev.countdown - 1 };
+          });
+        }, 1000);
+      }
     }
   }
 

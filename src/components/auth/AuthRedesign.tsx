@@ -12,6 +12,7 @@ type View = 'landing' | 'login' | 'register';
 interface AuthRedesignProps {
   onLoginSuccess: (role: string, name: string) => void;
   currentView?: View;
+  onViewChange?: (view: View) => void;
   fixedRole?: 'cliente' | 'repartidor';
   onBackToWelcome?: () => void;
 }
@@ -298,7 +299,13 @@ const PARTNERS = [
   { src: '/logo.png', name: 'Logifast', sector: 'Logística Express' },
 ];
 
-export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', fixedRole, onBackToWelcome }: AuthRedesignProps) {
+export default function AuthRedesign({
+  onLoginSuccess,
+  currentView = 'landing',
+  onViewChange,
+  fixedRole,
+  onBackToWelcome,
+}: AuthRedesignProps) {
   const [view, setView] = useState<View>(currentView);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [sideDrawerOpen, setSideDrawerOpen] = useState(false);
@@ -324,14 +331,18 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
     setView(currentView);
   }, [currentView]);
 
-  useEffect(() => {
+  const changeView = (newView: View) => {
+    setView(newView);
+    if (onViewChange) {
+      onViewChange(newView);
+    }
     if (typeof window !== 'undefined') {
-      const targetHash = view === 'login' ? '#/login' : view === 'register' ? '#/register' : '#/';
+      const targetHash = newView === 'login' ? '#/login' : newView === 'register' ? '#/register' : '#/';
       if (window.location.hash !== targetHash) {
         window.location.hash = targetHash;
       }
     }
-  }, [view]);
+  };
 
   // Auto-advance carrusel interactivo cada 5s
   useEffect(() => {
@@ -356,7 +367,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
       transition: 'background 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease',
       WebkitFontSmoothing: 'antialiased',
     }}>
-      {/* Dynamic Liquid Glass Background Lighting */}
+      {/* Dynamic Liquid Glass Background Lighting (Optimized for iOS WebKit GPU) */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
         <div style={{
           position: 'absolute',
@@ -367,7 +378,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
           background: isDark
             ? 'radial-gradient(circle, rgba(0, 122, 255, 0.22) 0%, rgba(88, 86, 214, 0.12) 50%, transparent 70%)'
             : 'radial-gradient(circle, rgba(0, 122, 255, 0.12) 0%, rgba(88, 86, 214, 0.05) 50%, transparent 70%)',
-          filter: 'blur(140px)',
+          filter: 'blur(20px)',
         }} />
         <div style={{
           position: 'absolute',
@@ -378,7 +389,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
           background: isDark
             ? 'radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, rgba(255, 149, 0, 0.08) 60%, transparent 70%)'
             : 'radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(255, 149, 0, 0.04) 60%, transparent 70%)',
-          filter: 'blur(150px)',
+          filter: 'blur(20px)',
         }} />
         <div style={{
           position: 'absolute',
@@ -389,7 +400,7 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
           background: isDark
             ? 'radial-gradient(circle, rgba(0, 200, 83, 0.14) 0%, rgba(0, 122, 255, 0.1) 60%, transparent 70%)'
             : 'radial-gradient(circle, rgba(0, 200, 83, 0.06) 0%, rgba(0, 122, 255, 0.04) 60%, transparent 70%)',
-          filter: 'blur(160px)',
+          filter: 'blur(20px)',
         }} />
       </div>
 
@@ -406,8 +417,8 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
             <LandingView
               currentSlide={currentSlide}
               setCurrentSlide={setCurrentSlide}
-              onLogin={() => setView('login')}
-              onRegister={() => setView('register')}
+              onLogin={() => changeView('login')}
+              onRegister={() => changeView('register')}
               isDark={isDark}
               toggleTheme={toggleTheme}
               sideDrawerOpen={sideDrawerOpen}
@@ -425,9 +436,9 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
             style={{ position: 'relative', zIndex: 10 }}
           >
             <LoginView
-              onBack={() => (onBackToWelcome ? onBackToWelcome() : setView('landing'))}
+              onBack={() => (onBackToWelcome ? onBackToWelcome() : changeView('landing'))}
               onLoginSuccess={onLoginSuccess}
-              onSwitchToRegister={() => setView('register')}
+              onSwitchToRegister={() => changeView('register')}
               isDark={isDark}
               toggleTheme={toggleTheme}
               fixedRole={fixedRole}
@@ -444,9 +455,9 @@ export default function AuthRedesign({ onLoginSuccess, currentView = 'landing', 
             style={{ position: 'relative', zIndex: 10 }}
           >
             <RegisterView
-              onBack={() => (onBackToWelcome ? onBackToWelcome() : setView('landing'))}
+              onBack={() => (onBackToWelcome ? onBackToWelcome() : changeView('landing'))}
               onLoginSuccess={onLoginSuccess}
-              onSwitchToLogin={() => setView('login')}
+              onSwitchToLogin={() => changeView('login')}
               isDark={isDark}
               toggleTheme={toggleTheme}
               fixedRole={fixedRole}

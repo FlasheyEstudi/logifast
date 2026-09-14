@@ -373,7 +373,11 @@ export default function Home() {
   // Listen to hash changes and restore authenticated sessions from server
   useEffect(() => {
     // Verificar sesión activa en el servidor (/api/auth/me)
-    fetch('/api/auth/me')
+    const token = typeof window !== 'undefined' ? localStorage.getItem('lf-jwt-token') : null;
+    const authHeaders: Record<string, string> = {};
+    if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+
+    fetch('/api/auth/me', { headers: authHeaders })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.user) {
@@ -382,10 +386,15 @@ export default function Home() {
           setLoginUserName(user.name || user.email);
           localStorage.setItem('lf-session-role', user.role);
           localStorage.setItem('lf-session-name', user.name || user.email);
-          if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#/login') {
+          const hash = window.location.hash;
+          if (hash.startsWith('#/dashboard') || hash.startsWith('#/cliente') || hash.startsWith('#/repartidor') || hash.startsWith('#/ingeniero')) {
             setCurrentView('dashboard');
-            window.location.hash = '#/dashboard';
           }
+        } else {
+          // Servidor confirmó que no hay sesión activa: limpiar storage para no atrapar en loop
+          localStorage.removeItem('lf-session-role');
+          localStorage.removeItem('lf-session-name');
+          localStorage.removeItem('lf-session-view');
         }
       })
       .catch(() => null);
@@ -395,11 +404,11 @@ export default function Home() {
       const savedRole = typeof window !== 'undefined' ? localStorage.getItem('lf-session-role') : null;
       const savedName = typeof window !== 'undefined' ? localStorage.getItem('lf-session-name') : null;
 
-      if (hash === '#/login' && !savedRole) {
+      if (hash === '#/login') {
         setCurrentView('login');
         setRegStep(1);
         document.body.style.overflow = 'hidden';
-      } else if (hash === '#/register' && !savedRole) {
+      } else if (hash === '#/register') {
         setCurrentView('register');
         setRegStep(1);
         document.body.style.overflow = 'hidden';
@@ -407,8 +416,7 @@ export default function Home() {
         hash.startsWith('#/dashboard') ||
         hash.startsWith('#/cliente') ||
         hash.startsWith('#/repartidor') ||
-        hash.startsWith('#/ingeniero') ||
-        Boolean(savedRole)
+        hash.startsWith('#/ingeniero')
       ) {
         if (savedRole) {
           setLoginRole(savedRole);
@@ -416,8 +424,12 @@ export default function Home() {
           setCurrentView('dashboard');
           document.body.style.overflow = '';
         } else {
-          // Intentar verificar cookie del servidor si localStorage no tiene savedRole
-          fetch('/api/auth/me')
+          // Intentar verificar token o cookie del servidor si localStorage no tiene savedRole
+          const currentToken = typeof window !== 'undefined' ? localStorage.getItem('lf-jwt-token') : null;
+          const headers: Record<string, string> = {};
+          if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+
+          fetch('/api/auth/me', { headers })
             .then((res) => (res.ok ? res.json() : null))
             .then((data) => {
               if (data && data.user) {
@@ -429,15 +441,18 @@ export default function Home() {
                 document.body.style.overflow = '';
               } else {
                 setCurrentView('landing');
+                window.location.hash = '#/';
                 document.body.style.overflow = '';
               }
             })
             .catch(() => {
               setCurrentView('landing');
+              window.location.hash = '#/';
               document.body.style.overflow = '';
             });
         }
       } else {
+        // Para #/, #ecosistema, #aliados, #cta o vacío
         setCurrentView('landing');
         document.body.style.overflow = '';
       }
@@ -708,11 +723,13 @@ export default function Home() {
       console.error('[LOGOUT]', err);
     }
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('lf-jwt-token');
       localStorage.removeItem('lf-session-view');
       localStorage.removeItem('lf-session-role');
       localStorage.removeItem('lf-session-name');
       window.location.hash = '#/';
     }
+    setCurrentView('landing');
     document.body.style.overflow = '';
     addToast('Sesión cerrada', 'Has cerrado sesión correctamente', 'info');
   }, [addToast]);
@@ -735,6 +752,7 @@ export default function Home() {
     return (
       <AuthRedesign
         currentView={currentView}
+        onViewChange={(newView) => setCurrentView(newView)}
         onLoginSuccess={(role, name) => {
           setLoginRole(role);
           setLoginUserName(name);
