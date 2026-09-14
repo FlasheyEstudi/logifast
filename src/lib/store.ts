@@ -1028,8 +1028,9 @@ export const useStore = create<AppState>((set, get) => ({
           origenLng: o.origenLng || 0,
           destinoLat: o.destinoLat || 0,
           destinoLng: o.destinoLng || 0,
-          repartidor: o.repartidor?.user?.name || o.repartidorNombre || (o.repartidorId ? 'Repartidor LogiFast' : null),
-          repartidorInitials: o.repartidor?.user?.name ? o.repartidor.user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'RP',
+          repartidor: o.repartidor?.nombre || o.repartidor?.user?.name || o.repartidorNombre || (o.repartidorId ? 'Repartidor LogiFast' : null),
+          repartidorNombre: o.repartidor?.nombre || o.repartidor?.user?.name || o.repartidorNombre || (o.repartidorId ? 'Repartidor LogiFast' : null),
+          repartidorInitials: (o.repartidor?.nombre || o.repartidor?.user?.name) ? (o.repartidor?.nombre || o.repartidor.user.name).split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'RP',
           descripcion: o.paquete || 'Envío',
           monto: o.monto || 0,
           estado: o.estado || 'pendiente',
@@ -1590,17 +1591,31 @@ export const useStore = create<AppState>((set, get) => ({
       set({ trackingOrderId: null, trackingSteps: [...TRACKING_STEPS_TEMPLATE], trackingETA: 12 });
       return;
     }
-    const order = get().orders.find((o) => o.id === orderId);
-    if (!order) return;
+    const orderIdStr = String(orderId);
+    const order = (get().orders || []).find((o) => String(o.id) === orderIdStr);
+    let orderEstado = order?.estado;
+    let orderHora = order?.hora;
+
+    if (!orderEstado) {
+      try {
+        const { useMarketplaceStore } = require('@/lib/marketplace-store');
+        const oc = (useMarketplaceStore.getState().ordenesCompra || []).find((c: any) => String(c.id) === orderIdStr);
+        if (oc) {
+          orderEstado = oc.estado === 'entregado' ? 'entregado' : (oc.estado === 'en_camino' ? 'encamino' : oc.estado);
+          orderHora = oc.hora || '12:00';
+        }
+      } catch {}
+    }
+
     // Build tracking steps based on order status
     const now = new Date();
     const fmt = (d: Date) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
     const steps = TRACKING_STEPS_TEMPLATE.map((s, i) => ({ ...s }));
     // Determine which steps are completed based on order estado
     const statusIndex: Record<string, number> = {
-      pendiente: 0, encamino: 3, recogido: 5, entregado: 7, incidencia: 3, programada: 0,
+      pendiente: 0, recibido: 0, preparando: 1, listo: 2, aceptado: 3, encamino: 3, en_camino: 3, recogido: 5, entregado: 7, incidencia: 3, programada: 0,
     };
-    const completedUpTo = statusIndex[order.estado] ?? 0;
+    const completedUpTo = statusIndex[orderEstado || 'pendiente'] ?? 0;
     for (let i = 0; i < steps.length; i++) {
       if (i < completedUpTo) {
         steps[i].status = 'completed';
@@ -1613,16 +1628,16 @@ export const useStore = create<AppState>((set, get) => ({
       }
     }
     // For programada, show first step completed
-    if (order.estado === 'programada') {
+    if (orderEstado === 'programada' && orderHora) {
       steps[0].status = 'completed';
-      steps[0].timestamp = order.hora;
+      steps[0].timestamp = orderHora;
     }
     // For entregado, mark all completed
-    if (order.estado === 'entregado') {
+    if (orderEstado === 'entregado') {
       steps.forEach((s, i) => { s.status = 'completed'; s.timestamp = fmt(new Date(now.getTime() - (7 - i) * 180000)); });
     }
-    const eta = order.estado === 'entregado' ? 0 : order.estado === 'programada' ? -1 : Math.max(3, Math.floor(12 - completedUpTo * 1.5));
-    set({ trackingOrderId: orderId, trackingSteps: steps, trackingETA: eta });
+    const eta = orderEstado === 'entregado' ? 0 : orderEstado === 'programada' ? -1 : Math.max(3, Math.floor(12 - completedUpTo * 1.5));
+    set({ trackingOrderId: orderIdStr, trackingSteps: steps, trackingETA: eta });
   },
 
   advanceTrackingStep: () => {

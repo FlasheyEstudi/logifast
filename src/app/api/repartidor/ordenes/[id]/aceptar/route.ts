@@ -95,15 +95,24 @@ export async function PATCH(
       }).catch(() => null);
 
       // Sincronizar OrdenCompra vinculada (si aplica)
-      if (orden.tiendaId) {
-        await db.ordenCompra.updateMany({
+      let linkedCompraIds: string[] = [];
+      if (orden?.tiendaId) {
+        const linkedCompras = await db.ordenCompra.findMany({
           where: {
             tiendaId: orden.tiendaId,
             clienteId: orden.clienteId,
             estado: { in: ['recibido', 'preparando', 'listo', 'pendiente'] },
           },
-          data: { repartidorId: profile.id, estado: 'en_camino' },
-        }).catch(() => null);
+          select: { id: true },
+        }).catch(() => []);
+        linkedCompraIds = (linkedCompras || []).map((c) => c.id);
+
+        if (linkedCompraIds.length > 0) {
+          await db.ordenCompra.updateMany({
+            where: { id: { in: linkedCompraIds } },
+            data: { repartidorId: profile.id, estado: 'en_camino' },
+          }).catch(() => null);
+        }
       }
     }
 
@@ -123,13 +132,23 @@ export async function PATCH(
     // Emitir eventos en tiempo real al cliente, admin y otros repartidores
     try {
       const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
-      // 1. Notificar a todos los repartidores que esta orden ya fue tomada para que desaparezca de sus pantallas
+      const repNombre = profile.nombre || rp.user.name || 'Repartidor';
+      const repData = {
+        nombre: repNombre,
+        telefono: profile.telefono || rp.user.telefono || '',
+        calificacion: profile.calificacion || 5.0,
+        totalEntregas: profile.totalEntregas || 0,
+        fotoUrl: rp.user.fotoUrl || null,
+      };
+
+      // 1. Notificar a todos los repartidores que esta orden ya fue tomada
       emitirEventoRealtime({
         room: 'repartidores',
         event: 'repartidor:orden:tomada',
         data: { ordenId: id, repartidorId: profile.id },
       });
-      // 2. Notificar al cliente con los datos reales del repartidor
+
+      // 2. Notificar al cliente en la sala específica de la orden
       emitirEventoRealtime({
         room: `orden:${id}`,
         event: 'orden:estado:update',
@@ -137,15 +156,40 @@ export async function PATCH(
           id,
           estado: 'aceptado',
           repartidorId: profile.id,
-          repartidor: {
-            nombre: profile.nombre || rp.user.name || 'Repartidor',
-            telefono: profile.telefono || rp.user.telefono || '',
-            calificacion: profile.calificacion || 5.0,
-            totalEntregas: profile.totalEntregas || 0,
-            fotoUrl: rp.user.fotoUrl || null,
-          },
+          repartidorNombre: repNombre,
+          repartidor: repData,
         },
       });
+
+      // 2b. Si hay compras vinculadas, emitir en sus salas específicas también
+      for (const compraId of linkedCompraIds) {
+        emitirEventoRealtime({
+          room: `orden:${compraId}`,
+          event: 'orden:estado:update',
+          data: {
+            id: compraId,
+            ordenServicioId: id,
+            estado: 'en_camino',
+            repartidorId: profile.id,
+            repartidorNombre: repNombre,
+            repartidor: repData,
+          },
+        });
+      }
+
+      // 2c. Broadcast global para asegurar que cualquier vista activa del cliente se actualice al instante
+      emitirEventoRealtime({
+        event: 'orden:estado:update',
+        data: {
+          id,
+          linkedCompraIds,
+          estado: 'aceptado',
+          repartidorId: profile.id,
+          repartidorNombre: repNombre,
+          repartidor: repData,
+        },
+      });
+
       // 3. Notificar al admin
       emitirEventoRealtime({
         room: 'admin',

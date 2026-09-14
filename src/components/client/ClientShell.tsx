@@ -37,6 +37,7 @@ import {
   notificarProgresoEnvio,
 } from '@/services/native-notifications';
 import LiveOrderProgressBar from '@/components/ui/LiveOrderProgressBar';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
 
@@ -285,14 +286,18 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     );
     if (uncompletedEnvio) {
       const ordAny = uncompletedEnvio as any;
-      const repNombre = typeof ordAny.repartidor === 'object' ? ordAny.repartidor?.nombre : (typeof ordAny.repartidor === 'string' ? ordAny.repartidor : undefined);
+      const rawRep = ordAny.repartidor;
+      const repNombre =
+        typeof rawRep === 'object' && rawRep !== null
+          ? (rawRep.nombre || rawRep.name)
+          : (typeof rawRep === 'string' && rawRep.trim() !== '' ? rawRep : (ordAny.repartidorNombre || undefined));
       return {
         id: uncompletedEnvio.id,
         estado: ordAny.estado || ordAny.status || 'pendiente',
         origen: uncompletedEnvio.origen,
         destino: uncompletedEnvio.destino,
         repartidorNombre: repNombre,
-        tiempoEstimadoMin: 12,
+        tiempoEstimadoMin: ordAny.tiempoEstimado || 12,
       };
     }
 
@@ -301,14 +306,18 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     );
     if (uncompletedCompra) {
       const c = uncompletedCompra as any;
-      const repNombre = typeof c.repartidor === 'object' ? c.repartidor?.nombre : (typeof c.repartidor === 'string' ? c.repartidor : undefined);
+      const rawRep = c.repartidor;
+      const repNombre =
+        typeof rawRep === 'object' && rawRep !== null
+          ? (rawRep.nombre || rawRep.name)
+          : (typeof rawRep === 'string' && rawRep.trim() !== '' ? rawRep : (c.repartidorNombre || undefined));
       return {
         id: c.id,
-        estado: c.estado,
+        estado: c.estado || 'recibido',
         origen: c.tienda?.nombre || c.tiendaNombre || 'Comercio',
         destino: c.direccionEntrega || 'Tu dirección',
         repartidorNombre: repNombre,
-        tiempoEstimadoMin: 15,
+        tiempoEstimadoMin: c.tiempoEstimado || 15,
       };
     }
 
@@ -316,7 +325,10 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   }, [orders, ordenesCompra]);
 
   useEffect(() => {
-    if (activeOrder) setBarDismissed(false);
+    if (activeOrder?.id) {
+      setBarDismissed(false);
+      realtime.clienteTrackingUnirse(String(activeOrder.id));
+    }
   }, [activeOrder?.id]);
 
   /* ─── Detección de "Pedido Listo para Retiro" (Comercios y Marketplace) ─── */
@@ -554,7 +566,38 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     });
 
     // Eventos realtime de actualización inmediata de órdenes
-    const cleanupOrdenUpdate = onRealtimeEvent('orden:estado:update', () => {
+    const cleanupOrdenUpdate = onRealtimeEvent('orden:estado:update', (data) => {
+      if (data?.id) {
+        const orderIdStr = String(data.id);
+        const nuevoEstado = data.estado || 'aceptado';
+        const repNom = data.repartidor?.nombre || data.repartidor?.user?.name || data.repartidorNombre;
+        const linkedIds = Array.isArray(data.linkedCompraIds) ? data.linkedCompraIds.map(String) : [];
+
+        useStore.setState((state) => ({
+          orders: (state.orders || []).map((o) =>
+            String(o.id) === orderIdStr || linkedIds.includes(String(o.id))
+              ? {
+                  ...o,
+                  estado: nuevoEstado,
+                  repartidor: repNom || o.repartidor,
+                  repartidorNombre: repNom || (o as any).repartidorNombre,
+                }
+              : o
+          ),
+        }));
+
+        useMarketplaceStore.setState((state) => ({
+          ordenesCompra: (state.ordenesCompra || []).map((oc) =>
+            String(oc.id) === orderIdStr || linkedIds.includes(String(oc.id))
+              ? {
+                  ...oc,
+                  estado: nuevoEstado === 'aceptado' ? 'en_camino' : nuevoEstado,
+                  repartidorNombre: repNom || oc.repartidorNombre,
+                }
+              : oc
+          ),
+        }));
+      }
       fetchOrders();
       fetchOrdenesCompra();
     });
@@ -1091,12 +1134,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               aria-modal="true"
               aria-label="Seguimiento de envío"
             >
-              <ClientTracking
-                isDark={isDark}
-                onBack={handleCloseTracking}
-                onOpenChat={handleOpenChat}
-                onRate={handleOpenRating}
-              />
+              <ErrorBoundary nombre="Seguimiento de Envío">
+                <ClientTracking
+                  isDark={isDark}
+                  onBack={handleCloseTracking}
+                  onOpenChat={handleOpenChat}
+                  onRate={handleOpenRating}
+                />
+              </ErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1302,8 +1347,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           )}
         </AnimatePresence>
 
-        {/* ─── Barra de Progreso en Vivo en Tiempo Real (Live Activity Permanente) ─── */}
-        {activeOrder && !trackingOrderId && (
+        {/* ─── Barra de Progreso en Vivo en Tiempo Real (Live Activity Flotante Sutil) ─── */}
+        {activeOrder && !trackingOrderId && !barDismissed && (
           <LiveOrderProgressBar
             ordenId={activeOrder.id}
             estado={activeOrder.estado}
@@ -1312,6 +1357,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             repartidorNombre={activeOrder.repartidorNombre}
             tiempoEstimadoMin={activeOrder.tiempoEstimadoMin}
             onOpenTracking={(id) => setTrackingOrder(id)}
+            onDismiss={() => setBarDismissed(true)}
           />
         )}
 

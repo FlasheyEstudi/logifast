@@ -53,7 +53,7 @@ interface ClientTrackingProps {
    ═══════════════════════════════════════════════ */
 
 function getRepartidorInfo(
-  driverName?: string | null,
+  driverNameRaw?: any,
   initials?: string | null,
   realData?: {
     telefono?: string | null;
@@ -63,8 +63,15 @@ function getRepartidorInfo(
     color?: string | null;
   } | null
 ): RepartidorInfo | null {
+  const driverName = typeof driverNameRaw === 'string'
+    ? driverNameRaw
+    : (typeof driverNameRaw === 'object' && driverNameRaw !== null
+        ? (driverNameRaw.nombre || driverNameRaw.name || null)
+        : null);
+
   if (
     !driverName ||
+    typeof driverName !== 'string' ||
     driverName === 'Sin asignar' ||
     driverName === 'Pendiente' ||
     driverName.trim() === ''
@@ -809,13 +816,13 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
 
   const currentOrdenCompra = useMemo(() => {
     if (!trackingOrderId) return null;
-    return ordenesCompra.find((oc) => oc.id === trackingOrderId) ?? null;
+    return (ordenesCompra || []).find((oc) => String(oc.id) === String(trackingOrderId)) ?? null;
   }, [trackingOrderId, ordenesCompra]);
 
   // Find current order (from orders, ordenesCompra, or backendTracking)
   const order: Order | null = useMemo(() => {
     if (!trackingOrderId) return null;
-    const foundEnvio = orders.find((o) => o.id === trackingOrderId);
+    const foundEnvio = (orders || []).find((o) => String(o.id) === String(trackingOrderId));
     if (foundEnvio) {
       const liveRepartidor = backendTracking?.repartidor?.nombre ?? foundEnvio.repartidor;
       const liveRepartidorTelefono = backendTracking?.repartidor?.telefono ?? (foundEnvio as any).repartidorTelefono;
@@ -1073,10 +1080,11 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   ]);
 
   // Current step index
-  const currentStepIdx = trackingSteps.findIndex((s) => s.status === 'current');
-  const completedCount = trackingSteps.filter((s) => s.status === 'completed').length;
-  const allCompleted = trackingSteps.every((s) => s.status === 'completed');
-  const progressPct = allCompleted ? 100 : Math.round((completedCount / trackingSteps.length) * 100);
+  const safeSteps = Array.isArray(trackingSteps) ? trackingSteps : [];
+  const currentStepIdx = safeSteps.findIndex((s) => s.status === 'current');
+  const completedCount = safeSteps.filter((s) => s.status === 'completed').length;
+  const allCompleted = safeSteps.length > 0 && safeSteps.every((s) => s.status === 'completed');
+  const progressPct = allCompleted ? 100 : Math.round((completedCount / (safeSteps.length || 1)) * 100);
 
   // Map driver status to client step index
   const mapDriverEstadoToStepIndex = useCallback((estado: string): number => {
@@ -1179,7 +1187,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   };
 
   /* ─── DELIVERY CONFIRMED SCREEN ─── */
-  if (allCompleted && order) {
+  if (allCompleted && order && order.estado === 'entregado') {
     return (
       <div
         data-theme={isDark ? 'dark' : 'light'}
@@ -1259,7 +1267,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         >
           {[
             { icon: <Clock size={15} />, label: '14:52', sub: 'Hora' },
-            { icon: <Bike size={15} />, label: repartidor?.nombre.split(' ')[0] ?? '—', sub: 'Repartidor' },
+            { icon: <Bike size={15} />, label: typeof repartidor?.nombre === 'string' ? (repartidor.nombre.split(' ')[0] || repartidor.nombre) : '—', sub: 'Repartidor' },
             { icon: <Navigation size={15} />, label: '3.2 km', sub: 'Distancia' },
             { icon: <Clock size={15} />, label: '18 min', sub: 'Tiempo total' },
           ].map((item, i) => (
@@ -1365,6 +1373,65 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             Volver al inicio
           </button>
         </motion.div>
+      </div>
+    );
+  }
+
+  /* ─── PENDING / LOADING FALLBACK ─── */
+  if (!order) {
+    return (
+      <div
+        data-theme={isDark ? 'dark' : 'light'}
+        style={{
+          width: '100%',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--bg)',
+          padding: 24,
+          gap: 16,
+        }}
+      >
+        <div
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: 16,
+            background: 'rgba(0, 102, 255, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--primario)',
+          }}
+        >
+          <Package size={26} />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 6px', color: 'var(--text)' }}>
+            Cargando seguimiento...
+          </h3>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+            Conectando con el servidor en tiempo real
+          </p>
+        </div>
+        <button
+          onClick={onBack}
+          style={{
+            marginTop: 8,
+            padding: '10px 20px',
+            borderRadius: 9999,
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--text)',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          Volver
+        </button>
       </div>
     );
   }
