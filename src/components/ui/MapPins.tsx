@@ -10,45 +10,44 @@ import { Home, Package, MapPin, Store, Bike, Navigation } from 'lucide-react';
 export function PinMiUbicacion({ label = 'Mi ubicación' }: { label?: string }) {
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
-      {/* Soft halo pulse */}
-      <span
-        style={{
-          position: 'absolute',
-          width: 38,
-          height: 38,
-          borderRadius: '50%',
-          background: 'rgba(0, 122, 255, 0.25)',
-          top: -3,
-          left: -3,
-          animation: 'lf-beacon-pulse 2.2s cubic-bezier(0.2, 0.8, 0.4, 1) infinite',
-          pointerEvents: 'none',
-        }}
-      />
-      {/* Outer beacon ring */}
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #007AFF 0%, #0056B3 100%)',
-          border: '3px solid #FFFFFF',
-          boxShadow: '0 4px 14px rgba(0, 122, 255, 0.45), 0 1px 3px rgba(0,0,0,0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#FFFFFF',
-          zIndex: 2,
-        }}
-      >
-        <div
+      <div style={{ position: 'relative', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Soft halo pulse */}
+        <span
           style={{
-            width: 10,
-            height: 10,
+            position: 'absolute',
+            inset: -4,
             borderRadius: '50%',
-            background: '#FFFFFF',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            background: 'rgba(0, 122, 255, 0.25)',
+            animation: 'lf-beacon-pulse 2.2s cubic-bezier(0.2, 0.8, 0.4, 1) infinite',
+            pointerEvents: 'none',
           }}
         />
+        {/* Outer beacon ring */}
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #007AFF 0%, #0056B3 100%)',
+            border: '3px solid #FFFFFF',
+            boxShadow: '0 4px 14px rgba(0, 122, 255, 0.45), 0 1px 3px rgba(0,0,0,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF',
+            zIndex: 2,
+          }}
+        >
+          <div
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            }}
+          />
+        </div>
       </div>
       {label && (
         <span
@@ -204,53 +203,39 @@ export function PinEntrega({ label = 'Punto de entrega' }: { label?: string }) {
         filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.25))',
       }}
     >
-      {/* Ground target ripple beacon (landing zone) */}
-      <span
-        style={{
-          position: 'absolute',
-          width: 50,
-          height: 50,
-          borderRadius: '50%',
-          background: 'rgba(239, 68, 68, 0.22)',
-          top: -4,
-          left: -4,
-          animation: 'lf-beacon-pulse 2.2s cubic-bezier(0.2, 0.8, 0.4, 1) infinite',
-          pointerEvents: 'none',
-        }}
-      />
-      
-      {/* Ground landing crosshair dot */}
-      <div
-        style={{
-          position: 'absolute',
-          width: 14,
-          height: 14,
-          borderRadius: '50%',
-          background: 'rgba(239, 68, 68, 0.4)',
-          border: '1.5px dashed rgba(255, 255, 255, 0.8)',
-          bottom: 18,
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Contenedor concéntrico del pinhead y su halo */}
+      <div style={{ position: 'relative', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Ground target ripple beacon (landing zone) */}
+        <span
+          style={{
+            position: 'absolute',
+            inset: -5,
+            borderRadius: '50%',
+            background: 'rgba(239, 68, 68, 0.22)',
+            animation: 'lf-beacon-pulse 2.2s cubic-bezier(0.2, 0.8, 0.4, 1) infinite',
+            pointerEvents: 'none',
+          }}
+        />
 
-      {/* Main destination pinhead */}
-      <div
-        style={{
-          position: 'relative',
-          width: 42,
-          height: 42,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #FF453A 0%, #D70015 60%, #990000 100%)',
-          border: '3.5px solid #FFFFFF',
-          boxShadow: '0 8px 24px rgba(239, 68, 68, 0.55), 0 2px 8px rgba(0,0,0,0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#FFFFFF',
-          zIndex: 2,
-        }}
-      >
-        <MapPin size={22} strokeWidth={2.6} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
+        {/* Main destination pinhead */}
+        <div
+          style={{
+            position: 'relative',
+            width: 42,
+            height: 42,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #FF453A 0%, #D70015 60%, #990000 100%)',
+            border: '3.5px solid #FFFFFF',
+            boxShadow: '0 8px 24px rgba(239, 68, 68, 0.55), 0 2px 8px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF',
+            zIndex: 2,
+          }}
+        >
+          <MapPin size={22} strokeWidth={2.6} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
+        </div>
       </div>
 
       {/* Needle point */}
@@ -397,7 +382,7 @@ export function PinRepartidorMoto({
   label?: string;
 }) {
   // Normalize bearing to 0-360 range
-  const normalizedBearing = Math.round((bearing % 360 + 360) % 360);
+  const normalizedBearing = Math.round(((bearing % 360) + 360) % 360);
 
   return (
     <div
@@ -407,78 +392,100 @@ export function PinRepartidorMoto({
         flexDirection: 'column',
         alignItems: 'center',
         cursor: 'pointer',
+        userSelect: 'none',
       }}
     >
-      {/* Soft continuous subtle breath aura */}
-      <span
-        style={{
-          position: 'absolute',
-          width: 52,
-          height: 52,
-          borderRadius: '50%',
-          background: isMoving ? 'rgba(16, 185, 129, 0.28)' : 'rgba(16, 185, 129, 0.16)',
-          top: -4,
-          left: -4,
-          animation: 'lf-beacon-pulse 2.2s ease-in-out infinite',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Directional Container oriented according to bearing */}
+      {/* Contenedor concéntrico del vehículo para garantizar alineación radial perfecta */}
       <div
         style={{
           position: 'relative',
-          width: 44,
-          height: 44,
+          width: 46,
+          height: 46,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transform: `rotate(${normalizedBearing}deg)`,
-          transition: 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
-          zIndex: 2,
         }}
       >
-        {/* Forward Heading Navigation Chevron / Cone */}
-        <div
+        {/* Halo de pulso concéntrico centrado exactamente en el vehículo */}
+        <span
           style={{
             position: 'absolute',
-            top: -10,
-            width: 0,
-            height: 0,
-            borderLeft: '7px solid transparent',
-            borderRight: '7px solid transparent',
-            borderBottom: '12px solid #10B981',
-            filter: 'drop-shadow(0 -2px 6px rgba(16, 185, 129, 0.8))',
-            opacity: isMoving ? 1 : 0.85,
-            transition: 'opacity 0.3s ease',
+            inset: -6,
+            borderRadius: '50%',
+            background: isMoving ? 'rgba(16, 185, 129, 0.22)' : 'rgba(16, 185, 129, 0.14)',
+            border: '1.5px solid rgba(16, 185, 129, 0.35)',
+            animation: 'lf-beacon-pulse 2.4s cubic-bezier(0.2, 0.8, 0.4, 1) infinite',
+            pointerEvents: 'none',
           }}
         />
 
-        {/* Main motorcycle badge */}
+        {/* Aura sutil estática */}
+        <span
+          style={{
+            position: 'absolute',
+            inset: -2,
+            borderRadius: '50%',
+            background: 'rgba(16, 185, 129, 0.18)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Directional Container oriented according to bearing */}
         <div
           style={{
-            width: 42,
-            height: 42,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-            border: '3px solid #FFFFFF',
-            boxShadow: '0 6px 20px rgba(16, 185, 129, 0.55), 0 2px 6px rgba(0,0,0,0.35)',
+            position: 'relative',
+            width: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#FFFFFF',
+            transform: `rotate(${normalizedBearing}deg)`,
+            transition: 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)',
+            zIndex: 2,
           }}
         >
-          {/* Inner bike icon or arrow aligned with heading */}
+          {/* Forward Heading Navigation Chevron / Cone */}
           <div
             style={{
+              position: 'absolute',
+              top: -9,
+              width: 0,
+              height: 0,
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderBottom: '11px solid #10B981',
+              filter: 'drop-shadow(0 -2px 5px rgba(16, 185, 129, 0.75))',
+              opacity: isMoving ? 1 : 0.9,
+              transition: 'opacity 0.25s ease',
+            }}
+          />
+
+          {/* Main motorcycle badge */}
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              border: '3px solid #FFFFFF',
+              boxShadow: '0 4px 18px rgba(16, 185, 129, 0.5), 0 2px 6px rgba(0,0,0,0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transform: 'rotate(-45deg)', // aligns standard Lucide navigation icon along 0 deg heading
+              color: '#FFFFFF',
             }}
           >
-            <Navigation size={21} strokeWidth={2.6} fill="#FFFFFF" />
+            {/* Inner bike icon or arrow aligned with heading */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transform: 'rotate(-45deg)', // aligns standard Lucide navigation icon along 0 deg heading
+              }}
+            >
+              <Navigation size={20} strokeWidth={2.6} fill="#FFFFFF" />
+            </div>
           </div>
         </div>
       </div>

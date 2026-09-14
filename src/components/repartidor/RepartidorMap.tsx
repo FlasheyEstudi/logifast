@@ -548,8 +548,8 @@ export default function RepartidorMap({
           display: flex;
           flex-direction: column;
           gap: 8px;
-          z-index: 35;
-          transition: bottom 0.3s ease;
+          z-index: 45;
+          transition: bottom 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         .driver-ctrl-btn {
           width: 42px;

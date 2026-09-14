@@ -197,8 +197,8 @@ export default function RepartidorServicio() {
           controlsBottomOffset={
             drawerOpen
               ? ordenActiva
-                ? 'calc(var(--ios-tabbar-height, 65px) + 210px)'
-                : 'calc(var(--ios-tabbar-height, 65px) + 85px)'
+                ? 'calc(var(--ios-tabbar-height, 65px) + 240px)'
+                : 'calc(var(--ios-tabbar-height, 65px) + 125px)'
               : 'calc(var(--ios-tabbar-height, 65px) + 25px)'
           }
         />
@@ -340,7 +340,13 @@ export default function RepartidorServicio() {
           }}
         >
           <ChevronUp size={16} style={{ color: 'var(--primario)' }} />
-          <span>{ordenActiva ? `${ordenActiva.cliente} • Ver detalles` : 'Ver panel'}</span>
+          <span>
+            {ordenActiva
+              ? `${ordenActiva.cliente} • Ver detalles`
+              : estado === 'EN_LINEA'
+              ? '🟢 En Línea • Buscando órdenes'
+              : 'Ver panel'}
+          </span>
         </motion.button>
       )}
 
@@ -489,41 +495,65 @@ export default function RepartidorServicio() {
               <div
                 style={{
                   ...sectionCard,
-                  padding: '12px 18px',
+                  padding: '12px 16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 14,
+                  gap: 12,
                   borderRadius: 20,
+                  boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 10px #34C759' }} />
-                  <div>
-                    <h3 style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 10px #34C759', flexShrink: 0 }} />
+                  <div style={{ minWidth: 0 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       En Línea • Buscando órdenes
                     </h3>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       Hoy: <strong style={{ color: '#34C759', fontFamily: "'JetBrains Mono', monospace" }}>C$ {statsGanancias.ganancias.toFixed(2)}</strong> ({statsGanancias.entregas} {statsGanancias.entregas === 1 ? 'entrega' : 'entregas'})
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleToggleConnection}
-                  style={{
-                    background: 'rgba(255, 59, 48, 0.12)',
-                    color: '#FF3B30',
-                    border: '1px solid rgba(255, 59, 48, 0.25)',
-                    borderRadius: 100,
-                    padding: '8px 16px',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Pausar
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    onClick={handleToggleConnection}
+                    style={{
+                      background: 'rgba(255, 59, 48, 0.12)',
+                      color: '#FF3B30',
+                      border: '1px solid rgba(255, 59, 48, 0.25)',
+                      borderRadius: 100,
+                      padding: '7px 14px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Pausar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDrawerOpen(false)}
+                    title="Minimizar panel para despejar el mapa"
+                    aria-label="Minimizar panel"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <ChevronDown size={17} />
+                  </button>
+                </div>
               </div>
             )}
 
