@@ -281,7 +281,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
   /* ─── Computed metrics ─── */
   const clientOrders = useMemo(
-    () => orders.filter((o) => o.cliente === userName),
+    () => (orders || []).filter((o) => o.cliente === userName),
     [orders, userName],
   );
 

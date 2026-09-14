@@ -181,10 +181,10 @@ export default function ClientInicio({
   const { ordenesCompra } = useMarketplaceStore();
 
   const activeOrders = useMemo(() => {
-    const enviosActivos = orders.filter(
+    const enviosActivos = (orders || []).filter(
       (o) => !['entregado', 'entregada', 'completado', 'completada', 'cancelado', 'cancelada', 'incidencia'].includes(o.estado)
     );
-    const comprasActivas = ordenesCompra
+    const comprasActivas = (ordenesCompra || [])
       .filter((oc) => oc.estado !== 'entregado')
       .map((oc) => ({
         id: oc.id,
@@ -198,7 +198,7 @@ export default function ClientInicio({
   }, [orders, ordenesCompra]);
 
   const featuredTiendas = useMemo(() => {
-    return tiendas.slice(0, 6);
+    return (tiendas || []).slice(0, 6);
   }, [tiendas]);
 
   const handleAdSubmit = (e: React.FormEvent) => {

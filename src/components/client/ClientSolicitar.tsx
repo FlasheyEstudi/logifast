@@ -31,6 +31,7 @@ import {
   Clock,
 } from '@/components/icons';
 import CheckAnimation from '@/components/ui/CheckAnimation';
+import OrderConfirmationModal from '@/components/ui/OrderConfirmationModal';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
 import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta, reverseGeocode } from '@/lib/osrm';
@@ -2823,136 +2824,62 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     }
   };
 
-  /* ═══ CONFIRMATION SCREEN ═══ */
+  /* ═══ CONFIRMATION MODAL ═══ */
   if (confirmed) {
+    const targetId = confirmedOrderId || confirmedOrderData?.id || `LF-${Math.floor(Math.random() * 90000) + 10000}`;
     return (
-      <div className="w-full max-w-md mx-auto py-8 px-4 text-center">
-        <motion.div
-          initial={{ scale: 0.92, opacity: 0, y: 16 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center gap-4 sm:gap-5"
-        >
-          <CheckAnimation size={76} />
-
-          <div className="space-y-1">
-            <h2 className="text-2xl sm:text-3xl font-bold font-['Syne',sans-serif] text-emerald-500 tracking-tight">
-              {scheduleMode === 'programar' && scheduleDate && scheduleTime ? '¡Envío programado!' : '¡Envío confirmado!'}
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-['DM_Sans',sans-serif]">
-              Orden <span className="font-mono font-bold text-slate-900 dark:text-white">#{confirmedOrderId}</span> {scheduleMode === 'programar' ? 'programada exitosamente' : 'creada exitosamente'}
-            </p>
-          </div>
-
-          {/* Schedule info in confirmation */}
-          {scheduleMode === 'programar' && scheduleDate && scheduleTime && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="w-full flex items-center gap-2.5 p-3.5 rounded-2xl bg-[#007AFF]/10 border border-[#007AFF]/20 text-left font-['DM_Sans',sans-serif]"
-            >
-              <Calendar size={20} className="text-[#007AFF] flex-shrink-0" />
-              <div>
-                <div className="text-xs font-semibold text-[#007AFF]">
-                  Recogida programada
-                </div>
-                <div className="text-sm text-slate-800 dark:text-slate-200">
-                  {formatSpanishDate(scheduleDate)} a las {scheduleTime}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Security PIN card */}
-          {confirmedOrderData?.pin && (
-            <div className="w-full bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 flex flex-col items-center gap-1">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 font-['DM_Sans',sans-serif] flex items-center gap-1.5">
-                <ShieldCheck size={14} />
-                <span>PIN de Seguridad de Entrega</span>
-              </div>
-              <div className="text-3xl font-extrabold font-mono tracking-[0.25em] text-amber-600 dark:text-amber-400">
-                {confirmedOrderData.pin}
-              </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-['DM_Sans',sans-serif]">
-                Dicta o muestra este código al repartidor al recibir tu envío
-              </div>
-            </div>
-          )}
-
-          {/* Quick details */}
-          <div className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-3 font-['DM_Sans',sans-serif] shadow-sm">
-            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-sm">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
-              <span className="truncate">{confirmedOrderData?.origen || solicitudEnvio.origen}</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-sm">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#FF5722] flex-shrink-0" />
-              <span className="truncate">{confirmedOrderData?.destino || solicitudEnvio.destino}</span>
-            </div>
-
-            {confirmedOrderData?.distanceKm ? (
-              <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/80 dark:border-slate-800">
-                <span className="flex items-center gap-1">
-                  <Clock size={13} className="text-slate-400" />
-                  <span>Distancia y Tiempo Estimado</span>
-                </span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
-                  {confirmedOrderData.distanceKm.toFixed(1)} km • ~{confirmedOrderData.estimatedMinutes} min
-                </span>
-              </div>
-            ) : null}
-
-            <div className="border-t border-slate-200 dark:border-slate-800 pt-2.5 flex justify-between items-center">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                {(confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago) === 'efectivo' ? (
-                  <Banknote size={14} className="text-emerald-500" />
-                ) : (
-                  <CreditCard size={14} className="text-blue-500" />
-                )}
-                <span>{(confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago) === 'efectivo' ? 'Efectivo' : 'Transferencia'}</span>
-              </div>
-              <span className="text-lg font-bold font-mono text-[#FF5722]">
-                {formatCordobas(confirmedOrderData?.total || costBreakdown.total)}
-              </span>
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="w-full flex flex-col gap-2.5 font-['DM_Sans',sans-serif]">
-            <button
-              onClick={() => {
-                const targetId = confirmedOrderId || confirmedOrderData?.id;
-                resetSolicitudEnvio();
-                setCurrentStep(1);
-                setConfirmed(false);
-                if (targetId) {
-                  setTrackingOrder(targetId);
-                } else {
-                  onNavigate('envios');
-                }
-              }}
-              className="w-full py-3.5 px-4 bg-[#FF5722] hover:bg-[#F4511E] active:scale-[0.98] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#FF5722]/25 transition-all flex items-center justify-center gap-2"
-            >
-              <Truck size={18} />
-              <span>Rastrear envío en vivo</span>
-            </button>
-
-            <button
-              onClick={() => {
-                resetSolicitudEnvio();
-                setCurrentStep(1);
-                setConfirmed(false);
-                onNavigate('inicio');
-              }}
-              className="w-full py-3 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 shadow-sm"
-            >
-              Volver al inicio
-            </button>
-          </div>
-        </motion.div>
-      </div>
+      <OrderConfirmationModal
+        tipo="envio"
+        orderId={targetId}
+        titulo={scheduleMode === 'programar' && scheduleDate && scheduleTime ? '¡Envío programado!' : '¡Envío confirmado!'}
+        subtitulo={
+          scheduleMode === 'programar'
+            ? 'Tu envío ha sido programado exitosamente. Un repartidor acudirá a recolectarlo a la fecha y hora indicadas.'
+            : 'Tu solicitud de envío ha sido registrada. Un repartidor aceptará la recolección en breve.'
+        }
+        pin={confirmedOrderData?.pin}
+        origen={confirmedOrderData?.origen || solicitudEnvio.origen}
+        destino={confirmedOrderData?.destino || solicitudEnvio.destino}
+        programadoTexto={
+          scheduleMode === 'programar' && scheduleDate && scheduleTime
+            ? `${formatSpanishDate(scheduleDate)} a las ${scheduleTime}`
+            : undefined
+        }
+        subtotal={confirmedOrderData?.subtotal || costBreakdown.base}
+        costoEnvio={confirmedOrderData?.costoEnvio || costBreakdown.base}
+        descuento={costBreakdown.descuento}
+        total={confirmedOrderData?.total || costBreakdown.total}
+        metodoPago={confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago || 'efectivo'}
+        distanciaKm={confirmedOrderData?.distanceKm}
+        tiempoEstimadoMin={confirmedOrderData?.estimatedMinutes || 15}
+        onRastrear={(id) => {
+          resetSolicitudEnvio();
+          setCurrentStep(1);
+          setConfirmed(false);
+          if (id) {
+            setTrackingOrder(id);
+          } else {
+            onNavigate('envios');
+          }
+        }}
+        onVerLista={() => {
+          resetSolicitudEnvio();
+          setCurrentStep(1);
+          setConfirmed(false);
+          onNavigate('envios');
+        }}
+        onIrAInicio={() => {
+          resetSolicitudEnvio();
+          setCurrentStep(1);
+          setConfirmed(false);
+          onNavigate('inicio');
+        }}
+        onClose={() => {
+          resetSolicitudEnvio();
+          setCurrentStep(1);
+          setConfirmed(false);
+        }}
+      />
     );
   }
 

@@ -26,48 +26,67 @@ export default function LiveOrderProgressBar({
   onOpenTracking,
   onDismiss,
 }: LiveOrderProgressBarProps) {
-  // Mapear estado a progreso porcentual y etiqueta
+  // Mapear estado a progreso porcentual, etiqueta y feedback visual
   const { progreso, etapa, color, icono: IconoEtapa, descripcion } = React.useMemo(() => {
-    const est = (estado || '').toLowerCase();
+    const est = (estado || '').toLowerCase().trim();
+
     if (est.includes('entregad') || est === 'completado') {
       return {
         progreso: 100,
-        etapa: 'Entregado',
+        etapa: 'Entregado con éxito',
         color: '#10B981',
         icono: CheckCircle,
-        descripcion: '¡Tu pedido ha sido entregado!',
+        descripcion: '¡Tu pedido ha sido completado!',
       };
     }
-    if (est.includes('cerca') || est.includes('llegando') || est === 'en_camino_entregar') {
+    if (est.includes('puerta') || est.includes('llegad') || est.includes('punto_entrega') || est.includes('50m') || est.includes('cerca')) {
       return {
-        progreso: 88,
-        etapa: 'Repartidor cerca',
-        color: '#007AFF',
+        progreso: 92,
+        etapa: 'Repartidor en tu puerta',
+        color: '#34C759',
         icono: Bike,
-        descripcion: repartidorNombre ? `${repartidorNombre} está a pocas cuadras` : 'A menos de 500 metros',
+        descripcion: repartidorNombre ? `${repartidorNombre} está en tu ubicación (<50m)` : 'Tu repartidor ha llegado al destino',
       };
     }
-    if (est.includes('recogid') || est.includes('transito') || est === 'recogido') {
+    if (est.includes('transito') || est.includes('recogid') || est.includes('camino_entregar') || est.includes('en_ruta')) {
       return {
-        progreso: 65,
-        etapa: 'En ruta a entrega',
+        progreso: 75,
+        etapa: 'En camino a entrega',
         color: '#FF5722',
         icono: Navigation,
-        descripcion: 'Paquete en tránsito hacia tu dirección',
+        descripcion: repartidorNombre ? `${repartidorNombre} va en ruta hacia ti` : 'Paquete en tránsito hacia tu dirección',
       };
     }
-    if (est.includes('camino') || est.includes('aceptad') || est === 'en_camino_recoger') {
+    if (est.includes('punto_recogida') || est.includes('en_tienda') || est.includes('recogiendo') || est.includes('listo')) {
       return {
-        progreso: 38,
-        etapa: 'En camino a recogida',
+        progreso: 55,
+        etapa: 'En punto de recogida',
+        color: '#007AFF',
+        icono: Package,
+        descripcion: 'Recolectando tu paquete en el local...',
+      };
+    }
+    if (est.includes('camino_recoger') || est.includes('encamino') || est.includes('en_camino') || est.includes('aceptad') || est.includes('asigna')) {
+      return {
+        progreso: 35,
+        etapa: 'Repartidor en camino',
         color: '#F59E0B',
         icono: Bike,
-        descripcion: repartidorNombre ? `${repartidorNombre} va hacia el punto` : 'Repartidor asignado',
+        descripcion: repartidorNombre ? `${repartidorNombre} va hacia el punto` : 'Repartidor asignado en camino',
+      };
+    }
+    if (est.includes('preparando')) {
+      return {
+        progreso: 25,
+        etapa: 'Comercio preparando',
+        color: '#8B5CF6',
+        icono: Package,
+        descripcion: 'El comercio está preparando tu orden',
       };
     }
     // Buscando / Pendiente
     return {
-      progreso: 18,
+      progreso: 15,
       etapa: 'Asignando repartidor',
       color: '#8B5CF6',
       icono: Package,
@@ -214,36 +233,21 @@ export default function LiveOrderProgressBar({
               </p>
             </div>
 
-            {/* Botón de acción flecha */}
+            {/* Indicador flecha para abrir seguimiento en vivo */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4,
-                color: 'rgba(255, 255, 255, 0.4)',
+                justifyContent: 'center',
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.08)',
+                color: 'rgba(255, 255, 255, 0.8)',
                 flexShrink: 0,
               }}
             >
-              <ChevronRight size={18} />
-              {onDismiss && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDismiss();
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: 4,
-                    color: 'rgba(255, 255, 255, 0.3)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                  }}
-                >
-                  <X size={14} />
-                </button>
-              )}
+              <ChevronRight size={16} />
             </div>
           </div>
         </div>

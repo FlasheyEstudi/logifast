@@ -44,16 +44,23 @@ class ClientErrorBoundary extends Component<ClientErrorBoundaryProps, ClientErro
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[Client Dashboard Error Boundary]', error, errorInfo);
     if (error.name === 'ChunkLoadError' || error.message?.includes('Failed to load chunk')) {
-      const reloadKey = 'lf_chunk_reload_client';
-      const now = Date.now();
-      const last = Number(sessionStorage.getItem(reloadKey) || 0);
-      if (now - last > 15000) {
-        sessionStorage.setItem(reloadKey, String(now));
+      try {
+        const reloadKey = 'lf_chunk_reload_client';
+        const now = Date.now();
+        const last = Number(sessionStorage.getItem(reloadKey) || 0);
+        if (now - last > 15000) {
+          sessionStorage.setItem(reloadKey, String(now));
+          window.location.reload();
+        }
+      } catch {
         window.location.reload();
       }
     }
   }
   handleRetry = () => {
+    try {
+      sessionStorage.removeItem('lf_chunk_reload_client');
+    } catch {}
     this.setState({ hasError: false, error: null });
   };
 

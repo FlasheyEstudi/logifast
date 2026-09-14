@@ -34,6 +34,7 @@ import {
   solicitarPermisoNotificacionesManual,
   dispararNotificacionNativa,
   notificarPedidoListoParaRetiro,
+  notificarProgresoEnvio,
 } from '@/services/native-notifications';
 import LiveOrderProgressBar from '@/components/ui/LiveOrderProgressBar';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
@@ -420,11 +421,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const alreadyShown = sessionStorage.getItem('client_splash_shown');
-      if (!alreadyShown) {
-        sessionStorage.setItem('client_splash_shown', 'true');
-        setShowSplash(true);
-      }
+      try {
+        const alreadyShown = sessionStorage.getItem('client_splash_shown');
+        if (!alreadyShown) {
+          sessionStorage.setItem('client_splash_shown', 'true');
+          setShowSplash(true);
+        }
+      } catch {}
     }
   }, []);
 
@@ -436,13 +439,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   const avatarRef = useRef<HTMLDivElement>(null);
   const snackbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const unreadCount = clientNotificaciones.filter((n) => !n.leida).length;
+  const unreadCount = (clientNotificaciones || []).filter((n) => !n.leida).length;
   const initials = getInitials(userName);
 
   /* ─── Active orders count for Pedidos badge (envíos + compras no entregadas) ─── */
   const activeOrdersCount =
-    orders.filter((o) => !['entregado', 'incidencia'].includes(o.estado)).length +
-    ordenesCompra.filter((o) => o.estado !== 'entregado').length;
+    (orders || []).filter((o) => !['entregado', 'incidencia'].includes(o.estado)).length +
+    (ordenesCompra || []).filter((o) => o.estado !== 'entregado').length;
 
   /* ─── iOS Large Title for current module ─── */
   const iosTitle = IOS_TITLE_MAP[clientActiveModule] || 'Logifast';
@@ -476,13 +479,53 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   /* ─── REALTIME CHAT & ORDER TRACKING ROOMS ─── */
   useEffect(() => {
     const activeOrderIds = [
-      ...orders.filter((o) => !['entregado', 'incidencia'].includes(o.estado)).map((o) => o.id),
-      ...ordenesCompra.filter((o) => o.estado !== 'entregado').map((o) => o.id),
+      ...(orders || []).filter((o) => !['entregado', 'incidencia'].includes(o.estado)).map((o) => o.id),
+      ...(ordenesCompra || []).filter((o) => o.estado !== 'entregado').map((o) => o.id),
     ];
     activeOrderIds.forEach((id) => {
       if (id) realtime.clienteTrackingUnirse(id);
     });
   }, [orders, ordenesCompra]);
+
+  /* ─── ALERTA SONORA Y HÁPTICA POR CAMBIO DE ESTADO DE LA ORDEN ACTIVA ─── */
+  const prevActiveOrderStateRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!activeOrder) {
+      prevActiveOrderStateRef.current = null;
+      return;
+    }
+    const currentEstado = String(activeOrder.estado || '').toLowerCase().trim();
+    const prev = prevActiveOrderStateRef.current;
+
+    if (prev !== null && prev !== currentEstado) {
+      // Cambio de estado detectado: emitir alerta sonora específica y vibración
+      if (currentEstado.includes('entregad')) {
+        reproducirSonido('orden_entregada', 100);
+        HAPTIC_PATTERNS.success();
+      } else if (currentEstado.includes('puerta') || currentEstado.includes('llegad') || currentEstado.includes('cerca')) {
+        reproducirSonido('nueva_orden', 100);
+        HAPTIC_PATTERNS.llegadaPuerta();
+      } else if (currentEstado.includes('recogid') || currentEstado.includes('camino')) {
+        reproducirSonido('ruta_optimizada', 90);
+        HAPTIC_PATTERNS.medium();
+      } else if (currentEstado.includes('asigna') || currentEstado.includes('acepta')) {
+        reproducirSonido('orden_aceptada', 90);
+        HAPTIC_PATTERNS.medium();
+      } else {
+        reproducirSonido('notificacion', 85);
+        HAPTIC_PATTERNS.light();
+      }
+
+      notificarProgresoEnvio({
+        ordenId: String(activeOrder.id),
+        porcentaje: currentEstado.includes('entregad') ? 100 : currentEstado.includes('puerta') ? 95 : currentEstado.includes('camino') ? 75 : 40,
+        etapaTexto: activeOrder.repartidorNombre ? `${activeOrder.repartidorNombre} actualizó tu entrega` : 'Actualización de tu pedido',
+        subtitulo: `Estado: ${activeOrder.estado}`,
+      }).catch(() => null);
+    }
+
+    prevActiveOrderStateRef.current = currentEstado;
+  }, [activeOrder?.id, activeOrder?.estado, activeOrder?.repartidorNombre]);
 
   useEffect(() => {
     const cleanupChat = onRealtimeEvent('chat:mensaje:nuevo', (msg) => {
@@ -510,10 +553,22 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       }
     });
 
+    // Eventos realtime de actualización inmediata de órdenes
+    const cleanupOrdenUpdate = onRealtimeEvent('orden:estado:update', () => {
+      fetchOrders();
+      fetchOrdenesCompra();
+    });
+    const cleanupRiderUpdate = onRealtimeEvent('repartidor:estado:update', () => {
+      fetchOrders();
+      fetchOrdenesCompra();
+    });
+
     return () => {
       cleanupChat();
+      cleanupOrdenUpdate();
+      cleanupRiderUpdate();
     };
-  }, [showSnackbar, setChatOrderId, setChatOpen]);
+  }, [showSnackbar, setChatOrderId, setChatOpen, fetchOrders, fetchOrdenesCompra]);
 
   /* Close dropdowns on outside click */
   useEffect(() => {
@@ -1247,8 +1302,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           )}
         </AnimatePresence>
 
-        {/* ─── Barra de Progreso en Vivo en Tiempo Real (Live Activity) ─── */}
-        {activeOrder && !trackingOrderId && !barDismissed && (
+        {/* ─── Barra de Progreso en Vivo en Tiempo Real (Live Activity Permanente) ─── */}
+        {activeOrder && !trackingOrderId && (
           <LiveOrderProgressBar
             ordenId={activeOrder.id}
             estado={activeOrder.estado}
@@ -1257,7 +1312,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             repartidorNombre={activeOrder.repartidorNombre}
             tiempoEstimadoMin={activeOrder.tiempoEstimadoMin}
             onOpenTracking={(id) => setTrackingOrder(id)}
-            onDismiss={() => setBarDismissed(true)}
           />
         )}
 
