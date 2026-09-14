@@ -673,8 +673,11 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         }).catch(() => null);
       }
     } else if (nuevoEstado === 'ENTREGADO') {
+      const tieneFoto = Boolean((order as any)?.paqueteFotoUrl || backendTracking?.orden?.paqueteFotoUrl);
       titulo = '¡Pedido entregado con éxito!';
-      cuerpo = 'Tu orden ha sido completada. ¡Gracias por usar LogiFast!';
+      cuerpo = tieneFoto
+        ? 'Tu paquete ha sido entregado y el comprobante digital está guardado en tu historial.'
+        : 'Tu orden ha sido completada exitosamente. ¡Gracias por usar LogiFast!';
       tipo = 'exito';
       porcentaje = 100;
 

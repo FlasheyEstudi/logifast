@@ -251,7 +251,6 @@ export interface NotificacionOpciones {
   colorIcono?: string;
   iconoPequeno?: string;
   iconoGrande?: string;
-  imagenBanner?: string;
   categoriaAcciones?: 'ORDEN_NUEVA' | 'ORDEN_ESTADO' | string;
   extra?: Record<string, any>;
   tipoAlerta?: 'orden' | 'exito' | 'mensaje' | 'alerta' | 'timbre_puerta';
@@ -260,6 +259,7 @@ export interface NotificacionOpciones {
 
 /**
  * Dispara una notificación nativa inmediata y confiable en Android o Web
+ * Optimizado para 0 consumo de ancho de banda (payloads 100% texto e iconos locales)
  */
 export async function dispararNotificacionNativa({
   id = Math.floor(Math.random() * 1000000) + 1,
@@ -270,7 +270,6 @@ export async function dispararNotificacionNativa({
   canalId = 'logifast_urgente',
   colorIcono,
   iconoPequeno = 'ic_stat_logifast',
-  imagenBanner,
   categoriaAcciones,
   extra = {},
   tipoAlerta = 'orden',
@@ -358,11 +357,10 @@ export async function dispararNotificacionNativa({
 
   // 4. Vía Web Notifications API / Service Worker (PWA / Chrome Móvil / Safari)
   if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    const webOptions: NotificationOptions & { image?: string } = {
+    const webOptions: NotificationOptions = {
       body: cuerpo,
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
-      image: imagenBanner || undefined,
       data: extra,
       tag: `order-${extra?.ordenId || id}`,
       vibrate: [200, 100, 200, 100, 250],
@@ -585,6 +583,45 @@ export async function notificarResumenFidelizacion({
     categoriaAcciones: 'ORDEN_ESTADO',
     tipoAlerta: 'exito',
     extra: { ordenId, evento: 'PUNTOS_FIDELIZACION', puntosGanados, resolvedCashback },
+    mostrarBannerInApp: true,
+  });
+}
+
+/**
+ * "Comprobante de Entrega Registrado"
+ * Notificación 100% texto ultraligera (<1KB). NO descarga fotos ni imágenes por la red,
+ * garantizando cero consumo de ancho de banda en Supabase y Railway.
+ */
+export interface ComprobanteEntregaOpciones {
+  ordenId: string;
+  repartidorNombre?: string;
+  tieneFotoComprobante?: boolean;
+}
+
+export async function notificarComprobanteEntrega({
+  ordenId,
+  repartidorNombre,
+  tieneFotoComprobante = false,
+}: ComprobanteEntregaOpciones): Promise<void> {
+  const shortId = ordenId.slice(-8);
+  const nombre = repartidorNombre || 'Tu repartidor';
+  const titulo = '📦 ¡Entrega completada con éxito!';
+  const cuerpo = tieneFotoComprobante
+    ? `${nombre} entregó tu paquete #${shortId} y subió tu comprobante de entrega digital.`
+    : `${nombre} ha entregado tu pedido #${shortId}. ¡Gracias por confiar en LogiFast!`;
+
+  await dispararNotificacionNativa({
+    id: 950000 + (Math.abs(ordenId.split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)) % 9999),
+    titulo,
+    cuerpo,
+    subtexto: 'LOGIFAST • Entrega Exitosa',
+    detalleLargo: cuerpo,
+    canalId: 'logifast_estado',
+    colorIcono: '#10B981',
+    iconoPequeno: 'ic_stat_logifast',
+    categoriaAcciones: 'ORDEN_ESTADO',
+    tipoAlerta: 'exito',
+    extra: { ordenId, evento: 'ENTREGA_EXITOSA', tieneFotoComprobante },
     mostrarBannerInApp: true,
   });
 }
