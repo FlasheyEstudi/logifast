@@ -17,30 +17,26 @@ import {
 import { useRepartidorStore, type ChatMensaje } from '@/lib/repartidor-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 /* ═══════════════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════════════ */
 
 const MENSAJES_RAPIDOS = [
-  'Voy en camino a tu ubicación',
-  'Ya estoy afuera en el punto de entrega',
-  'Un momento por favor, hay un poco de tráfico',
-  '¿Podrías confirmarme alguna referencia?',
+  'Ya voy en camino con tu pedido',
+  'Llegué al punto de entrega',
+  'Estoy esperando en la entrada',
   'Por favor llámame si tienes dudas',
 ];
 
 function hapticTap(pattern: 'light' | 'medium' | 'success' = 'light') {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    try {
-      if (pattern === 'success') {
-        navigator.vibrate([15, 40, 15]);
-      } else if (pattern === 'medium') {
-        navigator.vibrate(20);
-      } else {
-        navigator.vibrate(10);
-      }
-    } catch {}
+  if (pattern === 'success') {
+    HAPTIC_PATTERNS.success();
+  } else if (pattern === 'medium') {
+    HAPTIC_PATTERNS.medium();
+  } else {
+    HAPTIC_PATTERNS.light();
   }
 }
 

@@ -340,12 +340,17 @@ export default function RepartidorServicio() {
           }}
         >
           <ChevronUp size={16} style={{ color: 'var(--primario)' }} />
-          <span>
-            {ordenActiva
-              ? `${ordenActiva.cliente} • Ver detalles`
-              : estado === 'EN_LINEA'
-              ? '🟢 En Línea • Buscando órdenes'
-              : 'Ver panel'}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {estado === 'EN_LINEA' && !ordenActiva && (
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#34C759', boxShadow: '0 0 6px #34C759', flexShrink: 0 }} />
+            )}
+            <span>
+              {ordenActiva
+                ? `${ordenActiva.cliente} • Ver detalles`
+                : estado === 'EN_LINEA'
+                ? 'En Línea • Buscando órdenes'
+                : 'Ver panel'}
+            </span>
           </span>
         </motion.button>
       )}

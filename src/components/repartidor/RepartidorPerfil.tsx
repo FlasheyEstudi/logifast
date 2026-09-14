@@ -1414,7 +1414,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                   fontWeight: 700,
                 }}
               >
-                ✓ FIRMADO
+                <Check size={12} strokeWidth={3} /> FIRMADO
               </span>
             ) : (
               <button

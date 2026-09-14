@@ -103,7 +103,7 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
       }}
     >
       {/* ── ENCABEZADO Y BÚSQUEDA ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 2 }}>
         <h1
           style={{
             fontSize: 24,

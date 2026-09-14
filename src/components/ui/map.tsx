@@ -52,9 +52,141 @@ export const ESRI_SATELLITE_STYLE: MapLibreGL.StyleSpecification = {
   ],
 };
 
+export const CARTO_VOYAGER_RASTER_STYLE: MapLibreGL.StyleSpecification = {
+  version: 8,
+  sources: {
+    "carto-voyager": {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: "© CARTO, © OpenStreetMap contributors",
+    },
+  },
+  layers: [
+    {
+      id: "carto-voyager-layer",
+      type: "raster",
+      source: "carto-voyager",
+      minzoom: 0,
+      maxzoom: 20,
+    },
+  ],
+};
+
+export const CARTO_DARK_RASTER_STYLE: MapLibreGL.StyleSpecification = {
+  version: 8,
+  sources: {
+    "carto-dark": {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://d.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: "© CARTO, © OpenStreetMap contributors",
+    },
+  },
+  layers: [
+    {
+      id: "carto-dark-layer",
+      type: "raster",
+      source: "carto-dark",
+      minzoom: 0,
+      maxzoom: 20,
+    },
+  ],
+};
+
+export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
+  version: 8,
+  sources: {
+    "streets-source": {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: "© CARTO, © OpenStreetMap",
+    },
+    "satellite-source": {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      attribution: "© Esri, DigitalGlobe, Earthstar",
+    },
+    "satellite-labels-source": {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png",
+        "https://d.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+    },
+    "dark-source": {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://d.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: "© CARTO, © OpenStreetMap",
+    },
+  },
+  layers: [
+    {
+      id: "base-streets",
+      type: "raster",
+      source: "streets-source",
+      layout: { visibility: "visible" },
+      minzoom: 0,
+      maxzoom: 20,
+    },
+    {
+      id: "base-satellite",
+      type: "raster",
+      source: "satellite-source",
+      layout: { visibility: "none" },
+      minzoom: 0,
+      maxzoom: 20,
+    },
+    {
+      id: "base-satellite-labels",
+      type: "raster",
+      source: "satellite-labels-source",
+      layout: { visibility: "none" },
+      minzoom: 0,
+      maxzoom: 20,
+    },
+    {
+      id: "base-dark",
+      type: "raster",
+      source: "dark-source",
+      layout: { visibility: "none" },
+      minzoom: 0,
+      maxzoom: 20,
+    },
+  ],
+};
+
 const defaultStyles = {
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-  light: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+  dark: CARTO_DARK_RASTER_STYLE,
+  light: CARTO_VOYAGER_RASTER_STYLE,
 };
 
 // A tile-less, dependency-free style with a transparent background. Use it for

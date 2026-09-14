@@ -19,6 +19,7 @@ import {
 } from '@/components/icons';
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { useRepartidorSnackbar } from './RepartidorShell';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 /* ═══════════════════════════════════════════════
    CIRCULAR COUNTDOWN
@@ -224,15 +225,9 @@ export default function RepartidorNotificacionOrden() {
     return () => clearInterval(i);
   }, [segundos, timeoutOrden, showSnackbar]);
 
-  /* Vibrate on mount (new order) */
+  /* Vibrate on mount (new order) respecting user settings */
   useEffect(() => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate([100, 50, 100]);
-      } catch {
-        /* ignore */
-      }
-    }
+    HAPTIC_PATTERNS.nuevaOrden();
   }, []);
 
   if (!ordenAsignadaPendiente) return null;

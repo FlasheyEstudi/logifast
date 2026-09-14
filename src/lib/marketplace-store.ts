@@ -378,16 +378,21 @@ export const useMarketplaceStore = create<MarketplaceState>()(
   // Usar confirmarCompraAsync() que hace POST real a /api/ordenes-compra con transacción BD.
 
   getCartSubtotal: () => {
-    return get().cartItems.reduce((sum, i) => sum + i.precioUnitario * i.cantidad, 0);
+    return get().cartItems.reduce((sum, i) => {
+      const price = Number(i.precioUnitario ?? (i as any).precio ?? 0) || 0;
+      const qty = Math.max(1, Number(i.cantidad ?? 1) || 1);
+      return sum + (price * qty);
+    }, 0);
   },
 
   getCartTotal: () => {
     const state = get();
-    const subtotal = state.getCartSubtotal();
+    const subtotal = Number(state.getCartSubtotal()) || 0;
     const tiendas = state.getCartTiendas();
     const firstTienda = state.tiendas.find((t) => t.id === tiendas[0]);
-    const costoEnvio = firstTienda?.costoEnvio ?? 20;
-    return subtotal + costoEnvio - state.cartDescuento;
+    const costoEnvio = Number(firstTienda?.costoEnvio ?? 35) || 35;
+    const descuento = Number(state.cartDescuento) || 0;
+    return Math.max(0, subtotal + costoEnvio - descuento);
   },
 
   getCartItemCount: () => get().cartItems.reduce((sum, i) => sum + i.cantidad, 0),
@@ -531,15 +536,16 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       const res = await fetch('/api/carrito');
       if (!res.ok) return;
       const data = await res.json();
-      const items = Array.isArray(data.items)
-        ? data.items.map((it: any) => ({
-            productoId: it.productoId,
-            nombre: it.nombreProducto ?? it.producto?.nombre ?? '',
-            precio: it.precioUnitario ?? it.producto?.precio ?? 0,
-            cantidad: it.cantidad ?? 1,
-            tiendaId: it.tiendaId ?? it.producto?.tiendaId ?? '',
-            imagen: it.producto?.imagenUrl ?? null,
-            notas: it.notas ?? null,
+      const items: CartItem[] = Array.isArray(data.items)
+        ? data.items.map((it: any, index: number) => ({
+            id: String(it.id || it.productoId || `ci-${Date.now()}-${index}`),
+            productoId: String(it.productoId || it.producto?.id || ''),
+            tiendaId: String(it.tiendaId ?? it.producto?.tiendaId ?? ''),
+            nombreProducto: String(it.nombreProducto ?? it.producto?.nombre ?? it.nombre ?? 'Producto'),
+            precioUnitario: Number(it.precioUnitario ?? it.producto?.precio ?? it.precio ?? 0) || 0,
+            cantidad: Math.max(1, Number(it.cantidad ?? 1) || 1),
+            imagenColor: String(it.imagenColor ?? it.producto?.imagenColor ?? it.producto?.imagenUrl ?? ''),
+            notas: String(it.notas ?? ''),
           }))
         : [];
       set({ cartItems: items });
@@ -556,10 +562,11 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         return { ok: false, error: 'No hay items en el carrito' };
       }
       const tiendaId = tiendas[0];
-      const subtotal = state.getCartSubtotal();
+      const subtotal = Number(state.getCartSubtotal()) || 0;
       const firstTienda = state.tiendas.find((t) => t.id === tiendaId);
-      const costoEnvio = firstTienda?.costoEnvio ?? 20;
-      const total = subtotal + costoEnvio - (state.cartDescuento ?? 0);
+      const costoEnvio = Number(firstTienda?.costoEnvio ?? 35) || 35;
+      const descuento = Number(state.cartDescuento) || 0;
+      const total = Math.max(0, subtotal + costoEnvio - descuento);
 
       const body = {
         tiendaId,

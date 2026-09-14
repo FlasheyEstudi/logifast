@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 interface SnapPoint {
   id: string;
@@ -97,13 +98,7 @@ export function useBottomSheetGesture(options: UseBottomSheetGestureOptions) {
     const velocity = velocityRef.current;
 
     const triggerHaptic = () => {
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try {
-          navigator.vibrate(8);
-        } catch {
-          /* ignore */
-        }
-      }
+      HAPTIC_PATTERNS.snap();
     };
 
     if (Math.abs(velocity) > 0.2) {

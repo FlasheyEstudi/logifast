@@ -4,6 +4,7 @@
  */
 
 import { useConfigStore, type Tema } from '@/store/configStore';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 export function toggleThemeWithTransition(
   _event?: React.MouseEvent | MouseEvent | { clientX: number; clientY: number }
@@ -25,12 +26,8 @@ export function toggleThemeWithTransition(
 
   const nextTema: Tema = isCurrentlyDark ? 'light' : 'dark';
 
-  // Haptic feedback ligero
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    try {
-      navigator.vibrate(10);
-    } catch {}
-  }
+  // Haptic feedback ligero respetando ajustes
+  HAPTIC_PATTERNS.light();
 
   // Si el navegador soporta View Transitions de manera fluida y sin movimiento reducido:
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

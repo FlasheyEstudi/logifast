@@ -71,7 +71,7 @@ export async function PATCH(
     let body: { kmRecorridos?: number; tiempoTotal?: number } = {};
     try { body = await req.json(); } catch { /* allow empty */ }
     const rawKm = Number(body.kmRecorridos ?? 0);
-    const kmRecorridos = rawKm > 0 ? rawKm : (orden.kmRecorridos || orden.kmEstimados || 3.5);
+    const kmRecorridos = rawKm > 0 ? Math.round(rawKm * 10) / 10 : (orden.kmRecorridos || orden.kmEstimados || 3.5);
     const rawTiempo = Number(body.tiempoTotal ?? 0);
     const tiempoTotal = rawTiempo > 0 ? rawTiempo : (orden.tiempoTotal || orden.tiempoEstimado || 15);
     const comision = Math.round(orden.ganancia * 0.15);

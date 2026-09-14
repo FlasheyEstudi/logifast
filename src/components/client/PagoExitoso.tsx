@@ -14,6 +14,7 @@ import {
   Tag,
   Clock,
   Navigation,
+  Check,
 } from '@/components/icons';
 
 export interface CompletedOrderData {
@@ -46,6 +47,11 @@ interface PagoExitosoProps {
   setClientActiveModule?: (module: any) => void;
 }
 
+const safeNum = (v: any, fallback = 0): number => {
+  const n = Number(v);
+  return !Number.isNaN(n) && Number.isFinite(n) ? n : fallback;
+};
+
 export default function PagoExitoso({
   order,
   orderId,
@@ -55,10 +61,10 @@ export default function PagoExitoso({
 }: PagoExitosoProps) {
   const effectiveId = order?.id || orderId || `LF-${Math.floor(Math.random() * 90000) + 10000}`;
   const pin = order?.codigoPin || '';
-  const subtotal = order?.subtotal ?? (order?.total ? Math.max(0, order.total - (order.costoEnvio || 35)) : 0);
-  const envio = order?.costoEnvio ?? 35;
-  const descuento = order?.descuento ?? 0;
-  const total = order?.total ?? Math.max(0, subtotal + envio - descuento);
+  const subtotal = safeNum(order?.subtotal, safeNum(order?.total) ? Math.max(0, safeNum(order?.total) - safeNum(order?.costoEnvio, 35)) : 0);
+  const envio = safeNum(order?.costoEnvio, 35);
+  const descuento = safeNum(order?.descuento, 0);
+  const total = safeNum(order?.total, Math.max(0, subtotal + envio - descuento));
   const tienda = order?.tiendaNombre || 'Tienda Asociada';
   const direccion = order?.direccionEntrega || 'Dirección de Entrega';
   const km = order?.kmEstimados && order.kmEstimados > 0 ? order.kmEstimados.toFixed(1) : null;
@@ -107,7 +113,7 @@ export default function PagoExitoso({
             <CheckCircle size={38} />
           </motion.div>
           <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#FF5722] flex items-center justify-center text-white text-[11px] font-bold shadow-md">
-            ✓
+            <Check size={11} strokeWidth={3} />
           </div>
         </div>
 
@@ -178,7 +184,7 @@ export default function PagoExitoso({
                       {it.cantidad}x {it.nombreProducto || it.nombre || 'Producto'}
                     </span>
                     <span className="font-mono font-semibold text-slate-200">
-                      C$ {((it.precioUnitario ?? it.precio ?? 0) * it.cantidad).toFixed(2)}
+                      C$ {((safeNum(it.precioUnitario ?? it.precio)) * safeNum(it.cantidad, 1)).toFixed(2)}
                     </span>
                   </div>
                 ))}

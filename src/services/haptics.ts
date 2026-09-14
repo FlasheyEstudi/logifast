@@ -1,80 +1,52 @@
 // services/haptics.ts
+import { useConfigStore } from '@/store/configStore';
+
+function safeVibrate(patron: number | number[]): void {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
+    return;
+  }
+  try {
+    const vibracionActiva = useConfigStore.getState().vibracionActiva;
+    if (!vibracionActiva) return;
+    navigator.vibrate(patron);
+  } catch {
+    // Ignore unsupported hardware or browser security restrictions
+  }
+}
 
 export const HAPTIC_PATTERNS = {
   // Feedback ligero — toques de UI
-  light: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate(10); } catch {}
-    }
-  },
-  
+  light: () => safeVibrate(10),
+
   // Feedback medio — acciones confirmadas
-  medium: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate(25); } catch {}
-    }
-  },
-  
+  medium: () => safeVibrate(25),
+
   // Feedback fuerte — acciones importantes
-  heavy: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate(50); } catch {}
-    }
-  },
-  
+  heavy: () => safeVibrate(50),
+
   // Success — entrega completada, orden aceptada
-  success: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate([15, 50, 25]); } catch {}
-    }
-  },
-  
+  success: () => safeVibrate([15, 50, 25]),
+
   // Error — falla, rechazo
-  error: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate([50, 30, 50, 30, 50]); } catch {}
-    }
-  },
-  
+  error: () => safeVibrate([50, 30, 50, 30, 50]),
+
   // Warning — incidencia, timeout
-  warning: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate([30, 50, 30]); } catch {}
-    }
-  },
-  
-  // Nueva orden — patron urgente
-  nuevaOrden: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate([100, 50, 100, 50, 200]); } catch {}
-    }
-  },
-  
+  warning: () => safeVibrate([30, 50, 30]),
+
+  // Nueva orden — patrón urgente para evento crítico de negocio
+  nuevaOrden: () => safeVibrate([100, 50, 100, 50, 200]),
+
   // Mensaje recibido
-  mensaje: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate(15); } catch {}
-    }
-  },
-  
+  mensaje: () => safeVibrate(15),
+
   // Snap del bottom sheet
-  snap: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate(5); } catch {}
-    }
-  },
-  
-  // Timer tick (cada segundo del timer de aceptacion)
+  snap: () => safeVibrate(5),
+
+  // Timer tick — REMOVIDO para eliminar la vibración continua de 1s
   timerTick: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate(3); } catch {}
-    }
+    // No-op intencional: optimización de hardware y batería del repartidor
   },
-  
-  // Timer urgente (ultimos 5 segundos)
-  timerUrgente: () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate([10, 20, 10]); } catch {}
-    }
-  }
+
+  // Timer urgente (últimos 5 segundos de una orden crítica pendiente)
+  timerUrgente: () => safeVibrate([10, 20, 10]),
 };

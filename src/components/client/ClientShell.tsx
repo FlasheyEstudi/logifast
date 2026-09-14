@@ -28,6 +28,7 @@ import { LogoSpinner } from '@/components/ui/loaders';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
 import { aplicarTema } from '@/store/configStore';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
 
 /* ═══════════════════════════════════════════════
@@ -400,11 +401,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
       if (isFromAdmin || isFromRider) {
         reproducirSonido('mensaje', 90);
-        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-          try {
-            navigator.vibrate([20, 50, 20]);
-          } catch {}
-        }
+        HAPTIC_PATTERNS.mensaje();
         const isChatCurrentlyOpen = useStore.getState().chatOpen;
         const currentChatOrderId = useStore.getState().chatOrderId;
         if (!isChatCurrentlyOpen || (msg.ordenId && currentChatOrderId !== msg.ordenId)) {
@@ -501,7 +498,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   );
 
   /* ─── NAVEGACIÓN Y KEEP-ALIVE DE PESTAÑAS (TRANSICIONES INSTANTÁNEAS 0ms) ─── */
-  const CORE_CLIENT_TABS: ClientModuleKey[] = ['inicio', 'solicitar', 'explorar', 'envios', 'pedidos', 'perfil'];
+  const CORE_CLIENT_TABS: ClientModuleKey[] = ['inicio', 'solicitar', 'explorar', 'envios', 'pedidos', 'puntos', 'perfil'];
   const [visitedTabs, setVisitedTabs] = useState<Set<ClientModuleKey>>(() => new Set(['inicio', clientActiveModule]));
 
   useEffect(() => {
@@ -545,6 +542,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         return <ClientEnvios {...moduleProps} />;
       case 'pedidos':
         return <ClientPedidos {...moduleProps} />;
+      case 'puntos':
+        return <ClientPuntos isDark={isDark} onNavigate={handleNav} />;
       case 'perfil':
         return <ClientPerfil {...perfilProps} />;
       default:
@@ -788,7 +787,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         <main
           style={{
             flex: 1,
-            paddingTop: clientActiveModule === 'tienda' ? 0 : 'calc(96px + env(safe-area-inset-top, 0px))',
+            paddingTop: clientActiveModule === 'tienda' ? 0 : 'calc(58px + env(safe-area-inset-top, 0px))',
             paddingBottom: clientActiveModule === 'tienda' ? 0 : 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
             minHeight: '100vh',
             backgroundColor: 'var(--ios-bg)',
@@ -802,8 +801,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               margin: '0 auto',
               paddingLeft: clientActiveModule === 'tienda' ? 0 : 16,
               paddingRight: clientActiveModule === 'tienda' ? 0 : 16,
-              paddingTop: clientActiveModule === 'tienda' ? 0 : 20,
-              paddingBottom: clientActiveModule === 'tienda' ? 0 : 20,
+              paddingTop: clientActiveModule === 'tienda' ? 0 : 4,
+              paddingBottom: clientActiveModule === 'tienda' ? 0 : 16,
             }}
             className="lf-client-inner-pad"
           >
@@ -1127,18 +1126,18 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           /* Header offset for status bar on mobile */
           @media (max-width: 1023px) {
             .lf-header-bar.lf-ios-header {
-              top: max(24px, env(safe-area-inset-top, 24px)) !important;
+              top: calc(env(safe-area-inset-top, 10px) + 8px) !important;
             }
             .lf-client-content-padded.lf-ios-content {
-              padding-top: calc(96px + max(24px, env(safe-area-inset-top, 24px))) !important;
+              padding-top: calc(58px + env(safe-area-inset-top, 0px)) !important;
             }
           }
           @media (max-width: 1023px) and (pointer: coarse) {
             .lf-header-bar.lf-ios-header {
-              top: env(safe-area-inset-top, 0px) !important;
+              top: calc(env(safe-area-inset-top, 10px) + 8px) !important;
             }
             .lf-client-content-padded.lf-ios-content {
-              padding-top: calc(96px + env(safe-area-inset-top, 0px)) !important;
+              padding-top: calc(58px + env(safe-area-inset-top, 0px)) !important;
             }
           }
 

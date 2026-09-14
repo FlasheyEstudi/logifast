@@ -16,6 +16,7 @@ import {
 import { useStore, type ChatMessage } from '@/lib/store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -49,16 +50,12 @@ function getInitials(name: string): string {
 }
 
 function hapticTap(pattern: 'light' | 'medium' | 'success' = 'light') {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    try {
-      if (pattern === 'success') {
-        navigator.vibrate([15, 40, 15]);
-      } else if (pattern === 'medium') {
-        navigator.vibrate(20);
-      } else {
-        navigator.vibrate(10);
-      }
-    } catch {}
+  if (pattern === 'success') {
+    HAPTIC_PATTERNS.success();
+  } else if (pattern === 'medium') {
+    HAPTIC_PATTERNS.medium();
+  } else {
+    HAPTIC_PATTERNS.light();
   }
 }
 

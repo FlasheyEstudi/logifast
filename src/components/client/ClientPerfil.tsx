@@ -6,7 +6,7 @@ import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
   LogOut, Shield, Bell, Globe, ChevronRight, AlertTriangle,
   Star, Banknote, CreditCard, Copy, Home, Building, ShoppingBag, Package,
-  Heart, ShoppingCart, Gift, Users,
+  Heart, ShoppingCart, Gift, Users, Vibrate,
 } from '@/components/icons';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -228,8 +228,24 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const [favTab, setFavTab] = useState<'tiendas' | 'productos'>('tiendas');
 
   /* ─── Settings state ─── */
-  const [prefPayment, setPrefPayment] = useState<'efectivo' | 'transferencia'>('efectivo');
+  const [prefPayment, setPrefPaymentState] = useState<'efectivo' | 'transferencia'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('logifast_client_pref_payment');
+      if (saved === 'efectivo' || saved === 'transferencia') return saved;
+    }
+    return 'efectivo';
+  });
   const [prefPaymentInited, setPrefPaymentInited] = useState(false);
+
+  const setPrefPayment = (p: 'efectivo' | 'transferencia' | ((prev: 'efectivo' | 'transferencia') => 'efectivo' | 'transferencia')) => {
+    setPrefPaymentState((prev) => {
+      const next = typeof p === 'function' ? p(prev) : p;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('logifast_client_pref_payment', next);
+      }
+      return next;
+    });
+  };
 
   /* ─── Configuración global (configStore) ─── */
   const notificacionesPush = useConfigStore((s) => s.notificacionesPush);
@@ -238,15 +254,20 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const toggleNotificacionesEmail = useConfigStore((s) => s.toggleNotificacionesEmail);
   const compartirUbicacion = useConfigStore((s) => s.compartirUbicacion);
   const toggleCompartirUbicacion = useConfigStore((s) => s.toggleCompartirUbicacion);
+  const vibracionActiva = useConfigStore((s) => s.vibracionActiva);
+  const toggleVibracion = useConfigStore((s) => s.toggleVibracion);
+  const selectedLang = useConfigStore((s) => s.idioma);
+  const setIdioma = useConfigStore((s) => s.setIdioma);
 
   /* ─── Modals ─── */
   const [logoutModal, setLogoutModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteText, setDeleteText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [privacyModal, setPrivacyModal] = useState(false);
   const [languageModal, setLanguageModal] = useState(false);
   const [paymentModal, setPaymentModal] = useState(false);
-  const [selectedLang, setSelectedLang] = useState('es');
 
   /* ─── Toast state ─── */
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -266,14 +287,14 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
   const metrics = useMemo(() => {
     const total = clientOrders.length;
-    const totalSpent = clientOrders.reduce((s, o) => s + o.monto, 0);
+    const totalSpent = clientOrders.reduce((s, o) => s + (Number(o.monto) || 0), 0);
     const avg = total > 0 ? Math.round(totalSpent / total) : 0;
     const currentMonthPrefix = new Date().toISOString().substring(0, 7);
-    const thisMonth = clientOrders.filter((o) => o.fecha.startsWith(currentMonthPrefix)).length;
+    const thisMonth = clientOrders.filter((o) => (o.fecha || '').startsWith(currentMonthPrefix)).length;
     const zoneCount: Record<string, number> = {};
     clientOrders.forEach((o) => {
-      const zone = o.destino.split(',')[0].trim();
-      zoneCount[zone] = (zoneCount[zone] || 0) + 1;
+      const zone = (o.destino || '').split(',')[0].trim();
+      if (zone) zoneCount[zone] = (zoneCount[zone] || 0) + 1;
     });
     const topZone = Object.entries(zoneCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
     const payCount: Record<string, number> = {};
@@ -282,6 +303,27 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
     });
     const topPayment = (Object.entries(payCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'efectivo') as 'efectivo' | 'transferencia';
     return { total, totalSpent, avg, thisMonth, topZone, topPayment };
+  }, [clientOrders]);
+
+  /* Gráfica mensual dinámica calculada desde el historial real de envíos */
+  const monthlyChartData = useMemo(() => {
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const now = new Date();
+    const result: { mes: string; envios: number }[] = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const count = clientOrders.filter((o) => {
+        const dStr = o.fecha || (o as any).createdAt || '';
+        return dStr.includes(yearMonth) || (i === 0 && (dStr.toLowerCase().includes('hoy') || dStr.toLowerCase().includes('ayer')));
+      }).length;
+      result.push({
+        mes: monthNames[d.getMonth()],
+        envios: count,
+      });
+    }
+    return result;
   }, [clientOrders]);
 
   if (!prefPaymentInited && metrics.topPayment) {
@@ -612,18 +654,52 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
   const handleCanjear = async (puntos: number) => {
     const ok = canjearPuntos(puntos);
     if (ok) {
-      setToast({ message: `Se canjearon ${puntos} puntos correctamente`, type: 'success' });
+      const valor = puntos === 100 ? 20 : puntos === 200 ? 50 : 35;
+      const titulo = puntos === 100 ? 'C$ 20 OFF' : puntos === 200 ? 'C$ 50 OFF' : 'Envío Gratis';
+      setToast({ message: `¡Se canjearon ${puntos} puntos! Cupón de ${titulo} agregado a tu billetera`, type: 'success' });
       try {
-        await fetch('/api/cliente/fidelizacion', {
+        await fetch('/api/cliente/billetera', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ puntosARedimir: puntos }),
+          body: JSON.stringify({ action: 'canjear', puntos, valor, titulo }),
         });
+        useStore.getState().fetchCuponesBilletera?.();
       } catch (e) {
         console.warn('[handleCanjear API error]:', e);
       }
     } else {
-      setToast({ message: 'No tienes suficientes puntos', type: 'error' });
+      setToast({ message: 'No tienes suficientes puntos para este canje', type: 'error' });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteText !== 'ELIMINAR') {
+      notify.error('Debes escribir "ELIMINAR" para confirmar');
+      return;
+    }
+    if (!deletePassword) {
+      notify.error('Ingresa tu contraseña para verificar tu identidad');
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword, confirm: 'ELIMINAR' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al eliminar la cuenta');
+      }
+      notify.success('Tu cuenta ha sido eliminada permanentemente.');
+      setDeleteModal(false);
+      onLogout();
+    } catch (err: any) {
+      notify.error(err.message || 'Contraseña incorrecta o error al eliminar cuenta');
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -1241,7 +1317,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
         {/* Bar chart */}
         <div style={{ height: 120, marginBottom: 0, minWidth: 0, minHeight: 120 }}>
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={120}>
-            <BarChart data={MONTHLY_DATA} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+            <BarChart data={monthlyChartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
               <XAxis
                 dataKey="mes"
                 tick={{ fontSize: 11, fill: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}
@@ -1842,6 +1918,13 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
             label="Compartir ubicación"
             right={<Toggle on={compartirUbicacion} onToggle={() => toggleCompartirUbicacion()} />}
           />
+          {/* Vibración háptica — wired to configStore */}
+          <SettingsRow
+            icon={<Vibrate size={18} />}
+            label="Vibración"
+            desc="Respuesta táctil y alertas del sistema"
+            right={<Toggle on={vibracionActiva} onToggle={() => toggleVibracion()} />}
+          />
           {/* Metodo de pago preferido */}
           <SettingsRow
             icon={prefPayment === 'efectivo' ? <Banknote size={18} /> : <CreditCard size={18} />}
@@ -2036,30 +2119,40 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
               <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16, fontFamily: "'DM Sans', sans-serif" }}>
                 Esta accion es irreversible. Se eliminaran todos tus datos.
               </p>
-              <div style={{ textAlign: 'left', marginBottom: 8 }}>
+              <div style={{ textAlign: 'left', marginBottom: 12 }}>
                 <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
                   Escribe <strong style={{ color: 'var(--peligro)' }}>ELIMINAR</strong> para confirmar
                 </label>
                 <input className="lf-input" style={inputStyle} value={deleteText} onChange={(e) => setDeleteText(e.target.value)} placeholder="ELIMINAR" />
               </div>
+              <div style={{ textAlign: 'left', marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
+                  Contraseña de seguridad
+                </label>
+                <input
+                  type="password"
+                  className="lf-input"
+                  style={inputStyle}
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Tu contraseña para verificar"
+                />
+              </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
-                <button style={btnGhost} onClick={() => setDeleteModal(false)}>
+                <button style={btnGhost} onClick={() => { setDeleteModal(false); setDeletePassword(''); setDeleteText(''); }}>
                   Cancelar
                 </button>
                 <button
                   style={{
                     ...btnPrimary,
-                    background: deleteText === 'ELIMINAR' ? 'var(--peligro)' : 'var(--text-muted)',
-                    cursor: deleteText === 'ELIMINAR' ? 'pointer' : 'not-allowed',
-                    opacity: deleteText === 'ELIMINAR' ? 1 : 0.5,
+                    background: deleteText === 'ELIMINAR' && deletePassword ? 'var(--peligro)' : 'var(--text-muted)',
+                    cursor: deleteText === 'ELIMINAR' && deletePassword && !isDeletingAccount ? 'pointer' : 'not-allowed',
+                    opacity: deleteText === 'ELIMINAR' && deletePassword && !isDeletingAccount ? 1 : 0.5,
                   }}
-                  disabled={deleteText !== 'ELIMINAR'}
-                  onClick={() => {
-                    setDeleteModal(false);
-                    onLogout();
-                  }}
+                  disabled={deleteText !== 'ELIMINAR' || !deletePassword || isDeletingAccount}
+                  onClick={handleDeleteAccount}
                 >
-                  <Trash2 size={14} /> Eliminar permanentemente
+                  <Trash2 size={14} /> {isDeletingAccount ? 'Eliminando...' : 'Eliminar permanentemente'}
                 </button>
               </div>
             </div>
@@ -2148,7 +2241,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedLang('es');
+                    setIdioma('es');
                     notify.success('Idioma configurado en Español');
                     setLanguageModal(false);
                   }}
@@ -2176,7 +2269,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedLang('en');
+                    setIdioma('en');
                     notify.success('Language set to English');
                     setLanguageModal(false);
                   }}
@@ -2242,19 +2335,22 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
                 {[
-                  { id: 'efectivo', label: 'Efectivo contra Entrega', desc: 'Pagas en efectivo al recibir tu paquete (C$ o $)' },
-                  { id: 'transferencia', label: 'Transferencia Bancaria Directa', desc: 'BAC Credomatic, Banpro, Lafise Bancentro' },
-                  { id: 'tarjeta', label: 'Tarjeta de Débito / Crédito', desc: 'Visa, Mastercard - Pasarela de pago segura' },
+                  { id: 'efectivo', label: 'Efectivo contra Entrega', desc: 'Pagas en efectivo al recibir tu paquete (C$ o $)', disabled: false },
+                  { id: 'transferencia', label: 'Transferencia Bancaria Directa', desc: 'BAC Credomatic, Banpro, Lafise Bancentro', disabled: true, badge: 'Próximamente' },
+                  { id: 'tarjeta', label: 'Tarjeta de Débito / Crédito', desc: 'Visa, Mastercard - Pasarela de pago segura', disabled: true, badge: 'Próximamente' },
                 ].map((met) => {
                   const isSel = prefPayment === met.id;
                   return (
                     <button
                       key={met.id}
                       type="button"
+                      disabled={met.disabled}
                       onClick={() => {
-                        setPrefPayment(met.id as any);
-                        notify.success(`Método de pago predeterminado: ${met.label}`);
-                        setPaymentModal(false);
+                        if (!met.disabled) {
+                          setPrefPayment(met.id as any);
+                          notify.success(`Método de pago predeterminado: ${met.label}`);
+                          setPaymentModal(false);
+                        }
                       }}
                       style={{
                         padding: '12px 14px',
@@ -2262,16 +2358,36 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                         border: isSel ? '2px solid var(--primario)' : '1px solid var(--border)',
                         background: isSel ? 'color-mix(in srgb, var(--primario) 10%, var(--surface))' : 'var(--surface)',
                         textAlign: 'left',
-                        cursor: 'pointer',
+                        cursor: met.disabled ? 'not-allowed' : 'pointer',
+                        opacity: met.disabled ? 0.6 : 1,
                         display: 'flex',
                         alignItems: 'center',
                         gap: 12,
                         transition: 'all 0.15s',
+                        position: 'relative',
                       }}
                     >
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: isSel ? 700 : 600, color: 'var(--text)' }}>
-                          {met.label}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: isSel ? 700 : 600, color: 'var(--text)' }}>
+                            {met.label}
+                          </span>
+                          {met.badge && (
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                                background: 'rgba(255, 149, 0, 0.15)',
+                                color: '#FF9500',
+                                border: '1px solid rgba(255, 149, 0, 0.3)',
+                                letterSpacing: '0.02em',
+                              }}
+                            >
+                              {met.badge}
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                           {met.desc}

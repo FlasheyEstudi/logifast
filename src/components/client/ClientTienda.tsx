@@ -449,7 +449,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
           aria-label="Volver"
           style={{
             position: 'absolute',
-            top: 20,
+            top: 'calc(env(safe-area-inset-top, 14px) + 10px)',
             left: 16,
             width: 38,
             height: 38,

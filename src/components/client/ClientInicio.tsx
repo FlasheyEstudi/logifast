@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { reverseGeocode } from '@/lib/osrm';
 import {
   Search,
   Sparkles,
@@ -109,6 +110,66 @@ export default function ClientInicio({
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [adModalOpen, setAdModalOpen] = useState(false);
   const [adSuccessMsg, setAdSuccessMsg] = useState('');
+
+  /* Dynamic Location state from GPS or saved addresses */
+  const [ubicacionTexto, setUbicacionTexto] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('logifast_client_geo_address');
+      if (saved) return saved;
+    }
+    return 'Detectando ubicación...';
+  });
+  const [detectandoGps, setDetectandoGps] = useState(false);
+
+  const detectarUbicacion = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    setDetectandoGps(true);
+
+    // 1. Priorizar si el usuario tiene direcciones guardadas predeterminadas
+    try {
+      const storeState = useStore.getState();
+      const savedAddr = storeState.direccionesGuardadas?.find((d: any) => d.predeterminada) || storeState.direccionesGuardadas?.[0];
+      if (savedAddr && savedAddr.direccion) {
+        setUbicacionTexto(savedAddr.direccion);
+        localStorage.setItem('logifast_client_geo_address', savedAddr.direccion);
+      }
+    } catch {}
+
+    // 2. Si hay soporte para GPS nativo / navegador, obtener coordenadas en tiempo real
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const { latitude, longitude } = pos.coords;
+            const res = await reverseGeocode(latitude, longitude);
+            if (res && res.trim().length > 0) {
+              setUbicacionTexto(res);
+              localStorage.setItem('logifast_client_geo_address', res);
+              localStorage.setItem('logifast_client_geo_lat', String(latitude));
+              localStorage.setItem('logifast_client_geo_lng', String(longitude));
+            }
+          } catch (err) {
+            console.warn('[detectarUbicacion reverseGeocode error]', err);
+          } finally {
+            setDetectandoGps(false);
+          }
+        },
+        (err) => {
+          console.warn('[geolocation getCurrentPosition error]', err.message);
+          setDetectandoGps(false);
+          setUbicacionTexto((prev) => (prev === 'Detectando ubicación...' ? 'Managua, Nicaragua' : prev));
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+    } else {
+      setDetectandoGps(false);
+      setUbicacionTexto((prev) => (prev === 'Detectando ubicación...' ? 'Managua, Nicaragua' : prev));
+    }
+  }, []);
+
+  useEffect(() => {
+    detectarUbicacion();
+  }, [detectarUbicacion]);
 
   /* Load real banners, feed & wallet on mount */
   useEffect(() => {
@@ -268,11 +329,14 @@ export default function ClientInicio({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: 8,
+          paddingTop: 2,
         }}
       >
         <div>
-          <div
+          <button
+            type="button"
+            onClick={() => detectarUbicacion()}
+            title="Toca para actualizar tu ubicación GPS en tiempo real"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -282,11 +346,28 @@ export default function ClientInicio({
               color: 'var(--primario)',
               fontFamily: "'DM Sans', sans-serif",
               marginBottom: 4,
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              maxWidth: 240,
+              textAlign: 'left',
             }}
           >
-            <MapPin size={14} style={{ color: 'var(--primario)' }} />
-            <span>Managua, Nicaragua</span>
-          </div>
+            <MapPin size={14} style={{ color: 'var(--primario)', flexShrink: 0 }} />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {ubicacionTexto}
+            </span>
+            {detectandoGps && (
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                style={{ display: 'inline-flex', flexShrink: 0, marginLeft: 2 }}
+              >
+                <Clock size={11} />
+              </motion.span>
+            )}
+          </button>
           <h1
             style={{
               fontSize: 24,

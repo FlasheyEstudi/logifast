@@ -26,6 +26,7 @@ import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { obtenerRuta, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), { ssr: false });
 
@@ -120,10 +121,9 @@ const STEP_ICONS = [
    ═══════════════════════════════════════════════ */
 
 function haptic(style: 'light' | 'medium' | 'heavy' = 'light') {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    const ms = style === 'heavy' ? 30 : style === 'medium' ? 15 : 8;
-    navigator.vibrate(ms);
-  }
+  if (style === 'heavy') HAPTIC_PATTERNS.heavy();
+  else if (style === 'medium') HAPTIC_PATTERNS.medium();
+  else HAPTIC_PATTERNS.light();
 }
 
 /* ═══════════════════════════════════════════════

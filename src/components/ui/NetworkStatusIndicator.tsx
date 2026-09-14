@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 export default function NetworkStatusIndicator() {
   const [isOnline, setIsOnline] = useState(true);
@@ -18,9 +19,7 @@ export default function NetworkStatusIndicator() {
     const handleOnline = () => {
       setIsOnline(true);
       setShowReconnected(true);
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate(25); } catch {}
-      }
+      HAPTIC_PATTERNS.medium();
       if (reconnectTimer) clearTimeout(reconnectTimer);
       reconnectTimer = setTimeout(() => {
         setShowReconnected(false);
@@ -31,9 +30,7 @@ export default function NetworkStatusIndicator() {
       setIsOnline(false);
       setShowReconnected(false);
       if (reconnectTimer) clearTimeout(reconnectTimer);
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate([40, 60, 40]); } catch {}
-      }
+      HAPTIC_PATTERNS.warning();
     };
 
     window.addEventListener('online', handleOnline);

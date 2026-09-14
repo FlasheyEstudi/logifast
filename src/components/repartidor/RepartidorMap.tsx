@@ -8,9 +8,9 @@ import {
   MarkerPopup,
   MapRoute,
   MapRef,
-  MAP_STYLES,
-  ESRI_SATELLITE_STYLE,
+  UNIFIED_MULTI_BASEMAP_STYLE,
 } from '@/components/ui/map';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 import { obtenerRuta, obtenerRutaMultiples, type PasoRuta } from '@/lib/osrm';
 import { PinRecogida, PinEntrega, PinTienda, PinRepartidorMoto } from '@/components/ui/MapPins';
 
@@ -490,20 +490,43 @@ export default function RepartidorMap({
 
   const handleRecenterClick = () => {
     setShouldFollow(true);
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate(10);
-      } catch {}
-    }
+    HAPTIC_PATTERNS.light();
   };
 
-  const [mapLayer, setMapLayer] = useState<'calles' | 'satelite' | 'nocturno'>('calles');
+  const [mapLayer, setMapLayer] = useState<'calles' | 'satelite' | 'nocturno'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('logifast_driver_map_layer') as 'calles' | 'satelite' | 'nocturno';
+      if (saved === 'calles' || saved === 'satelite' || saved === 'nocturno') return saved;
+    }
+    return 'calles';
+  });
 
-  const selectedMapStyle = useMemo(() => {
-    if (mapLayer === 'satelite') return ESRI_SATELLITE_STYLE;
-    if (mapLayer === 'nocturno') return MAP_STYLES.dark;
-    return MAP_STYLES.voyager;
-  }, [mapLayer]);
+  // Layer visibility switcher: updates immediately via WebGL layout properties without reloading or destroying styles
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    try {
+      const isCalles = mapLayer === 'calles';
+      const isSatelite = mapLayer === 'satelite';
+      const isNocturno = mapLayer === 'nocturno';
+
+      if (map.getLayer('base-streets')) {
+        map.setLayoutProperty('base-streets', 'visibility', isCalles ? 'visible' : 'none');
+      }
+      if (map.getLayer('base-satellite')) {
+        map.setLayoutProperty('base-satellite', 'visibility', isSatelite ? 'visible' : 'none');
+      }
+      if (map.getLayer('base-satellite-labels')) {
+        map.setLayoutProperty('base-satellite-labels', 'visibility', isSatelite ? 'visible' : 'none');
+      }
+      if (map.getLayer('base-dark')) {
+        map.setLayoutProperty('base-dark', 'visibility', isNocturno ? 'visible' : 'none');
+      }
+    } catch (err) {
+      console.warn('[RepartidorMap] Error toggling layer visibility:', err);
+    }
+  }, [mapLayer, mapReady]);
 
   // Activar modo 3D automáticamente cuando el repartidor inicia viaje / navegación
   useEffect(() => {
@@ -623,7 +646,7 @@ export default function RepartidorMap({
         pitch={is3DMode ? 66 : 0}
         bearing={is3DMode ? activeBearing : 0}
         maxPitch={85}
-        styles={{ light: selectedMapStyle, dark: selectedMapStyle }}
+        styles={{ light: UNIFIED_MULTI_BASEMAP_STYLE, dark: UNIFIED_MULTI_BASEMAP_STYLE }}
         className="rounded-2xl overflow-hidden"
         onLoad={() => setMapReady(true)}
         dragPan={true}
@@ -795,13 +818,17 @@ export default function RepartidorMap({
           <button
             type="button"
             onClick={() => {
-              setMapLayer((prev) => (prev === 'calles' ? 'satelite' : prev === 'satelite' ? 'nocturno' : 'calles'));
-              if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-                try { navigator.vibrate(8); } catch {}
-              }
+              setMapLayer((prev) => {
+                const next = prev === 'calles' ? 'satelite' : prev === 'satelite' ? 'nocturno' : 'calles';
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('logifast_driver_map_layer', next);
+                }
+                return next;
+              });
+              HAPTIC_PATTERNS.light();
             }}
             className={`driver-ctrl-btn ${mapLayer !== 'calles' ? 'active' : ''}`}
-            title={`Capa: ${mapLayer}`}
+            title={`Capa actual: ${mapLayer === 'calles' ? 'Calles' : mapLayer === 'satelite' ? 'Satélite' : 'Nocturno'}`}
             aria-label="Cambiar estilo de mapa"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -817,9 +844,7 @@ export default function RepartidorMap({
             onClick={() => {
               setIs3DMode((prev) => !prev);
               setShouldFollow(true);
-              if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-                try { navigator.vibrate(10); } catch {}
-              }
+              HAPTIC_PATTERNS.light();
             }}
             className={`driver-ctrl-btn ${is3DMode ? 'active' : ''}`}
             title={is3DMode ? 'Vista 2D (Plana)' : 'Vista 3D (Perspectiva)'}

@@ -92,7 +92,7 @@ async function computeStats(
   const comprasUnicas = compras.filter((c) => !servicioIds.has(c.id) && !servicioTiendaIds.has(c.tiendaId));
 
   const entregas = servicios.length + comprasUnicas.length;
-  const kmServicios = servicios.reduce((s, x) => s + (x.kmRecorridos || x.kmEstimados || 3.5), 0);
+  const kmServicios = servicios.reduce((s, x) => s + (typeof x.kmRecorridos === 'number' && x.kmRecorridos > 0 ? x.kmRecorridos : (x.kmEstimados || 3.5)), 0);
   const kmCompras = comprasUnicas.length * 3.5;
   const km = kmServicios + kmCompras;
 
@@ -149,7 +149,7 @@ async function computeTrends(
       const comprasUnicas = compras.filter((c) => !servicioIds.has(c.id) && !servicioTiendaIds.has(c.tiendaId));
 
       const entregas = servicios.length + comprasUnicas.length;
-      const km = servicios.reduce((s, x) => s + (x.kmRecorridos || 0), 0) + comprasUnicas.length * 3.5;
+      const km = servicios.reduce((s, x) => s + (typeof x.kmRecorridos === 'number' && x.kmRecorridos > 0 ? x.kmRecorridos : (x.kmEstimados || 3.5)), 0) + comprasUnicas.length * 3.5;
       const ganancias =
         servicios.reduce((s, x) => s + (x.ganancia || 0), 0) +
         comprasUnicas.reduce(

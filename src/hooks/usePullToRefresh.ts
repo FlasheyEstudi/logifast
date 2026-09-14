@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void>;
@@ -95,14 +96,8 @@ export function usePullToRefresh(options: UsePullToRefreshOptions) {
       setIsRefreshing(true);
       setPullDistance(60); // mantener la animacion
 
-      // Vibración de trigger
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try {
-          navigator.vibrate(15);
-        } catch {
-          /* ignore */
-        }
-      }
+      // Vibración de trigger respetando configuración
+      HAPTIC_PATTERNS.light();
 
       try {
         await onRefresh();

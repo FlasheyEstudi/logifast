@@ -105,10 +105,17 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
 
   if (!isOpen) return null;
 
-  const subtotal = getCartSubtotal();
+  const subtotal = Number(getCartSubtotal()) || 0;
   const delivery = cartItems.length > 0 ? 35 : 0;
-  const descuento = cartDescuento;
+  const descuento = Number(cartDescuento) || 0;
   const total = Math.max(0, subtotal + delivery - descuento);
+
+  // Auto-switch to efectivo if invalid or unsupported payment method
+  React.useEffect(() => {
+    if (cartMetodoPago !== 'efectivo') {
+      setCartMetodoPago('efectivo');
+    }
+  }, [cartMetodoPago, setCartMetodoPago]);
 
   // Group items by store
   const grupos = cartItems.reduce((acc, item) => {
@@ -244,51 +251,56 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
 
       // Agregar a useStore para tracking y rastreo sin recargar la página
       if (ordenCreada) {
-        addOrder({
-          id: ordenCreada.id,
-          codigoPin: ordenCreada.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
-          cliente: ordenCreada.clienteNombre || ordenCreada.cliente?.name || 'Cliente',
-          clienteTelefono: ordenCreada.clienteTelefono || ordenCreada.cliente?.telefono || '',
-          origen: tiendaNombre,
-          destino: direccionEntregaInput.trim(),
-          origenLat: ordenCreada.origenLat || 0,
-          origenLng: ordenCreada.origenLng || 0,
-          destinoLat: ordenCreada.destinoLat || deliveryLat || 0,
-          destinoLng: ordenCreada.destinoLng || deliveryLng || 0,
-          repartidor: null,
-          repartidorInitials: 'RP',
-          descripcion: cartInstrucciones || `Pedido de compra: ${tiendaNombre}`,
-          monto: ordenCreada.total ?? total,
-          subtotal: ordenCreada.subtotal ?? subtotal,
-          costoEnvio: ordenCreada.costoEnvio ?? delivery,
-          descuento: ordenCreada.descuento ?? (cartDescuento || 0),
-          codigoPromo: cartCodigoPromo || '',
-          estado: 'pendiente',
-          metodoPago: cartMetodoPago as any,
-          estadoPago: 'pendiente',
-          fecha: 'Hoy',
-          hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          timeline: [],
-        } as any);
+          const safeSubtotal = Number(ordenCreada.subtotal ?? subtotal) || 0;
+          const safeDelivery = Number(ordenCreada.costoEnvio ?? delivery) || 0;
+          const safeDescuento = Number(ordenCreada.descuento ?? cartDescuento ?? 0) || 0;
+          const safeTotal = Number(ordenCreada.total ?? total) || Math.max(0, safeSubtotal + safeDelivery - safeDescuento);
 
-        setCompletedOrder({
-          id: ordenCreada.id,
-          codigoPin: ordenCreada.codigoPin,
-          tiendaNombre,
-          direccionEntrega: direccionEntregaInput.trim(),
-          subtotal: ordenCreada.subtotal ?? subtotal,
-          costoEnvio: ordenCreada.costoEnvio ?? delivery,
-          descuento: ordenCreada.descuento ?? (cartDescuento || 0),
-          total: ordenCreada.total ?? total,
-          metodoPago: cartMetodoPago,
-          kmEstimados: ordenCreada.kmEstimados,
-          tiempoEstimado: ordenCreada.tiempoEstimado,
-          items: cartItems.map((it) => ({
-            nombreProducto: it.nombreProducto || (it as any).nombre || 'Producto',
-            cantidad: it.cantidad,
-            precioUnitario: it.precioUnitario || (it as any).precio || 0,
-          })),
-        });
+          addOrder({
+            id: ordenCreada.id,
+            codigoPin: ordenCreada.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
+            cliente: ordenCreada.clienteNombre || ordenCreada.cliente?.name || 'Cliente',
+            clienteTelefono: ordenCreada.clienteTelefono || ordenCreada.cliente?.telefono || '',
+            origen: tiendaNombre,
+            destino: direccionEntregaInput.trim(),
+            origenLat: ordenCreada.origenLat || 0,
+            origenLng: ordenCreada.origenLng || 0,
+            destinoLat: ordenCreada.destinoLat || deliveryLat || 0,
+            destinoLng: ordenCreada.destinoLng || deliveryLng || 0,
+            repartidor: null,
+            repartidorInitials: 'RP',
+            descripcion: cartInstrucciones || `Pedido de compra: ${tiendaNombre}`,
+            monto: safeTotal,
+            subtotal: safeSubtotal,
+            costoEnvio: safeDelivery,
+            descuento: safeDescuento,
+            codigoPromo: cartCodigoPromo || '',
+            estado: 'pendiente',
+            metodoPago: cartMetodoPago as any,
+            estadoPago: 'pendiente',
+            fecha: 'Hoy',
+            hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timeline: [],
+          } as any);
+
+          setCompletedOrder({
+            id: ordenCreada.id,
+            codigoPin: ordenCreada.codigoPin,
+            tiendaNombre,
+            direccionEntrega: direccionEntregaInput.trim(),
+            subtotal: safeSubtotal,
+            costoEnvio: safeDelivery,
+            descuento: safeDescuento,
+            total: safeTotal,
+            metodoPago: cartMetodoPago,
+            kmEstimados: ordenCreada.kmEstimados,
+            tiempoEstimado: ordenCreada.tiempoEstimado,
+            items: cartItems.map((it) => ({
+              nombreProducto: it.nombreProducto || (it as any).nombre || 'Producto',
+              cantidad: Number(it.cantidad) || 1,
+              precioUnitario: Number(it.precioUnitario ?? (it as any).precio ?? 0) || 0,
+            })),
+          });
       }
 
       clearCart();
@@ -524,7 +536,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                           <div style={{ flex: 1, paddingRight: 12 }}>
                             <h5 style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>{item.nombreProducto}</h5>
                             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: '#007AFF', marginTop: 4, display: 'block' }}>
-                              C$ {(item.precioUnitario * item.cantidad).toFixed(2)}
+                              C$ {((Number(item.precioUnitario ?? (item as any).precio ?? 0) || 0) * (Number(item.cantidad) || 1)).toFixed(2)}
                             </span>
                           </div>
 
@@ -853,23 +865,45 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                     </button>
 
                     <button
-                      onClick={() => setCartMetodoPago('transferencia')}
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      title="Método de pago en habilitación técnica"
                       style={{
-                        padding: 12,
+                        padding: '12px 8px',
                         borderRadius: 14,
-                        border: cartMetodoPago === 'transferencia' ? '2px solid #007AFF' : '1px solid rgba(255, 255, 255, 0.12)',
-                        background: cartMetodoPago === 'transferencia' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                        color: '#F8FAFC',
-                        cursor: 'pointer',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        background: 'rgba(15, 23, 42, 0.4)',
+                        color: '#64748B',
+                        cursor: 'not-allowed',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         gap: 4,
+                        position: 'relative',
+                        opacity: 0.7,
                       }}
                     >
-                      <CreditCard size={20} color={cartMetodoPago === 'transferencia' ? '#007AFF' : '#94A3B8'} />
-                      <span style={{ fontSize: 13, fontWeight: 700 }}>Transferencia</span>
-                      <span style={{ fontSize: 10, color: '#94A3B8' }}>Bancaria / Móvil</span>
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: '1px 5px',
+                          borderRadius: 4,
+                          background: 'rgba(255, 149, 0, 0.15)',
+                          color: '#FF9500',
+                          border: '1px solid rgba(255, 149, 0, 0.3)',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        Próximamente
+                      </span>
+                      <CreditCard size={20} color="#64748B" />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#94A3B8' }}>Transferencia</span>
+                      <span style={{ fontSize: 10, color: '#64748B' }}>Trabajando en ello</span>
                     </button>
                   </div>
                 </div>

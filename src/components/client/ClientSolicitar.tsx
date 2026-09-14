@@ -2102,12 +2102,15 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                   label: 'Efectivo',
                   desc: 'Paga al repartidor al recibir',
                   icon: Banknote,
+                  disabled: false,
                 },
                 {
                   key: 'transferencia' as const,
                   label: 'Transferencia',
-                  desc: 'Transfiere antes de la entrega',
+                  desc: 'Trabajando en ello',
                   icon: CreditCard,
+                  disabled: true,
+                  badge: 'Próximamente',
                 },
               ].map((method) => {
                 const isSelected = solicitudEnvio.metodoPago === method.key;
@@ -2115,8 +2118,14 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 return (
                   <motion.button
                     key={method.key}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setSolicitudEnvio({ metodoPago: method.key })}
+                    type="button"
+                    disabled={method.disabled}
+                    whileTap={method.disabled ? undefined : { scale: 0.97 }}
+                    onClick={() => {
+                      if (!method.disabled) {
+                        setSolicitudEnvio({ metodoPago: method.key });
+                      }
+                    }}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
@@ -2126,11 +2135,32 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                       borderRadius: 14,
                       border: `2px solid ${isSelected ? 'var(--primario)' : 'var(--border)'}`,
                       background: isSelected ? 'var(--primario-soft)' : 'var(--surface)',
-                      cursor: 'pointer',
+                      cursor: method.disabled ? 'not-allowed' : 'pointer',
+                      opacity: method.disabled ? 0.65 : 1,
                       transition: 'all 0.2s ease',
                       textAlign: 'center',
+                      position: 'relative',
                     }}
                   >
+                    {method.badge && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: 6,
+                          background: 'rgba(255, 149, 0, 0.15)',
+                          color: '#FF9500',
+                          border: '1px solid rgba(255, 149, 0, 0.35)',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {method.badge}
+                      </span>
+                    )}
                     <Icon
                       size={28}
                       style={{

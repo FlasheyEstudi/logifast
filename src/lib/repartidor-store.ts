@@ -36,6 +36,9 @@ function dispararFeedback(
   }
 }
 
+let syncInFlight: Promise<void> | null = null;
+let lastPosApiSendTime = 0;
+
 /* ═══════════════════════════════════════════════════════
    TYPES
    ═══════════════════════════════════════════════════════ */
@@ -922,7 +925,6 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     const orden = get().ordenActiva;
     set({
       estado: 'RECOGIDO',
-      kmRecorridos: 0,
       ordenActiva: orden ? { ...orden } : null,
     });
     if (orden) {
@@ -951,6 +953,11 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     const comision = Math.round(orden.monto * 0.15);
     const nuevoSaldo = Math.max(0, get().perfil.saldo - comision);
     
+    const kmTrip = get().kmRecorridos;
+    const estimatedKm = (orden.kmEstimados && orden.kmEstimados > 0) ? orden.kmEstimados : 1.5;
+    const finalKm = Math.round((kmTrip >= 0.3 ? kmTrip : estimatedKm) * 10) / 10;
+    const finalMinutos = Math.max(1, Math.round(get().tiempoTranscurrido / 60));
+
     const nuevoServicio: ServicioHistorial = {
       id: `svc-${Date.now()}`,
       ordenId: orden.id,
@@ -960,9 +967,9 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       origen: orden.origen,
       destino: orden.destino,
       hora: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' }),
-      kmRecorridos: Math.round(get().kmRecorridos * 10) / 10,
+      kmRecorridos: finalKm,
       ganancia: orden.ganancia,
-      tiempoTotal: Math.round(get().tiempoTranscurrido / 60),
+      tiempoTotal: finalMinutos,
       estado: 'entregado',
     };
     const restantes = (get().ordenesActivas || []).filter((o) => o.id !== orden.id);
@@ -976,15 +983,15 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       serviciosHoy: [nuevoServicio, ...get().serviciosHoy],
       statsHoy: {
         entregas: get().statsHoy.entregas + 1,
-        km: Math.round((get().statsHoy.km + get().kmRecorridos) * 10) / 10,
+        km: Math.round((get().statsHoy.km + finalKm) * 10) / 10,
         ganancias: get().statsHoy.ganancias + orden.ganancia,
-        tiempoActivo: get().statsHoy.tiempoActivo + Math.round(get().tiempoTranscurrido / 60),
+        tiempoActivo: get().statsHoy.tiempoActivo + finalMinutos,
       },
       perfil: {
         ...get().perfil,
         saldo: nuevoSaldo
       },
-      moto: { ...get().moto, estado: restantes.length > 0 ? 'EN_SERVICIO' : 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + get().kmRecorridos },
+      moto: { ...get().moto, estado: restantes.length > 0 ? 'EN_SERVICIO' : 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + finalKm },
       kmRecorridos: 0,
       tiempoTranscurrido: 0,
       eta: 0,
@@ -993,6 +1000,11 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
     fetch(`/api/repartidor/ordenes/${orden.id}/entregar`, {
       method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kmRecorridos: finalKm,
+        tiempoTotal: finalMinutos,
+      }),
     }).catch((err) => console.error('[confirmarEntrega API error]', err));
   },
 
@@ -1057,30 +1069,52 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
   },
 
   actualizarPosicion: (lat, lng) => {
-    const prev = { lat: get().lat, lng: get().lng };
-    const distancia = calcularDistancia(prev.lat, prev.lng, lat, lng);
-
-    // Solo sumar km si estamos en estado RECOGIDO (en camino a entregar)
-    let nuevosKm = get().kmRecorridos;
-    if (get().estado === 'RECOGIDO') {
-      nuevosKm += distancia;
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) {
+      return;
     }
 
-    // Recalcular ETA
-    const orden = get().ordenActiva;
-    let nuevaEta = get().eta;
+    const state = get();
+    const prev = { lat: state.lat, lng: state.lng };
+
+    // Verificar si es el primer fix real del GPS (evitar salto artificial desde coords default de Managua)
+    const isFirstFix = Math.abs(prev.lat - 12.1364) < 0.0005 && Math.abs(prev.lng - (-86.2581)) < 0.0005;
+
+    let deltaKm = 0;
+    if (!isFirstFix) {
+      deltaKm = calcularDistancia(prev.lat, prev.lng, lat, lng);
+    }
+
+    // Filtro contra ruido GPS en reposo (< 6 metros / 0.006 km)
+    // y filtro contra teletransportación / glitch (< 1.5 km de un solo salto)
+    const isMovementSignificant = deltaKm >= 0.006 && deltaKm <= 1.5;
+
+    // Acumular distancia durante TODOS los estados de viaje activo (recogida y entrega)
+    const ACTIVE_TRIP_STATES = ['ORDEN_ASIGNADA', 'EN_CAMINO_RECOGER', 'EN_PUNTO_RECOGIDA', 'RECOGIDO', 'EN_PUNTO_ENTREGA'] as const;
+    const isInActiveTrip = (ACTIVE_TRIP_STATES as readonly string[]).includes(state.estado);
+
+    let nuevosKm = state.kmRecorridos;
+    if (isMovementSignificant && isInActiveTrip) {
+      nuevosKm += deltaKm;
+    }
+
+    // Recalcular ETA dinámico
+    const orden = state.ordenActiva;
+    let nuevaEta = state.eta;
     if (orden) {
-      if (get().estado === 'EN_CAMINO_RECOGER') {
+      if (state.estado === 'EN_CAMINO_RECOGER' || state.estado === 'ORDEN_ASIGNADA') {
         const kmRestantes = calcularDistancia(lat, lng, orden.origenLat, orden.origenLng);
         nuevaEta = calcularETA(kmRestantes);
-      } else if (get().estado === 'RECOGIDO') {
+      } else if (state.estado === 'RECOGIDO' || state.estado === 'EN_PUNTO_ENTREGA') {
         const kmRestantes = calcularDistancia(lat, lng, orden.destinoLat, orden.destinoLng);
         nuevaEta = calcularETA(kmRestantes);
       }
     }
 
-    // Calcular heading
-    const heading = Math.atan2(lng - prev.lng, lat - prev.lat) * (180 / Math.PI);
+    // Calcular heading / rumbo
+    let heading = state.heading;
+    if (isMovementSignificant) {
+      heading = (Math.atan2(lng - prev.lng, lat - prev.lat) * (180 / Math.PI) + 360) % 360;
+    }
 
     set({
       lat,
@@ -1090,11 +1124,16 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       eta: nuevaEta,
     });
 
-    fetch('/api/repartidor/posicion', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lat, lng, heading, ordenId: orden?.id, estado: get().estado }),
-    }).catch((err) => console.error('[actualizarPosicion API error]', err));
+    // Throttled API fallback (máximo 1 vez cada 4 segundos para evitar saturación de red y consumo de batería)
+    const now = Date.now();
+    if (now - lastPosApiSendTime >= 4000) {
+      lastPosApiSendTime = now;
+      fetch('/api/repartidor/posicion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng, heading, ordenId: orden?.id, estado: state.estado }),
+      }).catch(() => {});
+    }
   },
 
   simularMovimiento: () => {
@@ -1156,9 +1195,24 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
   },
 
   obtenerStats: (periodo) => {
-    if (periodo === 'hoy') return get().statsHoy;
-    if (periodo === 'semana') return get().statsSemana;
-    return get().statsMes;
+    const state = get();
+    const activeKm = state.ordenActiva ? (state.kmRecorridos || 0) : 0;
+    if (periodo === 'hoy') {
+      return {
+        ...state.statsHoy,
+        km: Math.round((state.statsHoy.km + activeKm) * 10) / 10,
+      };
+    }
+    if (periodo === 'semana') {
+      return {
+        ...state.statsSemana,
+        km: Math.round((state.statsSemana.km + activeKm) * 10) / 10,
+      };
+    }
+    return {
+      ...state.statsMes,
+      km: Math.round((state.statsMes.km + activeKm) * 10) / 10,
+    };
   },
 
   verificarProductos: (productoId) => {
@@ -1181,143 +1235,156 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
      ═══════════════════════════════════════════════════════ */
 
   syncFromBackend: async () => {
-    try {
-      const currentState = get();
-      const isManualDisconnected = !currentState.conectado && (currentState.ordenesActivas || []).length === 0;
+    if (syncInFlight) {
+      return syncInFlight;
+    }
 
-      const [perfilRes, motoRes, conexionRes, ordenesRes, statsHoyRes, statsSemanaRes, statsMesRes, notifsRes, calsRes] = await Promise.all([
-        fetch('/api/repartidor/perfil'),
-        fetch('/api/repartidor/moto'),
-        fetch('/api/repartidor/conexion'),
-        fetch('/api/repartidor/ordenes?estado=activa'),
-        fetch('/api/repartidor/stats?periodo=hoy'),
-        fetch('/api/repartidor/stats?periodo=semana'),
-        fetch('/api/repartidor/stats?periodo=mes'),
-        fetch('/api/repartidor/notificaciones'),
-        fetch('/api/repartidor/calificaciones'),
-      ]);
+    syncInFlight = (async () => {
+      try {
+        const currentState = get();
+        const isManualDisconnected = !currentState.conectado && (currentState.ordenesActivas || []).length === 0;
 
-      if (perfilRes.status === 401) {
-        // Sesión no autenticada como repartidor
-        return;
-      }
+        const [perfilRes, motoRes, conexionRes, ordenesRes, statsHoyRes, statsSemanaRes, statsMesRes, notifsRes, calsRes] = await Promise.all([
+          fetch('/api/repartidor/perfil'),
+          fetch('/api/repartidor/moto'),
+          fetch('/api/repartidor/conexion'),
+          fetch('/api/repartidor/ordenes?estado=activa'),
+          fetch('/api/repartidor/stats?periodo=hoy'),
+          fetch('/api/repartidor/stats?periodo=semana'),
+          fetch('/api/repartidor/stats?periodo=mes'),
+          fetch('/api/repartidor/notificaciones'),
+          fetch('/api/repartidor/calificaciones'),
+        ]);
 
-      if (perfilRes.ok) {
-        const perfil = await perfilRes.json();
-        if (perfil && perfil.id) {
-          set({ perfil });
+        if (perfilRes.status === 401) {
+          // Sesión no autenticada como repartidor
+          return;
         }
-      }
-      if (motoRes.ok) {
-        const moto = await motoRes.json();
-        if (moto && moto.id) set({ moto });
-      }
 
-      if (ordenesRes.ok) {
-        const data = await ordenesRes.json();
-        const serverOrdenes: OrdenActiva[] = data?.ordenes || (data?.orden ? [data.orden] : []);
-        const serverOfertas: OrdenActiva[] = data?.ofertas || [];
+        const updates: Partial<RepartidorStoreState> = {};
 
-        if (serverOrdenes.length > 0) {
-          const currentActive = currentState.ordenActiva;
-          const matchingActive = currentActive ? serverOrdenes.find((o) => o.id === currentActive.id) : null;
-
-          set({
-            ordenesActivas: serverOrdenes,
-            ordenActiva: matchingActive || serverOrdenes[0],
-            ofertasDisponibles: serverOfertas,
-            enServicio: true,
-            conectado: true,
-          });
-        } else {
-          set({
-            ordenesActivas: [],
-            ordenActiva: null,
-            ofertasDisponibles: serverOfertas,
-          });
+        if (perfilRes.ok) {
+          const perfil = await perfilRes.json();
+          if (perfil && perfil.id) {
+            updates.perfil = perfil;
+          }
         }
-      }
+        if (motoRes.ok) {
+          const moto = await motoRes.json();
+          if (moto && moto.id) updates.moto = moto;
+        }
 
-      if (conexionRes.ok) {
-        const c = await conexionRes.json();
-        if (c) {
-          const freshState = get();
-          const hasActiveOrder = (freshState.ordenesActivas || []).length > 0 || !!freshState.ordenActiva;
+        if (ordenesRes.ok) {
+          const data = await ordenesRes.json();
+          const serverOrdenes: OrdenActiva[] = data?.ordenes || (data?.orden ? [data.orden] : []);
+          const serverOfertas: OrdenActiva[] = data?.ofertas || [];
 
-          if (isManualDisconnected && !hasActiveOrder) {
-            set({
-              conectado: false,
-              enServicio: false,
-              pausado: false,
-              pausaHasta: null,
-              estado: 'DESCONECTADO',
-            });
+          if (serverOrdenes.length > 0) {
+            const currentActive = currentState.ordenActiva;
+            const matchingActive = currentActive ? serverOrdenes.find((o) => o.id === currentActive.id) : null;
+
+            updates.ordenesActivas = serverOrdenes;
+            updates.ordenActiva = matchingActive || serverOrdenes[0];
+            updates.ofertasDisponibles = serverOfertas;
+            updates.enServicio = true;
+            updates.conectado = true;
           } else {
-            const ACTIVE_TRIP_STATES = ['ORDEN_ASIGNADA', 'EN_CAMINO_RECOGER', 'EN_PUNTO_RECOGIDA', 'RECOGIDO', 'EN_CAMINO_ENTREGAR', 'EN_PUNTO_ENTREGA'];
-            const isCurrentlyInTrip = ACTIVE_TRIP_STATES.includes(freshState.estado);
+            updates.ordenesActivas = [];
+            updates.ordenActiva = null;
+            updates.ofertasDisponibles = serverOfertas;
+          }
+        }
 
-            set({
-              conectado: isManualDisconnected ? false : (c.conectado || hasActiveOrder || c.enServicio),
-              enServicio: isManualDisconnected ? false : (c.enServicio || hasActiveOrder),
-              pausado: c.pausado ?? false,
-              pausaHasta: c.pausaHasta ? new Date(c.pausaHasta).getTime() : null,
-              estado: isManualDisconnected
+        if (conexionRes.ok) {
+          const c = await conexionRes.json();
+          if (c) {
+            const freshState = get();
+            const hasActiveOrder = (freshState.ordenesActivas || []).length > 0 || !!freshState.ordenActiva;
+
+            if (isManualDisconnected && !hasActiveOrder) {
+              updates.conectado = false;
+              updates.enServicio = false;
+              updates.pausado = false;
+              updates.pausaHasta = null;
+              updates.estado = 'DESCONECTADO';
+            } else {
+              const ACTIVE_TRIP_STATES = ['ORDEN_ASIGNADA', 'EN_CAMINO_RECOGER', 'EN_PUNTO_RECOGIDA', 'RECOGIDO', 'EN_CAMINO_ENTREGAR', 'EN_PUNTO_ENTREGA'];
+              const isCurrentlyInTrip = ACTIVE_TRIP_STATES.includes(freshState.estado);
+
+              updates.conectado = isManualDisconnected ? false : (c.conectado || hasActiveOrder || c.enServicio);
+              updates.enServicio = isManualDisconnected ? false : (c.enServicio || hasActiveOrder);
+              updates.pausado = c.pausado ?? false;
+              updates.pausaHasta = c.pausaHasta ? new Date(c.pausaHasta).getTime() : null;
+              updates.estado = isManualDisconnected
                 ? 'DESCONECTADO'
                 : (isCurrentlyInTrip
                     ? freshState.estado
-                    : (hasActiveOrder ? 'EN_CAMINO_RECOGER' : (c.estado && c.estado !== 'DESCONECTADO' ? c.estado : 'EN_LINEA'))),
-              rechazosHora: c.rechazosHora ?? 0,
-            });
+                    : (hasActiveOrder ? 'EN_CAMINO_RECOGER' : (c.estado && c.estado !== 'DESCONECTADO' ? c.estado : 'EN_LINEA')));
+              updates.rechazosHora = c.rechazosHora ?? 0;
+            }
           }
         }
-      }
-      if (statsHoyRes.ok) {
-        const data = await statsHoyRes.json();
-        if (data?.stats) {
-          set({ statsHoy: data.stats });
-        }
-      }
-      if (statsSemanaRes.ok) {
-        const data = await statsSemanaRes.json();
-        if (data?.stats) {
-          set({ statsSemana: data.stats });
-        }
-      }
-      if (statsMesRes.ok) {
-        const data = await statsMesRes.json();
-        if (data?.stats) {
-          set({ statsMes: data.stats });
-        }
-      }
-      if (notifsRes.ok) {
-        const data = await notifsRes.json();
-        if (data?.notificaciones) {
-          set({
-            notificaciones: data.notificaciones,
-            notificacionesNoLeidas: data.noLeidas ?? 0,
-          });
-        }
-      }
-      if (calsRes.ok) {
-        const data = await calsRes.json();
-        if (data?.calificaciones) {
-          set({ calificaciones: data.calificaciones });
-        }
-      }
 
-      // Cargar historial del día
-      try {
-        const histRes = await fetch('/api/repartidor/ordenes?estado=historial');
-        if (histRes.ok) {
-          const hist = await histRes.json();
-          if (hist?.servicios) {
-            set({ serviciosHoy: hist.servicios });
+        if (statsHoyRes.ok) {
+          const data = await statsHoyRes.json();
+          if (data?.stats && typeof data.stats.ganancias === 'number') {
+            const serverKm = data.stats.km || 0;
+            const currentLocalKm = currentState.statsHoy.km || 0;
+            updates.statsHoy = {
+              entregas: data.stats.entregas,
+              ganancias: data.stats.ganancias,
+              tiempoActivo: data.stats.tiempoActivo,
+              km: Math.max(serverKm, currentLocalKm),
+            };
           }
         }
-      } catch {}
-    } catch (err) {
-      console.error('[syncFromBackend]', err);
-    }
+        if (statsSemanaRes.ok) {
+          const data = await statsSemanaRes.json();
+          if (data?.stats && typeof data.stats.ganancias === 'number') {
+            updates.statsSemana = data.stats;
+          }
+        }
+        if (statsMesRes.ok) {
+          const data = await statsMesRes.json();
+          if (data?.stats && typeof data.stats.ganancias === 'number') {
+            updates.statsMes = data.stats;
+          }
+        }
+        if (notifsRes.ok) {
+          const data = await notifsRes.json();
+          if (data?.notificaciones) {
+            updates.notificaciones = data.notificaciones;
+            updates.notificacionesNoLeidas = data.noLeidas ?? 0;
+          }
+        }
+        if (calsRes.ok) {
+          const data = await calsRes.json();
+          if (data?.calificaciones) {
+            updates.calificaciones = data.calificaciones;
+          }
+        }
+
+        // Cargar historial del día
+        try {
+          const histRes = await fetch('/api/repartidor/ordenes?estado=historial');
+          if (histRes.ok) {
+            const hist = await histRes.json();
+            if (hist?.servicios) {
+              updates.serviciosHoy = hist.servicios;
+            }
+          }
+        } catch {}
+
+        // Aplicar todas las actualizaciones en una sola llamada atómica
+        set(updates);
+      } catch (err) {
+        console.error('[syncFromBackend]', err);
+      } finally {
+        syncInFlight = null;
+      }
+    })();
+
+    return syncInFlight;
   },
 
   conectarAsync: async () => {
@@ -1434,7 +1501,6 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
       if (!res.ok) return false;
       set({
         estado: 'RECOGIDO',
-        kmRecorridos: 0,
       });
       return true;
     } catch (err) {
@@ -1447,12 +1513,17 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     const orden = get().ordenActiva;
     if (!orden) return false;
     try {
+      const kmTrip = get().kmRecorridos;
+      const estimatedKm = (orden.kmEstimados && orden.kmEstimados > 0) ? orden.kmEstimados : 1.5;
+      const finalKm = Math.round((kmTrip >= 0.3 ? kmTrip : estimatedKm) * 10) / 10;
+      const finalMinutos = Math.max(1, Math.round(get().tiempoTranscurrido / 60));
+
       const res = await fetch(`/api/repartidor/ordenes/${orden.id}/entregar`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          kmRecorridos: Math.round(get().kmRecorridos * 10) / 10,
-          tiempoTotal: Math.round(get().tiempoTranscurrido / 60),
+          kmRecorridos: finalKm,
+          tiempoTotal: finalMinutos,
         }),
       });
       const data = await res.json();
@@ -1467,9 +1538,9 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         origen: orden.origen,
         destino: orden.destino,
         hora: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' }),
-        kmRecorridos: Math.round(get().kmRecorridos * 10) / 10,
+        kmRecorridos: finalKm,
         ganancia: orden.ganancia,
-        tiempoTotal: Math.round(get().tiempoTranscurrido / 60),
+        tiempoTotal: finalMinutos,
         estado: 'entregado',
       };
       set({
@@ -1479,15 +1550,15 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         serviciosHoy: [nuevoServicio, ...get().serviciosHoy],
         statsHoy: {
           entregas: get().statsHoy.entregas + 1,
-          km: Math.round((get().statsHoy.km + get().kmRecorridos) * 10) / 10,
+          km: Math.round((get().statsHoy.km + finalKm) * 10) / 10,
           ganancias: get().statsHoy.ganancias + orden.ganancia,
-          tiempoActivo: get().statsHoy.tiempoActivo + Math.round(get().tiempoTranscurrido / 60),
+          tiempoActivo: get().statsHoy.tiempoActivo + finalMinutos,
         },
         perfil: {
           ...get().perfil,
           saldo: Math.max(0, get().perfil.saldo - (data.comision ?? 0)),
         },
-        moto: { ...get().moto, estado: 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + get().kmRecorridos },
+        moto: { ...get().moto, estado: 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + finalKm },
         kmRecorridos: 0,
         tiempoTranscurrido: 0,
         eta: 0,
@@ -1648,10 +1719,13 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     }),
     {
       name: 'logifast-repartidor-store',
-      // Solo persistir datos del perfil del repartidor. NO persistir órdenes
-      // en vivo, posición GPS, ni estado de conexión (siempre arrancar offline).
+      // Persistir perfil y métricas para que al recargar la página nunca parpadeen ni vuelvan a 0
       partialize: (state) => ({
         perfil: state.perfil,
+        statsHoy: state.statsHoy,
+        statsSemana: state.statsSemana,
+        statsMes: state.statsMes,
+        kmRecorridos: state.kmRecorridos,
         conectado: false,
         enServicio: false,
         pausado: false,
