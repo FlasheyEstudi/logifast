@@ -1293,11 +1293,12 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
             if (newlyAssigned) {
               const ord = matchingActive || serverOrdenes[0];
+              const ordAny = ord as any;
               dispararNotificacionNativa({
                 titulo: '¡Orden asignada a tu ruta!',
                 cuerpo: `Recogida: ${ord.origen} → Destino: ${ord.destino}`,
                 subtexto: 'LOGIFAST Repartidor • Alerta de Despacho',
-                detalleLargo: `Recogida: ${ord.origen}\nDestino: ${ord.destino}\nCliente: ${ord.clienteNombre || 'Cliente'}\nTarifa: C$ ${ord.montoTotal || '0.00'}`,
+                detalleLargo: `Recogida: ${ord.origen}\nDestino: ${ord.destino}\nCliente: ${ordAny.clienteNombre || ord.cliente || 'Cliente'}\nTarifa: C$ ${ordAny.montoTotal || ord.monto || '0.00'}`,
                 canalId: 'logifast_urgente',
                 colorIcono: '#00C853',
                 iconoPequeno: 'ic_stat_logifast',
@@ -1312,11 +1313,12 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
             const freshOffers = serverOfertas.filter((o) => !prevIds.has(o.id));
             if (freshOffers.length > 0) {
               const topOffer = freshOffers[0];
+              const topAny = topOffer as any;
               dispararNotificacionNativa({
                 titulo: '¡Nueva orden disponible para entrega!',
-                cuerpo: `${topOffer.clienteNombre || 'Cliente'}: ${topOffer.origen} → ${topOffer.destino} (C$ ${topOffer.montoTotal || ''})`,
+                cuerpo: `${topAny.clienteNombre || topOffer.cliente || 'Cliente'}: ${topOffer.origen} → ${topOffer.destino} (C$ ${topAny.montoTotal || topOffer.monto || ''})`,
                 subtexto: 'LOGIFAST Repartidor • Oportunidad de Ganancia',
-                detalleLargo: `Cliente: ${topOffer.clienteNombre || 'Cliente'}\nRecogida: ${topOffer.origen}\nDestino: ${topOffer.destino}\nGanancia estimada: C$ ${topOffer.montoTotal || ''}`,
+                detalleLargo: `Cliente: ${topAny.clienteNombre || topOffer.cliente || 'Cliente'}\nRecogida: ${topOffer.origen}\nDestino: ${topOffer.destino}\nGanancia estimada: C$ ${topAny.montoTotal || topOffer.monto || ''}`,
                 canalId: 'logifast_urgente',
                 colorIcono: '#00C853',
                 iconoPequeno: 'ic_stat_logifast',

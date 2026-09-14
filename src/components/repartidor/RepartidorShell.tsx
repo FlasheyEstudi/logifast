@@ -11,6 +11,8 @@ import { useConfigStore } from '@/store/configStore';
 import { reproducirSiActivo, reproducirSonido } from '@/services/audio';
 import { iniciarRastreoFondo, detenerRastreoFondo } from '@/services/background-tracking';
 import { inicializarNotificacionesNativas, solicitarPermisoNotificacionesManual, dispararNotificacionNativa } from '@/services/native-notifications';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 import { Bell, X } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════

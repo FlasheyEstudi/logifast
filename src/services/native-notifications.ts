@@ -358,7 +358,7 @@ export async function dispararNotificacionNativa({
 
   // 4. Vía Web Notifications API / Service Worker (PWA / Chrome Móvil / Safari)
   if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    const webOptions: NotificationOptions = {
+    const webOptions: NotificationOptions & { image?: string } = {
       body: cuerpo,
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',

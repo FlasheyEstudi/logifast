@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback, createContext, useContext } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, createContext, useContext } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -20,6 +20,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   Wallet,
+  X,
 } from '@/components/icons';
 import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
@@ -27,6 +28,7 @@ import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { LogoSpinner } from '@/components/ui/loaders';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
+import { aplicarTema } from '@/store/configStore';
 import {
   inicializarNotificacionesNativas,
   solicitarPermisoNotificacionesManual,
@@ -278,29 +280,33 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   /* ─── Detección de Orden Activa para Barra de Progreso en Tiempo Real ─── */
   const activeOrder = useMemo(() => {
     const uncompletedEnvio = (orders || []).find(
-      (o) => o.status !== 'entregado' && o.status !== 'cancelado'
+      (o: any) => o.estado !== 'entregado' && (o.estado as string) !== 'cancelado' && o.status !== 'entregado' && o.status !== 'cancelado'
     );
     if (uncompletedEnvio) {
+      const ordAny = uncompletedEnvio as any;
+      const repNombre = typeof ordAny.repartidor === 'object' ? ordAny.repartidor?.nombre : (typeof ordAny.repartidor === 'string' ? ordAny.repartidor : undefined);
       return {
         id: uncompletedEnvio.id,
-        estado: uncompletedEnvio.status,
+        estado: ordAny.estado || ordAny.status || 'pendiente',
         origen: uncompletedEnvio.origen,
         destino: uncompletedEnvio.destino,
-        repartidorNombre: uncompletedEnvio.repartidor?.nombre,
+        repartidorNombre: repNombre,
         tiempoEstimadoMin: 12,
       };
     }
 
     const uncompletedCompra = (ordenesCompra || []).find(
-      (o) => o.estado !== 'entregado' && o.estado !== 'cancelado'
+      (o: any) => o.estado !== 'entregado' && (o.estado as string) !== 'cancelado'
     );
     if (uncompletedCompra) {
+      const c = uncompletedCompra as any;
+      const repNombre = typeof c.repartidor === 'object' ? c.repartidor?.nombre : (typeof c.repartidor === 'string' ? c.repartidor : undefined);
       return {
-        id: uncompletedCompra.id,
-        estado: uncompletedCompra.estado,
-        origen: uncompletedCompra.tienda?.nombre || 'Comercio',
-        destino: uncompletedCompra.direccionEntrega || 'Tu dirección',
-        repartidorNombre: uncompletedCompra.repartidor?.nombre,
+        id: c.id,
+        estado: c.estado,
+        origen: c.tienda?.nombre || c.tiendaNombre || 'Comercio',
+        destino: c.direccionEntrega || 'Tu dirección',
+        repartidorNombre: repNombre,
         tiempoEstimadoMin: 15,
       };
     }

@@ -14,6 +14,7 @@ import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
 import { iniciarRastreoFondo, forzarEnvioPosicionGps } from '@/services/background-tracking';
 import { obtenerUbicacionActual } from '@/lib/native-geolocation';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 import { RepartidorRadarLoader } from '@/components/ui/loaders';
 
