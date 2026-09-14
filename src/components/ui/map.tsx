@@ -1319,6 +1319,121 @@ function MapPopup({
   );
 }
 
+type RouteAnchor = "start" | "end" | "progress" | number;
+
+type RouteMeasure = {
+  /** Distance from the first coordinate to each vertex. */
+  cumulative: number[];
+  /** Length of the whole route. 0 for routes with fewer than two vertices. */
+  total: number;
+};
+
+const EMPTY_ROUTE_MEASURE: RouteMeasure = { cumulative: [], total: 0 };
+const EMPTY_COORDINATES: [number, number][] = [];
+
+function resolveBeforeId(map: MapLibreGL.Map, beforeId: string | undefined) {
+  return beforeId && map.getLayer(beforeId) ? beforeId : undefined;
+}
+
+function clampFraction(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(1, Math.max(0, value));
+}
+
+function measureRoute(coordinates: [number, number][]): RouteMeasure {
+  if (coordinates.length < 2) return EMPTY_ROUTE_MEASURE;
+
+  const cumulative = [0];
+  let total = 0;
+
+  for (let i = 1; i < coordinates.length; i += 1) {
+    const [lng1, lat1] = coordinates[i - 1];
+    const [lng2, lat2] = coordinates[i];
+    const midLat = ((lat1 + lat2) / 2) * (Math.PI / 180);
+    total += Math.hypot((lng2 - lng1) * Math.cos(midLat), lat2 - lat1);
+    cumulative.push(total);
+  }
+
+  return { cumulative, total };
+}
+
+function findSegmentIndex(cumulative: number[], distance: number) {
+  let low = 0;
+  let high = cumulative.length - 1;
+
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (cumulative[mid] < distance) low = mid + 1;
+    else high = mid;
+  }
+
+  return Math.min(low === 0 ? 0 : low - 1, cumulative.length - 2);
+}
+
+function pointAtFraction(
+  coordinates: [number, number][],
+  measure: RouteMeasure,
+  fraction: number,
+): [number, number] | null {
+  if (coordinates.length === 0) return null;
+  if (coordinates.length === 1 || measure.total === 0) return coordinates[0];
+
+  const target = measure.total * clampFraction(fraction);
+  const index = findSegmentIndex(measure.cumulative, target);
+  const [lng1, lat1] = coordinates[index];
+  const [lng2, lat2] = coordinates[index + 1];
+  const segment = measure.cumulative[index + 1] - measure.cumulative[index];
+  const ratio =
+    segment === 0 ? 0 : (target - measure.cumulative[index]) / segment;
+
+  return [lng1 + (lng2 - lng1) * ratio, lat1 + (lat2 - lat1) * ratio];
+}
+
+function sliceAtFraction(
+  coordinates: [number, number][],
+  measure: RouteMeasure,
+  fraction: number,
+): [number, number][] {
+  if (coordinates.length < 2) return [];
+
+  const t = clampFraction(fraction);
+  if (t <= 0 || measure.total === 0) return [];
+  if (t >= 1) return coordinates;
+
+  const target = measure.total * t;
+  const index = findSegmentIndex(measure.cumulative, target);
+  const point = pointAtFraction(coordinates, measure, t);
+  const traveled = coordinates.slice(0, index + 1);
+  if (point) traveled.push(point);
+
+  return traveled;
+}
+
+type RouteContextValue = {
+  id: string;
+  ready: boolean;
+  coordinates: [number, number][];
+  traveled: [number, number][];
+  progress: number | undefined;
+  color: string;
+  width: number;
+  opacity: number;
+  dashArray: [number, number] | undefined;
+  beforeId: string | undefined;
+  pointAt: (at: RouteAnchor) => [number, number] | null;
+  registerLayer: (layerId: string) => () => void;
+};
+
+const RouteContext = createContext<RouteContextValue | null>(null);
+
+function useMapRoute() {
+  const context = useContext(RouteContext);
+  if (!context) {
+    throw new Error("Route components must be used within MapRoute");
+  }
+  return context;
+}
+
 type MapRouteProps = {
   /** Optional unique identifier for the route layer */
   id?: string;
@@ -1332,35 +1447,100 @@ type MapRouteProps = {
   opacity?: number;
   /** Dash pattern [dash length, gap length] for dashed lines */
   dashArray?: [number, number];
+  /** Fraction of the route already covered, from 0 to 1 */
+  progress?: number;
+  /** Marks this route as active/selected */
+  active?: boolean;
+  /** Line color while active */
+  activeColor?: string;
+  /** Line width while active */
+  activeWidth?: number;
+  /** Line opacity while active */
+  activeOpacity?: number;
+  /** Dash pattern while active */
+  activeDashArray?: [number, number];
+  /** Optional MapLibre layer id to insert the route layers before */
+  beforeId?: string;
   /** Callback when the route line is clicked */
   onClick?: () => void;
   /** Callback when mouse enters the route line */
   onMouseEnter?: () => void;
   /** Callback when mouse leaves the route line */
   onMouseLeave?: () => void;
-  /** Whether the route is interactive - shows pointer cursor on hover (default: true) */
+  /** Whether the route is interactive (default: true) */
   interactive?: boolean;
+  /** Route subcomponents (RouteProgress, RouteMarker) */
+  children?: ReactNode;
 };
 
 function MapRoute({
   id: propId,
-  coordinates,
+  coordinates: coordinatesProp,
   color = "#4285F4",
   width = 3,
   opacity = 0.8,
   dashArray,
+  progress,
+  active = false,
+  activeColor,
+  activeWidth,
+  activeOpacity,
+  activeDashArray,
+  beforeId,
   onClick,
   onMouseEnter,
   onMouseLeave,
   interactive = true,
+  children,
 }: MapRouteProps) {
   const { map, isLoaded } = useMap();
   const autoId = useId();
   const id = propId ?? autoId;
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
+  const [ready, setReady] = useState(false);
 
-  // Add source and layer on mount
+  const coordinates =
+    coordinatesProp && coordinatesProp.length > 0 ? coordinatesProp : EMPTY_COORDINATES;
+
+  const resolvedColor = active ? (activeColor ?? color) : color;
+  const resolvedWidth = active ? (activeWidth ?? width) : width;
+  const resolvedOpacity = active ? (activeOpacity ?? opacity) : opacity;
+  const resolvedDashArray = active ? (activeDashArray ?? dashArray) : dashArray;
+
+  const measure = useMemo(() => measureRoute(coordinates), [coordinates]);
+  const traveled = useMemo(
+    () =>
+      progress === undefined
+        ? []
+        : sliceAtFraction(coordinates, measure, progress),
+    [coordinates, measure, progress],
+  );
+
+  const pointAt = useCallback(
+    (at: RouteAnchor) => {
+      if (coordinates.length === 0) return null;
+      if (at === "start") return coordinates[0];
+      if (at === "end") return coordinates[coordinates.length - 1];
+      if (at === "progress") {
+        if (progress === undefined) return null;
+        return pointAtFraction(coordinates, measure, progress);
+      }
+      return pointAtFraction(coordinates, measure, at);
+    },
+    [coordinates, measure, progress],
+  );
+
+  const childLayersRef = useRef<string[]>([]);
+  const registerLayer = useCallback((childLayerId: string) => {
+    childLayersRef.current = [...childLayersRef.current, childLayerId];
+    return () => {
+      childLayersRef.current = childLayersRef.current.filter(
+        (entry) => entry !== childLayerId,
+      );
+    };
+  }, []);
+
   useEffect(() => {
     if (!isLoaded || !map) return;
 
@@ -1373,20 +1553,26 @@ function MapRoute({
       },
     });
 
-    map.addLayer({
-      id: layerId,
-      type: "line",
-      source: sourceId,
-      layout: { "line-join": "round", "line-cap": "round" },
-      paint: {
-        "line-color": color,
-        "line-width": width,
-        "line-opacity": opacity,
-        ...(dashArray && { "line-dasharray": dashArray }),
+    map.addLayer(
+      {
+        id: layerId,
+        type: "line",
+        source: sourceId,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": resolvedColor,
+          "line-width": resolvedWidth,
+          "line-opacity": resolvedOpacity,
+          ...(resolvedDashArray && { "line-dasharray": resolvedDashArray }),
+        },
       },
-    });
+      resolveBeforeId(map, beforeId),
+    );
+
+    setReady(true);
 
     return () => {
+      setReady(false);
       try {
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
@@ -1394,19 +1580,20 @@ function MapRoute({
         // ignore
       }
     };
-     
   }, [isLoaded, map]);
 
-  // When coordinates change, update the source data
   useEffect(() => {
-    if (!isLoaded || !map || coordinates.length < 2) return;
+    if (!isLoaded || !map) return;
 
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
     if (source) {
       source.setData({
         type: "Feature",
         properties: {},
-        geometry: { type: "LineString", coordinates },
+        geometry: {
+          type: "LineString",
+          coordinates: coordinates.length < 2 ? [] : coordinates,
+        },
       });
     }
   }, [isLoaded, map, coordinates, sourceId]);
@@ -1414,13 +1601,20 @@ function MapRoute({
   useEffect(() => {
     if (!isLoaded || !map || !map.getLayer(layerId)) return;
 
-    map.setPaintProperty(layerId, "line-color", color);
-    map.setPaintProperty(layerId, "line-width", width);
-    map.setPaintProperty(layerId, "line-opacity", opacity);
-    map.setPaintProperty(layerId, "line-dasharray", dashArray);
-  }, [isLoaded, map, layerId, color, width, opacity, dashArray]);
+    map.setPaintProperty(layerId, "line-color", resolvedColor);
+    map.setPaintProperty(layerId, "line-width", resolvedWidth);
+    map.setPaintProperty(layerId, "line-opacity", resolvedOpacity);
+    map.setPaintProperty(layerId, "line-dasharray", resolvedDashArray);
+  }, [
+    isLoaded,
+    map,
+    layerId,
+    resolvedColor,
+    resolvedWidth,
+    resolvedOpacity,
+    resolvedDashArray,
+  ]);
 
-  // Handle click and hover events
   useEffect(() => {
     if (!isLoaded || !map || !interactive) return;
 
@@ -1455,7 +1649,165 @@ function MapRoute({
     interactive,
   ]);
 
+  const contextValue = useMemo(
+    () => ({
+      id,
+      ready,
+      coordinates,
+      traveled,
+      progress,
+      color: resolvedColor,
+      width: resolvedWidth,
+      opacity: resolvedOpacity,
+      dashArray: resolvedDashArray,
+      beforeId,
+      pointAt,
+      registerLayer,
+    }),
+    [
+      id,
+      ready,
+      coordinates,
+      traveled,
+      progress,
+      resolvedColor,
+      resolvedWidth,
+      resolvedOpacity,
+      resolvedDashArray,
+      beforeId,
+      pointAt,
+      registerLayer,
+    ],
+  );
+
+  return (
+    <RouteContext.Provider value={contextValue}>
+      {children}
+    </RouteContext.Provider>
+  );
+}
+
+type RouteProgressProps = {
+  /** Line color for the traveled portion */
+  color?: string;
+  /** Line width in pixels */
+  width?: number;
+  /** Line opacity from 0 to 1 */
+  opacity?: number;
+  /** Dash pattern for dashed lines */
+  dashArray?: [number, number];
+};
+
+function RouteProgress({
+  color,
+  width,
+  opacity,
+  dashArray,
+}: RouteProgressProps) {
+  const { map, isLoaded } = useMap();
+  const route = useMapRoute();
+  const { ready, traveled, registerLayer, beforeId } = route;
+
+  const sourceId = `route-progress-source-${route.id}`;
+  const layerId = `route-progress-layer-${route.id}`;
+
+  const resolvedColor = color ?? route.color;
+  const resolvedWidth = width ?? route.width;
+  const resolvedOpacity = opacity ?? route.opacity;
+
+  useEffect(() => {
+    if (!ready || !map) return;
+
+    map.addSource(sourceId, {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: [] },
+      },
+    });
+
+    map.addLayer(
+      {
+        id: layerId,
+        type: "line",
+        source: sourceId,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": resolvedColor,
+          "line-width": resolvedWidth,
+          "line-opacity": resolvedOpacity,
+          ...(dashArray && { "line-dasharray": dashArray }),
+        },
+      },
+      resolveBeforeId(map, beforeId),
+    );
+
+    const unregister = registerLayer(layerId);
+
+    return () => {
+      unregister();
+      try {
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+      } catch {
+        // ignore
+      }
+    };
+  }, [ready, map]);
+
+  useEffect(() => {
+    if (!ready || !map) return;
+
+    const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
+    if (source) {
+      source.setData({
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "LineString",
+          coordinates: traveled.length < 2 ? [] : traveled,
+        },
+      });
+    }
+  }, [ready, map, traveled, sourceId]);
+
+  useEffect(() => {
+    if (!isLoaded || !map || !map.getLayer(layerId)) return;
+
+    map.setPaintProperty(layerId, "line-color", resolvedColor);
+    map.setPaintProperty(layerId, "line-width", resolvedWidth);
+    map.setPaintProperty(layerId, "line-opacity", resolvedOpacity);
+    map.setPaintProperty(layerId, "line-dasharray", dashArray);
+  }, [
+    isLoaded,
+    map,
+    layerId,
+    resolvedColor,
+    resolvedWidth,
+    resolvedOpacity,
+    dashArray,
+  ]);
+
   return null;
+}
+
+type RouteMarkerProps = {
+  /** Where to pin the marker: start, end, progress, or 0-1 fraction */
+  at: RouteAnchor;
+} & Omit<MapMarkerProps, "longitude" | "latitude">;
+
+function RouteMarker({ at, children, ...markerProps }: RouteMarkerProps) {
+  const { pointAt } = useMapRoute();
+  const position = pointAt(at);
+
+  if (!position) return null;
+
+  return (
+    <MapMarker longitude={position[0]} latitude={position[1]} {...markerProps}>
+      {children}
+    </MapMarker>
+  );
 }
 
 type MapGeoJSONData<
@@ -2417,9 +2769,21 @@ export {
   MapPopup,
   MapControls,
   MapRoute,
+  RouteProgress,
+  RouteMarker,
   MapArc,
   MapGeoJSON,
   MapClusterLayer,
 };
 
-export type { MapRef, MapViewport, MapArcDatum, MapArcEvent, MapGeoJSONEvent };
+export type {
+  MapRef,
+  MapViewport,
+  MapArcDatum,
+  MapArcEvent,
+  MapGeoJSONEvent,
+  MapRouteProps,
+  RouteProgressProps,
+  RouteMarkerProps,
+  RouteAnchor,
+};
