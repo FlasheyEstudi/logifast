@@ -90,37 +90,21 @@ export async function obtenerUbicacionActual(
         }
       }
 
-      // B. ETAPA 1: Lectura instantánea de la última posición conocida de Android (máximo 5 minutos)
-      try {
-        const cached = await geoPlugin.getCurrentPosition({
-          enableHighAccuracy: false,
-          timeout: 2000,
-          maximumAge: 300000, // 5 min
-        });
-        if (cached?.coords && (cached.coords.latitude !== 0 || cached.coords.longitude !== 0)) {
-          triggerHapticSuccess();
-          return {
-            ok: true,
-            lat: cached.coords.latitude,
-            lng: cached.coords.longitude,
-            accuracy: cached.coords.accuracy,
-            heading: cached.coords.heading,
-            speed: cached.coords.speed,
-            source: 'capacitor_cache',
-          };
-        }
-      } catch {
-        // Continuar con fijación fresca
-      }
-
-      // C. ETAPA 2: Fijación fresca de alta precisión (GPS por hardware satelital)
+      // B. ETAPA 1: Fijación fresca de alta precisión (GPS por hardware satelital directo)
       try {
         const freshHigh = await geoPlugin.getCurrentPosition({
           enableHighAccuracy: true,
           timeout: customOpts?.timeout ?? 9000,
-          maximumAge: customOpts?.maximumAge ?? 15000,
+          maximumAge: 0, // No aceptar posiciones obsoletas o desactualizadas de caché
         });
-        if (freshHigh?.coords && (freshHigh.coords.latitude !== 0 || freshHigh.coords.longitude !== 0)) {
+        if (
+          freshHigh?.coords &&
+          typeof freshHigh.coords.latitude === 'number' &&
+          typeof freshHigh.coords.longitude === 'number' &&
+          (freshHigh.coords.latitude !== 0 || freshHigh.coords.longitude !== 0) &&
+          Math.abs(freshHigh.coords.latitude) <= 90 &&
+          Math.abs(freshHigh.coords.longitude) <= 180
+        ) {
           triggerHapticSuccess();
           return {
             ok: true,
@@ -140,17 +124,24 @@ export async function obtenerUbicacionActual(
             error: 'El GPS de tu celular está apagado. Por favor activa la "Ubicación" en la barra de ajustes rápidos.',
           };
         }
-        // Fallback inmediato a Etapa 3 si estamos bajo techo o la señal satelital tardó
+        // Fallback a Etapa 2 si estamos bajo techo o la señal satelital tardó
       }
 
-      // D. ETAPA 3: Fallback a red celular / WiFi / antenas (Balanced Power / Coarse)
+      // C. ETAPA 2: Fallback rápido de red celular / WiFi / antenas solo si satélites fallaron
       try {
         const networkPos = await geoPlugin.getCurrentPosition({
           enableHighAccuracy: false,
-          timeout: 10000,
-          maximumAge: 600000, // 10 min
+          timeout: 6000,
+          maximumAge: 15000, // Máximo 15 segundos
         });
-        if (networkPos?.coords && (networkPos.coords.latitude !== 0 || networkPos.coords.longitude !== 0)) {
+        if (
+          networkPos?.coords &&
+          typeof networkPos.coords.latitude === 'number' &&
+          typeof networkPos.coords.longitude === 'number' &&
+          (networkPos.coords.latitude !== 0 || networkPos.coords.longitude !== 0) &&
+          Math.abs(networkPos.coords.latitude) <= 90 &&
+          Math.abs(networkPos.coords.longitude) <= 180
+        ) {
           triggerHapticSuccess();
           return {
             ok: true,

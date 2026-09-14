@@ -6,6 +6,7 @@ import {
   inicializarTema,
   aplicarTema,
 } from '@/store/configStore';
+import { initCapacitorAndroid } from '@/lib/capacitor-android';
 
 /**
  * ThemeProvider — wires the LOGIFAST configStore `tema` value into
@@ -26,6 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // 1. Apply persisted theme on first mount, register Service Worker, and bind ChunkLoadError recovery.
   useEffect(() => {
     inicializarTema();
+    initCapacitorAndroid().catch(() => null);
 
     const handleGlobalError = (event: ErrorEvent) => {
       const errorMsg = event.message || '';

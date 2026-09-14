@@ -222,8 +222,8 @@ export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
 };
 
 const defaultStyles = {
-  dark: CARTO_DARK_RASTER_STYLE,
-  light: CARTO_VOYAGER_RASTER_STYLE,
+  dark: MAP_STYLES.dark,
+  light: MAP_STYLES.liberty,
 };
 
 // A tile-less, dependency-free style with a transparent background. Use it for

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { reverseGeocode } from '@/lib/osrm';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import {
   Search,
   Sparkles,
@@ -135,35 +136,25 @@ export default function ClientInicio({
       }
     } catch {}
 
-    // 2. Si hay soporte para GPS nativo / navegador, obtener coordenadas en tiempo real
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const { latitude, longitude } = pos.coords;
-            const res = await reverseGeocode(latitude, longitude);
-            if (res && res.trim().length > 0) {
-              setUbicacionTexto(res);
-              localStorage.setItem('logifast_client_geo_address', res);
-              localStorage.setItem('logifast_client_geo_lat', String(latitude));
-              localStorage.setItem('logifast_client_geo_lng', String(longitude));
-            }
-          } catch (err) {
-            console.warn('[detectarUbicacion reverseGeocode error]', err);
-          } finally {
-            setDetectandoGps(false);
-          }
-        },
-        (err) => {
-          console.warn('[geolocation getCurrentPosition error]', err.message);
-          setDetectandoGps(false);
-          setUbicacionTexto((prev) => (prev === 'Detectando ubicación...' ? 'Managua, Nicaragua' : prev));
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-      );
-    } else {
-      setDetectandoGps(false);
+    // 2. Obtener coordenadas satelitales en tiempo real mediante motor unificado
+    try {
+      const res = await obtenerUbicacionActual({ enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+      if (res.ok && typeof res.lat === 'number' && typeof res.lng === 'number') {
+        const address = await reverseGeocode(res.lat, res.lng);
+        if (address && address.trim().length > 0) {
+          setUbicacionTexto(address);
+          localStorage.setItem('logifast_client_geo_address', address);
+          localStorage.setItem('logifast_client_geo_lat', String(res.lat));
+          localStorage.setItem('logifast_client_geo_lng', String(res.lng));
+        }
+      } else {
+        setUbicacionTexto((prev) => (prev === 'Detectando ubicación...' ? 'Managua, Nicaragua' : prev));
+      }
+    } catch (err) {
+      console.warn('[detectarUbicacion error]', err);
       setUbicacionTexto((prev) => (prev === 'Detectando ubicación...' ? 'Managua, Nicaragua' : prev));
+    } finally {
+      setDetectandoGps(false);
     }
   }, []);
 

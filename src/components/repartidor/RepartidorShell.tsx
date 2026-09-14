@@ -9,8 +9,8 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { useConfigStore } from '@/store/configStore';
 import { reproducirSiActivo, reproducirSonido } from '@/services/audio';
-import { HAPTIC_PATTERNS } from '@/services/haptics';
 import { iniciarRastreoFondo, detenerRastreoFondo } from '@/services/background-tracking';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC MODULE IMPORTS — mantienen todos los overlays
@@ -471,18 +471,33 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
   const storeHeading = useRepartidorStore((s) => s.heading);
   const storeEstado = useRepartidorStore((s) => s.estado);
 
+  // Obtener posición GPS fresca inmediata en el montaje de la app
+  useEffect(() => {
+    obtenerUbicacionActual({ enableHighAccuracy: true, timeout: 8000, maximumAge: 0 })
+      .then((res) => {
+        if (res.ok && typeof res.lat === 'number' && typeof res.lng === 'number') {
+          actualizarPosicion(res.lat, res.lng);
+        }
+      })
+      .catch(() => null);
+  }, [actualizarPosicion]);
+
+  // Mantener geolocalización activa para centrado de mapa en tiempo real
+  useEffect(() => {
+    geo.start();
+  }, [geo.start]);
+
+  // Iniciar/detener rastreo en segundo plano según estado de conexión
   useEffect(() => {
     if (conectado) {
-      geo.start();
       iniciarRastreoFondo(ordenId, storeEstado);
     } else {
-      geo.stop();
       detenerRastreoFondo();
     }
     return () => {
       detenerRastreoFondo();
     };
-  }, [conectado, ordenId, storeEstado, geo.start, geo.stop]);
+  }, [conectado, ordenId, storeEstado]);
 
   // Connect/disconnect socket when driver goes online/offline
   useEffect(() => {

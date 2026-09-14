@@ -284,8 +284,17 @@ function SolicitarMapPreview({
   const hasOrigen = origenLat !== 0 && origenLng !== 0;
   const hasDestino = destinoLat !== 0 && destinoLng !== 0;
 
-  const centerLat = hasOrigen ? origenLat : hasDestino ? destinoLat : 12.1364;
-  const centerLng = hasOrigen ? origenLng : hasDestino ? destinoLng : -86.2581;
+  const [cachedUserPos] = useState<[number, number] | null>(() => {
+    if (typeof window !== 'undefined') {
+      const lat = Number(localStorage.getItem('logifast_client_geo_lat'));
+      const lng = Number(localStorage.getItem('logifast_client_geo_lng'));
+      if (lat && lng && lat !== 0 && lng !== 0) return [lat, lng];
+    }
+    return null;
+  });
+
+  const centerLat = hasOrigen ? origenLat : hasDestino ? destinoLat : (cachedUserPos ? cachedUserPos[0] : 12.1364);
+  const centerLng = hasOrigen ? origenLng : hasDestino ? destinoLng : (cachedUserPos ? cachedUserPos[1] : -86.2581);
 
   useEffect(() => {
     if (hasOrigen && hasDestino) {

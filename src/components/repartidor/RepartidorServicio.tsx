@@ -12,8 +12,8 @@ import {
 import { useRepartidorStore } from '@/lib/repartidor-store';
 import { obtenerRuta, rutaLineaRecta } from '@/lib/osrm';
 import { useRepartidorSnackbar } from './RepartidorShell';
-import { HAPTIC_PATTERNS } from '@/services/haptics';
 import { iniciarRastreoFondo, forzarEnvioPosicionGps } from '@/services/background-tracking';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 
 import { RepartidorRadarLoader } from '@/components/ui/loaders';
 
@@ -77,8 +77,18 @@ export default function RepartidorServicio() {
   const [pinError, setPinError] = useState(false);
   const [rutaCoordenadas, setRutaCoordenadas] = useState<[number,number][]>([]);
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const [mapMode, setMapMode] = useState<'normal'|'fullscreen'>('normal');
   const [mapTilt, setMapTilt] = useState(false);
+
+  // Asegurar que el mapa del repartidor capture su posición GPS satelital real al abrirse
+  useEffect(() => {
+    obtenerUbicacionActual({ enableHighAccuracy: true, timeout: 8000, maximumAge: 0 })
+      .then((res) => {
+        if (res.ok && typeof res.lat === 'number' && typeof res.lng === 'number') {
+          useRepartidorStore.getState().actualizarPosicion(res.lat, res.lng);
+        }
+      })
+      .catch(() => null);
+  }, []);
 
   useEffect(() => {
     if (!ordenActiva) { setRutaCoordenadas([]); return; }

@@ -127,7 +127,21 @@ export function useGeolocation(
       timeout,
     };
 
-    // Immediate single read for fast first paint
+    // Immediate single read via unified GPS engine (Capacitor native hardware / browser)
+    obtenerUbicacionActual({ enableHighAccuracy, timeout, maximumAge: 0 }).then((res) => {
+      if (res.ok && typeof res.lat === 'number' && typeof res.lng === 'number') {
+        setState({
+          lat: res.lat,
+          lng: res.lng,
+          heading: res.heading ?? null,
+          accuracy: res.accuracy ?? 15,
+          error: null,
+          loading: false,
+        });
+      }
+    }).catch(() => null);
+
+    // Browser geolocation single read
     navigator.geolocation.getCurrentPosition(onSuccess, onError, geoOpts);
 
     // Continuous watch if enabled

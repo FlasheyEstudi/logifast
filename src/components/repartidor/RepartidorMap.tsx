@@ -8,7 +8,8 @@ import {
   MarkerPopup,
   MapRoute,
   MapRef,
-  UNIFIED_MULTI_BASEMAP_STYLE,
+  MAP_STYLES,
+  ESRI_SATELLITE_STYLE,
 } from '@/components/ui/map';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 import { obtenerRuta, obtenerRutaMultiples, type PasoRuta } from '@/lib/osrm';
@@ -268,7 +269,7 @@ export default function RepartidorMap({
 
   // Center camera on driver with 3D perspective
   useEffect(() => {
-    if (mapRef.current && shouldFollow) {
+    if (mapRef.current && mapReady && shouldFollow && isValidPos(animatedPos)) {
       if (is3DMode) {
         mapRef.current.easeTo({
           center: [animatedPos[1], animatedPos[0]],
@@ -287,7 +288,7 @@ export default function RepartidorMap({
         });
       }
     }
-  }, [animatedPos, shouldFollow, is3DMode, activeBearing, zoom]);
+  }, [animatedPos, shouldFollow, is3DMode, activeBearing, zoom, mapReady]);
 
   // Fit bounds in 2D mode (e.g. client tracking view) to show driver AND destination/origin
   useEffect(() => {
@@ -491,6 +492,15 @@ export default function RepartidorMap({
   const handleRecenterClick = () => {
     setShouldFollow(true);
     HAPTIC_PATTERNS.light();
+    if (mapRef.current && isValidPos(animatedPos)) {
+      mapRef.current.flyTo({
+        center: [animatedPos[1], animatedPos[0]],
+        zoom: is3DMode ? 18.2 : 16,
+        pitch: is3DMode ? 66 : 0,
+        bearing: is3DMode ? activeBearing : 0,
+        duration: 800,
+      });
+    }
   };
 
   const [mapLayer, setMapLayer] = useState<'calles' | 'satelite' | 'nocturno'>(() => {
@@ -501,38 +511,12 @@ export default function RepartidorMap({
     return 'calles';
   });
 
-  // Layer visibility switcher: updates immediately via WebGL layout properties without reloading or destroying styles
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapReady) return;
-
-    try {
-      const isCalles = mapLayer === 'calles';
-      const isSatelite = mapLayer === 'satelite';
-      const isNocturno = mapLayer === 'nocturno';
-
-      if (map.getLayer('base-streets')) {
-        map.setLayoutProperty('base-streets', 'visibility', isCalles ? 'visible' : 'none');
-      }
-      if (map.getLayer('base-satellite')) {
-        map.setLayoutProperty('base-satellite', 'visibility', isSatelite ? 'visible' : 'none');
-      }
-      if (map.getLayer('base-satellite-labels')) {
-        map.setLayoutProperty('base-satellite-labels', 'visibility', isSatelite ? 'visible' : 'none');
-      }
-      if (map.getLayer('base-satellite-roads')) {
-        map.setLayoutProperty('base-satellite-roads', 'visibility', isSatelite ? 'visible' : 'none');
-      }
-      if (map.getLayer('base-dark')) {
-        map.setLayoutProperty('base-dark', 'visibility', isNocturno ? 'visible' : 'none');
-      }
-      if (map.getLayer('base-dark-labels')) {
-        map.setLayoutProperty('base-dark-labels', 'visibility', isNocturno ? 'visible' : 'none');
-      }
-    } catch (err) {
-      console.warn('[RepartidorMap] Error toggling layer visibility:', err);
-    }
-  }, [mapLayer, mapReady]);
+  // Estilo dinámico de mapa: Vectorial Libre (mapcn) para calles/noche y satelital Esri
+  const activeStyle = useMemo(() => {
+    if (mapLayer === 'satelite') return ESRI_SATELLITE_STYLE;
+    if (mapLayer === 'nocturno') return MAP_STYLES.dark;
+    return MAP_STYLES.liberty;
+  }, [mapLayer]);
 
   // Activar modo 3D automáticamente cuando el repartidor inicia viaje / navegación
   useEffect(() => {
@@ -652,7 +636,7 @@ export default function RepartidorMap({
         pitch={is3DMode ? 66 : 0}
         bearing={is3DMode ? activeBearing : 0}
         maxPitch={85}
-        styles={{ light: UNIFIED_MULTI_BASEMAP_STYLE, dark: UNIFIED_MULTI_BASEMAP_STYLE }}
+        styles={{ light: activeStyle, dark: activeStyle }}
         className="rounded-2xl overflow-hidden"
         onLoad={() => setMapReady(true)}
         dragPan={true}
