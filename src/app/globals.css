@@ -16180,6 +16180,13 @@ video,
   transition: none !important;
 }
 
+/* Ocultar banners de atribución / watermarks en mapas */
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-attrib-inner,
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  display: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),

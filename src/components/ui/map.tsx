@@ -24,9 +24,10 @@ import { X, Minus, Plus, Locate, Maximize, Loader2 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 export const MAP_STYLES = {
-  voyager: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  voyager: "https://tiles.openfreemap.org/styles/bright",
+  dark: "https://tiles.openfreemap.org/styles/dark",
   liberty: "https://tiles.openfreemap.org/styles/liberty",
+  positron: "https://tiles.openfreemap.org/styles/positron",
 };
 
 export const ESRI_SATELLITE_STYLE: MapLibreGL.StyleSpecification = {
@@ -58,13 +59,12 @@ export const CARTO_VOYAGER_RASTER_STYLE: MapLibreGL.StyleSpecification = {
     "carto-voyager": {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
       ],
       tileSize: 256,
-      attribution: "© CARTO, © OpenStreetMap contributors",
+      attribution: "© OpenStreetMap contributors",
     },
   },
   layers: [
@@ -73,7 +73,7 @@ export const CARTO_VOYAGER_RASTER_STYLE: MapLibreGL.StyleSpecification = {
       type: "raster",
       source: "carto-voyager",
       minzoom: 0,
-      maxzoom: 20,
+      maxzoom: 19,
     },
   ],
 };
@@ -84,13 +84,17 @@ export const CARTO_DARK_RASTER_STYLE: MapLibreGL.StyleSpecification = {
     "carto-dark": {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-        "https://d.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
-      attribution: "© CARTO, © OpenStreetMap contributors",
+      attribution: "© Esri, HERE, © OpenStreetMap contributors",
+    },
+    "carto-dark-labels": {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
     },
   },
   layers: [
@@ -99,7 +103,14 @@ export const CARTO_DARK_RASTER_STYLE: MapLibreGL.StyleSpecification = {
       type: "raster",
       source: "carto-dark",
       minzoom: 0,
-      maxzoom: 20,
+      maxzoom: 19,
+    },
+    {
+      id: "carto-dark-labels-layer",
+      type: "raster",
+      source: "carto-dark-labels",
+      minzoom: 0,
+      maxzoom: 19,
     },
   ],
 };
@@ -110,13 +121,12 @@ export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
     "streets-source": {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
       ],
       tileSize: 256,
-      attribution: "© CARTO, © OpenStreetMap",
+      attribution: "© OpenStreetMap contributors",
     },
     "satellite-source": {
       type: "raster",
@@ -129,23 +139,34 @@ export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
     "satellite-labels-source": {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png",
-        "https://d.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png",
+        "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
+      attribution: "© Esri",
+    },
+    "satellite-roads-source": {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      attribution: "© Esri",
     },
     "dark-source": {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-        "https://d.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
-      attribution: "© CARTO, © OpenStreetMap",
+      attribution: "© Esri, HERE, © OpenStreetMap",
+    },
+    "dark-labels-source": {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      attribution: "© Esri",
     },
   },
   layers: [
@@ -155,7 +176,7 @@ export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
       source: "streets-source",
       layout: { visibility: "visible" },
       minzoom: 0,
-      maxzoom: 20,
+      maxzoom: 19,
     },
     {
       id: "base-satellite",
@@ -163,7 +184,7 @@ export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
       source: "satellite-source",
       layout: { visibility: "none" },
       minzoom: 0,
-      maxzoom: 20,
+      maxzoom: 19,
     },
     {
       id: "base-satellite-labels",
@@ -171,7 +192,15 @@ export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
       source: "satellite-labels-source",
       layout: { visibility: "none" },
       minzoom: 0,
-      maxzoom: 20,
+      maxzoom: 19,
+    },
+    {
+      id: "base-satellite-roads",
+      type: "raster",
+      source: "satellite-roads-source",
+      layout: { visibility: "none" },
+      minzoom: 0,
+      maxzoom: 19,
     },
     {
       id: "base-dark",
@@ -179,7 +208,15 @@ export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
       source: "dark-source",
       layout: { visibility: "none" },
       minzoom: 0,
-      maxzoom: 20,
+      maxzoom: 19,
+    },
+    {
+      id: "base-dark-labels",
+      type: "raster",
+      source: "dark-labels-source",
+      layout: { visibility: "none" },
+      minzoom: 0,
+      maxzoom: 19,
     },
   ],
 };
@@ -452,9 +489,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       container: containerRef.current,
       style: initialStyle,
       renderWorldCopies: false,
-      attributionControl: {
-        compact: true,
-      },
+      attributionControl: props.attributionControl ?? false,
       ...props,
       ...viewport,
     });

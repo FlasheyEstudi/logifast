@@ -520,8 +520,14 @@ export default function RepartidorMap({
       if (map.getLayer('base-satellite-labels')) {
         map.setLayoutProperty('base-satellite-labels', 'visibility', isSatelite ? 'visible' : 'none');
       }
+      if (map.getLayer('base-satellite-roads')) {
+        map.setLayoutProperty('base-satellite-roads', 'visibility', isSatelite ? 'visible' : 'none');
+      }
       if (map.getLayer('base-dark')) {
         map.setLayoutProperty('base-dark', 'visibility', isNocturno ? 'visible' : 'none');
+      }
+      if (map.getLayer('base-dark-labels')) {
+        map.setLayoutProperty('base-dark-labels', 'visibility', isNocturno ? 'visible' : 'none');
       }
     } catch (err) {
       console.warn('[RepartidorMap] Error toggling layer visibility:', err);
