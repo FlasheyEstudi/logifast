@@ -27,7 +27,12 @@ import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { LogoSpinner } from '@/components/ui/loaders';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
-import { inicializarNotificacionesNativas, solicitarPermisoNotificacionesManual, dispararNotificacionNativa } from '@/services/native-notifications';
+import {
+  inicializarNotificacionesNativas,
+  solicitarPermisoNotificacionesManual,
+  dispararNotificacionNativa,
+  notificarPedidoListoParaRetiro,
+} from '@/services/native-notifications';
 import LiveOrderProgressBar from '@/components/ui/LiveOrderProgressBar';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
@@ -306,6 +311,22 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   useEffect(() => {
     if (activeOrder) setBarDismissed(false);
   }, [activeOrder?.id]);
+
+  /* ─── Detección de "Pedido Listo para Retiro" (Comercios y Marketplace) ─── */
+  const lastEstadosCompraRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    (ordenesCompra || []).forEach((oc) => {
+      const prev = lastEstadosCompraRef.current[oc.id];
+      if (prev && prev !== 'listo' && oc.estado === 'listo') {
+        notificarPedidoListoParaRetiro({
+          ordenId: oc.id,
+          tiendaNombre: oc.tiendaNombre || (oc as any).tienda?.nombre || 'El comercio',
+          esPickUpCliente: (oc as any).metodoEntrega === 'retiro',
+        }).catch(() => null);
+      }
+      lastEstadosCompraRef.current[oc.id] = oc.estado;
+    });
+  }, [ordenesCompra]);
 
   /* ─── Sync Dynamic URL Hash & Soporte para Gesto Atrás Móvil (popstate) ─── */
   useEffect(() => {

@@ -26,8 +26,14 @@ import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { obtenerRuta, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
-import { HAPTIC_PATTERNS } from '@/services/haptics';
-import { dispararNotificacionNativa, inicializarNotificacionesNativas, notificarProgresoEnvio } from '@/services/native-notifications';
+import {
+  dispararNotificacionNativa,
+  inicializarNotificacionesNativas,
+  notificarProgresoEnvio,
+  notificarRepartidorEnPuerta,
+  notificarDemoraClimaOTrafico,
+  notificarResumenFidelizacion,
+} from '@/services/native-notifications';
 
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), { ssr: false });
 
@@ -625,6 +631,9 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   const [driverEstado, setDriverEstado] = useState<string>('DESCONECTADO');
   const [rutaCoords, setRutaCoords] = useState<[number, number][] | undefined>(undefined);
   const lastNotifiedEstadoRef = useRef<string>('');
+  const notifiedPuertaRef = useRef<boolean>(false);
+  const notifiedFidelizacionRef = useRef<boolean>(false);
+  const notifiedDemoraRef = useRef<boolean>(false);
 
   const notificarCambioEstado = useCallback((nuevoEstado: string) => {
     if (!nuevoEstado || lastNotifiedEstadoRef.current === nuevoEstado) return;
@@ -650,11 +659,45 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       titulo = 'Repartidor cerca';
       cuerpo = 'Tu repartidor se encuentra a pocos minutos de tu ubicación.';
       porcentaje = 90;
+    } else if (nuevoEstado === 'EN_PUNTO_ENTREGA' || nuevoEstado === 'LLEGADO') {
+      titulo = '¡Tu repartidor está en la puerta!';
+      cuerpo = 'El repartidor ha llegado a tu dirección de entrega.';
+      porcentaje = 95;
+      if (!notifiedPuertaRef.current) {
+        notifiedPuertaRef.current = true;
+        notificarRepartidorEnPuerta({
+          ordenId: String(trackingOrderId),
+          pin: (order as any)?.codigoPin || backendTracking?.orden?.codigoPin,
+          repartidorNombre: (order as any)?.repartidor || 'Tu repartidor',
+          direccion: (order as any)?.destino || '',
+        }).catch(() => null);
+      }
     } else if (nuevoEstado === 'ENTREGADO') {
       titulo = '¡Pedido entregado con éxito!';
       cuerpo = 'Tu orden ha sido completada. ¡Gracias por usar LogiFast!';
       tipo = 'exito';
       porcentaje = 100;
+
+      // Notificación 5: Resumen de Ahorro y Fidelización post-entrega
+      if (!notifiedFidelizacionRef.current) {
+        notifiedFidelizacionRef.current = true;
+        const montoNum = Number((order as any)?.monto || (order as any)?.total || 150);
+        const puntosGanados = Math.max(15, Math.round(montoNum * 0.1));
+        const cashback = Number((puntosGanados / 5).toFixed(2));
+
+        try {
+          useStore.getState().addFidelizacionPuntos(`Orden completada #${trackingOrderId}`, puntosGanados);
+        } catch {}
+
+        setTimeout(() => {
+          notificarResumenFidelizacion({
+            ordenId: String(trackingOrderId),
+            montoTotal: montoNum,
+            puntosGanados,
+            cashbackCordobas: cashback,
+          }).catch(() => null);
+        }, 3200);
+      }
     }
 
     if (titulo) {
@@ -678,7 +721,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         subtitulo: cuerpo,
       }).catch(() => null);
     }
-  }, [trackingOrderId]);
+  }, [trackingOrderId, order, backendTracking]);
 
   // Sync client to order's tracking room & receive live driver positioning
   useEffect(() => {
@@ -739,11 +782,23 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       fetchTracking();
     });
 
+    const cleanupDemora = onRealtimeEvent('orden:demora_clima', (data: any) => {
+      if ((!data?.ordenId || data?.ordenId === trackingOrderId) && !notifiedDemoraRef.current) {
+        notifiedDemoraRef.current = true;
+        notificarDemoraClimaOTrafico({
+          ordenId: String(trackingOrderId),
+          minutosDemora: data?.minutosDemora || 15,
+          motivo: data?.motivo || 'lluvia_trafico',
+        }).catch(() => null);
+      }
+    });
+
     return () => {
       clearInterval(interval);
       cleanupPos();
       cleanupEstado();
       cleanupOrdenUpdate();
+      cleanupDemora();
     };
   }, [trackingOrderId]);
 
@@ -964,6 +1019,29 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
 
     // Punto destino: hacia la casa del cliente (dest) si ya recogió, o hacia el origen (orig) si aún recolecta
     const targetPoint = isRecogido ? dest : (hasDriverGps ? orig : dest);
+
+    // 1. Alerta de proximidad < 50 metros: Repartidor en la Puerta con timbre y háptica
+    if (hasDriverGps && destLat && destLng && isRecogido) {
+      const dLat = ((destLat - driverPos![0]) * Math.PI) / 180;
+      const dLng = ((destLng - driverPos![1]) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((driverPos![0] * Math.PI) / 180) *
+        Math.cos((destLat * Math.PI) / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distMetros = 6371e3 * c;
+
+      if (distMetros <= 50 && !notifiedPuertaRef.current) {
+        notifiedPuertaRef.current = true;
+        notificarRepartidorEnPuerta({
+          ordenId: String(order.id),
+          pin: (order as any)?.codigoPin || backendTracking?.orden?.codigoPin,
+          repartidorNombre: (order as any)?.repartidor || 'Tu repartidor',
+          direccion: (order as any)?.destino || '',
+        }).catch(() => null);
+      }
+    }
 
     if (startPoint.lat && startPoint.lng && targetPoint.lat && targetPoint.lng) {
       // Trazar línea directa inmediata como fallback instantáneo para que jamás esté vacío

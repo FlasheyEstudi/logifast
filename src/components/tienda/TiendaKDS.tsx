@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, CheckCircle2, AlertCircle, Bell, RefreshCw, Bike } from '@/components/icons';
 import { notify } from '@/lib/notify';
+import { notificarPedidoListoParaRetiro } from '@/services/native-notifications';
 
 interface ItemOrden {
   id?: string;
@@ -100,6 +101,12 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
       });
       if (res.ok) {
         notify.success(`Pedido marcado como ${nuevoEstado}`);
+        if (nuevoEstado === 'listo') {
+          notificarPedidoListoParaRetiro({
+            ordenId,
+            tiendaNombre: 'Tu comercio',
+          }).catch(() => null);
+        }
         cargarOrdenes();
       } else {
         notify.error('Error al actualizar el estado');

@@ -49,4 +49,7 @@ export const HAPTIC_PATTERNS = {
 
   // Timer urgente (últimos 5 segundos de una orden crítica pendiente)
   timerUrgente: () => safeVibrate([10, 20, 10]),
+
+  // Repartidor en la puerta (menos de 50 metros) — patrón insistente tipo timbre
+  llegadaPuerta: () => safeVibrate([150, 80, 150, 80, 300, 120, 300]),
 };

@@ -24,7 +24,9 @@ function getAudioContext(): AudioContext | null {
  * Genera un timbre de alerta profesional sintetizado mediante Web Audio API
  * Funciona offline, sin archivos de audio externos ni peticiones de red.
  */
-export function reproducirAlertaSonora(tipo: 'orden' | 'exito' | 'mensaje' | 'alerta' = 'orden'): void {
+export function reproducirAlertaSonora(
+  tipo: 'orden' | 'exito' | 'mensaje' | 'alerta' | 'timbre_puerta' = 'orden'
+): void {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -45,6 +47,15 @@ export function reproducirAlertaSonora(tipo: 'orden' | 'exito' | 'mensaje' | 'al
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
       osc.start(now);
       osc.stop(now + 0.5);
+    } else if (tipo === 'timbre_puerta') {
+      // Clásico timbre de puerta de dos notas (Ding-Dong: Mi5 659.25Hz -> Do5 523.25Hz)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659.25, now); // Ding (E5)
+      osc.frequency.setValueAtTime(523.25, now + 0.26); // Dong (C5)
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+      osc.start(now);
+      osc.stop(now + 0.85);
     } else if (tipo === 'exito') {
       // Acorde suave de confirmación de entrega (Do5 -> Sol5 -> Do6)
       osc.type = 'triangle';
@@ -243,7 +254,7 @@ export interface NotificacionOpciones {
   imagenBanner?: string;
   categoriaAcciones?: 'ORDEN_NUEVA' | 'ORDEN_ESTADO' | string;
   extra?: Record<string, any>;
-  tipoAlerta?: 'orden' | 'exito' | 'mensaje' | 'alerta';
+  tipoAlerta?: 'orden' | 'exito' | 'mensaje' | 'alerta' | 'timbre_puerta';
   mostrarBannerInApp?: boolean;
 }
 
@@ -273,6 +284,8 @@ export async function dispararNotificacionNativa({
     HAPTIC_PATTERNS.nuevaOrden();
   } else if (tipoAlerta === 'exito') {
     HAPTIC_PATTERNS.success();
+  } else if (tipoAlerta === 'timbre_puerta') {
+    HAPTIC_PATTERNS.llegadaPuerta();
   } else {
     HAPTIC_PATTERNS.mensaje();
   }
@@ -282,6 +295,8 @@ export async function dispararNotificacionNativa({
     try {
       if (tipoAlerta === 'exito') {
         sileo.success({ title: titulo, description: cuerpo });
+      } else if (tipoAlerta === 'timbre_puerta') {
+        sileo.warning({ title: titulo, description: cuerpo });
       } else {
         sileo.info({ title: titulo, description: cuerpo });
       }
@@ -417,3 +432,160 @@ export async function notificarProgresoEnvio({
     mostrarBannerInApp: false, // El widget in-app ya se muestra en pantalla
   });
 }
+
+/**
+ * 1. "Repartidor en la Puerta / Ha llegado"
+ * Alerta sonora tipo timbre y vibración háptica de alta prioridad cuando el repartidor esté a <50 metros
+ */
+export interface RepartidorEnPuertaOpciones {
+  ordenId: string;
+  pin?: string;
+  repartidorNombre?: string;
+  direccion?: string;
+}
+
+export async function notificarRepartidorEnPuerta({
+  ordenId,
+  pin,
+  repartidorNombre,
+  direccion,
+}: RepartidorEnPuertaOpciones): Promise<void> {
+  const nombre = repartidorNombre || 'Tu repartidor';
+  const pinMsg = pin ? `\n🔑 PIN de Entrega: ${pin}` : '';
+  const titulo = '🚪 ¡Tu repartidor está en la puerta!';
+  const cuerpo = `${nombre} ha llegado a tu destino.${pin ? ` Ten listo tu PIN: #${pin}` : ' Por favor sal a recibirlo.'}`;
+  const detalleLargo = `${nombre} está afuera en ${direccion || 'tu ubicación'}.${pinMsg}\nMuestra o dicta el PIN al repartidor para recibir tu paquete.`;
+
+  await dispararNotificacionNativa({
+    id: 990000 + (Math.abs(ordenId.split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)) % 9999),
+    titulo,
+    cuerpo,
+    subtexto: 'LOGIFAST • Repartidor en la Puerta (<50m)',
+    detalleLargo,
+    canalId: 'logifast_urgente',
+    colorIcono: '#FF9500',
+    iconoPequeno: 'ic_stat_logifast',
+    categoriaAcciones: 'ORDEN_ESTADO',
+    tipoAlerta: 'timbre_puerta',
+    extra: { ordenId, evento: 'REPARTIDOR_EN_PUERTA', pin },
+    mostrarBannerInApp: true,
+  });
+}
+
+/**
+ * 3. "Alerta de Clima / Demora Inusual"
+ * Aviso predictivo si hay lluvia o congestión vehicular que aumente el tiempo estimado
+ */
+export interface DemoraClimaOTraficoOpciones {
+  ordenId: string;
+  minutosDemora?: number;
+  motivo?: 'lluvia' | 'trafico' | 'lluvia_trafico';
+}
+
+export async function notificarDemoraClimaOTrafico({
+  ordenId,
+  minutosDemora = 12,
+  motivo = 'lluvia_trafico',
+}: DemoraClimaOTraficoOpciones): Promise<void> {
+  const motivoTexto =
+    motivo === 'lluvia'
+      ? 'fuertes lluvias en el trayecto'
+      : motivo === 'trafico'
+      ? 'congestión vehicular en la ruta'
+      : 'lluvia y alto tráfico en la zona';
+
+  const titulo = '🌧️ Alerta de Clima y Tráfico • Demora estimada';
+  const cuerpo = `Debido a ${motivoTexto}, tu orden #${ordenId.slice(-8)} podría demorar unos ~${minutosDemora} min adicionales. Priorizamos la seguridad de tu repartidor.`;
+
+  await dispararNotificacionNativa({
+    id: 980000 + (Math.abs(ordenId.split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)) % 9999),
+    titulo,
+    cuerpo,
+    subtexto: 'LOGIFAST • Alerta Predictiva de Ruta',
+    detalleLargo: cuerpo,
+    canalId: 'logifast_estado',
+    colorIcono: '#007AFF',
+    iconoPequeno: 'ic_stat_logifast',
+    categoriaAcciones: 'ORDEN_ESTADO',
+    tipoAlerta: 'alerta',
+    extra: { ordenId, evento: 'DEMORA_CLIMA', minutosDemora },
+    mostrarBannerInApp: true,
+  });
+}
+
+/**
+ * 4. "Pedido Listo para Retiro"
+ * Para comercios y restaurantes en recolección cuando finalizan la preparación
+ */
+export interface PedidoListoRetiroOpciones {
+  ordenId: string;
+  tiendaNombre?: string;
+  esPickUpCliente?: boolean;
+}
+
+export async function notificarPedidoListoParaRetiro({
+  ordenId,
+  tiendaNombre = 'El comercio',
+  esPickUpCliente = false,
+}: PedidoListoRetiroOpciones): Promise<void> {
+  const titulo = esPickUpCliente
+    ? '🛍️ ¡Tu pedido está listo para retirar!'
+    : '🛍️ Pedido preparado y listo para retiro';
+
+  const cuerpo = esPickUpCliente
+    ? `${tiendaNombre} ha finalizado tu orden #${ordenId.slice(-8)}. ¡Ya puedes pasar a recogerla!`
+    : `${tiendaNombre} terminó de empaquetar tu orden #${ordenId.slice(-8)}. El repartidor está recolectándola para llevártela.`;
+
+  await dispararNotificacionNativa({
+    id: 970000 + (Math.abs(ordenId.split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)) % 9999),
+    titulo,
+    cuerpo,
+    subtexto: `LOGIFAST • ${esPickUpCliente ? 'Retiro en Tienda' : 'En Preparación'}`,
+    detalleLargo: cuerpo,
+    canalId: 'logifast_urgente',
+    colorIcono: '#00C853',
+    iconoPequeno: 'ic_stat_logifast',
+    categoriaAcciones: 'ORDEN_ESTADO',
+    tipoAlerta: 'orden',
+    extra: { ordenId, evento: 'PEDIDO_LISTO', tiendaNombre },
+    mostrarBannerInApp: true,
+  });
+}
+
+/**
+ * 5. "Resumen de Ahorro y Fidelización"
+ * Notificación post-entrega acreditando puntos o cashback a la Billetera LogiFast
+ */
+export interface ResumenFidelizacionOpciones {
+  ordenId: string;
+  montoTotal?: number;
+  puntosGanados?: number;
+  cashbackCordobas?: number;
+}
+
+export async function notificarResumenFidelizacion({
+  ordenId,
+  montoTotal = 150,
+  puntosGanados = 20,
+  cashbackCordobas,
+}: ResumenFidelizacionOpciones): Promise<void> {
+  const resolvedCashback = cashbackCordobas ?? Math.max(1, Math.round(puntosGanados / 5));
+  const titulo = `🎁 ¡Has ganado +${puntosGanados} LogiPuntos!`;
+  const cuerpo = `Por completar tu orden #${ordenId.slice(-8)} (C$ ${montoTotal.toFixed(2)}), acreditamos ${puntosGanados} puntos (~C$ ${resolvedCashback}) a tu Billetera LogiFast.`;
+
+  await dispararNotificacionNativa({
+    id: 960000 + (Math.abs(ordenId.split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)) % 9999),
+    titulo,
+    cuerpo,
+    subtexto: 'LOGIFAST • Billetera y Fidelización',
+    detalleLargo: `${cuerpo}\nCanjea tus puntos por cupones de descuento y envíos gratis en la app.`,
+    canalId: 'logifast_estado',
+    colorIcono: '#10B981',
+    iconoPequeno: 'ic_stat_logifast',
+    categoriaAcciones: 'ORDEN_ESTADO',
+    tipoAlerta: 'exito',
+    extra: { ordenId, evento: 'PUNTOS_FIDELIZACION', puntosGanados, resolvedCashback },
+    mostrarBannerInApp: true,
+  });
+}
+
