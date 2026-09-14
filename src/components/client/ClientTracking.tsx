@@ -269,7 +269,7 @@ function VisualMap({
         </span>
       </div>
 
-      {/* ─── Destination Marker: circulo 20x20, var(--primario), borde blanco 3px ─── */}
+      {/* ─── Destination Marker: High Clarity Delivery Drop-off ─── */}
       <div
         style={{
           position: 'absolute',
@@ -280,32 +280,60 @@ function VisualMap({
           flexDirection: 'column',
           alignItems: 'center',
           gap: 4,
-          zIndex: 10,
+          zIndex: 15,
         }}
       >
-        <div
+        {/* Soft beacon ring */}
+        <span
           style={{
-            width: 20,
-            height: 20,
+            position: 'absolute',
+            width: 38,
+            height: 38,
             borderRadius: '50%',
-            background: 'var(--primario)',
-            border: '3px solid #fff',
-            boxShadow: '0 2px 8px rgba(255,87,34,0.35)',
+            background: 'rgba(239, 68, 68, 0.25)',
+            top: -5,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            animation: 'lf-beacon-pulse 2.2s infinite',
+            pointerEvents: 'none',
           }}
         />
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #FF453A 0%, #D70015 100%)',
+            border: '3px solid #fff',
+            boxShadow: '0 4px 14px rgba(239, 68, 68, 0.5), 0 2px 4px rgba(0,0,0,0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF',
+          }}
+        >
+          <MapPin size={15} strokeWidth={2.6} />
+        </div>
         <span
           style={{
             fontFamily: "'DM Sans', sans-serif",
-            fontSize: 11,
-            fontWeight: 600,
-            color: isDark ? '#FFE0B2' : '#E65100',
-            background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.85)',
-            padding: '1px 6px',
-            borderRadius: 4,
+            fontSize: 10.5,
+            fontWeight: 700,
+            color: '#FFFFFF',
+            background: 'rgba(15, 23, 42, 0.92)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 69, 58, 0.4)',
+            padding: '2px 8px',
+            borderRadius: 999,
             whiteSpace: 'nowrap',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
           }}
         >
-          Entrega
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FF453A' }} />
+          Destino Entrega
         </span>
       </div>
 

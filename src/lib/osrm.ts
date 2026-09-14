@@ -67,7 +67,8 @@ const rutaCache = new Map<string, { res: ResultadoRuta; exp: number }>();
  */
 export async function obtenerRuta(
   origen: PuntoRuta,
-  destino: PuntoRuta
+  destino: PuntoRuta,
+  opciones?: { bearing?: number }
 ): Promise<ResultadoRuta> {
   if (
     !origen ||
@@ -85,15 +86,24 @@ export async function obtenerRuta(
     };
   }
 
-  const cacheKey = `${origen.lat.toFixed(4)},${origen.lng.toFixed(4)}->${destino.lat.toFixed(4)},${destino.lng.toFixed(4)}`;
+  const roundedBearing = opciones?.bearing !== undefined && !isNaN(opciones.bearing)
+    ? Math.round(((opciones.bearing % 360) + 360) % 360)
+    : undefined;
+
+  const cacheKey = `${origen.lat.toFixed(4)},${origen.lng.toFixed(4)}->${destino.lat.toFixed(4)},${destino.lng.toFixed(4)}${roundedBearing !== undefined ? `@${roundedBearing}` : ''}`;
   const now = Date.now();
   const cached = rutaCache.get(cacheKey);
   if (cached && cached.exp > now) {
     return cached.res;
   }
 
-  // OSRM expects lng,lat order with steps enabled
-  const url = `https://router.project-osrm.org/route/v1/driving/${origen.lng},${origen.lat};${destino.lng},${destino.lat}?overview=full&geometries=geojson&steps=true`;
+  // OSRM parameters:
+  // - overview=full & geometries=geojson & steps=true: full road polyline + maneuvers
+  // - continue_straight=false: respects legal one-way turns and traffic junctions
+  // - radiuses=75;75: snaps start and destination to the nearest drivable road segment
+  // - bearings: initializes routing along the vehicle heading to avoid illegal immediate U-turns
+  const bearingParam = roundedBearing !== undefined ? `&bearings=${roundedBearing},45;` : '';
+  const url = `https://router.project-osrm.org/route/v1/driving/${origen.lng},${origen.lat};${destino.lng},${destino.lat}?overview=full&geometries=geojson&steps=true&annotations=true&continue_straight=false&radiuses=75;75${bearingParam}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), OSRM_TIMEOUT_MS);
@@ -374,6 +384,29 @@ export const NICARAGUA_MASTER_POIS: NicaraguaPuntoReferencia[] = [
   { nombre: 'Ticuantepe', alias: ['ticuantepe'], categoria: 'Municipio', direccion: 'Parque Central de Ticuantepe', lat: 12.0220, lng: -86.2050 },
   { nombre: 'Aeropuerto Internacional Augusto C. Sandino (MGA)', alias: ['aeropuerto', 'aeropuerto managua', 'aeropuerto sandino'], categoria: 'Aeropuerto', direccion: 'Km 11 Carretera Norte, Managua', lat: 12.1420, lng: -86.1680 },
 
+  // ─── Semáforos y Puntos Emblemáticos Clave de Managua ───
+  { nombre: 'Semáforos de Villa Fontana', alias: ['semaforos villa fontana', 'villa fontana semaforos'], categoria: 'Semáforo', direccion: 'Pista Suburbana con Villa Fontana', lat: 12.1150, lng: -86.2650 },
+  { nombre: 'Semáforos de Plaza El Sol', alias: ['semaforos plaza el sol', 'plaza el sol'], categoria: 'Semáforo', direccion: 'Pista Juan Pablo II, frente a Plaza El Sol', lat: 12.1280, lng: -86.2650 },
+  { nombre: 'Semáforos de Lozelsa', alias: ['semaforos lozelsa', 'lozelsa'], categoria: 'Semáforo', direccion: 'Calle Principal de Los Robles', lat: 12.1220, lng: -86.2580 },
+  { nombre: 'Semáforos de La Robelo', alias: ['semaforos la robelo', 'la robelo'], categoria: 'Semáforo', direccion: 'Carretera Norte, Managua', lat: 12.1520, lng: -86.2420 },
+  { nombre: 'Semáforos del Zumen', alias: ['semaforos del zumen', 'el zumen', 'zumen'], categoria: 'Semáforo', direccion: 'Pista Juan Pablo II, cerca de la Alcaldía', lat: 12.1240, lng: -86.2950 },
+  { nombre: 'Semáforos de Jonathan González', alias: ['semaforos jonathan gonzalez', 'jonathan gonzalez'], categoria: 'Semáforo', direccion: 'Pista Benjamin Zeledón', lat: 12.1360, lng: -86.2760 },
+  { nombre: 'Semáforos de La Racachaca', alias: ['semaforos la racachaca', 'racachaca', 'la racachaca'], categoria: 'Semáforo', direccion: 'Barrio Altagracia, Managua', lat: 12.1380, lng: -86.2900 },
+  { nombre: 'Semáforos del Colonial', alias: ['semaforos del colonial', 'el colonial semaforos'], categoria: 'Semáforo', direccion: 'Pista Solidaridad, Colonia 10 de Junio', lat: 12.1460, lng: -86.2370 },
+  { nombre: 'Semáforos de ENEL Central', alias: ['semaforos enel central', 'enel central'], categoria: 'Semáforo', direccion: 'Pista Juan Pablo II', lat: 12.1250, lng: -86.2840 },
+  { nombre: 'Semáforos de Autolote El Chele', alias: ['semaforos autolote el chele', 'el chele'], categoria: 'Semáforo', direccion: 'Pista Suburbana / Pista Universitaria', lat: 12.1290, lng: -86.2600 },
+  { nombre: 'Semáforos de Linda Vista', alias: ['semaforos linda vista'], categoria: 'Semáforo', direccion: 'Pista Portezuelo / Linda Vista', lat: 12.1510, lng: -86.3020 },
+  { nombre: 'Distribuidora Vicky (La Vicky)', alias: ['la vicky', 'vicky', 'distribuidora vicky'], categoria: 'Punto de Referencia', direccion: 'Altamira D\'Este, Managua', lat: 12.1190, lng: -86.2570 },
+  { nombre: 'Iglesia Pío X (Bello Horizonte)', alias: ['iglesia pio x', 'pio x', 'parroquia pio x'], categoria: 'Iglesia', direccion: 'Colonia Bello Horizonte, Managua', lat: 12.1440, lng: -86.2280 },
+  { nombre: 'Gancho de Caminos (Mercado Oriental)', alias: ['gancho de caminos'], categoria: 'Punto de Referencia', direccion: 'Entrada Sur Mercado Oriental', lat: 12.1440, lng: -86.2560 },
+  { nombre: 'Ciudad Jardín', alias: ['ciudad jardin', 'ciudad jardín'], categoria: 'Zona Comercial', direccion: 'Cerca de Mercado Oriental', lat: 12.1400, lng: -86.2540 },
+  { nombre: 'Edificio Pellas', alias: ['edificio pellas', 'bac pellas'], categoria: 'Edificio Corporativo', direccion: 'Km 4.5 Carretera a Masaya', lat: 12.1230, lng: -86.2620 },
+  { nombre: 'Plaza Cuba', alias: ['plaza cuba'], categoria: 'Plaza', direccion: 'Zona Hippos, Los Robles', lat: 12.1285, lng: -86.2625 },
+  { nombre: 'Parque Las Madres', alias: ['parque las madres', 'las madres'], categoria: 'Parque', direccion: 'Bolonia, Managua', lat: 12.1320, lng: -86.2840 },
+  { nombre: 'Parque Los Marañones (Centroamérica)', alias: ['parque los marañones', 'los marañones'], categoria: 'Parque', direccion: 'Colonia Centroamérica', lat: 12.1160, lng: -86.2460 },
+  { nombre: 'Estatua de Montoya', alias: ['estatua de montoya', 'montoya'], categoria: 'Monumento', direccion: 'Avenida Monumental, Managua', lat: 12.1420, lng: -86.2860 },
+  { nombre: 'Portón Principal UCA (Casimiro Sotelo)', alias: ['porton uca', 'porton casimiro sotelo'], categoria: 'Universidad', direccion: 'Pista Juan Pablo II, Managua', lat: 12.1280, lng: -86.2710 },
+
   // ─── Departamentos y Ciudades Principales ───
   { nombre: 'Masaya (Parque Central)', alias: ['masaya', 'mercado de artesanias masaya'], categoria: 'Departamento', direccion: 'Centro Histórico, Masaya', lat: 11.9740, lng: -86.0940 },
   { nombre: 'Granada (Parque Central / Calle La Calzada)', alias: ['granada', 'calle la calzada'], categoria: 'Departamento', direccion: 'Parque Central Colón, Granada', lat: 11.9298, lng: -85.9560 },
@@ -387,59 +420,181 @@ export const NICARAGUA_MASTER_POIS: NicaraguaPuntoReferencia[] = [
 ];
 
 /**
+ * Constantes Geodésicas de Cuadrícula Urbana para Nicaragua (Managua Lat 12.13° N).
+ * 1 cuadra urbana ≈ 100 metros (~84-100 varas).
+ */
+const CUADRA_LAT_GRADOS = 0.000898; // Desplazamiento latitudinal (al lago = +, al sur = -)
+const CUADRA_LNG_GRADOS = 0.000919; // Desplazamiento longitudinal (arriba = +, abajo = -)
+
+function parsearDistanciaNica(val: string | undefined, unidad: string | undefined): number {
+  if (!val) return 1;
+  const v = val.trim().toLowerCase();
+  if (v === 'media' || v === '1/2' || v === 'medio') return 0.5;
+  if (v === 'una y media' || v === '1 y media' || v === '1 1/2') return 1.5;
+  if (v === 'dos y media' || v === '2 y media' || v === '2 1/2') return 2.5;
+  const num = parseFloat(v);
+  if (isNaN(num)) return 1;
+  if (unidad && (unidad.startsWith('var') || unidad.startsWith('vr'))) return num / 100;
+  if (unidad && (unidad.startsWith('met') || unidad.startsWith('mt') || unidad === 'm')) return num / 100;
+  if (!unidad && num > 20) return num / 100;
+  return num;
+}
+
+/**
+ * Motor Especializado de Resolución de Nomenclatura Local (Nicaragua / Managua).
+ * Interpreta cuadras, al lago, al sur, arriba, abajo, varas, manzanas y números de casa.
+ */
+export function interpretarDireccionNica(
+  address: string,
+  fallback: [number, number] = [12.1365, -86.2514]
+): { coordenadas: [number, number]; referencia?: string } {
+  if (!address || typeof address !== 'string') return { coordenadas: fallback };
+  const rawLower = address.toLowerCase().trim();
+
+  // 1. Detección de Kilómetros en Carreteras Nacionales
+  const kmMasaya = rawLower.match(/(?:km|kil[oó]metro)\s*(\d+(?:\.\d+)?)\s*(?:carretera\s*(?:a\s*)?masaya)/i) ||
+                   rawLower.match(/(?:carretera\s*(?:a\s*)?masaya)\s*(?:km|kil[oó]metro)?\s*(\d+(?:\.\d+)?)/i);
+  if (kmMasaya && kmMasaya[1]) {
+    const km = parseFloat(kmMasaya[1]);
+    if (!isNaN(km)) {
+      // Interpolación a lo largo de Carretera a Masaya (Km 4.5 -> Km 14)
+      const t = Math.max(0, Math.min((km - 4.5) / (14.0 - 4.5), 1));
+      const lat = 12.1264 + (12.0450 - 12.1264) * t;
+      const lng = -86.2652 + (-86.2050 - (-86.2652)) * t;
+      return { coordenadas: [lat, lng], referencia: `Carretera a Masaya Km ${km}` };
+    }
+  }
+
+  const kmNorte = rawLower.match(/(?:km|kil[oó]metro)\s*(\d+(?:\.\d+)?)\s*(?:carretera\s*norte)/i) ||
+                  rawLower.match(/(?:carretera\s*norte)\s*(?:km|kil[oó]metro)?\s*(\d+(?:\.\d+)?)/i);
+  if (kmNorte && kmNorte[1]) {
+    const km = parseFloat(kmNorte[1]);
+    if (!isNaN(km)) {
+      const t = Math.max(0, Math.min((km - 4.0) / (14.0 - 4.0), 1));
+      const lat = 12.1520 + (12.1400 - 12.1520) * t;
+      const lng = -86.2420 + (-86.1400 - (-86.2420)) * t;
+      return { coordenadas: [lat, lng], referencia: `Carretera Norte Km ${km}` };
+    }
+  }
+
+  const kmSur = rawLower.match(/(?:km|kil[oó]metro)\s*(\d+(?:\.\d+)?)\s*(?:carretera\s*sur)/i) ||
+                rawLower.match(/(?:carretera\s*sur)\s*(?:km|kil[oó]metro)?\s*(\d+(?:\.\d+)?)/i);
+  if (kmSur && kmSur[1]) {
+    const km = parseFloat(kmSur[1]);
+    if (!isNaN(km)) {
+      const t = Math.max(0, Math.min((km - 7.5) / (20.0 - 7.5), 1));
+      const lat = 12.1120 + (12.0300 - 12.1120) * t;
+      const lng = -86.3110 + (-86.3500 - (-86.3110)) * t;
+      return { coordenadas: [lat, lng], referencia: `Carretera Sur Km ${km}` };
+    }
+  }
+
+  // 2. Localizar Punto de Referencia Base de Mayor Coincidencia
+  let basePoi: NicaraguaPuntoReferencia | null = null;
+  let maxMatchLen = 0;
+
+  for (const poi of NICARAGUA_MASTER_POIS) {
+    const poiNameLower = poi.nombre.toLowerCase();
+    if (rawLower.includes(poiNameLower) && poiNameLower.length > maxMatchLen) {
+      basePoi = poi;
+      maxMatchLen = poiNameLower.length;
+    }
+    for (const alias of poi.alias) {
+      if (rawLower.includes(alias) && alias.length > maxMatchLen) {
+        basePoi = poi;
+        maxMatchLen = alias.length;
+      }
+    }
+  }
+
+  const baseLat = basePoi ? basePoi.lat : fallback[0];
+  const baseLng = basePoi ? basePoi.lng : fallback[1];
+
+  // 3. Desglosar Desplazamientos Cardinales Nicas
+  const norm = ' ' + rawLower
+    .replace(/,/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/media\s+cuadra/g, '0.5 cuadras')
+    .replace(/1\/2\s+cuadra/g, '0.5 cuadras')
+    .replace(/1\/2\s*c\b/g, '0.5 cuadras') + ' ';
+
+  let dy = 0; // +Lat (al lago/norte) o -Lat (al sur)
+  let dx = 0; // +Lng (arriba/este) o -Lng (abajo/oeste)
+
+  const reNorte = /(?:(\d+(?:\.\d+)?|\d+\/\d+|media|una y media|dos y media)?\s*(cuadras?|c\b|c\.|varas?|vrs\b|vrs\.|metros?|mts\b|m\b)?)?\s*(?:al\s+lago|al\s+norte|hacia\s+el\s+lago|hacia\s+el\s+norte)\b/gi;
+  const reSur = /(?:(\d+(?:\.\d+)?|\d+\/\d+|media|una y media|dos y media)?\s*(cuadras?|c\b|c\.|varas?|vrs\b|vrs\.|metros?|mts\b|m\b)?)?\s*(?:al\s+sur|hacia\s+el\s+sur|hacia\s+la\s+monta[ñn]a)\b/gi;
+  const reOeste = /(?:(\d+(?:\.\d+)?|\d+\/\d+|media|una y media|dos y media)?\s*(cuadras?|c\b|c\.|varas?|vrs\b|vrs\.|metros?|mts\b|m\b)?)?\s*(?:abajo|al\s+oeste|hacia\s+abajo|hacia\s+el\s+oeste)\b/gi;
+  const reEste = /(?:(\d+(?:\.\d+)?|\d+\/\d+|media|una y media|dos y media)?\s*(cuadras?|c\b|c\.|varas?|vrs\b|vrs\.|metros?|mts\b|m\b)?)?\s*(?:arriba|al\s+este|hacia\s+arriba|hacia\s+el\s+este)\b/gi;
+
+  let m: RegExpExecArray | null;
+  while ((m = reNorte.exec(norm)) !== null) {
+    const val = parsearDistanciaNica(m[1], m[2]);
+    dy += val * CUADRA_LAT_GRADOS;
+  }
+  while ((m = reSur.exec(norm)) !== null) {
+    const val = parsearDistanciaNica(m[1], m[2]);
+    dy -= val * CUADRA_LAT_GRADOS;
+  }
+  while ((m = reOeste.exec(norm)) !== null) {
+    const val = parsearDistanciaNica(m[1], m[2]);
+    dx -= val * CUADRA_LNG_GRADOS;
+  }
+  while ((m = reEste.exec(norm)) !== null) {
+    const val = parsearDistanciaNica(m[1], m[2]);
+    dx += val * CUADRA_LNG_GRADOS;
+  }
+
+  // 4. Micro-localización de Manzana (Mz) y Casa / Lote
+  const mzMatch = norm.match(/(?:manzana|mz|mza)[\s.:#-]*([a-z0-9]+)/i);
+  const casaMatch = norm.match(/(?:casa|csa|no|num|núm|#)[\s.:#-]*([a-z0-9]+)/i);
+
+  if (mzMatch && mzMatch[1]) {
+    const mzVal = parseInt(mzMatch[1], 10) || (mzMatch[1].toUpperCase().charCodeAt(0) - 64);
+    if (!isNaN(mzVal)) {
+      // Dispersión en cuadrícula residencial (~30m por manzana)
+      dy += ((mzVal % 5) - 2) * 0.0003;
+      dx += (Math.floor(mzVal / 5) - 2) * 0.0003;
+    }
+  }
+
+  if (casaMatch && casaMatch[1]) {
+    const casaVal = parseInt(casaMatch[1], 10);
+    if (!isNaN(casaVal)) {
+      // Ajuste fino de frontis de vivienda (~10m por número de casa)
+      dy += ((casaVal % 10) - 5) * 0.00008;
+      dx += (Math.floor(casaVal / 10) - 2) * 0.00008;
+    }
+  }
+
+  const calculatedLat = baseLat + dy;
+  const calculatedLng = baseLng + dx;
+
+  return {
+    coordenadas: [calculatedLat, calculatedLng],
+    referencia: basePoi ? basePoi.nombre : undefined,
+  };
+}
+
+/**
  * Resolves Managua and Nicaragua addresses to latitude & longitude coordinates.
- * Covers all major rotondas, shopping centers, neighborhoods, and departments.
+ * Uses the advanced local nomenclature engine (interpretarDireccionNica)
+ * with full support for landmarks, cuadras, al lago/sur/arriba/abajo, manzanas and lots.
  */
 export function geocodeAddress(
   address: string,
   fallback: [number, number] = [12.1365, -86.2514]
 ): [number, number] {
   if (!address || typeof address !== 'string') return fallback;
-  const q = address.toLowerCase().trim();
 
-  // 1. Search in Master Nicaragua POIs
-  for (const poi of NICARAGUA_MASTER_POIS) {
-    if (poi.nombre.toLowerCase().includes(q) || poi.alias.some((a) => q.includes(a) || a.includes(q))) {
-      return [poi.lat, poi.lng];
-    }
+  // 1. Resolución inteligente por Nomenclatura Local Nica
+  const nicaResult = interpretarDireccionNica(address, fallback);
+  if (nicaResult.referencia || nicaResult.coordenadas[0] !== fallback[0] || nicaResult.coordenadas[1] !== fallback[1]) {
+    return nicaResult.coordenadas;
   }
 
-  // Rotondas principales de Managua
-  if (q.includes('rotonda metrocentro') || q.includes('rubén darío') || q.includes('ruben dario')) return [12.1264, -86.2652];
-  if (q.includes('rotonda cristo rey') || q.includes('cristo rey')) return [12.1332, -86.2512];
-  if (q.includes('rotonda el güegüense') || q.includes('rotonda gueguense') || q.includes('plaza españa')) return [12.1348, -86.2825];
-  if (q.includes('jean paul genie') || q.includes('galerias') || q.includes('galerías')) return [12.1008, -86.2536];
-  if (q.includes('rotonda bello horizonte')) return [12.1465, -86.2305];
-  if (q.includes('rotonda la virgen')) return [12.1485, -86.2215];
-  if (q.includes('rotonda universitaria') || q.includes('unan')) return [12.1125, -86.2735];
-  if (q.includes('rotonda centroamérica') || q.includes('centroamerica')) return [12.1120, -86.2480];
-  if (q.includes('santo domingo')) return [12.0970, -86.2420];
-  if (q.includes('hugo chávez') || q.includes('plaza inter') || q.includes('bolonia')) return [12.1432, -86.2758];
+  const q = address.toLowerCase().trim();
 
-  // Zonas y Barrios de Managua
-  if (q.includes('robles') || q.includes('hippos') || q.includes('zona viva')) return [12.1264, -86.2652];
-  if (q.includes('altamira')) return [12.1158, -86.2589];
-  if (q.includes('villa fontana')) return [12.1110, -86.2685];
-  if (q.includes('bello horizonte')) return [12.1415, -86.2301];
-  if (q.includes('linda vista')) return [12.1489, -86.3021];
-  if (q.includes('multicentro') || q.includes('americas') || q.includes('américas')) return [12.1384, -86.2189];
-  if (q.includes('monseñor') || q.includes('batahola') || q.includes('lezcano')) return [12.1402, -86.2954];
-  if (q.includes('colinas') || q.includes('las colinas')) return [12.0850, -86.2250];
-  if (q.includes('oriental') || q.includes('mercado oriental')) return [12.1410, -86.2520];
-  if (q.includes('huembes') || q.includes('roberto huembes')) return [12.1205, -86.2435];
-  if (q.includes('mayoreo')) return [12.1450, -86.2050];
-  if (q.includes('ciudad jardín') || q.includes('ciudad jardin')) return [12.1390, -86.2550];
-  if (q.includes('reparto san juan')) return [12.1210, -86.2690];
-  if (q.includes('san judas')) return [12.1120, -86.2980];
-  if (q.includes('altagracia')) return [12.1310, -86.2890];
-  if (q.includes('carretera a masaya') || q.includes('km 9') || q.includes('km 10') || q.includes('km 11')) return [12.0750, -86.2150];
-  if (q.includes('carretera norte') || q.includes('aeropuerto')) return [12.1480, -86.1750];
-  if (q.includes('carretera sur') || q.includes('el crucero')) return [12.0950, -86.3120];
-  if (q.includes('ciudad sandino')) return [12.1580, -86.3450];
-  if (q.includes('tipitapa')) return [12.1980, -86.0950];
-  if (q.includes('ticuantepe')) return [12.0220, -86.2050];
-
-  // Departamentos y Municipios de Nicaragua
+  // 2. Búsqueda de departamentos y municipios
   if (q.includes('masaya')) return [11.9744, -86.0942];
   if (q.includes('granada')) return [11.9299, -85.9560];
   if (q.includes('león') || q.includes('leon')) return [12.4379, -86.8780];
@@ -454,7 +609,7 @@ export function geocodeAddress(
   if (q.includes('puerto cabezas') || q.includes('bilwi')) return [14.0350, -83.3888];
   if (q.includes('central') || q.includes('managua')) return [12.1365, -86.2514];
 
-  // 2. Hash-based fallback with deterministic regional jitter
+  // 3. Fallback con jitter determinista regional
   let hash = 0;
   for (let i = 0; i < address.length; i++) hash = (hash * 31 + address.charCodeAt(i)) >>> 0;
   const latOffset = ((hash % 100) - 50) * 0.0005;

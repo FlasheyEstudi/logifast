@@ -119,10 +119,12 @@ export default function RepartidorMap({
   const [currentBearing, setCurrentBearing] = useState(0);
   const [gyroBearing, setGyroBearing] = useState<number | null>(null);
 
-  // Smooth interpolated driver position
+  // Smooth continuous interpolated driver position with zero-jitter RAF
+  const currentPosRef = useRef<[number, number]>(targetDriverPos);
   const [animatedPos, setAnimatedPos] = useState<[number, number]>(targetDriverPos);
-  const prevDriverPosRef = useRef<[number, number]>(targetDriverPos);
+  const [isMoving, setIsMoving] = useState(false);
   const animFrameRef = useRef<number | null>(null);
+  const movingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const mapRef = useRef<MapRef | null>(null);
 
@@ -132,35 +134,48 @@ export default function RepartidorMap({
   const [routeSteps, setRouteSteps] = useState<PasoRuta[]>([]);
   const [osrmRouteCoords, setOsrmRouteCoords] = useState<[number, number][]>([]);
 
-  // Smooth position interpolation with LERP
+  // Smooth position interpolation with continuous RAF and shortest angular path
   useEffect(() => {
-    const startPos = animatedPos;
+    const startPos = currentPosRef.current;
     const endPos = targetDriverPos;
 
-    if (startPos[0] === endPos[0] && startPos[1] === endPos[1]) return;
-
-    // Calculate motion bearing if driver is moving
     const dist = Math.hypot(endPos[0] - startPos[0], endPos[1] - startPos[1]);
-    if (dist > 0.00005) {
-      const b = calculateBearing(startPos, endPos);
-      setCurrentBearing((prev) => {
-        // Smooth bearing angle transition
-        const diff = (b - prev + 180) % 360 - 180;
-        return prev + diff * 0.4;
-      });
+    // Ignore microscopic noise (< 0.5 meters)
+    if (dist < 0.000005) return;
+
+    // Direct snap on teleports or huge jumps (> 2 km, e.g. first GPS lock)
+    if (dist > 0.02) {
+      currentPosRef.current = endPos;
+      setAnimatedPos(endPos);
+      return;
     }
 
-    const duration = 650;
-    const startTime = performance.now();
+    setIsMoving(true);
+    if (movingTimeoutRef.current) clearTimeout(movingTimeoutRef.current);
+    movingTimeoutRef.current = setTimeout(() => setIsMoving(false), 2500);
 
-    const step = (time: number) => {
-      const elapsed = time - startTime;
+    // Calculate motion bearing along trajectory with shortest angular turn
+    const targetBearing = calculateBearing(startPos, endPos);
+    setCurrentBearing((prev) => {
+      const diff = ((targetBearing - prev + 540) % 360) - 180;
+      return (prev + diff * 0.45 + 360) % 360;
+    });
+
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+
+    const startTime = performance.now();
+    const duration = 750; // Smooth 750ms glide across GPS intervals
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const ease = progress * (2 - progress); // Ease-out
+      // Smooth cubic ease-out for natural deceleration
+      const ease = 1 - Math.pow(1 - progress, 3);
 
       const lat = startPos[0] + (endPos[0] - startPos[0]) * ease;
       const lng = startPos[1] + (endPos[1] - startPos[1]) * ease;
 
+      currentPosRef.current = [lat, lng];
       setAnimatedPos([lat, lng]);
 
       if (progress < 1) {
@@ -169,7 +184,6 @@ export default function RepartidorMap({
     };
 
     animFrameRef.current = requestAnimationFrame(step);
-    prevDriverPosRef.current = endPos;
 
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -417,7 +431,8 @@ export default function RepartidorMap({
 
     obtenerRuta(
       { lat: targetDriverPos[0], lng: targetDriverPos[1] },
-      { lat: targetPos[0], lng: targetPos[1] }
+      { lat: targetPos[0], lng: targetPos[1] },
+      { bearing: activeBearing }
     )
       .then((res) => {
         if (currentReqId !== routeRequestIdRef.current) return;
@@ -756,6 +771,7 @@ export default function RepartidorMap({
           <MapMarker longitude={animatedPos[1]} latitude={animatedPos[0]}>
             <PinRepartidorMoto
               bearing={activeBearing}
+              isMoving={isMoving}
               label="Repartidor en vivo"
             />
             <MarkerPopup>

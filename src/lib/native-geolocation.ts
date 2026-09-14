@@ -36,11 +36,8 @@ export interface GeolocationOptions {
 }
 
 function triggerHapticSuccess() {
-  try {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate([20, 30, 20]);
-    }
-  } catch {}
+  // Las vibraciones continuas en lecturas GPS están deshabilitadas para proteger el hardware
+  // y evitar molestias al conductor durante el rastreo activo. Se reservan solo para alertas de negocio.
 }
 
 /**
