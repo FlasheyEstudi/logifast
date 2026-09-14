@@ -83,7 +83,7 @@ function CompraStepBar({ estado }: { estado: string }) {
 /* ── ActiveCompraCard ── */
 function ActiveCompraCard({ oc, onOpenTracking, onOpenChat }: { oc: OrdenCompra; onOpenTracking: (id: string) => void; onOpenChat?: (id: string) => void }) {
   const info = statusInfo(oc.estado);
-  const etaMin = useMemo(() => Math.floor(Math.random() * 20) + 15, []);
+  const etaMin = useMemo(() => (oc as any).tiempoEstimado || ((oc as any).kmEstimados ? Math.round((oc as any).kmEstimados * 4 + 8) : 15), [oc]);
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ ...card, overflow: 'hidden' }}>
@@ -154,7 +154,7 @@ function ActiveCompraCard({ oc, onOpenTracking, onOpenChat }: { oc: OrdenCompra;
 /* ── ActiveEnvioCard ── */
 function ActiveEnvioCard({ order, onOpenTracking, onOpenChat }: { order: Order; onOpenTracking: (id: string) => void; onOpenChat: (id: string) => void }) {
   const info = statusInfo(order.estado);
-  const etaMin = useMemo(() => Math.floor(Math.random() * 12) + 8, []);
+  const etaMin = useMemo(() => (order as any).tiempoEstimado || ((order as any).kmEstimados ? Math.round((order as any).kmEstimados * 3 + 8) : 12), [order]);
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ ...card, overflow: 'hidden' }}>

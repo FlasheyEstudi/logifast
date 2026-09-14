@@ -36,7 +36,6 @@ import {
   notificarPedidoListoParaRetiro,
   notificarProgresoEnvio,
 } from '@/services/native-notifications';
-import LiveOrderProgressBar from '@/components/ui/LiveOrderProgressBar';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
@@ -255,7 +254,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   /* ─── Prompt de Permisos de Notificación en Primer Ingreso ─── */
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
-  const [barDismissed, setBarDismissed] = useState(false);
 
   useEffect(() => {
     inicializarNotificacionesNativas().then((granted) => {
@@ -326,7 +324,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   useEffect(() => {
     if (activeOrder?.id) {
-      setBarDismissed(false);
       realtime.clienteTrackingUnirse(String(activeOrder.id));
     }
   }, [activeOrder?.id]);
@@ -1346,20 +1343,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* ─── Barra de Progreso en Vivo en Tiempo Real (Live Activity Flotante Sutil) ─── */}
-        {activeOrder && !trackingOrderId && !barDismissed && (
-          <LiveOrderProgressBar
-            ordenId={activeOrder.id}
-            estado={activeOrder.estado}
-            origen={activeOrder.origen}
-            destino={activeOrder.destino}
-            repartidorNombre={activeOrder.repartidorNombre}
-            tiempoEstimadoMin={activeOrder.tiempoEstimadoMin}
-            onOpenTracking={(id) => setTrackingOrder(id)}
-            onDismiss={() => setBarDismissed(true)}
-          />
-        )}
 
         {/* ─── RESPONSIVE STYLES (iOS native) ─── */}
         <style>{`

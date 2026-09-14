@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useMarketplaceStore } from '@/lib/marketplace-store';
 
 /* ═══════════════════════════════════════════════
    TYPES
@@ -1036,11 +1037,22 @@ export const useStore = create<AppState>((set, get) => ({
           estado: o.estado || 'pendiente',
           metodoPago: o.metodoPago || 'efectivo',
           estadoPago: 'pendiente',
-          codigoPin: o.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),
+          codigoPin: o.codigoPin || '',
+          kmEstimados: o.kmEstimados || 0,
+          tiempoEstimado: o.tiempoEstimado || 0,
+          distancia: o.kmEstimados || 0,
+          paqueteFotoUrl: o.paqueteFotoUrl || o.fotoEntrega || null,
+          entregadoEn: o.entregadoEn || null,
+          aceptadoEn: o.aceptadoEn || null,
+          recogidoEn: o.recogidoEn || null,
+          createdAt: o.createdAt || null,
           fecha: new Date(o.createdAt || Date.now()).toISOString().split('T')[0],
           hora: new Date(o.createdAt || Date.now()).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
           timeline: [
             { step: 'Orden creada', hora: new Date(o.createdAt || Date.now()).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true },
+            ...(o.aceptadoEn ? [{ step: 'Repartidor asignado', hora: new Date(o.aceptadoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true }] : []),
+            ...(o.recogidoEn ? [{ step: 'Paquete recogido', hora: new Date(o.recogidoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true }] : []),
+            ...(o.entregadoEn ? [{ step: 'Entrega confirmada', hora: new Date(o.entregadoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true }] : []),
           ],
         }));
         set({ orders: mapped });
@@ -1595,14 +1607,15 @@ export const useStore = create<AppState>((set, get) => ({
     const order = (get().orders || []).find((o) => String(o.id) === orderIdStr);
     let orderEstado = order?.estado;
     let orderHora = order?.hora;
+    let orderTiempoEst = (order as any)?.tiempoEstimado || 0;
 
     if (!orderEstado) {
       try {
-        const { useMarketplaceStore } = require('@/lib/marketplace-store');
         const oc = (useMarketplaceStore.getState().ordenesCompra || []).find((c: any) => String(c.id) === orderIdStr);
         if (oc) {
           orderEstado = oc.estado === 'entregado' ? 'entregado' : (oc.estado === 'en_camino' ? 'encamino' : oc.estado);
           orderHora = oc.hora || '12:00';
+          orderTiempoEst = (oc as any)?.tiempoEstimado || 0;
         }
       } catch {}
     }
@@ -1610,33 +1623,59 @@ export const useStore = create<AppState>((set, get) => ({
     // Build tracking steps based on order status
     const now = new Date();
     const fmt = (d: Date) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
-    const steps = TRACKING_STEPS_TEMPLATE.map((s, i) => ({ ...s }));
-    // Determine which steps are completed based on order estado
+    const orderCreatedTime = order?.createdAt ? fmt(new Date(order.createdAt)) : (orderHora || fmt(now));
+
+    const steps = TRACKING_STEPS_TEMPLATE.map((s) => ({ ...s }));
     const statusIndex: Record<string, number> = {
       pendiente: 0, recibido: 0, preparando: 1, listo: 2, aceptado: 3, encamino: 3, en_camino: 3, recogido: 5, entregado: 7, incidencia: 3, programada: 0,
     };
     const completedUpTo = statusIndex[orderEstado || 'pendiente'] ?? 0;
+
     for (let i = 0; i < steps.length; i++) {
       if (i < completedUpTo) {
         steps[i].status = 'completed';
-        steps[i].timestamp = fmt(new Date(now.getTime() - (completedUpTo - i) * 180000));
+        if (i === 0) {
+          steps[i].timestamp = orderCreatedTime;
+        } else if (i === 1 && (order as any)?.aceptadoEn) {
+          steps[i].timestamp = fmt(new Date((order as any).aceptadoEn));
+        } else if (i === 4 && (order as any)?.recogidoEn) {
+          steps[i].timestamp = fmt(new Date((order as any).recogidoEn));
+        } else if (i === 7 && (order as any)?.entregadoEn) {
+          steps[i].timestamp = fmt(new Date((order as any).entregadoEn));
+        } else {
+          steps[i].timestamp = orderHora || orderCreatedTime;
+        }
       } else if (i === completedUpTo) {
         steps[i].status = 'current';
-        steps[i].timestamp = fmt(now);
+        steps[i].timestamp = i === 0 ? orderCreatedTime : fmt(now);
       } else {
         steps[i].status = 'pending';
+        steps[i].timestamp = '—';
       }
     }
+
     // For programada, show first step completed
     if (orderEstado === 'programada' && orderHora) {
       steps[0].status = 'completed';
       steps[0].timestamp = orderHora;
     }
-    // For entregado, mark all completed
+    // For entregado, mark all completed with real final timestamp
     if (orderEstado === 'entregado') {
-      steps.forEach((s, i) => { s.status = 'completed'; s.timestamp = fmt(new Date(now.getTime() - (7 - i) * 180000)); });
+      const entregaTime = (order as any)?.entregadoEn ? fmt(new Date((order as any).entregadoEn)) : (orderHora || fmt(now));
+      steps.forEach((s, idx) => {
+        s.status = 'completed';
+        s.timestamp = idx === 0 ? orderCreatedTime : entregaTime;
+      });
     }
-    const eta = orderEstado === 'entregado' ? 0 : orderEstado === 'programada' ? -1 : Math.max(3, Math.floor(12 - completedUpTo * 1.5));
+
+    const eta = orderEstado === 'entregado'
+      ? 0
+      : orderEstado === 'programada'
+      ? -1
+      : orderTiempoEst > 0
+      ? orderTiempoEst
+      : Math.max(3, 15 - completedUpTo * 2);
+
     set({ trackingOrderId: orderIdStr, trackingSteps: steps, trackingETA: eta });
   },
 
@@ -1669,7 +1708,7 @@ export const useStore = create<AppState>((set, get) => ({
   sendChatMessage: (orderId, content, senderType) => {
     const id = `msg-${Date.now()}`;
     const now = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
-    const senderName = senderType === 'cliente' ? 'María' : senderType === 'sistema' ? 'Sistema' : 'Repartidor';
+    const senderName = senderType === 'cliente' ? 'Cliente' : senderType === 'sistema' ? 'Sistema' : 'Repartidor';
     const msg: ChatMessage = { id, senderId: senderType === 'cliente' ? 'cliente' : 'r1', senderName, senderType, content, timestamp: now, read: senderType !== 'cliente' };
     set((state) => ({
       chatConversations: state.chatConversations.map((c) =>

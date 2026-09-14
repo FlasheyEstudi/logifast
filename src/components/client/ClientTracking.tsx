@@ -642,176 +642,6 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   const notifiedFidelizacionRef = useRef<boolean>(false);
   const notifiedDemoraRef = useRef<boolean>(false);
 
-  const notificarCambioEstado = useCallback((nuevoEstado: string) => {
-    if (!nuevoEstado || lastNotifiedEstadoRef.current === nuevoEstado) return;
-    const prev = lastNotifiedEstadoRef.current;
-    lastNotifiedEstadoRef.current = nuevoEstado;
-
-    if (!prev) return;
-
-    let titulo = '';
-    let cuerpo = '';
-    let tipo: 'orden' | 'exito' = 'orden';
-    let porcentaje = 20;
-
-    if (nuevoEstado === 'EN_CAMINO_RECOGER') {
-      titulo = 'Repartidor en camino';
-      cuerpo = 'El repartidor se dirige al punto de recogida.';
-      porcentaje = 40;
-    } else if (nuevoEstado === 'RECOGIDO') {
-      titulo = 'Pedido recolectado';
-      cuerpo = 'Tu paquete va en camino hacia tu dirección de entrega.';
-      porcentaje = 70;
-    } else if (nuevoEstado === 'EN_CAMINO_ENTREGAR') {
-      titulo = 'Repartidor cerca';
-      cuerpo = 'Tu repartidor se encuentra a pocos minutos de tu ubicación.';
-      porcentaje = 90;
-    } else if (nuevoEstado === 'EN_PUNTO_ENTREGA' || nuevoEstado === 'LLEGADO') {
-      titulo = '¡Tu repartidor está en la puerta!';
-      cuerpo = 'El repartidor ha llegado a tu dirección de entrega.';
-      porcentaje = 95;
-      if (!notifiedPuertaRef.current) {
-        notifiedPuertaRef.current = true;
-        notificarRepartidorEnPuerta({
-          ordenId: String(trackingOrderId),
-          pin: (order as any)?.codigoPin || backendTracking?.orden?.codigoPin,
-          repartidorNombre: (order as any)?.repartidor || 'Tu repartidor',
-          direccion: (order as any)?.destino || '',
-        }).catch(() => null);
-      }
-    } else if (nuevoEstado === 'ENTREGADO') {
-      const tieneFoto = Boolean((order as any)?.paqueteFotoUrl || backendTracking?.orden?.paqueteFotoUrl);
-      titulo = '¡Pedido entregado con éxito!';
-      cuerpo = tieneFoto
-        ? 'Tu paquete ha sido entregado y el comprobante digital está guardado en tu historial.'
-        : 'Tu orden ha sido completada exitosamente. ¡Gracias por usar LogiFast!';
-      tipo = 'exito';
-      porcentaje = 100;
-
-      // Notificación 5: Resumen de Ahorro y Fidelización post-entrega
-      if (!notifiedFidelizacionRef.current) {
-        notifiedFidelizacionRef.current = true;
-        const montoNum = Number((order as any)?.monto || (order as any)?.total || 150);
-        const puntosGanados = Math.max(15, Math.round(montoNum * 0.1));
-        const cashback = Number((puntosGanados / 5).toFixed(2));
-
-        try {
-          useStore.getState().addFidelizacionPuntos(`Orden completada #${trackingOrderId}`, puntosGanados);
-        } catch {}
-
-        setTimeout(() => {
-          notificarResumenFidelizacion({
-            ordenId: String(trackingOrderId),
-            montoTotal: montoNum,
-            puntosGanados,
-            cashbackCordobas: cashback,
-          }).catch(() => null);
-        }, 3200);
-      }
-    }
-
-    if (titulo) {
-      dispararNotificacionNativa({
-        titulo,
-        cuerpo,
-        subtexto: `LOGIFAST • Seguimiento en Tiempo Real (${porcentaje}%)`,
-        detalleLargo: `${titulo}\n${cuerpo}\nOrden ID: #${trackingOrderId}`,
-        canalId: 'logifast_urgente',
-        colorIcono: '#007AFF',
-        iconoPequeno: 'ic_stat_logifast',
-        categoriaAcciones: 'ORDEN_ESTADO',
-        tipoAlerta: tipo,
-        extra: { ordenId: trackingOrderId, porcentaje },
-      }).catch(() => null);
-
-      notificarProgresoEnvio({
-        ordenId: String(trackingOrderId),
-        porcentaje,
-        etapaTexto: titulo,
-        subtitulo: cuerpo,
-      }).catch(() => null);
-    }
-  }, [trackingOrderId, order, backendTracking]);
-
-  // Sync client to order's tracking room & receive live driver positioning
-  useEffect(() => {
-    if (!trackingOrderId) return;
-    inicializarNotificacionesNativas().catch(() => null);
-    realtime.clienteTrackingUnirse(trackingOrderId);
-
-    // Fetch tracking details directly from API
-    const fetchTracking = () => {
-      fetch(`/api/ordenes/${trackingOrderId}/tracking`, { cache: 'no-store' })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data?.orden) {
-            setBackendTracking(data);
-            if (data.repartidorPos && data.repartidorPos.lat && data.repartidorPos.lng) {
-              setDriverPos([data.repartidorPos.lat, data.repartidorPos.lng]);
-            }
-            if (data.driverEstado) {
-              setDriverEstado(data.driverEstado);
-              notificarCambioEstado(data.driverEstado);
-            } else if (data.orden.estado) {
-              const mapped = data.orden.estado === 'recogido'
-                ? 'RECOGIDO'
-                : (data.orden.estado === 'en_camino' || data.orden.estado === 'encamino' || data.orden.estado === 'aceptado')
-                  ? 'EN_CAMINO_RECOGER'
-                  : data.orden.estado === 'entregado'
-                    ? 'ENTREGADO'
-                    : 'ORDEN_ASIGNADA';
-              setDriverEstado(mapped);
-              notificarCambioEstado(mapped);
-            }
-          }
-        })
-        .catch(() => null);
-    };
-
-    fetchTracking();
-    const interval = setInterval(fetchTracking, 3000);
-
-    const cleanupPos = onRealtimeEvent('repartidor:posicion:update', (data) => {
-      if (data?.lat && data?.lng) {
-        setDriverPos([data.lat, data.lng]);
-      }
-      if (data?.estado) {
-        setDriverEstado(data.estado);
-      }
-    });
-
-    const cleanupEstado = onRealtimeEvent('repartidor:estado:update', (data) => {
-      if (data?.estado) {
-        setDriverEstado(data.estado);
-        notificarCambioEstado(data.estado);
-      }
-      fetchTracking();
-    });
-
-    const cleanupOrdenUpdate = onRealtimeEvent('orden:estado:update', () => {
-      fetchTracking();
-    });
-
-    const cleanupDemora = onRealtimeEvent('orden:demora_clima', (data: any) => {
-      if ((!data?.ordenId || data?.ordenId === trackingOrderId) && !notifiedDemoraRef.current) {
-        notifiedDemoraRef.current = true;
-        notificarDemoraClimaOTrafico({
-          ordenId: String(trackingOrderId),
-          minutosDemora: data?.minutosDemora || 15,
-          motivo: data?.motivo || 'lluvia_trafico',
-        }).catch(() => null);
-      }
-    });
-
-    return () => {
-      clearInterval(interval);
-      cleanupPos();
-      cleanupEstado();
-      cleanupOrdenUpdate();
-      cleanupDemora();
-    };
-  }, [trackingOrderId]);
-
   const { ordenesCompra } = useMarketplaceStore();
 
   const currentOrdenCompra = useMemo(() => {
@@ -1000,6 +830,177 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         fotoUrl: backendTracking?.repartidor?.fotoUrl || null,
       })
     : null;
+
+
+  const notificarCambioEstado = useCallback((nuevoEstado: string) => {
+    if (!nuevoEstado || lastNotifiedEstadoRef.current === nuevoEstado) return;
+    const prev = lastNotifiedEstadoRef.current;
+    lastNotifiedEstadoRef.current = nuevoEstado;
+
+    if (!prev) return;
+
+    let titulo = '';
+    let cuerpo = '';
+    let tipo: 'orden' | 'exito' = 'orden';
+    let porcentaje = 20;
+
+    if (nuevoEstado === 'EN_CAMINO_RECOGER') {
+      titulo = 'Repartidor en camino';
+      cuerpo = 'El repartidor se dirige al punto de recogida.';
+      porcentaje = 40;
+    } else if (nuevoEstado === 'RECOGIDO') {
+      titulo = 'Pedido recolectado';
+      cuerpo = 'Tu paquete va en camino hacia tu dirección de entrega.';
+      porcentaje = 70;
+    } else if (nuevoEstado === 'EN_CAMINO_ENTREGAR') {
+      titulo = 'Repartidor cerca';
+      cuerpo = 'Tu repartidor se encuentra a pocos minutos de tu ubicación.';
+      porcentaje = 90;
+    } else if (nuevoEstado === 'EN_PUNTO_ENTREGA' || nuevoEstado === 'LLEGADO') {
+      titulo = '¡Tu repartidor está en la puerta!';
+      cuerpo = 'El repartidor ha llegado a tu dirección de entrega.';
+      porcentaje = 95;
+      if (!notifiedPuertaRef.current) {
+        notifiedPuertaRef.current = true;
+        notificarRepartidorEnPuerta({
+          ordenId: String(trackingOrderId),
+          pin: (order as any)?.codigoPin || backendTracking?.orden?.codigoPin,
+          repartidorNombre: (order as any)?.repartidor || 'Tu repartidor',
+          direccion: (order as any)?.destino || '',
+        }).catch(() => null);
+      }
+    } else if (nuevoEstado === 'ENTREGADO') {
+      const tieneFoto = Boolean((order as any)?.paqueteFotoUrl || backendTracking?.orden?.paqueteFotoUrl);
+      titulo = '¡Pedido entregado con éxito!';
+      cuerpo = tieneFoto
+        ? 'Tu paquete ha sido entregado y el comprobante digital está guardado en tu historial.'
+        : 'Tu orden ha sido completada exitosamente. ¡Gracias por usar LogiFast!';
+      tipo = 'exito';
+      porcentaje = 100;
+
+      // Notificación 5: Resumen de Ahorro y Fidelización post-entrega
+      if (!notifiedFidelizacionRef.current) {
+        notifiedFidelizacionRef.current = true;
+        const montoNum = Number((order as any)?.monto || (order as any)?.total || 150);
+        const puntosGanados = Math.max(15, Math.round(montoNum * 0.1));
+        const cashback = Number((puntosGanados / 5).toFixed(2));
+
+        try {
+          useStore.getState().addFidelizacionPuntos(`Orden completada #${trackingOrderId}`, puntosGanados);
+        } catch {}
+
+        setTimeout(() => {
+          notificarResumenFidelizacion({
+            ordenId: String(trackingOrderId),
+            montoTotal: montoNum,
+            puntosGanados,
+            cashbackCordobas: cashback,
+          }).catch(() => null);
+        }, 3200);
+      }
+    }
+
+    if (titulo) {
+      dispararNotificacionNativa({
+        titulo,
+        cuerpo,
+        subtexto: `LOGIFAST • Seguimiento en Tiempo Real (${porcentaje}%)`,
+        detalleLargo: `${titulo}\n${cuerpo}\nOrden ID: #${trackingOrderId}`,
+        canalId: 'logifast_urgente',
+        colorIcono: '#007AFF',
+        iconoPequeno: 'ic_stat_logifast',
+        categoriaAcciones: 'ORDEN_ESTADO',
+        tipoAlerta: tipo,
+        extra: { ordenId: trackingOrderId, porcentaje },
+      }).catch(() => null);
+
+      notificarProgresoEnvio({
+        ordenId: String(trackingOrderId),
+        porcentaje,
+        etapaTexto: titulo,
+        subtitulo: cuerpo,
+      }).catch(() => null);
+    }
+  }, [trackingOrderId, order, backendTracking]);
+
+  // Sync client to order's tracking room & receive live driver positioning
+  useEffect(() => {
+    if (!trackingOrderId) return;
+    inicializarNotificacionesNativas().catch(() => null);
+    realtime.clienteTrackingUnirse(trackingOrderId);
+
+    // Fetch tracking details directly from API
+    const fetchTracking = () => {
+      fetch(`/api/ordenes/${trackingOrderId}/tracking`, { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.orden) {
+            setBackendTracking(data);
+            if (data.repartidorPos && data.repartidorPos.lat && data.repartidorPos.lng) {
+              setDriverPos([data.repartidorPos.lat, data.repartidorPos.lng]);
+            }
+            if (data.driverEstado) {
+              setDriverEstado(data.driverEstado);
+              notificarCambioEstado(data.driverEstado);
+            } else if (data.orden.estado) {
+              const mapped = data.orden.estado === 'recogido'
+                ? 'RECOGIDO'
+                : (data.orden.estado === 'en_camino' || data.orden.estado === 'encamino' || data.orden.estado === 'aceptado')
+                  ? 'EN_CAMINO_RECOGER'
+                  : data.orden.estado === 'entregado'
+                    ? 'ENTREGADO'
+                    : 'ORDEN_ASIGNADA';
+              setDriverEstado(mapped);
+              notificarCambioEstado(mapped);
+            }
+          }
+        })
+        .catch(() => null);
+    };
+
+    fetchTracking();
+    const interval = setInterval(fetchTracking, 3000);
+
+    const cleanupPos = onRealtimeEvent('repartidor:posicion:update', (data) => {
+      if (data?.lat && data?.lng) {
+        setDriverPos([data.lat, data.lng]);
+      }
+      if (data?.estado) {
+        setDriverEstado(data.estado);
+      }
+    });
+
+    const cleanupEstado = onRealtimeEvent('repartidor:estado:update', (data) => {
+      if (data?.estado) {
+        setDriverEstado(data.estado);
+        notificarCambioEstado(data.estado);
+      }
+      fetchTracking();
+    });
+
+    const cleanupOrdenUpdate = onRealtimeEvent('orden:estado:update', () => {
+      fetchTracking();
+    });
+
+    const cleanupDemora = onRealtimeEvent('orden:demora_clima', (data: any) => {
+      if ((!data?.ordenId || data?.ordenId === trackingOrderId) && !notifiedDemoraRef.current) {
+        notifiedDemoraRef.current = true;
+        notificarDemoraClimaOTrafico({
+          ordenId: String(trackingOrderId),
+          minutosDemora: data?.minutosDemora || 15,
+          motivo: data?.motivo || 'lluvia_trafico',
+        }).catch(() => null);
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      cleanupPos();
+      cleanupEstado();
+      cleanupOrdenUpdate();
+      cleanupDemora();
+    };
+  }, [trackingOrderId]);
 
   // Fetch OSRM route dynamically: Driver to Destination (or to Pickup if not yet picked up)
   useEffect(() => {
@@ -1266,10 +1267,46 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           }}
         >
           {[
-            { icon: <Clock size={15} />, label: '14:52', sub: 'Hora' },
-            { icon: <Bike size={15} />, label: typeof repartidor?.nombre === 'string' ? (repartidor.nombre.split(' ')[0] || repartidor.nombre) : '—', sub: 'Repartidor' },
-            { icon: <Navigation size={15} />, label: '3.2 km', sub: 'Distancia' },
-            { icon: <Clock size={15} />, label: '18 min', sub: 'Tiempo total' },
+            {
+              icon: <Clock size={15} />,
+              label: (order as any)?.entregadoEn
+                ? new Date((order as any).entregadoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+                : (order.hora || (order.createdAt ? new Date(order.createdAt).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '—')),
+              sub: 'Hora entrega',
+            },
+            {
+              icon: <Bike size={15} />,
+              label: typeof repartidor?.nombre === 'string'
+                ? (repartidor.nombre.split(' ')[0] || repartidor.nombre)
+                : ((order as any)?.repartidorNombre || (order as any)?.repartidor || 'Repartidor'),
+              sub: 'Repartidor',
+            },
+            {
+              icon: <Navigation size={15} />,
+              label: (order as any)?.kmRecorridos
+                ? `${(order as any).kmRecorridos} km`
+                : (order as any)?.kmEstimados
+                  ? `${(order as any).kmEstimados} km`
+                  : (order.distancia ? `${order.distancia} km` : (backendTracking?.orden?.kmEstimados ? `${backendTracking.orden.kmEstimados} km` : '—')),
+              sub: 'Distancia',
+            },
+            {
+              icon: <Clock size={15} />,
+              label: (() => {
+                if ((order as any)?.createdAt && (order as any)?.entregadoEn) {
+                  const m = Math.max(1, Math.round((new Date((order as any).entregadoEn).getTime() - new Date((order as any).createdAt).getTime()) / 60000));
+                  return `${m} min`;
+                }
+                if ((order as any)?.tiempoTotal) {
+                  return `${(order as any).tiempoTotal} min`;
+                }
+                if ((order as any)?.tiempoEstimado || backendTracking?.orden?.tiempoEstimado) {
+                  return `${(order as any)?.tiempoEstimado || backendTracking?.orden?.tiempoEstimado} min`;
+                }
+                return '—';
+              })(),
+              sub: 'Tiempo real',
+            },
           ].map((item, i) => (
             <div
               key={i}
@@ -1301,31 +1338,35 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           ))}
         </motion.div>
 
-        {/* Photo evidence placeholder */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-          style={{
-            width: '100%',
-            maxWidth: 280,
-            height: 160,
-            borderRadius: 12,
-            border: '2px dashed var(--border)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            marginTop: 8,
-            background: 'var(--bg-alt)',
-          }}
-        >
-          <Package size={28} style={{ color: 'var(--text-muted)' }} />
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: 'var(--text-muted)' }}>
-            Foto de evidencia
-          </span>
-        </motion.div>
+        {/* Foto de evidencia real si fue tomada por el repartidor */}
+        {Boolean((order as any)?.paqueteFotoUrl || (order as any)?.fotoEntrega || backendTracking?.orden?.paqueteFotoUrl || backendTracking?.orden?.fotoEntrega) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            style={{
+              width: '100%',
+              maxWidth: 280,
+              borderRadius: 14,
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+              marginTop: 8,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+            }}
+          >
+            <img
+              src={(order as any)?.paqueteFotoUrl || (order as any)?.fotoEntrega || backendTracking?.orden?.paqueteFotoUrl || backendTracking?.orden?.fotoEntrega}
+              alt="Comprobante de entrega"
+              style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
+            />
+            <div style={{ padding: '6px 12px', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Package size={14} style={{ color: 'var(--primario)' }} />
+              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>
+                Comprobante de entrega verificado
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Action buttons */}
         <motion.div
