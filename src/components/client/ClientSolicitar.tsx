@@ -28,7 +28,9 @@ import {
   Navigation,
   Camera,
   Moon,
+  Clock,
 } from '@/components/icons';
+import CheckAnimation from '@/components/ui/CheckAnimation';
 import { useStore } from '@/lib/store';
 import type { DireccionSugerencia, SolicitudEnvio, Order, OrderStatus, PaymentMethod, PaymentStatus } from '@/lib/store';
 import { geocodeAddress, buscarUbicacionDinamica, obtenerRuta, reverseGeocode } from '@/lib/osrm';
@@ -38,6 +40,8 @@ import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, M
 import { PinRecogida, PinEntrega, PinTienda } from '@/components/ui/MapPins';
 import { useMapaPuntos } from '@/hooks/useMapaPuntos';
 import { dispararNotificacionNativa } from '@/services/native-notifications';
+import { parsearUbicacionCompartida } from '@/lib/location-parser';
+import { Share2, MessageSquare, CheckCircle2 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════
    TYPES
@@ -472,8 +476,11 @@ function AddressInput({
   onChange,
   onSelect,
   onUseMyLocation,
+  onPasteSharedLocation,
   isLocating,
   hasGpsFix,
+  hasSharedLocationFix,
+  isParsingShared,
   dotColor,
   suggestions,
   placeholder,
@@ -483,8 +490,11 @@ function AddressInput({
   onChange: (v: string) => void;
   onSelect: (s: DireccionSugerencia) => void;
   onUseMyLocation?: () => void;
+  onPasteSharedLocation?: () => void;
   isLocating?: boolean;
   hasGpsFix?: boolean;
+  hasSharedLocationFix?: boolean;
+  isParsingShared?: boolean;
   dotColor: string;
   suggestions: DireccionSugerencia[];
   placeholder: string;
@@ -618,72 +628,135 @@ function AddressInput({
         )}
       </div>
 
-      {onUseMyLocation && (
+      {(onUseMyLocation || onPasteSharedLocation) && (
         <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 26 }}
-            onClick={onUseMyLocation}
-            disabled={isLocating}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 7,
-              background: isLocating
-                ? 'rgba(0, 122, 255, 0.14)'
-                : hasGpsFix
-                ? 'rgba(52, 199, 89, 0.15)'
-                : 'rgba(0, 122, 255, 0.08)',
-              border: isLocating
-                ? '1px solid rgba(0, 122, 255, 0.4)'
-                : hasGpsFix
-                ? '1.5px solid #34C759'
-                : '1px solid rgba(0, 122, 255, 0.22)',
-              borderRadius: 100,
-              padding: '6px 14px',
-              color: isLocating
-                ? 'var(--primario)'
-                : hasGpsFix
-                ? '#34C759'
-                : 'var(--primario)',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: isLocating ? 'wait' : 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
-              boxShadow: hasGpsFix
-                ? '0 0 14px rgba(52, 199, 89, 0.22)'
-                : isLocating
-                ? '0 0 14px rgba(0, 122, 255, 0.2)'
-                : 'none',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.25s ease',
-            }}
-          >
-            {isLocating ? (
-              <>
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                  style={{ display: 'inline-flex' }}
-                >
+          {onUseMyLocation && (
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+              onClick={onUseMyLocation}
+              disabled={isLocating}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                background: isLocating
+                  ? 'rgba(0, 122, 255, 0.14)'
+                  : hasGpsFix
+                  ? 'rgba(52, 199, 89, 0.15)'
+                  : 'rgba(0, 122, 255, 0.08)',
+                border: isLocating
+                  ? '1px solid rgba(0, 122, 255, 0.4)'
+                  : hasGpsFix
+                  ? '1.5px solid #34C759'
+                  : '1px solid rgba(0, 122, 255, 0.22)',
+                borderRadius: 100,
+                padding: '6px 14px',
+                color: isLocating
+                  ? 'var(--primario)'
+                  : hasGpsFix
+                  ? '#34C759'
+                  : 'var(--primario)',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: isLocating ? 'wait' : 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+                boxShadow: hasGpsFix
+                  ? '0 0 14px rgba(52, 199, 89, 0.22)'
+                  : isLocating
+                  ? '0 0 14px rgba(0, 122, 255, 0.2)'
+                  : 'none',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.25s ease',
+              }}
+            >
+              {isLocating ? (
+                <>
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                    style={{ display: 'inline-flex' }}
+                  >
+                    <Locate size={14} />
+                  </motion.span>
+                  <span>Buscando señal satelital GPS...</span>
+                </>
+              ) : hasGpsFix ? (
+                <>
+                  <Check size={14} strokeWidth={2.5} />
+                  <span>Ubicación GPS fijada</span>
+                </>
+              ) : (
+                <>
                   <Locate size={14} />
-                </motion.span>
-                <span>Buscando señal satelital GPS...</span>
-              </>
-            ) : hasGpsFix ? (
-              <>
-                <Check size={14} strokeWidth={2.5} />
-                <span>Ubicación GPS fijada</span>
-              </>
-            ) : (
-              <>
-                <Locate size={14} />
-                <span>Usar mi ubicación GPS actual</span>
-              </>
-            )}
-          </motion.button>
+                  <span>Usar mi ubicación GPS actual</span>
+                </>
+              )}
+            </motion.button>
+          )}
+
+          {onPasteSharedLocation && (
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+              onClick={onPasteSharedLocation}
+              disabled={isParsingShared}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                background: hasSharedLocationFix
+                  ? 'rgba(37, 211, 102, 0.18)'
+                  : isParsingShared
+                  ? 'rgba(37, 211, 102, 0.12)'
+                  : 'rgba(37, 211, 102, 0.09)',
+                border: hasSharedLocationFix
+                  ? '1.5px solid #25D366'
+                  : isParsingShared
+                  ? '1px solid rgba(37, 211, 102, 0.4)'
+                  : '1px solid rgba(37, 211, 102, 0.28)',
+                borderRadius: 100,
+                padding: '6px 14px',
+                color: '#25D366',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: isParsingShared ? 'wait' : 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+                boxShadow: hasSharedLocationFix
+                  ? '0 0 14px rgba(37, 211, 102, 0.25)'
+                  : 'none',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.25s ease',
+              }}
+            >
+              {isParsingShared ? (
+                <>
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                    style={{ display: 'inline-flex' }}
+                  >
+                    <Share2 size={13} />
+                  </motion.span>
+                  <span>Leyendo ubicación WhatsApp...</span>
+                </>
+              ) : hasSharedLocationFix ? (
+                <>
+                  <CheckCircle2 size={14} />
+                  <span>✓ Ubicación WhatsApp fijada</span>
+                </>
+              ) : (
+                <>
+                  <Share2 size={13} />
+                  <span>Pegar Ubicación (WhatsApp / Maps)</span>
+                </>
+              )}
+            </motion.button>
+          )}
         </div>
       )}
 
@@ -860,42 +933,6 @@ function CostCard({ breakdown, showPromo }: { breakdown: CostBreakdown; showProm
 }
 
 /* ═══════════════════════════════════════════════
-   CHECK ANIMATION (SVG for confirmation)
-   ═══════════════════════════════════════════════ */
-
-function CheckAnimation() {
-  return (
-    <div style={{ width: 80, height: 80, position: 'relative' }}>
-      <svg viewBox="0 0 80 80" style={{ width: '100%', height: '100%' }}>
-        <motion.circle
-          cx="40"
-          cy="40"
-          r="36"
-          fill="none"
-          stroke="var(--exito)"
-          strokeWidth="3"
-          strokeLinecap="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.6, ease: 'easeInOut' }}
-        />
-        <motion.path
-          d="M24 42 L34 52 L56 30"
-          fill="none"
-          stroke="var(--exito)"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.4, delay: 0.5, ease: 'easeOut' }}
-        />
-      </svg>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
@@ -998,6 +1035,79 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     setToast({ message, variant });
     setTimeout(() => setToast(null), 3000);
   }, []);
+
+  /* ─── Soporte de Ubicación Compartida vía WhatsApp / Telegram / Maps ─── */
+  const [hasSharedLocationFix, setHasSharedLocationFix] = useState(false);
+  const [isParsingSharedLocation, setIsParsingSharedLocation] = useState(false);
+  const [shareLocationModalOpen, setShareLocationModalOpen] = useState(false);
+  const [manualShareInput, setManualShareInput] = useState('');
+
+  const aplicarUbicacionParseada = useCallback((result: any) => {
+    if (result.exito && result.lat && result.lng) {
+      setSolicitudEnvio({
+        destino: result.direccionTexto,
+        destinoLat: result.lat,
+        destinoLng: result.lng,
+      });
+      setHasGpsDestino(false);
+      setHasSharedLocationFix(true);
+      showToast(`¡Destino fijado desde ${result.fuente === 'whatsapp' ? 'WhatsApp' : 'Maps'}!`, 'success');
+      return true;
+    }
+    return false;
+  }, [setSolicitudEnvio, showToast]);
+
+  const handlePasteWhatsAppLocation = useCallback(async () => {
+    setIsParsingSharedLocation(true);
+    let clipText = '';
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
+        clipText = await navigator.clipboard.readText();
+      }
+    } catch {}
+
+    if (clipText && clipText.trim().length > 3) {
+      const parsed = await parsearUbicacionCompartida(clipText);
+      if (parsed.exito) {
+        aplicarUbicacionParseada(parsed);
+        setIsParsingSharedLocation(false);
+        return;
+      }
+    }
+
+    // Si el portapapeles estaba vacío o no contenía enlace válido, abrir el modal de pegado
+    setIsParsingSharedLocation(false);
+    setShareLocationModalOpen(true);
+  }, [aplicarUbicacionParseada]);
+
+  // Listener para cuando se comparte un enlace directo desde Android (Intent ACTION_SEND de WhatsApp o Telegram)
+  useEffect(() => {
+    const checkAndApplyShared = async (text: string) => {
+      if (!text || text.trim().length === 0) return;
+      setIsParsingSharedLocation(true);
+      const parsed = await parsearUbicacionCompartida(text);
+      if (parsed.exito) {
+        aplicarUbicacionParseada(parsed);
+      }
+      setIsParsingSharedLocation(false);
+    };
+
+    if (typeof window !== 'undefined' && (window as any).__LOGIFAST_SHARED_LOCATION__) {
+      const shared = (window as any).__LOGIFAST_SHARED_LOCATION__;
+      (window as any).__LOGIFAST_SHARED_LOCATION__ = null;
+      checkAndApplyShared(shared);
+    }
+
+    const handleEvent = (e: any) => {
+      const text = e.detail?.text;
+      if (text) checkAndApplyShared(text);
+    };
+
+    window.addEventListener('logifast:sharedLocation', handleEvent);
+    return () => {
+      window.removeEventListener('logifast:sharedLocation', handleEvent);
+    };
+  }, [aplicarUbicacionParseada]);
 
   /* ─── Cost calculation ─── */
   const costBreakdown = useMemo<CostBreakdown>(() => {
@@ -1439,13 +1549,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
           resetSolicitudEnvio();
           dispararNotificacionNativa({
             titulo: '¡Envío express solicitado!',
-            cuerpo: `Tu orden hacia ${solicitudEnvio.destino?.texto || 'Destino'} está registrada. Buscando repartidor cercano...`,
-            subtexto: 'LOGIFAST • Envío Solicitado',
-            detalleLargo: `Recogida: ${solicitudEnvio.origen?.texto || 'Origen'}\nDestino: ${solicitudEnvio.destino?.texto || 'Destino'}\nTotal: C$ ${costBreakdown.total.toFixed(2)}`,
+            cuerpo: `Tu orden hacia ${solicitudEnvio.destino || 'Destino'} está registrada. Buscando repartidor cercano...`,
+            subtexto: 'LOGIFAST • Envío Solicitado (20%)',
+            detalleLargo: `Recogida: ${solicitudEnvio.origen || 'Origen'}\nDestino: ${solicitudEnvio.destino || 'Destino'}\nTotal: C$ ${costBreakdown.total.toFixed(2)}`,
             canalId: 'logifast_urgente',
             colorIcono: '#007AFF',
             iconoPequeno: 'ic_stat_logifast',
-            iconoGrande: 'ic_launcher',
             categoriaAcciones: 'ORDEN_ESTADO',
             tipoAlerta: 'exito',
             extra: { ordenId: newId },
@@ -1555,6 +1664,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                   if (!v || v.trim() === '') {
                     setSolicitudEnvio({ destino: '', destinoLat: 0, destinoLng: 0 });
                     setHasGpsDestino(false);
+                    setHasSharedLocationFix(false);
                   } else {
                     const [autoLat, autoLng] = geocodeAddress(v);
                     setSolicitudEnvio({ destino: v, destinoLat: autoLat, destinoLng: autoLng });
@@ -1562,14 +1672,21 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 }}
                 onSelect={(s) => {
                   setHasGpsDestino(false);
+                  setHasSharedLocationFix(false);
                   setSolicitudEnvio({ destino: s.direccion, destinoLat: s.lat, destinoLng: s.lng });
                 }}
-                onUseMyLocation={() => handleUseMyLocation('destino')}
+                onUseMyLocation={() => {
+                  setHasSharedLocationFix(false);
+                  handleUseMyLocation('destino');
+                }}
+                onPasteSharedLocation={handlePasteWhatsAppLocation}
                 isLocating={locatingField === 'destino'}
                 hasGpsFix={hasGpsDestino && Boolean(solicitudEnvio.destinoLat)}
+                hasSharedLocationFix={hasSharedLocationFix && Boolean(solicitudEnvio.destinoLat)}
+                isParsingShared={isParsingSharedLocation}
                 dotColor="var(--primario)"
                 suggestions={todasSugerencias}
-                placeholder="Ej: Col. Los Robles, Managua"
+                placeholder="Ej: Col. Los Robles, Managua o pega enlace WhatsApp"
               />
             </div>
 
@@ -2709,45 +2826,38 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
   /* ═══ CONFIRMATION SCREEN ═══ */
   if (confirmed) {
     return (
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
+      <div className="w-full max-w-md mx-auto py-8 px-4 text-center">
         <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}
+          initial={{ scale: 0.92, opacity: 0, y: 16 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col items-center gap-4 sm:gap-5"
         >
-          <CheckAnimation />
-          <h2 style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--exito)', margin: 0 }}>
-            {scheduleMode === 'programar' && scheduleDate && scheduleTime ? '¡Envío programado!' : '¡Envío confirmado!'}
-          </h2>
-          <p style={{ fontSize: 15, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>
-            Orden <span style={{ fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>#{confirmedOrderId}</span> {scheduleMode === 'programar' ? 'programada exitosamente' : 'creada exitosamente'}
-          </p>
+          <CheckAnimation size={76} />
+
+          <div className="space-y-1">
+            <h2 className="text-2xl sm:text-3xl font-bold font-['Syne',sans-serif] text-emerald-500 tracking-tight">
+              {scheduleMode === 'programar' && scheduleDate && scheduleTime ? '¡Envío programado!' : '¡Envío confirmado!'}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-['DM_Sans',sans-serif]">
+              Orden <span className="font-mono font-bold text-slate-900 dark:text-white">#{confirmedOrderId}</span> {scheduleMode === 'programar' ? 'programada exitosamente' : 'creada exitosamente'}
+            </p>
+          </div>
 
           {/* Schedule info in confirmation */}
           {scheduleMode === 'programar' && scheduleDate && scheduleTime && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '14px 18px',
-                borderRadius: 12,
-                background: 'var(--primario-soft)',
-                border: '1px solid rgba(255,87,34,0.2)',
-                width: '100%',
-                textAlign: 'left',
-              }}
+              transition={{ delay: 0.2 }}
+              className="w-full flex items-center gap-2.5 p-3.5 rounded-2xl bg-[#007AFF]/10 border border-[#007AFF]/20 text-left font-['DM_Sans',sans-serif]"
             >
-              <Calendar size={20} style={{ color: 'var(--primario)', flexShrink: 0 }} />
+              <Calendar size={20} className="text-[#007AFF] flex-shrink-0" />
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--primario)', fontFamily: "'DM Sans', sans-serif" }}>
+                <div className="text-xs font-semibold text-[#007AFF]">
                   Recogida programada
                 </div>
-                <div style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Sans', sans-serif" }}>
+                <div className="text-sm text-slate-800 dark:text-slate-200">
                   {formatSpanishDate(scheduleDate)} a las {scheduleTime}
                 </div>
               </div>
@@ -2756,80 +2866,61 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
 
           {/* Security PIN card */}
           {confirmedOrderData?.pin && (
-            <div
-              style={{
-                width: '100%',
-                padding: '16px 20px',
-                borderRadius: 14,
-                background: 'rgba(255,179,0,0.12)',
-                border: '1.5px solid rgba(255,179,0,0.3)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'DM Sans', sans-serif" }}>
-                PIN de Seguridad de Entrega
+            <div className="w-full bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 flex flex-col items-center gap-1">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 font-['DM_Sans',sans-serif] flex items-center gap-1.5">
+                <ShieldCheck size={14} />
+                <span>PIN de Seguridad de Entrega</span>
               </div>
-              <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--warning)', letterSpacing: 6 }}>
+              <div className="text-3xl font-extrabold font-mono tracking-[0.25em] text-amber-600 dark:text-amber-400">
                 {confirmedOrderData.pin}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-['DM_Sans',sans-serif]">
                 Dicta o muestra este código al repartidor al recibir tu envío
               </div>
             </div>
           )}
 
           {/* Quick details */}
-          <div
-            style={{
-              background: 'var(--surface)',
-              borderRadius: 14,
-              border: '1.5px solid var(--border)',
-              padding: 20,
-              width: '100%',
-              textAlign: 'left',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--exito)' }} />
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
-                  {confirmedOrderData?.origen || solicitudEnvio.origen}
-                </span>
-              </div>
+          <div className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-3 font-['DM_Sans',sans-serif] shadow-sm">
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-sm">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
+              <span className="truncate">{confirmedOrderData?.origen || solicitudEnvio.origen}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primario)' }} />
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
-                  {confirmedOrderData?.destino || solicitudEnvio.destino}
-                </span>
-              </div>
+
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 text-sm">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#FF5722] flex-shrink-0" />
+              <span className="truncate">{confirmedOrderData?.destino || solicitudEnvio.destino}</span>
             </div>
+
             {confirmedOrderData?.distanceKm ? (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 12, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
-                <span>Distancia y Tiempo Estimado</span>
-                <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+              <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/80 dark:border-slate-800">
+                <span className="flex items-center gap-1">
+                  <Clock size={13} className="text-slate-400" />
+                  <span>Distancia y Tiempo Estimado</span>
+                </span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
                   {confirmedOrderData.distanceKm.toFixed(1)} km • ~{confirmedOrderData.estimatedMinutes} min
                 </span>
               </div>
             ) : null}
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {(confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago) === 'efectivo' ? <Banknote size={14} style={{ color: 'var(--exito)' }} /> : <CreditCard size={14} style={{ color: 'var(--info)' }} />}
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
-                  {(confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago) === 'efectivo' ? 'Efectivo' : 'Transferencia'}
-                </span>
+
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-2.5 flex justify-between items-center">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                {(confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago) === 'efectivo' ? (
+                  <Banknote size={14} className="text-emerald-500" />
+                ) : (
+                  <CreditCard size={14} className="text-blue-500" />
+                )}
+                <span>{(confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago) === 'efectivo' ? 'Efectivo' : 'Transferencia'}</span>
               </div>
-              <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+              <span className="text-lg font-bold font-mono text-[#FF5722]">
                 {formatCordobas(confirmedOrderData?.total || costBreakdown.total)}
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 8 }}>
+          {/* Action buttons */}
+          <div className="w-full flex flex-col gap-2.5 font-['DM_Sans',sans-serif]">
             <button
               onClick={() => {
                 const targetId = confirmedOrderId || confirmedOrderData?.id;
@@ -2842,29 +2933,12 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                   onNavigate('envios');
                 }
               }}
-              style={{
-                width: '100%',
-                padding: '14px 20px',
-                borderRadius: 12,
-                border: 'none',
-                background: 'var(--primario)',
-                color: 'white',
-                fontSize: 15,
-                fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif",
-                cursor: 'pointer',
-                transition: 'background 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--primario-hover)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--primario)'; }}
+              className="w-full py-3.5 px-4 bg-[#FF5722] hover:bg-[#F4511E] active:scale-[0.98] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#FF5722]/25 transition-all flex items-center justify-center gap-2"
             >
               <Truck size={18} />
-              Rastrear envío en vivo
+              <span>Rastrear envío en vivo</span>
             </button>
+
             <button
               onClick={() => {
                 resetSolicitudEnvio();
@@ -2872,19 +2946,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
                 setConfirmed(false);
                 onNavigate('inicio');
               }}
-              style={{
-                width: '100%',
-                padding: '14px 20px',
-                borderRadius: 12,
-                border: '1.5px solid var(--border)',
-                background: 'transparent',
-                color: 'var(--text-secondary)',
-                fontSize: 15,
-                fontWeight: 500,
-                fontFamily: "'DM Sans', sans-serif",
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
+              className="w-full py-3 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 shadow-sm"
             >
               Volver al inicio
             </button>
@@ -3056,6 +3118,154 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
             {toast.variant === 'info' && <Info size={16} />}
             {toast.message}
           </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Modal para pegar enlace o texto de WhatsApp / Telegram */}
+      <AnimatePresence>
+        {shareLocationModalOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+              background: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              style={{
+                width: '100%',
+                maxWidth: 440,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 24,
+                padding: 24,
+                boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+                position: 'relative',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: 'rgba(37, 211, 102, 0.15)',
+                      border: '1px solid rgba(37, 211, 102, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#25D366',
+                    }}
+                  >
+                    <Share2 size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--text)', fontFamily: "'Syne', sans-serif" }}>
+                      Ubicación de WhatsApp / Maps
+                    </h3>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                      Entrega exacta sin adivinar direcciones
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShareLocationModalOpen(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5, marginBottom: 14 }}>
+                Pega el enlace de Google Maps o el mensaje de WhatsApp / Telegram que te compartió quien recibirá el envío:
+              </p>
+
+              <textarea
+                value={manualShareInput}
+                onChange={(e) => setManualShareInput(e.target.value)}
+                placeholder="Ej: https://maps.google.com/?q=12.136389,-86.251389 o texto del chat..."
+                rows={3}
+                className="lf-textarea"
+                style={{
+                  width: '100%',
+                  borderRadius: 14,
+                  padding: '12px 14px',
+                  fontSize: 13,
+                  background: 'var(--bg)',
+                  border: '1.5px solid var(--border)',
+                  color: 'var(--text)',
+                  marginBottom: 16,
+                  resize: 'none',
+                }}
+              />
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShareLocationModalOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: 14,
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={!manualShareInput.trim() || isParsingSharedLocation}
+                  onClick={async () => {
+                    setIsParsingSharedLocation(true);
+                    const parsed = await parsearUbicacionCompartida(manualShareInput);
+                    setIsParsingSharedLocation(false);
+                    if (parsed.exito) {
+                      aplicarUbicacionParseada(parsed);
+                      setShareLocationModalOpen(false);
+                      setManualShareInput('');
+                    } else {
+                      showToast('No pudimos extraer coordenadas de ese texto', 'error');
+                    }
+                  }}
+                  style={{
+                    flex: 2,
+                    padding: '12px',
+                    borderRadius: 14,
+                    background: '#25D366',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    boxShadow: '0 4px 14px rgba(37, 211, 102, 0.4)',
+                    opacity: !manualShareInput.trim() || isParsingSharedLocation ? 0.6 : 1,
+                  }}
+                >
+                  <Check size={16} />
+                  <span>{isParsingSharedLocation ? 'Analizando...' : 'Fijar como Destino'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

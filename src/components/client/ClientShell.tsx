@@ -27,8 +27,8 @@ import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { LogoSpinner } from '@/components/ui/loaders';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
-import { aplicarTema } from '@/store/configStore';
-import { inicializarNotificacionesNativas } from '@/services/native-notifications';
+import { inicializarNotificacionesNativas, solicitarPermisoNotificacionesManual, dispararNotificacionNativa } from '@/services/native-notifications';
+import LiveOrderProgressBar from '@/components/ui/LiveOrderProgressBar';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
 
@@ -244,9 +244,71 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount, fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, ordenesCompra } = useMarketplaceStore();
 
+  /* ─── Prompt de Permisos de Notificación en Primer Ingreso ─── */
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+  const [barDismissed, setBarDismissed] = useState(false);
+
+  useEffect(() => {
+    inicializarNotificacionesNativas().then((granted) => {
+      if (!granted && typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'default') {
+          setShowPermissionPrompt(true);
+        }
+      }
+    }).catch(() => null);
+  }, []);
+
+  const handleActivarNotificaciones = async () => {
+    const granted = await solicitarPermisoNotificacionesManual();
+    setShowPermissionPrompt(false);
+    if (granted) {
+      dispararNotificacionNativa({
+        titulo: '¡Notificaciones activadas!',
+        cuerpo: 'Te avisaremos cuando tu repartidor esté en camino y llegue a tu puerta.',
+        tipoAlerta: 'exito',
+      });
+    }
+  };
+
+  /* ─── Detección de Orden Activa para Barra de Progreso en Tiempo Real ─── */
+  const activeOrder = useMemo(() => {
+    const uncompletedEnvio = (orders || []).find(
+      (o) => o.status !== 'entregado' && o.status !== 'cancelado'
+    );
+    if (uncompletedEnvio) {
+      return {
+        id: uncompletedEnvio.id,
+        estado: uncompletedEnvio.status,
+        origen: uncompletedEnvio.origen,
+        destino: uncompletedEnvio.destino,
+        repartidorNombre: uncompletedEnvio.repartidor?.nombre,
+        tiempoEstimadoMin: 12,
+      };
+    }
+
+    const uncompletedCompra = (ordenesCompra || []).find(
+      (o) => o.estado !== 'entregado' && o.estado !== 'cancelado'
+    );
+    if (uncompletedCompra) {
+      return {
+        id: uncompletedCompra.id,
+        estado: uncompletedCompra.estado,
+        origen: uncompletedCompra.tienda?.nombre || 'Comercio',
+        destino: uncompletedCompra.direccionEntrega || 'Tu dirección',
+        repartidorNombre: uncompletedCompra.repartidor?.nombre,
+        tiempoEstimadoMin: 15,
+      };
+    }
+
+    return null;
+  }, [orders, ordenesCompra]);
+
+  useEffect(() => {
+    if (activeOrder) setBarDismissed(false);
+  }, [activeOrder?.id]);
+
   /* ─── Sync Dynamic URL Hash & Soporte para Gesto Atrás Móvil (popstate) ─── */
   useEffect(() => {
-    inicializarNotificacionesNativas().catch(() => null);
     if (typeof window === 'undefined') return;
 
     // Inicializar estado del historial si es la primera carga
@@ -1072,6 +1134,105 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ─── Banner de Solicitud de Permisos de Notificación (Heads-Up) ─── */}
+        <AnimatePresence>
+          {showPermissionPrompt && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+              style={{
+                position: 'fixed',
+                top: 'calc(env(safe-area-inset-top, 10px) + 68px)',
+                left: 16,
+                right: 16,
+                maxWidth: 440,
+                margin: '0 auto',
+                zIndex: 9999,
+                background: 'rgba(0, 122, 255, 0.95)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderRadius: 18,
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                color: '#FFFFFF',
+                boxShadow: '0 12px 30px rgba(0, 122, 255, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Bell size={18} />
+                </div>
+                <div style={{ fontSize: 12, lineHeight: 1.3 }}>
+                  <span style={{ fontWeight: 700, display: 'block', fontFamily: "'Syne', sans-serif" }}>Activa las notificaciones</span>
+                  <span style={{ opacity: 0.9, fontSize: 11 }}>Te avisaremos cuando tu repartidor esté en camino y llegue</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={handleActivarNotificaciones}
+                  style={{
+                    background: '#FFFFFF',
+                    color: '#007AFF',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '6px 14px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  Activar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPermissionPrompt(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    padding: 4,
+                    opacity: 0.7,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Barra de Progreso en Vivo en Tiempo Real (Live Activity) ─── */}
+        {activeOrder && !trackingOrderId && !barDismissed && (
+          <LiveOrderProgressBar
+            ordenId={activeOrder.id}
+            estado={activeOrder.estado}
+            origen={activeOrder.origen}
+            destino={activeOrder.destino}
+            repartidorNombre={activeOrder.repartidorNombre}
+            tiempoEstimadoMin={activeOrder.tiempoEstimadoMin}
+            onOpenTracking={(id) => setTrackingOrder(id)}
+            onDismiss={() => setBarDismissed(true)}
+          />
+        )}
 
         {/* ─── RESPONSIVE STYLES (iOS native) ─── */}
         <style>{`

@@ -10,8 +10,8 @@ import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { useConfigStore } from '@/store/configStore';
 import { reproducirSiActivo, reproducirSonido } from '@/services/audio';
 import { iniciarRastreoFondo, detenerRastreoFondo } from '@/services/background-tracking';
-import { obtenerUbicacionActual } from '@/lib/native-geolocation';
-import { inicializarNotificacionesNativas } from '@/services/native-notifications';
+import { inicializarNotificacionesNativas, solicitarPermisoNotificacionesManual, dispararNotificacionNativa } from '@/services/native-notifications';
+import { Bell, X } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC MODULE IMPORTS — mantienen todos los overlays
@@ -434,9 +434,34 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
     }
   }, []);
 
+  /* ─── Prompt de Permisos de Notificación para Repartidor ─── */
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+
+  useEffect(() => {
+    inicializarNotificacionesNativas().then((granted) => {
+      if (!granted && typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'default') {
+          setShowPermissionPrompt(true);
+        }
+      }
+    }).catch(() => null);
+  }, []);
+
+  const handleActivarNotificaciones = async () => {
+    const granted = await solicitarPermisoNotificacionesManual();
+    setShowPermissionPrompt(false);
+    if (granted) {
+      dispararNotificacionNativa({
+        titulo: '¡Alertas de Repartidor activadas!',
+        cuerpo: 'Recibirás avisos de nuevas órdenes en tu zona.',
+        canalId: 'logifast_urgente',
+        tipoAlerta: 'exito',
+      });
+    }
+  };
+
   /* ─── Sync inicial con backend (10s cuando la pestaña está visible) ─── */
   useEffect(() => {
-    inicializarNotificacionesNativas().catch(() => null);
     syncFromBackend();
 
     const handleVisibilityAndSync = () => {
@@ -1051,6 +1076,91 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
         <AnimatePresence>{incidenciaAbierta && <RepartidorIncidencia />}</AnimatePresence>
 
         <AnimatePresence>{servicioDetalle && <RepartidorDetalleServicio />}</AnimatePresence>
+
+        {/* ─── Banner de Permisos de Notificación (Heads-Up para Repartidor) ─── */}
+        <AnimatePresence>
+          {showPermissionPrompt && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+              style={{
+                position: 'fixed',
+                top: 'calc(env(safe-area-inset-top, 10px) + 68px)',
+                left: 16,
+                right: 16,
+                maxWidth: 440,
+                margin: '0 auto',
+                zIndex: 9999,
+                background: 'rgba(0, 200, 83, 0.95)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderRadius: 18,
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                color: '#FFFFFF',
+                boxShadow: '0 12px 30px rgba(0, 200, 83, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Bell size={18} />
+                </div>
+                <div style={{ fontSize: 12, lineHeight: 1.3 }}>
+                  <span style={{ fontWeight: 700, display: 'block', fontFamily: "'Syne', sans-serif" }}>Activa alertas de viaje</span>
+                  <span style={{ opacity: 0.9, fontSize: 11 }}>Te alertaremos de nuevas órdenes para ganar dinero</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={handleActivarNotificaciones}
+                  style={{
+                    background: '#FFFFFF',
+                    color: '#00A844',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '6px 14px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  Activar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPermissionPrompt(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    padding: 4,
+                    opacity: 0.7,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ═══════ RESPONSIVE STYLES ═══════ */}
         <style>{`

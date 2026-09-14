@@ -87,9 +87,10 @@ function getCapacitorLocalNotifications(): any {
 
 let channelsConfigured = false;
 let actionsConfigured = false;
+let permissionRequested = false;
 
 /**
- * Inicializa permisos, canales prioritarios (Heads-Up) y botones de acción en Android
+ * Inicializa permisos, canales prioritarios (Heads-Up) y botones de acción en Android y Web
  */
 export async function inicializarNotificacionesNativas(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
@@ -97,21 +98,46 @@ export async function inicializarNotificacionesNativas(): Promise<boolean> {
   const plugin = getCapacitorLocalNotifications();
 
   if (plugin) {
+    let hasDisplayPermission = false;
+
+    // 1. SOLICITAR PERMISOS NATIVOS PRIMERO (Crucial para Android 13+ / POST_NOTIFICATIONS)
     try {
-      // 1. Crear canales prioritarios de Android para alertas de entrega (Heads-Up)
-      if (!channelsConfigured && plugin.createChannel) {
-        await plugin.createChannel({
+      const status = await plugin.checkPermissions();
+      if (status?.display === 'granted') {
+        hasDisplayPermission = true;
+      } else {
+        const req = await plugin.requestPermissions();
+        hasDisplayPermission = req?.display === 'granted';
+      }
+      permissionRequested = true;
+    } catch (permErr) {
+      console.warn('[NativeNotifications] Error al verificar permisos en Android:', permErr);
+    }
+
+    // 2. CREAR CANALES NATIVOS ANDROID (Importancia máxima permitida en canales: 4 = IMPORTANCE_HIGH)
+    if (!channelsConfigured && plugin.createChannel) {
+      const canales = [
+        {
           id: 'logifast_urgente',
           name: 'Pedidos y Alertas Urgentes',
           description: 'Notificaciones flotantes prioritarias para nuevas órdenes y estados de entrega',
-          importance: 5, // IMPORTANCE_HIGH: Notificación flotante emergente (Heads-up)
+          importance: 4, // IMPORTANCE_HIGH: Notificación flotante emergente (Heads-up)
           visibility: 1, // VISIBILITY_PUBLIC: Visible con pantalla bloqueada
           vibration: true,
           lights: true,
           lightColor: '#007AFF',
-        });
-
-        await plugin.createChannel({
+        },
+        {
+          id: 'logifast_estado',
+          name: 'Estado de Envíos y Progreso',
+          description: 'Actualizaciones de progreso y despacho de pedidos en tiempo real',
+          importance: 4,
+          vibration: true,
+          visibility: 1,
+          lights: true,
+          lightColor: '#FF5722',
+        },
+        {
           id: 'logifast_chat',
           name: 'Mensajes de Entrega',
           description: 'Chat en tiempo real entre repartidor y cliente',
@@ -120,24 +146,22 @@ export async function inicializarNotificacionesNativas(): Promise<boolean> {
           visibility: 1,
           lights: true,
           lightColor: '#00C853',
-        });
+        },
+      ];
 
-        await plugin.createChannel({
-          id: 'logifast_estado',
-          name: 'Estado de Envíos',
-          description: 'Actualizaciones de progreso y despacho de pedidos',
-          importance: 4,
-          vibration: true,
-          visibility: 1,
-          lights: true,
-          lightColor: '#FF5722',
-        });
-
-        channelsConfigured = true;
+      for (const canal of canales) {
+        try {
+          await plugin.createChannel(canal);
+        } catch (chanErr) {
+          console.warn(`[NativeNotifications] Advertencia registrando canal ${canal.id}:`, chanErr);
+        }
       }
+      channelsConfigured = true;
+    }
 
-      // 2. Registrar tipos de acciones interactivas para Android
-      if (!actionsConfigured && plugin.registerActionTypes) {
+    // 3. REGISTRAR BOTONES DE ACCIÓN RÁPIDA (Interactivos desde la barra)
+    if (!actionsConfigured && plugin.registerActionTypes) {
+      try {
         await plugin.registerActionTypes({
           types: [
             {
@@ -172,27 +196,24 @@ export async function inicializarNotificacionesNativas(): Promise<boolean> {
             }
           });
         }
-
         actionsConfigured = true;
+      } catch (actErr) {
+        console.warn('[NativeNotifications] Advertencia configurando acciones interactivas:', actErr);
       }
-
-      // 3. Solicitar permiso POST_NOTIFICATIONS (Android 13+)
-      const status = await plugin.checkPermissions();
-      if (status.display !== 'granted') {
-        const req = await plugin.requestPermissions();
-        return req.display === 'granted';
-      }
-      return true;
-    } catch (err) {
-      console.warn('[NativeNotifications] Error inicializando canales nativos:', err);
     }
-  } else if ('Notification' in window) {
-    // Entorno Web / PWA
+
+    return hasDisplayPermission;
+  }
+
+  // ENTORNO WEB / PWA (Navegadores móviles y de escritorio)
+  if (typeof window !== 'undefined' && 'Notification' in window) {
     if (Notification.permission === 'default') {
       try {
         const res = await Notification.requestPermission();
+        permissionRequested = true;
         return res === 'granted';
-      } catch {
+      } catch (webErr) {
+        console.warn('[NativeNotifications] Error pidiendo permiso web:', webErr);
         return false;
       }
     }
@@ -200,6 +221,13 @@ export async function inicializarNotificacionesNativas(): Promise<boolean> {
   }
 
   return false;
+}
+
+/**
+ * Permite solicitar el permiso manualmente desde un botón o banner con interacción directa del usuario
+ */
+export async function solicitarPermisoNotificacionesManual(): Promise<boolean> {
+  return inicializarNotificacionesNativas();
 }
 
 export interface NotificacionOpciones {
@@ -220,7 +248,7 @@ export interface NotificacionOpciones {
 }
 
 /**
- * Dispara una notificación nativa estilizada e inmediata en Android (con logo, icono y canal Heads-Up) o Web
+ * Dispara una notificación nativa inmediata y confiable en Android o Web
  */
 export async function dispararNotificacionNativa({
   id = Math.floor(Math.random() * 1000000) + 1,
@@ -231,7 +259,6 @@ export async function dispararNotificacionNativa({
   canalId = 'logifast_urgente',
   colorIcono,
   iconoPequeno = 'ic_stat_logifast',
-  iconoGrande = 'ic_launcher',
   imagenBanner,
   categoriaAcciones,
   extra = {},
@@ -269,46 +296,124 @@ export async function dispararNotificacionNativa({
       const resolvedColor = colorIcono || (canalId === 'logifast_urgente' ? '#007AFF' : canalId === 'logifast_chat' ? '#00C853' : '#FF5722');
       const resolvedActionType = categoriaAcciones || (canalId === 'logifast_urgente' ? 'ORDEN_NUEVA' : 'ORDEN_ESTADO');
 
+      // DISPARO INMEDIATO:
+      // Omitir schedule. Al no tener schedule, Capacitor ejecuta directamente notificationManager.notify(...)
+      // evitando la trampa de AlarmManager y garantizando entrega al 100% en tiempo real.
+      const payload: any = {
+        id,
+        title: titulo,
+        body: cuerpo,
+        largeBody: detalleLargo || cuerpo,
+        summaryText: subtexto,
+        channelId: canalId,
+        iconColor: resolvedColor,
+        actionTypeId: resolvedActionType,
+        extra,
+      };
+
+      if (iconoPequeno) {
+        payload.smallIcon = iconoPequeno;
+      }
+
       await plugin.schedule({
-        notifications: [
-          {
-            id,
-            title: titulo,
-            body: cuerpo,
-            largeBody: detalleLargo || cuerpo,
-            summaryText: subtexto,
-            channelId: canalId,
-            smallIcon: iconoPequeno,
-            largeIcon: iconoGrande,
-            iconColor: resolvedColor,
-            actionTypeId: resolvedActionType,
-            schedule: { at: new Date(Date.now() + 50) },
-            extra,
-          },
-        ],
+        notifications: [payload],
       });
       return;
     } catch (err) {
-      console.warn('[NativeNotifications] Falló al programar notificación nativa:', err);
+      console.warn('[NativeNotifications] Falló con payload enriquecido, reintentando básico:', err);
+      // Fallback a prueba de fallos con canal por defecto
+      try {
+        await plugin.schedule({
+          notifications: [
+            {
+              id,
+              title: titulo,
+              body: cuerpo,
+              channelId: 'default',
+              extra,
+            },
+          ],
+        });
+        return;
+      } catch (fallbackErr) {
+        console.warn('[NativeNotifications] Falló reintento básico en Android:', fallbackErr);
+      }
     }
   }
 
-  // 4. Vía Web Notifications API (para PWA / Navegador móvil y escritorio)
-  if ('Notification' in window && Notification.permission === 'granted') {
-    try {
-      const webOptions: NotificationOptions = {
-        body: cuerpo,
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
-        image: imagenBanner || undefined,
-        data: extra,
-        tag: `order-${extra?.ordenId || id}`,
-        vibrate: [200, 100, 200, 100, 250],
-        requireInteraction: canalId === 'logifast_urgente',
-      };
-      new Notification(titulo, webOptions);
-    } catch {
-      // Ignorar restricciones en navegadores
+  // 4. Vía Web Notifications API / Service Worker (PWA / Chrome Móvil / Safari)
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    const webOptions: NotificationOptions = {
+      body: cuerpo,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      image: imagenBanner || undefined,
+      data: extra,
+      tag: `order-${extra?.ordenId || id}`,
+      vibrate: [200, 100, 200, 100, 250],
+      requireInteraction: canalId === 'logifast_urgente',
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((registration) => {
+          registration.showNotification(titulo, webOptions);
+        })
+        .catch(() => {
+          try {
+            new Notification(titulo, webOptions);
+          } catch {}
+        });
+    } else {
+      try {
+        new Notification(titulo, webOptions);
+      } catch {}
     }
   }
+}
+
+/**
+ * Actualiza la notificación de progreso en tiempo real para un envío o pedido activo
+ */
+export interface ProgresoEnvioNotifOpciones {
+  ordenId: string;
+  porcentaje: number; // 0 - 100
+  etapaTexto: string;
+  subtitulo: string;
+  origen?: string;
+  destino?: string;
+  tiempoEstimadoMin?: number;
+}
+
+export async function notificarProgresoEnvio({
+  ordenId,
+  porcentaje,
+  etapaTexto,
+  subtitulo,
+  origen,
+  destino,
+  tiempoEstimadoMin,
+}: ProgresoEnvioNotifOpciones): Promise<void> {
+  const hashId = Math.abs(
+    ordenId.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)
+  ) % 100000;
+
+  const etaStr = tiempoEstimadoMin ? ` • ~${tiempoEstimadoMin} min` : '';
+  const titulo = `🛵 ${etapaTexto} (${porcentaje}%)${etaStr}`;
+  const cuerpo = `${subtitulo}${origen && destino ? `\n📍 ${origen} ➔ ${destino}` : ''}`;
+
+  await dispararNotificacionNativa({
+    id: hashId,
+    titulo,
+    cuerpo,
+    subtexto: `LOGIFAST Live Tracker • ${porcentaje}%`,
+    detalleLargo: cuerpo,
+    canalId: 'logifast_estado',
+    colorIcono: '#FF5722',
+    iconoPequeno: 'ic_stat_logifast',
+    categoriaAcciones: 'ORDEN_ESTADO',
+    tipoAlerta: porcentaje >= 100 ? 'exito' : 'mensaje',
+    extra: { ordenId, porcentaje },
+    mostrarBannerInApp: false, // El widget in-app ya se muestra en pantalla
+  });
 }

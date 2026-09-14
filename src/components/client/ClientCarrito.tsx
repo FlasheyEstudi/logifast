@@ -315,7 +315,6 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
         canalId: 'logifast_urgente',
         colorIcono: '#007AFF',
         iconoPequeno: 'ic_stat_logifast',
-        iconoGrande: 'ic_launcher',
         categoriaAcciones: 'ORDEN_ESTADO',
         tipoAlerta: 'exito',
         extra: { ordenId: ordenCreada?.id },

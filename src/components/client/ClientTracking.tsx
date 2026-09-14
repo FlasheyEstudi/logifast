@@ -27,7 +27,7 @@ import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { obtenerRuta, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
-import { dispararNotificacionNativa, inicializarNotificacionesNativas } from '@/services/native-notifications';
+import { dispararNotificacionNativa, inicializarNotificacionesNativas, notificarProgresoEnvio } from '@/services/native-notifications';
 
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), { ssr: false });
 
@@ -636,35 +636,46 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     let titulo = '';
     let cuerpo = '';
     let tipo: 'orden' | 'exito' = 'orden';
+    let porcentaje = 20;
 
     if (nuevoEstado === 'EN_CAMINO_RECOGER') {
       titulo = 'Repartidor en camino';
       cuerpo = 'El repartidor se dirige al punto de recogida.';
+      porcentaje = 40;
     } else if (nuevoEstado === 'RECOGIDO') {
       titulo = 'Pedido recolectado';
       cuerpo = 'Tu paquete va en camino hacia tu dirección de entrega.';
+      porcentaje = 70;
     } else if (nuevoEstado === 'EN_CAMINO_ENTREGAR') {
       titulo = 'Repartidor cerca';
       cuerpo = 'Tu repartidor se encuentra a pocos minutos de tu ubicación.';
+      porcentaje = 90;
     } else if (nuevoEstado === 'ENTREGADO') {
       titulo = '¡Pedido entregado con éxito!';
       cuerpo = 'Tu orden ha sido completada. ¡Gracias por usar LogiFast!';
       tipo = 'exito';
+      porcentaje = 100;
     }
 
     if (titulo) {
       dispararNotificacionNativa({
         titulo,
         cuerpo,
-        subtexto: 'LOGIFAST • Seguimiento en Tiempo Real',
+        subtexto: `LOGIFAST • Seguimiento en Tiempo Real (${porcentaje}%)`,
         detalleLargo: `${titulo}\n${cuerpo}\nOrden ID: #${trackingOrderId}`,
         canalId: 'logifast_urgente',
         colorIcono: '#007AFF',
         iconoPequeno: 'ic_stat_logifast',
-        iconoGrande: 'ic_launcher',
         categoriaAcciones: 'ORDEN_ESTADO',
         tipoAlerta: tipo,
-        extra: { ordenId: trackingOrderId },
+        extra: { ordenId: trackingOrderId, porcentaje },
+      }).catch(() => null);
+
+      notificarProgresoEnvio({
+        ordenId: String(trackingOrderId),
+        porcentaje,
+        etapaTexto: titulo,
+        subtitulo: cuerpo,
       }).catch(() => null);
     }
   }, [trackingOrderId]);
