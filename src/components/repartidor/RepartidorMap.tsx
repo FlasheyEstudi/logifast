@@ -431,8 +431,7 @@ export default function RepartidorMap({
 
     obtenerRuta(
       { lat: targetDriverPos[0], lng: targetDriverPos[1] },
-      { lat: targetPos[0], lng: targetPos[1] },
-      { bearing: activeBearing }
+      { lat: targetPos[0], lng: targetPos[1] }
     )
       .then((res) => {
         if (currentReqId !== routeRequestIdRef.current) return;
