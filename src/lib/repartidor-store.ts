@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { reproducirSiActivo, vibrarSiActivo, type SonidoTipo } from '@/services/audio';
 import { useConfigStore } from '@/store/configStore';
 import { realtime } from '@/services/realtime';
+import { dispararNotificacionNativa, inicializarNotificacionesNativas } from '@/services/native-notifications';
 
 /* ═══════════════════════════════════════════════════════
    AUDIO + VIBRATION FEEDBACK HELPER
@@ -1282,13 +1283,39 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
           if (serverOrdenes.length > 0) {
             const currentActive = currentState.ordenActiva;
             const matchingActive = currentActive ? serverOrdenes.find((o) => o.id === currentActive.id) : null;
+            const newlyAssigned = !currentActive || (matchingActive ? false : true);
 
             updates.ordenesActivas = serverOrdenes;
             updates.ordenActiva = matchingActive || serverOrdenes[0];
             updates.ofertasDisponibles = serverOfertas;
             updates.enServicio = true;
             updates.conectado = true;
+
+            if (newlyAssigned) {
+              const ord = matchingActive || serverOrdenes[0];
+              dispararNotificacionNativa({
+                titulo: '¡Orden asignada a tu ruta!',
+                cuerpo: `Recogida: ${ord.origen} → Destino: ${ord.destino}`,
+                canalId: 'logifast_urgente',
+                tipoAlerta: 'orden',
+                extra: { ordenId: ord.id },
+              }).catch(() => null);
+            }
           } else {
+            // Verificar si hay nuevas ofertas disponibles que no estaban antes
+            const prevIds = new Set((currentState.ofertasDisponibles || []).map((o) => o.id));
+            const freshOffers = serverOfertas.filter((o) => !prevIds.has(o.id));
+            if (freshOffers.length > 0) {
+              const topOffer = freshOffers[0];
+              dispararNotificacionNativa({
+                titulo: '¡Nueva orden disponible para entrega!',
+                cuerpo: `${topOffer.clienteNombre || 'Cliente'}: ${topOffer.origen} → ${topOffer.destino} (C$ ${topOffer.montoTotal || ''})`,
+                canalId: 'logifast_urgente',
+                tipoAlerta: 'orden',
+                extra: { ordenId: topOffer.id },
+              }).catch(() => null);
+            }
+
             updates.ordenesActivas = [];
             updates.ordenActiva = null;
             updates.ofertasDisponibles = serverOfertas;

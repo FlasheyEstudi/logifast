@@ -27,6 +27,7 @@ import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { obtenerRuta, rutaLineaRecta, geocodeAddress } from '@/lib/osrm';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
+import { dispararNotificacionNativa, inicializarNotificacionesNativas } from '@/services/native-notifications';
 
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), { ssr: false });
 
@@ -622,11 +623,49 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [driverEstado, setDriverEstado] = useState<string>('DESCONECTADO');
   const [rutaCoords, setRutaCoords] = useState<[number, number][] | undefined>(undefined);
-  const [backendTracking, setBackendTracking] = useState<any>(null);
+  const lastNotifiedEstadoRef = useRef<string>('');
+
+  const notificarCambioEstado = useCallback((nuevoEstado: string) => {
+    if (!nuevoEstado || lastNotifiedEstadoRef.current === nuevoEstado) return;
+    const prev = lastNotifiedEstadoRef.current;
+    lastNotifiedEstadoRef.current = nuevoEstado;
+
+    if (!prev) return;
+
+    let titulo = '';
+    let cuerpo = '';
+    let tipo: 'orden' | 'exito' = 'orden';
+
+    if (nuevoEstado === 'EN_CAMINO_RECOGER') {
+      titulo = 'Repartidor en camino';
+      cuerpo = 'El repartidor se dirige al punto de recogida.';
+    } else if (nuevoEstado === 'RECOGIDO') {
+      titulo = 'Pedido recolectado';
+      cuerpo = 'Tu paquete va en camino hacia tu dirección de entrega.';
+    } else if (nuevoEstado === 'EN_CAMINO_ENTREGAR') {
+      titulo = 'Repartidor cerca';
+      cuerpo = 'Tu repartidor se encuentra a pocos minutos de tu ubicación.';
+    } else if (nuevoEstado === 'ENTREGADO') {
+      titulo = '¡Pedido entregado con éxito!';
+      cuerpo = 'Tu orden ha sido completada. ¡Gracias por usar LogiFast!';
+      tipo = 'exito';
+    }
+
+    if (titulo) {
+      dispararNotificacionNativa({
+        titulo,
+        cuerpo,
+        canalId: 'logifast_urgente',
+        tipoAlerta: tipo,
+        extra: { ordenId: trackingOrderId },
+      }).catch(() => null);
+    }
+  }, [trackingOrderId]);
 
   // Sync client to order's tracking room & receive live driver positioning
   useEffect(() => {
     if (!trackingOrderId) return;
+    inicializarNotificacionesNativas().catch(() => null);
     realtime.clienteTrackingUnirse(trackingOrderId);
 
     // Fetch tracking details directly from API
@@ -641,6 +680,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
             }
             if (data.driverEstado) {
               setDriverEstado(data.driverEstado);
+              notificarCambioEstado(data.driverEstado);
             } else if (data.orden.estado) {
               const mapped = data.orden.estado === 'recogido'
                 ? 'RECOGIDO'
@@ -650,6 +690,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                     ? 'ENTREGADO'
                     : 'ORDEN_ASIGNADA';
               setDriverEstado(mapped);
+              notificarCambioEstado(mapped);
             }
           }
         })
@@ -671,6 +712,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     const cleanupEstado = onRealtimeEvent('repartidor:estado:update', (data) => {
       if (data?.estado) {
         setDriverEstado(data.estado);
+        notificarCambioEstado(data.estado);
       }
       fetchTracking();
     });
