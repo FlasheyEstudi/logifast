@@ -620,6 +620,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const etaIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const [backendTracking, setBackendTracking] = useState<any>(null);
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [driverEstado, setDriverEstado] = useState<string>('DESCONECTADO');
   const [rutaCoords, setRutaCoords] = useState<[number, number][] | undefined>(undefined);

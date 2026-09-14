@@ -59,12 +59,10 @@ export const CARTO_VOYAGER_RASTER_STYLE: MapLibreGL.StyleSpecification = {
     "carto-voyager": {
       type: "raster",
       tiles: [
-        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
+      attribution: "© Esri, HERE, Garmin, USGS",
     },
   },
   layers: [
@@ -121,12 +119,10 @@ export const UNIFIED_MULTI_BASEMAP_STYLE: MapLibreGL.StyleSpecification = {
     "streets-source": {
       type: "raster",
       tiles: [
-        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
+      attribution: "© Esri, HERE, Garmin, USGS",
     },
     "satellite-source": {
       type: "raster",
