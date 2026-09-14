@@ -28,6 +28,7 @@ import { LogoSpinner } from '@/components/ui/loaders';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { reproducirSonido } from '@/services/audio';
 import { aplicarTema } from '@/store/configStore';
+import { inicializarNotificacionesNativas } from '@/services/native-notifications';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
 
@@ -245,6 +246,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   /* ─── Sync Dynamic URL Hash & Soporte para Gesto Atrás Móvil (popstate) ─── */
   useEffect(() => {
+    inicializarNotificacionesNativas().catch(() => null);
     if (typeof window === 'undefined') return;
 
     // Inicializar estado del historial si es la primera carga

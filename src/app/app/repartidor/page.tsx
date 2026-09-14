@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { initCapacitorAndroid } from '@/lib/capacitor-android';
+import { inicializarNotificacionesNativas } from '@/services/native-notifications';
 import { RoleLoader } from '@/components/ui/loaders';
 import AuthRedesign from '@/components/auth/AuthRedesign';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
@@ -172,6 +173,7 @@ export default function RepartidorAppPage() {
       hasOpenModal: () => false,
       closeActiveModal: () => {},
     });
+    inicializarNotificacionesNativas().catch(() => null);
 
     // 2. Comprobar si ya vio la bienvenida de conductor única
     if (typeof window !== 'undefined') {

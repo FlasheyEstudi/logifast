@@ -11,6 +11,7 @@ import { useConfigStore } from '@/store/configStore';
 import { reproducirSiActivo, reproducirSonido } from '@/services/audio';
 import { iniciarRastreoFondo, detenerRastreoFondo } from '@/services/background-tracking';
 import { obtenerUbicacionActual } from '@/lib/native-geolocation';
+import { inicializarNotificacionesNativas } from '@/services/native-notifications';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC MODULE IMPORTS — mantienen todos los overlays
@@ -435,6 +436,7 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
 
   /* ─── Sync inicial con backend (10s cuando la pestaña está visible) ─── */
   useEffect(() => {
+    inicializarNotificacionesNativas().catch(() => null);
     syncFromBackend();
 
     const handleVisibilityAndSync = () => {

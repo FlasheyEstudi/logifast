@@ -1296,7 +1296,13 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
               dispararNotificacionNativa({
                 titulo: '¡Orden asignada a tu ruta!',
                 cuerpo: `Recogida: ${ord.origen} → Destino: ${ord.destino}`,
+                subtexto: 'LOGIFAST Repartidor • Alerta de Despacho',
+                detalleLargo: `Recogida: ${ord.origen}\nDestino: ${ord.destino}\nCliente: ${ord.clienteNombre || 'Cliente'}\nTarifa: C$ ${ord.montoTotal || '0.00'}`,
                 canalId: 'logifast_urgente',
+                colorIcono: '#00C853',
+                iconoPequeno: 'ic_stat_logifast',
+                iconoGrande: 'ic_launcher',
+                categoriaAcciones: 'ORDEN_NUEVA',
                 tipoAlerta: 'orden',
                 extra: { ordenId: ord.id },
               }).catch(() => null);
@@ -1310,7 +1316,13 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
               dispararNotificacionNativa({
                 titulo: '¡Nueva orden disponible para entrega!',
                 cuerpo: `${topOffer.clienteNombre || 'Cliente'}: ${topOffer.origen} → ${topOffer.destino} (C$ ${topOffer.montoTotal || ''})`,
+                subtexto: 'LOGIFAST Repartidor • Oportunidad de Ganancia',
+                detalleLargo: `Cliente: ${topOffer.clienteNombre || 'Cliente'}\nRecogida: ${topOffer.origen}\nDestino: ${topOffer.destino}\nGanancia estimada: C$ ${topOffer.montoTotal || ''}`,
                 canalId: 'logifast_urgente',
+                colorIcono: '#00C853',
+                iconoPequeno: 'ic_stat_logifast',
+                iconoGrande: 'ic_launcher',
+                categoriaAcciones: 'ORDEN_NUEVA',
                 tipoAlerta: 'orden',
                 extra: { ordenId: topOffer.id },
               }).catch(() => null);

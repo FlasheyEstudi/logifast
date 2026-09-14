@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { initCapacitorAndroid } from '@/lib/capacitor-android';
+import { inicializarNotificacionesNativas } from '@/services/native-notifications';
 import { RoleLoader } from '@/components/ui/loaders';
 import AuthRedesign, { SLIDES, AppleSlideWidget } from '@/components/auth/AuthRedesign';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
@@ -54,6 +55,7 @@ export default function ClienteAppPage() {
       hasOpenModal: () => false,
       closeActiveModal: () => {},
     });
+    inicializarNotificacionesNativas().catch(() => null);
 
     if (typeof window !== 'undefined') {
       const seen = localStorage.getItem('lf_client_welcome_done');

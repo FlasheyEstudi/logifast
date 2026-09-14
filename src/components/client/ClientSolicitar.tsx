@@ -37,6 +37,7 @@ import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, MarkerLabel } from '@/components/ui/map';
 import { PinRecogida, PinEntrega, PinTienda } from '@/components/ui/MapPins';
 import { useMapaPuntos } from '@/hooks/useMapaPuntos';
+import { dispararNotificacionNativa } from '@/services/native-notifications';
 
 /* ═══════════════════════════════════════════════
    TYPES
@@ -1436,6 +1437,19 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
           setConfirming(false);
           setConfirmed(true);
           resetSolicitudEnvio();
+          dispararNotificacionNativa({
+            titulo: '¡Envío express solicitado!',
+            cuerpo: `Tu orden hacia ${solicitudEnvio.destino?.texto || 'Destino'} está registrada. Buscando repartidor cercano...`,
+            subtexto: 'LOGIFAST • Envío Solicitado',
+            detalleLargo: `Recogida: ${solicitudEnvio.origen?.texto || 'Origen'}\nDestino: ${solicitudEnvio.destino?.texto || 'Destino'}\nTotal: C$ ${costBreakdown.total.toFixed(2)}`,
+            canalId: 'logifast_urgente',
+            colorIcono: '#007AFF',
+            iconoPequeno: 'ic_stat_logifast',
+            iconoGrande: 'ic_launcher',
+            categoriaAcciones: 'ORDEN_ESTADO',
+            tipoAlerta: 'exito',
+            extra: { ordenId: newId },
+          }).catch(() => null);
         });
     }, 2000);
   }, [orders, userName, solicitudEnvio, costBreakdown.total, addOrder, confirmarEnvio, scheduleMode, scheduleDate, scheduleTime]);

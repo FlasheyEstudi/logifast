@@ -24,8 +24,8 @@ import { notify } from '@/lib/notify';
 import { LogoSpinner } from '@/components/ui/loaders';
 
 import { reverseGeocode } from '@/lib/osrm';
-import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import PagoExitoso, { type CompletedOrderData } from './PagoExitoso';
+import { dispararNotificacionNativa } from '@/services/native-notifications';
 
 interface ClientCarritoProps {
   isOpen: boolean;
@@ -306,6 +306,21 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       clearCart();
       setIsProcessing(false);
       notify.success('¡Pedido de compra realizado con éxito!');
+
+      dispararNotificacionNativa({
+        titulo: '¡Pedido de compra realizado con éxito!',
+        cuerpo: `Tu compra en ${tiendaNombre} por C$ ${safeTotal.toFixed(2)} está confirmada y en preparación.`,
+        subtexto: 'LOGIFAST Marketplace • Compra Confirmada',
+        detalleLargo: `Comercio: ${tiendaNombre}\nEntrega: ${direccionEntregaInput.trim()}\nTotal: C$ ${safeTotal.toFixed(2)}\nPago: ${cartMetodoPago.toUpperCase()}`,
+        canalId: 'logifast_urgente',
+        colorIcono: '#007AFF',
+        iconoPequeno: 'ic_stat_logifast',
+        iconoGrande: 'ic_launcher',
+        categoriaAcciones: 'ORDEN_ESTADO',
+        tipoAlerta: 'exito',
+        extra: { ordenId: ordenCreada?.id },
+      }).catch(() => null);
+
       if (onSuccessCheckout) onSuccessCheckout();
     } catch (err: any) {
       console.error('[handlePagar error]', err);

@@ -656,7 +656,13 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       dispararNotificacionNativa({
         titulo,
         cuerpo,
+        subtexto: 'LOGIFAST • Seguimiento en Tiempo Real',
+        detalleLargo: `${titulo}\n${cuerpo}\nOrden ID: #${trackingOrderId}`,
         canalId: 'logifast_urgente',
+        colorIcono: '#007AFF',
+        iconoPequeno: 'ic_stat_logifast',
+        iconoGrande: 'ic_launcher',
+        categoriaAcciones: 'ORDEN_ESTADO',
         tipoAlerta: tipo,
         extra: { ordenId: trackingOrderId },
       }).catch(() => null);

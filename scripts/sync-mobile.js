@@ -70,6 +70,14 @@ function syncProject(projectName, targetDir, htmlSource) {
     fs.copyFileSync(geoPatchSrc, geoJavaDest);
   }
 
+  // 4.6 Asegurar icono vectorial nativo para notificaciones Android (ic_stat_logifast)
+  const notifIconSrc = path.join(ROOT_DIR, 'scripts/resources/ic_stat_logifast.xml');
+  const notifIconDest = path.join(targetDir, 'android/app/src/main/res/drawable/ic_stat_logifast.xml');
+  if (fs.existsSync(notifIconSrc) && fs.existsSync(path.dirname(notifIconDest))) {
+    console.log('  → Asegurando icono nativo de notificaciones (ic_stat_logifast.xml)...');
+    fs.copyFileSync(notifIconSrc, notifIconDest);
+  }
+
   // 5. Ejecutar npx cap sync android
   console.log('  → Ejecutando npx cap sync android...');
   try {
