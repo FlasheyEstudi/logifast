@@ -34,6 +34,7 @@ import {
   notificarDemoraClimaOTrafico,
   notificarResumenFidelizacion,
 } from '@/services/native-notifications';
+import { HAPTIC_PATTERNS } from '@/services/haptics';
 
 const RepartidorMap = dynamic(() => import('../repartidor/RepartidorMap'), { ssr: false });
 
@@ -135,9 +136,15 @@ const STEP_ICONS = [
    ═══════════════════════════════════════════════ */
 
 function haptic(style: 'light' | 'medium' | 'heavy' = 'light') {
-  if (style === 'heavy') HAPTIC_PATTERNS.heavy();
-  else if (style === 'medium') HAPTIC_PATTERNS.medium();
-  else HAPTIC_PATTERNS.light();
+  try {
+    if (typeof HAPTIC_PATTERNS !== 'undefined') {
+      if (style === 'heavy') HAPTIC_PATTERNS.heavy?.();
+      else if (style === 'medium') HAPTIC_PATTERNS.medium?.();
+      else HAPTIC_PATTERNS.light?.();
+    }
+  } catch {
+    // safe fallback
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -1492,6 +1499,142 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       }}
       className="md:!flex-row"
     >
+      {/* ─── FLOATING TOP BAR: BACK & QUICK ACTIONS (Siempre por encima de todo) ─── */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)',
+          paddingLeft: 16,
+          paddingRight: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          zIndex: 1000,
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Botón Volver Atrás */}
+        <button
+          type="button"
+          onClick={() => { haptic('light'); onBack(); }}
+          style={{
+            pointerEvents: 'auto',
+            height: 42,
+            padding: '0 16px',
+            borderRadius: 999,
+            background: 'var(--lf-glass-bg)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid var(--lf-glass-border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+            fontSize: 13,
+            fontWeight: 700,
+            color: isDark ? '#fff' : 'var(--text)',
+            touchAction: 'manipulation',
+          }}
+          aria-label="Volver atrás"
+        >
+          <ArrowLeft size={16} /> Volver
+        </button>
+
+        {/* Panel de Acciones Rápidas */}
+        <div
+          style={{
+            pointerEvents: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          {/* Botón EXPANDIR MAPA */}
+          <button
+            type="button"
+            onClick={() => { haptic('light'); setIsExpandedMap(!isExpandedMap); }}
+            style={{
+              height: 42,
+              padding: '0 14px',
+              borderRadius: 14,
+              background: 'var(--lf-glass-bg)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1px solid var(--lf-glass-border)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              color: isDark ? '#fff' : 'var(--text)',
+              cursor: 'pointer',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+              touchAction: 'manipulation',
+            }}
+          >
+            <Navigation size={14} style={{ color: 'var(--primario)' }} />
+            {isExpandedMap ? 'Minimizar' : 'Expandir'}
+          </button>
+
+          {/* Botón MENSAJE DIRECTO */}
+          {order && (
+            <button
+              type="button"
+              onClick={() => { haptic('medium'); onOpenChat(order.id); }}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: '50%',
+                background: 'var(--primario)',
+                color: '#fff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 6px 24px rgba(0,102,255,0.4)',
+                touchAction: 'manipulation',
+              }}
+              title="Enviar Mensaje"
+            >
+              <MessageCircle size={18} />
+            </button>
+          )}
+
+          {/* Botón LLAMAR AL REPARTIDOR (solo cuando hay repartidor asignado) */}
+          {repartidor && (
+            <button
+              type="button"
+              onClick={() => {
+                haptic('medium');
+                window.open(`tel:${repartidor.telefono}`);
+              }}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: '50%',
+                background: '#16A34A',
+                color: '#fff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 6px 24px rgba(22,163,74,0.4)',
+                touchAction: 'manipulation',
+              }}
+              title="Llamar al Repartidor"
+            >
+              <Phone size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* ═══════ MAP AREA — Fullscreen Subpage View ═══════ */}
       <div
         style={{
@@ -1513,121 +1656,8 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           altura="100%"
           seguirRepartidor={false}
           mostrarNavegacionDriver={false}
+          controlsBottomOffset={sheetSnap === 'minimized' ? '140px' : 'calc(50vh + 20px)'}
         />
-
-        {/* ─── Top Left: Back Button ─── */}
-        <button
-          onClick={() => { haptic('light'); onBack(); }}
-          style={{
-            position: 'absolute',
-            top: 16,
-            left: 16,
-            height: 40,
-            padding: '0 14px',
-            borderRadius: 999,
-            background: 'var(--lf-glass-bg)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid var(--lf-glass-border)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-            zIndex: 30,
-            fontSize: 13,
-            fontWeight: 700,
-            color: isDark ? '#fff' : 'var(--text)',
-          }}
-          aria-label="Volver atrás"
-        >
-          <ArrowLeft size={16} /> Volver
-        </button>
-
-        {/* ─── Top Right: Quick Actions Floating Panel ─── */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            zIndex: 30,
-          }}
-        >
-          {/* Botón EXPANDIR MAPA */}
-          <button
-            onClick={() => { haptic('light'); setIsExpandedMap(!isExpandedMap); }}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 12,
-              background: 'var(--lf-glass-bg)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid var(--lf-glass-border)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 12,
-              fontWeight: 700,
-              color: isDark ? '#fff' : '#111827',
-              cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-            }}
-          >
-            <Navigation size={14} color="var(--primario)" />
-            {isExpandedMap ? 'Minimizar Mapa' : 'Expandir Mapa'}
-          </button>
-
-          {/* Botón MENSAJE DIRECTO */}
-          {order && (
-            <button
-              onClick={() => { haptic('medium'); onOpenChat(order.id); }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                background: 'var(--primario)',
-                color: '#fff',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(0,102,255,0.4)',
-              }}
-              title="Enviar Mensaje"
-            >
-              <MessageCircle size={18} />
-            </button>
-          )}
-
-          {/* Botón LLAMAR AL REPARTIDOR (solo cuando hay repartidor asignado) */}
-          {repartidor && (
-            <button
-              onClick={() => {
-                haptic('medium');
-                window.open(`tel:${repartidor.telefono}`);
-              }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                background: '#16A34A',
-                color: '#fff',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(22,163,74,0.4)',
-              }}
-              title="Llamar al Repartidor"
-            >
-              <Phone size={18} />
-            </button>
-          )}
-        </div>
       </div>
 
       {/* ═══════ BOTTOM SHEET — 45% of screen ═══════ */}

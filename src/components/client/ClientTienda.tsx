@@ -18,6 +18,7 @@ import {
 import { Map, MapMarker, MarkerPopup } from '@/components/ui/map';
 import { PinTienda } from '@/components/ui/MapPins';
 import { notify } from '@/lib/notify';
+import { sileo } from 'sileo';
 
 /* ═══════════════════════════════════════════════
    PROPS
@@ -252,7 +253,8 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
   /* ─── Handlers ─── */
   const handleAddToCart = (producto: Producto) => {
     if (!tienda) return;
-    addToCart(producto, tienda);
+    const added = addToCart(producto, tienda);
+    if (added === false) return;
     setAddedProductIds((prev) => new Set(prev).add(producto.id));
     notify.success(`¡"${producto.nombre}" agregado al carrito!`);
     setTimeout(() => {
@@ -1815,7 +1817,17 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                       {previewQty}
                     </span>
                     <button
-                      onClick={() => setPreviewQty(previewQty + 1)}
+                      onClick={() => {
+                        const stock = selectedProductPreview.stock;
+                        if (stock !== null && stock !== undefined && previewQty >= stock) {
+                          sileo.warning({
+                            title: 'Stock límite alcanzado',
+                            description: `Solo hay ${stock} unidad${stock > 1 ? 'es' : ''} disponible${stock > 1 ? 'es' : ''} de "${selectedProductPreview.nombre}".`,
+                          });
+                          return;
+                        }
+                        setPreviewQty(previewQty + 1);
+                      }}
                       style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       <Plus size={14} />
@@ -1824,36 +1836,68 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                 </div>
 
                 {/* Add to Cart button */}
-                <button
-                  onClick={() => {
-                    for (let i = 0; i < previewQty; i++) {
-                      addToCart(selectedProductPreview, tienda);
-                    }
-                    notify.success(`¡${previewQty}x "${selectedProductPreview.nombre}" añadido al carrito!`);
-                    setSelectedProductPreview(null);
-                    setPreviewQty(1);
-                  }}
-                  style={{
-                    width: '100%',
-                    height: 46,
-                    borderRadius: 14,
-                    background: 'var(--primario)',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    marginTop: 4,
-                  }}
-                >
-                  <ShoppingBag size={18} />
-                  <span>Añadir al Carrito • C$ {(selectedProductPreview.precio * previewQty).toFixed(2)}</span>
-                </button>
+                {selectedProductPreview.stock !== null && selectedProductPreview.stock !== undefined && selectedProductPreview.stock <= 0 ? (
+                  <button
+                    disabled
+                    style={{
+                      width: '100%',
+                      height: 46,
+                      borderRadius: 14,
+                      background: 'var(--bg-alt)',
+                      color: 'var(--text-muted)',
+                      border: '1px solid var(--border)',
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      marginTop: 4,
+                    }}
+                  >
+                    <span>Producto Agotado</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      let allAdded = true;
+                      for (let i = 0; i < previewQty; i++) {
+                        const ok = addToCart(selectedProductPreview, tienda);
+                        if (!ok) {
+                          allAdded = false;
+                          break;
+                        }
+                      }
+                      if (allAdded) {
+                        notify.success(`¡${previewQty}x "${selectedProductPreview.nombre}" añadido al carrito!`);
+                      }
+                      setSelectedProductPreview(null);
+                      setPreviewQty(1);
+                    }}
+                    style={{
+                      width: '100%',
+                      height: 46,
+                      borderRadius: 14,
+                      background: 'var(--primario)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      marginTop: 4,
+                    }}
+                  >
+                    <ShoppingBag size={18} />
+                    <span>Añadir al Carrito • C$ {(selectedProductPreview.precio * previewQty).toFixed(2)}</span>
+                  </button>
+                )}
               </div>
             </motion.div>
           </motion.div>

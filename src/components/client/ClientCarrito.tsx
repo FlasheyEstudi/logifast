@@ -21,6 +21,7 @@ import {
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { useStore } from '@/lib/store';
 import { notify } from '@/lib/notify';
+import { sileo } from 'sileo';
 import { LogoSpinner } from '@/components/ui/loaders';
 
 import { reverseGeocode } from '@/lib/osrm';
@@ -324,7 +325,15 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
     } catch (err: any) {
       console.error('[handlePagar error]', err);
       setIsProcessing(false);
-      notify.error(err?.message || 'Ocurrió un error al procesar tu pedido de compra');
+      const errMsg = err?.message || 'Ocurrió un error al procesar tu pedido de compra';
+      if (errMsg.toLowerCase().includes('stock') || errMsg.toLowerCase().includes('disponib')) {
+        sileo.warning({
+          title: 'Stock insuficiente',
+          description: errMsg,
+        });
+      } else {
+        notify.error(errMsg);
+      }
     }
   };
 

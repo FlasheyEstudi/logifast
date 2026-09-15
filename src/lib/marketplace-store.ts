@@ -181,7 +181,7 @@ interface MarketplaceState {
   setCarritoOpen: (open: boolean) => void;
 
   /* Cart Actions */
-  addToCart: (producto: Producto, tienda: Tienda) => void;
+  addToCart: (producto: Producto, tienda: Tienda) => boolean;
   removeFromCart: (itemId: string) => void;
   updateCartItemQty: (itemId: string, qty: number) => void;
   clearCart: () => void;
@@ -266,11 +266,35 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
   /* Cart Actions */
   // P1: addToCart persiste en BD vía POST /api/carrito (no solo memoria).
-  // Actualización optimista: actualiza UI inmediatamente, luego sincroniza con BD.
-  // Si la BD falla, el item se queda en memoria hasta el siguiente fetchCarrito.
+  // Valida disponibilidad y stock en tiempo real con alertas Sileo.
   addToCart: (producto, tienda) => {
+    // Validar disponibilidad activa
+    if (producto.disponible === false) {
+      sileo.warning({
+        title: 'Producto no disponible',
+        description: `"${producto.nombre}" no está disponible temporalmente.`,
+      });
+      return false;
+    }
+
+    // Validar stock disponible
+    if (producto.stock !== null && producto.stock !== undefined && producto.stock <= 0) {
+      sileo.warning({
+        title: 'Sin stock disponible',
+        description: `Lo sentimos, "${producto.nombre}" se encuentra agotado.`,
+      });
+      return false;
+    }
+
     const existing = get().cartItems.find((i) => i.productoId === producto.id);
     if (existing) {
+      if (producto.stock !== null && producto.stock !== undefined && existing.cantidad >= producto.stock) {
+        sileo.warning({
+          title: 'Límite de stock alcanzado',
+          description: `Solo hay ${producto.stock} unidad${producto.stock > 1 ? 'es' : ''} disponible${producto.stock > 1 ? 's' : ''} de "${producto.nombre}".`,
+        });
+        return false;
+      }
       // Item ya existe: incrementar cantidad
       set((state) => ({
         cartItems: state.cartItems.map((i) =>
@@ -282,7 +306,19 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productoId: producto.id, cantidad: existing.cantidad + 1 }),
-      }).catch((err) => console.error('[addToCart PATCH error]', err));
+      })
+        .then(async (r) => {
+          if (!r.ok) {
+            const data = await r.json().catch(() => ({}));
+            sileo.warning({
+              title: 'Stock insuficiente',
+              description: data?.error || 'Inventario insuficiente para agregar más unidades.',
+            });
+            get().fetchCarrito();
+          }
+        })
+        .catch((err) => console.error('[addToCart PATCH error]', err));
+      return true;
     } else {
       // Item nuevo: crear en BD
       _cartIdCounter++;
@@ -307,7 +343,18 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           cantidad: 1,
         }),
       })
-        .then((r) => r.ok ? r.json() : null)
+        .then(async (r) => {
+          if (!r.ok) {
+            const data = await r.json().catch(() => ({}));
+            sileo.warning({
+              title: 'Stock insuficiente',
+              description: data?.error || 'No se pudo agregar al carrito por falta de disponibilidad.',
+            });
+            get().fetchCarrito();
+            return null;
+          }
+          return r.json();
+        })
         .then((data) => {
           // Actualizar el ID local con el real de la BD
           if (data?.item?.id) {
@@ -319,6 +366,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           }
         })
         .catch((err) => console.error('[addToCart POST error]', err));
+      return true;
     }
   },
 
@@ -343,6 +391,17 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       get().removeFromCart(itemId);
       return;
     }
+
+    // Validar contra el stock disponible en memoria si existe
+    const prod = get().productos.find((p) => p.id === item.productoId);
+    if (prod && prod.stock !== null && prod.stock !== undefined && qty > prod.stock) {
+      sileo.warning({
+        title: 'Stock insuficiente',
+        description: `Solo hay ${prod.stock} unidad${prod.stock > 1 ? 'es' : ''} disponible${prod.stock > 1 ? 's' : ''} de "${item.nombreProducto}".`,
+      });
+      return;
+    }
+
     // Actualización optimista
     set((state) => ({
       cartItems: state.cartItems.map((i) =>
@@ -354,7 +413,18 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productoId: item.productoId, cantidad: qty }),
-    }).catch((err) => console.error('[updateCartItemQty PATCH error]', err));
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const data = await r.json().catch(() => ({}));
+          sileo.warning({
+            title: 'Stock insuficiente',
+            description: data?.error || 'Inventario insuficiente para esta cantidad.',
+          });
+          get().fetchCarrito();
+        }
+      })
+      .catch((err) => console.error('[updateCartItemQty PATCH error]', err));
   },
 
   // P1: clearCart persiste en BD vía DELETE /api/carrito (sin productoId = limpiar todo)
