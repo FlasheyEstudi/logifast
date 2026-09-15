@@ -301,6 +301,34 @@ export async function POST(req: NextRequest) {
       },
     }).catch(() => null);
 
+    // 5. Emitir eventos en tiempo real a taller de mantenimiento y despacho central
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitirEventoRealtime({
+        room: 'ingeniero',
+        event: 'ingeniero:alerta:nueva',
+        data: {
+          alertaId: alerta.id,
+          motoId: moto.id,
+          motoNombre: moto.nombre,
+          tipo: alerta.tipo,
+          descripcion: alerta.descripcion,
+          prioridad,
+          repartidor: profile.nombre,
+        },
+      });
+      emitirEventoRealtime({
+        room: 'ingeniero',
+        event: 'ingeniero:mantenimiento:nuevo',
+        data: mantenimiento,
+      });
+      emitirEventoRealtime({
+        room: 'admin',
+        event: 'admin:flota:snapshot',
+        data: { motoId: moto.id, estado: esUrgente ? 'EN_MANTENIMIENTO' : moto.estado },
+      });
+    } catch {}
+
     return NextResponse.json({
       ok: true,
       message: 'Problema reportado exitosamente al equipo de Mantenimiento',

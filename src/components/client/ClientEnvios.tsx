@@ -92,9 +92,28 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
     return o.id.toLowerCase().includes(q) || o.destino.toLowerCase().includes(q) || o.origen.toLowerCase().includes(q);
   }), [historicalOrders, filterState, searchQuery]);
 
-  const handleReportSubmit = (e: React.FormEvent) => {
+  const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addToast('Reporte enviado a soporte. Te contactaremos pronto.', 'success');
+    if (!reportModal.orderId) return;
+    try {
+      const res = await fetch(`/api/ordenes/${reportModal.orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          estado: 'incidencia',
+          incidenciaTipo: `Reporte Cliente: ${reportModal.reason}`,
+          incidenciaDesc: reportModal.description.trim() || 'Reportado por cliente desde Mis Envíos',
+        }),
+      });
+      if (res.ok) {
+        addToast('Reporte enviado a soporte y despacho. Te contactaremos pronto.', 'success');
+        fetchOrders();
+      } else {
+        addToast('No se pudo enviar el reporte. Intenta nuevamente.', 'error');
+      }
+    } catch {
+      addToast('Error de conexión al enviar el reporte.', 'error');
+    }
     setReportModal({ open: false, orderId: '', reason: 'retraso', description: '' });
   };
 

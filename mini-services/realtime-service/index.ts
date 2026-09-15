@@ -126,6 +126,12 @@ io.on('connection', (socket) => {
     socket.join(`orden:${data.ordenId}`);
   });
 
+  // ─── INGENIERO: unirse a sala de taller y mantenimiento ───
+  socket.on('ingeniero:conectar', () => {
+    socket.join('ingeniero');
+    console.log(`[realtime] ingeniero conectado en socket ${socket.id}`);
+  });
+
   // ─── REPARTIDOR: unirse a su sala personal ───
   socket.on('repartidor:join:personal', (data: { repartidorId: string }) => {
     socket.join(`repartidor:${data.repartidorId}`);

@@ -14,7 +14,10 @@ export async function PATCH(
     const { costoTotal, costoManoObra: manoObraInput, observaciones, repuestosUsados } = body;
 
     // Validar estado previo
-    const mantenimiento = await prisma.mantenimiento.findUnique({ where: { id } });
+    const mantenimiento = await prisma.mantenimiento.findUnique({
+      where: { id },
+      include: { moto: true },
+    });
     if (!mantenimiento) {
       return NextResponse.json({ error: 'Mantenimiento no encontrado' }, { status: 404 });
     }
@@ -93,7 +96,59 @@ export async function PATCH(
         where: { id: mantenimiento.motoId },
         data: { estado: 'DISPONIBLE' }
       }).catch(() => null);
+
+      // Desactivar y resolver automáticamente las alertas activas de esta moto
+      await prisma.alertaMantenimiento.updateMany({
+        where: {
+          motoId: mantenimiento.motoId,
+          activa: true,
+        },
+        data: {
+          activa: false,
+          resuelta: true,
+          resueltaEn: new Date(),
+        },
+      }).catch(() => null);
     }
+
+    // Notificar al repartidor asignado a esta motocicleta
+    if (mantenimiento.moto?.asignadaA) {
+      await prisma.notificacionRepartidor.create({
+        data: {
+          repartidorId: mantenimiento.moto.asignadaA,
+          tipo: 'mantenimiento',
+          titulo: 'Mantenimiento completado',
+          contenido: `El equipo técnico ha completado el mantenimiento de tu moto (${mantenimiento.moto.nombre || 'Asignada'} - ${mantenimiento.moto.placa || ''}). Ya se encuentra 100% lista para operar.`,
+          leido: false,
+        },
+      }).catch(() => null);
+    }
+
+    // Emitir eventos en tiempo real a admin, ingeniero y repartidor
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitirEventoRealtime({
+        room: 'admin',
+        event: 'mantenimiento:completado',
+        data: { mantenimientoId: id, motoId: mantenimiento.motoId, estado: 'COMPLETADO' },
+      });
+      emitirEventoRealtime({
+        room: 'ingeniero',
+        event: 'mantenimiento:completado',
+        data: { mantenimientoId: id, motoId: mantenimiento.motoId, estado: 'COMPLETADO' },
+      });
+      if (mantenimiento.moto?.asignadaA) {
+        emitirEventoRealtime({
+          room: `repartidor:${mantenimiento.moto.asignadaA}`,
+          event: 'repartidor:moto:mantenimiento_completado',
+          data: {
+            motoId: mantenimiento.motoId,
+            estado: 'DISPONIBLE',
+            mensaje: 'Mantenimiento completado.',
+          },
+        });
+      }
+    } catch {}
 
     return NextResponse.json(updated);
   } catch (error) {

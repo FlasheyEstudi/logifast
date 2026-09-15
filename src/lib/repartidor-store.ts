@@ -1035,14 +1035,20 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         }
       : null;
 
+    const esMantenimiento = tipo === 'mecanica' || tipo === 'accidente';
+
     set({
-      estado: 'EN_LINEA',
+      estado: esMantenimiento ? 'DESCONECTADO' : 'EN_LINEA',
       enServicio: false,
       ordenActiva: null,
       ordenesActivas: [],
       incidenciaAbierta: false,
       serviciosHoy: nuevoServicio ? [nuevoServicio, ...get().serviciosHoy] : get().serviciosHoy,
-      moto: { ...get().moto, estado: 'DISPONIBLE' },
+      moto: {
+        ...get().moto,
+        estado: esMantenimiento ? 'EN_MANTENIMIENTO' : get().moto.estado,
+        alertaMantenimiento: esMantenimiento ? true : get().moto.alertaMantenimiento,
+      },
       kmRecorridos: 0,
       tiempoTranscurrido: 0,
       eta: 0,
@@ -1051,7 +1057,7 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
           id: `ntf-${Date.now()}`,
           tipo: 'incidencia',
           titulo: 'Incidencia reportada',
-          contenido: `Reporte enviado: ${tipoLabel}. Soporte revisará tu caso.`,
+          contenido: `Reporte enviado: ${tipoLabel}. Soporte y Mantenimiento han sido notificados.`,
           leido: false,
           tiempo: 'ahora',
         },
@@ -1065,7 +1071,11 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tipo, descripcion: desc }),
-      }).catch((err) => console.error('[reportarIncidencia API error]', err));
+      })
+        .then(() => {
+          get().syncFromBackend();
+        })
+        .catch((err) => console.error('[reportarIncidencia API error]', err));
     }
   },
 

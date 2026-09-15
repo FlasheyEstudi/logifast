@@ -21,7 +21,9 @@ import {
   ArrowDown,
   ArrowLeft,
   ChevronUp,
+  X,
 } from '@/components/icons';
+import { notify } from '@/lib/notify';
 import { useStore, type TrackingStep, type RepartidorInfo, type Order } from '@/lib/store';
 import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
@@ -693,7 +695,9 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         fragil: (backendTracking?.orden as any)?.fragil ?? (foundEnvio as any).fragil ?? false,
         kmEstimados: backendTracking?.orden?.kmEstimados || (foundEnvio as any).kmEstimados,
         tiempoEstimado: backendTracking?.orden?.tiempoEstimado || (foundEnvio as any).tiempoEstimado,
-        estado: liveEstado === 'entregado' ? 'entregado' : liveEstado === 'aceptado' || liveEstado === 'en_camino' || liveEstado === 'recogido' ? 'encamino' : foundEnvio.estado,
+        estado: liveEstado === 'incidencia' ? 'incidencia' : liveEstado === 'entregado' ? 'entregado' : liveEstado === 'aceptado' || liveEstado === 'en_camino' || liveEstado === 'recogido' ? 'encamino' : foundEnvio.estado,
+        incidenciaTipo: backendTracking?.orden?.incidenciaTipo || (foundEnvio as any).incidenciaTipo,
+        incidenciaDesc: backendTracking?.orden?.incidenciaDesc || (foundEnvio as any).incidenciaDesc,
         repartidor: liveRepartidor,
         repartidorTelefono: liveRepartidorTelefono,
         repartidorInitials: liveRepartidorInitials,
@@ -734,7 +738,9 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         origenLng: oLng,
         destinoLat: dLat,
         destinoLng: dLng,
-        estado: currentOrdenCompra.estado === 'entregado' ? 'entregado' : 'encamino',
+        estado: currentOrdenCompra.estado === 'incidencia' ? 'incidencia' : currentOrdenCompra.estado === 'entregado' ? 'entregado' : 'encamino',
+        incidenciaTipo: (currentOrdenCompra as any).incidenciaTipo || backendTracking?.orden?.incidenciaTipo,
+        incidenciaDesc: (currentOrdenCompra as any).incidenciaDesc || backendTracking?.orden?.incidenciaDesc,
         monto: currentOrdenCompra.total,
         subtotal: (currentOrdenCompra as any).subtotal || backendTracking?.orden?.subtotal || currentOrdenCompra.total,
         costoEnvio: (currentOrdenCompra as any).costoEnvio || backendTracking?.orden?.costoEnvio || 0,
@@ -790,7 +796,9 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         origenLng: oLng,
         destinoLat: dLat,
         destinoLng: dLng,
-        estado: bo.estado === 'entregado' ? 'entregado' : 'encamino',
+        estado: bo.estado === 'incidencia' ? 'incidencia' : bo.estado === 'entregado' ? 'entregado' : 'encamino',
+        incidenciaTipo: bo.incidenciaTipo,
+        incidenciaDesc: bo.incidenciaDesc,
         monto: bo.monto || bo.total || 0,
         subtotal: bo.subtotal || bo.total || 0,
         costoEnvio: bo.costoEnvio || 0,
@@ -930,6 +938,65 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
     }
   }, [trackingOrderId, order, backendTracking]);
 
+  // Estados y manejadores para reporte de incidencia y cancelación de orden
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('retraso');
+  const [reportDescription, setReportDescription] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [isCancellingOrder, setIsCancellingOrder] = useState(false);
+
+  const handleClientReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order?.id) return;
+    setIsSubmittingReport(true);
+    try {
+      const res = await fetch(`/api/ordenes/${order.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          estado: 'incidencia',
+          incidenciaTipo: `Reporte Cliente: ${reportReason}`,
+          incidenciaDesc: reportDescription.trim() || 'Reportado por cliente en seguimiento en vivo',
+        }),
+      });
+      if (res.ok) {
+        notify.success('Reporte enviado a soporte y despacho.');
+        setReportModalOpen(false);
+        setReportDescription('');
+      } else {
+        notify.error('No se pudo enviar el reporte.');
+      }
+    } catch {
+      notify.error('Error de conexión al enviar reporte.');
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
+  const handleClientCancelOrder = async () => {
+    if (!order?.id) return;
+    setIsCancellingOrder(true);
+    try {
+      const res = await fetch(`/api/ordenes/${order.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        notify.success('Envío cancelado exitosamente.');
+        setCancelModalOpen(false);
+        onBack();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        notify.error(d?.error || 'No se pudo cancelar el envío.');
+      }
+    } catch {
+      notify.error('Error de conexión al cancelar envío.');
+    } finally {
+      setIsCancellingOrder(false);
+    }
+  };
+
   // Sync client to order's tracking room & receive live driver positioning
   useEffect(() => {
     if (!trackingOrderId) return;
@@ -989,6 +1056,16 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       fetchTracking();
     });
 
+    const cleanupIncidencia = onRealtimeEvent('orden:incidencia', (data: any) => {
+      if (!data?.ordenId || String(data.ordenId) === String(trackingOrderId)) {
+        fetchTracking();
+        haptic('heavy');
+        if (data?.mensajeCliente) {
+          notify.error(data.mensajeCliente);
+        }
+      }
+    });
+
     const cleanupDemora = onRealtimeEvent('orden:demora_clima', (data: any) => {
       if ((!data?.ordenId || data?.ordenId === trackingOrderId) && !notifiedDemoraRef.current) {
         notifiedDemoraRef.current = true;
@@ -1005,6 +1082,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
       cleanupPos();
       cleanupEstado();
       cleanupOrdenUpdate();
+      cleanupIncidencia();
       cleanupDemora();
     };
   }, [trackingOrderId]);
@@ -1720,73 +1798,164 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           }}
           className="lf-scrollbar"
         >
-          {/* ═══════ ETA — always visible ═══════ */}
-          <div style={{ marginBottom: 20, textAlign: 'center' }}>
-            <p
+          {/* ═══════ ETA / INCIDENCIA BANNER ═══════ */}
+          {order?.estado === 'incidencia' ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
               style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 13,
-                color: 'var(--text-muted)',
-                margin: '0 0 4px 0',
+                marginBottom: 20,
+                padding: '16px',
+                borderRadius: 14,
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                textAlign: 'left',
               }}
             >
-              {order?.estado === 'programada'
-                ? 'Recogida programada para'
-                : 'Tu paquete llega en'}
-            </p>
-            <AnimatePresence mode="wait">
-              <motion.h2
-                key={trackingETA}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25 }}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 20 }}>⚠️</span>
+                <span
+                  style={{
+                    fontFamily: "'Syne', sans-serif",
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: 'var(--peligro)',
+                  }}
+                >
+                  Contratiempo en la entrega
+                </span>
+              </div>
+              <p
                 style={{
-                  fontFamily: "'Syne', sans-serif",
-                  fontSize: 36,
-                  fontWeight: 700,
-                  color: 'var(--primario)',
-                  margin: '0 0 12px 0',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--text)',
+                  margin: '0 0 4px 0',
+                }}
+              >
+                {(order as any).incidenciaTipo || 'Incidencia en ruta'}
+              </p>
+              {(order as any).incidenciaDesc && (
+                <p
+                  style={{
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    margin: 0,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {(order as any).incidenciaDesc}
+                </p>
+              )}
+              <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => onOpenChat(order?.id || '')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Abrir chat
+                </button>
+                {(order as any).repartidorTelefono && (
+                  <a
+                    href={`tel:${(order as any).repartidorTelefono}`}
+                    style={{
+                      flex: 1,
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      background: 'var(--primario)',
+                      color: '#ffffff',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Llamar repartidor
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            <div style={{ marginBottom: 20, textAlign: 'center' }}>
+              <p
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 13,
+                  color: 'var(--text-muted)',
+                  margin: '0 0 4px 0',
                 }}
               >
                 {order?.estado === 'programada'
-                  ? order.hora
-                  : `~${trackingETA} minutos`}
-              </motion.h2>
-            </AnimatePresence>
+                  ? 'Recogida programada para'
+                  : 'Tu paquete llega en'}
+              </p>
+              <AnimatePresence mode="wait">
+                <motion.h2
+                  key={trackingETA}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25 }}
+                  style={{
+                    fontFamily: "'Syne', sans-serif",
+                    fontSize: 36,
+                    fontWeight: 700,
+                    color: 'var(--primario)',
+                    margin: '0 0 12px 0',
+                  }}
+                >
+                  {order?.estado === 'programada'
+                    ? order.hora
+                    : `~${trackingETA} minutos`}
+                </motion.h2>
+              </AnimatePresence>
 
-            {/* Progress bar: height 4px, gradient var(--primario) */}
-            <div
-              style={{
-                width: '100%',
-                height: 4,
-                borderRadius: 2,
-                background: 'var(--bg-alt)',
-                overflow: 'hidden',
-              }}
-            >
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
+              {/* Progress bar: height 4px, gradient var(--primario) */}
+              <div
                 style={{
-                  height: '100%',
+                  width: '100%',
+                  height: 4,
                   borderRadius: 2,
-                  background: `linear-gradient(90deg, var(--primario), var(--primario-hover))`,
+                  background: 'var(--bg-alt)',
+                  overflow: 'hidden',
                 }}
-              />
+              >
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPct}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  style={{
+                    height: '100%',
+                    borderRadius: 2,
+                    background: `linear-gradient(90deg, var(--primario), var(--primario-hover))`,
+                  }}
+                />
+              </div>
+              <p
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  color: 'var(--text-muted)',
+                  margin: '4px 0 0 0',
+                }}
+              >
+                {progressPct}% completado
+              </p>
             </div>
-            <p
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                color: 'var(--text-muted)',
-                margin: '4px 0 0 0',
-              }}
-            >
-              {progressPct}% completado
-            </p>
-          </div>
+          )}
 
           {/* PIN DE ENTREGA BANNER */}
           {orderPin && (
@@ -2220,7 +2389,11 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           {sheetSnap !== 'minimized' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
               <button
-                onClick={() => haptic('medium')}
+                type="button"
+                onClick={() => {
+                  haptic('medium');
+                  setReportModalOpen(true);
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -2241,9 +2414,13 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                 <AlertTriangle size={15} />
                 Reportar problema
               </button>
-              {order && (order.estado === 'pendiente' || order.estado === 'programada') && (
+              {order && (order.estado === 'pendiente' || order.estado === 'programada' || (order.estado as string) === 'recibido') && (
                 <button
-                  onClick={() => haptic('heavy')}
+                  type="button"
+                  onClick={() => {
+                    haptic('heavy');
+                    setCancelModalOpen(true);
+                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -2277,6 +2454,230 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
           }
         `}</style>
       </motion.div>
+
+      {/* ═══════ Modal Reportar Problema ═══════ */}
+      {reportModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 16,
+              maxWidth: 400,
+              width: '100%',
+              padding: 24,
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
+                Reportar problema
+              </h3>
+              <button
+                type="button"
+                onClick={() => setReportModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleClientReport}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>
+                  Motivo
+                </label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-alt)',
+                    color: 'var(--text)',
+                    fontSize: 14,
+                    outline: 'none',
+                  }}
+                >
+                  <option value="retraso">Demora o retraso excesivo</option>
+                  <option value="direccion_incorrecta">Problema con la dirección</option>
+                  <option value="repartidor_no_responde">El repartidor no responde</option>
+                  <option value="paquete_danado">Paquete en mal estado</option>
+                  <option value="otro">Otro problema</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>
+                  Descripción detallada
+                </label>
+                <textarea
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Explica lo sucedido para que soporte pueda ayudarte..."
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-alt)',
+                    color: 'var(--text)',
+                    fontSize: 13,
+                    resize: 'none',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setReportModalOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    color: 'var(--text)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReport}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'var(--peligro)',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: isSubmittingReport ? 'not-allowed' : 'pointer',
+                    opacity: isSubmittingReport ? 0.7 : 1,
+                  }}
+                >
+                  {isSubmittingReport ? 'Enviando...' : 'Enviar reporte'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ Modal Cancelar Envío ═══════ */}
+      {cancelModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 16,
+              maxWidth: 380,
+              width: '100%',
+              padding: 24,
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.12)',
+                color: 'var(--peligro)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto',
+              }}
+            >
+              <AlertTriangle size={24} />
+            </div>
+            <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text)' }}>
+              ¿Cancelar este envío?
+            </h3>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px 0', lineHeight: 1.4 }}>
+              Esta acción no se puede deshacer. La orden será cancelada y se notificará al equipo de logística.
+            </p>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setCancelModalOpen(false)}
+                disabled={isCancellingOrder}
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={handleClientCancelOrder}
+                disabled={isCancellingOrder}
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--peligro)',
+                  color: '#ffffff',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: isCancellingOrder ? 'not-allowed' : 'pointer',
+                  opacity: isCancellingOrder ? 0.7 : 1,
+                }}
+              >
+                {isCancellingOrder ? 'Cancelando...' : 'Sí, cancelar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

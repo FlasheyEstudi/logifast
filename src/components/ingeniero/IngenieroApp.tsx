@@ -10,6 +10,8 @@ import { DashboardSkeleton, FlotaSkeleton, MantenimientosSkeleton, PerfilSkeleto
 import CrearMantenimiento from './CrearMantenimiento';
 import CrearMotoModal from './CrearMotoModal';
 import DetalleMotoModal from './DetalleMotoModal';
+import { realtime, onRealtimeEvent } from '@/services/realtime';
+import { notify } from '@/lib/notify';
 
 const Dashboard = lazy(() => import('./Dashboard'));
 const Flota = lazy(() => import('./Flota'));
@@ -40,9 +42,37 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
   const [avatarOpen, setAvatarOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
 
-  // Cargar datos reales al montar
+  // Cargar datos reales y conectar a realtime del taller
   useEffect(() => {
     store.cargarDatos();
+
+    realtime.ingenieroConectar();
+
+    const cleanupAlerta = onRealtimeEvent('ingeniero:alerta:nueva', (data: any) => {
+      store.cargarDatos();
+      notify.warning(
+        `🚨 Alerta de ${data?.repartidor || 'Repartidor'}: ${data?.descripcion || 'Incidencia reportada'}`
+      );
+    });
+
+    const cleanupMantenimiento = onRealtimeEvent('ingeniero:mantenimiento:nuevo', () => {
+      store.cargarDatos();
+    });
+
+    const cleanupIniciado = onRealtimeEvent('mantenimiento:iniciado', () => {
+      store.cargarDatos();
+    });
+
+    const cleanupCompletado = onRealtimeEvent('mantenimiento:completado', () => {
+      store.cargarDatos();
+    });
+
+    return () => {
+      cleanupAlerta();
+      cleanupMantenimiento();
+      cleanupIniciado();
+      cleanupCompletado();
+    };
   }, []);
 
   // Cerrar dropdown al hacer click fuera

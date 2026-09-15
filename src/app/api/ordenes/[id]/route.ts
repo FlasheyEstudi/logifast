@@ -123,6 +123,28 @@ export async function PATCH(
       });
     }
 
+    try {
+      const { emitOrdenActualizada, emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitOrdenActualizada(ordenActualizada);
+      emitirEventoRealtime({
+        room: `orden:${id}`,
+        event: 'orden:estado:update',
+        data: ordenActualizada,
+      });
+      if ((dataToUpdate as any).estado === 'incidencia') {
+        emitirEventoRealtime({
+          room: `orden:${id}`,
+          event: 'orden:incidencia',
+          data: {
+            ordenId: id,
+            tipo: dataToUpdate.incidenciaTipo || 'Incidencia',
+            descripcion: dataToUpdate.incidenciaDesc || '',
+            estado: 'incidencia',
+          },
+        });
+      }
+    } catch {}
+
     return NextResponse.json({ ok: true, orden: ordenActualizada });
   } catch (error) {
     console.error('[ORDEN_PATCH]', error);
@@ -147,10 +169,23 @@ export async function DELETE(
     const { id } = await params;
 
     // Ownership check
-    const orden = await db.ordenServicio.findUnique({
+    let orden = await db.ordenServicio.findUnique({
       where: { id },
       select: { clienteId: true, estado: true },
     });
+    let isCompra = false;
+
+    if (!orden) {
+      const oc = await db.ordenCompra.findUnique({
+        where: { id },
+        select: { clienteId: true, estado: true },
+      });
+      if (oc) {
+        orden = oc;
+        isCompra = true;
+      }
+    }
+
     if (!orden) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
@@ -167,14 +202,35 @@ export async function DELETE(
       return NextResponse.json({ error: 'No se puede cancelar una orden ya entregada' }, { status: 400 });
     }
 
-    const ordenCancelada = await db.ordenServicio.update({
-      where: { id },
-      data: {
-        estado: 'cancelado',
-        incidenciaTipo: 'cancelacion',
-        incidenciaDesc: `Cancelado por ${user.name || user.email} (${user.role})`,
-      },
-    });
+    let ordenCancelada: any;
+    if (isCompra) {
+      ordenCancelada = await db.ordenCompra.update({
+        where: { id },
+        data: {
+          estado: 'cancelado',
+        },
+      });
+    } else {
+      ordenCancelada = await db.ordenServicio.update({
+        where: { id },
+        data: {
+          estado: 'cancelado',
+          incidenciaTipo: 'cancelacion',
+          incidenciaDesc: `Cancelado por ${user.name || user.email} (${user.role})`,
+        },
+      });
+    }
+
+    try {
+      const { emitOrdenEliminada, emitOrdenActualizada, emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitOrdenEliminada(id);
+      emitOrdenActualizada(ordenCancelada);
+      emitirEventoRealtime({
+        room: `orden:${id}`,
+        event: 'orden:cancelada',
+        data: { id, canceladaPor: user.role },
+      });
+    } catch {}
 
     return NextResponse.json({ ok: true, orden: ordenCancelada });
   } catch (error) {

@@ -40,12 +40,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
     }
 
-    await db.ordenServicio.update({
+    const updatedOrden = await db.ordenServicio.update({
       where: { id },
       data: {
         estado: 'incidencia',
         incidenciaTipo: tipoLabel,
         incidenciaDesc: desc,
+      },
+      include: {
+        cliente: { select: { id: true, name: true, email: true, telefono: true } },
       },
     });
 
@@ -65,6 +68,56 @@ export async function PATCH(
       },
     });
 
+    // Notificar en tiempo real al Cliente y Admin sobre la incidencia
+    const { emitirEventoRealtime, emitOrdenActualizada } = await import('@/lib/realtime-emitter');
+    emitOrdenActualizada(updatedOrden);
+
+    const descCliente =
+      tipoRaw === 'mecanica'
+        ? 'El repartidor reportó una falla mecánica en la motocicleta. Soporte está reasignando tu pedido.'
+        : tipoRaw === 'accidente'
+        ? 'El repartidor reportó un contratiempo vial en ruta. Soporte está gestionando tu entrega de inmediato.'
+        : tipoRaw === 'cliente'
+        ? `Inconveniente en entrega: ${desc || 'Problema de localización o contacto'}.`
+        : `Contratiempo en ruta (${tipoLabel}): ${desc || 'En gestión por soporte'}.`;
+
+    emitirEventoRealtime({
+      room: `orden:${id}`,
+      event: 'orden:incidencia',
+      data: {
+        ordenId: id,
+        tipo: tipoLabel,
+        descripcion: desc,
+        mensajeCliente: descCliente,
+        estado: 'incidencia',
+      },
+    });
+
+    if (orden.clienteId) {
+      emitirEventoRealtime({
+        room: `cliente:${orden.clienteId}`,
+        event: 'cliente:notificacion',
+        data: {
+          id: `notif-inc-${Date.now()}`,
+          titulo: 'Contratiempo en tu envío',
+          mensaje: descCliente,
+          tipo: 'incidencia',
+          ordenId: id,
+        },
+      });
+
+      await db.notificacionPush.create({
+        data: {
+          userId: orden.clienteId,
+          titulo: 'Contratiempo en tu entrega',
+          contenido: descCliente,
+          tipo: 'INCIDENCIA',
+          entidadId: id,
+          leida: false,
+        },
+      }).catch(() => null);
+    }
+
     // Si la incidencia es falla mecánica o accidente, generar reporte automático al módulo de Ingeniero / Mantenimiento
     if (tipoRaw === 'mecanica' || tipoRaw === 'accidente') {
       try {
@@ -73,7 +126,7 @@ export async function PATCH(
           moto = await db.moto.findUnique({ where: { id: profile.motoId } });
         }
         if (!moto) {
-          moto = await db.moto.findFirst({ where: { asignadaA: profile.id } }) || await db.moto.findFirst();
+          moto = (await db.moto.findFirst({ where: { asignadaA: profile.id } })) || (await db.moto.findFirst());
         }
 
         if (moto) {
@@ -108,6 +161,18 @@ export async function PATCH(
               costoTotal: 0,
               estado: 'PROGRAMADO',
               prioridad: 'URGENTE',
+            },
+          });
+
+          // Notificar en tiempo real al panel de Ingeniero / Taller
+          emitirEventoRealtime({
+            room: 'ingeniero',
+            event: 'ingeniero:alerta:nueva',
+            data: {
+              motoId: moto.id,
+              motoNombre: moto.nombre,
+              tipo: 'EMERGENCIA',
+              descripcion: `[Incidencia] ${tipoLabel} de ${profile.nombre} (Orden ${id})`,
             },
           });
         }

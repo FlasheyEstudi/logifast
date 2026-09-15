@@ -60,10 +60,27 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { id } = body;
 
-    await prisma.alertaMantenimiento.update({
+    const updatedAlerta = await prisma.alertaMantenimiento.update({
       where: { id },
-      data: { activa: false, resuelta: true, resueltaEn: new Date() }
+      data: { activa: false, resuelta: true, resueltaEn: new Date() },
+      include: { moto: true },
     });
+
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitirEventoRealtime({
+        room: 'ingeniero',
+        event: 'ingeniero:alerta:nueva',
+        data: { id, resuelta: true },
+      });
+      if (updatedAlerta.moto?.asignadaA) {
+        emitirEventoRealtime({
+          room: `repartidor:${updatedAlerta.moto.asignadaA}`,
+          event: 'repartidor:moto:update',
+          data: { motoId: updatedAlerta.motoId },
+        });
+      }
+    } catch {}
 
     return NextResponse.json({ ok: true });
   } catch (error) {

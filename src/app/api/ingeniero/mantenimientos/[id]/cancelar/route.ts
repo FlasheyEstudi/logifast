@@ -37,11 +37,50 @@ export async function PATCH(
       },
     });
     if (otrosActivos === 0) {
-      await prisma.moto.update({
+      const moto = await prisma.moto.update({
         where: { id: mantenimiento.motoId },
         data: { estado: 'DISPONIBLE' }
       }).catch(() => null);
+
+      if (moto?.asignadaA) {
+        await prisma.notificacionRepartidor.create({
+          data: {
+            repartidorId: moto.asignadaA,
+            tipo: 'mantenimiento',
+            titulo: 'Mantenimiento cancelado',
+            contenido: `El servicio de taller para tu moto ${moto.nombre} fue cancelado y la unidad ha quedado disponible.`,
+            leido: false,
+          },
+        }).catch(() => null);
+
+        try {
+          const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+          emitirEventoRealtime({
+            room: `repartidor:${moto.asignadaA}`,
+            event: 'repartidor:moto:mantenimiento_completado',
+            data: {
+              motoId: moto.id,
+              estado: 'DISPONIBLE',
+              mensaje: 'Mantenimiento cancelado. Moto liberada.',
+            },
+          });
+        } catch {}
+      }
     }
+
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitirEventoRealtime({
+        room: 'admin',
+        event: 'mantenimiento:completado',
+        data: { mantenimientoId: id, motoId: mantenimiento.motoId, estado: 'CANCELADO' },
+      });
+      emitirEventoRealtime({
+        room: 'ingeniero',
+        event: 'mantenimiento:completado',
+        data: { mantenimientoId: id, motoId: mantenimiento.motoId, estado: 'CANCELADO' },
+      });
+    } catch {}
 
     return NextResponse.json(updated);
   } catch (error) {

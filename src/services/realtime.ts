@@ -51,11 +51,21 @@ export type RealtimeEvent =
   | 'repartidor:orden:tomada'          // orden tomada por otro repartidor (se retira del pool)
   | 'repartidor:posicion:update'       // posición del repartidor actualizada (cliente/admin reciben)
   | 'repartidor:estado:update'         // estado del repartidor cambió (cliente recibe)
+  | 'repartidor:moto:mantenimiento_iniciado'   // moto entró al taller
+  | 'repartidor:moto:mantenimiento_completado' // moto reparada y disponible
+  | 'repartidor:moto:update'          // estado de moto actualizado
   | 'orden:estado:update'              // estado o repartidor de la orden cambió en vivo
+  | 'orden:incidencia'                 // incidencia reportada en la orden
+  | 'orden:demora_clima'               // demora por clima o tráfico
+  | 'orden:cancelada'                  // orden cancelada
   | 'chat:mensaje:nuevo'               // nuevo mensaje de chat
   | 'admin:flota:snapshot'             // snapshot inicial de flota (admin recibe)
   | 'admin:repartidor:offline'         // repartidor se desconectó (admin recibe)
-  | 'admin:asignacion:confirmada';     // confirmación de asignación (admin recibe)
+  | 'admin:asignacion:confirmada'      // confirmación de asignación (admin recibe)
+  | 'ingeniero:alerta:nueva'           // alerta técnica o emergencia creada (ingeniero recibe)
+  | 'ingeniero:mantenimiento:nuevo'    // orden de mantenimiento creada (ingeniero recibe)
+  | 'mantenimiento:iniciado'           // mantenimiento pasó a EN_PROCESO
+  | 'mantenimiento:completado';        // mantenimiento finalizado
 
 // ─── Helper para suscribirse a eventos con cleanup ───
 export function onRealtimeEvent(event: RealtimeEvent, handler: (data: any) => void): () => void {
@@ -74,6 +84,7 @@ export const realtime = {
   adminConectar: () => getSocket().emit('admin:conectar'),
   adminAsignarOrden: (repartidorId: string, orden: any) =>
     getSocket().emit('admin:asignar:orden', { repartidorId, orden }),
+  ingenieroConectar: () => getSocket().emit('ingeniero:conectar'),
   clienteTrackingUnirse: (ordenId: string) => getSocket().emit('cliente:tracking:unirse', { ordenId }),
   chatMensaje: (ordenId: string, emisor: 'repartidor' | 'cliente', contenido: string) =>
     getSocket().emit('chat:mensaje', {

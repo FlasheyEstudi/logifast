@@ -640,11 +640,48 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
       useRepartidorStore.setState(update);
     });
 
+    const cleanupMotoMantenimiento = onRealtimeEvent('repartidor:moto:mantenimiento_iniciado', (data: any) => {
+      const state = useRepartidorStore.getState();
+      state.syncFromBackend();
+      reproducirSonido('error', 80);
+      HAPTIC_PATTERNS.heavy();
+      showSnackbar({
+        message: data?.mensaje || 'Tu motocicleta ha ingresado al taller para mantenimiento.',
+        action: 'Ver',
+        onAction: () => {
+          setPantalla('perfil');
+          setGananciasActive(false);
+        },
+      });
+    });
+
+    const cleanupMotoCompletado = onRealtimeEvent('repartidor:moto:mantenimiento_completado', (data: any) => {
+      const state = useRepartidorStore.getState();
+      state.syncFromBackend();
+      reproducirSonido('notificacion', 90);
+      HAPTIC_PATTERNS.success();
+      showSnackbar({
+        message: data?.mensaje || '¡Tu moto está lista! Mantenimiento técnico completado.',
+        action: 'Ver',
+        onAction: () => {
+          setPantalla('perfil');
+          setGananciasActive(false);
+        },
+      });
+    });
+
+    const cleanupMotoUpdate = onRealtimeEvent('repartidor:moto:update', () => {
+      useRepartidorStore.getState().syncFromBackend();
+    });
+
     return () => {
       cleanupChat();
       cleanupOrder();
       cleanupDisponible();
       cleanupTomada();
+      cleanupMotoMantenimiento();
+      cleanupMotoCompletado();
+      cleanupMotoUpdate();
     };
   }, [conectado, showSnackbar]);
 
