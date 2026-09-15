@@ -1081,34 +1081,55 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
     setShareLocationModalOpen(true);
   }, [aplicarUbicacionParseada]);
 
-  // Listener para cuando se comparte un enlace directo desde Android (Intent ACTION_SEND de WhatsApp o Telegram)
+  // Listener para cuando se comparte un enlace directo desde Android (Intent ACTION_VIEW o ACTION_SEND de WhatsApp o Telegram)
   useEffect(() => {
     const checkAndApplyShared = async (text: string) => {
       if (!text || text.trim().length === 0) return;
       setIsParsingSharedLocation(true);
-      const parsed = await parsearUbicacionCompartida(text);
-      if (parsed.exito) {
-        aplicarUbicacionParseada(parsed);
+      try {
+        const parsed = await parsearUbicacionCompartida(text);
+        if (parsed.exito) {
+          aplicarUbicacionParseada(parsed);
+        } else {
+          showToast('No pudimos extraer las coordenadas exactas de la ubicación compartida.', 'info');
+        }
+      } catch (err) {
+        console.error('[checkAndApplyShared error]', err);
+      } finally {
+        setIsParsingSharedLocation(false);
       }
-      setIsParsingSharedLocation(false);
     };
 
-    if (typeof window !== 'undefined' && (window as any).__LOGIFAST_SHARED_LOCATION__) {
-      const shared = (window as any).__LOGIFAST_SHARED_LOCATION__;
-      (window as any).__LOGIFAST_SHARED_LOCATION__ = null;
-      checkAndApplyShared(shared);
+    if (typeof window !== 'undefined') {
+      try {
+        const sharedGlobal = (window as any).__LOGIFAST_SHARED_LOCATION__;
+        const sharedSession = sessionStorage.getItem('logifast_shared_location');
+        const shared = sharedGlobal || sharedSession;
+
+        if (shared) {
+          (window as any).__LOGIFAST_SHARED_LOCATION__ = null;
+          sessionStorage.removeItem('logifast_shared_location');
+          checkAndApplyShared(shared);
+        }
+      } catch {}
     }
 
     const handleEvent = (e: any) => {
       const text = e.detail?.text;
-      if (text) checkAndApplyShared(text);
+      if (text) {
+        try {
+          (window as any).__LOGIFAST_SHARED_LOCATION__ = null;
+          sessionStorage.removeItem('logifast_shared_location');
+        } catch {}
+        checkAndApplyShared(text);
+      }
     };
 
     window.addEventListener('logifast:sharedLocation', handleEvent);
     return () => {
       window.removeEventListener('logifast:sharedLocation', handleEvent);
     };
-  }, [aplicarUbicacionParseada]);
+  }, [aplicarUbicacionParseada, showToast]);
 
   /* ─── Cost calculation ─── */
   const costBreakdown = useMemo<CostBreakdown>(() => {

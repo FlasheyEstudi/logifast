@@ -401,6 +401,66 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     return () => window.removeEventListener('popstate', handlePopState);
   }, [clientActiveModule, setClientActiveModule]);
 
+  /* ─── Receptor de Ubicación Compartida Externa (WhatsApp, Telegram, Google Maps) ─── */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const navegarASolicitar = () => {
+      const mState = useMarketplaceStore.getState();
+      const sState = useStore.getState();
+
+      if (mState.carritoOpen) mState.setCarritoOpen(false);
+      if (mState.tiendaSeleccionada) mState.setTiendaSeleccionada(null);
+      if (sState.trackingOrderId) sState.setTrackingOrder(null);
+      if (sState.chatOpen) sState.setChatOpen(false);
+      if (sState.ratingModalOpen) sState.setRatingModalOpen(false);
+      if (sState.clientNotifOpen) sState.setClientNotifOpen(false);
+
+      setClientActiveModule('solicitar');
+    };
+
+    // Registrar manejador directo accesible desde MainActivity (WebView evaluateJavascript)
+    (window as any).__LOGIFAST_HANDLE_SHARED__ = (text: string) => {
+      navegarASolicitar();
+      window.dispatchEvent(new CustomEvent('logifast:sharedLocation', { detail: { text } }));
+    };
+
+    const handleSharedEvent = () => {
+      navegarASolicitar();
+    };
+
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#/cliente/')) {
+        const mod = hash.replace('#/cliente/', '') as ClientModuleKey;
+        if (mod && mod !== clientActiveModule) {
+          if (mod === 'solicitar') {
+            navegarASolicitar();
+          } else {
+            setClientActiveModule(mod);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('logifast:sharedLocation', handleSharedEvent);
+    window.addEventListener('hashchange', handleHashChange);
+
+    try {
+      const pending =
+        (window as any).__LOGIFAST_SHARED_LOCATION__ ||
+        sessionStorage.getItem('logifast_shared_location');
+      if (pending) {
+        navegarASolicitar();
+      }
+    } catch {}
+
+    return () => {
+      window.removeEventListener('logifast:sharedLocation', handleSharedEvent);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [clientActiveModule, setClientActiveModule]);
+
   /* ─── Cargar datos del backend al montar y sincronizar en segundo plano ─── */
   useEffect(() => {
     fetchTiendas();

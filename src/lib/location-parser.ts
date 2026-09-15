@@ -16,9 +16,9 @@ export interface UbicacionParseada {
  */
 function sonCoordenadasValidas(lat: number, lng: number): boolean {
   if (isNaN(lat) || isNaN(lng)) return false;
+  if (lat === 0 && lng === 0) return false;
   // Latitud mundial [-90, 90], Longitud [-180, 180]
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return false;
-  // Nicaragua / Centroamérica aproximado: lat [10.0, 16.0], lng [-88.0, -82.0]
   return true;
 }
 
@@ -40,13 +40,33 @@ export async function parsearUbicacionCompartida(rawText: string): Promise<Ubica
 
   const clean = rawText.trim();
 
-  // 1. Detección de URI 'geo:' (Compartir nativo de Telegram y Android)
-  // Ej: geo:12.136389,-86.251389?z=17 o geo:12.136389,-86.251389
-  const geoUriMatch = clean.match(/geo:([+-]?\d+(?:\.\d+)?),([+-]?\d+(?:\.\d+)?)/i);
-  if (geoUriMatch) {
-    const lat = parseFloat(geoUriMatch[1]);
-    const lng = parseFloat(geoUriMatch[2]);
-    if (sonCoordenadasValidas(lat, lng)) {
+  // 1. Detección de URI 'geo:' (Compartir nativo de Telegram, WhatsApp y Android)
+  // Ejemplos:
+  // - geo:12.136389,-86.251389?z=17
+  // - geo:0,0?q=12.136389,-86.251389(Mi%20Lugar)
+  // - geo:0,0?q=loc:12.136389,-86.251389
+  // - geo:12.136389,-86.251389?q=12.136389,-86.251389
+  if (clean.toLowerCase().includes('geo:')) {
+    let lat = 0;
+    let lng = 0;
+
+    // A) Revisar query param ?q= o &q= con coordenadas (prioritario sobre geo:0,0)
+    const geoQueryMatch = clean.match(/[?&]q=(?:loc:)?([+-]?\d+(?:\.\d+)?)[,\s]+([+-]?\d+(?:\.\d+)?)/i);
+    if (geoQueryMatch) {
+      lat = parseFloat(geoQueryMatch[1]);
+      lng = parseFloat(geoQueryMatch[2]);
+    }
+
+    // B) Si no se halló en ?q=, extraer coordenadas directas de geo:lat,lng
+    if (lat === 0 && lng === 0) {
+      const geoDirectMatch = clean.match(/geo:([+-]?\d+(?:\.\d+)?),([+-]?\d+(?:\.\d+)?)/i);
+      if (geoDirectMatch) {
+        lat = parseFloat(geoDirectMatch[1]);
+        lng = parseFloat(geoDirectMatch[2]);
+      }
+    }
+
+    if (lat !== 0 && lng !== 0 && sonCoordenadasValidas(lat, lng)) {
       const direccion = await reverseGeocode(lat, lng);
       return {
         exito: true,
@@ -58,15 +78,36 @@ export async function parsearUbicacionCompartida(rawText: string): Promise<Ubica
         rawInput: clean,
       };
     }
+
+    // C) Si es geo:0,0?q=NombreDeLugar o dirección de texto
+    const geoTextMatch = clean.match(/[?&]q=([^&()]+)/i);
+    if (geoTextMatch) {
+      const queryAddress = decodeURIComponent(geoTextMatch[1].replace(/\+/g, ' ')).trim();
+      if (queryAddress) {
+        const searchResults = await buscarUbicacionDinamica(queryAddress);
+        if (searchResults && searchResults.length > 0) {
+          const top = searchResults[0];
+          return {
+            exito: true,
+            lat: top.lat,
+            lng: top.lng,
+            direccionTexto: top.display_name,
+            fuente: 'texto',
+            mensajeDetalle: 'Dirección localizada con precisión desde Geo URI',
+            rawInput: clean,
+          };
+        }
+      }
+    }
   }
 
   // 2. Enlaces estándar de Google Maps compartidos por WhatsApp y Telegram
   // Ej: https://maps.google.com/?q=12.136389,-86.251389
-  // Ej: https://www.google.com/maps?q=12.136389,-86.251389
-  // Ej: https://www.google.com/maps/search/?api=1&query=12.136389,-86.251389
   // Ej: https://maps.google.com/maps?q=loc:12.136389,-86.251389
+  // Ej: https://www.google.com/maps?daddr=12.136389,-86.251389
+  // Ej: https://www.google.com/maps/search/?api=1&query=12.136389,-86.251389
   const gmapsQueryMatch = clean.match(
-    /(?:https?:\/\/)?(?:www\.)?(?:maps\.google\.[a-z.]+|google\.[a-z.]+\/maps)[^\s]*[?&](?:q|query|loc)=([+-]?\d+(?:\.\d+)?)[,\s]+([+-]?\d+(?:\.\d+)?)/i
+    /(?:https?:\/\/)?(?:www\.)?(?:maps\.google\.[a-z.]+|google\.[a-z.]+\/maps)[^\s]*[?&](?:q|query|loc|destination|daddr)=(?:loc:)?([+-]?\d+(?:\.\d+)?)[,\s]+([+-]?\d+(?:\.\d+)?)/i
   );
   if (gmapsQueryMatch) {
     const lat = parseFloat(gmapsQueryMatch[1]);
@@ -80,6 +121,25 @@ export async function parsearUbicacionCompartida(rawText: string): Promise<Ubica
         direccionTexto: direccion,
         fuente: clean.toLowerCase().includes('whatsapp') ? 'whatsapp' : 'google_maps',
         mensajeDetalle: 'Ubicación extraída de Google Maps / WhatsApp',
+        rawInput: clean,
+      };
+    }
+  }
+
+  // 2.5 Enlaces de Apple Maps y Waze
+  const appleOrWazeMatch = clean.match(/(?:maps\.apple\.com|waze\.com\/ul)[^\s]*[?&](?:ll|q)=([+-]?\d+(?:\.\d+)?)[,\s]+([+-]?\d+(?:\.\d+)?)/i);
+  if (appleOrWazeMatch) {
+    const lat = parseFloat(appleOrWazeMatch[1]);
+    const lng = parseFloat(appleOrWazeMatch[2]);
+    if (sonCoordenadasValidas(lat, lng)) {
+      const direccion = await reverseGeocode(lat, lng);
+      return {
+        exito: true,
+        lat,
+        lng,
+        direccionTexto: direccion,
+        fuente: 'google_maps',
+        mensajeDetalle: 'Ubicación identificada desde enlace de mapa',
         rawInput: clean,
       };
     }
