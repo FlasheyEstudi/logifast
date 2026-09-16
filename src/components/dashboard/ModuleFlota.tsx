@@ -396,17 +396,61 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
                           <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Próximo mant.</span><div style={{ fontSize: 13 }}>{moto.proximoMantenimiento || '—'}</div></div>
                           <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Costo total</span><div className="font-mono" style={{ fontSize: 13, fontWeight: 600 }}>C${costoVal.toLocaleString()}</div></div>
                         </div>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <button onClick={() => openEdit(moto)} style={{
                             padding: '6px 12px', borderRadius: 8, border: '1px solid var(--lf-border)',
                             background: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main)',
                             display: 'flex', alignItems: 'center', gap: 4,
                           }}><Wrench size={12} /> Editar</button>
-                          {moto.status === 'maintenance' && (
-                            <button onClick={() => { updateMoto({ ...moto, status: 'available' }); showToast(`${moto.nombre} disponible`); }} style={{
-                              padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--lf-success)',
-                              color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                            }}>Marcar disponible</button>
+                          {moto.status === 'maintenance' ? (
+                            <button
+                              onClick={async () => {
+                                updateMoto({ ...moto, status: 'available' });
+                                showToast(`${moto.nombre} marcada como disponible`);
+                                try {
+                                  await fetch('/api/ingeniero/motos', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: moto.id, estado: 'DISPONIBLE' }),
+                                  });
+                                } catch (e) {}
+                              }}
+                              style={{
+                                padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--lf-success, #16A34A)',
+                                color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                              }}
+                            >
+                              Marcar disponible
+                            </button>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                updateMoto({ ...moto, status: 'maintenance' });
+                                showToast(`${moto.nombre} enviada a Taller`);
+                                try {
+                                  await fetch('/api/ingeniero/motos', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: moto.id, estado: 'EN_MANTENIMIENTO' }),
+                                  });
+                                  await fetch('/api/ingeniero/alertas', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      motoId: moto.id,
+                                      tipo: 'CORRECTIVO',
+                                      descripcion: `Ingreso a taller por Administración: ${moto.nombre} (${moto.placa})`,
+                                    }),
+                                  }).catch(() => null);
+                                } catch (e) {}
+                              }}
+                              style={{
+                                padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--lf-danger, #DC2626)',
+                                color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                              }}
+                            >
+                              Enviar a Taller
+                            </button>
                           )}
                         </div>
                       </div>

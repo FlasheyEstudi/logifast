@@ -8,6 +8,7 @@ import {
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { Incident } from '@/lib/store';
+import { onRealtimeEvent } from '@/services/realtime';
 
 /* ═══════════════════════════════════════════════
    HELPERS
@@ -116,6 +117,14 @@ export default function ModuleIncidencias() {
 
   useEffect(() => {
     fetchIncidents();
+    const cleanups = [
+      onRealtimeEvent('admin:incidencia:nueva', () => fetchIncidents()),
+      onRealtimeEvent('orden:incidencia', () => fetchIncidents()),
+      onRealtimeEvent('orden:estado:update', () => fetchIncidents()),
+    ];
+    return () => {
+      cleanups.forEach((c) => c());
+    };
   }, [fetchIncidents]);
 
   const incidents = dbIncidents.length > 0 ? dbIncidents : storeIncidents;

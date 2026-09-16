@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutList, Package, User, MapPin, Clock, DollarSign,
-  Check, X, ChevronRight, Timer, ArrowRight, Bike, Radio,
+  Check, X, ChevronRight, Timer, ArrowRight, Bike, Radio, Zap, AlertTriangle,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
 import type { Order, Rider } from '@/lib/store';
@@ -38,30 +38,32 @@ export default function ModuleDespacho() {
   const [confirmRiderId, setConfirmRiderId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'timeline'>('cards');
   const [orderFilter, setOrderFilter] = useState<'todos' | 'envio' | 'compra'>('todos');
+  const [autoDispatching, setAutoDispatching] = useState(false);
   const { toasts, showToast } = useToast();
 
-  /* Rapid 3-second polling to guarantee instant order synchronization */
-  useEffect(() => {
-    const fetchDespacho = async () => {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      try {
-        const res = await fetch('/api/admin/despacho');
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.queue) {
-            useStore.setState({ orders: data.queue });
-          }
+  const fetchDespacho = useCallback(async () => {
+    if (typeof document !== 'undefined' && document.hidden) return;
+    try {
+      const res = await fetch('/api/admin/despacho');
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.queue) {
+          useStore.setState({ orders: data.queue });
         }
-      } catch (e) {}
-    };
-    fetchDespacho();
-    const interval = setInterval(fetchDespacho, 15000);
-    return () => clearInterval(interval);
+      }
+    } catch (e) {}
   }, []);
 
-  /* ─── Derived data ─── */
+  /* Polling cada 6s para sincronización ágil de la cola */
+  useEffect(() => {
+    fetchDespacho();
+    const interval = setInterval(fetchDespacho, 6000);
+    return () => clearInterval(interval);
+  }, [fetchDespacho]);
+
+  /* ─── Derived data (incluye órdenes pendientes e incidencias que requieren reasignación) ─── */
   const pendingOrdersAll = useMemo(
-    () => orders.filter((o) => o.estado === 'pendiente' && !o.repartidor),
+    () => orders.filter((o) => (o.estado === 'pendiente' || o.estado === 'incidencia') && (!o.repartidor || o.estado === 'incidencia')),
     [orders]
   );
 
@@ -128,8 +130,8 @@ export default function ModuleDespacho() {
     return map;
   }, [pendingOrders]);
 
-  /* ─── Assign handler ─── */
-  const handleConfirmAssign = (orderId: string, riderId: string) => {
+  /* ─── Assign handler conectado al backend y WebSocket ─── */
+  const handleConfirmAssign = async (orderId: string, riderId: string) => {
     const rider = riders.find((r) => r.id === riderId);
     const order = orders.find((o) => o.id === orderId);
     if (!rider || !order) return;
@@ -142,9 +144,56 @@ export default function ModuleDespacho() {
       timestamp: new Date().toISOString(),
       leido: false,
     });
-    showToast(`${orderId} asignada a ${rider.nombre}`);
+    showToast(`Asignando ${orderId} a ${rider.nombre}...`);
     setSelectedOrderId(null);
     setConfirmRiderId(null);
+
+    try {
+      const res = await fetch('/api/admin/despacho', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'manual', orderId, driverId: rider.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast(`✓ ${orderId} asignada a ${rider.nombre} exitosamente`);
+        fetchDespacho();
+      } else {
+        showToast(data.error || 'Error al confirmar asignación en servidor');
+      }
+    } catch (e) {
+      console.error('[handleConfirmAssign error]', e);
+      showToast('Error de conexión al asignar orden');
+    }
+  };
+
+  /* ─── Auto-dispatch handler ─── */
+  const handleAutoDispatch = async () => {
+    setAutoDispatching(true);
+    showToast('⚡ Ejecutando auto-despacho inteligente...');
+    try {
+      const res = await fetch('/api/admin/despacho', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auto-dispatch' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        if (data.assignedCount > 0) {
+          showToast(`✓ ${data.assignedCount} órdenes auto-despachadas con éxito`);
+        } else {
+          showToast(data.message || 'No hay órdenes pendientes o repartidores libres');
+        }
+        fetchDespacho();
+      } else {
+        showToast(data.error || 'Error en auto-despacho');
+      }
+    } catch (e) {
+      console.error('[handleAutoDispatch error]', e);
+      showToast('Error de conexión en auto-despacho');
+    } finally {
+      setAutoDispatching(false);
+    }
   };
 
   /* ─── Timeline view data (last 4 hours) ─── */
@@ -196,7 +245,30 @@ export default function ModuleDespacho() {
             repartidores libres
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <button
+            onClick={handleAutoDispatch}
+            disabled={autoDispatching || pendingOrders.length === 0}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 8,
+              border: 'none',
+              background: autoDispatching ? 'var(--lf-border)' : 'var(--lf-accent, #FF6600)',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: autoDispatching || pendingOrders.length === 0 ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              opacity: pendingOrders.length === 0 ? 0.6 : 1,
+              transition: 'all 0.15s',
+            }}
+            title="Auto-asignar órdenes a los repartidores más cercanos según GPS y zona"
+          >
+            <Zap size={14} />
+            <span>{autoDispatching ? 'Despachando...' : 'Auto-despacho'}</span>
+          </button>
           <button
             onClick={() => setViewMode('cards')}
             style={{
@@ -353,6 +425,8 @@ export default function ModuleDespacho() {
               const waitColor = getWaitColor(waitMin);
               const dist = distanceMap[order.id] || '—';
               const isEnvio = order.tipo === 'envio';
+              const isIncidencia = order.estado === 'incidencia';
+              const borderAccent = isIncidencia ? '#DC2626' : isEnvio ? '#0066FF' : '#16A34A';
 
               return (
                 <motion.div
@@ -365,10 +439,10 @@ export default function ModuleDespacho() {
                     marginBottom: 8,
                     cursor: 'pointer',
                     background: 'var(--lf-surface)',
-                    border: `1px solid ${isSelected ? (isEnvio ? '#0066FF' : '#16A34A') : 'var(--lf-border)'}`,
-                    borderLeft: `4px solid ${isEnvio ? '#0066FF' : '#16A34A'}`,
+                    border: `1px solid ${isSelected ? borderAccent : 'var(--lf-border)'}`,
+                    borderLeft: `4px solid ${borderAccent}`,
                     boxShadow: isSelected
-                      ? '0 0 0 2px rgba(0,102,255,0.15), 0 4px 12px rgba(0,0,0,0.1)'
+                      ? `0 0 0 2px ${isIncidencia ? 'rgba(220,38,38,0.2)' : 'rgba(0,102,255,0.15)'}, 0 4px 12px rgba(0,0,0,0.1)`
                       : 'none',
                     transition: 'all 0.2s',
                   }}
@@ -398,6 +472,23 @@ export default function ModuleDespacho() {
                       >
                         {isEnvio ? 'ENVÍO' : 'PEDIDO'}
                       </span>
+                      {isIncidencia && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            background: 'rgba(220,38,38,0.15)',
+                            color: '#DC2626',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}
+                        >
+                          <AlertTriangle size={10} /> REASIGNAR
+                        </span>
+                      )}
                       <span
                         className="font-mono"
                         style={{

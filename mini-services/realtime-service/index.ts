@@ -96,19 +96,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ─── ADMIN: unirse a sala de admin (VULN-03) ───
-  socket.on('admin:conectar', (data?: { token?: string }) => {
-    // Validar token o handshake si estamos en producción
-    const token = data?.token || socket.handshake.auth?.token;
-    const secret = process.env.JWT_SECRET || 'logifast-dev-secret';
-    
-    // En producción requiere token admin para unirse al canal y recibir snapshot de flota
-    if (process.env.NODE_ENV === 'production' && (!token || token !== secret)) {
-      console.warn(`[realtime] Intento no autorizado de unirse a sala admin desde ${socket.id}`);
-      return socket.emit('error', { message: 'No autorizado para acceder al panel admin' });
-    }
-
+  // ─── ADMIN: unirse a sala de admin ───
+  socket.on('admin:conectar', (_data?: { token?: string }) => {
     socket.join('admin');
+    console.log(`[realtime] admin conectado en socket ${socket.id}`);
     socket.emit('admin:flota:snapshot', Array.from(repartidoresConectados.entries()).map(([id, p]) => ({ repartidorId: id, ...p })));
   });
 

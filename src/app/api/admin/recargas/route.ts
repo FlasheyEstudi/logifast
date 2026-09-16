@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
+import { emitRecargaActualizada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,7 +80,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (accion === 'aprobar') {
-      // Transacción: marcar como completada + incrementar saldo
+      // Transacción: marcar como completada + incrementar saldo + notificar
       const [updated] = await db.$transaction([
         db.recargaSaldo.update({
           where: { id },
@@ -92,21 +93,55 @@ export async function PATCH(req: NextRequest) {
           where: { id: recarga.repartidorId },
           data: { saldo: { increment: recarga.monto } },
         }),
+        db.notificacionRepartidor.create({
+          data: {
+            repartidorId: recarga.repartidorId,
+            tipo: 'recarga_aprobada',
+            titulo: 'Recarga aprobada',
+            contenido: `Tu recarga de C$${recarga.monto} ha sido aprobada. Saldo acreditado.`,
+          },
+        }),
       ]);
+
+      const nuevoSaldo = (recarga.repartidor?.saldo ?? 0) + recarga.monto;
+      emitRecargaActualizada(recarga.repartidorId, {
+        recargaId: id,
+        estado: 'completada',
+        monto: recarga.monto,
+        nuevoSaldo,
+      });
+
       return NextResponse.json({
         ok: true,
         recarga: updated,
-        nuevoSaldo: (recarga.repartidor?.saldo ?? 0) + recarga.monto,
+        nuevoSaldo,
       });
     } else {
-      // Rechazar: solo cambiar estado, no tocar saldo
-      const updated = await db.recargaSaldo.update({
-        where: { id },
-        data: {
-          estado: 'rechazada',
-          referencia: motivo ? `Rechazada: ${motivo}` : 'Rechazada por admin',
-        },
+      // Rechazar: solo cambiar estado, no tocar saldo + notificar
+      const [updated] = await db.$transaction([
+        db.recargaSaldo.update({
+          where: { id },
+          data: {
+            estado: 'rechazada',
+            referencia: motivo ? `Rechazada: ${motivo}` : 'Rechazada por admin',
+          },
+        }),
+        db.notificacionRepartidor.create({
+          data: {
+            repartidorId: recarga.repartidorId,
+            tipo: 'recarga_rechazada',
+            titulo: 'Recarga rechazada',
+            contenido: `Tu recarga de C$${recarga.monto} fue rechazada${motivo ? `: ${motivo}` : '.'}`,
+          },
+        }),
+      ]);
+
+      emitRecargaActualizada(recarga.repartidorId, {
+        recargaId: id,
+        estado: 'rechazada',
+        monto: recarga.monto,
       });
+
       return NextResponse.json({ ok: true, recarga: updated });
     }
   } catch (error) {

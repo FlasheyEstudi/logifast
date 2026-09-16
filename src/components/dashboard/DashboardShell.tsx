@@ -10,6 +10,7 @@ import {
   Megaphone, MessageCircle, ChevronDown, MoreHorizontal,
 } from '@/components/icons';
 import { useStore, type ModuleKey } from '@/lib/store';
+import { realtime, onRealtimeEvent } from '@/services/realtime';
 import dynamic from 'next/dynamic';
 
 /* ─── Skeleton loading para módulos dinámicos ─── */
@@ -449,6 +450,95 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityAndFetch);
       }
+    };
+  }, []);
+
+  // Conexión en tiempo real a sala admin para eventos instantáneos
+  useEffect(() => {
+    realtime.adminConectar();
+
+    const cleanups = [
+      onRealtimeEvent('repartidor:posicion:update', (data) => {
+        if (!data?.repartidorId) return;
+        useStore.setState((state) => ({
+          riders: state.riders.map((r) =>
+            r.id === data.repartidorId
+              ? {
+                  ...r,
+                  lat: data.lat ?? r.lat,
+                  lng: data.lng ?? r.lng,
+                  status: data.estado === 'DESCONECTADO' ? 'offline' : data.estado === 'EN_SERVICIO' ? 'in-service' : 'available',
+                }
+              : r
+          ),
+        }));
+      }),
+
+      onRealtimeEvent('admin:repartidor:offline', (data) => {
+        if (!data?.repartidorId) return;
+        useStore.setState((state) => ({
+          riders: state.riders.map((r) =>
+            r.id === data.repartidorId ? { ...r, conectado: false, status: 'offline' } : r
+          ),
+        }));
+      }),
+
+      onRealtimeEvent('admin:orden:nueva', (nuevaOrden) => {
+        if (!nuevaOrden?.id) return;
+        useStore.setState((state) => {
+          if (state.orders.some((o) => o.id === nuevaOrden.id)) return state;
+          return { orders: [nuevaOrden, ...state.orders] };
+        });
+      }),
+
+      onRealtimeEvent('admin:orden:actualizada', (ordenActualizada) => {
+        if (!ordenActualizada?.id) return;
+        useStore.setState((state) => ({
+          orders: state.orders.map((o) =>
+            o.id === ordenActualizada.id ? { ...o, ...ordenActualizada } : o
+          ),
+        }));
+      }),
+
+      onRealtimeEvent('admin:orden:eliminada', (data) => {
+        if (!data?.id) return;
+        useStore.setState((state) => ({
+          orders: state.orders.filter((o) => o.id !== data.id),
+        }));
+      }),
+
+      onRealtimeEvent('admin:incidencia:nueva', (incidencia) => {
+        if (!incidencia) return;
+        useStore.getState().addActivityEvent({
+          tipo: 'incidencia',
+          titulo: `Alerta: ${incidencia.tipo || 'Incidencia'} en Orden #${incidencia.ordenId?.slice(-4) || ''}`,
+          detalle: `${incidencia.descripcion || 'Contratiempo reportado en ruta'}`,
+          timestamp: new Date().toISOString(),
+          leido: false,
+        });
+      }),
+
+      onRealtimeEvent('repartidor:moto:mantenimiento_iniciado', (data) => {
+        if (!data?.motoId) return;
+        useStore.setState((state) => ({
+          motos: state.motos.map((m) =>
+            m.id === data.motoId ? { ...m, status: 'maintenance' } : m
+          ),
+        }));
+      }),
+
+      onRealtimeEvent('repartidor:moto:mantenimiento_completado', (data) => {
+        if (!data?.motoId) return;
+        useStore.setState((state) => ({
+          motos: state.motos.map((m) =>
+            m.id === data.motoId ? { ...m, status: 'available' } : m
+          ),
+        }));
+      }),
+    ];
+
+    return () => {
+      cleanups.forEach((c) => c());
     };
   }, []);
 

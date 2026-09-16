@@ -68,6 +68,7 @@ export interface Rider {
   kmTotal: number;
   calificacion: number;
   conectado: boolean;
+  saldo?: number;
   lat?: number;
   lng?: number;
 }
@@ -1613,7 +1614,13 @@ export const useStore = create<AppState>((set, get) => ({
       try {
         const oc = (useMarketplaceStore.getState().ordenesCompra || []).find((c: any) => String(c.id) === orderIdStr);
         if (oc) {
-          orderEstado = oc.estado === 'entregado' ? 'entregado' : (oc.estado === 'en_camino' ? 'encamino' : oc.estado);
+          orderEstado = oc.estado === 'entregado'
+            ? 'entregado'
+            : oc.estado === 'en_camino'
+            ? 'encamino'
+            : (oc.estado as string) === 'incidencia'
+            ? 'incidencia'
+            : 'pendiente';
           orderHora = oc.hora || '12:00';
           orderTiempoEst = (oc as any)?.tiempoEstimado || 0;
         }
@@ -1623,7 +1630,7 @@ export const useStore = create<AppState>((set, get) => ({
     // Build tracking steps based on order status
     const now = new Date();
     const fmt = (d: Date) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
-    const orderCreatedTime = order?.createdAt ? fmt(new Date(order.createdAt)) : (orderHora || fmt(now));
+    const orderCreatedTime = (order as any)?.createdAt ? fmt(new Date((order as any).createdAt)) : (orderHora || fmt(now));
 
     const steps = TRACKING_STEPS_TEMPLATE.map((s) => ({ ...s }));
     const statusIndex: Record<string, number> = {

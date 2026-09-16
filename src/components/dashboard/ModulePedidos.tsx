@@ -108,32 +108,13 @@ export default function ModulePedidos() {
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    const newId = `LF-${2848 + orders.length}`;
+    let realId = `LF-${2848 + orders.length}`;
     const rider = riders.find((r) => r.id === formRider);
     const todayStr = new Date().toISOString().split('T')[0];
-    const newOrder: Order = {
-      id: newId, cliente: formCliente, clienteTelefono: '+505 8888-0000',
-      origen: formOrigen, destino: formDestino,
-      origenLat: 12.11 + (Math.random() - 0.5) * 0.05, origenLng: -86.24 + (Math.random() - 0.5) * 0.05,
-      destinoLat: 12.12 + (Math.random() - 0.5) * 0.05, destinoLng: -86.25 + (Math.random() - 0.5) * 0.05,
-      repartidor: rider?.nombre || null, repartidorInitials: rider?.initials || '',
-      descripcion: formDesc, monto: Number(formMonto), estado: 'pendiente',
-      metodoPago: formPago, estadoPago: 'pendiente',
-      fecha: todayStr, hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
-      timeline: [
-        { step: 'Orden creada', hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true },
-        { step: 'En camino', hora: '—', completado: false },
-        { step: 'Recogida', hora: '—', completado: false },
-        { step: 'Entregada', hora: '—', completado: false },
-      ],
-    };
 
-    // Update store instantly for zero latency
-    addOrder(newOrder);
-
-    // Persist to Supabase / Prisma DB via API
+    // Persist to Supabase / Prisma DB via API first to get real DB id
     try {
-      await fetch('/api/ordenes', {
+      const res = await fetch('/api/ordenes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -146,12 +127,46 @@ export default function ModulePedidos() {
           repartidorId: formRider || undefined,
         }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.orden?.id) {
+          realId = data.orden.id;
+        }
+      }
     } catch (e) {
       console.warn('[ModulePedidos createOrder API error]:', e);
     }
 
+    const newOrder: Order = {
+      id: realId,
+      cliente: formCliente,
+      clienteTelefono: '+505 8888-0000',
+      origen: formOrigen,
+      destino: formDestino,
+      origenLat: 12.11 + (Math.random() - 0.5) * 0.05,
+      origenLng: -86.24 + (Math.random() - 0.5) * 0.05,
+      destinoLat: 12.12 + (Math.random() - 0.5) * 0.05,
+      destinoLng: -86.25 + (Math.random() - 0.5) * 0.05,
+      repartidor: rider?.nombre || null,
+      repartidorInitials: rider?.initials || '',
+      descripcion: formDesc,
+      monto: Number(formMonto),
+      estado: 'pendiente',
+      metodoPago: formPago,
+      estadoPago: 'pendiente',
+      fecha: todayStr,
+      hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
+      timeline: [
+        { step: 'Orden creada', hora: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true },
+        { step: 'En camino', hora: '—', completado: false },
+        { step: 'Recogida', hora: '—', completado: false },
+        { step: 'Entregada', hora: '—', completado: false },
+      ],
+    };
+
+    addOrder(newOrder);
     setCreateOrderOpen(false);
-    addToast(`Orden ${newId} creada exitosamente`);
+    addToast(`Orden ${realId} creada exitosamente`);
     setFormOrigen(''); setFormDestino(''); setFormDesc(''); setFormRider('');
     setFormPago('efectivo'); setFormMonto(''); setFormCliente(''); setFormErrors({});
   };

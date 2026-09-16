@@ -71,3 +71,9 @@ export function emitChatMensaje(ordenId: string, mensaje: any, repartidorId?: st
     emitirEventoRealtime({ room: `cliente:${clienteId}`, event: 'chat:mensaje:nuevo', data: mensaje });
   }
 }
+
+export function emitRecargaActualizada(repartidorId: string, data: any) {
+  emitirEventoRealtime({ room: `repartidor:${repartidorId}`, event: 'repartidor:recarga:actualizada', data });
+  emitirEventoRealtime({ room: 'admin', event: 'admin:recarga:actualizada', data });
+}
+

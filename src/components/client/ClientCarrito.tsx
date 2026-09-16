@@ -25,6 +25,7 @@ import { sileo } from 'sileo';
 import { LogoSpinner } from '@/components/ui/loaders';
 
 import { reverseGeocode } from '@/lib/osrm';
+import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import PagoExitoso, { type CompletedOrderData } from './PagoExitoso';
 import { dispararNotificacionNativa } from '@/services/native-notifications';
 
@@ -250,13 +251,13 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       // Recargar órdenes de compra en store de Marketplace
       useMarketplaceStore.getState().fetchOrdenesCompra();
 
+      const safeSubtotal = Number(ordenCreada?.subtotal ?? subtotal) || 0;
+      const safeDelivery = Number(ordenCreada?.costoEnvio ?? delivery) || 0;
+      const safeDescuento = Number(ordenCreada?.descuento ?? cartDescuento ?? 0) || 0;
+      const safeTotal = Number(ordenCreada?.total ?? total) || Math.max(0, safeSubtotal + safeDelivery - safeDescuento);
+
       // Agregar a useStore para tracking y rastreo sin recargar la página
       if (ordenCreada) {
-          const safeSubtotal = Number(ordenCreada.subtotal ?? subtotal) || 0;
-          const safeDelivery = Number(ordenCreada.costoEnvio ?? delivery) || 0;
-          const safeDescuento = Number(ordenCreada.descuento ?? cartDescuento ?? 0) || 0;
-          const safeTotal = Number(ordenCreada.total ?? total) || Math.max(0, safeSubtotal + safeDelivery - safeDescuento);
-
           addOrder({
             id: ordenCreada.id,
             codigoPin: ordenCreada.codigoPin || String(Math.floor(1000 + Math.random() * 9000)),

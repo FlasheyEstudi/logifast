@@ -12,14 +12,25 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await requireRole('admin');
-    const [ordenesPendientes, repartidoresOnline] = await Promise.all([
+    const [ordenesServicio, ordenesCompra, repartidoresOnline] = await Promise.all([
       db.ordenServicio.findMany({
         where: {
-          estado: { in: ['pendiente', 'asignado', 'aceptado', 'recogido'] },
+          estado: { in: ['pendiente', 'asignado', 'aceptado', 'recogido', 'incidencia'] },
         },
         include: {
           cliente: { select: { id: true, name: true, telefono: true } },
           repartidor: { select: { id: true, nombre: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      db.ordenCompra.findMany({
+        where: {
+          estado: { in: ['recibido', 'preparando', 'listo', 'en_camino', 'incidencia'] },
+        },
+        include: {
+          cliente: { select: { id: true, name: true, telefono: true } },
+          tienda: { select: { id: true, nombre: true, direccion: true, lat: true, lng: true } },
+          items: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -36,9 +47,36 @@ export async function GET() {
       }),
     ]);
 
+    // Mapear compras al formato unificado de cola de despacho
+    const comprasMapeadas = ordenesCompra.map((c) => ({
+      id: c.id,
+      tipo: 'compra' as const,
+      cliente: c.cliente,
+      clienteNombre: c.cliente?.name || 'Cliente Marketplace',
+      clienteTelefono: c.cliente?.telefono || '',
+      origen: c.tienda?.nombre || 'Tienda',
+      destino: c.direccionEntrega,
+      origenLat: c.tienda?.lat || 12.1364,
+      origenLng: c.tienda?.lng || -86.2581,
+      destinoLat: c.lat || 12.14,
+      destinoLng: c.lng || -86.25,
+      monto: c.total,
+      estado: c.repartidorId ? (c.estado === 'recibido' ? 'asignado' : c.estado) : (c.estado === 'recibido' || c.estado === 'listo' ? 'pendiente' : c.estado),
+      repartidorId: c.repartidorId,
+      repartidor: null,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+      paquete: `Pedido de Tienda (${c.items?.length || 1} productos)`,
+    }));
+
+    // Combinar órdenes de paquetería y compras
+    const queue = [...ordenesServicio, ...comprasMapeadas].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
     return NextResponse.json(
       {
-        queue: ordenesPendientes,
+        queue,
         driversOnline: repartidoresOnline,
       },
       {
@@ -59,9 +97,8 @@ export async function GET() {
 
 /**
  * POST /api/admin/despacho
- * Auto-dispatches or batch assigns pending orders to nearest available drivers.
- * Respeta: conectado, !enServicio, !pausado, contratoAceptado, zonaPreferida.
- * Usa updateMany atómico para evitar race conditions (dos órdenes al mismo driver).
+ * Asigna órdenes manualmente o ejecuta auto-despacho inteligente.
+ * Soporta reasignación por incidencia tanto en ordenServicio como ordenCompra.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -74,39 +111,106 @@ export async function POST(req: NextRequest) {
       const driver = await db.repartidorProfile.findUnique({ where: { id: driverId } });
       if (!driver) return NextResponse.json({ error: 'Repartidor no encontrado' }, { status: 404 });
 
-      // Asignación atómica: solo si la orden sigue pendiente y sin repartidor
-      const result = await db.ordenServicio.updateMany({
-        where: { id: orderId, repartidorId: null, estado: 'pendiente' },
-        data: { repartidorId: driver.id, estado: 'asignado' },
-      });
-      if (result.count === 0) {
-        return NextResponse.json({ error: 'La orden ya fue asignada o no está pendiente' }, { status: 409 });
+      // 1. Intentar asignar como ordenServicio
+      const servicio = await db.ordenServicio.findUnique({ where: { id: orderId } });
+      if (servicio) {
+        const updateData: Record<string, any> = {
+          repartidorId: driver.id,
+          estado: 'asignado',
+        };
+        if (servicio.estado === 'incidencia') {
+          updateData.incidenciaDesc = `Reasignado a ${driver.nombre} tras incidencia`;
+        }
+
+        const updatedOrder = await db.ordenServicio.update({
+          where: { id: orderId },
+          data: updateData,
+          include: { cliente: true, repartidor: true },
+        });
+
+        await db.repartidorProfile.update({
+          where: { id: driver.id },
+          data: { enServicio: true },
+        }).catch(() => null);
+
+        await db.notificacionRepartidor.create({
+          data: {
+            repartidorId: driver.id,
+            tipo: 'orden_asignada',
+            titulo: 'Orden asignada desde Despacho',
+            contenido: `Se te ha asignado la orden ${orderId} (${updatedOrder.origen || 'Origen'} → ${updatedOrder.destino || 'Destino'})`,
+            leido: false,
+            ordenId: orderId,
+          },
+        }).catch(() => null);
+
+        emitOrdenAsignada(driver.id, updatedOrder);
+        return NextResponse.json({ success: true, orden: updatedOrder });
       }
 
-      await db.notificacionRepartidor.create({
-        data: {
-          repartidorId: driver.id,
-          tipo: 'orden_asignada',
-          titulo: 'Orden asignada desde Despacho',
-          contenido: `Se te ha asignado manualmente la orden ${orderId}`,
-          leido: false,
-          ordenId: orderId,
-        },
-      }).catch(() => null);
+      // 2. Intentar asignar como ordenCompra
+      const compra = await db.ordenCompra.findUnique({ where: { id: orderId } });
+      if (compra) {
+        const updatedCompra = await db.ordenCompra.update({
+          where: { id: orderId },
+          data: {
+            repartidorId: driver.id,
+            estado: 'en_camino',
+          },
+          include: { cliente: true, tienda: true, items: true },
+        });
 
-      const updatedOrder = await db.ordenServicio.findUnique({ where: { id: orderId } });
-      if (updatedOrder) emitOrdenAsignada(driver.id, updatedOrder);
-      return NextResponse.json({ success: true, orden: updatedOrder });
+        await db.repartidorProfile.update({
+          where: { id: driver.id },
+          data: { enServicio: true },
+        }).catch(() => null);
+
+        await db.notificacionRepartidor.create({
+          data: {
+            repartidorId: driver.id,
+            tipo: 'orden_asignada',
+            titulo: 'Pedido de tienda asignado',
+            contenido: `Se te ha asignado el pedido ${orderId} de ${updatedCompra.tienda?.nombre || 'tienda'}`,
+            leido: false,
+            ordenId: orderId,
+          },
+        }).catch(() => null);
+
+        emitOrdenAsignada(driver.id, updatedCompra);
+        return NextResponse.json({ success: true, orden: updatedCompra });
+      }
+
+      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
 
-    // Auto-dispatch: órdenes pendientes sin repartidor
-    const pendingOrders = await db.ordenServicio.findMany({
-      where: { estado: 'pendiente', repartidorId: null },
-      take: 20,
-      orderBy: { createdAt: 'asc' }, // FIFO: las más antiguas primero
-    });
+    // Auto-dispatch: órdenes pendientes sin repartidor (o en incidencia)
+    const [pendingServicios, pendingCompras] = await Promise.all([
+      db.ordenServicio.findMany({
+        where: {
+          OR: [
+            { estado: 'pendiente', repartidorId: null },
+            { estado: 'incidencia' },
+          ],
+        },
+        take: 20,
+        orderBy: { createdAt: 'asc' },
+      }),
+      db.ordenCompra.findMany({
+        where: {
+          repartidorId: null,
+          estado: { in: ['recibido', 'listo', 'incidencia'] },
+        },
+        take: 20,
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
 
-    if (pendingOrders.length === 0) {
+    const allPending = [
+      ...pendingServicios.map((s) => ({ ...s, tipoEntidad: 'servicio' as const })),
+      ...pendingCompras.map((c) => ({ ...c, tipoEntidad: 'compra' as const })),
+    ];
+
+    if (allPending.length === 0) {
       return NextResponse.json({ success: true, assignedCount: 0, message: 'No hay órdenes pendientes' });
     }
 
@@ -127,41 +231,46 @@ export async function POST(req: NextRequest) {
     let assignedCount = 0;
     const usedDriverIds = new Set<string>();
 
-    for (const order of pendingOrders) {
+    for (const order of allPending) {
       if (usedDriverIds.size >= availableDrivers.length) break;
 
-      // Filtrar por zona preferida si la orden tiene zona de origen
       const candidates = availableDrivers.filter((d) => !usedDriverIds.has(d.id));
 
-      // Preferir repartidores cuya zonaPreferida coincida con el origen de la orden
+      const origenText = (order as any).origen || (order as any).direccionEntrega || '';
       let driver = candidates.find((d) => {
-        if (!d.zonaPreferida || !order.origen) return false;
-        return order.origen.toLowerCase().includes(d.zonaPreferida.toLowerCase());
+        if (!d.zonaPreferida || !origenText) return false;
+        return origenText.toLowerCase().includes(d.zonaPreferida.toLowerCase());
       });
 
-      // Si no hay match por zona, usar el más cercano por Haversine (si hay coords)
-      if (!driver && order.origenLat && order.origenLng) {
+      const oLat = (order as any).origenLat || (order as any).lat;
+      const oLng = (order as any).origenLng || (order as any).lng;
+
+      if (!driver && oLat && oLng) {
         const withCoords = candidates.filter((d) => d.lat != null && d.lng != null);
         if (withCoords.length > 0) {
           withCoords.sort((a, b) => {
-            const distA = haversine(order.origenLat!, order.origenLng!, a.lat!, a.lng!);
-            const distB = haversine(order.origenLat!, order.origenLng!, b.lat!, b.lng!);
+            const distA = haversine(oLat, oLng, a.lat!, a.lng!);
+            const distB = haversine(oLat, oLng, b.lat!, b.lng!);
             return distA - distB;
           });
           driver = withCoords[0];
         }
       }
 
-      // Fallback: primer candidato disponible
       if (!driver) driver = candidates[0];
       if (!driver) continue;
 
-      // Asignación atómica con updateMany
-      const result = await db.ordenServicio.updateMany({
-        where: { id: order.id, repartidorId: null, estado: 'pendiente' },
-        data: { repartidorId: driver.id, estado: 'asignado' },
-      });
-      if (result.count === 0) continue; // ya fue asignada por otro proceso
+      if (order.tipoEntidad === 'servicio') {
+        await db.ordenServicio.update({
+          where: { id: order.id },
+          data: { repartidorId: driver.id, estado: 'asignado' },
+        });
+      } else {
+        await db.ordenCompra.update({
+          where: { id: order.id },
+          data: { repartidorId: driver.id, estado: 'en_camino' },
+        });
+      }
 
       await db.repartidorProfile.update({
         where: { id: driver.id },
@@ -172,8 +281,8 @@ export async function POST(req: NextRequest) {
         data: {
           repartidorId: driver.id,
           tipo: 'orden_asignada',
-          titulo: 'Nueva orden asignada',
-          contenido: `Se te ha asignado la orden ${order.id}. Origen: ${order.origen ?? 'N/A'}`,
+          titulo: 'Nueva orden auto-asignada',
+          contenido: `Se te ha asignado la orden ${order.id}`,
           leido: false,
           ordenId: order.id,
         },

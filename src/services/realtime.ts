@@ -62,6 +62,13 @@ export type RealtimeEvent =
   | 'admin:flota:snapshot'             // snapshot inicial de flota (admin recibe)
   | 'admin:repartidor:offline'         // repartidor se desconectó (admin recibe)
   | 'admin:asignacion:confirmada'      // confirmación de asignación (admin recibe)
+  | 'admin:orden:nueva'                // nueva orden en el sistema (admin recibe)
+  | 'admin:orden:asignada'             // orden asignada a repartidor (admin recibe)
+  | 'admin:orden:actualizada'          // orden cambió de estado (admin recibe)
+  | 'admin:orden:eliminada'            // orden cancelada/eliminada (admin recibe)
+  | 'admin:incidencia:nueva'           // nueva incidencia reportada en vivo (admin recibe)
+  | 'admin:recarga:actualizada'        // recarga de saldo aprobada/rechazada (admin recibe)
+  | 'repartidor:recarga:actualizada'   // recarga de saldo aprobada/rechazada (repartidor recibe)
   | 'ingeniero:alerta:nueva'           // alerta técnica o emergencia creada (ingeniero recibe)
   | 'ingeniero:mantenimiento:nuevo'    // orden de mantenimiento creada (ingeniero recibe)
   | 'mantenimiento:iniciado'           // mantenimiento pasó a EN_PROCESO

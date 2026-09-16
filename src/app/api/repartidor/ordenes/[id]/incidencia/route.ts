@@ -118,6 +118,31 @@ export async function PATCH(
       }).catch(() => null);
     }
 
+    // Notificar en tiempo real al panel de administración (Despacho / Incidencias)
+    emitirEventoRealtime({
+      room: 'admin',
+      event: 'admin:incidencia:nueva',
+      data: {
+        ordenId: id,
+        tipo: tipoLabel,
+        tipoRaw,
+        descripcion: desc,
+        repartidorId: profile.id,
+        repartidorNombre: profile.nombre,
+        esMecanicaOAccidente: tipoRaw === 'mecanica' || tipoRaw === 'accidente',
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    emitOrdenActualizada({
+      id,
+      estado: 'incidencia',
+      incidenciaTipo: tipoLabel,
+      incidenciaDesc: desc,
+      repartidorId: profile.id,
+      repartidorNombre: profile.nombre,
+    });
+
     // Si la incidencia es falla mecánica o accidente, generar reporte automático al módulo de Ingeniero / Mantenimiento
     if (tipoRaw === 'mecanica' || tipoRaw === 'accidente') {
       try {

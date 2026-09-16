@@ -738,7 +738,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
         origenLng: oLng,
         destinoLat: dLat,
         destinoLng: dLng,
-        estado: currentOrdenCompra.estado === 'incidencia' ? 'incidencia' : currentOrdenCompra.estado === 'entregado' ? 'entregado' : 'encamino',
+        estado: (currentOrdenCompra.estado as string) === 'incidencia' ? 'incidencia' : currentOrdenCompra.estado === 'entregado' ? 'entregado' : 'encamino',
         incidenciaTipo: (currentOrdenCompra as any).incidenciaTipo || backendTracking?.orden?.incidenciaTipo,
         incidenciaDesc: (currentOrdenCompra as any).incidenciaDesc || backendTracking?.orden?.incidenciaDesc,
         monto: currentOrdenCompra.total,
@@ -1356,7 +1356,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
               icon: <Clock size={15} />,
               label: (order as any)?.entregadoEn
                 ? new Date((order as any).entregadoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
-                : (order.hora || (order.createdAt ? new Date(order.createdAt).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '—')),
+                : (order.hora || ((order as any).createdAt ? new Date((order as any).createdAt).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '—')),
               sub: 'Hora entrega',
             },
             {
@@ -1372,7 +1372,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
                 ? `${(order as any).kmRecorridos} km`
                 : (order as any)?.kmEstimados
                   ? `${(order as any).kmEstimados} km`
-                  : (order.distancia ? `${order.distancia} km` : (backendTracking?.orden?.kmEstimados ? `${backendTracking.orden.kmEstimados} km` : '—')),
+                  : ((order as any).distancia ? `${(order as any).distancia} km` : (backendTracking?.orden?.kmEstimados ? `${backendTracking.orden.kmEstimados} km` : '—')),
               sub: 'Distancia',
             },
             {

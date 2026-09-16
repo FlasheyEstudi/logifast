@@ -51,6 +51,27 @@ export async function POST(req: NextRequest) {
       })),
     });
 
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      targets.forEach((uid) => {
+        emitirEventoRealtime({
+          room: `usuario:${uid}`,
+          event: 'notificacion:push',
+          data: { titulo, contenido, tipo },
+        });
+        emitirEventoRealtime({
+          room: `cliente:${uid}`,
+          event: 'notificacion:push',
+          data: { titulo, contenido, tipo },
+        });
+        emitirEventoRealtime({
+          room: `repartidor:${uid}`,
+          event: 'notificacion:push',
+          data: { titulo, contenido, tipo },
+        });
+      });
+    } catch {}
+
     return ok({
       enviadas: result.count,
       destinatarios: targets.length,

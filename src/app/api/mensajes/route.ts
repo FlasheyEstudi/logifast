@@ -250,6 +250,16 @@ export async function POST(request: NextRequest) {
       },
     });
     emitirEventoRealtime({
+      room: 'admin',
+      event: 'chat:mensaje:nuevo',
+      data: {
+        ...mensaje,
+        emisor: sessionUser.role === 'admin' ? 'admin' : sessionUser.role,
+        emisorNombre: sessionUser.name || (sessionUser.role === 'admin' ? 'Soporte LOGIFAST' : 'Usuario'),
+        esAdmin: sessionUser.role === 'admin',
+      },
+    });
+    emitirEventoRealtime({
       room: `repartidor:${receptorId}`,
       event: 'chat:mensaje:nuevo',
       data: {

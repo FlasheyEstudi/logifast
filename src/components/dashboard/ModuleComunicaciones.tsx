@@ -8,6 +8,7 @@ import {
   X, ChevronLeft, Users, Bike, Clock, Shield, Sparkles,
 } from '@/components/icons';
 import { useStore } from '@/lib/store';
+import { onRealtimeEvent } from '@/services/realtime';
 import type {
   Conversacion,
   MensajeDirecto,
@@ -175,6 +176,12 @@ function BuzonPanel() {
 
   useEffect(() => {
     fetchConvs();
+    const unsub = onRealtimeEvent('chat:mensaje:nuevo', () => {
+      fetchConvs();
+    });
+    return () => {
+      unsub();
+    };
   }, [fetchConvs]);
 
   const conversaciones = dbConversaciones.length > 0 ? dbConversaciones : storeConvs;
@@ -995,16 +1002,74 @@ function PlantillasPanel() {
 
 function NotificacionesPanel() {
   const { notificacionesAuto: storeNotifs, toggleNotificacionAuto, addToast } = useStore();
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [targetRole, setTargetRole] = useState<'todos' | 'cliente' | 'repartidor' | 'ingeniero'>('todos');
+  const [pushTitulo, setPushTitulo] = useState('');
+  const [pushContenido, setPushContenido] = useState('');
+  const [pushTipo, setPushTipo] = useState('sistema');
+  const [sending, setSending] = useState(false);
+
+  const handleSendBroadcast = async () => {
+    if (!pushTitulo.trim() || !pushContenido.trim()) {
+      addToast('Título y mensaje son requeridos');
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await fetch('/api/admin/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: targetRole,
+          titulo: pushTitulo.trim(),
+          contenido: pushContenido.trim(),
+          tipo: pushTipo,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Error al enviar');
+      }
+      addToast(`Notificación push enviada a ${data.enviadas ?? 'los'} usuarios`);
+      setBroadcastOpen(false);
+      setPushTitulo('');
+      setPushContenido('');
+    } catch (e: any) {
+      addToast(e.message || 'Error al difundir push');
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <h3 className="font-serif" style={{ fontSize: 16, fontWeight: 700, color: 'var(--lf-text-main)', margin: 0 }}>
-          Reglas de Automatización de Notificaciones
-        </h3>
-        <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', margin: '2px 0 0' }}>
-          Disparadores automáticos por eventos en la plataforma
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <h3 className="font-serif" style={{ fontSize: 16, fontWeight: 700, color: 'var(--lf-text-main)', margin: 0 }}>
+            Reglas de Automatización de Notificaciones
+          </h3>
+          <p style={{ fontSize: 12, color: 'var(--lf-text-muted)', margin: '2px 0 0' }}>
+            Disparadores automáticos por eventos en la plataforma y difusiones push masivas
+          </p>
+        </div>
+        <button
+          onClick={() => setBroadcastOpen(true)}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 8,
+            border: 'none',
+            background: 'var(--lf-accent)',
+            color: '#fff',
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <Send size={14} /> Difundir Push
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
@@ -1042,6 +1107,200 @@ function NotificacionesPanel() {
           );
         })}
       </div>
+
+      {/* ═══ BROADCAST PUSH MODAL ═══ */}
+      <AnimatePresence>
+        {broadcastOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              zIndex: 250,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onClick={() => setBroadcastOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              style={{
+                background: 'var(--lf-surface)',
+                borderRadius: 16,
+                padding: 24,
+                width: '90%',
+                maxWidth: 460,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontWeight: 700, fontSize: 17, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Bell size={18} style={{ color: 'var(--lf-accent)' }} /> Difundir Notificación Push
+                </h3>
+                <button
+                  onClick={() => setBroadcastOpen(false)}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6,
+                    border: '1px solid var(--lf-border)',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: 'var(--lf-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)', display: 'block', marginBottom: 4 }}>
+                    Audiencia Objetivo
+                  </label>
+                  <select
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value as any)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--lf-border)',
+                      background: 'var(--lf-bg-base)',
+                      color: 'var(--lf-text-main)',
+                      fontSize: 13,
+                    }}
+                  >
+                    <option value="todos">Todos los usuarios (Clientes + Repartidores + Taller)</option>
+                    <option value="cliente">Solo Clientes</option>
+                    <option value="repartidor">Solo Repartidores</option>
+                    <option value="ingeniero">Solo Ingenieros de Taller</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)', display: 'block', marginBottom: 4 }}>
+                    Tipo de Notificación
+                  </label>
+                  <select
+                    value={pushTipo}
+                    onChange={(e) => setPushTipo(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--lf-border)',
+                      background: 'var(--lf-bg-base)',
+                      color: 'var(--lf-text-main)',
+                      fontSize: 13,
+                    }}
+                  >
+                    <option value="sistema">Aviso de Sistema / Operaciones</option>
+                    <option value="promocion">Promoción / Cupón</option>
+                    <option value="alerta">Alerta Crítica / Clima</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)', display: 'block', marginBottom: 4 }}>
+                    Título *
+                  </label>
+                  <input
+                    value={pushTitulo}
+                    onChange={(e) => setPushTitulo(e.target.value)}
+                    placeholder="Ej. ¡Lluvia fuerte en Managua! Conduce con precaución"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--lf-border)',
+                      background: 'var(--lf-bg-base)',
+                      color: 'var(--lf-text-main)',
+                      fontSize: 13,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-muted)', display: 'block', marginBottom: 4 }}>
+                    Mensaje *
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={pushContenido}
+                    onChange={(e) => setPushContenido(e.target.value)}
+                    placeholder="Escribe el contenido que verán los usuarios en su barra de notificaciones..."
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--lf-border)',
+                      background: 'var(--lf-bg-base)',
+                      color: 'var(--lf-text-main)',
+                      fontSize: 13,
+                      outline: 'none',
+                      resize: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button
+                    onClick={() => setBroadcastOpen(false)}
+                    style={{
+                      flex: 1,
+                      padding: 10,
+                      borderRadius: 8,
+                      border: '1px solid var(--lf-border)',
+                      background: 'transparent',
+                      color: 'var(--lf-text-main)',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    disabled={sending}
+                    onClick={handleSendBroadcast}
+                    style={{
+                      flex: 1,
+                      padding: 10,
+                      borderRadius: 8,
+                      border: 'none',
+                      background: 'var(--lf-accent)',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: sending ? 'not-allowed' : 'pointer',
+                      opacity: sending ? 0.7 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Send size={13} /> {sending ? 'Enviando...' : 'Enviar Difusión'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
