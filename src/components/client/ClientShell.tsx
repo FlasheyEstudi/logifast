@@ -832,16 +832,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
   /* Close dropdowns on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setClientNotifOpen(false);
-      }
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
         setAvatarOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [setClientNotifOpen]);
+  }, []);
 
   /* Close dropdowns on escape */
   useEffect(() => {
@@ -1169,89 +1166,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                     </span>
                   )}
                 </button>
-
-                {/* ─── Panel de notificaciones (antes no se renderizaba nada) ─── */}
-                <AnimatePresence>
-                  {clientNotifOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                      transition={{ duration: 0.18, ease: 'easeOut' }}
-                      style={{
-                        position: 'absolute',
-                        top: 40,
-                        right: 0,
-                        width: 'min(340px, calc(100vw - 32px))',
-                        maxHeight: 420,
-                        overflowY: 'auto',
-                        background: 'var(--surface)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 18,
-                        boxShadow: '0 18px 44px rgba(0,0,0,0.22)',
-                        zIndex: 400,
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)' }}>Notificaciones</span>
-                        {clientNotificaciones.length > 0 && (
-                          <button
-                            onClick={() => {
-                              markAllClientNotifRead();
-                              fetch('/api/notificaciones-push', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }).catch(() => null);
-                            }}
-                            style={{ background: 'none', border: 'none', color: 'var(--primario)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
-                          >
-                            Marcar todas
-                          </button>
-                        )}
-                      </div>
-
-                      {clientNotificaciones.length === 0 ? (
-                        <div style={{ padding: '34px 20px', textAlign: 'center' }}>
-                          <Bell size={26} style={{ color: 'var(--text-muted)', marginBottom: 8 }} />
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Sin notificaciones</div>
-                          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>
-                            Aquí llegarán tus pedidos, promociones y avisos de LogiFast.
-                          </div>
-                        </div>
-                      ) : (
-                        clientNotificaciones.map((n) => (
-                          <div
-                            key={n.id}
-                            onClick={() => {
-                              markClientNotifRead(n.id);
-                              fetch('/api/notificaciones-push', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: n.id }) }).catch(() => null);
-                              if (n.relacionadoId && (n.tipo === 'orden_confirmada' || n.tipo === 'repartidor_asignado' || n.tipo === 'repartidor_camino' || n.tipo === 'paquete_recogido')) {
-                                setTrackingOrder(n.relacionadoId);
-                                setClientNotifOpen(false);
-                              }
-                            }}
-                            style={{
-                              display: 'flex', gap: 11, padding: '12px 16px',
-                              borderBottom: '1px solid var(--border)',
-                              background: n.leida ? 'transparent' : 'var(--primario-soft)',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <span style={{ display: 'flex', alignItems: 'center', color: 'var(--primario)', flexShrink: 0, marginTop: 2 }}>
-                              {(() => {
-                                const IconoNotif = ICONO_POR_TIPO[n.tipo] || Bell;
-                                return <IconoNotif size={17} />;
-                              })()}
-                            </span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{n.titulo}</div>
-                              <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', lineHeight: 1.45, wordBreak: 'break-word' }}>{n.descripcion}</div>
-                              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>{tiempoRelativo(n.timestamp)}</div>
-                            </div>
-                            {!n.leida && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--primario)', flexShrink: 0, marginTop: 6 }} />}
-                          </div>
-                        ))
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
 
               {/* Cart */}
@@ -1558,6 +1472,245 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 onClose={() => setCarritoOpen(false)}
               />
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Modal / Panel de Notificaciones (Ancho, Centrado y Totalmente Legible) ─── */}
+        <AnimatePresence>
+          {clientNotifOpen && (
+            <>
+              {/* Backdrop para cerrar al tocar fuera */}
+              <motion.div
+                key="client-notif-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={() => setClientNotifOpen(false)}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(0,0,0,0.45)',
+                  backdropFilter: 'blur(3px)',
+                  WebkitBackdropFilter: 'blur(3px)',
+                  zIndex: 9996,
+                }}
+              />
+
+              {/* Panel flotante de notificaciones */}
+              <motion.div
+                key="client-notif-panel"
+                initial={{ opacity: 0, y: -12, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.96 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="lf-notif-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Notificaciones"
+                style={{
+                  position: 'fixed',
+                  top: 'calc(env(safe-area-inset-top, 10px) + 64px)',
+                  left: 14,
+                  right: 14,
+                  maxWidth: 420,
+                  margin: '0 auto',
+                  maxHeight: 'min(75vh, 520px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 22,
+                  boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+                  zIndex: 9997,
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Header del Panel */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '14px 18px',
+                    borderBottom: '1px solid var(--border)',
+                    background: 'var(--surface)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)' }}>
+                      Notificaciones
+                    </span>
+                    {unreadCount > 0 && (
+                      <span
+                        style={{
+                          padding: '2px 7px',
+                          borderRadius: 10,
+                          background: 'var(--peligro)',
+                          color: '#fff',
+                          fontSize: 10,
+                          fontWeight: 700,
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      >
+                        {unreadCount}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {clientNotificaciones.length > 0 && (
+                      <button
+                        onClick={() => {
+                          markAllClientNotifRead();
+                          fetch('/api/notificaciones-push', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({}),
+                          }).catch(() => null);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--primario)',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontFamily: "'DM Sans', sans-serif",
+                          padding: '4px 6px',
+                        }}
+                      >
+                        Marcar todas
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setClientNotifOpen(false)}
+                      aria-label="Cerrar notificaciones"
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lista de Notificaciones */}
+                <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  {clientNotificaciones.length === 0 ? (
+                    <div style={{ padding: '38px 24px', textAlign: 'center' }}>
+                      <div
+                        style={{
+                          width: 50,
+                          height: 50,
+                          borderRadius: '50%',
+                          background: 'var(--primario-soft)',
+                          color: 'var(--primario)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 12px',
+                        }}
+                      >
+                        <Bell size={24} />
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                        Sin notificaciones
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5, maxWidth: 260, margin: '6px auto 0' }}>
+                        Aquí llegarán tus pedidos, promociones y avisos importantes de LogiFast.
+                      </div>
+                    </div>
+                  ) : (
+                    clientNotificaciones.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => {
+                          markClientNotifRead(n.id);
+                          fetch('/api/notificaciones-push', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: n.id }),
+                          }).catch(() => null);
+                          if (
+                            n.relacionadoId &&
+                            (n.tipo === 'orden_confirmada' ||
+                              n.tipo === 'repartidor_asignado' ||
+                              n.tipo === 'repartidor_camino' ||
+                              n.tipo === 'paquete_recogido')
+                          ) {
+                            setTrackingOrder(n.relacionadoId);
+                            setClientNotifOpen(false);
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          gap: 12,
+                          padding: '13px 18px',
+                          borderBottom: '1px solid var(--border)',
+                          background: n.leida ? 'transparent' : 'var(--primario-soft)',
+                          cursor: 'pointer',
+                          transition: 'background 0.15s ease',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 10,
+                            background: n.leida ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'var(--primario)',
+                            color: n.leida ? 'var(--primario)' : '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            marginTop: 2,
+                          }}
+                        >
+                          {(() => {
+                            const IconoNotif = ICONO_POR_TIPO[n.tipo] || Bell;
+                            return <IconoNotif size={16} />;
+                          })()}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>
+                            {n.titulo}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45, wordBreak: 'break-word' }}>
+                            {n.descripcion}
+                          </div>
+                          <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {tiempoRelativo(n.timestamp)}
+                          </div>
+                        </div>
+                        {!n.leida && (
+                          <span
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              background: 'var(--primario)',
+                              flexShrink: 0,
+                              marginTop: 8,
+                            }}
+                          />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
 

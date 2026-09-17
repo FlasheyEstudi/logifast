@@ -244,21 +244,21 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="lf-notif-panel"
             style={{
               position: 'fixed',
-              top: 'max(56px, env(safe-area-inset-top))',
-              right: 'max(8px, env(safe-area-inset-right))',
-              left: 'max(8px, env(safe-area-inset-left))',
-              width: 'auto',
-              maxWidth: 380,
-              maxHeight: 'min(70vh, 600px)',
+              top: 'max(56px, env(safe-area-inset-top, 0px))',
+              right: 'max(12px, env(safe-area-inset-right, 0px))',
+              width: 'calc(100vw - 24px)',
+              maxWidth: 400,
+              maxHeight: 'min(75vh, 600px)',
               background: 'var(--lf-surface)',
               border: '1px solid var(--lf-border)',
-              borderRadius: 12,
+              borderRadius: 14,
               boxShadow:
                 '0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)',
               overflow: 'hidden',
-              zIndex: 200,
+              zIndex: 9999,
             }}
           >
             {/* ── Header ── */}
