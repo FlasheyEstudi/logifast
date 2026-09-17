@@ -75,3 +75,73 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Error al guardar comunicación' }, { status: 500 });
   }
 }
+
+/**
+ * PATCH /api/admin/comunicaciones
+ * Actualiza una plantilla de mensaje existente.
+ * Body: { id, nombre?, categoria?, contenido?, variables? }
+ */
+export async function PATCH(req: NextRequest) {
+  try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser || sessionUser.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { id, nombre, categoria, contenido, variables } = body ?? {};
+    if (!id) {
+      return NextResponse.json({ error: 'id requerido' }, { status: 400 });
+    }
+
+    const existente = await db.plantillaMensaje.findUnique({ where: { id: String(id) } });
+    if (!existente) {
+      return NextResponse.json({ error: 'Plantilla no encontrada' }, { status: 404 });
+    }
+
+    const data: Record<string, unknown> = {};
+    if (nombre !== undefined) data.nombre = String(nombre);
+    if (categoria !== undefined) data.categoria = String(categoria);
+    if (contenido !== undefined) data.contenido = String(contenido);
+    if (variables !== undefined) data.variables = JSON.stringify(variables);
+
+    const plantilla = await db.plantillaMensaje.update({
+      where: { id: String(id) },
+      data,
+    });
+
+    return NextResponse.json({ plantilla });
+  } catch (error) {
+    console.error('[ADMIN_COMUNICACIONES_PATCH]', error);
+    return NextResponse.json({ error: 'Error al actualizar la plantilla' }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/admin/comunicaciones?id=...
+ * Elimina una plantilla de mensaje.
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser || sessionUser.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
+    const id = new URL(req.url).searchParams.get('id')?.trim();
+    if (!id) {
+      return NextResponse.json({ error: 'id requerido' }, { status: 400 });
+    }
+
+    const existente = await db.plantillaMensaje.findUnique({ where: { id } });
+    if (!existente) {
+      return NextResponse.json({ error: 'Plantilla no encontrada' }, { status: 404 });
+    }
+
+    await db.plantillaMensaje.delete({ where: { id } });
+    return NextResponse.json({ ok: true, id });
+  } catch (error) {
+    console.error('[ADMIN_COMUNICACIONES_DELETE]', error);
+    return NextResponse.json({ error: 'Error al eliminar la plantilla' }, { status: 500 });
+  }
+}

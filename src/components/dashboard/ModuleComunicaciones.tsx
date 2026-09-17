@@ -1143,13 +1143,63 @@ function BuzonPanel() {
    PLANTILLAS SUB-COMPONENT
    ═══════════════════════════════════════════════ */
 
+/** Convierte una fila de `PlantillaMensaje` de la base de datos al tipo del store:
+ *  en la BD `variables` se guarda como JSON string y `categoria` como texto libre. */
+function normalizarPlantilla(p: Record<string, unknown>): PlantillaMensaje {
+  const categorias: PlantillaMensaje['categoria'][] = ['orden', 'incidencia', 'promocion', 'general'];
+  const categoriaRaw = p.categoria as PlantillaMensaje['categoria'];
+  const categoria = categorias.includes(categoriaRaw) ? categoriaRaw : 'general';
+
+  let variables: string[] = [];
+  try {
+    const parsed = typeof p.variables === 'string' ? JSON.parse(p.variables) : p.variables;
+    if (Array.isArray(parsed)) variables = parsed.map((v) => String(v));
+  } catch {
+    variables = [];
+  }
+
+  return {
+    id: String(p.id ?? ''),
+    nombre: String(p.nombre ?? ''),
+    categoria,
+    contenido: String(p.contenido ?? ''),
+    variables,
+    esDefault: Boolean(p.esDefault),
+    createdAt: p.createdAt ? String(p.createdAt) : new Date().toISOString(),
+  };
+}
+
 function PlantillasPanel() {
-  const { plantillas: storePlantillas, addPlantilla, updatePlantilla, deletePlantilla, addToast } = useStore();
+  const { plantillas: storePlantillas, addToast } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nombre, setNombre] = useState('');
   const [categoria, setCategoria] = useState<PlantillaMensaje['categoria']>('general');
   const [contenido, setContenido] = useState('');
+  const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+
+  /* Las plantillas viven en la base de datos. Antes solo se guardaban en memoria
+   * del navegador (se perdían al recargar) y el endpoint existía sin que nadie
+   * lo llamara. */
+  const recargar = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/comunicaciones', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data?.plantillas)) {
+        useStore.setState({ plantillas: data.plantillas.map(normalizarPlantilla) });
+      }
+    } catch {
+      addToast('No se pudieron cargar las plantillas', 'error');
+    } finally {
+      setCargando(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => {
+    recargar();
+  }, [recargar]);
 
   const handleOpenNew = () => {
     setEditingId(null);
@@ -1167,28 +1217,54 @@ function PlantillasPanel() {
     setModalOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!nombre.trim() || !contenido.trim()) {
       addToast('Nombre y contenido son requeridos', 'error');
       return;
     }
     const vars = (contenido.match(/\{\{(\w+)\}\}/g) || []).map((v) => v.replace(/[{}]/g, ''));
-    if (editingId) {
-      updatePlantilla(editingId, { nombre: nombre.trim(), categoria, contenido: contenido.trim(), variables: vars });
-      addToast('Plantilla actualizada', 'success');
-    } else {
-      addPlantilla({
-        id: `PLANT-${Date.now()}`,
-        nombre: nombre.trim(),
-        categoria,
-        contenido: contenido.trim(),
-        variables: vars,
-        esDefault: false,
-        createdAt: new Date().toISOString(),
+    setGuardando(true);
+    try {
+      const res = await fetch('/api/admin/comunicaciones', {
+        method: editingId ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          editingId
+            ? { id: editingId, nombre: nombre.trim(), categoria, contenido: contenido.trim(), variables: vars }
+            : { type: 'plantilla', payload: { nombre: nombre.trim(), categoria, contenido: contenido.trim(), variables: vars } }
+        ),
       });
-      addToast('Plantilla creada', 'success');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.plantilla) {
+        throw new Error(data?.error || 'Error al guardar la plantilla');
+      }
+      const guardada = normalizarPlantilla(data.plantilla);
+      useStore.setState((state) => ({
+        plantillas: editingId
+          ? state.plantillas.map((p) => (p.id === editingId ? guardada : p))
+          : [guardada, ...state.plantillas],
+      }));
+      addToast(editingId ? 'Plantilla actualizada' : 'Plantilla creada', 'success');
+      setModalOpen(false);
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'No se pudo guardar la plantilla', 'error');
+    } finally {
+      setGuardando(false);
     }
-    setModalOpen(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/comunicaciones?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || 'Error al eliminar la plantilla');
+      }
+      useStore.setState((state) => ({ plantillas: state.plantillas.filter((p) => p.id !== id) }));
+      addToast('Plantilla eliminada', 'success');
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'No se pudo eliminar la plantilla', 'error');
+    }
   };
 
   return (
@@ -1206,6 +1282,15 @@ function PlantillasPanel() {
           <Plus size={14} className="mr-1" /> Nueva Plantilla
         </Button>
       </div>
+
+      {cargando && storePlantillas.length === 0 && (
+        <div style={{ fontSize: 12.5, color: 'var(--lf-text-muted)', padding: '6px 2px' }}>Cargando plantillas…</div>
+      )}
+      {!cargando && storePlantillas.length === 0 && (
+        <div style={{ fontSize: 12.5, color: 'var(--lf-text-muted)', padding: '6px 2px' }}>
+          Todavía no hay plantillas guardadas. Creá la primera con «Nueva Plantilla».
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
         {storePlantillas.map((p) => {
@@ -1238,7 +1323,7 @@ function PlantillasPanel() {
                   <button onClick={() => handleOpenEdit(p)} style={{ border: 'none', background: 'transparent', color: 'var(--lf-accent)', cursor: 'pointer', padding: 4 }}>
                     <Edit2 size={14} />
                   </button>
-                  <button onClick={() => deletePlantilla(p.id)} style={{ border: 'none', background: 'transparent', color: 'var(--lf-danger, #DC2626)', cursor: 'pointer', padding: 4 }}>
+                  <button onClick={() => handleDelete(p.id)} style={{ border: 'none', background: 'transparent', color: 'var(--lf-danger, #DC2626)', cursor: 'pointer', padding: 4 }}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -1283,7 +1368,7 @@ function PlantillasPanel() {
           </div>
           <DialogFooter style={{ marginTop: 12 }}>
             <Button variant="outline" onClick={() => setModalOpen(false)} style={{ borderColor: 'var(--lf-border)', color: 'var(--lf-text-main)' }}>Cancelar</Button>
-            <Button onClick={handleSave} style={{ background: 'var(--lf-accent)', color: '#fff' }}>Guardar</Button>
+            <Button onClick={handleSave} disabled={guardando} style={{ background: 'var(--lf-accent)', color: '#fff' }}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1296,7 +1381,8 @@ function PlantillasPanel() {
    ═══════════════════════════════════════════════ */
 
 function NotificacionesPanel() {
-  const { notificacionesAuto: storeNotifs, toggleNotificacionAuto, addToast } = useStore();
+  const { notificacionesAuto: storeNotifs, addToast } = useStore();
+  const [cargandoReglas, setCargandoReglas] = useState(true);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [targetRole, setTargetRole] = useState<'todos' | 'cliente' | 'repartidor' | 'ingeniero'>('todos');
   const [pushTitulo, setPushTitulo] = useState('');
@@ -1310,6 +1396,49 @@ function NotificacionesPanel() {
     sinConexion: number;
     lotesFallidos: number;
   } | null>(null);
+
+  /* Las reglas viven en la tabla `NotificacionAutomatica`. Antes el switch solo
+   * movía un booleano en memoria; ahora persiste en el servidor y revierte si
+   * el servidor rechaza el cambio. */
+  const recargarReglas = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/comunicaciones', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data?.notificacionesAuto)) {
+        useStore.setState({ notificacionesAuto: data.notificacionesAuto });
+      }
+    } catch {
+      addToast('No se pudieron cargar las reglas de notificación', 'error');
+    } finally {
+      setCargandoReglas(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => {
+    recargarReglas();
+  }, [recargarReglas]);
+
+  const handleToggleRegla = async (n: NotificacionAutomatica) => {
+    const nuevaActiva = !n.activa;
+    useStore.setState((state) => ({
+      notificacionesAuto: state.notificacionesAuto.map((x) => (x.id === n.id ? { ...x, activa: nuevaActiva } : x)),
+    }));
+    try {
+      const res = await fetch('/api/notificaciones-auto', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: n.id, activa: nuevaActiva }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      addToast(`Notificación "${n.etiqueta || n.evento}" ${nuevaActiva ? 'activada' : 'desactivada'}`);
+    } catch {
+      useStore.setState((state) => ({
+        notificacionesAuto: state.notificacionesAuto.map((x) => (x.id === n.id ? { ...x, activa: n.activa } : x)),
+      }));
+      addToast('No se pudo cambiar la regla en el servidor', 'error');
+    }
+  };
 
   const handleSendBroadcast = async () => {
     if (!pushTitulo.trim() || !pushContenido.trim()) {
@@ -1388,6 +1517,15 @@ function NotificacionesPanel() {
         </button>
       </div>
 
+      {cargandoReglas && storeNotifs.length === 0 && (
+        <div style={{ fontSize: 12.5, color: 'var(--lf-text-muted)', padding: '6px 2px' }}>Cargando reglas…</div>
+      )}
+      {!cargandoReglas && storeNotifs.length === 0 && (
+        <div style={{ fontSize: 12.5, color: 'var(--lf-text-muted)', padding: '6px 2px' }}>
+          No hay reglas de notificación configuradas en la base de datos.
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
         {storeNotifs.map((n) => {
           const canal = CANAL_CONFIG[n.canal] || CANAL_CONFIG.push;
@@ -1411,14 +1549,11 @@ function NotificacionesPanel() {
                   <CanalIcon size={18} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--lf-text-main)' }}>{n.evento}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--lf-text-main)' }}>{n.etiqueta || n.evento}</div>
                   <div style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Destinatario: {n.destinatario} • Canal: {canal.label}</div>
                 </div>
               </div>
-              <Switch checked={n.activa} onCheckedChange={() => {
-                toggleNotificacionAuto(n.id);
-                addToast(`Notificación "${n.evento}" ${n.activa ? 'desactivada' : 'activada'}`);
-              }} />
+              <Switch checked={n.activa} onCheckedChange={() => handleToggleRegla(n)} />
             </div>
           );
         })}
@@ -1708,7 +1843,7 @@ export default function ModuleComunicaciones() {
           { label: 'Conversaciones Activas', value: conversaciones.length || 8, icon: MessageCircle, color: '#FF6600', bg: 'rgba(255,102,0,0.1)' },
           { label: 'Mensajes No Leídos', value: totalUnread, icon: Bell, color: '#DC2626', bg: 'rgba(220,38,38,0.1)' },
           { label: 'Riders Conectados', value: ridersOnline || 5, icon: Bike, color: '#16A34A', bg: 'rgba(22,163,74,0.1)' },
-          { label: 'Plantillas Listas', value: plantillas.length || 4, icon: Mail, color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
+          { label: 'Plantillas Listas', value: plantillas.length, icon: Mail, color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
         ].map((m, i) => (
           <div
             key={i}
