@@ -1159,7 +1159,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                 </div>
 
                 {/* Grid: RUC + WhatsApp */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>RUC / Cédula del negocio</label>
                     <input
@@ -1297,7 +1297,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
         </h3>
 
         {/* 3 stats in row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" style={{ marginBottom: 20 }}>
           {[
             { value: String(metrics.total), label: 'Envios totales' },
             { value: `C$${(metrics.totalSpent ?? 0).toLocaleString()}`, label: 'Gastados' },
@@ -1628,7 +1628,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                   <p>No tienes tiendas favoritas</p>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {favoriteTiendas.map((t) => (
                     <div
                       key={t.id}

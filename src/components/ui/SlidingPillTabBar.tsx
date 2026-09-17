@@ -237,6 +237,7 @@ export default function SlidingPillTabBar({
               justifyContent: 'center',
               gap: isSelected ? 6 : 0,
               padding: '8px 12px',
+              minHeight: 44,
               borderRadius: 100,
               border: 'none',
               background: 'transparent',

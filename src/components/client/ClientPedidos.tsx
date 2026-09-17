@@ -400,7 +400,7 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
       </div>
 
       {/* RESUMEN CAPSULAR */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" style={{ marginBottom: 16 }}>
         {[
           { label: 'Envíos activos', val: String(activeEnvios.length), color: 'var(--primario)', icon: <Package size={14} style={{ color: 'var(--primario)' }} /> },
           { label: 'Compras activas', val: String(activeCompras.length), color: '#FF9500', icon: <ShoppingBag size={14} style={{ color: '#FF9500' }} /> },

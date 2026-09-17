@@ -1547,7 +1547,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               </div>
 
               {/* Políticas Comerciales */}
-              <div style={{ padding: 16, borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5" style={{ padding: 16, borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pedido Mínimo</div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>C$ {tienda.pedidoMinimo}</div>

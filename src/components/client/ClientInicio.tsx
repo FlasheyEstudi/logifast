@@ -1375,6 +1375,7 @@ export default function ClientInicio({
           onClick={() => setAdModalOpen(true)}
           style={{
             ...btnPrimary,
+            minHeight: 44,
             padding: '10px 16px',
             fontSize: 13,
             flexShrink: 0,

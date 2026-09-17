@@ -1015,7 +1015,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                     <CreditCard size={16} color="#FF9500" />
                     <span>Método de Pago</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
                       onClick={() => setCartMetodoPago('efectivo')}
                       style={{
