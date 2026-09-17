@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, CheckCircle2, AlertCircle, Bell, RefreshCw, Bike } from '@/components/icons';
 import { notify } from '@/lib/notify';
-import { notificarPedidoListoParaRetiro } from '@/services/native-notifications';
 
 interface ItemOrden {
   id?: string;
@@ -94,22 +93,19 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
 
   const cambiarEstado = async (ordenId: string, nuevoEstado: string) => {
     try {
-      const res = await fetch(`/api/ordenes/${ordenId}`, {
+      const res = await fetch('/api/cliente/tienda/pedidos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: nuevoEstado }),
+        body: JSON.stringify({ id: ordenId, estado: nuevoEstado }),
       });
       if (res.ok) {
         notify.success(`Pedido marcado como ${nuevoEstado}`);
-        if (nuevoEstado === 'listo') {
-          notificarPedidoListoParaRetiro({
-            ordenId,
-            tiendaNombre: 'Tu comercio',
-          }).catch(() => null);
-        }
+        // El modo retiro (pedido listo para recoger en tienda) aún no existe: toda compra
+        // crea envío con repartidor. Cuando se implemente, aquí se notificará al cliente.
         cargarOrdenes();
       } else {
-        notify.error('Error al actualizar el estado');
+        const data = await res.json().catch(() => null);
+        notify.error(data?.error || 'Error al actualizar el estado');
       }
     } catch (e) {
       notify.error('Error de conexión');
@@ -324,7 +320,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                     )}
                     {ord.estado === 'listo' && (
                       <button
-                        onClick={() => cambiarEstado(ord.id, 'entregado')}
+                        onClick={() => cambiarEstado(ord.id, 'en_camino')}
                         style={{
                           gridColumn: 'span 2',
                           height: 40,
@@ -337,7 +333,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                           cursor: 'pointer',
                         }}
                       >
-                        Finalizar / Entregado a Repartidor
+                        Entregar al Repartidor
                       </button>
                     )}
                   </div>
