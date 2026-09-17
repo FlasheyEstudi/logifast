@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { getOrdenPin, generarPinAleatorio } from '@/lib/utils';
+import { validarCodigoPromocional } from '@/lib/cupones';
 import { emitOrdenCreada, emitOrdenAsignada, emitirEventoRealtime } from '@/lib/realtime-emitter';
 import { geocodeAddress, calcularDistanciaHaversine, calcularTiempoEstimado } from '@/lib/osrm';
 
@@ -192,38 +193,25 @@ export async function POST(req: NextRequest) {
       subtotal += producto.precio * cantidad;
     }
 
-    // Re-validar código promocional server-side (P0-13)
+    // Re-validar código promocional server-side (P0-13) con el MISMO motor de reglas
+    // que POST /api/codigos/validar: tipo de servicio, monto mínimo, usos globales,
+    // uso único por cliente, primer pedido y tope de descuento. Así el descuento que
+    // vio el cliente es el que se cobra y no se puede saltar reglas posteando directo.
+    // El descuento se calcula sobre el subtotal de productos, nunca sobre el envío.
     let descuentoValidado = 0;
     let codigoUsado: string | null = null;
     if (codigoPromo) {
-      const codigoUpper = String(codigoPromo).toUpperCase();
-      const promo = await db.codigoPromocional.findUnique({
-        where: { codigo: codigoUpper },
+      const validacion = await validarCodigoPromocional({
+        codigo: String(codigoPromo),
+        montoSubtotal: subtotal,
+        tipoOrden: 'marketplace',
+        clienteId: user.id,
       });
-      if (!promo) {
-        return NextResponse.json({ error: 'Código promocional inválido' }, { status: 400 });
+      if (!validacion.ok) {
+        return NextResponse.json({ error: validacion.error }, { status: validacion.status });
       }
-      if (promo.estado !== 'activo') {
-        return NextResponse.json({ error: 'Código promocional inactivo' }, { status: 400 });
-      }
-      const now = new Date();
-      if (now < promo.vigenciaInicio || now > promo.vigenciaFin) {
-        return NextResponse.json({ error: 'Código promocional expirado' }, { status: 400 });
-      }
-      if (promo.maxUsos > 0 && promo.usosActuales >= promo.maxUsos) {
-        return NextResponse.json({ error: 'Código promocional agotado' }, { status: 400 });
-      }
-      const yaUsado = await db.usoCodigo.findFirst({
-        where: { codigoId: promo.id, clienteId: user.id },
-      });
-      if (yaUsado) {
-        return NextResponse.json({ error: 'Ya usaste este código' }, { status: 400 });
-      }
-      descuentoValidado =
-        promo.tipoDescuento === 'porcentaje'
-          ? Math.round((subtotal * promo.valor) / 100)
-          : Math.min(subtotal, promo.valor);
-      codigoUsado = codigoUpper;
+      descuentoValidado = validacion.descuento;
+      codigoUsado = validacion.promo.codigo;
     }
 
     const costoEnvio = tienda.costoEnvio;

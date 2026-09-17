@@ -58,24 +58,25 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
     cuponesBilletera = [],
     marcarCuponUsado,
     cuponAplicado,
-    validateCodigoPromo,
   } = useStore();
 
   const cuponesDisponibles = useMemo(() => {
     return cuponesBilletera.filter((c) => c.estado === 'disponible');
   }, [cuponesBilletera]);
 
-  // Si hay un cupón preaplicado desde el inicio o feed
+  // Si hay un cupón preaplicado desde el inicio o feed, solo fijamos el CÓDIGO:
+  // el monto del descuento lo confirma el servidor (POST /api/codigos/validar).
   useEffect(() => {
     if (cuponAplicado && cuponAplicado.estado === 'disponible' && !cartCodigoPromo) {
       setCartCodigoPromo(cuponAplicado.codigoPromo);
-      setCartDescuento(cuponAplicado.valor);
+      setCartDescuento(0);
     }
   }, [cuponAplicado, cartCodigoPromo, setCartCodigoPromo, setCartDescuento]);
 
   const [codigoPromoInput, setCodigoPromoInput] = useState('');
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isValidandoCodigo, setIsValidandoCodigo] = useState(false);
 
   // Address validation & GPS states
   const [direccionEntregaInput, setDireccionEntregaInput] = useState('');
@@ -114,12 +115,144 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
     }
   }, [cartMetodoPago, setCartMetodoPago]);
 
+  /* ─── Cupones: el descuento lo decide SIEMPRE el servidor ─── */
+  // Firma de la última validación (código + subtotal) para no repetir llamadas ni avisos.
+  const ultimaValidacionPromo = React.useRef('');
+
+  // Subtotal del carrito calculado antes del early return: lo necesita el efecto de
+  // revalidación (un hook no puede vivir después de un `return` condicional).
+  const subtotalCarrito = Number(getCartSubtotal()) || 0;
+
+  /**
+   * Aplica/valida un código contra POST /api/codigos/validar y usa el
+   * `descuentoCalculado` que devuelve el servidor. Si el servidor rechaza, se
+   * devuelve SU mensaje y no se aplica descuento alguno.
+   */
+  const aplicarCodigoServidor = async (
+    codigo: string
+  ): Promise<{ ok: boolean; descuento: number; mensaje: string }> => {
+    const code = String(codigo || '').trim().toUpperCase();
+    if (!code) return { ok: false, descuento: 0, mensaje: 'Código promocional requerido' };
+
+    const subtotalActual = Number(getCartSubtotal()) || 0;
+
+    try {
+      const res = await fetch('/api/codigos/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigo: code,
+          montoSubtotal: subtotalActual,
+          tipoOrden: 'marketplace',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data?.ok) {
+        const descuento = Number(data.descuentoCalculado) || 0;
+        setCartCodigoPromo(String(data.codigo || code));
+        setCartDescuento(descuento);
+        ultimaValidacionPromo.current = `${code}:${subtotalActual}`;
+        return { ok: true, descuento, mensaje: data.mensaje || `¡Cupón ${code} aplicado!` };
+      }
+
+      // El servidor rechazó el cupón: se muestra SU mensaje tal cual y no hay descuento.
+      setCartCodigoPromo('');
+      setCartDescuento(0);
+      return { ok: false, descuento: 0, mensaje: data?.error || 'Código no válido o expirado' };
+    } catch {
+      // Error de red: nunca inventamos un descuento local.
+      setCartCodigoPromo('');
+      setCartDescuento(0);
+      return { ok: false, descuento: 0, mensaje: 'No se pudo validar el código promocional. Revisa tu conexión.' };
+    }
+  };
+
+  // Si el subtotal cambia con un cupón ya aplicado, se revalida contra el servidor
+  // (y se corrige el descuento mostrado) antes de pagar.
+  React.useEffect(() => {
+    if (!isOpen || !cartCodigoPromo || cartItems.length === 0) return;
+    const firma = `${cartCodigoPromo.toUpperCase()}:${subtotalCarrito}`;
+    if (ultimaValidacionPromo.current === firma) return;
+    ultimaValidacionPromo.current = firma;
+    void aplicarCodigoServidor(cartCodigoPromo).then((r) => {
+      if (!r.ok) notify.error(r.mensaje);
+    });
+  }, [isOpen, cartCodigoPromo, subtotalCarrito, cartItems.length]);
+
+  /* ─── Envío real y pedido mínimo de la tienda (fuente única: GET /api/tiendas/[id]) ─── */
+  const [envioTienda, setEnvioTienda] = useState<{ nombre: string; costoEnvio: number; pedidoMinimo: number } | null>(null);
+  const [cargandoEnvio, setCargandoEnvio] = useState(false);
+
+  const tiendasEnCarrito = useMemo(
+    () => Array.from(new Set(cartItems.map((i) => i.tiendaId).filter(Boolean))),
+    [cartItems]
+  );
+  const multiTienda = tiendasEnCarrito.length > 1;
+  const tiendaPrincipalId = tiendasEnCarrito[0] ?? null;
+
+  React.useEffect(() => {
+    if (!isOpen || !tiendaPrincipalId || multiTienda) {
+      setEnvioTienda(null);
+      setCargandoEnvio(false);
+      return;
+    }
+    let cancelado = false;
+    setCargandoEnvio(true);
+    fetch(`/api/tiendas/${tiendaPrincipalId}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Tienda no disponible'))))
+      .then((t) => {
+        if (cancelado) return;
+        // Solo se confía en un costoEnvio numérico real: si el payload no lo trae,
+        // el envío queda "por confirmar" en lugar de asumir envío gratis.
+        if (typeof t?.costoEnvio !== 'number' || !Number.isFinite(t.costoEnvio)) {
+          setEnvioTienda(null);
+          setCargandoEnvio(false);
+          return;
+        }
+        setEnvioTienda({
+          nombre: String(t?.nombre ?? ''),
+          costoEnvio: t.costoEnvio,
+          pedidoMinimo: Number.isFinite(Number(t?.pedidoMinimo)) ? Number(t.pedidoMinimo) : 0,
+        });
+        setCargandoEnvio(false);
+      })
+      .catch(() => {
+        if (cancelado) return;
+        // Si la consulta falla no se bloquea la compra ni se inventa un monto:
+        // se marca el envío como "por confirmar" y el servidor cobra el real.
+        setEnvioTienda(null);
+        setCargandoEnvio(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [isOpen, tiendaPrincipalId, multiTienda]);
+
   if (!isOpen) return null;
 
-  const subtotal = Number(getCartSubtotal()) || 0;
-  const delivery = cartItems.length > 0 ? 35 : 0;
+  const subtotal = subtotalCarrito;
   const descuento = Number(cartDescuento) || 0;
+
+  // Envío real: solo el que devuelve la tienda. Nunca un monto fijo inventado.
+  const envioEstado: 'ok' | 'cargando' | 'multi' | 'desconocido' = multiTienda
+    ? 'multi'
+    : cargandoEnvio
+    ? 'cargando'
+    : envioTienda
+    ? 'ok'
+    : 'desconocido';
+  const delivery = envioEstado === 'ok' ? Number(envioTienda?.costoEnvio) || 0 : 0;
   const total = Math.max(0, subtotal + delivery - descuento);
+
+  // El pedido mínimo también lo manda la tienda (mismo fetch, sin reglas locales).
+  const pedidoMinimo = envioEstado === 'ok' ? Number(envioTienda?.pedidoMinimo) || 0 : 0;
+  const faltaParaMinimo = pedidoMinimo > subtotal ? pedidoMinimo - subtotal : 0;
+  const motivoBloqueo = multiTienda
+    ? 'Tu carrito tiene productos de más de una tienda'
+    : faltaParaMinimo > 0
+    ? `Mínimo C$ ${pedidoMinimo.toFixed(2)} — te faltan C$ ${faltaParaMinimo.toFixed(2)}`
+    : null;
 
   // Group items by store
   const grupos = cartItems.reduce((acc, item) => {
@@ -170,46 +303,56 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
     }
   };
 
-  const handleAplicarCodigo = () => {
+  const handleAplicarCodigo = async () => {
     const code = codigoPromoInput.trim().toUpperCase();
-    if (!code) return;
+    if (!code || isValidandoCodigo) return;
 
-    // Buscar en cupones de la billetera
-    const enBilletera = cuponesDisponibles.find((c) => c.codigoPromo.toUpperCase() === code);
-    if (enBilletera) {
-      setCartCodigoPromo(enBilletera.codigoPromo);
-      setCartDescuento(enBilletera.valor);
-      notify.success(`¡Cupón ${enBilletera.codigoPromo} aplicado (-C$ ${enBilletera.valor})!`);
+    // Sin códigos locales ni listas maestras: el descuento lo decide el servidor.
+    setIsValidandoCodigo(true);
+    const resultado = await aplicarCodigoServidor(code);
+    setIsValidandoCodigo(false);
+
+    if (resultado.ok) {
+      notify.success(resultado.mensaje);
       setCodigoPromoInput('');
-      return;
-    }
-
-    // Buscar en cupones maestros
-    const valid = validateCodigoPromo(code);
-    if (valid.valid) {
-      setCartCodigoPromo(code);
-      setCartDescuento(valid.descuento);
-      notify.success(`¡Cupón ${code} aplicado (-C$ ${valid.descuento})!`);
-    } else if (code === 'LOGIFAST20') {
-      setCartCodigoPromo('LOGIFAST20');
-      setCartDescuento(20);
-      notify.success('¡Cupón LOGIFAST20 aplicado (-C$ 20)!');
-    } else if (code === 'PROMO50' || code === 'BIENVENIDO50' || code === 'LOGIFAST50') {
-      setCartCodigoPromo(code);
-      setCartDescuento(50);
-      notify.success(`¡Cupón ${code} aplicado (-C$ 50)!`);
     } else {
-      notify.error('Código promocional no válido o expirado');
+      // Mensaje del servidor tal cual.
+      notify.error(resultado.mensaje);
     }
-    setCodigoPromoInput('');
   };
 
   const handlePagar = async () => {
     if (cartItems.length === 0) return;
+
+    // El carrito no puede llevar productos de varias tiendas: el envío se cotiza por tienda.
+    if (grupos.length > 1) {
+      notify.error('Tu carrito tiene productos de más de una tienda. Realiza un pedido por tienda.');
+      return;
+    }
+
+    // Pedido mínimo de la tienda (mismo dato que se muestra en el resumen).
+    const minimoTienda = Number(envioTienda?.pedidoMinimo) || 0;
+    if (minimoTienda > 0 && subtotal < minimoTienda) {
+      notify.error(
+        `El pedido mínimo de ${envioTienda?.nombre || 'esta tienda'} es C$ ${minimoTienda.toFixed(2)}. Te faltan C$ ${(minimoTienda - subtotal).toFixed(2)}.`
+      );
+      return;
+    }
+
     if (!direccionEntregaInput || direccionEntregaInput.trim().length < 3) {
       setAddressError(true);
       notify.error('Debes ingresar o confirmar una dirección de entrega válida.');
       return;
+    }
+
+    // Revalidar el cupón con el subtotal actual antes de cobrar: el importe final
+    // siempre lo decide el servidor.
+    if (cartCodigoPromo) {
+      const revalidado = await aplicarCodigoServidor(cartCodigoPromo);
+      if (!revalidado.ok) {
+        notify.error(revalidado.mensaje);
+        return;
+      }
     }
 
     setIsProcessing(true);
@@ -651,7 +794,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                           type="text"
                           value={codigoPromoInput}
                           onChange={(e) => setCodigoPromoInput(e.target.value.toUpperCase())}
-                          placeholder="Ej. LOGIFAST20"
+                          placeholder="Ingresa tu código"
                           style={{
                             flex: 1,
                             padding: '10px 14px',
@@ -666,6 +809,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                         />
                         <button
                           onClick={handleAplicarCodigo}
+                          disabled={isValidandoCodigo}
                           style={{
                             padding: '10px 18px',
                             borderRadius: 12,
@@ -674,10 +818,11 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                             border: 'none',
                             fontSize: 13,
                             fontWeight: 700,
-                            cursor: 'pointer',
+                            cursor: isValidandoCodigo ? 'wait' : 'pointer',
+                            opacity: isValidandoCodigo ? 0.7 : 1,
                           }}
                         >
-                          Aplicar
+                          {isValidandoCodigo ? 'Validando...' : 'Aplicar'}
                         </button>
                       </div>
 
@@ -692,10 +837,11 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                               <button
                                 key={c.id}
                                 type="button"
-                                onClick={() => {
-                                  setCartCodigoPromo(c.codigoPromo);
-                                  setCartDescuento(c.valor);
-                                  notify.success(`¡Cupón ${c.codigoPromo} aplicado (-C$ ${c.valor})!`);
+                                onClick={async () => {
+                                  // El descuento lo confirma el servidor aunque el cupón venga de la billetera.
+                                  const resultado = await aplicarCodigoServidor(c.codigoPromo);
+                                  if (resultado.ok) notify.success(resultado.mensaje);
+                                  else notify.error(resultado.mensaje);
                                 }}
                                 style={{
                                   display: 'inline-flex',
@@ -954,7 +1100,13 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94A3B8' }}>
                     <span>Envío</span>
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#F8FAFC' }}>C$ {delivery.toFixed(2)}</span>
+                    {envioEstado === 'ok' ? (
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#F8FAFC' }}>C$ {delivery.toFixed(2)}</span>
+                    ) : (
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#94A3B8' }}>
+                        {envioEstado === 'cargando' ? 'Calculando...' : envioEstado === 'multi' ? 'Por tienda' : 'Por confirmar'}
+                      </span>
+                    )}
                   </div>
                   {descuento > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#34C759', fontWeight: 700 }}>
@@ -962,6 +1114,28 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                       <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>- C$ {descuento.toFixed(2)}</span>
                     </div>
                   )}
+
+                  {multiTienda && (
+                    <div style={{ padding: '8px 12px', borderRadius: 12, background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)', color: '#F87171', fontSize: 11, fontWeight: 600, lineHeight: 1.45 }}>
+                      Tu carrito tiene productos de más de una tienda. El envío se cotiza por tienda: realiza un pedido por tienda para poder pagar.
+                    </div>
+                  )}
+                  {!multiTienda && faltaParaMinimo > 0 && (
+                    <div style={{ padding: '8px 12px', borderRadius: 12, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#F59E0B', fontSize: 11, fontWeight: 600, lineHeight: 1.45 }}>
+                      El pedido mínimo de {envioTienda?.nombre || 'esta tienda'} es C$ {pedidoMinimo.toFixed(2)}. Te faltan C$ {faltaParaMinimo.toFixed(2)} para poder pagar.
+                    </div>
+                  )}
+                  {envioEstado === 'cargando' && (
+                    <div style={{ padding: '8px 12px', borderRadius: 12, background: 'rgba(148, 163, 184, 0.12)', border: '1px solid rgba(148, 163, 184, 0.3)', color: '#94A3B8', fontSize: 11, fontWeight: 600, lineHeight: 1.45 }}>
+                      Calculando el costo de envío real de esta tienda...
+                    </div>
+                  )}
+                  {envioEstado === 'desconocido' && (
+                    <div style={{ padding: '8px 12px', borderRadius: 12, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#F59E0B', fontSize: 11, fontWeight: 600, lineHeight: 1.45 }}>
+                      No pudimos verificar el envío de esta tienda. El total mostrado no incluye envío: al confirmar se te cobrará el envío real.
+                    </div>
+                  )}
+
                   <div style={{ paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 700, color: '#F8FAFC', fontSize: 15 }}>Total a Pagar</span>
                     <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#007AFF' }}>
@@ -978,7 +1152,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
             <div style={{ padding: 16, background: 'rgba(15, 23, 42, 0.95)', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
               <button
                 onClick={handlePagar}
-                disabled={isProcessing}
+                disabled={isProcessing || envioEstado === 'cargando' || !!motivoBloqueo}
                 style={{
                   width: '100%',
                   padding: 16,
@@ -992,7 +1166,8 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 10,
-                  cursor: isProcessing ? 'not-allowed' : 'pointer',
+                  cursor: isProcessing || envioEstado === 'cargando' || motivoBloqueo ? 'not-allowed' : 'pointer',
+                  opacity: envioEstado === 'cargando' || motivoBloqueo ? 0.65 : 1,
                   boxShadow: '0 8px 24px rgba(0, 122, 255, 0.4)',
                 }}
               >
@@ -1001,9 +1176,19 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                     <LogoSpinner size={22} />
                     <span>Procesando...</span>
                   </div>
+                ) : motivoBloqueo ? (
+                  <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.35 }}>{motivoBloqueo}</span>
+                ) : envioEstado === 'cargando' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <LogoSpinner size={22} />
+                    <span>Calculando envío...</span>
+                  </div>
                 ) : (
                   <>
-                    <span>Confirmar y Pagar C$ {total.toFixed(2)}</span>
+                    <span>
+                      Confirmar y Pagar C$ {total.toFixed(2)}
+                      {envioEstado === 'desconocido' ? ' + envío' : ''}
+                    </span>
                     <ArrowRight size={18} />
                   </>
                 )}
