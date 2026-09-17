@@ -12,45 +12,45 @@ const config: Config = {
   theme: {
         extend: {
                 colors: {
-                        background: 'hsl(var(--background))',
-                        foreground: 'hsl(var(--foreground))',
+                        background: 'hsl(var(--background-hsl) / <alpha-value>)',
+                        foreground: 'hsl(var(--foreground-hsl) / <alpha-value>)',
                         card: {
-                                DEFAULT: 'hsl(var(--card))',
-                                foreground: 'hsl(var(--card-foreground))'
+                                DEFAULT: 'hsl(var(--card-hsl) / <alpha-value>)',
+                                foreground: 'hsl(var(--card-foreground-hsl) / <alpha-value>)'
                         },
                         popover: {
-                                DEFAULT: 'hsl(var(--popover))',
-                                foreground: 'hsl(var(--popover-foreground))'
+                                DEFAULT: 'hsl(var(--popover-hsl) / <alpha-value>)',
+                                foreground: 'hsl(var(--popover-foreground-hsl) / <alpha-value>)'
                         },
                         primary: {
-                                DEFAULT: 'hsl(var(--primary))',
-                                foreground: 'hsl(var(--primary-foreground))'
+                                DEFAULT: 'hsl(var(--primary-hsl) / <alpha-value>)',
+                                foreground: 'hsl(var(--primary-foreground-hsl) / <alpha-value>)'
                         },
                         secondary: {
-                                DEFAULT: 'hsl(var(--secondary))',
-                                foreground: 'hsl(var(--secondary-foreground))'
+                                DEFAULT: 'hsl(var(--secondary-hsl) / <alpha-value>)',
+                                foreground: 'hsl(var(--secondary-foreground-hsl) / <alpha-value>)'
                         },
                         muted: {
-                                DEFAULT: 'hsl(var(--muted))',
-                                foreground: 'hsl(var(--muted-foreground))'
+                                DEFAULT: 'hsl(var(--muted-hsl) / <alpha-value>)',
+                                foreground: 'hsl(var(--muted-foreground-hsl) / <alpha-value>)'
                         },
                         accent: {
-                                DEFAULT: 'hsl(var(--accent))',
-                                foreground: 'hsl(var(--accent-foreground))'
+                                DEFAULT: 'hsl(var(--accent-hsl) / <alpha-value>)',
+                                foreground: 'hsl(var(--accent-foreground-hsl) / <alpha-value>)'
                         },
                         destructive: {
-                                DEFAULT: 'hsl(var(--destructive))',
-                                foreground: 'hsl(var(--destructive-foreground))'
+                                DEFAULT: 'hsl(var(--destructive-hsl) / <alpha-value>)',
+                                foreground: 'hsl(var(--destructive-foreground-hsl) / <alpha-value>)'
                         },
-                        border: 'hsl(var(--border))',
-                        input: 'hsl(var(--input))',
-                        ring: 'hsl(var(--ring))',
+                        border: 'var(--border)',
+                        input: 'var(--input)',
+                        ring: 'hsl(var(--ring-hsl) / <alpha-value>)',
                         chart: {
-                                '1': 'hsl(var(--chart-1))',
-                                '2': 'hsl(var(--chart-2))',
-                                '3': 'hsl(var(--chart-3))',
-                                '4': 'hsl(var(--chart-4))',
-                                '5': 'hsl(var(--chart-5))'
+                                '1': 'hsl(var(--chart-1-hsl) / <alpha-value>)',
+                                '2': 'hsl(var(--chart-2-hsl) / <alpha-value>)',
+                                '3': 'hsl(var(--chart-3-hsl) / <alpha-value>)',
+                                '4': 'hsl(var(--chart-4-hsl) / <alpha-value>)',
+                                '5': 'hsl(var(--chart-5-hsl) / <alpha-value>)'
                         }
                 },
                 borderRadius: {

@@ -1147,7 +1147,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               <button
                 onClick={toggleTheme}
                 aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
-                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: isDark ? '#FFD60A' : '#FF9500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'transparent', color: isDark ? '#FFD60A' : '#FF9500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
               >
                 {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
               </button>
@@ -1157,7 +1157,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 <button
                   onClick={() => { abrirNotificaciones(); setAvatarOpen(false); }}
                   aria-label="Notificaciones"
-                  style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : isDark ? '#98989D' : '#636366', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
+                  style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : isDark ? '#98989D' : '#636366', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
                 >
                   <Bell size={16} strokeWidth={1.8} />
                   {unreadCount > 0 && (
@@ -1172,7 +1172,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               <button
                 onClick={() => setCarritoOpen(true)}
                 aria-label="Carrito"
-                style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: carritoOpen ? 'var(--primario)' : 'transparent', color: carritoOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
+                style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: carritoOpen ? 'var(--primario)' : 'transparent', color: carritoOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
               >
                 <ShoppingBag size={16} strokeWidth={1.8} />
                 {getCartItemCount() > 0 && (

@@ -126,6 +126,34 @@ html.light {
   --input: rgba(120, 120, 128, 0.2);
   --ring: #007AFF;
 
+  /* ─── Triplets HSL para Tailwind (tema claro) ───
+     tailwind.config.ts genera las clases del sistema como
+     hsl(var(--x-hsl) / <alpha-value>). Los tokens de arriba siguen en HEX/rgba
+     porque cientos de estilos inline los consumen con var(--x): así funcionan
+     las dos capas a la vez, sin reescribir la app de golpe. */
+  --background-hsl: 240 24% 96%;
+  --foreground-hsl: 240 3% 11%;
+  --card-hsl: 0 0% 100%;
+  --card-foreground-hsl: 240 3% 11%;
+  --popover-hsl: 0 0% 100%;
+  --popover-foreground-hsl: 240 3% 11%;
+  --primary-hsl: 211 100% 50%;
+  --primary-foreground-hsl: 0 0% 100%;
+  --secondary-hsl: 240 11% 91%;
+  --secondary-foreground-hsl: 240 3% 11%;
+  --muted-hsl: 240 11% 91%;
+  --muted-foreground-hsl: 240 2% 57%;
+  --accent-hsl: 211 100% 50%;
+  --accent-foreground-hsl: 0 0% 100%;
+  --destructive-hsl: 3 100% 59%;
+  --destructive-foreground-hsl: 0 0% 100%;
+  --ring-hsl: 211 100% 50%;
+  --chart-1-hsl: 211 100% 50%;
+  --chart-2-hsl: 135 59% 49%;
+  --chart-3-hsl: 35 100% 50%;
+  --chart-4-hsl: 280 68% 60%;
+  --chart-5-hsl: 3 100% 59%;
+
   /* ─── Alias tokens (dashboard inline-style compatibility) ───
      The dashboard components (ModuleConfig, ModulePedidos, etc.)
      reference --lf-surface / --lf-bg / --lf-text-main / --lf-border
@@ -261,6 +289,30 @@ html.dark {
   --border-shadcn: rgba(84, 84, 88, 0.36);
   --input: rgba(120, 120, 128, 0.36);
   --ring: #0A84FF;
+
+  /* ─── Triplets HSL para Tailwind (tema oscuro) ─── */
+  --background-hsl: 0 0% 0%;
+  --foreground-hsl: 0 0% 100%;
+  --card-hsl: 240 3% 11%;
+  --card-foreground-hsl: 0 0% 100%;
+  --popover-hsl: 240 3% 11%;
+  --popover-foreground-hsl: 0 0% 100%;
+  --primary-hsl: 210 100% 52%;
+  --primary-foreground-hsl: 0 0% 100%;
+  --secondary-hsl: 240 2% 18%;
+  --secondary-foreground-hsl: 0 0% 100%;
+  --muted-hsl: 240 2% 18%;
+  --muted-foreground-hsl: 240 2% 61%;
+  --accent-hsl: 240 2% 23%;
+  --accent-foreground-hsl: 0 0% 100%;
+  --destructive-hsl: 3 100% 61%;
+  --destructive-foreground-hsl: 0 0% 100%;
+  --ring-hsl: 210 100% 52%;
+  --chart-1-hsl: 210 100% 52%;
+  --chart-2-hsl: 135 64% 50%;
+  --chart-3-hsl: 36 100% 52%;
+  --chart-4-hsl: 280 85% 65%;
+  --chart-5-hsl: 3 100% 61%;
 
   /* ─── Alias tokens (dark) — keep dashboard inline styles solid in dark mode ─── */
   --lf-bg: var(--bg);

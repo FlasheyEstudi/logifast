@@ -187,10 +187,15 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
             background: 'var(--surface)',
             borderRadius: 16,
             border: '1px solid var(--border)',
-            overflow: 'hidden',
+            // La tabla tiene más columnas de las que caben en un celular. Antes el
+            // contenedor las recortaba (overflow: hidden) y varias columnas quedaban
+            // inalcanzables; ahora la tabla se desliza en horizontal dentro del panel.
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            WebkitOverflowScrolling: 'touch',
           }}
         >
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+          <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
             <thead>
               <tr
                 style={{
