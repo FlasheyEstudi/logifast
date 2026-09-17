@@ -283,29 +283,63 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
   const { tiendaSeleccionada, carritoOpen, setCarritoOpen, setTiendaSeleccionada, getCartItemCount, fetchTiendas, fetchOrdenesCompra, fetchFavoritos, fetchCarrito, ordenesCompra } = useMarketplaceStore();
 
-  /* ─── Prompt de Permisos de Notificación en Primer Ingreso ─── */
+  /* ─── Prompt de Permisos de Notificación (pre-permiso explicativo) ─── */
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+  const [permisoBloqueado, setPermisoBloqueado] = useState(false);
 
   useEffect(() => {
-    inicializarNotificacionesNativas().then((granted) => {
-      if (!granted && typeof window !== 'undefined' && 'Notification' in window) {
-        if (Notification.permission === 'default') {
+    let cancelado = false;
+    // Ya se le explicó antes: no volver a insistir en cada arranque.
+    const yaExplicado =
+      typeof window !== 'undefined' && localStorage.getItem('lf_notif_prompt_done') === 'true';
+
+    // Solo VERIFICA el permiso (no lo pide): el diálogo del sistema se lanza
+    // únicamente cuando el usuario toca "Activar" en la pantalla explicativa.
+    inicializarNotificacionesNativas()
+      .then((granted) => {
+        if (cancelado || granted || yaExplicado) return;
+        const permiso =
+          typeof window !== 'undefined' && 'Notification' in window
+            ? Notification.permission
+            : 'default';
+        if (permiso === 'default') {
           setShowPermissionPrompt(true);
+        } else if (permiso === 'denied') {
+          setPermisoBloqueado(true);
         }
-      }
-    }).catch(() => null);
+      })
+      .catch(() => null);
+
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   const handleActivarNotificaciones = async () => {
     const granted = await solicitarPermisoNotificacionesManual();
+    try {
+      localStorage.setItem('lf_notif_prompt_done', 'true');
+    } catch {}
     setShowPermissionPrompt(false);
     if (granted) {
+      // Notificación de prueba: el usuario comprueba en el acto que suenan.
       dispararNotificacionNativa({
         titulo: '¡Notificaciones activadas!',
-        cuerpo: 'Te avisaremos cuando tu repartidor esté en camino y llegue a tu puerta.',
+        cuerpo: 'Así te avisaremos: tu pedido en camino, el repartidor en tu puerta y las promociones.',
         tipoAlerta: 'exito',
+        canalId: 'logifast_estado',
+        mostrarBannerInApp: false,
       });
+    } else {
+      setPermisoBloqueado(true);
     }
+  };
+
+  const handleAhoraNo = () => {
+    try {
+      localStorage.setItem('lf_notif_prompt_done', 'true');
+    } catch {}
+    setShowPermissionPrompt(false);
   };
 
   /* ─── Centro de notificaciones: carga real desde la API ─── */
@@ -1519,14 +1553,166 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
           )}
         </AnimatePresence>
 
-        {/* ─── Banner de Solicitud de Permisos de Notificación (Heads-Up) ─── */}
+        {/* ─── Pre-permiso de Notificaciones (explicar ANTES del diálogo del sistema) ─── */}
         <AnimatePresence>
           {showPermissionPrompt && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={handleAhoraNo}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(0,0,0,0.55)',
+                  backdropFilter: 'blur(4px)',
+                  WebkitBackdropFilter: 'blur(4px)',
+                  zIndex: 9998,
+                }}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 60 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 60 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Activar notificaciones"
+                style={{
+                  position: 'fixed',
+                  left: 12,
+                  right: 12,
+                  bottom: 'calc(env(safe-area-inset-bottom, 12px) + 12px)',
+                  maxWidth: 460,
+                  margin: '0 auto',
+                  zIndex: 9999,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 24,
+                  padding: '22px 20px 18px',
+                  boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 18,
+                    margin: '0 auto 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, var(--primario), #8B5CF6)',
+                    color: '#fff',
+                    boxShadow: '0 10px 26px rgba(0,102,255,0.32)',
+                  }}
+                >
+                  <Bell size={26} />
+                </div>
+
+                <h3
+                  style={{
+                    margin: '0 0 6px',
+                    textAlign: 'center',
+                    fontSize: 19,
+                    fontWeight: 800,
+                    fontFamily: "'Syne', sans-serif",
+                    color: 'var(--text)',
+                  }}
+                >
+                  Activá las notificaciones
+                </h3>
+                <p
+                  style={{
+                    margin: '0 0 16px',
+                    textAlign: 'center',
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  Son alertas del sistema, no se ven dentro de la app. Te avisamos solo de lo importante:
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 18 }}>
+                  {[
+                    { icono: '🛵', titulo: 'Tu pedido en camino', detalle: 'Cuando el repartidor ya salió hacia vos.' },
+                    { icono: '🔔', titulo: 'El repartidor está en tu puerta', detalle: 'Con sonido y vibración, aunque tengas el celular bloqueado.' },
+                    { icono: '🎁', titulo: 'Promociones y cupones', detalle: 'Descuentos y avisos que te envía LogiFast.' },
+                  ].map((fila) => (
+                    <div key={fila.titulo} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 18, lineHeight: '22px' }}>{fila.icono}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{fila.titulo}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.45 }}>{fila.detalle}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleActivarNotificaciones}
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: 16,
+                    border: 'none',
+                    background: 'var(--primario)',
+                    color: '#fff',
+                    fontSize: 15,
+                    fontWeight: 800,
+                    fontFamily: "'Syne', sans-serif",
+                    cursor: 'pointer',
+                    boxShadow: '0 10px 24px rgba(0,102,255,0.3)',
+                  }}
+                >
+                  Activar notificaciones
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAhoraNo}
+                  style={{
+                    width: '100%',
+                    marginTop: 8,
+                    padding: '12px 16px',
+                    borderRadius: 16,
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-muted)',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Ahora no
+                </button>
+
+                <p
+                  style={{
+                    margin: '10px 0 0',
+                    textAlign: 'center',
+                    fontSize: 10.5,
+                    lineHeight: 1.45,
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  Podés cambiarlo cuando quieras desde tu perfil.
+                </p>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Permiso bloqueado: cómo reactivarlas ─── */}
+        <AnimatePresence>
+          {permisoBloqueado && (
             <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
               style={{
                 position: 'fixed',
                 top: 'calc(env(safe-area-inset-top, 10px) + 68px)',
@@ -1534,72 +1720,29 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                 right: 16,
                 maxWidth: 440,
                 margin: '0 auto',
-                zIndex: 9999,
-                background: 'rgba(0, 122, 255, 0.95)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderRadius: 18,
-                padding: '12px 16px',
+                zIndex: 9997,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 14,
+                padding: '11px 14px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                color: '#FFFFFF',
-                boxShadow: '0 12px 30px rgba(0, 122, 255, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+                gap: 10,
+                boxShadow: '0 10px 26px rgba(0,0,0,0.22)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Bell size={18} />
-                </div>
-                <div style={{ fontSize: 12, lineHeight: 1.3 }}>
-                  <span style={{ fontWeight: 700, display: 'block', fontFamily: "'Syne', sans-serif" }}>Activa las notificaciones</span>
-                  <span style={{ opacity: 0.9, fontSize: 11 }}>Te avisaremos cuando tu repartidor esté en camino y llegue</span>
-                </div>
+              <Bell size={16} style={{ color: 'var(--warning, #FFB300)', flexShrink: 0 }} />
+              <div style={{ fontSize: 11.5, lineHeight: 1.45, color: 'var(--text-secondary)', flex: 1 }}>
+                Las notificaciones están bloqueadas. Activalas en{' '}
+                <strong style={{ color: 'var(--text)' }}>Ajustes › Apps › LogiFast › Notificaciones</strong>.
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={handleActivarNotificaciones}
-                  style={{
-                    background: '#FFFFFF',
-                    color: '#007AFF',
-                    border: 'none',
-                    borderRadius: 10,
-                    padding: '6px 14px',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                  }}
-                >
-                  Activar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPermissionPrompt(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#FFFFFF',
-                    padding: 4,
-                    opacity: 0.7,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <X size={16} />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setPermisoBloqueado(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}
+              >
+                <X size={15} />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

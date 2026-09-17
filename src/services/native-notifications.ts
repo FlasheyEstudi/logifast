@@ -103,7 +103,20 @@ let permissionRequested = false;
 /**
  * Inicializa permisos, canales prioritarios (Heads-Up) y botones de acción en Android y Web
  */
-export async function inicializarNotificacionesNativas(): Promise<boolean> {
+/**
+ * Inicializa las notificaciones nativas: verifica permisos y crea los canales Android.
+ *
+ * IMPORTANTE: por defecto NO pide el permiso. En Android 13+ pedirlo al arrancar
+ * dispara el diálogo del sistema antes de que la app pueda explicar nada, y el
+ * usuario lo rechaza por reflejo. El flujo correcto es: pantalla de pre-permiso
+ * explicativa → `solicitarPermisoNotificacionesManual()`.
+ *
+ * Pasar `{ solicitarPermiso: true }` mantiene el comportamiento antiguo (pedir de una).
+ */
+export async function inicializarNotificacionesNativas(
+  opciones: { solicitarPermiso?: boolean } = {}
+): Promise<boolean> {
+  const { solicitarPermiso = false } = opciones;
   if (typeof window === 'undefined') return false;
 
   const plugin = getCapacitorLocalNotifications();
@@ -111,16 +124,17 @@ export async function inicializarNotificacionesNativas(): Promise<boolean> {
   if (plugin) {
     let hasDisplayPermission = false;
 
-    // 1. SOLICITAR PERMISOS NATIVOS PRIMERO (Crucial para Android 13+ / POST_NOTIFICATIONS)
+    // 1. VERIFICAR PERMISOS NATIVOS (POST_NOTIFICATIONS en Android 13+)
+    //    Solo se solicita si el llamador lo pide explícitamente.
     try {
       const status = await plugin.checkPermissions();
       if (status?.display === 'granted') {
         hasDisplayPermission = true;
-      } else {
+      } else if (solicitarPermiso) {
         const req = await plugin.requestPermissions();
         hasDisplayPermission = req?.display === 'granted';
+        permissionRequested = true;
       }
-      permissionRequested = true;
     } catch (permErr) {
       console.warn('[NativeNotifications] Error al verificar permisos en Android:', permErr);
     }
@@ -225,7 +239,7 @@ export async function inicializarNotificacionesNativas(): Promise<boolean> {
 
   // ENTORNO WEB / PWA (Navegadores móviles y de escritorio)
   if (typeof window !== 'undefined' && 'Notification' in window) {
-    if (Notification.permission === 'default') {
+    if (Notification.permission === 'default' && solicitarPermiso) {
       try {
         const res = await Notification.requestPermission();
         permissionRequested = true;
@@ -242,10 +256,12 @@ export async function inicializarNotificacionesNativas(): Promise<boolean> {
 }
 
 /**
- * Permite solicitar el permiso manualmente desde un botón o banner con interacción directa del usuario
+ * Solicita el permiso con interacción directa del usuario (obligatorio en Android 13+
+ * y en iOS/Safari). Se llama desde la pantalla de pre-permiso, nunca al arrancar.
+ * Si el usuario ya lo había concedido, devuelve true sin volver a preguntar.
  */
 export async function solicitarPermisoNotificacionesManual(): Promise<boolean> {
-  return inicializarNotificacionesNativas();
+  return inicializarNotificacionesNativas({ solicitarPermiso: true });
 }
 
 export interface NotificacionOpciones {

@@ -1904,7 +1904,34 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
           <SettingsRow
             icon={<Bell size={18} />}
             label="Notificaciones push"
-            right={<Toggle on={notificacionesPush} onToggle={() => toggleNotificacionesPush()} />}
+            right={
+              <Toggle
+                on={notificacionesPush}
+                onToggle={async () => {
+                  const activando = !notificacionesPush;
+                  // Al activar hay que pedir el permiso REAL del sistema (Android 13+):
+                  // antes el interruptor solo guardaba una preferencia local.
+                  if (activando) {
+                    try {
+                      const { solicitarPermisoNotificacionesManual, dispararNotificacionNativa } = await import(
+                        '@/services/native-notifications'
+                      );
+                      const granted = await solicitarPermisoNotificacionesManual();
+                      if (granted) {
+                        dispararNotificacionNativa({
+                          titulo: 'Notificaciones activadas',
+                          cuerpo: 'Ya podés recibir avisos de tus pedidos y promociones.',
+                          tipoAlerta: 'exito',
+                          canalId: 'logifast_estado',
+                          mostrarBannerInApp: false,
+                        });
+                      }
+                    } catch {}
+                  }
+                  toggleNotificacionesPush();
+                }}
+              />
+            }
           />
           {/* Notificaciones por email — wired to configStore */}
           <SettingsRow
