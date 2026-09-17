@@ -13,7 +13,7 @@ import { iniciarRastreoFondo, detenerRastreoFondo } from '@/services/background-
 import { inicializarNotificacionesNativas, solicitarPermisoNotificacionesManual, dispararNotificacionNativa } from '@/services/native-notifications';
 import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, Package, Wrench, MessageCircle } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC MODULE IMPORTS — mantienen todos los overlays
@@ -1288,12 +1288,14 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 18 }}>
                   {[
-                    { icono: '📦', titulo: 'Pedido nuevo en tu zona', detalle: 'Alerta flotante con sonido, aunque el celular esté bloqueado.' },
-                    { icono: '🛠️', titulo: 'Tu moto salió del taller', detalle: 'Cuando terminan el mantenimiento y podés volver a operar.' },
-                    { icono: '💬', titulo: 'Mensajes del cliente', detalle: 'Avisos de chat durante la entrega.' },
+                    { Icono: Package, titulo: 'Pedido nuevo en tu zona', detalle: 'Alerta flotante con sonido, aunque el celular esté bloqueado.' },
+                    { Icono: Wrench, titulo: 'Tu moto salió del taller', detalle: 'Cuando terminan el mantenimiento y podés volver a operar.' },
+                    { Icono: MessageCircle, titulo: 'Mensajes del cliente', detalle: 'Avisos de chat durante la entrega.' },
                   ].map((fila) => (
                     <div key={fila.titulo} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: 18, lineHeight: '22px' }}>{fila.icono}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', color: '#00C853', flexShrink: 0, marginTop: 3 }}>
+                        <fila.Icono size={18} />
+                      </span>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{fila.titulo}</div>
                         <div style={{ fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.45 }}>{fila.detalle}</div>

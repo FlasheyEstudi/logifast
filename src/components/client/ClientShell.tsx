@@ -17,6 +17,8 @@ import {
   Bike,
   Tag,
   Heart,
+  Gift,
+  Megaphone,
   ShoppingBag,
   ShoppingCart,
   Wallet,
@@ -243,18 +245,19 @@ function tiempoRelativo(iso: string): string {
   return new Date(iso).toLocaleDateString('es-NI', { day: 'numeric', month: 'short' });
 }
 
-const ICONO_POR_TIPO: Record<string, string> = {
-  promocion: '🎁',
-  marketing: '📣',
-  sistema: '🔔',
-  codigo_nuevo: '🎟️',
-  orden_confirmada: '📦',
-  repartidor_asignado: '🛵',
-  repartidor_camino: '🛵',
-  paquete_recogido: '📦',
-  entrega_exitosa: '✅',
-  incidencia: '⚠️',
-  te_extranamos: '💛',
+/* Icono por tipo de notificación (sistema de diseño: iconos, nunca emoji) */
+const ICONO_POR_TIPO: Record<string, typeof Bell> = {
+  promocion: Gift,
+  marketing: Megaphone,
+  sistema: Bell,
+  codigo_nuevo: Tag,
+  orden_confirmada: Package,
+  repartidor_asignado: Bike,
+  repartidor_camino: Bike,
+  paquete_recogido: Package,
+  entrega_exitosa: CheckCircle,
+  incidencia: AlertTriangle,
+  te_extranamos: Heart,
 };
 
 export default function ClientShell({ isDark, toggleTheme, onLogout, userName }: ClientShellProps) {
@@ -1206,7 +1209,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
                       {clientNotificaciones.length === 0 ? (
                         <div style={{ padding: '34px 20px', textAlign: 'center' }}>
-                          <div style={{ fontSize: 26, marginBottom: 8 }}>🔔</div>
+                          <Bell size={26} style={{ color: 'var(--text-muted)', marginBottom: 8 }} />
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Sin notificaciones</div>
                           <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>
                             Aquí llegarán tus pedidos, promociones y avisos de LogiFast.
@@ -1231,7 +1234,12 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                               cursor: 'pointer',
                             }}
                           >
-                            <span style={{ fontSize: 17, lineHeight: '20px' }}>{ICONO_POR_TIPO[n.tipo] || '🔔'}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', color: 'var(--primario)', flexShrink: 0, marginTop: 2 }}>
+                              {(() => {
+                                const IconoNotif = ICONO_POR_TIPO[n.tipo] || Bell;
+                                return <IconoNotif size={17} />;
+                              })()}
+                            </span>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{n.titulo}</div>
                               <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', lineHeight: 1.45, wordBreak: 'break-word' }}>{n.descripcion}</div>
@@ -1637,12 +1645,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 18 }}>
                   {[
-                    { icono: '🛵', titulo: 'Tu pedido en camino', detalle: 'Cuando el repartidor ya salió hacia vos.' },
-                    { icono: '🔔', titulo: 'El repartidor está en tu puerta', detalle: 'Con sonido y vibración, aunque tengas el celular bloqueado.' },
-                    { icono: '🎁', titulo: 'Promociones y cupones', detalle: 'Descuentos y avisos que te envía LogiFast.' },
+                    { Icono: Bike, titulo: 'Tu pedido en camino', detalle: 'Cuando el repartidor ya salió hacia vos.' },
+                    { Icono: Bell, titulo: 'El repartidor está en tu puerta', detalle: 'Con sonido y vibración, aunque tengas el celular bloqueado.' },
+                    { Icono: Gift, titulo: 'Promociones y cupones', detalle: 'Descuentos y avisos que te envía LogiFast.' },
                   ].map((fila) => (
                     <div key={fila.titulo} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: 18, lineHeight: '22px' }}>{fila.icono}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', color: 'var(--primario)', flexShrink: 0, marginTop: 3 }}>
+                        <fila.Icono size={18} />
+                      </span>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{fila.titulo}</div>
                         <div style={{ fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.45 }}>{fila.detalle}</div>
