@@ -27,6 +27,8 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
   const [busqueda, setBusqueda] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Producto | null>(null);
+  // Confirmación local antes de archivar (no hay borrado duro: el Kardex conserva la trazabilidad)
+  const [archivarConfirmId, setArchivarConfirmId] = useState<string | null>(null);
 
   // Form State
   const [nombre, setNombre] = useState('');
@@ -124,7 +126,8 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           precio: Number(precio),
           costo: Number(costo) || 0,
           stock: Number(stock) || 0,
-          stockMinimo: Number(stockMinimo) || 5,
+          // stockMinimo 0 es un valor válido: sólo se usa 5 cuando el campo queda vacío.
+          stockMinimo: stockMinimo === '' ? 5 : Number(stockMinimo) || 0,
           codigoBarras,
           unidadMedida,
           imagenUrl,
@@ -156,9 +159,13 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         body: JSON.stringify({ id: p.id, disponible: !p.disponible }),
       });
       if (res.ok) {
+        // Archivar es reversible y no borra el producto: su historial de Kardex se conserva.
         notify.success(
-          p.disponible ? 'Producto pausado en el Marketplace' : 'Producto publicado en el Marketplace'
+          p.disponible
+            ? 'Producto archivado del catálogo'
+            : 'Producto publicado en el catálogo'
         );
+        setArchivarConfirmId(null);
         cargarProductos();
       }
     } catch (e) {
@@ -387,13 +394,76 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       <div style={{ fontWeight: 700, color: bajoStock ? '#FF3B30' : 'var(--text)' }}>
                         C$ {(p.costo || 0).toFixed(2)} | {p.stock ?? 0} {p.unidadMedida || 'und'}
                       </div>
+                      {bajoStock && (
+                        <div
+                          style={{ fontSize: 10, fontWeight: 700, color: '#FF3B30', marginTop: 2 }}
+                          title="Stock por debajo del mínimo configurado"
+                        >
+                          Mínimo: {p.stockMinimo ?? 5} {p.unidadMedida || 'und'}
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Confirmación antes de archivar (archivar no borra: el Kardex lo referencia) */}
+                  {archivarConfirmId === p.id && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6,
+                        background: 'var(--bg-alt)',
+                        border: '1px solid #FF3B30',
+                        borderRadius: 8,
+                        padding: 8,
+                      }}
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>
+                        ¿Archivar "{p.nombre}" del catálogo? Dejará de publicarse, pero su historial de Kardex se conserva.
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => toggleDisponible(p)}
+                          style={{
+                            flex: 1,
+                            height: 30,
+                            borderRadius: 8,
+                            border: 'none',
+                            background: '#FF3B30',
+                            color: 'white',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Sí, archivar
+                        </button>
+                        <button
+                          onClick={() => setArchivarConfirmId(null)}
+                          style={{
+                            flex: 1,
+                            height: 30,
+                            borderRadius: 8,
+                            border: '1px solid var(--border)',
+                            background: 'var(--surface)',
+                            color: 'var(--text)',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Action Buttons */}
                   <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 6 }}>
                     <button
-                      onClick={() => toggleDisponible(p)}
+                      onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
+                      title={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
+                      aria-label={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
                       style={{
                         flex: 1,
                         height: 34,
@@ -411,7 +481,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       }}
                     >
                       {p.disponible ? <EyeOff size={14} /> : <Eye size={14} />}
-                      <span>{p.disponible ? 'Pausar' : 'Publicar'}</span>
+                      <span>{p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}</span>
                     </button>
 
                     <button
@@ -541,7 +611,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Precio Venta (C$) *</label>
                   <input
@@ -592,6 +662,29 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="25"
+                    style={{
+                      width: '100%',
+                      height: 40,
+                      borderRadius: 10,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-alt)',
+                      padding: '0 12px',
+                      color: 'var(--text)',
+                      marginTop: 4,
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                    Stock mínimo (alerta)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={stockMinimo}
+                    onChange={(e) => setStockMinimo(e.target.value)}
+                    placeholder="5"
                     style={{
                       width: '100%',
                       height: 40,

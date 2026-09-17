@@ -72,49 +72,59 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'La cantidad debe ser mayor a cero' }, { status: 400 });
     }
 
-    const producto = await db.producto.findUnique({
-      where: { id: productoId },
-      include: { tienda: true },
+    // Lectura del producto + actualización de stock + movimiento de Kardex en una sola
+    // transacción: el stock nunca cambia sin dejar su registro en el Kardex.
+    const resultado = await db.$transaction(async (tx) => {
+      const producto = await tx.producto.findUnique({
+        where: { id: productoId },
+        include: { tienda: true },
+      });
+
+      if (!producto || producto.tienda.propietarioId !== user.id) {
+        return null;
+      }
+
+      const stockActual = producto.stock ?? 0;
+      let nuevoStock = stockActual;
+
+      if (tipo === 'ENTRADA') {
+        nuevoStock = stockActual + cantNum;
+      } else if (tipo === 'SALIDA') {
+        nuevoStock = Math.max(0, stockActual - cantNum);
+      } else if (tipo === 'AJUSTE') {
+        nuevoStock = cantNum;
+      }
+
+      // Actualizar stock del producto
+      await tx.producto.update({
+        where: { id: productoId },
+        data: { stock: nuevoStock },
+      });
+
+      // Crear registro Kardex
+      const movimiento = await tx.kardexMovimiento.create({
+        data: {
+          tiendaId: producto.tiendaId,
+          productoId,
+          tipo,
+          cantidad: cantNum,
+          stockAnterior: stockActual,
+          stockNuevo: nuevoStock,
+          costoUnitario: Number(costoUnitario) || producto.costo || 0,
+          precioVenta: producto.precio,
+          motivo: typeof motivo === 'string' ? motivo.trim() : 'Movimiento de Kardex',
+          usuarioId: user.id,
+        },
+      });
+
+      return { movimiento, nuevoStock };
     });
 
-    if (!producto || producto.tienda.propietarioId !== user.id) {
+    if (!resultado) {
       return NextResponse.json({ ok: false, error: 'Producto no encontrado' }, { status: 404 });
     }
 
-    const stockActual = producto.stock ?? 0;
-    let nuevoStock = stockActual;
-
-    if (tipo === 'ENTRADA') {
-      nuevoStock = stockActual + cantNum;
-    } else if (tipo === 'SALIDA') {
-      nuevoStock = Math.max(0, stockActual - cantNum);
-    } else if (tipo === 'AJUSTE') {
-      nuevoStock = cantNum;
-    }
-
-    // Actualizar stock del producto
-    await db.producto.update({
-      where: { id: productoId },
-      data: { stock: nuevoStock },
-    });
-
-    // Crear registro Kardex
-    const movimiento = await db.kardexMovimiento.create({
-      data: {
-        tiendaId: producto.tiendaId,
-        productoId,
-        tipo,
-        cantidad: cantNum,
-        stockAnterior: stockActual,
-        stockNuevo: nuevoStock,
-        costoUnitario: Number(costoUnitario) || producto.costo || 0,
-        precioVenta: producto.precio,
-        motivo: typeof motivo === 'string' ? motivo.trim() : 'Movimiento de Kardex',
-        usuarioId: user.id,
-      },
-    });
-
-    return NextResponse.json({ ok: true, movimiento, nuevoStock });
+    return NextResponse.json({ ok: true, movimiento: resultado.movimiento, nuevoStock: resultado.nuevoStock });
   } catch (error) {
     console.error('[TIENDA_KARDEX_POST]', error);
     return NextResponse.json({ ok: false, error: 'Error al registrar movimiento Kardex' }, { status: 500 });
