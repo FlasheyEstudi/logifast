@@ -199,7 +199,8 @@ export interface NotificacionRepartidor {
 export interface ChatMensaje {
   id: string;
   ordenId: string;
-  emisor: 'repartidor' | 'cliente';
+  // 'admin' = intervención de soporte (se muestra con etiqueta [ADMIN])
+  emisor: 'repartidor' | 'cliente' | 'admin';
   contenido: string;
   enviadoEn: string;
 }

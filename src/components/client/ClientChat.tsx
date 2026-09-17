@@ -72,6 +72,9 @@ function MessageBubble({
   isClient: boolean;
   isDark: boolean;
 }) {
+  // Los mensajes de administración (soporte) se distinguen con etiqueta [ADMIN]
+  const esAdmin = msg.emisor === 'admin';
+  const texto = msg.contenido.replace('[ADMIN] ', '');
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -92,7 +95,9 @@ function MessageBubble({
             lineHeight: 1.45,
             wordBreak: 'break-word',
             color: isClient ? '#FFFFFF' : isDark ? '#F1F5F9' : '#0F172A',
-            background: isClient
+            background: esAdmin
+              ? 'linear-gradient(135deg, #8B5CF6, #6D28D9)'
+              : isClient
               ? 'linear-gradient(135deg, #007AFF, #0056B3)'
               : isDark
               ? '#1E293B'
@@ -105,7 +110,12 @@ function MessageBubble({
             fontWeight: 500,
           }}
         >
-          {msg.contenido}
+          {esAdmin && (
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.4, marginBottom: 3, opacity: 0.85 }}>
+              [ADMIN]
+            </div>
+          )}
+          {texto}
         </div>
         <div
           style={{

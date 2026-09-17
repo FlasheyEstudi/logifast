@@ -345,13 +345,14 @@ export default function RepartidorChat() {
             ) : (
               mensajes.map((m) => {
                 const esMio = m.emisor === 'repartidor';
+                const esAdmin = m.emisor === 'admin';
                 return (
                   <div
                     key={m.id}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      alignItems: esMio ? 'flex-end' : 'flex-start',
+                      alignItems: esAdmin ? 'center' : esMio ? 'flex-end' : 'flex-start',
                       gap: 4,
                     }}
                   >
@@ -359,18 +360,29 @@ export default function RepartidorChat() {
                       style={{
                         maxWidth: '82%',
                         padding: '10px 14px',
-                        borderRadius: esMio ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                        background: esMio
+                        borderRadius: esAdmin ? 14 : esMio ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                        background: esAdmin
+                          ? 'rgba(139,92,246,0.16)'
+                          : esMio
                           ? 'var(--primario, #10B981)'
                           : 'var(--surface)',
-                        color: esMio ? '#FFFFFF' : 'var(--text)',
+                        color: esAdmin ? 'var(--text)' : esMio ? '#FFFFFF' : 'var(--text)',
                         fontSize: 14,
                         lineHeight: 1.4,
                         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: esMio ? 'none' : '1px solid var(--border)',
+                        border: esAdmin
+                          ? '1px solid rgba(139,92,246,0.4)'
+                          : esMio
+                          ? 'none'
+                          : '1px solid var(--border)',
                       }}
                     >
-                      {m.contenido}
+                      {esAdmin && (
+                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.4, marginBottom: 3, color: '#8B5CF6' }}>
+                          [ADMIN]
+                        </div>
+                      )}
+                      {m.contenido.replace('[ADMIN] ', '')}
                       <div
                         style={{
                           fontSize: 10,

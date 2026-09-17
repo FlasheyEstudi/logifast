@@ -101,14 +101,308 @@ const DESTINATARIO_CONFIG: Record<NotificacionAutomatica['destinatario'], { labe
   ingeniero: { label: 'Ingeniero', bg: 'rgba(22,163,74,0.12)', color: '#16A34A' },
 };
 
-type SubTab = 'buzon' | 'plantillas' | 'notificaciones';
+type SubTab = 'buzon' | 'chats' | 'plantillas' | 'notificaciones';
 type BuzonFilter = 'todos' | 'clientes' | 'repartidores' | 'noLeidos';
 
 const SUB_TABS: { key: SubTab; label: string; icon: typeof MessageCircle }[] = [
   { key: 'buzon', label: 'Buzón en Vivo', icon: MessageCircle },
+  { key: 'chats', label: 'Chats de Pedidos', icon: Bike },
   { key: 'plantillas', label: 'Plantillas de Mensajes', icon: Mail },
   { key: 'notificaciones', label: 'Automatizaciones Push', icon: Bell },
 ];
+
+/* ═══════════════════════════════════════════════
+   CHATS DE PEDIDOS (CLIENTE ↔ REPARTIDOR) — VISOR DEL ADMIN
+   Sin esto el administrador queda ciego ante un reclamo.
+   ═══════════════════════════════════════════════ */
+
+interface ChatResumen {
+  ordenId: string;
+  tipo: string;
+  estado: 'abierto' | 'cerrado';
+  estadoOrden: string | null;
+  origen: string | null;
+  destino: string | null;
+  totalMensajes: number;
+  noLeidos: number;
+  ultimoMensaje: { contenido: string; emisor: string; enviadoEn: string } | null;
+  cliente: { id: string; nombre: string; telefono?: string | null } | null;
+  repartidor: { id: string; nombre: string; userId: string | null } | null;
+}
+
+interface ChatMensaje {
+  id: string;
+  emisor: string;
+  contenido: string;
+  enviadoEn: string;
+  leido: boolean;
+}
+
+function ChatsPanel() {
+  const [chats, setChats] = useState<ChatResumen[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'abierto' | 'cerrado'>('todos');
+  const [busqueda, setBusqueda] = useState('');
+  const [seleccion, setSeleccion] = useState<string | null>(null);
+  const [detalle, setDetalle] = useState<{ mensajes: ChatMensaje[]; cliente: any; repartidor: any; estadoOrden: string | null; origen: string | null; destino: string | null } | null>(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
+  const [borrador, setBorrador] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const finRef = useRef<HTMLDivElement>(null);
+
+  const cargarLista = useCallback(async () => {
+    setCargando(true);
+    try {
+      const params = new URLSearchParams();
+      if (filtroEstado !== 'todos') params.set('estado', filtroEstado);
+      if (busqueda.trim()) params.set('q', busqueda.trim());
+      const res = await fetch(`/api/admin/chats?${params.toString()}`, { cache: 'no-store' });
+      const data = res.ok ? await res.json() : null;
+      setChats(data?.chats ?? []);
+    } catch {
+      setChats([]);
+    } finally {
+      setCargando(false);
+    }
+  }, [filtroEstado, busqueda]);
+
+  useEffect(() => { cargarLista(); }, [cargarLista]);
+
+  const abrirChat = useCallback(async (ordenId: string) => {
+    setSeleccion(ordenId);
+    setCargandoDetalle(true);
+    setAviso(null);
+    try {
+      const res = await fetch(`/api/admin/chats/${encodeURIComponent(ordenId)}`, { cache: 'no-store' });
+      const data = res.ok ? await res.json() : null;
+      setDetalle(
+        data
+          ? {
+              mensajes: data.mensajes ?? [],
+              cliente: data.cliente,
+              repartidor: data.repartidor,
+              estadoOrden: data.estadoOrden,
+              origen: data.origen,
+              destino: data.destino,
+            }
+          : null
+      );
+    } catch {
+      setDetalle(null);
+    } finally {
+      setCargandoDetalle(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    finRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [detalle?.mensajes.length]);
+
+  const enviarComoAdmin = useCallback(async () => {
+    if (!seleccion || !borrador.trim() || enviando) return;
+    setEnviando(true);
+    try {
+      const res = await fetch(`/api/admin/chats/${encodeURIComponent(seleccion)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contenido: borrador.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'No se pudo enviar');
+      setBorrador('');
+      setAviso('Mensaje enviado como [ADMIN] a cliente y repartidor.');
+      abrirChat(seleccion);
+    } catch (e: any) {
+      setAviso(e?.message || 'Error al enviar');
+    } finally {
+      setEnviando(false);
+    }
+  }, [seleccion, borrador, enviando, abrirChat]);
+
+  const ESTADO_BADGE: Record<string, { bg: string; color: string; label: string }> = {
+    abierto: { bg: 'rgba(22,163,74,0.12)', color: '#16A34A', label: 'Abierto' },
+    cerrado: { bg: 'rgba(142,142,160,0.12)', color: 'var(--lf-text-muted)', label: 'Cerrado' },
+  };
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: seleccion ? 'minmax(280px, 38%) 1fr' : '1fr', gap: 16, height: '100%', minHeight: 0 }}>
+      {/* ─── Lista de conversaciones ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
+            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--lf-text-muted)' }} />
+            <input
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por orden o texto del chat…"
+              style={{ width: '100%', padding: '8px 10px 8px 30px', borderRadius: 10, border: '1px solid var(--lf-border)', background: 'var(--lf-bg-base)', color: 'var(--lf-text-main)', fontSize: 12.5 }}
+            />
+          </div>
+          {(['todos', 'abierto', 'cerrado'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFiltroEstado(f)}
+              style={{
+                padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                border: '1px solid var(--lf-border)',
+                background: filtroEstado === f ? 'var(--lf-accent)' : 'transparent',
+                color: filtroEstado === f ? '#fff' : 'var(--lf-text-muted)',
+              }}
+            >
+              {f === 'todos' ? 'Todos' : f === 'abierto' ? 'Abiertos' : 'Cerrados'}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ overflowY: 'auto', border: '1px solid var(--lf-border)', borderRadius: 12, background: 'var(--lf-surface)', flex: 1, minHeight: 0 }}>
+          {cargando ? (
+            <div style={{ padding: 24, textAlign: 'center', fontSize: 12.5, color: 'var(--lf-text-muted)' }}>Cargando conversaciones…</div>
+          ) : chats.length === 0 ? (
+            <div style={{ padding: 28, textAlign: 'center' }}>
+              <MessageCircle size={22} style={{ color: 'var(--lf-text-muted)', marginBottom: 8 }} />
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Sin conversaciones</div>
+              <div style={{ fontSize: 11.5, color: 'var(--lf-text-muted)', marginTop: 4 }}>
+                Aquí aparecerán los chats entre cliente y repartidor de cada pedido.
+              </div>
+            </div>
+          ) : (
+            chats.map((c) => {
+              const badge = ESTADO_BADGE[c.estado];
+              const activo = seleccion === c.ordenId;
+              return (
+                <button
+                  key={c.ordenId}
+                  onClick={() => abrirChat(c.ordenId)}
+                  style={{
+                    width: '100%', textAlign: 'left', padding: '11px 13px', cursor: 'pointer',
+                    border: 'none', borderBottom: '1px solid var(--lf-border)',
+                    background: activo ? 'var(--lf-bg-base)' : 'transparent',
+                    display: 'flex', flexDirection: 'column', gap: 5,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11.5, fontWeight: 700 }}>
+                      #{c.ordenId.slice(-8).toUpperCase()}
+                    </span>
+                    <span style={{ padding: '2px 7px', borderRadius: 6, fontSize: 10, fontWeight: 700, background: badge.bg, color: badge.color }}>
+                      {badge.label}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--lf-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.cliente?.nombre || 'Cliente'} ↔ {c.repartidor?.nombre || 'Sin repartidor'}
+                  </div>
+                  {c.ultimoMensaje && (
+                    <div style={{ fontSize: 11.5, color: 'var(--lf-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <strong style={{ color: c.ultimoMensaje.emisor === 'admin' ? 'var(--lf-accent)' : 'inherit' }}>
+                        {c.ultimoMensaje.emisor === 'admin' ? '[ADMIN] ' : c.ultimoMensaje.emisor === 'cliente' ? 'Cliente: ' : 'Repartidor: '}
+                      </strong>
+                      {c.ultimoMensaje.contenido.replace('[ADMIN] ', '')}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10.5, color: 'var(--lf-text-muted)' }}>
+                    <span>{c.totalMensajes} mensajes</span>
+                    {c.tipo === 'tienda' && <span>· Tienda</span>}
+                    {c.noLeidos > 0 && <span style={{ color: 'var(--lf-accent)', fontWeight: 700 }}>· {c.noLeidos} sin leer</span>}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* ─── Detalle (solo lectura + intervención) ─── */}
+      {seleccion && (
+        <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--lf-border)', borderRadius: 12, background: 'var(--lf-surface)', minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '11px 14px', borderBottom: '1px solid var(--lf-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+                Pedido #{seleccion.slice(-8).toUpperCase()}
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--lf-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {detalle?.cliente?.name || 'Cliente'} ↔ {detalle?.repartidor?.name || 'Sin repartidor asignado'}
+                {detalle?.estadoOrden ? ` · ${detalle.estadoOrden}` : ''}
+              </div>
+            </div>
+            <button onClick={() => { setSeleccion(null); setDetalle(null); }} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid var(--lf-border)', background: 'transparent', cursor: 'pointer', color: 'var(--lf-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={14} />
+            </button>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 9, minHeight: 0 }}>
+            {cargandoDetalle ? (
+              <div style={{ fontSize: 12.5, color: 'var(--lf-text-muted)', textAlign: 'center', padding: 20 }}>Cargando historial…</div>
+            ) : !detalle || detalle.mensajes.length === 0 ? (
+              <div style={{ fontSize: 12.5, color: 'var(--lf-text-muted)', textAlign: 'center', padding: 20 }}>
+                Esta conversación todavía no tiene mensajes.
+              </div>
+            ) : (
+              detalle.mensajes.map((m) => {
+                const esAdmin = m.emisor === 'admin';
+                const esCliente = m.emisor === 'cliente';
+                return (
+                  <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: esCliente ? 'flex-start' : 'flex-end' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: esAdmin ? 'var(--lf-accent)' : 'var(--lf-text-muted)' }}>
+                        {esAdmin ? '[ADMIN]' : esCliente ? 'Cliente' : 'Repartidor'}
+                      </span>
+                      <span style={{ fontSize: 10, color: 'var(--lf-text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+                        {new Date(m.enviadoEn).toLocaleString('es-NI', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        maxWidth: '78%', padding: '8px 12px', borderRadius: 12, fontSize: 12.5, lineHeight: 1.45,
+                        background: esAdmin ? 'rgba(139,92,246,0.14)' : esCliente ? 'var(--lf-bg-base)' : 'rgba(255,102,0,0.14)',
+                        border: esAdmin ? '1px solid rgba(139,92,246,0.35)' : '1px solid var(--lf-border)',
+                        color: 'var(--lf-text-main)', wordBreak: 'break-word',
+                      }}
+                    >
+                      {m.contenido.replace('[ADMIN] ', '')}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={finRef} />
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--lf-border)', padding: 11 }}>
+            {aviso && (
+              <div style={{ fontSize: 11.5, color: 'var(--lf-text-muted)', marginBottom: 7 }}>{aviso}</div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={borrador}
+                onChange={(e) => setBorrador(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarComoAdmin(); } }}
+                placeholder="Intervenir como Administrador…"
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--lf-border)', background: 'var(--lf-bg-base)', color: 'var(--lf-text-main)', fontSize: 12.5 }}
+              />
+              <button
+                onClick={enviarComoAdmin}
+                disabled={enviando || !borrador.trim()}
+                style={{
+                  padding: '9px 15px', borderRadius: 10, border: 'none',
+                  background: enviando || !borrador.trim() ? 'var(--lf-border)' : 'var(--lf-accent)',
+                  color: '#fff', fontWeight: 700, fontSize: 12.5,
+                  cursor: enviando || !borrador.trim() ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <Send size={13} /> {enviando ? 'Enviando…' : 'Enviar'}
+              </button>
+            </div>
+            <div style={{ fontSize: 10.5, color: 'var(--lf-text-muted)', marginTop: 6 }}>
+              Tu mensaje se marca como <strong>[ADMIN]</strong> y lo ven el cliente y el repartidor.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ═══════════════════════════════════════════════
    BUZÓN SUB-COMPONENT (CHAT EN VIVO)
@@ -1499,6 +1793,7 @@ export default function ModuleComunicaciones() {
             style={{ height: '100%' }}
           >
             {activeSubTab === 'buzon' && <BuzonPanel />}
+            {activeSubTab === 'chats' && <ChatsPanel />}
             {activeSubTab === 'plantillas' && <PlantillasPanel />}
             {activeSubTab === 'notificaciones' && <NotificacionesPanel />}
           </motion.div>
