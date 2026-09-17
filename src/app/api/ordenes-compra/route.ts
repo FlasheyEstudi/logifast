@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { otorgarRecompensaMensual } from '@/lib/tienda/recompensas';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { getOrdenPin, generarPinAleatorio } from '@/lib/utils';
@@ -125,11 +126,22 @@ export async function POST(req: NextRequest) {
       metodoPago,
       codigoPromo,
       instrucciones,
+      modoEntrega: modoEntregaCrudo,
     } = body;
 
-    if (!tiendaId || !items || !items.length || !direccionEntrega || !metodoPago) {
+    // #2 Retiro en punto: el cliente recoge en la tienda. En ese modo no hay envío ni
+    // repartidor, la dirección es la propia tienda y el código PIN sirve para retirar.
+    const modoEntrega: 'reparto' | 'retiro' = modoEntregaCrudo === 'retiro' ? 'retiro' : 'reparto';
+
+    if (!tiendaId || !items || !items.length || !metodoPago) {
       return NextResponse.json(
-        { error: 'Faltan campos obligatorios: tiendaId, items, direccionEntrega, metodoPago' },
+        { error: 'Faltan campos obligatorios: tiendaId, items, metodoPago' },
+        { status: 400 }
+      );
+    }
+    if (modoEntrega === 'reparto' && !direccionEntrega) {
+      return NextResponse.json(
+        { error: 'Falta la dirección de entrega para un pedido con reparto' },
         { status: 400 }
       );
     }
@@ -206,6 +218,8 @@ export async function POST(req: NextRequest) {
         montoSubtotal: subtotal,
         tipoOrden: 'marketplace',
         clienteId: user.id,
+        // #6: un cupón creado por una tienda solo vale en ESA tienda.
+        tiendaId,
       });
       if (!validacion.ok) {
         return NextResponse.json({ error: validacion.error }, { status: validacion.status });
@@ -214,7 +228,8 @@ export async function POST(req: NextRequest) {
       codigoUsado = validacion.promo.codigo;
     }
 
-    const costoEnvio = tienda.costoEnvio;
+    // En retiro no se cobra envío: no hay reparto que pagar.
+    const costoEnvio = modoEntrega === 'retiro' ? 0 : tienda.costoEnvio;
     const total = Math.max(0, subtotal + costoEnvio - descuentoValidado);
 
     const pinGenerado = String(Math.floor(1000 + Math.random() * 9000));
@@ -225,7 +240,8 @@ export async function POST(req: NextRequest) {
         clienteId: user.id,
         tiendaId,
         estado: 'recibido',
-        direccionEntrega,
+        modoEntrega,
+        direccionEntrega: modoEntrega === 'retiro' ? `Retiro en tienda — ${tienda.nombre}` : direccionEntrega,
         lat: Number(lat) || 0,
         lng: Number(lng) || 0,
         instrucciones: instrucciones ?? null,
@@ -282,6 +298,12 @@ export async function POST(req: NextRequest) {
         where: { id: tiendaId },
         data: { totalPedidos: { increment: 1 } },
       });
+
+      // #2: en modo retiro no existe envío que ofrecer — se sale antes de crear la
+      // OrdenServicio y de publicar la oferta a los repartidores.
+      if (modoEntrega === 'retiro') {
+        return { orden, ordenServicio: null as null };
+      }
 
       // 5. Crear OrdenServicio para el repartidor (tipo compra)
       const rawDestLat = Number(lat) || 0;
@@ -340,8 +362,10 @@ export async function POST(req: NextRequest) {
     emitirEventoRealtime({ room: 'admin', event: 'admin:orden:nueva', data: result.orden });
     emitirEventoRealtime({ room: `tienda:${tiendaId}`, event: 'tienda:orden:nueva', data: result.orden });
 
-    // 2. Publicar a la bolsa de Ofertas Disponibles para todos los repartidores
-    emitOrdenCreada(result.ordenServicio);
+    // 2. Publicar a la bolsa de Ofertas Disponibles para todos los repartidores.
+    //    Un pedido de retiro no tiene OrdenServicio, así que no se publica nada.
+    if (result.ordenServicio) {
+      emitOrdenCreada(result.ordenServicio);
 
     const repartidoresConectados = await db.repartidorProfile
       .findMany({
@@ -365,15 +389,36 @@ export async function POST(req: NextRequest) {
         .catch(() => null);
     }
 
+    }
+
+    // ─── #4 Recompensa: 5 compras en el mes calendario → cupón automático ───
+    // El conteo es del mes en curso y cada mes estrena su propio código, así que el
+    // mes siguiente no arrastra el contador anterior. Un fallo aquí no puede tumbar
+    // una venta ya cobrada: por eso va fuera de la transacción y en try/catch.
+    let recompensa = null as Awaited<ReturnType<typeof otorgarRecompensaMensual>>;
+    try {
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      inicioMes.setHours(0, 0, 0, 0);
+      const comprasDelMes = await db.ordenCompra.count({
+        where: { clienteId: user.id, createdAt: { gte: inicioMes }, estado: { not: 'cancelado' } },
+      });
+      recompensa = await otorgarRecompensaMensual(db, user.id, comprasDelMes);
+    } catch (err) {
+      console.error('[ordenes-compra] recompensa mensual', err);
+    }
+
     const createdOrden = result.orden as any;
     return NextResponse.json(
       {
         message: 'Orden creada exitosamente',
+        recompensa,
         orden: {
           id: createdOrden.id,
           tiendaId: createdOrden.tiendaId,
           tiendaNombre: createdOrden.tienda?.nombre || tienda.nombre,
           estado: createdOrden.estado,
+          modoEntrega: createdOrden.modoEntrega || modoEntrega,
           total: createdOrden.total,
           subtotal: createdOrden.subtotal,
           costoEnvio: createdOrden.costoEnvio,
@@ -381,12 +426,14 @@ export async function POST(req: NextRequest) {
           metodoPago: createdOrden.metodoPago,
           direccionEntrega: createdOrden.direccionEntrega,
           codigoPin: pinGenerado,
-          origenLat: result.ordenServicio.origenLat,
-          origenLng: result.ordenServicio.origenLng,
-          destinoLat: result.ordenServicio.destinoLat,
-          destinoLng: result.ordenServicio.destinoLng,
-          kmEstimados: result.ordenServicio.kmEstimados,
-          tiempoEstimado: result.ordenServicio.tiempoEstimado,
+          // En modo retiro no hay OrdenServicio: estos campos van en null y el cliente
+          // no muestra repartidor ni estimación de entrega.
+          origenLat: result.ordenServicio?.origenLat ?? null,
+          origenLng: result.ordenServicio?.origenLng ?? null,
+          destinoLat: result.ordenServicio?.destinoLat ?? null,
+          destinoLng: result.ordenServicio?.destinoLng ?? null,
+          kmEstimados: result.ordenServicio?.kmEstimados ?? null,
+          tiempoEstimado: result.ordenServicio?.tiempoEstimado ?? null,
           clienteNombre: user.name,
           clienteTelefono: user.telefono ?? '',
           createdAt: createdOrden.createdAt,
@@ -396,7 +443,7 @@ export async function POST(req: NextRequest) {
             cantidad: it.cantidad,
             precioUnitario: it.precioUnitario,
           })),
-          ordenServicioId: result.ordenServicio.id,
+          ordenServicioId: result.ordenServicio?.id ?? null,
         },
       },
       { status: 201 }

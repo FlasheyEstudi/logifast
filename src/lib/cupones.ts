@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
  * como `POST /api/ordenes-compra` (el cobro real), para que las reglas
  * comerciales se apliquen exactamente igual en los dos caminos:
  * - Tipo de servicio (envio vs marketplace)
+ * - Tienda dueña del cupón: un cupón creado por una tienda solo aplica en ESA tienda
  * - Monto mínimo de compra
  * - Límite de usos globales
  * - Uso único por cliente
@@ -46,11 +47,14 @@ export async function validarCodigoPromocional({
   montoSubtotal = 0,
   tipoOrden = 'envio',
   clienteId,
+  tiendaId,
 }: {
   codigo: string;
   montoSubtotal?: number;
   tipoOrden?: TipoOrdenPromocional;
   clienteId: string;
+  /** Tienda de la compra: obliga a que un cupón con `tiendaId` sea de esa misma tienda. */
+  tiendaId?: string | null;
 }): Promise<ResultadoValidacionPromo> {
   const codigoStr = String(codigo ?? '').trim().toUpperCase();
   if (!codigoStr) {
@@ -72,6 +76,13 @@ export async function validarCodigoPromocional({
   const now = new Date();
   if (now < promo.vigenciaInicio || now > promo.vigenciaFin) {
     return { ok: false, status: 400, error: 'El código promocional ha expirado' };
+  }
+
+  // 0. Cupón de tienda: solo vale en la tienda que lo creó. Los cupones globales
+  //    (tiendaId null) siguen funcionando en cualquier tienda, como antes.
+  const tiendaDelCupon = (promo as { tiendaId?: string | null }).tiendaId ?? null;
+  if (tiendaDelCupon && tiendaDelCupon !== (tiendaId ?? null)) {
+    return { ok: false, status: 400, error: 'Este cupón es exclusivo de otra tienda' };
   }
 
   const tipoServicio = promoReglas.tipoServicio || 'ambos';

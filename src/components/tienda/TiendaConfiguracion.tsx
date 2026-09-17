@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, Save, MapPin, Store, Image as ImageIcon, Phone, Clock, DollarSign, Truck } from '@/components/icons';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import { notify } from '@/lib/notify';
+import { TiendaCupones } from './TiendaCupones';
 
 interface DaySchedule {
   abre: string;
@@ -559,6 +560,9 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
           <span>{guardando ? 'Guardando Ajustes...' : 'Guardar Configuración de Tienda'}</span>
         </button>
       </form>
+
+      {/* #6 — Cupones propios de la tienda: solo aplican a sus productos */}
+      <TiendaCupones />
     </div>
   );
 }

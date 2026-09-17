@@ -80,6 +80,8 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
 
   // Address validation & GPS states
   const [direccionEntregaInput, setDireccionEntregaInput] = useState('');
+  // #2 Retiro en punto: sin envío ni repartidor; el pedido se recoge con el PIN.
+  const [modoEntrega, setModoEntrega] = useState<'reparto' | 'retiro'>('reparto');
   const [deliveryLat, setDeliveryLat] = useState(0);
   const [deliveryLng, setDeliveryLng] = useState(0);
   const [addressError, setAddressError] = useState(false);
@@ -339,7 +341,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       return;
     }
 
-    if (!direccionEntregaInput || direccionEntregaInput.trim().length < 3) {
+    if (modoEntrega === 'reparto' && (!direccionEntregaInput || direccionEntregaInput.trim().length < 3)) {
       setAddressError(true);
       notify.error('Debes ingresar o confirmar una dirección de entrega válida.');
       return;
@@ -371,7 +373,8 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
             cantidad: i.cantidad,
             notas: i.notas,
           })),
-          direccionEntrega: direccionEntregaInput.trim(),
+          direccionEntrega: modoEntrega === 'retiro' ? 'Retiro en tienda' : direccionEntregaInput.trim(),
+          modoEntrega,
           lat: deliveryLat,
           lng: deliveryLng,
           metodoPago: cartMetodoPago,
@@ -943,6 +946,60 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                     </motion.button>
                   </div>
 
+                  {/* #2 Modo de entrega: el retiro no cobra envío ni usa repartidor */}
+                  <div className="grid grid-cols-2 gap-2" style={{ marginBottom: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => setModoEntrega('reparto')}
+                      style={{
+                        height: 44,
+                        borderRadius: 12,
+                        border: modoEntrega === 'reparto' ? '1.5px solid #0066FF' : '1px solid rgba(255, 255, 255, 0.15)',
+                        background: modoEntrega === 'reparto' ? 'rgba(0,102,255,0.18)' : 'transparent',
+                        color: '#FFFFFF',
+                        fontWeight: 700,
+                        fontSize: 12.5,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Recibir a domicilio
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModoEntrega('retiro')}
+                      style={{
+                        height: 44,
+                        borderRadius: 12,
+                        border: modoEntrega === 'retiro' ? '1.5px solid #22C55E' : '1px solid rgba(255, 255, 255, 0.15)',
+                        background: modoEntrega === 'retiro' ? 'rgba(34,197,94,0.18)' : 'transparent',
+                        color: '#FFFFFF',
+                        fontWeight: 700,
+                        fontSize: 12.5,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Retiro en tienda
+                    </button>
+                  </div>
+
+                  {modoEntrega === 'retiro' && (
+                    <div
+                      style={{
+                        marginBottom: 10,
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        background: 'rgba(34,197,94,0.12)',
+                        border: '1px solid rgba(34,197,94,0.35)',
+                        color: '#22C55E',
+                        fontSize: 12.5,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Recoges en <b>{grupos[0]?.tiendaNombre || 'la tienda'}</b> y no pagas envío. Al confirmar recibirás un
+                      código PIN para retirar.
+                    </div>
+                  )}
+
                   <input
                     type="text"
                     value={direccionEntregaInput}
@@ -956,6 +1013,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                       padding: '12px 14px',
                       borderRadius: 12,
                       background: 'rgba(15, 23, 42, 0.6)',
+                      display: modoEntrega === 'retiro' ? 'none' : 'block',
                       border: addressError ? '1.5px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.15)',
                       color: '#F8FAFC',
                       fontSize: 13,

@@ -9,6 +9,7 @@ const postSchema = z.object({
   codigo: z.string().min(1, 'Código promocional requerido').max(50),
   montoSubtotal: z.number().min(0).optional(),
   tipoOrden: z.enum(['envio', 'marketplace', 'ambos']).optional(),
+  tiendaId: z.string().optional(),
 });
 
 /**
@@ -40,13 +41,15 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { codigo, montoSubtotal = 0, tipoOrden = 'envio' } = parsed.data;
+    const { codigo, montoSubtotal = 0, tipoOrden = 'envio', tiendaId } = parsed.data;
 
     const resultado = await validarCodigoPromocional({
       codigo,
       montoSubtotal,
       tipoOrden,
       clienteId: user.id,
+      // La vista previa del cliente respeta la misma regla de tienda que el cobro real.
+      tiendaId,
     });
 
     if (!resultado.ok) {
