@@ -89,3 +89,12 @@ No se repitieron las seis pruebas de §8.3 del documento de fases (cliente compr
 - `scripts/auditoria-paso-modo-oscuro.js` — cambia el tema con el botón real de la app y vuelve a medir.
 - `scripts/verificar-reportes.mjs` — abre el XLSX generado con ExcelJS y comprueba hojas, celdas, totales e imágenes incrustadas.
 - `mini-services/realtime-service/test-escaner.mjs` — 15 casos del escáner (PIN, emparejamiento, relé de códigos, allowlist).
+
+---
+
+## 5. Actualización — Fase 4 medida (17 sep, tarde)
+
+- **Cliente (6 pantallas), repartidor y portal de tienda (8 módulos): 0 desbordes, 0 elementos recortados y 0 objetivos táctiles < 44 px**, medidos a 390 / 820 / 1440 px.
+- El arreglo se hizo **en el CSS** (`.lf-ios-app`, `.lf-ios-content`, `.lf-ios-screen-transition`, `.lf-rep-pad` y los navs del dashboard → `min-height: 44px`), no botón por botón: sigue valiendo para lo que se agregue después.
+- **Dashboard admin:** 0 desbordes. Quedan **11 controles por debajo de 44 px**: los chips del mapa (MapLibre) y 3 iconos de 36×36. Lo que "sobresale" en la medición son marcadores del mapa, no layout.
+- **Lo que sigue pendiente de Fase 4:** migrar los estilos inline a clases (la deuda sigue igual: ClientTienda 243, ClientPerfil 228, ClientSolicitar 227, ClientTracking 145, ClientPedidos 118, ClientInicio 113). Se priorizó que no quedaran defectos visibles; el criterio "el conteo de estilos inline baja" **no está cumplido**.
