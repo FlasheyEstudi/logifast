@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
+import { enviarCampana } from '@/lib/campanas-sender';
 
 const postSchema = z.object({
   titulo: z.string().min(1, 'titulo requerido').max(200),
@@ -95,86 +96,20 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Campaña no encontrada' }, { status: 404 });
     }
 
-    // Acción de envío inmediato en tiempo real
+    // Acción de envío inmediato: segmentación y entrega reales viven en @/lib/campanas-sender
     if (accion === 'enviar' || estado === 'enviada') {
-      const segment = segmento || existing.segmento || 'todos';
-      const tituloFinal = titulo || existing.titulo;
-      const contenidoFinal = contenido || existing.contenido;
-      let usersToTarget: Array<{ id: string }> = [];
-
-      if (segment === 'todos' || segment === 'Todos') {
-        usersToTarget = await db.user.findMany({ select: { id: true } });
-      } else if (segment === 'Clientes nuevos') {
-        const twoWeeksAgo = new Date(Date.now() - 14 * 86400000);
-        usersToTarget = await db.user.findMany({
-          where: { role: 'cliente', createdAt: { gte: twoWeeksAgo } },
-          select: { id: true },
-        });
-      } else {
-        // Segmento por rol real (clientes / repartidores / administradores / ingenieros).
-        // Antes este else forzaba role:'cliente' con take:50, así que cualquier otra
-        // segmentación enviaba a 50 personas y los repartidores nunca recibían nada.
-        const rol = segment.toLowerCase();
-        const rolesValidos = ['cliente', 'repartidor', 'admin', 'ingeniero'];
-        usersToTarget = await db.user.findMany({
-          where: rolesValidos.includes(rol) ? { role: rol } : { role: 'cliente' },
-          select: { id: true },
+      if (segmento || titulo || contenido) {
+        await db.campana.update({
+          where: { id },
+          data: {
+            ...(segmento ? { segmento } : {}),
+            ...(titulo ? { titulo } : {}),
+            ...(contenido ? { contenido } : {}),
+          },
         });
       }
-
-      let guardadas = 0;
-      let entregadosEnVivo = 0;
-
-      if (usersToTarget.length > 0) {
-        const LOTE = 500;
-        const filas = usersToTarget.map((u) => ({
-          userId: u.id,
-          titulo: tituloFinal,
-          contenido: contenidoFinal,
-          tipo: 'promocion',
-          entidadId: id,
-          leida: false,
-        }));
-
-        for (let i = 0; i < filas.length; i += LOTE) {
-          const res = await db.notificacionPush.createMany({ data: filas.slice(i, i + LOTE) });
-          guardadas += res.count;
-        }
-
-        try {
-          const { emitirEventoRealtimeAsync } = await import('@/lib/realtime-emitter');
-          const salas = usersToTarget.map((u) => `usuario:${u.id}`);
-          for (let i = 0; i < salas.length; i += LOTE) {
-            const r = await emitirEventoRealtimeAsync({
-              rooms: salas.slice(i, i + LOTE),
-              event: 'notificacion:push',
-              data: { titulo: tituloFinal, contenido: contenidoFinal, tipo: 'promocion', entidadId: id },
-            });
-            entregadosEnVivo += r?.entregados ?? 0;
-          }
-        } catch {}
-      }
-
-      const updated = await db.campana.update({
-        where: { id },
-        data: {
-          estado: 'enviada',
-          enviadaEn: new Date(),
-          destinatarios: usersToTarget.length,
-          titulo: tituloFinal,
-          contenido: contenidoFinal,
-          segmento: segment,
-        },
-      });
-
-      return NextResponse.json({
-        ok: true,
-        data: updated,
-        enviados: usersToTarget.length,
-        guardadas,
-        entregadosEnVivo,
-        sinConexion: usersToTarget.length - entregadosEnVivo,
-      });
+      const resultado = await enviarCampana(id);
+      return NextResponse.json(resultado);
     }
 
     const updateData: Record<string, unknown> = {};

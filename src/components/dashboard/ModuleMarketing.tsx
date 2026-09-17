@@ -142,9 +142,26 @@ const SUB_TABS: { key: SubTab; label: string; icon: typeof Megaphone }[] = [
    ═══════════════════════════════════════════════ */
 
 function SubCampanas() {
-  const { campanas, addCampana, updateCampana, deleteCampana, addToast } = useStore();
+  const { campanas, addCampana, updateCampana, deleteCampana, addToast, fetchCampanas } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Campana | null>(null);
+
+  // Despacha las campañas programadas cuya hora ya venció (no existía planificador)
+  useEffect(() => {
+    let cancelado = false;
+    fetch('/api/admin/campanas/procesar', { method: 'POST' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (cancelado || !res?.procesadas) return;
+        const enviadas = (res.resultados || []).filter((x: any) => x?.ok).length;
+        if (enviadas > 0) {
+          addToast(`Se enviaron ${enviadas} campaña(s) programada(s)`);
+          fetchCampanas?.();
+        }
+      })
+      .catch(() => null);
+    return () => { cancelado = true; };
+  }, [addToast, fetchCampanas]);
 
   // Form state
   const [titulo, setTitulo] = useState('');
