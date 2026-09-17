@@ -189,3 +189,41 @@ io.on('connection', (socket) => {
 httpServer.listen(PORT, () => {
   console.log(`[realtime] LOGIFAST realtime service escuchando en puerto ${PORT}`);
 });
+
+/* ─────────────────────────────────────────────────────────────
+   DESPACHO DE CAMPAÑAS PROGRAMADAS
+   Antes no existía planificador: una campaña "Programada" nunca se
+   enviaba. Este proceso vive 24/7 en Railway, así que cada 5 minutos
+   pide a la app que despache las campañas cuya hora ya venció.
+   Variables: LOGIFAST_APP_URL y REALTIME_SERVICE_SECRET.
+   ───────────────────────────────────────────────────────────── */
+const APP_URL = (process.env.LOGIFAST_APP_URL || 'https://logifast.netlify.app').replace(/\/$/, '');
+const SERVICE_SECRET = process.env.REALTIME_SERVICE_SECRET || process.env.JWT_SECRET || 'logifast-dev-secret';
+const CRON_INTERVALO_MS = 5 * 60 * 1000;
+
+async function despacharCampanasProgramadas() {
+  try {
+    const res = await fetch(`${APP_URL}/api/cron/campanas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_SECRET}` },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) {
+      console.warn(`[cron] despacho de campañas respondió ${res.status}`);
+      return;
+    }
+    const data: any = await res.json();
+    if (data?.procesadas > 0) {
+      const ok = (data.resultados || []).filter((r: any) => r?.ok).length;
+      console.log(`[cron] campañas despachadas: ${ok}/${data.procesadas}`);
+    }
+  } catch (err: any) {
+    // Nunca debe tumbar el servicio realtime por un fallo de red
+    console.warn('[cron] no se pudo despachar campañas:', err?.message || err);
+  }
+}
+
+setInterval(despacharCampanasProgramadas, CRON_INTERVALO_MS);
+// Primera pasada 30s después de arrancar, para no competir con el arranque
+setTimeout(despacharCampanasProgramadas, 30000);
+console.log(`[cron] despacho de campañas programadas activo cada ${CRON_INTERVALO_MS / 60000} min → ${APP_URL}`);
