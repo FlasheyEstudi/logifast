@@ -3,30 +3,21 @@
 import React, { useState } from 'react';
 import { BarChart3, Download, FileSpreadsheet, Package, CreditCard, SlidersHorizontal } from '@/components/icons';
 import { notify } from '@/lib/notify';
+import { descargarReporteTienda } from '@/lib/tienda/descarga-cliente';
 
 export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
   const [descargando, setDescargando] = useState<string | null>(null);
+  const [dias, setDias] = useState(30);
 
-  const descargarReporte = async (tipo: 'inventario' | 'ventas' | 'kardex') => {
-    setDescargando(tipo);
+  const descargarReporte = async (
+    tipo: 'inventario' | 'ventas' | 'kardex',
+    formato: 'xlsx' | 'pdf' | 'csv' = 'xlsx'
+  ) => {
+    setDescargando(`${tipo}-${formato}`);
     try {
-      const res = await fetch(`/api/tienda/reportes/excel?tipo=${tipo}`);
-      if (!res.ok) {
-        throw new Error('Error al generar el reporte');
-      }
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Reporte_LogiFast_${tipo}_${Date.now()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-
-      notify.success(`Reporte de ${tipo.toUpperCase()} descargado exitosamente`);
-    } catch (err) {
+      const nombre = await descargarReporteTienda(tipo, formato, dias);
+      notify.success(`Descargado: ${nombre}`);
+    } catch {
       notify.error('Error al descargar el reporte');
     } finally {
       setDescargando(null);
@@ -66,11 +57,44 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
         }}
       >
         <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-          Exportación de Reportes Financieros a Microsoft Excel
+          Reportes con la identidad de tu tienda
         </h2>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-          Descarga archivos estructurados compatibles con Excel (.csv / .xlsx UTF-8) para contabilidad y control fiscal.
+          Descarga en Excel (.xlsx) o PDF: los dos salen con tu logo, el nombre y el color de tu tienda, y con la marca de
+          LogiFast. El CSV clásico sigue disponible.
         </p>
+      </div>
+
+      {/* Período que abarcan los reportes */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Período:</span>
+        {[
+          { d: 1, l: 'Hoy' },
+          { d: 7, l: '7 días' },
+          { d: 30, l: '30 días' },
+          { d: 0, l: 'Todo' },
+        ].map((p) => (
+          <button
+            key={p.d}
+            onClick={() => setDias(p.d)}
+            style={{
+              height: 44,
+              padding: '0 16px',
+              borderRadius: 999,
+              border: '1px solid var(--border)',
+              background: dias === p.d ? '#0066FF' : 'var(--bg-alt)',
+              color: dias === p.d ? '#FFFFFF' : 'var(--text)',
+              fontWeight: 700,
+              fontSize: 12.5,
+              cursor: 'pointer',
+            }}
+          >
+            {p.l}
+          </button>
+        ))}
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+          Los archivos salen con tu logo y el nombre de tu tienda.
+        </span>
       </div>
 
       {/* Grid de Opciones de Descarga */}
@@ -115,7 +139,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                     {op.titulo}
                   </h3>
                   <span style={{ fontSize: 11, fontWeight: 600, color: '#34C759' }}>
-                    Formato Excel .CSV
+                    Excel .XLSX y PDF
                   </span>
                 </div>
               </div>
@@ -125,29 +149,72 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
               </p>
             </div>
 
-            <button
-              onClick={() => descargarReporte(op.id)}
-              disabled={descargando === op.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                height: 44,
-                borderRadius: 10,
-                border: 'none',
-                background: '#0066FF',
-                color: 'white',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                marginTop: 20,
-                boxShadow: '0 4px 14px rgba(0,102,255,0.3)',
-              }}
-            >
-              <FileSpreadsheet size={16} />
-              <span>{descargando === op.id ? 'Generando Excel...' : 'Descargar para Excel'}</span>
-            </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 20, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => descargarReporte(op.id, 'xlsx')}
+                disabled={descargando !== null}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  flex: '1 1 170px',
+                  height: 44,
+                  borderRadius: 10,
+                  border: 'none',
+                  background: '#0066FF',
+                  color: 'white',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: descargando ? 'wait' : 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,102,255,0.3)',
+                }}
+              >
+                <FileSpreadsheet size={16} />
+                <span>{descargando === `${op.id}-xlsx` ? 'Generando…' : 'Excel .xlsx'}</span>
+              </button>
+
+              <button
+                onClick={() => descargarReporte(op.id, 'pdf')}
+                disabled={descargando !== null}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  flex: '1 1 130px',
+                  height: 44,
+                  borderRadius: 10,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-alt)',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: descargando ? 'wait' : 'pointer',
+                }}
+              >
+                <Download size={16} />
+                <span>{descargando === `${op.id}-pdf` ? 'Generando…' : 'PDF'}</span>
+              </button>
+
+              <button
+                onClick={() => descargarReporte(op.id, 'csv')}
+                disabled={descargando !== null}
+                style={{
+                  height: 44,
+                  padding: '0 14px',
+                  borderRadius: 10,
+                  border: '1px dashed var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text-muted)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: descargando ? 'wait' : 'pointer',
+                }}
+              >
+                CSV
+              </button>
+            </div>
           </div>
         ))}
       </div>
