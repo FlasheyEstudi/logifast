@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { buscarTiendaCompleta } from '@/lib/auth/tienda-acceso';
 import { geocodeAddress } from '@/lib/osrm';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,8 @@ export async function GET() {
         OR: [
           { propietarioId: user.id },
           ...(user.email ? [{ email: user.email }] : []),
+          // #7: un miembro invitado (cajero/encargado) también resuelve su tienda.
+          { usuarios: { some: { userId: user.id, activo: true } } },
         ],
       },
       select: {
@@ -152,6 +155,7 @@ export async function PATCH(req: NextRequest) {
         OR: [
           { propietarioId: user.id },
           ...(user.email ? [{ email: user.email }] : []),
+          { usuarios: { some: { userId: user.id, activo: true } } },
         ],
       },
       select: { id: true },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { buscarTiendaCompleta } from '@/lib/auth/tienda-acceso';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,9 +16,7 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 });
     }
 
-    const tienda = await db.tienda.findFirst({
-      where: { propietarioId: user.id },
-    });
+    const tienda = await buscarTiendaCompleta(user);
 
     if (!tienda) {
       return NextResponse.json({ ok: false, movimientos: [] });

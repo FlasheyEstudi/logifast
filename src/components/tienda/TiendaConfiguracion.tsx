@@ -5,6 +5,7 @@ import { Settings, Save, MapPin, Store, Image as ImageIcon, Phone, Clock, Dollar
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import { notify } from '@/lib/notify';
 import { TiendaCupones } from './TiendaCupones';
+import { TiendaComercial } from './TiendaComercial';
 
 interface DaySchedule {
   abre: string;
@@ -563,6 +564,9 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
 
       {/* #6 — Cupones propios de la tienda: solo aplican a sus productos */}
       <TiendaCupones />
+
+      {/* #7/#10 equipo con roles, #9 alianzas y #8 publicidad contratada */}
+      <TiendaComercial />
     </div>
   );
 }

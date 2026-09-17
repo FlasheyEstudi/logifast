@@ -20,6 +20,7 @@ import { SonidoToggle } from '@/components/ui/SonidoToggle';
 import { notify } from '@/lib/notify';
 import { obtenerUbicacionActual } from '@/lib/native-geolocation';
 import ClientMiTienda from './ClientMiTienda';
+import { ClientRecurrentes } from './ClientRecurrentes';
 
 function Camera({ size = 16 }: { size?: number }) {
   return (
@@ -791,6 +792,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
      ═══════════════════════════════════════════════ */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 600, margin: '0 auto', padding: '0 4px' }}>
+
+      {/* #1 Compras programadas del cliente */}
+      <ClientRecurrentes />
 
       {/* ═══════════════════════════════════════════
           HEADER: Avatar (con foto subible) + Name + Email

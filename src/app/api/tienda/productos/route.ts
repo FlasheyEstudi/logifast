@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { buscarTiendaCompleta, resolverAccesoTienda, tienePermiso } from '@/lib/auth/tienda-acceso';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +15,7 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 });
     }
 
-    const tienda = await db.tienda.findFirst({
-      where: { propietarioId: user.id },
-    });
+    const tienda = await buscarTiendaCompleta(user);
 
     if (!tienda) {
       return NextResponse.json({ ok: false, productos: [] });
@@ -45,12 +44,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 });
     }
 
-    const tienda = await db.tienda.findFirst({
-      where: { propietarioId: user.id },
-    });
+    const tienda = await buscarTiendaCompleta(user);
 
     if (!tienda) {
       return NextResponse.json({ ok: false, error: 'Tienda no encontrada' }, { status: 404 });
+    }
+
+    // #7: crear productos exige permiso de inventario; un cajero no puede hacerlo.
+    const acceso = await resolverAccesoTienda(user);
+    if (acceso && !tienePermiso(acceso, 'inventario')) {
+      return NextResponse.json({ ok: false, error: 'Tu rol no puede agregar productos al inventario' }, { status: 403 });
     }
 
     const body = await req.json();
@@ -145,13 +148,21 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'ID de producto no proporcionado' }, { status: 400 });
     }
 
+    const acceso = await resolverAccesoTienda(user);
+
     const producto = await db.producto.findUnique({
       where: { id },
       include: { tienda: true },
     });
 
-    if (!producto || producto.tienda.propietarioId !== user.id) {
+    if (!acceso || !producto || producto.tiendaId !== acceso.tiendaId) {
       return NextResponse.json({ ok: false, error: 'Producto no encontrado o sin permisos' }, { status: 404 });
+    }
+
+    // #7: cambiar precios (o costos) exige el permiso `precios`; un cajero puede vender
+    // y ajustar stock, pero no tocar la lista de precios.
+    if ((dataToUpdate.precio !== undefined || dataToUpdate.costo !== undefined) && !tienePermiso(acceso, 'precios')) {
+      return NextResponse.json({ ok: false, error: 'Tu rol no puede cambiar precios' }, { status: 403 });
     }
 
     // Regla Kardex: editar un producto nunca reescribe el stock en silencio.

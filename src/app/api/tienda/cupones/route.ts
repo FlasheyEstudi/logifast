@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
+import { buscarTiendaCompleta } from '@/lib/auth/tienda-acceso';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export async function GET() {
     const user = await getSessionUser();
     if (!user) return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 });
 
-    const tienda = await db.tienda.findFirst({ where: { propietarioId: user.id } });
+    const tienda = await buscarTiendaCompleta(user);
     if (!tienda) return NextResponse.json({ ok: false, error: 'Tienda no encontrada' }, { status: 404 });
 
     const cupones = await db.codigoPromocional.findMany({
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     const user = await getSessionUser();
     if (!user) return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 });
 
-    const tienda = await db.tienda.findFirst({ where: { propietarioId: user.id } });
+    const tienda = await buscarTiendaCompleta(user);
     if (!tienda) return NextResponse.json({ ok: false, error: 'Tienda no encontrada' }, { status: 404 });
 
     const body = await req.json().catch(() => ({}));

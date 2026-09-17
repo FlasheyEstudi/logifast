@@ -441,3 +441,25 @@ setInterval(despacharCampanasProgramadas, CRON_INTERVALO_MS);
 // Primera pasada 30s después de arrancar, para no competir con el arranque
 setTimeout(despacharCampanasProgramadas, 30000);
 console.log(`[cron] despacho de campañas programadas activo cada ${CRON_INTERVALO_MS / 60000} min → ${APP_URL}`);
+
+/* Pedidos recurrentes (#1): la app decide cuáles vencieron y los crea. */
+async function despacharPedidosRecurrentes() {
+  try {
+    const res = await fetch(`${APP_URL}/api/cron/pedidos-recurrentes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_SECRET}` },
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) {
+      console.warn(`[cron] pedidos recurrentes respondió ${res.status}`);
+      return;
+    }
+    const data: any = await res.json();
+    if (data?.creadas > 0) console.log(`[cron] pedidos recurrentes creados: ${data.creadas}`);
+  } catch (err: any) {
+    console.warn('[cron] no se pudieron despachar los pedidos recurrentes:', err?.message || err);
+  }
+}
+
+setInterval(despacharPedidosRecurrentes, CRON_INTERVALO_MS);
+setTimeout(despacharPedidosRecurrentes, 45000);

@@ -1,5 +1,7 @@
 'use client';
 
+import { RepartidorBeneficios } from '@/components/repartidor/RepartidorBeneficios';
+
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -243,6 +245,9 @@ function GananciasPanel() {
           </button>
         ))}
       </div>
+
+      {/* #9 Beneficios de comercios aliados */}
+      <RepartidorBeneficios />
 
       {/* Big ganancias card */}
       <div
