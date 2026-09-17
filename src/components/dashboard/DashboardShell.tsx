@@ -42,6 +42,32 @@ import CommandPalette from './CommandPalette';
 import NotificationCenter from './NotificationCenter';
 import { SkeletonLoader, getSkeletonVariant, type SkeletonVariant } from './SkeletonLoader';
 
+/* ─── Repartidor en el formato que espera el store `Order` ───
+ * El resto del panel guarda el NOMBRE del repartidor (Despacho, Repartidores y
+ * el despacho manual lo comparan contra `rider.nombre` y las tablas lo pintan
+ * como texto). Esta sincronización guardaba el `repartidorId`, así que esos
+ * filtros nunca coincidían y la tabla mostraba el id en vez del nombre.
+ */
+interface RepartidorLike {
+  nombre?: string | null;
+  user?: { name?: string | null } | null;
+}
+
+function nombreRepartidorDe(r: RepartidorLike | null | undefined): string | null {
+  return r?.nombre || r?.user?.name || null;
+}
+
+function inicialesDe(r: RepartidorLike | null | undefined): string {
+  const nombre = nombreRepartidorDe(r);
+  if (!nombre) return 'RP';
+  return nombre
+    .split(' ')
+    .map((p) => p.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'RP';
+}
+
 class ModuleErrorBoundary extends Component<
   { children: React.ReactNode },
   { hasError: boolean; isChunkError: boolean; countdown: number }
@@ -230,8 +256,8 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               origenLng: o.origenLng || 0,
               destinoLat: o.destinoLat || 0,
               destinoLng: o.destinoLng || 0,
-              repartidor: o.repartidorId || null,
-              repartidorInitials: 'RP',
+              repartidor: nombreRepartidorDe(o.repartidor),
+              repartidorInitials: inicialesDe(o.repartidor),
               descripcion: o.paquete || 'Envío de paquete',
               monto: o.monto || 0,
               estado: o.estado as any,
@@ -262,8 +288,8 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               origenLng: o.tienda?.lng || -86.2581,
               destinoLat: o.lat || 12.14,
               destinoLng: o.lng || -86.25,
-              repartidor: o.repartidorId || null,
-              repartidorInitials: 'RP',
+              repartidor: nombreRepartidorDe(o.repartidor),
+              repartidorInitials: inicialesDe(o.repartidor),
               descripcion: `Compra Tienda (${o.items?.length || 1} productos)`,
               monto: o.total || 0,
               estado: (o.estado === 'entregado' ? 'entregado' : (o.estado === 'en_camino' || o.estado === 'preparando' || o.estado === 'listo' || o.repartidorId) ? 'encamino' : 'pendiente'),

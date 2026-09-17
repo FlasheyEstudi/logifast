@@ -260,15 +260,13 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
   const [searchQuery, setSearchQuery] = useState('');
 
   React.useEffect(() => {
+    // Reusa el cargador del store (que mapea la fila de la API al tipo `Order`).
+    // Antes este componente volvía a pedir /api/ordenes y metía las filas crudas
+    // al store: `cliente` y `repartidor` llegaban como objetos y el filtro de
+    // "mis pedidos" del perfil no podía casar por nombre.
     const fetchClientOrders = async () => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      try {
-        const res = await fetch('/api/ordenes');
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data?.ordenes)) useStore.setState({ orders: data.ordenes });
-        }
-      } catch {}
+      await useStore.getState().fetchOrders();
     };
     fetchClientOrders();
 
