@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
-import { saveImage } from '@/lib/upload/image';
-import { uploadToSupabaseStorage } from '@/lib/upload/supabase-storage';
+import { uploadToSupabaseStorage, deleteFromSupabaseStorage } from '@/lib/upload/supabase-storage';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/cliente/foto-perfil
  * Soporta Multipart FormData (File) y JSON ({ fotoUrl: base64/url }).
+ * Comprime con Sharp a WebP (400x400), elimina la foto anterior y NUNCA guarda base64 en la BD.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -23,30 +23,55 @@ export async function POST(req: NextRequest) {
       const file = formData.get('file') as File | null;
       if (!file) return NextResponse.json({ error: 'Falta el archivo de imagen' }, { status: 400 });
 
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const mimeType = file.type || 'image/jpeg';
-        fotoUrlResult = await uploadToSupabaseStorage(buffer, file.name, mimeType, 'perfil-cliente');
-      } catch (saveErr) {
-        console.warn('[CLIENTE_FOTO_FS_WARN] Storage fallback:', saveErr);
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const mimeType = file.type || 'image/jpeg';
-        fotoUrlResult = `data:${mimeType};base64,${buffer.toString('base64')}`;
-      }
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      fotoUrlResult = await uploadToSupabaseStorage(
+        buffer,
+        file.name,
+        file.type || 'image/jpeg',
+        'perfil-cliente',
+        { maxWidth: 400, maxHeight: 400, quality: 85 }
+      );
     } else {
-      const body = await req.json();
-      if (body.fotoUrl && typeof body.fotoUrl === 'string') {
-        fotoUrlResult = body.fotoUrl.trim();
+      const body = await req.json().catch(() => ({}));
+      const rawFoto = String(body?.fotoUrl || '').trim();
+
+      if (rawFoto.startsWith('data:image/')) {
+        // Extraer base64 y procesar con Sharp para no guardar megabytes en la base de datos
+        const matches = rawFoto.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches[2]) {
+          const mime = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          fotoUrlResult = await uploadToSupabaseStorage(
+            buffer,
+            `avatar-${user.id}`,
+            mime,
+            'perfil-cliente',
+            { maxWidth: 400, maxHeight: 400, quality: 85 }
+          );
+        }
+      } else if (rawFoto.startsWith('http://') || rawFoto.startsWith('https://') || rawFoto.startsWith('/uploads/')) {
+        fotoUrlResult = rawFoto;
       }
     }
 
     if (!fotoUrlResult) {
-      return NextResponse.json({ error: 'Foto no válida o vacía' }, { status: 400 });
+      return NextResponse.json({ error: 'Foto no válida o formato no soportado' }, { status: 400 });
     }
 
-    // Actualizar el User con la URL de la foto
+    // Obtener foto anterior para limpiarla si existía en almacenamiento
+    const current = await db.user.findUnique({
+      where: { id: user.id },
+      select: { fotoUrl: true },
+    });
+
+    if (current?.fotoUrl && current.fotoUrl !== fotoUrlResult) {
+      await deleteFromSupabaseStorage(current.fotoUrl).catch((err) =>
+        console.warn('[ClienteFotoDeleteOld] No se pudo borrar foto previa:', err)
+      );
+    }
+
+    // Actualizar el User con la URL real de la foto
     await db.user.update({
       where: { id: user.id },
       data: { fotoUrl: fotoUrlResult },

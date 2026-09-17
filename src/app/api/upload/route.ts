@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveImage } from '@/lib/upload/image';
 import { uploadToSupabaseStorage } from '@/lib/upload/supabase-storage';
 import { getSessionUser } from '@/lib/auth/session';
 
@@ -9,6 +8,7 @@ export const dynamic = 'force-dynamic';
  * POST /api/upload
  * Body: FormData con `file` (imagen) y opcional `categoria` y `entidadId`.
  * Devuelve { id, url, filename, size, width, height }.
+ * Optimiza automáticamente con Sharp a WebP y sube a Supabase (o disco local).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -24,44 +24,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Falta el archivo de imagen' }, { status: 400 });
     }
 
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const mimeType = file.type || 'image/jpeg';
-      
-      const publicUrl = await uploadToSupabaseStorage(buffer, file.name, mimeType, categoria);
-
-      return NextResponse.json({
-        ok: true,
-        id: `img-${Date.now()}`,
-        url: publicUrl,
-        filename: file.name,
-        size: file.size,
-        width: 800,
-        height: 600,
-      });
-    } catch (saveErr) {
-      console.warn('[UPLOAD_STORAGE_FALLBACK]:', saveErr);
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const mimeType = file.type || 'image/png';
-      const dataUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
-
-      return NextResponse.json({
-        ok: true,
-        id: `img-${Date.now()}`,
-        url: dataUrl,
-        filename: file.name,
-        size: file.size,
-        width: 800,
-        height: 600,
-      });
+    if (file.size > 8 * 1024 * 1024) {
+      return NextResponse.json(
+        { ok: false, error: 'El archivo excede el tamaño máximo permitido (8 MB)' },
+        { status: 400 }
+      );
     }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const mimeType = file.type || 'image/jpeg';
+
+    const publicUrl = await uploadToSupabaseStorage(buffer, file.name, mimeType, categoria);
+
+    return NextResponse.json({
+      ok: true,
+      id: `img-${Date.now()}`,
+      url: publicUrl,
+      filename: file.name,
+      size: buffer.length,
+    });
   } catch (error) {
     console.error('[UPLOAD_ERROR]', error);
-    return NextResponse.json({
-      ok: false,
-      error: 'Error al procesar la imagen',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'No se pudo procesar o almacenar la imagen',
+      },
+      { status: 500 }
+    );
   }
 }

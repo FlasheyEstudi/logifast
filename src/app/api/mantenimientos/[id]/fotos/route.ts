@@ -46,7 +46,7 @@ export async function POST(
         filename: file.name,
         originalName: file.name,
         size: file.size,
-        mimeType,
+        mimeType: 'image/webp',
       },
     });
 
