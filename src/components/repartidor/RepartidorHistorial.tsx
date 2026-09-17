@@ -90,8 +90,8 @@ export default function RepartidorHistorial() {
         {/* STATS CAPSULARES */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
           {[
-            { label: 'Hoy', val: `C$ ${stats.ganancias.toFixed(0)}`, sub: `${stats.entregas} entregas`, color: '#34C759' },
-            { label: 'KM', val: `${stats.km.toFixed(1)}`, sub: 'recorridos', color: 'var(--primario)' },
+            { label: 'Hoy', val: `C$ ${(stats?.ganancias ?? 0).toFixed(0)}`, sub: `${stats?.entregas ?? 0} entregas`, color: '#34C759' },
+            { label: 'KM', val: `${(stats?.km ?? 0).toFixed(1)}`, sub: 'recorridos', color: 'var(--primario)' },
             { label: 'Activos', val: String(ordenesActivas.length), sub: `max 3`, color: '#FF9500' },
           ].map(s => (
             <div key={s.label} style={{ ...card, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -267,8 +267,8 @@ export default function RepartidorHistorial() {
             {/* Stats de periodo */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
-                { label: 'Ganancias', val: `C$ ${stats.ganancias.toFixed(2)}`, color: '#34C759' },
-                { label: 'Entregas', val: `${stats.entregas} envíos`, color: 'var(--text)' },
+                { label: 'Ganancias', val: `C$ ${(stats?.ganancias ?? 0).toFixed(2)}`, color: '#34C759' },
+                { label: 'Entregas', val: `${stats?.entregas ?? 0} envíos`, color: 'var(--text)' },
               ].map(s => (
                 <div key={s.label} style={{ ...card, padding: '12px 14px' }}>
                   <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 3 }}>{s.label}</div>

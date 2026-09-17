@@ -527,7 +527,7 @@ export default function RepartidorServicio() {
                       En Línea • Buscando órdenes
                     </h3>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      Hoy: <strong style={{ color: '#34C759', fontFamily: "'JetBrains Mono', monospace" }}>C$ {statsGanancias.ganancias.toFixed(2)}</strong> ({statsGanancias.entregas} {statsGanancias.entregas === 1 ? 'entrega' : 'entregas'})
+                      Hoy: <strong style={{ color: '#34C759', fontFamily: "'JetBrains Mono', monospace" }}>C$ {(statsGanancias?.ganancias ?? 0).toFixed(2)}</strong> ({statsGanancias?.entregas ?? 0} {(statsGanancias?.entregas ?? 0) === 1 ? 'entrega' : 'entregas'})
                     </p>
                   </div>
                 </div>

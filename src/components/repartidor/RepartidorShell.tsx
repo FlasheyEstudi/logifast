@@ -200,11 +200,28 @@ function BatteryIcon() {
    ═══════════════════════════════════════════════ */
 
 function GananciasPanel() {
-  const { obtenerStats, perfil } = useRepartidorStore();
+  const statsHoy = useRepartidorStore((s) => s.statsHoy);
+  const statsSemana = useRepartidorStore((s) => s.statsSemana);
+  const statsMes = useRepartidorStore((s) => s.statsMes);
+  const perfil = useRepartidorStore((s) => s.perfil);
   const [periodo, setPeriodo] = useState<'hoy' | 'semana' | 'mes'>('hoy');
-  const stats = obtenerStats(periodo);
 
-  const promedio = stats.entregas > 0 ? stats.ganancias / stats.entregas : 0;
+  const stats = React.useMemo(() => {
+    let base = statsHoy;
+    if (periodo === 'semana') base = statsSemana;
+    if (periodo === 'mes') base = statsMes;
+    return {
+      entregas: base?.entregas ?? 0,
+      km: base?.km ?? 0,
+      ganancias: base?.ganancias ?? 0,
+      tiempoActivo: base?.tiempoActivo ?? 0,
+    };
+  }, [periodo, statsHoy, statsSemana, statsMes]);
+
+  const promedio = React.useMemo(() => {
+    if (!stats.entregas || stats.entregas <= 0) return 0;
+    return stats.ganancias / stats.entregas;
+  }, [stats.entregas, stats.ganancias]);
 
   return (
     <div style={{ padding: '8px 0 40px' }}>

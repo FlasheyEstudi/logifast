@@ -344,19 +344,19 @@ function ConfigLink({
    ═══════════════════════════════════════════════ */
 
 export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfilProps) {
-  const {
-    perfil,
-    moto,
-    calificaciones,
-    actualizarConfig,
-    zonasDisponibles,
-    recargarSaldo,
-    aceptarContrato,
-    syncFromBackend,
-    reportarProblemaMotoAsync,
-    obtenerStats,
-    entregasSemana,
-  } = useRepartidorStore();
+  const perfil = useRepartidorStore((s) => s.perfil);
+  const moto = useRepartidorStore((s) => s.moto);
+  const calificaciones = useRepartidorStore((s) => s.calificaciones);
+  const actualizarConfig = useRepartidorStore((s) => s.actualizarConfig);
+  const zonasDisponibles = useRepartidorStore((s) => s.zonasDisponibles);
+  const recargarSaldo = useRepartidorStore((s) => s.recargarSaldo);
+  const aceptarContrato = useRepartidorStore((s) => s.aceptarContrato);
+  const syncFromBackend = useRepartidorStore((s) => s.syncFromBackend);
+  const reportarProblemaMotoAsync = useRepartidorStore((s) => s.reportarProblemaMotoAsync);
+  const statsHoy = useRepartidorStore((s) => s.statsHoy);
+  const statsSemana = useRepartidorStore((s) => s.statsSemana);
+  const statsMes = useRepartidorStore((s) => s.statsMes);
+  const entregasSemana = useRepartidorStore((s) => s.entregasSemana);
 
   const datosEntregasSemana = React.useMemo(() => {
     if (entregasSemana && entregasSemana.length > 0) {
@@ -366,15 +366,33 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
   }, [entregasSemana]);
 
   const ratingDist = React.useMemo(() => {
-    const total = calificaciones.length;
+    const total = (calificaciones || []).length;
     return [5, 4, 3, 2, 1].map((stars) => {
-      const count = calificaciones.filter((c) => Math.round(c.estrellas) === stars).length;
+      const count = (calificaciones || []).filter((c) => Math.round(c.estrellas) === stars).length;
       const pct = total > 0 ? Math.round((count / total) * 100) : (stars === 5 ? 100 : 0);
       return { stars, pct };
     });
   }, [calificaciones]);
+
   const [periodoResumen, setPeriodoResumen] = useState<'hoy' | 'semana' | 'mes'>('hoy');
-  const statsResumen = obtenerStats(periodoResumen);
+
+  const statsResumen = React.useMemo(() => {
+    let base = statsHoy;
+    if (periodoResumen === 'semana') base = statsSemana;
+    if (periodoResumen === 'mes') base = statsMes;
+
+    return {
+      entregas: base?.entregas ?? 0,
+      km: base?.km ?? 0,
+      ganancias: base?.ganancias ?? 0,
+      tiempoActivo: base?.tiempoActivo ?? 0,
+    };
+  }, [periodoResumen, statsHoy, statsSemana, statsMes]);
+
+  const promedioPorViaje = React.useMemo(() => {
+    if (!statsResumen.entregas || statsResumen.entregas <= 0) return 'C$ 0.00';
+    return `C$ ${(statsResumen.ganancias / statsResumen.entregas).toFixed(2)}`;
+  }, [statsResumen.entregas, statsResumen.ganancias]);
   const [zonaOpen, setZonaOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rechargeCode, setRechargeCode] = useState('');
@@ -772,29 +790,29 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             Ganancias netas {periodoResumen === 'hoy' ? 'de hoy' : periodoResumen === 'semana' ? 'de la semana' : 'del mes'}
           </div>
           <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759', lineHeight: 1.1 }}>
-            C$ {statsResumen.ganancias.toFixed(2)}
+            C$ {(statsResumen.ganancias || 0).toFixed(2)}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-            {statsResumen.entregas} {statsResumen.entregas === 1 ? 'entrega completada' : 'entregas completadas'}
+            {statsResumen.entregas || 0} {(statsResumen.entregas === 1) ? 'entrega completada' : 'entregas completadas'}
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <StatBox
             label="Km recorridos"
-            value={`${statsResumen.km.toFixed(1)} km`}
+            value={`${(statsResumen.km || 0).toFixed(1)} km`}
             icon={<RouteIcon size={12} />}
             color="var(--info, #2979FF)"
           />
           <StatBox
             label="Tiempo activo"
-            value={`${statsResumen.tiempoActivo} min`}
+            value={`${statsResumen.tiempoActivo || 0} min`}
             icon={<Clock size={12} />}
             color="var(--exito, #34C759)"
           />
           <StatBox
             label="Promedio / viaje"
-            value={statsResumen.entregas > 0 ? `C$ ${(statsResumen.ganancias / statsResumen.entregas).toFixed(2)}` : 'C$ 0.00'}
+            value={promedioPorViaje}
             icon={<TrendingUp size={12} />}
             color="var(--primario)"
           />
@@ -819,25 +837,25 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
         >
           <StatBox
             label="Entregas totales"
-            value={perfil.totalEntregas.toString()}
+            value={(perfil?.totalEntregas ?? 0).toString()}
             icon={<Bike size={12} />}
             color="var(--primario)"
           />
           <StatBox
             label="Km totales"
-            value={`${perfil.totalKm.toFixed(0)}`}
+            value={`${(perfil?.totalKm ?? 0).toFixed(0)} km`}
             icon={<RouteIcon size={12} />}
             color="var(--info, #2979FF)"
           />
           <StatBox
             label="Calificación"
-            value={perfil.calificacion.toFixed(1)}
+            value={(perfil?.calificacion ?? 5.0).toFixed(1)}
             icon={<Star size={12} />}
             color="var(--warning, var(--warning))"
           />
           <StatBox
             label="Tiempo prom."
-            value={`${perfil.tiempoPromedio} min`}
+            value={`${perfil?.tiempoPromedio ?? 0} min`}
             icon={<Clock size={12} />}
             color="var(--exito, var(--exito))"
           />

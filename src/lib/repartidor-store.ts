@@ -994,9 +994,24 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         ganancias: get().statsHoy.ganancias + orden.ganancia,
         tiempoActivo: get().statsHoy.tiempoActivo + finalMinutos,
       },
+      statsSemana: {
+        entregas: get().statsSemana.entregas + 1,
+        km: Math.round((get().statsSemana.km + finalKm) * 10) / 10,
+        ganancias: get().statsSemana.ganancias + orden.ganancia,
+        tiempoActivo: get().statsSemana.tiempoActivo + finalMinutos,
+      },
+      statsMes: {
+        entregas: get().statsMes.entregas + 1,
+        km: Math.round((get().statsMes.km + finalKm) * 10) / 10,
+        ganancias: get().statsMes.ganancias + orden.ganancia,
+        tiempoActivo: get().statsMes.tiempoActivo + finalMinutos,
+      },
       perfil: {
         ...get().perfil,
-        saldo: nuevoSaldo
+        saldo: nuevoSaldo,
+        totalEntregas: (get().perfil.totalEntregas || 0) + 1,
+        totalKm: Math.round(((get().perfil.totalKm || 0) + finalKm) * 10) / 10,
+        totalGanancias: (get().perfil.totalGanancias || 0) + orden.ganancia,
       },
       moto: { ...get().moto, estado: restantes.length > 0 ? 'EN_SERVICIO' : 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + finalKm },
       kmRecorridos: 0,
@@ -1213,23 +1228,9 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
   obtenerStats: (periodo) => {
     const state = get();
-    const activeKm = state.ordenActiva ? (state.kmRecorridos || 0) : 0;
-    if (periodo === 'hoy') {
-      return {
-        ...state.statsHoy,
-        km: Math.round((state.statsHoy.km + activeKm) * 10) / 10,
-      };
-    }
-    if (periodo === 'semana') {
-      return {
-        ...state.statsSemana,
-        km: Math.round((state.statsSemana.km + activeKm) * 10) / 10,
-      };
-    }
-    return {
-      ...state.statsMes,
-      km: Math.round((state.statsMes.km + activeKm) * 10) / 10,
-    };
+    if (periodo === 'hoy') return state.statsHoy;
+    if (periodo === 'semana') return state.statsSemana;
+    return state.statsMes;
   },
 
   verificarProductos: (productoId) => {
@@ -1261,38 +1262,38 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         const currentState = get();
         const isManualDisconnected = !currentState.conectado && (currentState.ordenesActivas || []).length === 0;
 
-        const [perfilRes, motoRes, conexionRes, ordenesRes, statsHoyRes, statsSemanaRes, statsMesRes, notifsRes, calsRes] = await Promise.all([
-          fetch('/api/repartidor/perfil'),
-          fetch('/api/repartidor/moto'),
-          fetch('/api/repartidor/conexion'),
-          fetch('/api/repartidor/ordenes?estado=activa'),
-          fetch('/api/repartidor/stats?periodo=hoy'),
-          fetch('/api/repartidor/stats?periodo=semana'),
-          fetch('/api/repartidor/stats?periodo=mes'),
-          fetch('/api/repartidor/notificaciones'),
-          fetch('/api/repartidor/calificaciones'),
+        const results = await Promise.allSettled([
+          fetch('/api/repartidor/perfil', { cache: 'no-store' }),
+          fetch('/api/repartidor/moto', { cache: 'no-store' }),
+          fetch('/api/repartidor/conexion', { cache: 'no-store' }),
+          fetch('/api/repartidor/ordenes?estado=activa', { cache: 'no-store' }),
+          fetch('/api/repartidor/stats?periodo=all', { cache: 'no-store' }),
+          fetch('/api/repartidor/notificaciones', { cache: 'no-store' }),
+          fetch('/api/repartidor/calificaciones', { cache: 'no-store' }),
         ]);
 
-        if (perfilRes.status === 401) {
+        const [perfilRes, motoRes, conexionRes, ordenesRes, statsRes, notifsRes, calsRes] = results;
+
+        if (perfilRes.status === 'fulfilled' && perfilRes.value.status === 401) {
           // Sesión no autenticada como repartidor
           return;
         }
 
         const updates: Partial<RepartidorStoreState> = {};
 
-        if (perfilRes.ok) {
-          const perfil = await perfilRes.json();
+        if (perfilRes.status === 'fulfilled' && perfilRes.value.ok) {
+          const perfil = await perfilRes.value.json();
           if (perfil && perfil.id) {
             updates.perfil = perfil;
           }
         }
-        if (motoRes.ok) {
-          const moto = await motoRes.json();
+        if (motoRes.status === 'fulfilled' && motoRes.value.ok) {
+          const moto = await motoRes.value.json();
           if (moto && moto.id) updates.moto = moto;
         }
 
-        if (ordenesRes.ok) {
-          const data = await ordenesRes.json();
+        if (ordenesRes.status === 'fulfilled' && ordenesRes.value.ok) {
+          const data = await ordenesRes.value.json();
           const serverOrdenes: OrdenActiva[] = data?.ordenes || (data?.orden ? [data.orden] : []);
           const serverOfertas: OrdenActiva[] = data?.ofertas || [];
 
@@ -1350,8 +1351,8 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
           }
         }
 
-        if (conexionRes.ok) {
-          const c = await conexionRes.json();
+        if (conexionRes.status === 'fulfilled' && conexionRes.value.ok) {
+          const c = await conexionRes.value.json();
           if (c) {
             const freshState = get();
             const hasActiveOrder = (freshState.ordenesActivas || []).length > 0 || !!freshState.ordenActiva;
@@ -1380,43 +1381,51 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
           }
         }
 
-        if (statsHoyRes.ok) {
-          const data = await statsHoyRes.json();
-          if (data?.stats && typeof data.stats.ganancias === 'number') {
-            const serverKm = data.stats.km || 0;
-            const currentLocalKm = currentState.statsHoy.km || 0;
+        if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
+          const data = await statsRes.value.json();
+          if (data?.hoy && typeof data.hoy.ganancias === 'number') {
             updates.statsHoy = {
-              entregas: data.stats.entregas,
-              ganancias: data.stats.ganancias,
-              tiempoActivo: data.stats.tiempoActivo,
-              km: Math.max(serverKm, currentLocalKm),
+              entregas: data.hoy.entregas ?? 0,
+              km: Math.round((data.hoy.km ?? 0) * 10) / 10,
+              ganancias: Math.round(data.hoy.ganancias ?? 0),
+              tiempoActivo: data.hoy.tiempoActivo ?? 0,
             };
           }
-          if (Array.isArray(data?.dias)) {
+          if (data?.semana && typeof data.semana.ganancias === 'number') {
+            updates.statsSemana = {
+              entregas: data.semana.entregas ?? 0,
+              km: Math.round((data.semana.km ?? 0) * 10) / 10,
+              ganancias: Math.round(data.semana.ganancias ?? 0),
+              tiempoActivo: data.semana.tiempoActivo ?? 0,
+            };
+          }
+          if (data?.mes && typeof data.mes.ganancias === 'number') {
+            updates.statsMes = {
+              entregas: data.mes.entregas ?? 0,
+              km: Math.round((data.mes.km ?? 0) * 10) / 10,
+              ganancias: Math.round(data.mes.ganancias ?? 0),
+              tiempoActivo: data.mes.tiempoActivo ?? 0,
+            };
+          }
+          if (Array.isArray(data?.dias) && data.dias.length > 0) {
             updates.entregasSemana = data.dias;
           }
-        }
-        if (statsSemanaRes.ok) {
-          const data = await statsSemanaRes.json();
-          if (data?.stats && typeof data.stats.ganancias === 'number') {
-            updates.statsSemana = data.stats;
+          if (data?.historico && updates.perfil) {
+            updates.perfil.totalEntregas = Math.max(updates.perfil.totalEntregas ?? 0, data.historico.totalEntregas ?? 0);
+            updates.perfil.totalKm = Math.max(updates.perfil.totalKm ?? 0, data.historico.totalKm ?? 0);
+            updates.perfil.totalGanancias = Math.max(updates.perfil.totalGanancias ?? 0, data.historico.totalGanancias ?? 0);
           }
         }
-        if (statsMesRes.ok) {
-          const data = await statsMesRes.json();
-          if (data?.stats && typeof data.stats.ganancias === 'number') {
-            updates.statsMes = data.stats;
-          }
-        }
-        if (notifsRes.ok) {
-          const data = await notifsRes.json();
+
+        if (notifsRes.status === 'fulfilled' && notifsRes.value.ok) {
+          const data = await notifsRes.value.json();
           if (data?.notificaciones) {
             updates.notificaciones = data.notificaciones;
             updates.notificacionesNoLeidas = data.noLeidas ?? 0;
           }
         }
-        if (calsRes.ok) {
-          const data = await calsRes.json();
+        if (calsRes.status === 'fulfilled' && calsRes.value.ok) {
+          const data = await calsRes.value.json();
           if (data?.calificaciones) {
             updates.calificaciones = data.calificaciones;
           }
@@ -1424,7 +1433,7 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
 
         // Cargar historial del día
         try {
-          const histRes = await fetch('/api/repartidor/ordenes?estado=historial');
+          const histRes = await fetch('/api/repartidor/ordenes?estado=historial', { cache: 'no-store' });
           if (histRes.ok) {
             const hist = await histRes.json();
             if (hist?.servicios) {
@@ -1612,9 +1621,24 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
           ganancias: get().statsHoy.ganancias + orden.ganancia,
           tiempoActivo: get().statsHoy.tiempoActivo + finalMinutos,
         },
+        statsSemana: {
+          entregas: get().statsSemana.entregas + 1,
+          km: Math.round((get().statsSemana.km + finalKm) * 10) / 10,
+          ganancias: get().statsSemana.ganancias + orden.ganancia,
+          tiempoActivo: get().statsSemana.tiempoActivo + finalMinutos,
+        },
+        statsMes: {
+          entregas: get().statsMes.entregas + 1,
+          km: Math.round((get().statsMes.km + finalKm) * 10) / 10,
+          ganancias: get().statsMes.ganancias + orden.ganancia,
+          tiempoActivo: get().statsMes.tiempoActivo + finalMinutos,
+        },
         perfil: {
           ...get().perfil,
           saldo: Math.max(0, get().perfil.saldo - (data.comision ?? 0)),
+          totalEntregas: (get().perfil.totalEntregas || 0) + 1,
+          totalKm: Math.round(((get().perfil.totalKm || 0) + finalKm) * 10) / 10,
+          totalGanancias: (get().perfil.totalGanancias || 0) + orden.ganancia,
         },
         moto: { ...get().moto, estado: 'DISPONIBLE', kmAcumulados: get().moto.kmAcumulados + finalKm },
         kmRecorridos: 0,
@@ -1783,6 +1807,7 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
         statsHoy: state.statsHoy,
         statsSemana: state.statsSemana,
         statsMes: state.statsMes,
+        entregasSemana: state.entregasSemana,
         kmRecorridos: state.kmRecorridos,
         conectado: false,
         enServicio: false,

@@ -5,239 +5,14 @@ import type { StatsRepartidor } from '@/lib/repartidor-store';
 
 export const dynamic = 'force-dynamic';
 
-type Periodo = 'hoy' | 'semana' | 'mes';
-
-function getStartOfPeriod(periodo: Periodo): Date {
-  const now = new Date();
-  if (periodo === 'hoy') {
-    const d = new Date(now);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  if (periodo === 'semana') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 7);
-    return d;
-  }
-  // mes
-  const d = new Date(now);
-  d.setMonth(d.getMonth() - 1);
-  return d;
-}
-
-function getStartOfPreviousPeriod(periodo: Periodo): Date {
-  const now = new Date();
-  if (periodo === 'hoy') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  if (periodo === 'semana') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 14);
-    return d;
-  }
-  const d = new Date(now);
-  d.setMonth(d.getMonth() - 2);
-  return d;
-}
-
-function getEndOfPreviousPeriod(periodo: Periodo): Date {
-  if (periodo === 'hoy') {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  if (periodo === 'semana') {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return d;
-  }
-  const d = new Date();
-  d.setMonth(d.getMonth() - 1);
-  return d;
-}
-
-async function computeStats(
-  repartidorId: string,
-  periodo: Periodo
-): Promise<StatsRepartidor> {
-  const start = getStartOfPeriod(periodo);
-
-  const [servicios, compras] = await Promise.all([
-    db.ordenServicio.findMany({
-      where: {
-        repartidorId,
-        estado: 'entregado',
-        OR: [
-          { entregadoEn: { gte: start } },
-          { updatedAt: { gte: start } },
-        ],
-      },
-      select: { id: true, tiendaId: true, kmRecorridos: true, kmEstimados: true, ganancia: true, tiempoTotal: true },
-    }),
-    db.ordenCompra.findMany({
-      where: {
-        repartidorId,
-        estado: 'entregado',
-        updatedAt: { gte: start },
-      },
-      select: { id: true, tiendaId: true, total: true, costoEnvio: true },
-    }),
-  ]);
-
-  const servicioIds = new Set(servicios.map((s) => s.id));
-  const servicioTiendaIds = new Set(servicios.map((s) => s.tiendaId).filter(Boolean));
-  const comprasUnicas = compras.filter((c) => !servicioIds.has(c.id) && !servicioTiendaIds.has(c.tiendaId));
-
-  const entregas = servicios.length + comprasUnicas.length;
-  const kmServicios = servicios.reduce((s, x) => s + (typeof x.kmRecorridos === 'number' && x.kmRecorridos > 0 ? x.kmRecorridos : (x.kmEstimados || 3.5)), 0);
-  const kmCompras = comprasUnicas.length * 3.5;
-  const km = kmServicios + kmCompras;
-
-  const gananciasServicios = servicios.reduce((s, x) => s + (x.ganancia || 0), 0);
-  const gananciasCompras = comprasUnicas.reduce(
-    (s, c) => s + Math.round(Number(c.costoEnvio || 0) > 0 ? Number(c.costoEnvio) : Number(c.total || 0) * 0.2),
-    0
-  );
-  const ganancias = gananciasServicios + gananciasCompras;
-
-  const tiempoServicios = servicios.reduce((s, x) => s + (x.tiempoTotal || 0), 0);
-  const tiempoCompras = comprasUnicas.length * 20;
-  const tiempoActivo = tiempoServicios + tiempoCompras;
-
-  return {
-    entregas,
-    km: Math.round(km * 10) / 10,
-    ganancias: Math.round(ganancias),
-    tiempoActivo,
-  };
-}
-
-async function computeTrends(
-  repartidorId: string,
-  periodo: Periodo
-): Promise<{ entregas: number; km: number; ganancias: number; tiempoActivo: number }> {
-  const [prev, current] = await Promise.all([
-    (async () => {
-      const start = getStartOfPreviousPeriod(periodo);
-      const end = getEndOfPreviousPeriod(periodo);
-      const [servicios, compras] = await Promise.all([
-        db.ordenServicio.findMany({
-          where: {
-            repartidorId,
-            estado: 'entregado',
-            OR: [
-              { entregadoEn: { gte: start, lt: end } },
-              { updatedAt: { gte: start, lt: end } },
-            ],
-          },
-          select: { id: true, tiendaId: true, kmRecorridos: true, kmEstimados: true, ganancia: true, tiempoTotal: true },
-        }),
-        db.ordenCompra.findMany({
-          where: {
-            repartidorId,
-            estado: 'entregado',
-            updatedAt: { gte: start, lt: end },
-          },
-          select: { id: true, tiendaId: true, total: true, costoEnvio: true },
-        }),
-      ]);
-      const servicioIds = new Set(servicios.map((s) => s.id));
-      const servicioTiendaIds = new Set(servicios.map((s) => s.tiendaId).filter(Boolean));
-      const comprasUnicas = compras.filter((c) => !servicioIds.has(c.id) && !servicioTiendaIds.has(c.tiendaId));
-
-      const entregas = servicios.length + comprasUnicas.length;
-      const km = servicios.reduce((s, x) => s + (typeof x.kmRecorridos === 'number' && x.kmRecorridos > 0 ? x.kmRecorridos : (x.kmEstimados || 3.5)), 0) + comprasUnicas.length * 3.5;
-      const ganancias =
-        servicios.reduce((s, x) => s + (x.ganancia || 0), 0) +
-        comprasUnicas.reduce(
-          (s, c) => s + Math.round(Number(c.costoEnvio || 0) > 0 ? Number(c.costoEnvio) : Number(c.total || 0) * 0.2),
-          0
-        );
-      const tiempoActivo = servicios.reduce((s, x) => s + (x.tiempoTotal || 0), 0) + comprasUnicas.length * 20;
-
-      return {
-        entregas,
-        km,
-        ganancias,
-        tiempoActivo,
-      };
-    })(),
-    computeStats(repartidorId, periodo),
-  ]);
-
-  const pct = (curr: number, prevN: number) => {
-    if (prevN === 0) return curr > 0 ? 100 : 0;
-    return Math.round(((curr - prevN) / prevN) * 100);
-  };
-
-  return {
-    entregas: pct(current.entregas, prev.entregas),
-    km: pct(current.km, prev.km),
-    ganancias: pct(current.ganancias, prev.ganancias),
-    tiempoActivo: pct(current.tiempoActivo, prev.tiempoActivo),
-  };
-}
+type Periodo = 'hoy' | 'semana' | 'mes' | 'all';
 
 const DIAS_LETRAS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
-async function computeDiasSemana(repartidorId: string): Promise<Array<{ x: string; v: number }>> {
-  const now = new Date();
-  const hace7Dias = new Date(now);
-  hace7Dias.setDate(hace7Dias.getDate() - 6);
-  hace7Dias.setHours(0, 0, 0, 0);
-
-  const [servicios, compras] = await Promise.all([
-    db.ordenServicio.findMany({
-      where: {
-        repartidorId,
-        estado: 'entregado',
-        OR: [
-          { entregadoEn: { gte: hace7Dias } },
-          { updatedAt: { gte: hace7Dias } },
-        ],
-      },
-      select: { id: true, entregadoEn: true, updatedAt: true },
-    }),
-    db.ordenCompra.findMany({
-      where: {
-        repartidorId,
-        estado: 'entregado',
-        updatedAt: { gte: hace7Dias },
-      },
-      select: { id: true, updatedAt: true },
-    }),
-  ]);
-
-  const result: Array<{ x: string; v: number }> = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const dayStart = new Date(d);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(d);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const countServicios = servicios.filter((s) => {
-      const fecha = s.entregadoEn || s.updatedAt;
-      return fecha >= dayStart && fecha <= dayEnd;
-    }).length;
-
-    const countCompras = compras.filter((c) => {
-      return c.updatedAt >= dayStart && c.updatedAt <= dayEnd;
-    }).length;
-
-    const letraDia = DIAS_LETRAS[d.getDay()];
-    result.push({ x: letraDia, v: countServicios + countCompras });
-  }
-
-  return result;
-}
-
 /**
- * GET /api/repartidor/stats?periodo=hoy|semana|mes
+ * GET /api/repartidor/stats?periodo=hoy|semana|mes|all
+ * Computa de forma atómica y en un solo pase de base de datos las métricas
+ * de hoy, esta semana, este mes y los últimos 7 días.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -248,31 +23,163 @@ export async function GET(req: NextRequest) {
     const { profile } = rp;
 
     const { searchParams } = new URL(req.url);
-    const periodo = (searchParams.get('periodo') ?? 'hoy') as Periodo;
-    const validPeriodo: Periodo = ['hoy', 'semana', 'mes'].includes(periodo)
-      ? periodo
-      : 'hoy';
+    const requestedPeriodo = (searchParams.get('periodo') ?? 'all') as Periodo;
 
-    const [stats, trends, dias] = await Promise.all([
-      computeStats(profile.id, validPeriodo),
-      computeTrends(profile.id, validPeriodo),
-      computeDiasSemana(profile.id),
+    const now = new Date();
+
+    // Inicio de hoy: 00:00:00.000
+    const startHoy = new Date(now);
+    startHoy.setHours(0, 0, 0, 0);
+
+    // Inicio de últimos 7 días (esta semana): 00:00:00.000
+    const startSemana = new Date(now);
+    startSemana.setDate(startSemana.getDate() - 7);
+    startSemana.setHours(0, 0, 0, 0);
+
+    // Inicio de últimos 30 días (este mes): 00:00:00.000
+    const startMes = new Date(now);
+    startMes.setMonth(startMes.getMonth() - 1);
+    startMes.setHours(0, 0, 0, 0);
+
+    // Repartidor IDs para cubrir asignaciones por profile.id o userId
+    const repartidorIds = [profile.id];
+    if (profile.userId && profile.userId !== profile.id) {
+      repartidorIds.push(profile.userId);
+    }
+
+    // Consulta única para los últimos 30 días (cubre mes, semana, hoy y gráfico de 7 días)
+    const [servicios, compras] = await Promise.all([
+      db.ordenServicio.findMany({
+        where: {
+          repartidorId: { in: repartidorIds },
+          estado: 'entregado',
+          OR: [
+            { entregadoEn: { gte: startMes } },
+            { updatedAt: { gte: startMes } },
+          ],
+        },
+        select: {
+          id: true,
+          tiendaId: true,
+          kmRecorridos: true,
+          kmEstimados: true,
+          ganancia: true,
+          tiempoTotal: true,
+          entregadoEn: true,
+          updatedAt: true,
+        },
+      }),
+      db.ordenCompra.findMany({
+        where: {
+          repartidorId: { in: repartidorIds },
+          estado: 'entregado',
+          updatedAt: { gte: startMes },
+        },
+        select: {
+          id: true,
+          tiendaId: true,
+          total: true,
+          costoEnvio: true,
+          updatedAt: true,
+        },
+      }),
     ]);
 
+    // Función pura de agregación en memoria sin consultas adicionales a la BD
+    const aggregateForPeriod = (startDate: Date): StatsRepartidor => {
+      const sFiltered = servicios.filter((s) => {
+        const d = s.entregadoEn || s.updatedAt;
+        return d >= startDate;
+      });
+      const cFiltered = compras.filter((c) => c.updatedAt >= startDate);
+
+      const sIds = new Set(sFiltered.map((s) => s.id));
+      const sTiendaIds = new Set(sFiltered.map((s) => s.tiendaId).filter(Boolean));
+      const cUnicas = cFiltered.filter((c) => !sIds.has(c.id) && !sTiendaIds.has(c.tiendaId));
+
+      const entregas = sFiltered.length + cUnicas.length;
+      const kmServicios = sFiltered.reduce(
+        (acc, x) => acc + (typeof x.kmRecorridos === 'number' && x.kmRecorridos > 0 ? x.kmRecorridos : (x.kmEstimados || 3.5)),
+        0
+      );
+      const kmCompras = cUnicas.length * 3.5;
+      const km = Math.round((kmServicios + kmCompras) * 10) / 10;
+
+      const gananciasServicios = sFiltered.reduce((acc, x) => acc + (x.ganancia || 0), 0);
+      const gananciasCompras = cUnicas.reduce(
+        (acc, c) => acc + Math.round(Number(c.costoEnvio || 0) > 0 ? Number(c.costoEnvio) : Number(c.total || 0) * 0.2),
+        0
+      );
+      const ganancias = Math.round(gananciasServicios + gananciasCompras);
+
+      const tiempoServicios = sFiltered.reduce((acc, x) => acc + (x.tiempoTotal || 0), 0);
+      const tiempoCompras = cUnicas.length * 20;
+      const tiempoActivo = tiempoServicios + tiempoCompras;
+
+      return { entregas, km, ganancias, tiempoActivo };
+    };
+
+    const statsHoy = aggregateForPeriod(startHoy);
+    const statsSemana = aggregateForPeriod(startSemana);
+    const statsMes = aggregateForPeriod(startMes);
+
+    // Gráfico de los últimos 7 días computado a partir de los datos en memoria
+    const dias: Array<{ x: string; v: number }> = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dayStart = new Date(d);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(d);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const countServicios = servicios.filter((s) => {
+        const fecha = s.entregadoEn || s.updatedAt;
+        return fecha >= dayStart && fecha <= dayEnd;
+      }).length;
+
+      const countCompras = compras.filter((c) => {
+        return c.updatedAt >= dayStart && c.updatedAt <= dayEnd;
+      }).length;
+
+      const letraDia = DIAS_LETRAS[d.getDay()];
+      dias.push({ x: letraDia, v: countServicios + countCompras });
+    }
+
+    // Compatibilidad hacia atrás con peticiones de periodo único
+    let singleStats = statsHoy;
+    if (requestedPeriodo === 'semana') singleStats = statsSemana;
+    if (requestedPeriodo === 'mes') singleStats = statsMes;
+
     return NextResponse.json(
-      { stats, trends, dias },
+      {
+        hoy: statsHoy,
+        semana: statsSemana,
+        mes: statsMes,
+        dias,
+        // Compatibilidad hacia atrás
+        stats: singleStats,
+        trends: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
+        historico: {
+          totalEntregas: profile.totalEntregas,
+          totalKm: profile.totalKm,
+          totalGanancias: profile.totalGanancias,
+          tiempoPromedio: profile.tiempoPromedio,
+          calificacion: profile.calificacion,
+        },
+      },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=20',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
         },
       }
     );
   } catch (error) {
     console.error('[REPARTIDOR_STATS_GET]', error);
-    return NextResponse.json({
-      stats: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
-      trends: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
-      dias: ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((x) => ({ x, v: 0 })),
-    });
+    // Retornar 500 para que el cliente no sobrescriba el estado con ceros espurios
+    return NextResponse.json(
+      { error: 'Error al calcular estadísticas' },
+      { status: 500 }
+    );
   }
 }
