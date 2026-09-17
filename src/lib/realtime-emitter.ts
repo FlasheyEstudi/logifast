@@ -2,30 +2,55 @@
  * LOGIFAST — Emitter de eventos realtime desde Next.js Serverless API routes hacia el microservicio en Railway.
  */
 
-export async function emitirEventoRealtime(payload: { room?: string; event: string; data: any }) {
+export interface EmitPayload {
+  room?: string;
+  /** Varias salas en un solo POST (envío masivo por lotes, evita N peticiones HTTP). */
+  rooms?: string[];
+  event: string;
+  data: any;
+}
+
+export interface EmitResultado {
+  ok: boolean;
+  entregados: number; // sockets realmente conectados en esas salas
+  salas: number | string;
+  salasActivas?: number | null;
+}
+
+function construirRequest(payload: EmitPayload) {
+  const baseUrl =
+    process.env.REALTIME_SERVICE_URL ||
+    process.env.NEXT_PUBLIC_REALTIME_URL ||
+    'https://logifast-production.up.railway.app';
+
+  const endpoint = `${baseUrl.replace(/\/$/, '')}/api/emit`;
+  const serviceKey = process.env.REALTIME_SERVICE_SECRET || process.env.JWT_SECRET || 'logifast-dev-secret';
+
+  return {
+    endpoint,
+    init: {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify(payload),
+    } as RequestInit,
+  };
+}
+
+/**
+ * Emisión "fire and forget" (comportamiento histórico).
+ * Usar `emitirEventoRealtimeAsync` cuando se necesite la métrica de entrega.
+ */
+export async function emitirEventoRealtime(payload: EmitPayload) {
   try {
-    const baseUrl =
-      process.env.REALTIME_SERVICE_URL ||
-      process.env.NEXT_PUBLIC_REALTIME_URL ||
-      'https://logifast-production.up.railway.app';
-
-    if (!baseUrl) return;
-
-    const endpoint = `${baseUrl.replace(/\/$/, '')}/api/emit`;
-    const serviceKey = process.env.REALTIME_SERVICE_SECRET || process.env.JWT_SECRET || 'logifast-dev-secret';
+    const { endpoint, init } = construirRequest(payload);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 2000);
 
-    fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    })
+    fetch(endpoint, { ...init, signal: controller.signal })
       .then(() => clearTimeout(timeout))
       .catch((err) => {
         clearTimeout(timeout);
@@ -33,6 +58,32 @@ export async function emitirEventoRealtime(payload: { room?: string; event: stri
       });
   } catch (e) {
     console.warn('[REALTIME_EMIT_ERR]', e);
+  }
+}
+
+/**
+ * Emisión que espera la respuesta del microservicio.
+ * Devuelve cuántos dispositivos conectados recibieron realmente el evento:
+ * es la única métrica honesta de "entregado" sin un proveedor de push (FCM).
+ */
+export async function emitirEventoRealtimeAsync(payload: EmitPayload): Promise<EmitResultado | null> {
+  try {
+    const { endpoint, init } = construirRequest(payload);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(endpoint, { ...init, signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      console.warn('[REALTIME_HTTP_EMIT_STATUS]', res.status);
+      return null;
+    }
+    return (await res.json()) as EmitResultado;
+  } catch (e: any) {
+    console.warn('[REALTIME_EMIT_ERR]', e?.message || e);
+    return null;
   }
 }
 
@@ -68,7 +119,9 @@ export function emitChatMensaje(ordenId: string, mensaje: any, repartidorId?: st
     emitirEventoRealtime({ room: `repartidor:${repartidorId}`, event: 'chat:mensaje:nuevo', data: mensaje });
   }
   if (clienteId) {
-    emitirEventoRealtime({ room: `cliente:${clienteId}`, event: 'chat:mensaje:nuevo', data: mensaje });
+    // `cliente:{id}` nunca fue una sala real (el cliente jamás se unía a ella).
+    // La sala personal real es `usuario:{User.id}`.
+    emitirEventoRealtime({ room: `usuario:${clienteId}`, event: 'chat:mensaje:nuevo', data: mensaje });
   }
 }
 

@@ -7,6 +7,16 @@ const PORT = 3003;
 // Singleton socket — created lazily on first call
 let socket: Socket | null = null;
 
+// Identidad de la sesión local: se re-emite en cada (re)conexión para que la sala
+// personal `usuario:{userId}` nunca se pierda tras un corte de red o un resume de la app.
+let usuarioActual: { userId: string; rol?: string } | null = null;
+
+function reclamarSalaPersonal() {
+  if (usuarioActual && socket?.connected) {
+    socket.emit('usuario:conectar', { userId: usuarioActual.userId, rol: usuarioActual.rol });
+  }
+}
+
 export function getSocket(): Socket {
   if (!socket) {
     const socketUrl =
@@ -33,6 +43,7 @@ export function getSocket(): Socket {
 
     socket.on('connect', () => {
       console.log('[realtime] conectado al servidor (id=' + socket?.id + ')');
+      reclamarSalaPersonal();
     });
     socket.on('disconnect', (reason) => {
       console.log('[realtime] desconectado:', reason);
@@ -83,6 +94,20 @@ export function onRealtimeEvent(event: RealtimeEvent, handler: (data: any) => vo
 
 // ─── Emisores (client → server) ───
 export const realtime = {
+  /**
+   * Une este dispositivo a su sala personal `usuario:{userId}`.
+   * Necesario para recibir avisos/notificaciones dirigidos de administración.
+   * Persiste tras reconexiones (ver `reclamarSalaPersonal`).
+   */
+  usuarioConectar: (userId: string, rol?: string) => {
+    if (!userId) return;
+    usuarioActual = { userId, rol };
+    const s = getSocket();
+    if (s.connected) s.emit('usuario:conectar', { userId, rol });
+  },
+  usuarioDesconectar: () => {
+    usuarioActual = null;
+  },
   repartidorConectar: (repartidorId: string) => getSocket().emit('repartidor:conectar', { repartidorId }),
   repartidorPosicion: (lat: number, lng: number, heading: number, estado: string, ordenId?: string) =>
     getSocket().emit('repartidor:posicion', { lat, lng, heading, estado, ordenId }),

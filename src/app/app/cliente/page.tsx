@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { initCapacitorAndroid } from '@/lib/capacitor-android';
 import { inicializarNotificacionesNativas } from '@/services/native-notifications';
+import { realtime } from '@/services/realtime';
 import { RoleLoader } from '@/components/ui/loaders';
 import AuthRedesign, { SLIDES, AppleSlideWidget } from '@/components/auth/AuthRedesign';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
@@ -67,6 +68,8 @@ export default function ClienteAppPage() {
       .then((data) => {
         if (data?.user && (data.user.role === 'cliente' || data.user.role === 'admin')) {
           setSessionUser(data.user);
+          // Unirse a la sala personal para recibir avisos dirigidos de administración
+          realtime.usuarioConectar(data.user.id, data.user.role);
         }
       })
       .catch(() => null)

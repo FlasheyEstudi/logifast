@@ -38,14 +38,37 @@ const httpServer = createServer((req, res) => {
     req.on('end', () => {
       try {
         const payload = JSON.parse(body);
-        const { room, event, data } = payload;
-        if (room) {
-          io.to(room).emit(event, data);
+        const { room, rooms, event, data } = payload;
+        const targets: string[] | null =
+          Array.isArray(rooms) && rooms.length > 0 ? rooms : room ? [room] : null;
+
+        if (targets) {
+          io.to(targets).emit(event, data);
         } else {
           io.emit(event, data);
         }
+
+        // Métrica honesta de entrega: cuántos sockets realmente conectados escuchaban esas salas.
+        let entregados = 0;
+        if (targets) {
+          const socketsUnicos = new Set<string>();
+          for (const sala of targets) {
+            const miembros = io.sockets.adapter.rooms.get(sala);
+            if (miembros) for (const sid of miembros) socketsUnicos.add(sid);
+          }
+          entregados = socketsUnicos.size;
+        }
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, broadcasted: true }));
+        res.end(
+          JSON.stringify({
+            ok: true,
+            broadcasted: true,
+            salas: targets ? targets.length : 'todas',
+            salasActivas: targets ? targets.filter((r) => io.sockets.adapter.rooms.has(r)).length : null,
+            entregados,
+          })
+        );
       } catch (err: any) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: false, error: err?.message || 'Invalid JSON' }));
@@ -126,6 +149,17 @@ io.on('connection', (socket) => {
   // ─── REPARTIDOR: unirse a su sala personal ───
   socket.on('repartidor:join:personal', (data: { repartidorId: string }) => {
     socket.join(`repartidor:${data.repartidorId}`);
+  });
+
+  // ─── USUARIO (cliente / repartidor / comercio / admin): sala personal por User.id ───
+  // Nota: el panel admin emite avisos masivos a `usuario:{userId}`. Antes esa sala
+  // no existía para nadie y los avisos se emitían al vacío.
+  socket.on('usuario:conectar', (data: { userId: string; rol?: string }) => {
+    if (!data?.userId) return;
+    socket.data.userId = data.userId;
+    socket.data.rol = data.rol;
+    socket.join(`usuario:${data.userId}`);
+    console.log(`[realtime] usuario ${data.userId} (${data.rol || 'n/a'}) unido a su sala personal`);
   });
 
   // ─── CHAT: enviar mensaje ───
