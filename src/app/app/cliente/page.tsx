@@ -36,10 +36,11 @@ export default function ClienteAppPage() {
   }, [tema]);
 
   const isDark =
-    tema === 'dark' ||
-    (tema === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
+    mounted &&
+    (tema === 'dark' ||
+      (tema === 'system' &&
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches));
 
   const toggleTheme = useCallback((event?: any) => {
     toggleThemeWithTransition(event);
@@ -110,7 +111,7 @@ export default function ClienteAppPage() {
     setAuthMode('login');
   };
 
-  if (checkingSession) {
+  if (!mounted || checkingSession) {
     return <RoleLoader role="cliente" />;
   }
 

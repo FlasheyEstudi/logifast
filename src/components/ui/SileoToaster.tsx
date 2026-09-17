@@ -5,10 +5,12 @@ import { Toaster } from 'sileo';
 import { useConfigStore } from '@/store/configStore';
 
 export default function SileoToaster() {
+  const [mounted, setMounted] = useState(false);
   const configTema = useConfigStore((s) => s.tema);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
+    setMounted(true);
     const computeTheme = (): 'light' | 'dark' => {
       if (typeof document === 'undefined') return 'dark';
       const domTheme = document.documentElement.getAttribute('data-theme');
@@ -41,6 +43,8 @@ export default function SileoToaster() {
       mql?.removeEventListener?.('change', handleMediaChange);
     };
   }, [configTema]);
+
+  if (!mounted) return null;
 
   return (
     <Toaster
