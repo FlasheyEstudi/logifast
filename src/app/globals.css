@@ -16250,3 +16250,23 @@ video,
 body {
   overflow-x: hidden;
 }
+
+/* ─── Fase 4: objetivo táctil mínimo en las apps de cliente y repartidor ───
+   El criterio es que ningún control quede por debajo de 44 px. Se aplica en el CSS
+   (no botón por botón) para que valga también para lo que se agregue después;
+   min-height gana sobre cualquier height fijo que traiga el estilo inline. */
+.lf-ios-content button, .lf-ios-content [role='button'], .lf-ios-content select, .lf-ios-content input,
+.lf-ios-screen-transition button, .lf-ios-screen-transition [role='button'], .lf-ios-screen-transition select, .lf-ios-screen-transition input,
+.lf-rep-pad button, .lf-rep-pad [role='button'], .lf-rep-pad select, .lf-rep-pad input {
+  min-height: 44px;
+}
+
+/* La raíz de la app cubre también los controles que viven fuera del contenido */
+.lf-ios-app button, .lf-ios-app [role='button'], .lf-ios-app select, .lf-ios-app input[type='text'], .lf-ios-app input[type='email'], .lf-ios-app input[type='number'] {
+  min-height: 44px;
+}
+
+/* Navs del dashboard admin (los controles del mapa quedan pendientes) */
+.lf-dash-desktop-nav button, .lf-dash-desktop-nav [role='button'], .lf-dash-bottom-nav button, .lf-dash-bottom-nav [role='button'] {
+  min-height: 44px;
+}
