@@ -1,23 +1,21 @@
 // components/ingeniero/IngenieroApp.tsx
 'use client';
 
-import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { useIngenieroStore } from '@/store/ingenieroStore';
 import { useDeviceInfo } from '@/hooks/useDeviceInfo';
-import { DashboardSkeleton, FlotaSkeleton, MantenimientosSkeleton, PerfilSkeleton } from './Skeletons';
+import Dashboard from './Dashboard';
+import Flota from './Flota';
+import Mantenimientos from './Mantenimientos';
+import Inventario from './Inventario';
+import PerfilIngeniero from './PerfilIngeniero';
 import CrearMantenimiento from './CrearMantenimiento';
 import CrearMotoModal from './CrearMotoModal';
 import DetalleMotoModal from './DetalleMotoModal';
 import { realtime, onRealtimeEvent } from '@/services/realtime';
 import { notify } from '@/lib/notify';
-
-const Dashboard = lazy(() => import('./Dashboard'));
-const Flota = lazy(() => import('./Flota'));
-const Mantenimientos = lazy(() => import('./Mantenimientos'));
-const Inventario = lazy(() => import('./Inventario'));
-const PerfilIngeniero = lazy(() => import('./PerfilIngeniero'));
 
 type TabId = 'dashboard' | 'flota' | 'mantenimientos' | 'inventario' | 'perfil';
 
@@ -284,33 +282,23 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
           >
             <div className="ingeniero-content">
               <ErrorBoundary nombre="Dashboard">
-                <Suspense fallback={<DashboardSkeleton />}>
-                  {store.tabActiva === 'dashboard' && <Dashboard />}
-                </Suspense>
+                {store.tabActiva === 'dashboard' && <Dashboard />}
               </ErrorBoundary>
 
               <ErrorBoundary nombre="Flota">
-                <Suspense fallback={<FlotaSkeleton />}>
-                  {store.tabActiva === 'flota' && <Flota />}
-                </Suspense>
+                {store.tabActiva === 'flota' && <Flota />}
               </ErrorBoundary>
 
               <ErrorBoundary nombre="Mantenimientos">
-                <Suspense fallback={<MantenimientosSkeleton />}>
-                  {store.tabActiva === 'mantenimientos' && <Mantenimientos />}
-                </Suspense>
+                {store.tabActiva === 'mantenimientos' && <Mantenimientos />}
               </ErrorBoundary>
 
               <ErrorBoundary nombre="Inventario">
-                <Suspense fallback={<FlotaSkeleton />}>
-                  {store.tabActiva === 'inventario' && <Inventario isTab={true} />}
-                </Suspense>
+                {store.tabActiva === 'inventario' && <Inventario isTab={true} />}
               </ErrorBoundary>
 
               <ErrorBoundary nombre="Perfil">
-                <Suspense fallback={<PerfilSkeleton />}>
-                  {store.tabActiva === 'perfil' && <PerfilIngeniero onLogout={onLogout} userName={userName} />}
-                </Suspense>
+                {store.tabActiva === 'perfil' && <PerfilIngeniero onLogout={onLogout} userName={userName} />}
               </ErrorBoundary>
             </div>
           </motion.div>
