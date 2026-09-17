@@ -39,6 +39,16 @@ const httpServer = createServer((req, res) => {
       try {
         const payload = JSON.parse(body);
         const { room, rooms, event, data } = payload;
+
+        // Allowlist: solo los eventos que el backend de LogiFast emite de verdad.
+        // Los eventos `escaner:*` son de socket directo (POS ↔ celular) y no deben
+        // poder difundirse desde HTTP ni desde fuera del emparejamiento.
+        if (typeof event !== 'string' || !EVENTOS_HTTP_PERMITIDOS.has(event)) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: `Evento no permitido: ${String(event).slice(0, 40)}` }));
+          return;
+        }
+
         const targets: string[] | null =
           Array.isArray(rooms) && rooms.length > 0 ? rooms : room ? [room] : null;
 
@@ -85,9 +95,72 @@ const io = new Server(httpServer, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
+// Eventos que una ruta serverless puede difundir vía POST /api/emit (ver src/lib/realtime-emitter.ts).
+// Mantener en sincronía al agregar eventos nuevos al backend.
+const EVENTOS_HTTP_PERMITIDOS = new Set<string>([
+  'admin:flota:snapshot',
+  'admin:incidencia:nueva',
+  'admin:orden:actualizada',
+  'admin:orden:asignada',
+  'admin:orden:eliminada',
+  'admin:orden:nueva',
+  'admin:orden:rechazada',
+  'admin:recarga:actualizada',
+  'chat:mensaje:nuevo',
+  'cliente:notificacion',
+  'ingeniero:alerta:nueva',
+  'ingeniero:mantenimiento:nuevo',
+  'mantenimiento:completado',
+  'mantenimiento:iniciado',
+  'notificacion:push',
+  'orden:cancelada',
+  'orden:estado:update',
+  'orden:incidencia',
+  'repartidor:moto:mantenimiento_completado',
+  'repartidor:moto:mantenimiento_iniciado',
+  'repartidor:moto:update',
+  'repartidor:orden:disponible',
+  'repartidor:orden:nueva',
+  'repartidor:orden:tomada',
+  'repartidor:posicion:update',
+  'repartidor:recarga:actualizada',
+  'tienda:orden:nueva',
+]);
+
 // In-memory state (no DB needed for realtime)
 const repartidoresConectados = new Map<string, { lat: number; lng: number; heading: number; estado: string; ultimaActualizacion: number }>();
 const salasOrden = new Map<string, Set<string>>(); // ordenId -> set of socket ids
+
+/* ─────────────────────────────────────────────────────────────
+   ESCÁNER INALÁMBRICO (POS ↔ CELULAR)
+   El POS abre una sala efímera `escaner:{PIN}`; el celular se une tecleando
+   ese PIN de 6 dígitos y retransmite los códigos que lee su cámara. El celular
+   nunca habla con la base ni con el POS: solo con esta sala en memoria.
+   ───────────────────────────────────────────────────────────── */
+const PIN_ESCANER_RE = /^\d{6}$/;
+const ESCANER_TTL_MS = 30 * 60 * 1000; // la sala muere sola si nadie la usa
+const ESCANER_MAX_SALAS = 500;         // cota de memoria del proceso
+const ESCANER_MAX_INTENTOS = 8;        // intentos de PIN por socket (anti fuerza bruta)
+const ESCANER_MIN_MS_CODIGO = 60;      // anti flood de códigos
+
+type SalaEscaner = {
+  pin: string;
+  posSocketId: string;
+  lectorSocketId: string | null;
+  ultimoUso: number;
+  ultimoCodigoEn: number;
+};
+
+const salasEscaner = new Map<string, SalaEscaner>();
+const roomEscaner = (pin: string) => `escaner:${pin}`;
+
+function cerrarSalaEscaner(pin: string, motivo: string) {
+  const sala = salasEscaner.get(pin);
+  if (!sala) return;
+  salasEscaner.delete(pin);
+  io.to(roomEscaner(pin)).emit('escaner:cerrada', { pin, motivo });
+  io.in(roomEscaner(pin)).socketsLeave(roomEscaner(pin));
+}
 
 io.on('connection', (socket) => {
   console.log(`[realtime] conectado ${socket.id}`);
@@ -175,6 +248,124 @@ io.on('connection', (socket) => {
     io.to(`orden:${data.ordenId}`).emit('repartidor:estado:update', { estado: data.estado });
   });
 
+  /* ─── ESCÁNER: el POS abre la sala y queda como dueño ─── */
+  socket.on('escaner:abrir', (data: { pin?: string }) => {
+    const pin = String(data?.pin ?? '').trim();
+    if (!PIN_ESCANER_RE.test(pin)) {
+      socket.emit('escaner:error', { contexto: 'abrir', mensaje: 'El PIN debe tener 6 dígitos' });
+      return;
+    }
+    if (salasEscaner.size >= ESCANER_MAX_SALAS) {
+      socket.emit('escaner:error', { contexto: 'abrir', mensaje: 'Demasiadas sesiones de escaneo activas' });
+      return;
+    }
+    // Reabrir reemplaza cualquier sesión previa de este mismo POS o un PIN ya tomado.
+    if (socket.data.escanerPin && socket.data.escanerPin !== pin) cerrarSalaEscaner(socket.data.escanerPin, 'reemplazada');
+    if (salasEscaner.has(pin)) cerrarSalaEscaner(pin, 'reemplazada');
+
+    salasEscaner.set(pin, {
+      pin,
+      posSocketId: socket.id,
+      lectorSocketId: null,
+      ultimoUso: Date.now(),
+      ultimoCodigoEn: 0,
+    });
+    socket.data.escanerPin = pin;
+    socket.data.escanerRol = 'pos';
+    socket.join(roomEscaner(pin));
+    socket.emit('escaner:abierta', { pin });
+    console.log(`[realtime] escáner abierto pin=${pin} por ${socket.id}`);
+  });
+
+  /* ─── ESCÁNER: el celular se une con el PIN ─── */
+  socket.on('escaner:unir', (data: { pin?: string }) => {
+    const pin = String(data?.pin ?? '').trim();
+    const sala = salasEscaner.get(pin);
+    if (!PIN_ESCANER_RE.test(pin) || !sala) {
+      socket.data.escanerIntentos = (socket.data.escanerIntentos ?? 0) + 1;
+      socket.emit('escaner:error', { contexto: 'unir', mensaje: 'PIN incorrecto o sesión expirada' });
+      if (socket.data.escanerIntentos >= ESCANER_MAX_INTENTOS) socket.disconnect(true);
+      return;
+    }
+    // Solo un lector por sesión. Un id que ya no está conectado se considera libre,
+    // lo que permite que el celular se reconecte tras perder la red.
+    const lectorVigente = sala.lectorSocketId && io.sockets.sockets.has(sala.lectorSocketId);
+    if (lectorVigente && sala.lectorSocketId !== socket.id) {
+      socket.emit('escaner:error', { contexto: 'unir', mensaje: 'Ya hay un lector emparejado en esta sesión' });
+      return;
+    }
+    sala.lectorSocketId = socket.id;
+    sala.ultimoUso = Date.now();
+    socket.data.escanerPin = pin;
+    socket.data.escanerRol = 'lector';
+    socket.join(roomEscaner(pin));
+    socket.emit('escaner:unida', { pin });
+    io.to(roomEscaner(pin)).emit('escaner:presencia', { pin, lectorConectado: true });
+    console.log(`[realtime] escáner pin=${pin} emparejado con lector ${socket.id}`);
+  });
+
+  /* ─── ESCÁNER: el celular transmite un código leído ─── */
+  socket.on('escaner:codigo', (data: { pin?: string; codigo?: string }) => {
+    const pin = String(data?.pin ?? '').trim();
+    const sala = salasEscaner.get(pin);
+    if (!sala) {
+      socket.emit('escaner:error', { contexto: 'codigo', mensaje: 'La sesión de escaneo ya no está activa' });
+      return;
+    }
+    if (sala.lectorSocketId !== socket.id) {
+      socket.emit('escaner:error', { contexto: 'codigo', mensaje: 'Este dispositivo no es el lector emparejado' });
+      return;
+    }
+    const codigo = String(data?.codigo ?? '').trim().slice(0, 64);
+    if (codigo.length < 3) return;
+
+    const ahora = Date.now();
+    if (ahora - sala.ultimoCodigoEn < ESCANER_MIN_MS_CODIGO) return;
+    sala.ultimoCodigoEn = ahora;
+    sala.ultimoUso = ahora;
+
+    // Al POS (y a cualquier otro observador de la sala). `to(room)` excluye al emisor.
+    socket.to(roomEscaner(pin)).emit('escaner:codigo:recibido', { pin, codigo, recibidoEn: ahora });
+    socket.emit('escaner:codigo:ack', { pin, codigo });
+  });
+
+  /* ─── ESCÁNER: el POS devuelve si el código resolvió a un producto ─── */
+  // Sin esto el celular solo sabría que emitió un código, no si la venta lo aceptó:
+  // el operador recibiría el mismo zumbido para "agregado" y para "no existe".
+  socket.on('escaner:resultado', (data: { pin?: string; codigo?: string; encontrado?: boolean; nombre?: string }) => {
+    const pin = String(data?.pin ?? '').trim();
+    const sala = salasEscaner.get(pin);
+    if (!sala || sala.posSocketId !== socket.id) return; // solo el POS dueño informa resultados
+    socket.to(roomEscaner(pin)).emit('escaner:resultado', {
+      pin,
+      codigo: String(data?.codigo ?? '').slice(0, 64),
+      encontrado: !!data?.encontrado,
+      nombre: typeof data?.nombre === 'string' ? data.nombre.slice(0, 80) : null,
+    });
+  });
+
+  /* ─── ESCÁNER: el celular se desempareja (sin cerrar la sesión del POS) ─── */
+  socket.on('escaner:salir', (data: { pin?: string }) => {
+    const pin = String(data?.pin ?? '').trim();
+    const sala = salasEscaner.get(pin);
+    if (!sala) return;
+    if (sala.lectorSocketId === socket.id) sala.lectorSocketId = null;
+    socket.leave(roomEscaner(pin));
+    socket.to(roomEscaner(pin)).emit('escaner:presencia', { pin, lectorConectado: false });
+  });
+
+  /* ─── ESCÁNER: solo el POS dueño cierra la sesión ─── */
+  socket.on('escaner:cerrar', (data: { pin?: string }) => {
+    const pin = String(data?.pin ?? '').trim();
+    const sala = salasEscaner.get(pin);
+    if (!sala) return;
+    if (sala.posSocketId !== socket.id) {
+      socket.emit('escaner:error', { contexto: 'cerrar', mensaje: 'Solo el POS que abrió la sesión puede cerrarla' });
+      return;
+    }
+    cerrarSalaEscaner(pin, 'cerrada-por-pos');
+  });
+
   // ─── Disconnect ───
   socket.on('disconnect', () => {
     const repartidorId = socket.data.repartidorId;
@@ -182,6 +373,20 @@ io.on('connection', (socket) => {
       repartidoresConectados.delete(repartidorId);
       io.to('admin').emit('admin:repartidor:offline', { repartidorId });
     }
+
+    // Limpieza del escáner: si se cae el POS, la sesión muere; si se cae el celular,
+    // la sesión sigue viva y el POS queda esperando otro lector.
+    const pinEscaner = socket.data.escanerPin as string | undefined;
+    const salaEscaner = pinEscaner ? salasEscaner.get(pinEscaner) : undefined;
+    if (salaEscaner && pinEscaner) {
+      if (salaEscaner.posSocketId === socket.id) {
+        cerrarSalaEscaner(pinEscaner, 'pos-desconectado');
+      } else if (salaEscaner.lectorSocketId === socket.id) {
+        salaEscaner.lectorSocketId = null;
+        io.to(roomEscaner(pinEscaner)).emit('escaner:presencia', { pin: pinEscaner, lectorConectado: false });
+      }
+    }
+
     console.log(`[realtime] desconectado ${socket.id}`);
   });
 });
@@ -189,6 +394,15 @@ io.on('connection', (socket) => {
 httpServer.listen(PORT, () => {
   console.log(`[realtime] LOGIFAST realtime service escuchando en puerto ${PORT}`);
 });
+
+// Barrido de sesiones de escáner inactivas: sin esto, una tablet que se va de la
+// red sin cerrar el panel dejaría la sala viva para siempre.
+setInterval(() => {
+  const ahora = Date.now();
+  for (const [pin, sala] of salasEscaner) {
+    if (ahora - sala.ultimoUso > ESCANER_TTL_MS) cerrarSalaEscaner(pin, 'expirada');
+  }
+}, 60 * 1000);
 
 /* ─────────────────────────────────────────────────────────────
    DESPACHO DE CAMPAÑAS PROGRAMADAS

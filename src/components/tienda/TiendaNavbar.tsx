@@ -13,6 +13,7 @@ import {
   Store,
   Clock,
   SlidersHorizontal,
+  TrendingUp,
 } from '@/components/icons';
 
 export type TiendaModulo =
@@ -22,6 +23,7 @@ export type TiendaModulo =
   | 'pos'
   | 'facturacion'
   | 'reportes'
+  | 'estadisticas'
   | 'configuracion';
 
 interface TiendaNavbarProps {
@@ -56,6 +58,7 @@ export function TiendaNavbar({
     { id: 'kardex', label: 'Kardex', shortLabel: 'Kardex', icon: <SlidersHorizontal size={18} /> },
     { id: 'facturacion', label: 'Facturación', shortLabel: 'DGI', icon: <FileText size={18} /> },
     { id: 'reportes', label: 'Reportes', shortLabel: 'Excel', icon: <BarChart3 size={18} /> },
+    { id: 'estadisticas', label: 'Estadísticas', shortLabel: 'Gráficas', icon: <TrendingUp size={18} /> },
     { id: 'configuracion', label: 'Perfil', shortLabel: 'Perfil', icon: <Settings size={18} /> },
   ];
 

@@ -17,14 +17,30 @@ function reclamarSalaPersonal() {
   }
 }
 
+// Sesión de escáner activa: el POS abrió una sala o el celular quedó emparejado.
+// Se re-emite en cada reconexión — el celular cambia de red (wifi ↔ datos) a cada rato.
+let escanerSesion: { pin: string; rol: 'pos' | 'lector' } | null = null;
+
+function reclamarSesionEscaner() {
+  if (escanerSesion && socket?.connected) {
+    socket.emit(escanerSesion.rol === 'pos' ? 'escaner:abrir' : 'escaner:unir', { pin: escanerSesion.pin });
+  }
+}
+
+/** URL del microservicio realtime. Exportada para diagnóstico del emparejamiento. */
+export function getRealtimeUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_REALTIME_URL ||
+    process.env.NEXT_PUBLIC_WS_URL ||
+    (typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:3003`
+      : '/')
+  );
+}
+
 export function getSocket(): Socket {
   if (!socket) {
-    const socketUrl =
-      process.env.NEXT_PUBLIC_REALTIME_URL ||
-      process.env.NEXT_PUBLIC_WS_URL ||
-      (typeof window !== 'undefined'
-        ? `${window.location.protocol}//${window.location.hostname}:3003`
-        : '/');
+    const socketUrl = getRealtimeUrl();
 
     socket = io(socketUrl, {
       // NOTE: We intentionally do NOT set `path: '/'`.
@@ -44,6 +60,7 @@ export function getSocket(): Socket {
     socket.on('connect', () => {
       console.log('[realtime] conectado al servidor (id=' + socket?.id + ')');
       reclamarSalaPersonal();
+      reclamarSesionEscaner();
     });
     socket.on('disconnect', (reason) => {
       console.log('[realtime] desconectado:', reason);
@@ -83,8 +100,16 @@ export type RealtimeEvent =
   | 'notificacion:push'                // aviso dirigido de administración (campaña, promoción, difusión)
   | 'ingeniero:alerta:nueva'           // alerta técnica o emergencia creada (ingeniero recibe)
   | 'ingeniero:mantenimiento:nuevo'    // orden de mantenimiento creada (ingeniero recibe)
-  | 'mantenimiento:iniciado'           // mantenimiento pasó a EN_PROCESO
-  | 'mantenimiento:completado';        // mantenimiento finalizado
+  | 'mantenimiento:iniciado'             // mantenimiento pasó a EN_PROCESO
+  | 'mantenimiento:completado'           // mantenimiento finalizado
+  | 'escaner:abierta'                    // el POS abrió una sala de escaneo (POS recibe)
+  | 'escaner:unida'                      // el celular quedó emparejado a la sala (celular recibe)
+  | 'escaner:codigo:recibido'            // código leído por el celular (POS recibe)
+  | 'escaner:codigo:ack'                 // el servidor confirmó el código enviado (celular recibe)
+  | 'escaner:resultado'                  // el POS resolvió el código: existe o no (celular recibe)
+  | 'escaner:presencia'                  // entró/salió el lector de la sala (ambos reciben)
+  | 'escaner:cerrada'                    // la sesión terminó, se cerró o expiró
+  | 'escaner:error';                     // el servidor rechazó una operación del escáner
 
 // ─── Helper para suscribirse a eventos con cleanup ───
 export function onRealtimeEvent(event: RealtimeEvent, handler: (data: any) => void): () => void {
@@ -124,6 +149,45 @@ export const realtime = {
       ordenId, emisor, contenido,
       enviadoEn: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' })
     }),
-  disconnect: () => { if (socket) { socket.disconnect(); socket = null; } },
+  /**
+   * ESCÁNER INALÁMBRICO — lado POS (tablet/PC).
+   * Abre la sala efímera `escaner:{pin}`; el PIN de 6 dígitos lo genera el POS.
+   */
+  escanerAbrir: (pin: string) => {
+    if (!pin) return;
+    escanerSesion = { pin, rol: 'pos' };
+    getSocket().emit('escaner:abrir', { pin });
+  },
+  /** ESCÁNER INALÁMBRICO — lado celular (lector): se une con el PIN del POS. */
+  escanerUnir: (pin: string) => {
+    if (!pin) return;
+    escanerSesion = { pin, rol: 'lector' };
+    getSocket().emit('escaner:unir', { pin });
+  },
+  /** Transmite al POS un código leído por la cámara del celular. */
+  escanerEnviarCodigo: (pin: string, codigo: string) => {
+    const limpio = String(codigo ?? '').trim();
+    if (!pin || limpio.length < 3) return;
+    getSocket().emit('escaner:codigo', { pin, codigo: limpio });
+  },
+  /** El celular se desempareja sin cerrar la sesión que abrió el POS. */
+  escanerSalir: (pin?: string) => {
+    const p = pin || (escanerSesion?.rol === 'lector' ? escanerSesion.pin : '');
+    escanerSesion = null;
+    if (p) getSocket().emit('escaner:salir', { pin: p });
+  },
+  /** El POS cierra la sala: el celular recibe `escaner:cerrada`. */
+  escanerCerrar: (pin?: string) => {
+    const p = pin || escanerSesion?.pin || '';
+    escanerSesion = null;
+    if (p) getSocket().emit('escaner:cerrar', { pin: p });
+  },
+  escanerSesionActiva: () => escanerSesion,
+  /** El POS avisa al celular si el código resolvió a un producto del catálogo. */
+  escanerResultado: (pin: string, codigo: string, encontrado: boolean, nombre?: string | null) => {
+    if (!pin) return;
+    getSocket().emit('escaner:resultado', { pin, codigo, encontrado, nombre: nombre ?? null });
+  },
+  disconnect: () => { if (socket) { socket.disconnect(); socket = null; escanerSesion = null; } },
   isConnected: () => socket?.connected ?? false,
 };

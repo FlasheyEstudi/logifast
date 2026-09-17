@@ -8,6 +8,7 @@ import { TiendaKardex } from './TiendaKardex';
 import { TiendaPOS } from './TiendaPOS';
 import { TiendaFacturacion } from './TiendaFacturacion';
 import { TiendaReportesExcel } from './TiendaReportesExcel';
+import { TiendaEstadisticas } from './TiendaEstadisticas';
 import { TiendaConfiguracion } from './TiendaConfiguracion';
 
 interface TiendaAppProps {
@@ -79,6 +80,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, onReturnToClient, use
         {moduloActivo === 'pos' && <TiendaPOS isDark={isDark} />}
         {moduloActivo === 'facturacion' && <TiendaFacturacion isDark={isDark} />}
         {moduloActivo === 'reportes' && <TiendaReportesExcel isDark={isDark} />}
+        {moduloActivo === 'estadisticas' && <TiendaEstadisticas isDark={isDark} />}
         {moduloActivo === 'configuracion' && <TiendaConfiguracion isDark={isDark} />}
       </main>
     </div>

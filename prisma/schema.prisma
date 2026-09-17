@@ -58,6 +58,8 @@ model User {
   tiendasPropias       Tienda[]                 @relation("TiendaPropietario")
   posts                Post[]
   cupones              CuponCliente[]
+  tiendasComoUsuario   TiendaUsuario[]          // #7: cajeros/encargados invitados a una tienda
+  pedidosRecurrentes   PedidoRecurrente[]       // #1: pedidos programados (lunes a viernes, hora y lugar)
 }
 
 model Post {
@@ -153,8 +155,12 @@ model CodigoPromocional {
   vigenciaFin      DateTime
   estado           String      @default("activo")
   creadoPor        String
+  tiendaId         String?                  // null = cupón global de LogiFast; con valor = solo aplica a esa tienda
   createdAt        DateTime    @default(now())
   usos             UsoCodigo[]
+  tienda           Tienda?     @relation("CuponTienda", fields: [tiendaId], references: [id], onDelete: Cascade)
+
+  @@index([tiendaId])
 }
 
 model UsoCodigo {
@@ -195,7 +201,14 @@ model Banner {
   programadoDesde DateTime?
   programadoHasta DateTime?
   creadoPor       String
+  tiendaId        String?   // banner contratado por una tienda (null = banner de LogiFast)
+  precioMensual   Float?    // tarifa acordada por el espacio
+  pagado          Boolean   @default(false)
+  contratadoHasta DateTime? // fin del contrato de pauta
   createdAt       DateTime  @default(now())
+  tienda          Tienda?   @relation("BannerTienda", fields: [tiendaId], references: [id], onDelete: SetNull)
+
+  @@index([tiendaId])
 }
 
 model FeedItem {
@@ -334,6 +347,12 @@ model Tienda {
   seguidores     TiendaFollow[]
   kardexMovimientos KardexMovimiento[]
   ventasPos      VentaPOS[]
+  usuarios       TiendaUsuario[]
+  pedidosRecurrentes PedidoRecurrente[]
+  cuponesPropios CodigoPromocional[]       @relation("CuponTienda")
+  banners        Banner[]                  @relation("BannerTienda")
+  alianzas       AlianzaBeneficio[]
+  beneficiosRedimidos BeneficioRedimido[]
 
   @@index([propietarioId])
 }
@@ -450,6 +469,9 @@ model OrdenCompra {
   total            Float
   codigoPin        String?
   programadoPara   DateTime?
+  modoEntrega      String            @default("reparto") // "reparto" | "retiro": el retiro no crea envío con repartidor
+  listoEn          DateTime?                            // la tienda marcó el pedido listo para retirar
+  retiradoEn       DateTime?                            // el cliente ya lo retiró en el punto
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   items            ItemOrdenCompra[]
@@ -562,6 +584,7 @@ model RepartidorProfile {
   user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   servicios        ServicioRepartidor[]
   solicitudesEnvio SolicitudEnvio[]
+  beneficiosRedimidos BeneficioRedimido[]
 }
 
 model PosicionRepartidor {
@@ -1054,5 +1077,96 @@ model CuponCliente {
 
   @@unique([clienteId, codigoPromo])
   @@index([clienteId])
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FASE 3 — modelos nuevos. Todos son aditivos: ninguna tabla ni
+   columna existente se elimina ni se renombra.
+   ───────────────────────────────────────────────────────────── */
+
+// #7 / #10 — Varios usuarios por tienda, cada uno con su rol y permisos.
+model TiendaUsuario {
+  id          String   @id @default(cuid())
+  tiendaId    String
+  userId      String
+  rol         String   @default("cajero") // "dueno" | "encargado" | "cajero" | "inventario"
+  permisos    String   @default("[]")     // JSON: ["precios","inventario","reportes"]; vacío = los del rol
+  activo      Boolean  @default(true)
+  invitadoPor String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tienda  Tienda @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  usuario User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tiendaId, userId])
+  @@index([userId])
+}
+
+// #1 — Pedido recurrente: mismo carrito, hora y lugar, repetido por regla.
+model PedidoRecurrente {
+  id               String    @id @default(cuid())
+  clienteId        String
+  tiendaId         String
+  frecuencia       String    @default("semanal") // "diario" | "semanal" | "quincenal" | "mensual"
+  diasSemana       String    @default("[]")      // JSON ISO-8601: [1,2,3,4,5] = lunes a viernes
+  hora             String    @default("10:00")   // HH:MM local
+  items            String    @default("[]")      // JSON: [{productoId, cantidad}] — snapshot del carrito
+  direccionEntrega String
+  lat              Float     @default(0)
+  lng              Float     @default(0)
+  metodoPago       String    @default("efectivo")
+  activo           Boolean   @default(true)      // pausar = activo:false
+  proximaEjecucion DateTime
+  ultimaEjecucion  DateTime?
+  creadoEn         DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  cliente User   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tienda  Tienda @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+
+  @@index([clienteId])
+  @@index([tiendaId])
+  @@index([proximaEjecucion])
+}
+
+// #9 — Alianza: un comercio aliado ofrece un beneficio a los repartidores.
+model AlianzaBeneficio {
+  id             String    @id @default(cuid())
+  tiendaId       String
+  titulo         String
+  descripcion    String?
+  tipo           String    @default("descuento") // "descuento" | "regalo" | "combo" | "otro"
+  valor          String?                          // "10%", "C$50", texto libre
+  condiciones    String?
+  vigenciaInicio DateTime?
+  vigenciaFin    DateTime?
+  activo         Boolean   @default(true)
+  creadoPor      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tienda Tienda              @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  canjes BeneficioRedimido[]
+
+  @@index([tiendaId])
+}
+
+// #9 — Canje: deja registro de qué repartidor usó qué beneficio y cuándo.
+model BeneficioRedimido {
+  id           String   @id @default(cuid())
+  beneficioId  String
+  tiendaId     String
+  repartidorId String
+  ordenId      String?
+  notas        String?
+  usadoEn      DateTime @default(now())
+
+  beneficio  AlianzaBeneficio  @relation(fields: [beneficioId], references: [id], onDelete: Cascade)
+  tienda     Tienda            @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  repartidor RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
+
+  @@index([beneficioId])
+  @@index([repartidorId])
 }
 

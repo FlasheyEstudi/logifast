@@ -39,7 +39,9 @@ export function middleware(req: NextRequest) {
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('X-XSS-Protection', '1; mode=block');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+  // La cámara se habilita para el lector de códigos (/escaner): la usa getUserMedia
+  // en el celular del operador. Micrófono y geolocalización siguen restringidos.
+  res.headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(self)');
 
   // Log de requests a API (solo en desarrollo)
   if (process.env.NODE_ENV === 'development' && path.startsWith('/api/')) {

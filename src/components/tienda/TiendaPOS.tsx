@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { CreditCard, ShoppingCart, Plus, Minus, Trash2, Printer, CheckCircle2, User, Search, DollarSign } from '@/components/icons';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { CreditCard, ShoppingCart, Plus, Minus, Trash2, Printer, CheckCircle2, User, Search, DollarSign, Camera, Wifi, RotateCcw } from '@/components/icons';
 import { notify } from '@/lib/notify';
+import { onRealtimeEvent, realtime } from '@/services/realtime';
 import type { Producto } from './TiendaInventario';
+import { TiendaDevolucion } from './TiendaDevolucion';
 
 interface ItemCarritoPOS {
   producto: Producto;
@@ -53,6 +55,24 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   // Modal Factura / Imprimir
   const [facturaEmitida, setFacturaEmitida] = useState<FacturaDatos | null>(null);
 
+  // Escáner inalámbrico: el celular del operador transmite los códigos que lee.
+  const [escanerAbierto, setEscanerAbierto] = useState(false);
+  const [escanerPin, setEscanerPin] = useState('');
+  const [lectorConectado, setLectorConectado] = useState(false);
+  const [ultimosEscaneos, setUltimosEscaneos] = useState<
+    { codigo: string; estado: 'ok' | 'sin-producto' | 'ambiguo'; detalle: string; hora: string }[]
+  >([]);
+  const [origenWeb, setOrigenWeb] = useState('');
+
+  // Devolución de mercadería (reingreso de stock + Kardex)
+  const [devolucionAbierta, setDevolucionAbierta] = useState(false);
+  const escanerPinRef = useRef('');                       // sesión viva, leída desde los listeners
+  const manejarCodigoRef = useRef<(codigo: string, origen: 'inalambrico' | 'pistola') => void>(() => {});
+
+  useEffect(() => {
+    setOrigenWeb(window.location.origin);
+  }, []);
+
   const cargarProductos = useCallback(async () => {
     try {
       const res = await fetch('/api/tienda/productos');
@@ -98,6 +118,136 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         { producto: p, cantidad: 1, precioUnitario: p.precio, subtotal: p.precio },
       ];
     });
+  };
+
+  // ─── Escáner: resolver un código contra el catálogo y agregarlo a la venta ───
+  const generarPinEscaner = () => {
+    try {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return String(100000 + (buf[0] % 900000));
+    } catch {
+      return String(Math.floor(100000 + Math.random() * 900000));
+    }
+  };
+
+  const manejarCodigo = useCallback(
+    (codigoCrudo: string, origen: 'inalambrico' | 'pistola') => {
+      const codigo = String(codigoCrudo ?? '').trim();
+      if (!codigo) return;
+      const encontrados = productos.filter((p) => p.codigoBarras && p.codigoBarras.trim() === codigo);
+      const hora = new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const registrar = (estado: 'ok' | 'sin-producto' | 'ambiguo', detalle: string) =>
+        setUltimosEscaneos((prev) => [{ codigo, estado, detalle, hora }, ...prev].slice(0, 5));
+
+      if (encontrados.length === 1) {
+        agregarAlCarrito(encontrados[0]);
+        registrar('ok', `+1 ${encontrados[0].nombre}`);
+        if (origen === 'pistola') notify.success(`${encontrados[0].nombre} agregado`);
+        if (escanerPinRef.current) realtime.escanerResultado(escanerPinRef.current, codigo, true, encontrados[0].nombre);
+        return;
+      }
+
+      // Un código desconocido no debe romper la venta: queda en el buscador para revisarlo a mano.
+      setBusqueda(codigo);
+      if (encontrados.length === 0) {
+        registrar('sin-producto', 'Sin producto con ese código');
+        notify.warning(`Código ${codigo}: sin producto registrado`);
+        if (escanerPinRef.current) realtime.escanerResultado(escanerPinRef.current, codigo, false, null);
+      } else {
+        registrar('ambiguo', `${encontrados.length} productos comparten el código`);
+        if (escanerPinRef.current) realtime.escanerResultado(escanerPinRef.current, codigo, true, null);
+      }
+    },
+    [productos, agregarAlCarrito]
+  );
+
+  // Los listeners de socket se registran una sola vez; la lógica se lee del ref
+  // para no reconectar cada vez que cambia el catálogo o el carrito.
+  useEffect(() => {
+    manejarCodigoRef.current = manejarCodigo;
+  }, [manejarCodigo]);
+
+  // Pistolas lectoras físicas: se comportan como un teclado que teclea en ráfaga y
+  // termina con Enter. Se distingue del tecleo humano por la velocidad de la ráfaga.
+  useEffect(() => {
+    let buffer = '';
+    let inicioRafaga = 0;
+    let ultimaTecla = 0;
+
+    const alTeclear = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const ahora = Date.now();
+      if (ahora - ultimaTecla > 120) {
+        buffer = '';
+        inicioRafaga = ahora;
+      }
+      ultimaTecla = ahora;
+
+      if (e.key === 'Enter') {
+        const codigo = buffer;
+        buffer = '';
+        const msPorCaracter = codigo.length > 1 ? (ultimaTecla - inicioRafaga) / codigo.length : 999;
+        if (codigo.length >= 6 && msPorCaracter <= 60) {
+          e.preventDefault();
+          setBusqueda('');
+          manejarCodigoRef.current(codigo, 'pistola');
+        }
+        return;
+      }
+      if (e.key.length === 1) buffer += e.key;
+    };
+
+    window.addEventListener('keydown', alTeclear, true);
+    return () => window.removeEventListener('keydown', alTeclear, true);
+  }, []);
+
+  // Eventos del escáner inalámbrico
+  useEffect(() => {
+    const offs = [
+      onRealtimeEvent('escaner:presencia', (d: { lectorConectado?: boolean }) => {
+        if (!escanerPinRef.current) return;
+        setLectorConectado(!!d?.lectorConectado);
+      }),
+      onRealtimeEvent('escaner:codigo:recibido', (d: { codigo?: string }) => {
+        if (d?.codigo) manejarCodigoRef.current(d.codigo, 'inalambrico');
+      }),
+      onRealtimeEvent('escaner:cerrada', (d: { motivo?: string }) => {
+        if (!escanerPinRef.current) return;
+        escanerPinRef.current = '';
+        setEscanerPin('');
+        setLectorConectado(false);
+        notify.warning(
+          d?.motivo === 'expirada' ? 'La sesión del escáner expiró por inactividad' : 'La sesión del escáner se cerró'
+        );
+      }),
+      onRealtimeEvent('escaner:error', (d: { mensaje?: string }) => {
+        if (d?.mensaje) notify.error(d.mensaje);
+      }),
+    ];
+    return () => {
+      offs.forEach((off) => off());
+      // Al salir del POS la sesión se cierra: el celular recibe `escaner:cerrada`.
+      if (escanerPinRef.current) realtime.escanerCerrar(escanerPinRef.current);
+    };
+  }, []);
+
+  const abrirEscaner = () => {
+    const pin = generarPinEscaner();
+    escanerPinRef.current = pin;
+    setEscanerPin(pin);
+    setLectorConectado(false);
+    setUltimosEscaneos([]);
+    setEscanerAbierto(true);
+    realtime.escanerAbrir(pin);
+  };
+
+  const cerrarEscaner = () => {
+    if (escanerPinRef.current) realtime.escanerCerrar(escanerPinRef.current);
+    escanerPinRef.current = '';
+    setEscanerPin('');
+    setLectorConectado(false);
+    setEscanerAbierto(false);
   };
 
   const modificarCantidad = (prodId: string, delta: number) => {
@@ -219,6 +369,49 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               width: '100%',
             }}
           />
+          <button
+            onClick={abrirEscaner}
+            title="Emparejar un celular como lector de códigos de barras"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              height: 36,
+              padding: '0 12px',
+              borderRadius: 10,
+              border: lectorConectado ? '1px solid rgba(34,197,94,.5)' : '1px solid var(--border)',
+              background: lectorConectado ? 'rgba(34,197,94,.12)' : 'var(--bg-alt)',
+              color: lectorConectado ? '#22C55E' : 'var(--text)',
+              fontWeight: 700,
+              fontSize: 12.5,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Camera size={15} />
+            {escanerAbierto ? (lectorConectado ? 'Lector activo' : 'Esperando…') : 'Escáner'}
+          </button>
+          <button
+            onClick={() => setDevolucionAbierta(true)}
+            title="Devolver mercadería al inventario"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              height: 36,
+              padding: '0 12px',
+              borderRadius: 10,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-alt)',
+              color: 'var(--text)',
+              fontWeight: 700,
+              fontSize: 12.5,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <RotateCcw size={15} /> Devolución
+          </button>
         </div>
 
         {/* Product Grid */}
@@ -519,6 +712,145 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* Modal Factura / Imprimir Ticket */}
+      <TiendaDevolucion
+        abierto={devolucionAbierta}
+        onCerrar={() => setDevolucionAbierta(false)}
+        productos={productos}
+        onDevuelto={cargarProductos}
+      />
+
+      {/* Escáner inalámbrico: la tablet espera al celular del operador */}
+      {escanerAbierto && (
+        <div
+          onClick={cerrarEscaner}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            zIndex: 60,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 460,
+              background: 'var(--surface)',
+              borderRadius: 18,
+              border: '1px solid var(--border)',
+              padding: 20,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Camera size={18} /> Escáner inalámbrico
+              </h3>
+              <span
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: lectorConectado ? 'rgba(34,197,94,.15)' : 'rgba(148,163,184,.15)',
+                  color: lectorConectado ? '#22C55E' : 'var(--text-muted)',
+                }}
+              >
+                {lectorConectado ? 'LECTOR CONECTADO' : 'ESPERANDO LECTOR…'}
+              </span>
+            </div>
+
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '10px 0 0', lineHeight: 1.5 }}>
+              En el celular abre <b>{origenWeb}/escaner</b> y teclea este PIN:
+            </p>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+              <div
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  fontSize: 38,
+                  fontWeight: 800,
+                  letterSpacing: 10,
+                  fontFamily: 'ui-monospace, monospace',
+                  padding: '10px 0',
+                  borderRadius: 14,
+                  background: 'var(--bg-alt)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                {escanerPin}
+              </div>
+              <Wifi size={22} style={{ color: lectorConectado ? '#22C55E' : 'var(--text-muted)' }} />
+            </div>
+
+            {origenWeb.includes('localhost') || origenWeb.includes('127.0.0.1') ? (
+              <p style={{ fontSize: 12, color: '#F59E0B', margin: '10px 0 0' }}>
+                El celular no puede abrir <b>localhost</b>: usa la IP de esta PC en la red (ej. http://192.168.1.10:3000/escaner).
+              </p>
+            ) : null}
+
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>ÚLTIMAS LECTURAS</div>
+              {ultimosEscaneos.length === 0 ? (
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Sin lecturas todavía.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {ultimosEscaneos.map((e, i) => (
+                    <div
+                      key={`${e.codigo}-${i}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '8px 10px',
+                        borderRadius: 10,
+                        background: 'var(--bg-alt)',
+                        border: '1px solid var(--border)',
+                      }}
+                    >
+                      <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 13, fontWeight: 700 }}>{e.codigo}</span>
+                      <span
+                        style={{
+                          flex: 1,
+                          fontSize: 12,
+                          color: e.estado === 'ok' ? '#22C55E' : e.estado === 'ambiguo' ? '#F59E0B' : '#EF4444',
+                        }}
+                      >
+                        {e.detalle}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{e.hora}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={cerrarEscaner}
+              style={{
+                width: '100%',
+                marginTop: 16,
+                height: 42,
+                borderRadius: 12,
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--text)',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Cerrar sesión de escaneo
+            </button>
+          </div>
+        </div>
+      )}
+
       {facturaEmitida && (
         <div
           style={{
