@@ -73,6 +73,17 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   }, [cargarProductos]);
 
   const agregarAlCarrito = (p: Producto) => {
+    // stock === null (o sin definir) => el producto no gestiona stock: sin tope
+    const stockDisponible = p.stock ?? null;
+
+    if (stockDisponible !== null) {
+      const enCarrito = carrito.find((it) => it.producto.id === p.id)?.cantidad ?? 0;
+      if (stockDisponible <= 0 || enCarrito + 1 > stockDisponible) {
+        notify.warning(`Stock insuficiente para "${p.nombre}". Disponible: ${stockDisponible}`);
+        return;
+      }
+    }
+
     setCarrito((prev) => {
       const existe = prev.find((it) => it.producto.id === p.id);
       if (existe) {
@@ -90,6 +101,15 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   };
 
   const modificarCantidad = (prodId: string, delta: number) => {
+    const item = carrito.find((it) => it.producto.id === prodId);
+    // stock === null (o sin definir) => el producto no gestiona stock: sin tope
+    const stockDisponible = item?.producto.stock ?? null;
+
+    if (item && delta > 0 && stockDisponible !== null && item.cantidad + delta > stockDisponible) {
+      notify.warning(`Stock insuficiente para "${item.producto.nombre}". Disponible: ${stockDisponible}`);
+      return;
+    }
+
     setCarrito((prev) =>
       prev
         .map((it) => {

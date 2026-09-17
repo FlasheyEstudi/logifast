@@ -12,6 +12,18 @@ interface ItemVentaInput {
 }
 
 /**
+ * Error de negocio del POS: existencias insuficientes detectadas dentro de la
+ * transacción (el stock cambió después de la validación previa). Se mapea a 400,
+ * nunca a 500, y provoca el rollback completo de la venta.
+ */
+class ErrorStockPOS extends Error {
+  constructor(mensaje: string) {
+    super(mensaje);
+    this.name = 'ErrorStockPOS';
+  }
+}
+
+/**
  * POST /api/tienda/pos
  * Procesa una venta en el Punto de Venta (POS):
  * - Registra la venta VentaPOS
@@ -78,6 +90,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Validar existencias: stock === null => el producto no gestiona stock y la venta se permite
+      if (prod.stock !== null && prod.stock < cant) {
+        return NextResponse.json(
+          { ok: false, error: 'Stock insuficiente para "' + prod.nombre + '". Disponible: ' + prod.stock },
+          { status: 400 }
+        );
+      }
+
       // PRECIO AUTORITATIVO DEL SERVIDOR (ignora el enviado por el cliente para evitar parameter tampering)
       const precioOficial = prod.precio;
       const sub = cant * precioOficial;
@@ -135,13 +155,24 @@ export async function POST(req: NextRequest) {
       for (const item of itemsFormatted) {
         const prod = await tx.producto.findUnique({ where: { id: item.productoId } });
         if (prod) {
+          // stock === null => el producto no gestiona stock: se vende sin tocar existencias
+          const gestionaStock = prod.stock !== null;
           const stockActual = prod.stock ?? 0;
-          const nuevoStock = Math.max(0, stockActual - item.cantidad);
+          const nuevoStock = gestionaStock ? stockActual - item.cantidad : stockActual;
 
-          await tx.producto.update({
-            where: { id: item.productoId },
-            data: { stock: { decrement: item.cantidad } },
-          });
+          if (nuevoStock < 0) {
+            // Corte atómico: se aborta la venta completa (sin stock negativo y sin Kardex divergente)
+            throw new ErrorStockPOS(
+              `Stock insuficiente para "${item.nombreProducto}". Disponible: ${stockActual}`
+            );
+          }
+
+          if (gestionaStock) {
+            await tx.producto.update({
+              where: { id: item.productoId },
+              data: { stock: nuevoStock },
+            });
+          }
 
           await tx.kardexMovimiento.create({
             data: {
@@ -192,6 +223,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof ErrorStockPOS) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+    }
     console.error('[TIENDA_POS_POST_ERROR]', error);
     return NextResponse.json({ ok: false, error: 'Error al procesar venta POS' }, { status: 500 });
   }
