@@ -5,9 +5,46 @@ import { emitOrdenAsignada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
 
+/* ─── Helpers de formato ───
+ * La cola de despacho alimenta directamente el store `Order` del dashboard.
+ * Los campos fecha/hora deben viajar en el formato que consumen la espera y la
+ * línea de tiempo del panel ('YYYY-MM-DD' y 'HH:MM' de 24 h), no localizados.
+ */
+
+/** 'YYYY-MM-DD' en hora local (toISOString daría el día UTC y desfase de un día). */
+function fechaLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dia}`;
+}
+
+/** 'HH:MM' de 24 horas. */
+function horaLocal(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** Iniciales del repartidor para el avatar de la cola. */
+function iniciales(nombre?: string | null): string {
+  const limpio = String(nombre || '').trim();
+  if (!limpio) return 'RP';
+  return (
+    limpio
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((p) => p.charAt(0).toUpperCase())
+      .join('') || 'RP'
+  );
+}
+
 /**
  * GET /api/admin/despacho
  * Returns active dispatch queue (pending/assigned orders) and nearby online drivers.
+ *
+ * La cola se normaliza al contrato `Order` del dashboard: `cliente` es un string
+ * y `repartidor` el nombre del repartidor. Antes se devolvían las filas crudas de
+ * Prisma, donde `cliente` viajaba como objeto {id, name, telefono}: al pintarlo el
+ * panel lanzaba el error #31 de React ("objects are not valid as a React child").
  */
 export async function GET() {
   try {
@@ -31,6 +68,7 @@ export async function GET() {
           cliente: { select: { id: true, name: true, telefono: true } },
           tienda: { select: { id: true, nombre: true, direccion: true, lat: true, lng: true } },
           items: true,
+          repartidor: { select: { id: true, nombre: true } },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -47,30 +85,72 @@ export async function GET() {
       }),
     ]);
 
-    // Mapear compras al formato unificado de cola de despacho
-    const comprasMapeadas = ordenesCompra.map((c) => ({
-      id: c.id,
-      tipo: 'compra' as const,
-      cliente: c.cliente,
-      clienteNombre: c.cliente?.name || 'Cliente Marketplace',
-      clienteTelefono: c.cliente?.telefono || '',
-      origen: c.tienda?.nombre || 'Tienda',
-      destino: c.direccionEntrega,
-      origenLat: c.tienda?.lat || 12.1364,
-      origenLng: c.tienda?.lng || -86.2581,
-      destinoLat: c.lat || 12.14,
-      destinoLng: c.lng || -86.25,
-      monto: c.total,
-      estado: c.repartidorId ? (c.estado === 'recibido' ? 'asignado' : c.estado) : (c.estado === 'recibido' || c.estado === 'listo' ? 'pendiente' : c.estado),
-      repartidorId: c.repartidorId,
-      repartidor: null,
-      createdAt: c.createdAt,
-      updatedAt: c.updatedAt,
-      paquete: `Pedido de Tienda (${c.items?.length || 1} productos)`,
-    }));
+    // ─── Envíos express → contrato `Order` ───
+    const colaServicios = ordenesServicio.map((o) => {
+      const creada = new Date(o.createdAt);
+      return {
+        id: o.id,
+        tipo: 'envio' as const,
+        cliente: o.clienteNombre || o.cliente?.name || 'Cliente',
+        clienteTelefono: o.clienteTelefono || o.cliente?.telefono || '',
+        clienteId: o.clienteId,
+        origen: o.origen,
+        destino: o.destino,
+        origenLat: o.origenLat || 0,
+        origenLng: o.origenLng || 0,
+        destinoLat: o.destinoLat || 0,
+        destinoLng: o.destinoLng || 0,
+        repartidor: o.repartidor?.nombre || null,
+        repartidorId: o.repartidorId || null,
+        repartidorInitials: iniciales(o.repartidor?.nombre),
+        descripcion: o.paquete || 'Envío de paquete',
+        monto: o.monto || 0,
+        estado: o.estado,
+        metodoPago: o.metodoPago || 'efectivo',
+        estadoPago: 'pagado' as const,
+        codigoPin: o.codigoPin || undefined,
+        fecha: fechaLocal(creada),
+        hora: horaLocal(creada),
+        timeline: [{ step: 'Creada', hora: horaLocal(creada), completado: true }],
+        createdAt: o.createdAt,
+        updatedAt: o.updatedAt,
+      };
+    });
+
+    // ─── Compras de tienda → mismo contrato ───
+    const colaCompras = ordenesCompra.map((c) => {
+      const creada = new Date(c.createdAt);
+      return {
+        id: c.id,
+        tipo: 'compra' as const,
+        cliente: c.cliente?.name || 'Cliente Marketplace',
+        clienteTelefono: c.cliente?.telefono || '',
+        clienteId: c.clienteId,
+        origen: c.tienda?.nombre || 'Tienda',
+        destino: c.direccionEntrega,
+        origenLat: c.tienda?.lat || 12.1364,
+        origenLng: c.tienda?.lng || -86.2581,
+        destinoLat: c.lat || 12.14,
+        destinoLng: c.lng || -86.25,
+        repartidor: c.repartidor?.nombre || null,
+        repartidorId: c.repartidorId || null,
+        repartidorInitials: iniciales(c.repartidor?.nombre),
+        descripcion: `Compra Tienda (${c.items?.length || 1} productos)`,
+        monto: c.total || 0,
+        estado: c.repartidorId ? (c.estado === 'recibido' ? 'asignado' : c.estado) : (c.estado === 'recibido' || c.estado === 'listo' ? 'pendiente' : c.estado),
+        metodoPago: c.metodoPago || 'efectivo',
+        estadoPago: 'pagado' as const,
+        codigoPin: c.codigoPin || undefined,
+        fecha: fechaLocal(creada),
+        hora: horaLocal(creada),
+        timeline: [{ step: 'Creada', hora: horaLocal(creada), completado: true }],
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      };
+    });
 
     // Combinar órdenes de paquetería y compras
-    const queue = [...ordenesServicio, ...comprasMapeadas].sort(
+    const queue = [...colaServicios, ...colaCompras].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 

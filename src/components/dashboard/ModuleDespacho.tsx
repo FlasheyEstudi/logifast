@@ -47,8 +47,15 @@ export default function ModuleDespacho() {
       const res = await fetch('/api/admin/despacho');
       if (res.ok) {
         const data = await res.json();
-        if (data?.queue) {
-          useStore.setState({ orders: data.queue });
+        if (Array.isArray(data?.queue)) {
+          // La cola trae solo las órdenes activas (pendientes/asignadas). Se
+          // fusiona por id en lugar de reemplazar la lista completa: antes el
+          // store global se quedaba solo con la cola y el resto del dashboard
+          // perdía las órdenes entregadas mientras Despacho estaba abierto.
+          const cola = data.queue as Order[];
+          const fusion = new Map(useStore.getState().orders.map((o) => [o.id, o]));
+          cola.forEach((o) => fusion.set(o.id, { ...fusion.get(o.id), ...o }));
+          useStore.setState({ orders: Array.from(fusion.values()) });
         }
       }
     } catch (e) {}
