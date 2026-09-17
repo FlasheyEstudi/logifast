@@ -38,11 +38,6 @@ export async function GET(req: NextRequest) {
           include: {
             cliente: { select: { id: true, name: true, telefono: true, fotoUrl: true, initials: true, color: true } },
             tienda: { select: { nombre: true } },
-            repartidor: {
-              include: {
-                user: { select: { id: true, name: true, telefono: true, fotoUrl: true, initials: true, color: true } },
-              },
-            },
           },
         })
       : null;
@@ -64,14 +59,22 @@ export async function GET(req: NextRequest) {
 
     // Resolver info del repartidor
     let repartidorInfo: any = null;
-    const repProfile = (orden as any)?.repartidor;
+    let repProfile = ordenServicio?.repartidor || null;
+    if (!repProfile && ordenCompra?.repartidorId) {
+      repProfile = await db.repartidorProfile.findUnique({
+        where: { id: ordenCompra.repartidorId },
+        include: {
+          user: { select: { id: true, name: true, telefono: true, fotoUrl: true, initials: true, color: true } },
+        },
+      });
+    }
     if (repProfile) {
       const repUser = repProfile.user;
       repartidorInfo = {
         id: repProfile.id,
         nombre: repProfile.nombre || repUser?.name || 'Carlos Martínez',
         telefono: repProfile.telefono || repUser?.telefono || '+505 8765-4321',
-        fotoUrl: repUser?.fotoUrl || repProfile.fotoUrl || null,
+        fotoUrl: repUser?.fotoUrl || null,
         initials: repUser?.initials || (repProfile.nombre ? repProfile.nombre.slice(0, 2).toUpperCase() : 'CM'),
         color: repUser?.color || '#10B981',
         calificacion: repProfile.calificacion || 4.9,
@@ -203,7 +206,7 @@ export async function POST(req: NextRequest) {
     const mensaje = await db.chatRepartidor.create({
       data: {
         ordenId,
-        repartidorId: repartidorId || undefined,
+        repartidorId: repartidorId || orden?.repartidorId || 'general',
         clienteId,
         emisor,
         contenido,

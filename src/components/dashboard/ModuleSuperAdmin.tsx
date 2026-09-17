@@ -143,6 +143,8 @@ export default function ModuleSuperAdmin() {
       .catch(() => {});
   }, []);
 
+  const currentHealth = stats?.systemHealth || SYSTEM_HEALTH;
+
   /* ─── Usuarios state ─── */
   const [localUsers, setLocalUsers] = useState<SystemUser[]>(users);
 
@@ -773,10 +775,10 @@ export default function ModuleSuperAdmin() {
                     </span>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700 }}>
-                    {SYSTEM_HEALTH.storageUsed} GB / {SYSTEM_HEALTH.storageTotal} GB
+                    {currentHealth.storageUsed} GB / {currentHealth.storageTotal} GB
                   </div>
                   <Progress
-                    value={(SYSTEM_HEALTH.storageUsed / SYSTEM_HEALTH.storageTotal) * 100}
+                    value={(currentHealth.storageUsed / currentHealth.storageTotal) * 100}
                     style={{ height: 6, borderRadius: 3 }}
                   />
                 </div>
@@ -813,14 +815,14 @@ export default function ModuleSuperAdmin() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 22, fontWeight: 700 }}>
-                      {SYSTEM_HEALTH.apiResponseMs}ms
+                      {currentHealth.apiResponseMs}ms
                     </span>
                     <TrendingUp
                       size={14}
                       style={{ color: 'var(--exito)', transform: 'rotate(-15deg)' }}
                     />
                     <span style={{ fontSize: 12, color: 'var(--exito)' }}>
-                      {SYSTEM_HEALTH.apiTrend}%
+                      {currentHealth.apiTrend}%
                     </span>
                   </div>
                 </div>
@@ -856,7 +858,7 @@ export default function ModuleSuperAdmin() {
                     </span>
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>
-                    {SYSTEM_HEALTH.lastBackup}
+                    {currentHealth.lastBackup}
                   </span>
                 </div>
 
@@ -890,7 +892,7 @@ export default function ModuleSuperAdmin() {
                       Versión del sistema
                     </span>
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 700 }}>{SYSTEM_HEALTH.version}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{currentHealth.version}</span>
                 </div>
 
                 {/* Connected Users */}

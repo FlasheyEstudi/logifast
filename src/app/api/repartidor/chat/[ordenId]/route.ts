@@ -36,11 +36,6 @@ export async function GET(
         include: {
           cliente: { select: { id: true, name: true, telefono: true, fotoUrl: true, initials: true, color: true } },
           tienda: { select: { nombre: true } },
-          repartidor: {
-            include: {
-              user: { select: { id: true, name: true, telefono: true, fotoUrl: true, initials: true, color: true } },
-            },
-          },
         },
       }),
     ]);
@@ -62,14 +57,22 @@ export async function GET(
     };
 
     let repartidorInfo: any = null;
-    const repProfile = (orden as any)?.repartidor;
+    let repProfile = ordenServicio?.repartidor || null;
+    if (!repProfile && ordenCompra?.repartidorId) {
+      repProfile = await db.repartidorProfile.findUnique({
+        where: { id: ordenCompra.repartidorId },
+        include: {
+          user: { select: { id: true, name: true, telefono: true, fotoUrl: true, initials: true, color: true } },
+        },
+      });
+    }
     if (repProfile) {
       const repUser = repProfile.user;
       repartidorInfo = {
         id: repProfile.id,
         nombre: repProfile.nombre || repUser?.name || 'Repartidor',
         telefono: repProfile.telefono || repUser?.telefono || '',
-        fotoUrl: repUser?.fotoUrl || repProfile.fotoUrl || null,
+        fotoUrl: repUser?.fotoUrl || null,
         initials: repUser?.initials || (repProfile.nombre ? repProfile.nombre.slice(0, 2).toUpperCase() : 'RP'),
         color: repUser?.color || '#007AFF',
         calificacion: repProfile.calificacion || 5.0,

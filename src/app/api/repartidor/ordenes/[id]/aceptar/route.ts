@@ -22,6 +22,7 @@ export async function PATCH(
     }
     const { profile } = rp;
 
+    let linkedCompraIds: string[] = [];
     let orden = await db.ordenServicio.findUnique({ where: { id } });
     if (!orden) {
       // Intentar buscar en ordenCompra (Marketplace)
@@ -95,7 +96,7 @@ export async function PATCH(
       }).catch(() => null);
 
       // Sincronizar OrdenCompra vinculada (si aplica)
-      let linkedCompraIds: string[] = [];
+      linkedCompraIds = [];
       if (orden?.tiendaId) {
         const linkedCompras = await db.ordenCompra.findMany({
           where: {

@@ -20,6 +20,12 @@ export async function GET() {
     }
     const { user, profile } = rp;
 
+    const recargasDb = await db.recargaSaldo.findMany({
+      where: { repartidorId: profile.id },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
     const result: RepartidorProfile & Record<string, any> = {
       id: profile.id,
       nombre: profile.nombre,
@@ -45,7 +51,12 @@ export async function GET() {
       ubicacionActiva: profile.ubicacionActiva,
       saldo: profile.saldo,
       contratoAceptado: profile.contratoAceptado,
-      recargas: [],
+      recargas: recargasDb.map((r) => ({
+        id: r.id,
+        monto: r.monto,
+        codigo: r.codigo || r.referencia || 'Recarga',
+        fecha: r.createdAt.toISOString().slice(0, 10),
+      })),
     };
 
     return NextResponse.json(result);

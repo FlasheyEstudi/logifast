@@ -181,6 +181,61 @@ async function computeTrends(
   };
 }
 
+const DIAS_LETRAS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+
+async function computeDiasSemana(repartidorId: string): Promise<Array<{ x: string; v: number }>> {
+  const now = new Date();
+  const hace7Dias = new Date(now);
+  hace7Dias.setDate(hace7Dias.getDate() - 6);
+  hace7Dias.setHours(0, 0, 0, 0);
+
+  const [servicios, compras] = await Promise.all([
+    db.ordenServicio.findMany({
+      where: {
+        repartidorId,
+        estado: 'entregado',
+        OR: [
+          { entregadoEn: { gte: hace7Dias } },
+          { updatedAt: { gte: hace7Dias } },
+        ],
+      },
+      select: { id: true, entregadoEn: true, updatedAt: true },
+    }),
+    db.ordenCompra.findMany({
+      where: {
+        repartidorId,
+        estado: 'entregado',
+        updatedAt: { gte: hace7Dias },
+      },
+      select: { id: true, updatedAt: true },
+    }),
+  ]);
+
+  const result: Array<{ x: string; v: number }> = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dayStart = new Date(d);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(d);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const countServicios = servicios.filter((s) => {
+      const fecha = s.entregadoEn || s.updatedAt;
+      return fecha >= dayStart && fecha <= dayEnd;
+    }).length;
+
+    const countCompras = compras.filter((c) => {
+      return c.updatedAt >= dayStart && c.updatedAt <= dayEnd;
+    }).length;
+
+    const letraDia = DIAS_LETRAS[d.getDay()];
+    result.push({ x: letraDia, v: countServicios + countCompras });
+  }
+
+  return result;
+}
+
 /**
  * GET /api/repartidor/stats?periodo=hoy|semana|mes
  */
@@ -198,13 +253,14 @@ export async function GET(req: NextRequest) {
       ? periodo
       : 'hoy';
 
-    const [stats, trends] = await Promise.all([
+    const [stats, trends, dias] = await Promise.all([
       computeStats(profile.id, validPeriodo),
       computeTrends(profile.id, validPeriodo),
+      computeDiasSemana(profile.id),
     ]);
 
     return NextResponse.json(
-      { stats, trends },
+      { stats, trends, dias },
       {
         headers: {
           'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=20',
@@ -216,6 +272,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       stats: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
       trends: { entregas: 0, km: 0, ganancias: 0, tiempoActivo: 0 },
+      dias: ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((x) => ({ x, v: 0 })),
     });
   }
 }

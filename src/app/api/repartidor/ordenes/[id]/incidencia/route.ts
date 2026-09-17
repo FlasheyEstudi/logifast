@@ -30,27 +30,40 @@ export async function PATCH(
     const body = await req.json();
     const tipoRaw = String(body.tipo ?? 'otro');
     const tipoLabel = TIPO_LABEL[tipoRaw] ?? 'Otro';
-    const desc = String(body.desc ?? '');
+    const desc = String(body.desc ?? body.descripcion ?? '');
 
-    const orden = await db.ordenServicio.findUnique({ where: { id } });
+    let clienteId: string | null = null;
+    let orden = await db.ordenServicio.findUnique({ where: { id } });
     if (!orden) {
-      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+      const ordenCompra = await db.ordenCompra.findUnique({
+        where: { id },
+        include: { cliente: true },
+      });
+      if (!ordenCompra) {
+        return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+      }
+      if (ordenCompra.repartidorId && ordenCompra.repartidorId !== profile.id) {
+        return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
+      }
+      clienteId = ordenCompra.clienteId;
+      await db.ordenCompra.update({
+        where: { id },
+        data: { estado: 'cancelado' },
+      });
+    } else {
+      if (orden.repartidorId && orden.repartidorId !== profile.id) {
+        return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
+      }
+      clienteId = orden.clienteId;
+      await db.ordenServicio.update({
+        where: { id },
+        data: {
+          estado: 'incidencia',
+          incidenciaTipo: tipoLabel,
+          incidenciaDesc: desc,
+        },
+      });
     }
-    if (orden.repartidorId !== profile.id) {
-      return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
-    }
-
-    const updatedOrden = await db.ordenServicio.update({
-      where: { id },
-      data: {
-        estado: 'incidencia',
-        incidenciaTipo: tipoLabel,
-        incidenciaDesc: desc,
-      },
-      include: {
-        cliente: { select: { id: true, name: true, email: true, telefono: true } },
-      },
-    });
 
     await db.repartidorProfile.update({
       where: { id: profile.id },
@@ -70,7 +83,9 @@ export async function PATCH(
 
     // Notificar en tiempo real al Cliente y Admin sobre la incidencia
     const { emitirEventoRealtime, emitOrdenActualizada } = await import('@/lib/realtime-emitter');
-    emitOrdenActualizada(updatedOrden);
+    if (orden) {
+      emitOrdenActualizada(orden);
+    }
 
     const descCliente =
       tipoRaw === 'mecanica'
@@ -93,9 +108,9 @@ export async function PATCH(
       },
     });
 
-    if (orden.clienteId) {
+    if (clienteId) {
       emitirEventoRealtime({
-        room: `cliente:${orden.clienteId}`,
+        room: `cliente:${clienteId}`,
         event: 'cliente:notificacion',
         data: {
           id: `notif-inc-${Date.now()}`,
@@ -108,7 +123,7 @@ export async function PATCH(
 
       await db.notificacionPush.create({
         data: {
-          userId: orden.clienteId,
+          userId: clienteId,
           titulo: 'Contratiempo en tu entrega',
           contenido: descCliente,
           tipo: 'INCIDENCIA',

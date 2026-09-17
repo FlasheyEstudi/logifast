@@ -151,8 +151,19 @@ export default function RepartidorDetalleServicio() {
 
   const s = servicioDetalle;
 
-  const origenPos = useMemo<[number, number]>(() => s ? getCoordsForLocation(s.origen, false) : [12.1289, -86.2451], [s]);
-  const destinoPos = useMemo<[number, number]>(() => s ? getCoordsForLocation(s.destino, true) : [12.1421, -86.2287], [s]);
+  const origenPos = useMemo<[number, number]>(() => {
+    if (s && typeof s.origenLat === 'number' && typeof s.origenLng === 'number' && (s.origenLat !== 0 || s.origenLng !== 0)) {
+      return [s.origenLat, s.origenLng];
+    }
+    return s ? getCoordsForLocation(s.origen, false) : [12.1289, -86.2451];
+  }, [s]);
+
+  const destinoPos = useMemo<[number, number]>(() => {
+    if (s && typeof s.destinoLat === 'number' && typeof s.destinoLng === 'number' && (s.destinoLat !== 0 || s.destinoLng !== 0)) {
+      return [s.destinoLat, s.destinoLng];
+    }
+    return s ? getCoordsForLocation(s.destino, true) : [12.1421, -86.2287];
+  }, [s]);
 
   useEffect(() => {
     if (!origenPos || !destinoPos) return;

@@ -68,8 +68,6 @@ export async function POST(request: NextRequest) {
         tipo,
         segmento,
         contenido,
-        triggerTipo: triggerTipo || 'manual',
-        variables: typeof variables === 'string' ? variables : JSON.stringify(variables),
         estado: estado || 'borrador',
         programadaPara: programadaPara ? new Date(programadaPara) : null,
         creadoPor,
@@ -81,3 +79,122 @@ export async function POST(request: NextRequest) {
     return handleError(error, 'CAMPANAS_POST');
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    await requireRole('admin');
+    const body = await request.json();
+    const { id, titulo, tipo, segmento, contenido, estado, programadaPara, accion } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'id requerido' }, { status: 400 });
+    }
+
+    const existing = await db.campana.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Campaña no encontrada' }, { status: 404 });
+    }
+
+    // Acción de envío inmediato en tiempo real
+    if (accion === 'enviar' || estado === 'enviada') {
+      const segment = segmento || existing.segmento || 'todos';
+      let usersToTarget: Array<{ id: string }> = [];
+
+      if (segment === 'todos') {
+        usersToTarget = await db.user.findMany({ select: { id: true } });
+      } else if (segment === 'Clientes nuevos') {
+        const twoWeeksAgo = new Date(Date.now() - 14 * 86400000);
+        usersToTarget = await db.user.findMany({
+          where: { role: 'cliente', createdAt: { gte: twoWeeksAgo } },
+          select: { id: true },
+        });
+      } else {
+        usersToTarget = await db.user.findMany({
+          where: { role: 'cliente' },
+          select: { id: true },
+          take: 50,
+        });
+      }
+
+      if (usersToTarget.length > 0) {
+        await db.notificacionPush.createMany({
+          data: usersToTarget.map((u) => ({
+            userId: u.id,
+            titulo: titulo || existing.titulo,
+            contenido: contenido || existing.contenido,
+            tipo: 'promocion',
+            entidadId: id,
+            leida: false,
+          })),
+        });
+
+        try {
+          const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+          usersToTarget.forEach((u) => {
+            emitirEventoRealtime({
+              room: `usuario:${u.id}`,
+              event: 'notificacion:push',
+              data: {
+                titulo: titulo || existing.titulo,
+                contenido: contenido || existing.contenido,
+                tipo: 'promocion',
+              },
+            });
+          });
+        } catch {}
+      }
+
+      const updated = await db.campana.update({
+        where: { id },
+        data: {
+          estado: 'enviada',
+          enviadaEn: new Date(),
+          destinatarios: usersToTarget.length,
+          titulo: titulo || existing.titulo,
+          contenido: contenido || existing.contenido,
+          segmento: segment,
+        },
+      });
+
+      return NextResponse.json({ ok: true, data: updated, enviados: usersToTarget.length });
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (titulo !== undefined) updateData.titulo = titulo;
+    if (tipo !== undefined) updateData.tipo = tipo;
+    if (segmento !== undefined) updateData.segmento = segmento;
+    if (contenido !== undefined) updateData.contenido = contenido;
+    if (estado !== undefined) updateData.estado = estado;
+    if (programadaPara !== undefined) {
+      updateData.programadaPara = programadaPara ? new Date(programadaPara) : null;
+    }
+
+    const updated = await db.campana.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return NextResponse.json({ ok: true, data: updated });
+  } catch (error) {
+    return handleError(error, 'CAMPANAS_PATCH');
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await requireRole('admin');
+    const { searchParams } = new URL(request.url);
+    const idParam = searchParams.get('id');
+    const id = idParam || (await request.json().catch(() => ({})))?.id;
+
+    if (!id) {
+      return NextResponse.json({ error: 'id requerido' }, { status: 400 });
+    }
+
+    await db.campana.delete({ where: { id } });
+    return NextResponse.json({ ok: true, message: 'Campaña eliminada' });
+  } catch (error) {
+    return handleError(error, 'CAMPANAS_DELETE');
+  }
+}
+

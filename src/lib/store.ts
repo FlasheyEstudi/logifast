@@ -772,17 +772,18 @@ interface AppState {
   addCampana: (campana: Campana) => void;
   updateCampana: (id: string, updates: Partial<Campana>) => void;
   deleteCampana: (id: string) => void;
+  fetchCampanas: () => Promise<void>;
   addCodigo: (codigo: CodigoPromocional) => void;
   updateCodigo: (id: string, updates: Partial<CodigoPromocional>) => void;
   deleteCodigo: (id: string) => void;
   addBanner: (banner: Banner) => void;
   updateBanner: (id: string, updates: Partial<Banner>) => void;
   deleteBanner: (id: string) => void;
-  fetchBanners: () => Promise<void>;
+  fetchBanners: (todos?: boolean) => Promise<void>;
   addFeedItem: (item: FeedItem) => void;
   updateFeedItem: (id: string, updates: Partial<FeedItem>) => void;
   deleteFeedItem: (id: string) => void;
-  fetchFeed: () => Promise<void>;
+  fetchFeed: (todos?: boolean) => Promise<void>;
   fetchCodigos: () => Promise<void>;
 
   /* Wallet / Cupones Cliente Actions */
@@ -1334,102 +1335,123 @@ export const useStore = create<AppState>((set, get) => ({
 
   /* Marketing Actions */
   addCampana: (campana) => {
-    set((state) => ({ campanas: [campana, ...state.campanas] }));
+    set((state) => ({ campanas: [campana, ...state.campanas.filter((c) => c.id !== campana.id)] }));
+  },
+  updateCampana: (id, updates) => {
+    set((state) => ({
+      campanas: state.campanas.map((c) => c.id === id ? { ...c, ...updates } : c),
+    }));
     fetch('/api/campanas', {
-      method: 'POST',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        titulo: campana.titulo,
-        tipo: campana.tipo,
-        segmento: campana.segmento,
-        contenido: JSON.stringify(campana.contenido),
-        estado: campana.estado,
-        creadoPor: 'admin',
+        id,
+        titulo: updates.titulo,
+        tipo: updates.tipo,
+        segmento: updates.segmento,
+        contenido: updates.contenido ? (typeof updates.contenido === 'string' ? updates.contenido : updates.contenido.cuerpo) : undefined,
+        estado: updates.estado,
+        programadaPara: updates.programadaPara,
       }),
-    }).catch((err) => console.error('[addCampana API error]', err));
+    }).catch((err) => console.error('[updateCampana API error]', err));
   },
-  updateCampana: (id, updates) => set((state) => ({
-    campanas: state.campanas.map((c) => c.id === id ? { ...c, ...updates } : c),
-  })),
-  deleteCampana: (id) => set((state) => ({ campanas: state.campanas.filter((c) => c.id !== id) })),
-
-  addCodigo: (codigo) => {
-    set((state) => ({ codigos: [codigo, ...state.codigos] }));
-    fetch('/api/codigos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        codigo: codigo.codigo,
-        tipoDescuento: codigo.tipoDescuento,
-        valor: codigo.valor,
-        aplicableA: codigo.aplicableA,
-        montoMinimo: codigo.montoMinimo,
-        maxUsos: codigo.maxUsos,
-        segmento: codigo.segmento,
-        vigenciaInicio: codigo.vigenciaInicio || new Date().toISOString(),
-        vigenciaFin: codigo.vigenciaFin || new Date(Date.now() + 30 * 86400000).toISOString(),
-        estado: codigo.estado,
-        creadoPor: 'admin',
-      }),
-    }).catch((err) => console.error('[addCodigo API error]', err));
+  deleteCampana: (id) => {
+    set((state) => ({ campanas: state.campanas.filter((c) => c.id !== id) }));
+    fetch(`/api/campanas?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      .catch((err) => console.error('[deleteCampana API error]', err));
   },
-  updateCodigo: (id, updates) => set((state) => ({
-    codigos: state.codigos.map((c) => c.id === id ? { ...c, ...updates } : c),
-  })),
-  deleteCodigo: (id) => set((state) => ({ codigos: state.codigos.filter((c) => c.id !== id) })),
-
-  addBanner: (banner) => {
-    set((state) => ({ banners: [...state.banners, banner] }));
-    fetch('/api/banners', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        titulo: banner.titulo,
-        subtitulo: banner.subtitulo,
-        tipo: banner.tipo,
-        colorFondo: banner.colorFondo,
-        gradiente: typeof banner.gradiente === 'object' ? JSON.stringify(banner.gradiente) : banner.gradiente,
-        colorTexto: banner.colorTexto,
-        imagenUrl: banner.imagenUrl,
-        botonTexto: banner.botonTexto,
-        botonAccion: banner.botonAccion,
-        botonLink: banner.botonLink,
-        icono: banner.icono,
-        segmento: banner.segmento,
-        mostrarEn: banner.mostrarEn,
-        posicion: banner.posicion,
-        estado: banner.estado,
-        creadoPor: 'admin',
-      }),
-    }).catch((err) => console.error('[addBanner API error]', err));
-  },
-  updateBanner: (id, updates) => set((state) => ({
-    banners: state.banners.map((b) => b.id === id ? { ...b, ...updates } : b),
-  })),
-  deleteBanner: (id) => set((state) => ({ banners: state.banners.filter((b) => b.id !== id) })),
-  fetchBanners: async () => {
+  fetchCampanas: async () => {
     try {
-      const res = await fetch('/api/banners?estado=activo');
+      const res = await fetch('/api/campanas');
       if (!res.ok) return;
       const json = await res.json();
-      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+      if (json.data && Array.isArray(json.data)) {
+        const mapped = json.data.map((c: any) => ({
+          ...c,
+          contenido: typeof c.contenido === 'string' && c.contenido.startsWith('{')
+            ? JSON.parse(c.contenido)
+            : { cuerpo: c.contenido || '' },
+        }));
+        set({ campanas: mapped });
+      }
+    } catch (err) {
+      console.error('[fetchCampanas error]', err);
+    }
+  },
+
+  addCodigo: (codigo) => {
+    set((state) => ({ codigos: [codigo, ...state.codigos.filter((c) => c.id !== codigo.id)] }));
+  },
+  updateCodigo: (id, updates) => {
+    set((state) => ({
+      codigos: state.codigos.map((c) => c.id === id ? { ...c, ...updates } : c),
+    }));
+    fetch('/api/codigos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates }),
+    }).catch((err) => console.error('[updateCodigo API error]', err));
+  },
+  deleteCodigo: (id) => {
+    set((state) => ({ codigos: state.codigos.filter((c) => c.id !== id) }));
+    fetch(`/api/codigos?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      .catch((err) => console.error('[deleteCodigo API error]', err));
+  },
+
+  addBanner: (banner) => {
+    set((state) => ({ banners: [...state.banners.filter((b) => b.id !== banner.id), banner] }));
+  },
+  updateBanner: (id, updates) => {
+    set((state) => ({
+      banners: state.banners.map((b) => b.id === id ? { ...b, ...updates } : b),
+    }));
+    fetch('/api/banners', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates }),
+    }).catch((err) => console.error('[updateBanner API error]', err));
+  },
+  deleteBanner: (id) => {
+    set((state) => ({ banners: state.banners.filter((b) => b.id !== id) }));
+    fetch(`/api/banners?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      .catch((err) => console.error('[deleteBanner API error]', err));
+  },
+  fetchBanners: async (todos = false) => {
+    try {
+      const res = await fetch(todos ? '/api/banners' : '/api/banners?estado=activo');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.data && Array.isArray(json.data)) {
         set({ banners: json.data });
       }
     } catch (err) {
       console.error('[fetchBanners error]', err);
     }
   },
-  addFeedItem: (item) => set((state) => ({ feedItems: [item, ...state.feedItems] })),
-  updateFeedItem: (id, updates) => set((state) => ({
-    feedItems: state.feedItems.map((f) => f.id === id ? { ...f, ...updates } : f),
-  })),
-  deleteFeedItem: (id) => set((state) => ({ feedItems: state.feedItems.filter((f) => f.id !== id) })),
-  fetchFeed: async () => {
+  addFeedItem: (item) => {
+    set((state) => ({ feedItems: [item, ...state.feedItems.filter((f) => f.id !== item.id)] }));
+  },
+  updateFeedItem: (id, updates) => {
+    set((state) => ({
+      feedItems: state.feedItems.map((f) => f.id === id ? { ...f, ...updates } : f),
+    }));
+    fetch('/api/feed', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates }),
+    }).catch((err) => console.error('[updateFeedItem API error]', err));
+  },
+  deleteFeedItem: (id) => {
+    set((state) => ({ feedItems: state.feedItems.filter((f) => f.id !== id) }));
+    fetch(`/api/feed?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      .catch((err) => console.error('[deleteFeedItem API error]', err));
+  },
+  fetchFeed: async (todos = false) => {
     try {
-      const res = await fetch('/api/feed?estado=activo');
+      const res = await fetch(todos ? '/api/feed' : '/api/feed?estado=activo');
       if (!res.ok) return;
       const json = await res.json();
-      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+      if (json.data && Array.isArray(json.data)) {
         set({ feedItems: json.data });
       }
     } catch (err) {

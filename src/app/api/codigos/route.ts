@@ -79,9 +79,6 @@ export async function POST(request: NextRequest) {
         valor: Number(valor),
         aplicableA,
         montoMinimo: montoMinimo ? Number(montoMinimo) : null,
-        descuentoMaximo: descuentoMaximo ? Number(descuentoMaximo) : null,
-        primerPedidoSolo: Boolean(primerPedidoSolo),
-        tipoServicio: tipoServicio || 'ambos',
         maxUsos: maxUsos ? Number(maxUsos) : 0,
         segmento: segmento || 'todos',
         vigenciaInicio: new Date(vigenciaInicio),
@@ -96,3 +93,51 @@ export async function POST(request: NextRequest) {
     return handleError(error, 'CODIGOS_POST');
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    await requireRole('admin');
+    const body = await request.json();
+    const { id, estado, valor, maxUsos, vigenciaInicio, vigenciaFin, montoMinimo } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'id requerido' }, { status: 400 });
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (estado !== undefined) updateData.estado = estado;
+    if (valor !== undefined) updateData.valor = Number(valor);
+    if (maxUsos !== undefined) updateData.maxUsos = Number(maxUsos);
+    if (montoMinimo !== undefined) updateData.montoMinimo = montoMinimo ? Number(montoMinimo) : null;
+    if (vigenciaInicio !== undefined) updateData.vigenciaInicio = new Date(vigenciaInicio);
+    if (vigenciaFin !== undefined) updateData.vigenciaFin = new Date(vigenciaFin);
+
+    const updated = await db.codigoPromocional.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return NextResponse.json({ ok: true, data: updated });
+  } catch (error) {
+    return handleError(error, 'CODIGOS_PATCH');
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await requireRole('admin');
+    const { searchParams } = new URL(request.url);
+    const idParam = searchParams.get('id');
+    const id = idParam || (await request.json().catch(() => ({})))?.id;
+
+    if (!id) {
+      return NextResponse.json({ error: 'id requerido' }, { status: 400 });
+    }
+
+    await db.codigoPromocional.delete({ where: { id } });
+    return NextResponse.json({ ok: true, message: 'Código promocional eliminado' });
+  } catch (error) {
+    return handleError(error, 'CODIGOS_DELETE');
+  }
+}
+

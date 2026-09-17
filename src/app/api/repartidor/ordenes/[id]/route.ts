@@ -28,11 +28,58 @@ export async function GET(
     }
     const { profile } = rp;
 
-    const orden = await db.ordenServicio.findUnique({ where: { id } });
+    let orden = await db.ordenServicio.findUnique({ where: { id } });
     if (!orden) {
-      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+      const compra = await db.ordenCompra.findUnique({
+        where: { id },
+        include: { tienda: true, cliente: true },
+      });
+      if (!compra) {
+        return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+      }
+      if (compra.repartidorId && compra.repartidorId !== profile.id) {
+        return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
+      }
+
+      const calificacionCompra = await db.calificacionRepartidor.findFirst({
+        where: { ordenId: id },
+      });
+
+      const detalleCompra: ServicioHistorial & {
+        fecha: string;
+        metodoPago: 'efectivo' | 'transferencia';
+        monto: number;
+        clienteTelefono: string;
+        calificacionComentario?: string | null;
+      } = {
+        id: compra.id,
+        ordenId: compra.id,
+        tipo: 'compra',
+        cliente: compra.cliente?.name || 'Cliente Marketplace',
+        tiendaNombre: compra.tienda?.nombre || 'Tienda Partner',
+        origen: compra.tienda?.nombre || 'Tienda Partner',
+        destino: compra.direccionEntrega || 'Managua',
+        origenLat: compra.tienda?.lat != null ? Number(compra.tienda.lat) : undefined,
+        origenLng: compra.tienda?.lng != null ? Number(compra.tienda.lng) : undefined,
+        destinoLat: compra.lat != null ? Number(compra.lat) : undefined,
+        destinoLng: compra.lng != null ? Number(compra.lng) : undefined,
+        hora: horaString(compra.createdAt),
+        kmRecorridos: Number((compra as any).kmEstimados || 0),
+        ganancia: Math.round(Number(compra.costoEnvio || 0) > 0 ? Number(compra.costoEnvio) : Number(compra.total || 0) * 0.2),
+        tiempoTotal: Number((compra as any).tiempoEstimado || 0),
+        estado: 'entregado',
+        calificacion: calificacionCompra?.estrellas ?? 5,
+        fecha: fechaString(compra.createdAt),
+        metodoPago: (compra.metodoPago === 'efectivo' ? 'efectivo' : 'transferencia') as 'efectivo' | 'transferencia',
+        monto: Number(compra.total || 0),
+        clienteTelefono: compra.cliente?.telefono ?? '',
+        calificacionComentario: calificacionCompra?.comentario ?? null,
+      };
+
+      return NextResponse.json(detalleCompra);
     }
-    if (orden.repartidorId !== profile.id) {
+
+    if (orden.repartidorId && orden.repartidorId !== profile.id) {
       return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
     }
 
@@ -54,6 +101,10 @@ export async function GET(
       tiendaNombre: orden.tiendaNombre ?? undefined,
       origen: orden.origen,
       destino: orden.destino,
+      origenLat: orden.origenLat ?? undefined,
+      origenLng: orden.origenLng ?? undefined,
+      destinoLat: orden.destinoLat ?? undefined,
+      destinoLng: orden.destinoLng ?? undefined,
       hora: horaString(orden.createdAt),
       kmRecorridos: orden.kmRecorridos,
       ganancia: orden.ganancia,

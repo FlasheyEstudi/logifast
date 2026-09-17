@@ -53,9 +53,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'El código promocional ha expirado' }, { status: 400 });
     }
 
+    const promoAny = promo as any;
+
     // 1. Tipo de servicio (envio vs marketplace)
-    if (promo.tipoServicio && promo.tipoServicio !== 'ambos' && promo.tipoServicio !== tipoOrden) {
-      const tipoLabel = promo.tipoServicio === 'envio' ? 'envíos directos' : 'compras en tiendas';
+    if (promoAny.tipoServicio && promoAny.tipoServicio !== 'ambos' && promoAny.tipoServicio !== tipoOrden) {
+      const tipoLabel = promoAny.tipoServicio === 'envio' ? 'envíos directos' : 'compras en tiendas';
       return NextResponse.json(
         { error: `Este código solo es aplicable para ${tipoLabel}` },
         { status: 400 }
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Validar solo primer pedido
-    if (promo.primerPedidoSolo || promo.aplicableA === 'primer_envio') {
+    if (promoAny.primerPedidoSolo || promo.aplicableA === 'primer_envio') {
       const [ordenesServicioPrevias, ordenesCompraPrevias] = await Promise.all([
         db.ordenServicio.count({ where: { clienteId: user.id } }),
         db.ordenCompra.count({ where: { clienteId: user.id } }),
@@ -101,8 +103,8 @@ export async function POST(req: NextRequest) {
     let descuento = 0;
     if (promo.tipoDescuento === 'porcentaje') {
       descuento = Math.round((montoSubtotal * promo.valor) / 100);
-      if (promo.descuentoMaximo && promo.descuentoMaximo > 0 && descuento > promo.descuentoMaximo) {
-        descuento = promo.descuentoMaximo;
+      if (promoAny.descuentoMaximo && promoAny.descuentoMaximo > 0 && descuento > promoAny.descuentoMaximo) {
+        descuento = promoAny.descuentoMaximo;
       }
     } else {
       descuento = Math.min(montoSubtotal, promo.valor);
@@ -115,9 +117,9 @@ export async function POST(req: NextRequest) {
       tipoDescuento: promo.tipoDescuento,
       valor: promo.valor,
       descuentoCalculado: descuento,
-      descuentoMaximo: promo.descuentoMaximo,
-      primerPedidoSolo: promo.primerPedidoSolo,
-      tipoServicio: promo.tipoServicio,
+      descuentoMaximo: promoAny.descuentoMaximo || null,
+      primerPedidoSolo: promoAny.primerPedidoSolo || false,
+      tipoServicio: promoAny.tipoServicio || 'ambos',
       mensaje: `¡Código ${promo.codigo} aplicado con éxito! Ahorro: C$${descuento}`,
     });
   } catch (error) {

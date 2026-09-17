@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings, Wrench, DollarSign, MapPin, Building, Users,
@@ -208,9 +208,49 @@ export default function ModuleConfig() {
   const [editingIntegration, setEditingIntegration] = useState<Integracion | null>(null);
   const [intApiKey, setIntApiKey] = useState('');
   const [intWebhookUrl, setIntWebhookUrl] = useState('');
+  const [integracionesList, setIntegracionesList] = useState<Integracion[]>(integraciones);
+
+  const fetchIntegraciones = useCallback(() => {
+    fetch('/api/admin/integraciones')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.integraciones && Array.isArray(data.integraciones)) {
+          setIntegracionesList(data.integraciones);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'integraciones') {
+      fetchIntegraciones();
+    }
+  }, [activeTab, fetchIntegraciones]);
 
   // ─── 9E: Backup State ───
   const [confirmCleanOpen, setConfirmCleanOpen] = useState(false);
+  const [backupHistory, setBackupHistory] = useState<Array<{ id: string; fecha: string; tipo: string; tamaño: string }>>([]);
+  const [storageStatus, setStorageStatus] = useState<{ usedMb: number; totalMb: number; percent: number }>({
+    usedMb: 14.2,
+    totalMb: 50.0,
+    percent: 28,
+  });
+
+  const fetchBackupStatus = useCallback(() => {
+    fetch('/api/admin/backup?status=true')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.storage) setStorageStatus(data.storage);
+        if (data?.history && Array.isArray(data.history)) setBackupHistory(data.history);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'backup') {
+      fetchBackupStatus();
+    }
+  }, [activeTab, fetchBackupStatus]);
 
   // ─── Apariencia: user preferences wired to global configStore ───
   const notificacionesPush = useConfigStore((s) => s.notificacionesPush);
@@ -332,35 +372,51 @@ export default function ModuleConfig() {
     setIntegrationModalOpen(true);
   };
 
-  const saveIntegration = () => {
+  const saveIntegration = async () => {
     if (editingIntegration) {
-      persistLocal(`integration-${editingIntegration.id}`, {
-        nombre: editingIntegration.nombre,
-        apiKey: intApiKey,
-        webhookUrl: intWebhookUrl,
-      });
+      try {
+        const res = await fetch('/api/admin/integraciones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingIntegration.id,
+            nombre: editingIntegration.nombre,
+            apiKey: intApiKey,
+            webhookUrl: intWebhookUrl,
+          }),
+        });
+        if (res.ok) {
+          showToast(`Integración ${editingIntegration?.nombre} guardada y auditada`);
+          addToast(`Integración ${editingIntegration?.nombre} configurada`, 'success');
+          fetchIntegraciones();
+        } else {
+          showToast('Error al guardar integración');
+        }
+      } catch {
+        showToast('Error de conexión al guardar integración');
+      }
     }
     setIntegrationModalOpen(false);
-    showToast(`Integración ${editingIntegration?.nombre} configurada`);
   };
 
   // ─── 9E: Backup handlers ───
   const exportAllData = async () => {
-    addToast('Exportando datos...', 'info');
-    showToast('Exportando datos...');
+    addToast('Generando dump completo de la base de datos PostgreSQL...', 'info');
+    showToast('Exportando dump completo...');
     try {
-      const res = await fetch('/api/auth/export-data');
+      const res = await fetch('/api/admin/backup?download=true');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `logifast-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `logifast-full-backup-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      addToast('Datos exportados correctamente', 'success');
+      addToast('Backup completo descargado y registrado en auditoría', 'success');
+      fetchBackupStatus();
     } catch (err) {
       console.error('[exportAllData]', err);
       addToast('Error al exportar datos', 'error');
@@ -1052,7 +1108,7 @@ export default function ModuleConfig() {
             <div>
               <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Integraciones</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-                {integraciones.map((integ) => {
+                {integracionesList.map((integ) => {
                   const IconComp = ICON_MAP[integ.icono] || Puzzle;
                   const isConnected = integ.estado === 'conectado';
                   return (
@@ -1122,12 +1178,8 @@ export default function ModuleConfig() {
               <div style={{ ...cardStyle, marginTop: 16 }}>
                 <label style={{ ...labelStyle, marginBottom: 10 }}>Historial de Backups</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[
-                    { fecha: '2026-06-10 03:00', tipo: 'Automático', tamaño: '24.3 MB' },
-                    { fecha: '2026-06-09 15:30', tipo: 'Manual', tamaño: '24.1 MB' },
-                    { fecha: '2026-06-08 03:00', tipo: 'Automático', tamaño: '23.8 MB' },
-                  ].map((backup, i) => (
-                    <div key={i} style={{
+                  {backupHistory.map((backup, i) => (
+                    <div key={backup.id || i} style={{
                       display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                       background: 'var(--lf-bg-base)', borderRadius: 8, border: '1px solid var(--lf-border)',
                     }}>
@@ -1145,13 +1197,13 @@ export default function ModuleConfig() {
                 <label style={{ ...labelStyle, marginBottom: 8 }}>Uso de Almacenamiento</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ flex: 1, height: 10, borderRadius: 5, background: 'var(--lf-border)', overflow: 'hidden' }}>
-                    <div style={{ width: '62%', height: '100%', borderRadius: 5, background: 'var(--lf-accent)', transition: 'width 0.5s' }} />
+                    <div style={{ width: `${storageStatus.percent}%`, height: '100%', borderRadius: 5, background: 'var(--lf-accent)', transition: 'width 0.5s' }} />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>62%</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{storageStatus.percent}%</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                  <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>24.3 MB usados</span>
-                  <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>de 39.0 MB</span>
+                  <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>{storageStatus.usedMb} MB usados</span>
+                  <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>de {storageStatus.totalMb} MB</span>
                 </div>
               </div>
             </div>

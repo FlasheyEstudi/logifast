@@ -340,29 +340,6 @@ function ConfigLink({
 }
 
 /* ═══════════════════════════════════════════════
-   BAR CHART DATA — entregas por día (última semana)
-   ═══════════════════════════════════════════════ */
-
-const ENTREGAS_SEMANA = [
-  { x: 'L', v: 5 },
-  { x: 'M', v: 7 },
-  { x: 'X', v: 6 },
-  { x: 'J', v: 8 },
-  { x: 'V', v: 9 },
-  { x: 'S', v: 2 },
-  { x: 'D', v: 1 },
-];
-
-/* Rating distribution (mock percentages) */
-const RATING_DIST = [
-  { stars: 5, pct: 78 },
-  { stars: 4, pct: 14 },
-  { stars: 3, pct: 5 },
-  { stars: 2, pct: 2 },
-  { stars: 1, pct: 1 },
-];
-
-/* ═══════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
@@ -378,7 +355,24 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
     syncFromBackend,
     reportarProblemaMotoAsync,
     obtenerStats,
+    entregasSemana,
   } = useRepartidorStore();
+
+  const datosEntregasSemana = React.useMemo(() => {
+    if (entregasSemana && entregasSemana.length > 0) {
+      return entregasSemana;
+    }
+    return ['D', 'L', 'M', 'X', 'J', 'V', 'S'].map((x) => ({ x, v: 0 }));
+  }, [entregasSemana]);
+
+  const ratingDist = React.useMemo(() => {
+    const total = calificaciones.length;
+    return [5, 4, 3, 2, 1].map((stars) => {
+      const count = calificaciones.filter((c) => Math.round(c.estrellas) === stars).length;
+      const pct = total > 0 ? Math.round((count / total) * 100) : (stars === 5 ? 100 : 0);
+      return { stars, pct };
+    });
+  }, [calificaciones]);
   const [periodoResumen, setPeriodoResumen] = useState<'hoy' | 'semana' | 'mes'>('hoy');
   const statsResumen = obtenerStats(periodoResumen);
   const [zonaOpen, setZonaOpen] = useState(false);
@@ -862,7 +856,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
         </div>
         <div style={{ height: 110, width: '100%', minWidth: 0, minHeight: 110 }}>
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={110}>
-            <BarChart data={ENTREGAS_SEMANA} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
+            <BarChart data={datosEntregasSemana} margin={{ top: 4, right: 0, bottom: 0, left: -24 }}>
               <XAxis
                 dataKey="x"
                 axisLine={false}
@@ -880,7 +874,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
                 formatter={(v: any) => [`${v} entregas`, '']}
               />
               <Bar dataKey="v" radius={[6, 6, 0, 0]} maxBarSize={24}>
-                {ENTREGAS_SEMANA.map((_, i) => (
+                {datosEntregasSemana.map((_, i) => (
                   <Cell key={`cell-${i}`} fill="var(--primario)" />
                 ))}
               </Bar>
@@ -1097,7 +1091,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
         </div>
         {/* Distribution */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
-          {RATING_DIST.map((d) => (
+          {ratingDist.map((d) => (
             <div key={d.stars} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
                 style={{

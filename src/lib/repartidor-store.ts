@@ -155,6 +155,10 @@ export interface ServicioHistorial {
   tiendaNombre?: string;
   origen: string;
   destino: string;
+  origenLat?: number;
+  origenLng?: number;
+  destinoLat?: number;
+  destinoLng?: number;
   hora: string;
   kmRecorridos: number;
   ganancia: number;
@@ -291,6 +295,7 @@ interface RepartidorStoreState {
   statsHoy: StatsRepartidor;
   statsSemana: StatsRepartidor;
   statsMes: StatsRepartidor;
+  entregasSemana: Array<{ x: string; v: number }>;
 
   // Historial
   serviciosHoy: ServicioHistorial[];
@@ -524,6 +529,7 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
     ganancias: 0,
     tiempoActivo: 0,
   },
+  entregasSemana: [],
 
   serviciosHoy: [],
 
@@ -1385,6 +1391,9 @@ export const useRepartidorStore = create<RepartidorStoreState>()(
               tiempoActivo: data.stats.tiempoActivo,
               km: Math.max(serverKm, currentLocalKm),
             };
+          }
+          if (Array.isArray(data?.dias)) {
+            updates.entregasSemana = data.dias;
           }
         }
         if (statsSemanaRes.ok) {

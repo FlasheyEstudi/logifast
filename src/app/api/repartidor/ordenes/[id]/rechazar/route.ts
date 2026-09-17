@@ -32,6 +32,31 @@ export async function PATCH(
       });
     }
 
+    const ordenCompra = await db.ordenCompra.findUnique({ where: { id } });
+    if (ordenCompra && ordenCompra.repartidorId === profile.id) {
+      await db.ordenCompra.update({
+        where: { id },
+        data: {
+          repartidorId: null,
+          estado: 'preparando',
+        },
+      });
+    }
+
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitirEventoRealtime({
+        room: 'admin',
+        event: 'admin:orden:rechazada',
+        data: { id, repartidorId: profile.id },
+      });
+      emitirEventoRealtime({
+        room: 'repartidores',
+        event: 'repartidor:orden:disponible',
+        data: { id },
+      });
+    } catch {}
+
     // Incrementar rechazos
     const nuevosRechazos = (profile.rechazosHora || 0) + 1;
     const pausado = nuevosRechazos >= 3;

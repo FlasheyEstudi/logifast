@@ -48,6 +48,13 @@ export async function GET(
           estado: { in: ['asignado', 'aceptado', 'recogido', 'en_camino'] },
         },
         select: { id: true },
+      }) || await db.ordenCompra.findFirst({
+        where: {
+          clienteId: user.id,
+          repartidorId,
+          estado: { in: ['asignado', 'aceptado', 'recibido', 'preparando', 'listo', 'en_camino', 'recogido'] },
+        },
+        select: { id: true },
       });
       if (!ordenActiva) {
         return NextResponse.json(

@@ -184,19 +184,10 @@ function SubCampanas() {
     const contenido = { titulo: contTitulo || undefined, cuerpo: contCuerpo, boton: contBoton || undefined };
     if (editing) {
       updateCampana(editing.id, { titulo, tipo, segmento, contenido, programadaPara: programadaPara || undefined });
-      addToast('Campaña actualizada', 'success');
+      addToast('Campaña actualizada en base de datos', 'success');
     } else {
-      const newCampana = {
-        id: genId(), titulo, tipo, segmento, contenido, triggerTipo,
-        estado: (programadaPara ? 'programada' : 'borrador') as Campana['estado'],
-        programadaPara: programadaPara || undefined,
-        destinatarios: 0, abiertos: 0, clicks: 0,
-        creadoPor: 'admin', createdAt: new Date().toISOString(),
-      };
-      addCampana(newCampana);
-      addToast('Campaña creada con éxito', 'success');
       try {
-        await fetch('/api/campanas', {
+        const res = await fetch('/api/campanas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -210,25 +201,97 @@ function SubCampanas() {
             creadoPor: 'admin',
           }),
         });
-      } catch (e) {
-        console.warn('[ModuleMarketing campanas API error]:', e);
+        if (res.ok) {
+          const json = await res.json();
+          const dbItem = json.data;
+          addCampana({
+            id: dbItem?.id || genId(),
+            titulo,
+            tipo,
+            segmento,
+            contenido,
+            triggerTipo,
+            estado: (programadaPara ? 'programada' : 'borrador') as Campana['estado'],
+            programadaPara: programadaPara || undefined,
+            destinatarios: 0,
+            abiertos: 0,
+            clicks: 0,
+            creadoPor: 'admin',
+            createdAt: dbItem?.createdAt || new Date().toISOString(),
+          });
+          addToast('Campaña creada y guardada con éxito', 'success');
+        } else {
+          const err = await res.json().catch(() => ({}));
+          addToast(err.error || 'Error al guardar campaña', 'error');
+        }
+      } catch {
+        addToast('Error de conexión al crear campaña', 'error');
       }
     }
     setModalOpen(false);
   };
 
-  const handleDuplicate = (c: Campana) => {
-    addCampana({
-      ...c, id: genId(), titulo: `${c.titulo} (copia)`,
-      estado: 'borrador', enviadaEn: undefined, destinatarios: 0, abiertos: 0, clicks: 0,
-      createdAt: new Date().toISOString(),
-    });
-    addToast('Campaña duplicada', 'success');
+  const handleDuplicate = async (c: Campana) => {
+    try {
+      const cuerpoStr = typeof c.contenido === 'string' ? c.contenido : (c.contenido?.cuerpo || JSON.stringify(c.contenido));
+      const res = await fetch('/api/campanas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo: `${c.titulo} (copia)`,
+          tipo: c.tipo,
+          segmento: c.segmento,
+          contenido: cuerpoStr,
+          triggerTipo: c.triggerTipo || 'manual',
+          estado: 'borrador',
+          programadaPara: null,
+          creadoPor: 'admin',
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const dbItem = json.data;
+        addCampana({
+          ...c,
+          id: dbItem?.id || genId(),
+          titulo: `${c.titulo} (copia)`,
+          estado: 'borrador',
+          enviadaEn: undefined,
+          destinatarios: 0,
+          abiertos: 0,
+          clicks: 0,
+          createdAt: dbItem?.createdAt || new Date().toISOString(),
+        });
+        addToast('Campaña duplicada con éxito', 'success');
+      }
+    } catch {
+      addToast('Error al duplicar campaña', 'error');
+    }
   };
 
-  const handleSendNow = (c: Campana) => {
-    updateCampana(c.id, { estado: 'enviada', enviadaEn: new Date().toISOString(), destinatarios: Math.floor(Math.random() * 150) + 30 });
-    addToast('Campaña enviada en tiempo real', 'success');
+  const handleSendNow = async (c: Campana) => {
+    try {
+      const res = await fetch('/api/campanas', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: c.id, accion: 'enviar' }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const updated = json.data;
+        updateCampana(c.id, {
+          estado: 'enviada',
+          enviadaEn: updated?.enviadaEn || new Date().toISOString(),
+          destinatarios: updated?.destinatarios ?? 0,
+        });
+        addToast(`Campaña enviada: ${updated?.destinatarios ?? 0} notificaciones push reales emitidas`, 'success');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        addToast(err.error || 'Error al enviar campaña', 'error');
+      }
+    } catch {
+      addToast('Error de conexión al enviar campaña', 'error');
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -468,7 +531,7 @@ function SubCodigos() {
     setModalOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!codigo.trim() || !valor) {
       addToast('Completa código y valor', 'error');
       return;
@@ -483,34 +546,45 @@ function SubCodigos() {
         codigo, tipoDescuento, valor: valorNum, aplicableA, montoMinimo: montoMinNum,
         maxUsos: maxUsosNum, segmento, vigenciaInicio, vigenciaFin,
       });
-      addToast('Código actualizado', 'success');
+      addToast('Código actualizado en base de datos', 'success');
     } else {
-      addCodigo({
-        id: genId(), codigo, tipoDescuento, valor: valorNum, aplicableA, montoMinimo: montoMinNum,
-        maxUsos: maxUsosNum, usosActuales: 0, segmento, vigenciaInicio, vigenciaFin,
-        estado: 'activo', creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
-      });
-      addToast('Código creado con éxito', 'success');
-
-      fetch('/api/codigos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          codigo,
-          tipoDescuento,
-          valor: valorNum,
-          aplicableA,
-          montoMinimo: montoMinNum ?? 0,
-          descuentoMaximo: descMaxNum ?? null,
-          primerPedidoSolo,
-          tipoServicio,
-          maxUsos: maxUsosNum,
-          segmento,
-          vigenciaInicio: vigenciaInicio || new Date().toISOString().split('T')[0],
-          vigenciaFin: vigenciaFin || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-          creadoPor: 'admin',
-        }),
-      }).catch(() => null);
+      try {
+        const res = await fetch('/api/codigos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codigo,
+            tipoDescuento,
+            valor: valorNum,
+            aplicableA,
+            montoMinimo: montoMinNum ?? 0,
+            descuentoMaximo: descMaxNum ?? null,
+            primerPedidoSolo,
+            tipoServicio,
+            maxUsos: maxUsosNum,
+            segmento,
+            vigenciaInicio: vigenciaInicio || new Date().toISOString().split('T')[0],
+            vigenciaFin: vigenciaFin || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+            creadoPor: 'admin',
+          }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const dbItem = json.data;
+          addCodigo({
+            id: dbItem?.id || genId(),
+            codigo, tipoDescuento, valor: valorNum, aplicableA, montoMinimo: montoMinNum,
+            maxUsos: maxUsosNum, usosActuales: 0, segmento, vigenciaInicio, vigenciaFin,
+            estado: 'activo', creadoPor: 'admin', createdAt: dbItem?.createdAt ? new Date(dbItem.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          });
+          addToast('Código creado con éxito', 'success');
+        } else {
+          const err = await res.json().catch(() => ({}));
+          addToast(err.error || 'Error al crear código', 'error');
+        }
+      } catch {
+        addToast('Error de conexión al crear código', 'error');
+      }
     }
     setModalOpen(false);
   };
@@ -809,7 +883,7 @@ function SubBanners() {
     setModalOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!titulo.trim()) {
       addToast('Ingresa un título', 'error');
       return;
@@ -824,39 +898,50 @@ function SubBanners() {
         accionTipo, accionValor: accionValor || undefined,
         ...(codigoPromo ? { codigoPromo } : {}),
       } as any);
-      addToast('Banner actualizado', 'success');
+      addToast('Banner actualizado en base de datos', 'success');
     } else {
-      addBanner({
-        id: genId(), titulo, subtitulo: subtitulo || undefined, tipo, colorFondo, colorTexto, gradiente,
-        imagenUrl: imagenUrl || undefined,
-        botonTexto: botonTexto || undefined, icono: icono || undefined,
-        segmento, mostrarEn, posicion: parseInt(posicion) || 1,
-        estado: 'activo', impresiones: 0, clicks: 0,
-        accionTipo, accionValor: accionValor || undefined,
-        creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
-        ...(codigoPromo ? { codigoPromo } : {}),
-      } as any);
-      addToast('Banner creado con éxito', 'success');
-
-      fetch('/api/banners', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          titulo,
-          subtitulo: subtitulo || null,
-          tipo,
-          colorFondo,
-          colorTexto,
-          imagenUrl: imagenUrl || null,
-          botonTexto: botonTexto || null,
-          accionTipo,
-          accionValor: accionValor || null,
-          segmento,
-          mostrarEn,
-          posicion: parseInt(posicion) || 1,
-          creadoPor: 'admin',
-        }),
-      }).catch(() => null);
+      try {
+        const res = await fetch('/api/banners', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titulo,
+            subtitulo: subtitulo || null,
+            tipo,
+            colorFondo,
+            colorTexto,
+            imagenUrl: imagenUrl || null,
+            botonTexto: botonTexto || null,
+            accionTipo,
+            accionValor: accionValor || null,
+            segmento,
+            mostrarEn,
+            posicion: parseInt(posicion) || 1,
+            creadoPor: 'admin',
+          }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const dbItem = json.data;
+          addBanner({
+            id: dbItem?.id || genId(),
+            titulo, subtitulo: subtitulo || undefined, tipo, colorFondo, colorTexto, gradiente,
+            imagenUrl: imagenUrl || undefined,
+            botonTexto: botonTexto || undefined, icono: icono || undefined,
+            segmento, mostrarEn, posicion: parseInt(posicion) || 1,
+            estado: 'activo', impresiones: 0, clicks: 0,
+            accionTipo, accionValor: accionValor || undefined,
+            creadoPor: 'admin', createdAt: dbItem?.createdAt ? new Date(dbItem.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            ...(codigoPromo ? { codigoPromo } : {}),
+          } as any);
+          addToast('Banner creado con éxito', 'success');
+        } else {
+          const err = await res.json().catch(() => ({}));
+          addToast(err.error || 'Error al guardar banner', 'error');
+        }
+      } catch {
+        addToast('Error de red al crear banner', 'error');
+      }
     }
     setModalOpen(false);
   };
@@ -1271,7 +1356,7 @@ function SubFeed() {
     setModalOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!titulo.trim() || !descripcion.trim()) {
       addToast('Completa título y descripción', 'error');
       return;
@@ -1281,30 +1366,41 @@ function SubFeed() {
         tipo, titulo, descripcion, botonTexto: botonTexto || undefined,
         codigoPromo: codigoPromo || undefined, segmento, posicion: parseInt(posicion) || 1,
       });
-      addToast('Feed item actualizado', 'success');
+      addToast('Feed item actualizado en base de datos', 'success');
     } else {
-      addFeedItem({
-        id: genId(), tipo, titulo, descripcion, icono: tipo === 'promocion' ? 'tag' : tipo === 'recordatorio' ? 'bell' : 'star',
-        botonTexto: botonTexto || undefined, codigoPromo: codigoPromo || undefined,
-        segmento, posicion: parseInt(posicion) || 1, estado: 'activo',
-        impresiones: 0, clicks: 0, creadoPor: 'admin', createdAt: new Date().toISOString().split('T')[0],
-      });
-      addToast('Feed item creado', 'success');
-
-      fetch('/api/feed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo,
-          titulo,
-          descripcion,
-          botonTexto: botonTexto || null,
-          codigoPromo: codigoPromo || null,
-          segmento,
-          posicion: parseInt(posicion) || 1,
-          creadoPor: 'admin',
-        }),
-      }).catch(() => null);
+      try {
+        const res = await fetch('/api/feed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo,
+            titulo,
+            descripcion,
+            botonTexto: botonTexto || null,
+            codigoPromo: codigoPromo || null,
+            segmento,
+            posicion: parseInt(posicion) || 1,
+            creadoPor: 'admin',
+          }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const dbItem = json.data;
+          addFeedItem({
+            id: dbItem?.id || genId(),
+            tipo, titulo, descripcion, icono: tipo === 'promocion' ? 'tag' : tipo === 'recordatorio' ? 'bell' : 'star',
+            botonTexto: botonTexto || undefined, codigoPromo: codigoPromo || undefined,
+            segmento, posicion: parseInt(posicion) || 1, estado: 'activo',
+            impresiones: 0, clicks: 0, creadoPor: 'admin', createdAt: dbItem?.createdAt ? new Date(dbItem.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          });
+          addToast('Feed item creado con éxito', 'success');
+        } else {
+          const err = await res.json().catch(() => ({}));
+          addToast(err.error || 'Error al crear item de feed', 'error');
+        }
+      } catch {
+        addToast('Error de conexión al crear feed item', 'error');
+      }
     }
     setModalOpen(false);
   };
@@ -1758,8 +1854,16 @@ function SubAnalitica() {
 
 export default function ModuleMarketing() {
   const [activeTab, setActiveTab] = useState<SubTab>('campanas');
+  const { fetchCampanas, fetchCodigos, fetchBanners, fetchFeed } = useStore();
 
-  // ─── Cargar KPIs reales desde el backend ───
+  // ─── Cargar datos reales y KPIs desde el backend ───
+  useEffect(() => {
+    fetchCampanas();
+    fetchCodigos();
+    fetchBanners(true);
+    fetchFeed(true);
+  }, [fetchCampanas, fetchCodigos, fetchBanners, fetchFeed]);
+
   const [stats, setStats] = useState<any>(null);
   useEffect(() => {
     fetch('/api/admin/marketing')

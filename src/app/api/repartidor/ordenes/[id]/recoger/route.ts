@@ -30,6 +30,21 @@ export async function PATCH(
         where: { id },
         data: { estado: 'en_camino' },
       });
+
+      try {
+        const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+        emitirEventoRealtime({
+          room: `orden:${id}`,
+          event: 'orden:estado:update',
+          data: { id, estado: 'recogido', repartidorId: profile.id },
+        });
+        emitirEventoRealtime({
+          room: 'admin',
+          event: 'admin:orden:actualizada',
+          data: { id, estado: 'recogido', repartidorId: profile.id },
+        });
+      } catch {}
+
       return NextResponse.json({
         ok: true,
         estado: 'recogido',
@@ -45,6 +60,20 @@ export async function PATCH(
       where: { id },
       data: { estado: 'recogido', recogidoEn: new Date() },
     });
+
+    try {
+      const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+      emitirEventoRealtime({
+        room: `orden:${id}`,
+        event: 'orden:estado:update',
+        data: { id, estado: 'recogido', repartidorId: profile.id },
+      });
+      emitirEventoRealtime({
+        room: 'admin',
+        event: 'admin:orden:actualizada',
+        data: { id, estado: 'recogido', repartidorId: profile.id },
+      });
+    } catch {}
 
     return NextResponse.json({
       ok: true,

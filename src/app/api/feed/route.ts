@@ -136,7 +136,93 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: feedItem }, { status: 201 });
-} catch (error) {
+  } catch (error) {
     return handleError(error, 'FEED_POST');
+  }
+}
+
+const patchSchema = z.object({
+  id: z.string().min(1, 'id requerido'),
+  tipo: z.enum(['anuncio', 'promocion', 'novedad', 'encuesta', 'recordatorio']).optional(),
+  titulo: z.string().max(200).optional(),
+  descripcion: z.string().max(2000).optional(),
+  icono: z.string().max(50).optional().nullable(),
+  botonTexto: z.string().max(50).optional().nullable(),
+  botonLink: z.string().max(500).optional().nullable(),
+  codigoPromo: z.string().max(50).optional().nullable(),
+  segmento: z.string().max(50).optional(),
+  posicion: z.number().int().min(0).optional(),
+  estado: z.enum(['activo', 'inactivo']).optional(),
+});
+
+export async function PATCH(request: NextRequest) {
+  try {
+    await requireRole('admin');
+    const body = await request.json();
+    const parsed = patchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
+
+    const { id, ...data } = parsed.data;
+    const existing = await db.feedItem.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Item de feed no encontrado' }, { status: 404 });
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (data.tipo !== undefined) updateData.tipo = data.tipo;
+    if (data.titulo !== undefined) updateData.titulo = data.titulo;
+    if (data.descripcion !== undefined) updateData.descripcion = data.descripcion;
+    if (data.icono !== undefined) updateData.icono = data.icono;
+    if (data.botonTexto !== undefined) updateData.botonTexto = data.botonTexto;
+    if (data.botonLink !== undefined) updateData.botonLink = data.botonLink;
+    if (data.codigoPromo !== undefined) updateData.codigoPromo = data.codigoPromo;
+    if (data.segmento !== undefined) updateData.segmento = data.segmento;
+    if (data.posicion !== undefined) updateData.posicion = data.posicion;
+    if (data.estado !== undefined) updateData.estado = data.estado;
+
+    const updated = await db.feedItem.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return NextResponse.json({ data: updated });
+  } catch (error) {
+    return handleError(error, 'FEED_PATCH');
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await requireRole('admin');
+    const { searchParams } = new URL(request.url);
+    let id = searchParams.get('id');
+
+    if (!id) {
+      try {
+        const body = await request.json();
+        id = body.id;
+      } catch {
+        // no body provided
+      }
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID de feed requerido' }, { status: 400 });
+    }
+
+    const existing = await db.feedItem.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Item de feed no encontrado' }, { status: 404 });
+    }
+
+    await db.feedItem.delete({ where: { id } });
+    return NextResponse.json({ success: true, id });
+  } catch (error) {
+    return handleError(error, 'FEED_DELETE');
   }
 }
