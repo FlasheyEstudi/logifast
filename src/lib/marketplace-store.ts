@@ -59,6 +59,10 @@ export interface CartItem {
   id: string;
   productoId: string;
   tiendaId: string;
+  // Nombre de la tienda dueña del item: lo usa ClientCarrito para el encabezado
+  // de cada grupo (antes siempre caía en el literal 'Tienda LogiFast' porque
+  // nadie asignaba este campo).
+  tiendaNombre?: string;
   nombreProducto: string;
   precioUnitario: number;
   cantidad: number;
@@ -286,6 +290,24 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       return false;
     }
 
+    // P1: guarda anti-mezcla de tiendas. El checkout usa `cartItems[0].tiendaId`
+    // (/api/ordenes-compra rechaza con 400 los productos de otra tienda), así que
+    // agregar un producto de otra tienda reventaba al final del flujo: se bloquea
+    // aquí, antes de dejar el carrito incoherente.
+    const itemEnCarrito = get().cartItems[0];
+    const tiendaIdEnCarrito = itemEnCarrito?.tiendaId;
+    if (tiendaIdEnCarrito && producto.tiendaId && producto.tiendaId !== tiendaIdEnCarrito) {
+      const tiendaEnCarrito =
+        itemEnCarrito?.tiendaNombre ||
+        get().tiendas.find((t) => t.id === tiendaIdEnCarrito)?.nombre ||
+        'otra tienda';
+      sileo.warning({
+        title: 'Producto de otra tienda',
+        description: `Tu carrito ya tiene productos de "${tiendaEnCarrito}". Vacía el carrito para comprar en "${tienda?.nombre || 'esta tienda'}".`,
+      });
+      return false;
+    }
+
     const existing = get().cartItems.find((i) => i.productoId === producto.id);
     if (existing) {
       if (producto.stock !== null && producto.stock !== undefined && existing.cantidad >= producto.stock) {
@@ -326,6 +348,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         id: `ci-${_cartIdCounter}`,
         productoId: producto.id,
         tiendaId: producto.tiendaId,
+        tiendaNombre: tienda?.nombre || '',
         nombreProducto: producto.nombre,
         precioUnitario: producto.precio,
         cantidad: 1,
@@ -611,6 +634,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             id: String(it.id || it.productoId || `ci-${Date.now()}-${index}`),
             productoId: String(it.productoId || it.producto?.id || ''),
             tiendaId: String(it.tiendaId ?? it.producto?.tiendaId ?? ''),
+            // GET /api/carrito ya devuelve `tiendaNombre` (producto → tienda),
+            // así que se mapea sin hacer un fetch extra por item.
+            tiendaNombre: String(it.tiendaNombre ?? it.producto?.tienda?.nombre ?? ''),
             nombreProducto: String(it.nombreProducto ?? it.producto?.nombre ?? it.nombre ?? 'Producto'),
             precioUnitario: Number(it.precioUnitario ?? it.producto?.precio ?? it.precio ?? 0) || 0,
             cantidad: Math.max(1, Number(it.cantidad ?? 1) || 1),

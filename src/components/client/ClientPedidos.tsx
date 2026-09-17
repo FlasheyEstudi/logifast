@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, ShoppingBag, Navigation, MessageCircle, RefreshCw, Star,
-  Clock, MapPin, RotateCcw, Search, ChevronRight, Bike, Plus,
+  Clock, MapPin, Search, ChevronRight, Bike, Plus,
 } from '@/components/icons';
 import { useStore, type Order } from '@/lib/store';
 import { useMarketplaceStore, type OrdenCompra } from '@/lib/marketplace-store';
@@ -21,6 +21,15 @@ interface ClientPedidosProps {
 
 type TabKey = 'activos' | 'historial';
 type HistoriaFilterKey = 'todos' | 'entregados';
+
+/* ── Estados finales: ya no están en curso, van al historial ── */
+const ESTADOS_ENTREGADO = ['entregado', 'entregada', 'completado', 'completada'];
+const ESTADOS_FINALIZADOS = [...ESTADOS_ENTREGADO, 'cancelado', 'cancelada', 'incidencia'];
+
+/* ── Item del historial: compras entregadas + envíos finalizados ── */
+type HistorialItem =
+  | { _type: 'compra'; oc: OrdenCompra }
+  | { _type: 'envio'; order: Order };
 
 /* ── Color helpers ── */
 const STATUS_MAP: Record<string, { bg: string; text: string; dot: string; label: string }> = {
@@ -217,6 +226,32 @@ function ActiveEnvioCard({ order, onOpenTracking, onOpenChat }: { order: Order; 
   );
 }
 
+/* ── History item (envío finalizado) ── */
+function EnvioHistoryItem({ order, onOpenTracking }: { order: Order; onOpenTracking: (id: string) => void }) {
+  const info = statusInfo(order.estado);
+
+  return (
+    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ ...card, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--primario-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Package size={20} style={{ color: 'var(--primario)' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{order.origen} → {order.destino}</span>
+          <span style={{ ...pill, padding: '2px 8px', background: info.bg, color: info.text, border: 'none' }}>{info.label}</span>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Envío • {order.fecha}</div>
+      </div>
+      <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+        <span style={{ fontSize: 14, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>C$ {order.monto}</span>
+        <button onClick={() => onOpenTracking(order.id)} style={{ ...pill, background: 'var(--bg-alt)', color: 'var(--text-muted)', border: '1px solid var(--border)', cursor: 'pointer', padding: '4px 10px' }}>
+          <Navigation size={10} /> Ver detalle
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ── History item (compra) ── */
 function CompraHistoryItem({ oc, onNavigate, onOpenRating }: { oc: OrdenCompra; onNavigate: any; onOpenRating?: (id: string) => void }) {
   const info = statusInfo(oc.estado);
@@ -237,8 +272,11 @@ function CompraHistoryItem({ oc, onNavigate, onOpenRating }: { oc: OrdenCompra; 
       <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
         <span style={{ fontSize: 14, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>C$ {oc.total}</span>
         <div style={{ display: 'flex', gap: 6 }}>
+          {/* Los items de la orden no traen `productoId` (GET /api/ordenes-compra solo
+              devuelve nombre/cantidad/precio), así que no se puede rearmar el carrito:
+              la acción se llama por lo que de verdad hace. */}
           <button onClick={() => onNavigate('explorar')} style={{ ...pill, background: 'var(--bg-alt)', color: 'var(--text-muted)', border: '1px solid var(--border)', cursor: 'pointer', padding: '4px 10px' }}>
-            <RotateCcw size={10} /> Reordenar
+            <ShoppingBag size={10} /> Explorar tiendas
           </button>
           {!oc.calificacion && onOpenRating && (
             <button onClick={() => onOpenRating(oc.id)} style={{ ...pill, background: 'rgba(245,158,11,.12)', color: '#F59E0B', border: 'none', cursor: 'pointer' }}>
@@ -294,24 +332,42 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
     };
   }, []);
 
-  const activeEnvios = useMemo(() => (orders || []).filter(o => !['entregado', 'entregada', 'completado', 'completada', 'cancelado', 'cancelada', 'incidencia'].includes(o.estado)), [orders]);
+  // Una compra crea además una OrdenServicio con tipo 'compra' (ordenes-compra/route.ts)
+  // y GET /api/ordenes no filtra por tipo: sin excluirla aquí, la misma compra salía
+  // como "Envío en curso" y como compra a la vez.
+  const activeEnvios = useMemo(() => (orders || []).filter(o => o.tipo !== 'compra' && !ESTADOS_FINALIZADOS.includes(o.estado)), [orders]);
   const activeCompras = useMemo(() => (ordenesCompra || []).filter(oc => oc.estado !== 'entregado'), [ordenesCompra]);
   const deliveredCompras = useMemo(() => (ordenesCompra || []).filter(oc => oc.estado === 'entregado'), [ordenesCompra]);
+  // Mismo criterio que `activeEnvios` pero al revés: envíos ya cerrados (y sin las
+  // órdenes de tipo 'compra', que ya se listan como compras).
+  const enviosFinalizados = useMemo(() => (orders || []).filter(o => o.tipo !== 'compra' && ESTADOS_FINALIZADOS.includes(o.estado)), [orders]);
 
   const filteredHistory = useMemo(() => {
-    let compras = deliveredCompras.map(oc => ({ ...oc, _type: 'compra' as const }));
+    let items: HistorialItem[] = [
+      ...deliveredCompras.map(oc => ({ _type: 'compra' as const, oc })),
+      ...enviosFinalizados.map(order => ({ _type: 'envio' as const, order })),
+    ];
+    // `historiaFilter` antes solo pintaba el botón: aquí filtra la lista de verdad
+    // ("Entregados" oculta cancelados e incidencias del historial).
+    if (historiaFilter === 'entregados') {
+      items = items.filter(it => it._type === 'compra'
+        ? it.oc.estado === 'entregado'
+        : ESTADOS_ENTREGADO.includes(it.order.estado));
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      compras = compras.filter(oc => oc.tiendaNombre.toLowerCase().includes(q) || oc.id.toLowerCase().includes(q));
+      items = items.filter(it => it._type === 'compra'
+        ? (it.oc.tiendaNombre.toLowerCase().includes(q) || it.oc.id.toLowerCase().includes(q))
+        : `${it.order.origen} ${it.order.destino} ${it.order.id}`.toLowerCase().includes(q));
     }
-    return compras;
-  }, [deliveredCompras, historiaFilter, searchQuery]);
+    return items;
+  }, [deliveredCompras, enviosFinalizados, historiaFilter, searchQuery]);
 
   const totalActivos = activeEnvios.length + activeCompras.length;
 
   const TABS = [
     { key: 'activos' as TabKey, label: `Activos${totalActivos > 0 ? ` (${totalActivos})` : ''}` },
-    { key: 'historial' as TabKey, label: `Historial (${deliveredCompras.length})` },
+    { key: 'historial' as TabKey, label: `Historial (${deliveredCompras.length + enviosFinalizados.length})` },
   ];
 
   const handleRefresh = async () => {
@@ -460,7 +516,9 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {filteredHistory.map(item => (
-                  <CompraHistoryItem key={item.id} oc={item} onNavigate={onNavigate} onOpenRating={onOpenRating} />
+                  item._type === 'compra'
+                    ? <CompraHistoryItem key={item.oc.id} oc={item.oc} onNavigate={onNavigate} onOpenRating={onOpenRating} />
+                    : <EnvioHistoryItem key={item.order.id} order={item.order} onOpenTracking={onOpenTracking} />
                 ))}
               </div>
             )}

@@ -475,6 +475,20 @@ export const TRACKING_STEPS_TEMPLATE: TrackingStep[] = [
   { id: 's8', label: 'Entrega confirmada', timestamp: '—', status: 'pending' },
 ];
 
+// Plantilla paralela para pedidos de compra (marketplace): aquí no hay paquete,
+// así que el seguimiento habla de "pedido". Mantiene la misma cantidad e índices
+// que TRACKING_STEPS_TEMPLATE para conservar el mapeo por estado de setTrackingOrder.
+export const TRACKING_STEPS_COMPRA: TrackingStep[] = [
+  { id: 'c1', label: 'Pedido confirmado', timestamp: '—', status: 'pending' },
+  { id: 'c2', label: 'Tienda preparando tu pedido', timestamp: '—', status: 'pending' },
+  { id: 'c3', label: 'Repartidor asignado', timestamp: '—', status: 'pending' },
+  { id: 'c4', label: 'Repartidor en la tienda', timestamp: '—', status: 'pending' },
+  { id: 'c5', label: 'Pedido recogido', timestamp: '—', status: 'pending' },
+  { id: 'c6', label: 'Pedido en camino', timestamp: '—', status: 'pending' },
+  { id: 'c7', label: 'Repartidor en punto de entrega', timestamp: '—', status: 'pending' },
+  { id: 'c8', label: 'Pedido entregado', timestamp: '—', status: 'pending' },
+];
+
 export interface RepartidorInfo {
   id: string;
   nombre: string;
@@ -1069,7 +1083,7 @@ export const useStore = create<AppState>((set, get) => ({
           timeline: [
             { step: 'Orden creada', hora: new Date(o.createdAt || Date.now()).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true },
             ...(o.aceptadoEn ? [{ step: 'Repartidor asignado', hora: new Date(o.aceptadoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true }] : []),
-            ...(o.recogidoEn ? [{ step: 'Paquete recogido', hora: new Date(o.recogidoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true }] : []),
+            ...(o.recogidoEn ? [{ step: o.tipo === 'compra' ? 'Pedido recogido' : 'Paquete recogido', hora: new Date(o.recogidoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true }] : []),
             ...(o.entregadoEn ? [{ step: 'Entrega confirmada', hora: new Date(o.entregadoEn).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }), completado: true }] : []),
           ],
         }));
@@ -1651,6 +1665,10 @@ export const useStore = create<AppState>((set, get) => ({
     }
     const orderIdStr = String(orderId);
     const order = (get().orders || []).find((o) => String(o.id) === orderIdStr);
+    // El tipo de orden elige la plantilla del timeline: los pedidos de compra
+    // (marketplace) no llevan paquete. `Order.tipo` es opcional; si la orden no
+    // está en el store de envíos pero sí en ordenesCompra, es una compra.
+    let esCompra = order?.tipo === 'compra';
     let orderEstado = order?.estado;
     let orderHora = order?.hora;
     let orderTiempoEst = (order as any)?.tiempoEstimado || 0;
@@ -1659,6 +1677,7 @@ export const useStore = create<AppState>((set, get) => ({
       try {
         const oc = (useMarketplaceStore.getState().ordenesCompra || []).find((c: any) => String(c.id) === orderIdStr);
         if (oc) {
+          esCompra = true;
           orderEstado = oc.estado === 'entregado'
             ? 'entregado'
             : oc.estado === 'en_camino'
@@ -1677,7 +1696,8 @@ export const useStore = create<AppState>((set, get) => ({
     const fmt = (d: Date) => d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
     const orderCreatedTime = (order as any)?.createdAt ? fmt(new Date((order as any).createdAt)) : (orderHora || fmt(now));
 
-    const steps = TRACKING_STEPS_TEMPLATE.map((s) => ({ ...s }));
+    const plantilla = esCompra ? TRACKING_STEPS_COMPRA : TRACKING_STEPS_TEMPLATE;
+    const steps = plantilla.map((s) => ({ ...s }));
     const statusIndex: Record<string, number> = {
       pendiente: 0, recibido: 0, preparando: 1, listo: 2, aceptado: 3, encamino: 3, en_camino: 3, recogido: 5, entregado: 7, incidencia: 3, programada: 0,
     };

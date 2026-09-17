@@ -817,7 +817,7 @@ export default function ClientInicio({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {/* Cat 1: Comida */}
           <button
-            onClick={() => handleSelectCategoria('restaurantes')}
+            onClick={() => handleSelectCategoria('comida')}
             style={{
               padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
@@ -861,7 +861,7 @@ export default function ClientInicio({
 
           {/* Cat 2: Mercado */}
           <button
-            onClick={() => handleSelectCategoria('supermercados')}
+            onClick={() => handleSelectCategoria('supermercado')}
             style={{
               padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
@@ -905,7 +905,7 @@ export default function ClientInicio({
 
           {/* Cat 3: Farmacia */}
           <button
-            onClick={() => handleSelectCategoria('farmacias')}
+            onClick={() => handleSelectCategoria('farmacia')}
             style={{
               padding: '16px 8px',
               borderRadius: 'var(--lf-card-radius, 18px)',
