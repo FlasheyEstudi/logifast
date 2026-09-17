@@ -50,7 +50,12 @@ function syncProject(projectName, targetDir, htmlSource) {
   copyRecursive(PUBLIC_DIR, targetPublic);
 
   // 3. Copiar bundle de Next.js (_next/static)
-  console.log('  → Copiando bundles estáticos de React (_next/static)...');
+  //    IMPORTANTE: se borra primero el bundle anterior. Sin esto los chunks de cada
+  //    build se acumulan (se llegaron a juntar 942 archivos para un build de 110) y
+  //    el APK carga peso muerto que ya nadie referencia.
+  console.log('  → Limpiando bundle anterior y copiando el nuevo (_next/static)...');
+  const targetNext = path.join(targetPublic, '_next');
+  fs.rmSync(targetNext, { recursive: true, force: true });
   const targetNextStatic = path.join(targetPublic, '_next', 'static');
   fs.mkdirSync(targetNextStatic, { recursive: true });
   copyRecursive(NEXT_STATIC, targetNextStatic);

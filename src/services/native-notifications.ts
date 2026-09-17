@@ -437,8 +437,8 @@ export async function notificarProgresoEnvio({
   ) % 100000;
 
   const etaStr = tiempoEstimadoMin ? ` • ~${tiempoEstimadoMin} min` : '';
-  const titulo = `🛵 ${etapaTexto} (${porcentaje}%)${etaStr}`;
-  const cuerpo = `${subtitulo}${origen && destino ? `\n📍 ${origen} ➔ ${destino}` : ''}`;
+  const titulo = `${etapaTexto} (${porcentaje}%)${etaStr}`;
+  const cuerpo = `${subtitulo}${origen && destino ? `\nDe ${origen} a ${destino}` : ''}`;
 
   await dispararNotificacionNativa({
     id: hashId,
@@ -474,8 +474,8 @@ export async function notificarRepartidorEnPuerta({
   direccion,
 }: RepartidorEnPuertaOpciones): Promise<void> {
   const nombre = repartidorNombre || 'Tu repartidor';
-  const pinMsg = pin ? `\n🔑 PIN de Entrega: ${pin}` : '';
-  const titulo = '🚪 ¡Tu repartidor está en la puerta!';
+  const pinMsg = pin ? `\nPIN de Entrega: ${pin}` : '';
+  const titulo = '¡Tu repartidor está en la puerta!';
   const cuerpo = `${nombre} ha llegado a tu destino.${pin ? ` Ten listo tu PIN: #${pin}` : ' Por favor sal a recibirlo.'}`;
   const detalleLargo = `${nombre} está afuera en ${direccion || 'tu ubicación'}.${pinMsg}\nMuestra o dicta el PIN al repartidor para recibir tu paquete.`;
 
@@ -517,7 +517,7 @@ export async function notificarDemoraClimaOTrafico({
       ? 'congestión vehicular en la ruta'
       : 'lluvia y alto tráfico en la zona';
 
-  const titulo = '🌧️ Alerta de Clima y Tráfico • Demora estimada';
+  const titulo = 'Alerta de Clima y Tráfico • Demora estimada';
   const cuerpo = `Debido a ${motivoTexto}, tu orden #${ordenId.slice(-8)} podría demorar unos ~${minutosDemora} min adicionales. Priorizamos la seguridad de tu repartidor.`;
 
   await dispararNotificacionNativa({
@@ -552,8 +552,8 @@ export async function notificarPedidoListoParaRetiro({
   esPickUpCliente = false,
 }: PedidoListoRetiroOpciones): Promise<void> {
   const titulo = esPickUpCliente
-    ? '🛍️ ¡Tu pedido está listo para retirar!'
-    : '🛍️ Pedido preparado y listo para retiro';
+    ? '¡Tu pedido está listo para retirar!'
+    : 'Pedido preparado y listo para retiro';
 
   const cuerpo = esPickUpCliente
     ? `${tiendaNombre} ha finalizado tu orden #${ordenId.slice(-8)}. ¡Ya puedes pasar a recogerla!`
@@ -593,7 +593,7 @@ export async function notificarResumenFidelizacion({
   cashbackCordobas,
 }: ResumenFidelizacionOpciones): Promise<void> {
   const resolvedCashback = cashbackCordobas ?? Math.max(1, Math.round(puntosGanados / 5));
-  const titulo = `🎁 ¡Has ganado +${puntosGanados} LogiPuntos!`;
+  const titulo = `¡Has ganado +${puntosGanados} LogiPuntos!`;
   const cuerpo = `Por completar tu orden #${ordenId.slice(-8)} (C$ ${montoTotal.toFixed(2)}), acreditamos ${puntosGanados} puntos (~C$ ${resolvedCashback}) a tu Billetera LogiFast.`;
 
   await dispararNotificacionNativa({
@@ -630,7 +630,7 @@ export async function notificarComprobanteEntrega({
 }: ComprobanteEntregaOpciones): Promise<void> {
   const shortId = ordenId.slice(-8);
   const nombre = repartidorNombre || 'Tu repartidor';
-  const titulo = '📦 ¡Entrega completada con éxito!';
+  const titulo = '¡Entrega completada con éxito!';
   const cuerpo = tieneFotoComprobante
     ? `${nombre} entregó tu paquete #${shortId} y subió tu comprobante de entrega digital.`
     : `${nombre} ha entregado tu pedido #${shortId}. ¡Gracias por confiar en LogiFast!`;
