@@ -370,6 +370,22 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     };
   }, [setClientNotificaciones, agregarNotificacionCliente]);
 
+  /* ─── Deep link desde una notificación nativa (tap en la bandeja de Android) ─── */
+  useEffect(() => {
+    const onAbrir = (e: Event) => {
+      const detalle = (e as CustomEvent).detail as { vista?: string; ordenId?: string };
+      if (!detalle?.ordenId) return;
+      if (detalle.vista === 'chat') {
+        setChatOrderId(detalle.ordenId);
+        setChatOpen(true);
+      } else {
+        setTrackingOrder(detalle.ordenId);
+      }
+    };
+    window.addEventListener('logifast:abrir', onAbrir as EventListener);
+    return () => window.removeEventListener('logifast:abrir', onAbrir as EventListener);
+  }, [setChatOpen, setChatOrderId, setTrackingOrder]);
+
   const abrirNotificaciones = useCallback(() => {
     const abriendo = !clientNotifOpen;
     setClientNotifOpen(abriendo);

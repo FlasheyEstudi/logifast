@@ -432,6 +432,23 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
 
   const syncFromBackend = useRepartidorStore((s) => s.syncFromBackend);
   const actualizarPosicionAsync = useRepartidorStore((s) => s.actualizarPosicionAsync);
+  const toggleChat = useRepartidorStore((s) => s.toggleChat);
+
+  /* ─── Deep link desde una notificación nativa (tap en la bandeja de Android) ─── */
+  useEffect(() => {
+    const onAbrir = (e: Event) => {
+      const detalle = (e as CustomEvent).detail as { vista?: string; ordenId?: string };
+      if (!detalle?.ordenId) return;
+      if (detalle.vista === 'chat') {
+        toggleChat(detalle.ordenId);
+      } else {
+        // Abrir la pantalla de servicio con el pedido en cuestión
+        setPantalla('servicio');
+      }
+    };
+    window.addEventListener('logifast:abrir', onAbrir as EventListener);
+    return () => window.removeEventListener('logifast:abrir', onAbrir as EventListener);
+  }, [toggleChat, setPantalla]);
 
   /* Local state for "ganancias" tab — no store modification */
   const [gananciasActive, setGananciasActive] = useState(false);
@@ -701,6 +718,31 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
       cleanupMotoUpdate();
     };
   }, [conectado, showSnackbar]);
+
+  /* ─── Avisos dirigidos de administración (campañas, promociones, difusiones) ───
+     No depende de `conectado`: si la app está abierta, el aviso debe sonar y
+     quedar en la bandeja de Android aunque el repartidor esté desconectado. */
+  useEffect(() => {
+    const cleanupPush = onRealtimeEvent('notificacion:push', (data: any) => {
+      const titulo = data?.titulo || 'LogiFast';
+      const cuerpo = data?.contenido || '';
+      const esPromo = data?.tipo === 'promocion' || data?.tipo === 'marketing';
+
+      dispararNotificacionNativa({
+        titulo,
+        cuerpo,
+        tipoAlerta: esPromo ? 'orden' : 'mensaje',
+        canalId: esPromo ? 'logifast_urgente' : 'logifast_estado',
+        colorIcono: esPromo ? '#FF6600' : '#00C853',
+        extra: data?.entidadId ? { ordenId: data.entidadId } : undefined,
+      }).catch(() => null);
+
+      reproducirSonido('mensaje');
+      showSnackbar({ message: `${titulo} — ${cuerpo}`.trim() });
+    });
+
+    return () => cleanupPush();
+  }, [showSnackbar]);
 
   /* ─── SIMULATION LOOP (5s) — MANTENER ─── */
   useEffect(() => {

@@ -196,15 +196,22 @@ export async function inicializarNotificacionesNativas(): Promise<boolean> {
           plugin.addListener('localNotificationActionPerformed', (notificationAction: any) => {
             const extra = notificationAction.notification?.extra || {};
             const actionId = notificationAction.actionId;
-            if (extra.ordenId) {
-              if (actionId === 'ver_tracking') {
-                window.location.hash = `#/cliente/tracking?id=${extra.ordenId}`;
-              } else if (actionId === 'abrir_chat') {
-                window.location.hash = `#/cliente/chat?id=${extra.ordenId}`;
-              } else if (actionId === 'ver_orden') {
-                window.location.hash = `#/repartidor/servicio?id=${extra.ordenId}`;
-              }
-            }
+            if (!extra.ordenId) return;
+
+            // La app NO usa hash routing (es App Router con estado interno), así que
+            // asignar `window.location.hash` no abría nada: al tocar la notificación
+            // no pasaba absolutamente nada. Emitimos un evento que los shells escuchan.
+            let vista: 'tracking' | 'chat' | 'servicio' = 'tracking';
+            if (actionId === 'abrir_chat') vista = 'chat';
+            else if (actionId === 'ver_orden') vista = 'servicio';
+
+            try {
+              window.dispatchEvent(
+                new CustomEvent('logifast:abrir', {
+                  detail: { vista, ordenId: extra.ordenId },
+                })
+              );
+            } catch {}
           });
         }
         actionsConfigured = true;
