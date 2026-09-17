@@ -133,7 +133,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                height: 42,
+                height: 44,
                 borderRadius: 10,
                 border: 'none',
                 background: '#0066FF',

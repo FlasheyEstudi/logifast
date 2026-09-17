@@ -376,7 +376,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              height: 36,
+              height: 44,
               padding: '0 12px',
               borderRadius: 10,
               border: lectorConectado ? '1px solid rgba(34,197,94,.5)' : '1px solid var(--border)',
@@ -398,7 +398,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              height: 36,
+              height: 44,
               padding: '0 12px',
               borderRadius: 10,
               border: '1px solid var(--border)',
@@ -603,13 +603,16 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
         {/* Customer & Payment Form */}
         <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {/* En celular se apilan: los inputs no bajan de su ancho intrínseco y desbordaban */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               type="text"
               placeholder="Nombre del Cliente"
               value={clienteNombre}
               onChange={(e) => setClienteNombre(e.target.value)}
               style={{
+                width: '100%',
+                minWidth: 0,
                 height: 34,
                 borderRadius: 8,
                 border: '1px solid var(--border)',
@@ -625,6 +628,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               value={clienteRuc}
               onChange={(e) => setClienteRuc(e.target.value)}
               style={{
+                width: '100%',
+                minWidth: 0,
                 height: 34,
                 borderRadius: 8,
                 border: '1px solid var(--border)',
@@ -636,11 +641,13 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <select
               value={metodoPago}
               onChange={(e) => setMetodoPago(e.target.value as any)}
               style={{
+                width: '100%',
+                minWidth: 0,
                 height: 34,
                 borderRadius: 8,
                 border: '1px solid var(--border)',
@@ -662,6 +669,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               value={montoRecibido}
               onChange={(e) => setMontoRecibido(e.target.value)}
               style={{
+                width: '100%',
+                minWidth: 0,
                 height: 34,
                 borderRadius: 8,
                 border: '1px solid var(--border)',
@@ -870,6 +879,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               background: '#FFFFFF',
               color: '#000000',
               width: 380,
+              maxWidth: '100%',
               borderRadius: 16,
               padding: 24,
               fontFamily: "'Courier New', Courier, monospace",

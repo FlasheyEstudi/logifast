@@ -240,7 +240,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               alignItems: 'center',
               gap: 8,
               padding: '0 16px',
-              height: 40,
+              height: 44,
               borderRadius: 10,
               background: '#0066FF',
               color: 'white',
@@ -466,7 +466,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       aria-label={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
                       style={{
                         flex: 1,
-                        height: 34,
+                        height: 44,
                         borderRadius: 8,
                         border: '1px solid var(--border)',
                         background: 'var(--bg-alt)',
@@ -488,7 +488,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       onClick={() => abrirModalEditar(p)}
                       style={{
                         flex: 1,
-                        height: 34,
+                        height: 44,
                         borderRadius: 8,
                         border: 'none',
                         background: 'rgba(0,102,255,0.1)',

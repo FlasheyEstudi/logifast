@@ -120,7 +120,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               key={p.dias}
               onClick={() => setDias(p.dias)}
               style={{
-                height: 34,
+                height: 44,
                 padding: '0 14px',
                 borderRadius: 999,
                 border: '1px solid var(--border)',
@@ -274,7 +274,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
             onClick={cargar}
             style={{
               marginTop: 14,
-              height: 40,
+              height: 44,
               padding: '0 16px',
               borderRadius: 12,
               border: '1px solid var(--border)',

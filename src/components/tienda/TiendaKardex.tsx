@@ -144,7 +144,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
               alignItems: 'center',
               gap: 8,
               padding: '0 16px',
-              height: 40,
+              height: 44,
               borderRadius: 10,
               background: '#0066FF',
               color: 'white',

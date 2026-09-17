@@ -181,7 +181,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
 
       <form onSubmit={guardarConfiguracion} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Banner Cover Image & Logo Uploaders */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
               Foto de Portada / Banner del Local
@@ -212,7 +212,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Nombre Comercial *</label>
             <input
@@ -286,7 +286,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
         </div>
 
         {/* Tarifas de Envío y Pedido Mínimo */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Costo de Envío Base (C$)</label>
             <input
@@ -369,11 +369,9 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
               return (
                 <div
                   key={key}
+                  className="grid grid-cols-2 md:grid-cols-[120px_1fr_1fr_90px] gap-3"
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: '120px 1fr 1fr 90px',
                     alignItems: 'center',
-                    gap: 12,
                     background: 'var(--surface)',
                     padding: '8px 12px',
                     borderRadius: 10,
@@ -450,6 +448,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
               onClick={detectarGPS}
               style={{
                 padding: '6px 12px',
+                minHeight: 44,
                 borderRadius: 8,
                 border: 'none',
                 background: '#0066FF',
@@ -466,7 +465,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>Latitud (GPS)</label>
               <input

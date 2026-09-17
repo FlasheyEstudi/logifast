@@ -20,6 +20,7 @@
     let sobresalen = 0;
     let toques = 0;
     const ejemplos = [];
+    const ejemplosToque = [];
     for (const el of document.querySelectorAll('body *')) {
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
@@ -33,9 +34,15 @@
     for (const el of document.querySelectorAll('button, a, [role="button"], summary')) {
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
-      if (r.height < 44) toques++;
+      if (r.height < 44) {
+        toques++;
+        if (ejemplosToque.length < 4) {
+          const etiqueta = (el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim().slice(0, 24);
+          ejemplosToque.push(`${etiqueta}[${Math.round(r.width)}x${Math.round(r.height)}]`);
+        }
+      }
     }
-    return { desborde: document.documentElement.scrollWidth - ancho, sobresalen, toques, ejemplos };
+    return { desborde: document.documentElement.scrollWidth - ancho, sobresalen, toques, ejemplos, ejemplosToque };
   };
 
   const navs = () => {
@@ -96,7 +103,7 @@
       continue;
     }
     const m = medir();
-    salida.push(`${largo}: desborde=${m.desborde} sobresalen=${m.sobresalen} toques<44=${m.toques}${m.ejemplos.length ? ' [' + m.ejemplos.join(' ') + ']' : ''}`);
+    salida.push(`${largo}: desborde=${m.desborde} sobresalen=${m.sobresalen} toques<44=${m.toques} {${m.ejemplosToque.join(' ')}}${m.ejemplos.length ? ' [' + m.ejemplos.join(' ') + ']' : ''}`);
   }
   return salida.join(' ;; ');
 })();
