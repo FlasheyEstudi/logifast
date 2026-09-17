@@ -287,7 +287,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
         // 1. Agregar órdenes provenientes del backend preservando el PIN exacto
         mergedOrders.forEach((o) => {
           const existing = currentOrders.find((c: any) => c.id === o.id);
-          const stablePin = o.codigoPin || existing?.codigoPin || String(1000 + (Math.abs(o.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)) % 9000));
+          const stablePin = o.codigoPin || existing?.codigoPin || String(1000 + (Math.abs(String(o?.id || '').split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)) % 9000));
           finalOrdersMap.set(o.id, { ...o, codigoPin: stablePin });
         });
 
@@ -339,7 +339,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
                 const montoTotal = clientOrders.reduce((acc, o) => acc + (o.monto || 0), 0);
                 return {
                   id: u.id,
-                  nombre: u.name || u.email.split('@')[0],
+                  nombre: u.name || (u.email ? u.email.split('@')[0] : 'Cliente'),
                   email: u.email,
                   telefono: u.telefono || '',
                   direccion: 'Managua, Nicaragua',

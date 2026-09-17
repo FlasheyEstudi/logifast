@@ -176,12 +176,17 @@ export default function ModuleIncidencias() {
   const riderWithMostIncidents = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const inc of incidents) {
-      counts[inc.repartidor] = (counts[inc.repartidor] || 0) + 1;
+      if (inc.repartidor && inc.repartidor !== '—') {
+        counts[inc.repartidor] = (counts[inc.repartidor] || 0) + 1;
+      }
     }
     let maxRider = '—';
     let maxCount = 0;
     for (const [rider, count] of Object.entries(counts)) {
-      if (count > maxCount) { maxRider = rider; maxCount = count; }
+      if (count > maxCount && rider && rider !== 'undefined' && rider !== 'null') {
+        maxRider = rider;
+        maxCount = count;
+      }
     }
     return maxRider;
   }, [incidents]);
@@ -386,7 +391,7 @@ export default function ModuleIncidencias() {
         {[
           { label: 'Total este mes', value: totalThisMonth, icon: AlertTriangle, color: '#DC2626' },
           { label: 'Tiempo prom. resolución', value: avgResolutionTime, icon: Clock, color: '#FF6600' },
-          { label: 'Más incidencias', value: riderWithMostIncidents.split(' ')[0], icon: User, color: '#002A5C' },
+          { label: 'Más incidencias', value: String(riderWithMostIncidents || '—').split(' ')[0], icon: User, color: '#002A5C' },
           { label: 'Activas / Resueltas', value: `${activeCount} / ${resolvedCount}`, icon: Shield, color: activeCount > 0 ? '#DC2626' : '#16A34A' },
         ].map((m) => (
           <div

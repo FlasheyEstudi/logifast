@@ -70,7 +70,7 @@ export default function ModuleRepartidores() {
           nombre: p.user?.name || p.nombre,
           email: p.user?.email || p.email || '',
           telefono: p.user?.telefono || p.telefono || '',
-          initials: (p.user?.name || p.nombre || 'RP').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+          initials: String(p.user?.name || p.nombre || 'RP').split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'RP',
           color: p.user?.color || '#0066FF',
           status: p.enServicio ? 'in-service' : p.conectado ? 'available' : 'offline',
           motoId: p.motoId || null,
@@ -129,7 +129,7 @@ export default function ModuleRepartidores() {
     setFormErrors({});
   };
 
-  const getInitials = (name: string) => name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+  const getInitials = (name?: string) => String(name || 'RP').split(' ').filter(Boolean).map((n) => n[0]).join('').toUpperCase().slice(0, 2) || 'RP';
 
   const handleSave = async () => {
     const errors: Record<string, string> = {};

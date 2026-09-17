@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
         convsMap.set(u.id, {
           id: `CONV-${u.id}`,
           participanteId: u.id,
-          participanteNombre: u.name || u.email.split('@')[0],
+          participanteNombre: u.name || (u.email ? u.email.split('@')[0] : 'Usuario'),
           participanteRol: u.role || 'cliente',
           ultimoMensaje: 'Iniciar conversación...',
           ultimoTimestamp: new Date().toISOString(),

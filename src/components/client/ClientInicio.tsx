@@ -369,7 +369,7 @@ export default function ClientInicio({
               margin: 0,
             }}
           >
-            ¡Hola, {userName.split(' ')[0]}!
+            ¡Hola, {String(userName || 'Cliente').split(' ')[0]}!
           </h1>
         </div>
 

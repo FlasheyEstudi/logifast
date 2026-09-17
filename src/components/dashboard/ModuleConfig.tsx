@@ -189,7 +189,7 @@ export default function ModuleConfig() {
         if (data && Array.isArray(data.users) && data.users.length > 0) {
           setEditUsers(data.users.map((u: any) => ({
             id: u.id,
-            nombre: u.name || u.email.split('@')[0],
+            nombre: u.name || (u.email ? u.email.split('@')[0] : 'Usuario'),
             email: u.email,
             rol: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'Cliente',
             activo: true,

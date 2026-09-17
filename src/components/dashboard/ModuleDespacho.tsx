@@ -106,12 +106,18 @@ export default function ModuleDespacho() {
   );
 
   /* ─── Wait time ─── */
-  const getWaitMinutes = useCallback((fecha: string, hora: string) => {
-    const [y, mo, d] = fecha.split('-').map(Number);
-    const [h, mi] = hora.split(':').map(Number);
-    const orderDate = new Date(y, mo - 1, d, h, mi);
-    const now = new Date();
-    return Math.max(0, Math.floor((now.getTime() - orderDate.getTime()) / 60000));
+  const getWaitMinutes = useCallback((fecha?: string, hora?: string) => {
+    try {
+      if (!fecha || !hora) return 0;
+      const [y, mo, d] = String(fecha).split('-').map(Number);
+      const [h, mi] = String(hora).split(':').map(Number);
+      if (isNaN(y) || isNaN(mo) || isNaN(d) || isNaN(h) || isNaN(mi)) return 0;
+      const orderDate = new Date(y, mo - 1, d, h, mi);
+      const now = new Date();
+      return Math.max(0, Math.floor((now.getTime() - orderDate.getTime()) / 60000));
+    } catch {
+      return 0;
+    }
   }, []);
 
   const getWaitColor = (min: number) => {
@@ -539,11 +545,11 @@ export default function ModuleDespacho() {
                   >
                     <MapPin size={11} style={{ flexShrink: 0 }} />
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {order.origen.split(',')[0]}
+                      {String(order.origen || 'Origen').split(',')[0]}
                     </span>
                     <ArrowRight size={10} style={{ flexShrink: 0, opacity: 0.5 }} />
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {order.destino.split(',')[0]}
+                      {String(order.destino || 'Destino').split(',')[0]}
                     </span>
                   </div>
 
@@ -783,7 +789,7 @@ export default function ModuleDespacho() {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {activeOrder.destino.split(',')[0]}
+                        {String(activeOrder.destino || 'Destino').split(',')[0]}
                       </div>
                     </div>
                   )}
@@ -827,7 +833,7 @@ export default function ModuleDespacho() {
                           </strong>{' '}
                           a{' '}
                           <strong style={{ color: 'var(--lf-text-main)' }}>
-                            {rider.nombre.split(' ')[0]}
+                            {String(rider.nombre || 'Repartidor').split(' ')[0]}
                           </strong>
                           ?
                         </span>
@@ -989,7 +995,7 @@ export default function ModuleDespacho() {
                         color: 'var(--lf-text-main)',
                       }}
                     >
-                      {rider.nombre.split(' ')[0]}
+                      {String(rider.nombre || 'Repartidor').split(' ')[0]}
                     </span>
                   </div>
 
@@ -1023,7 +1029,8 @@ export default function ModuleDespacho() {
                       </div>
                     )}
                     {riderOrders.map((order) => {
-                      const [oh] = order.hora.split(':').map(Number);
+                      const horaParts = String(order.hora || '08:00').split(':').map(Number);
+                      const oh = isNaN(horaParts[0]) ? 8 : horaParts[0];
                       const startHour = timelineHours[0];
                       const endHour = timelineHours[timelineHours.length - 1];
                       const leftPct =

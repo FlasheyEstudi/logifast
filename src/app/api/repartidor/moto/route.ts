@@ -92,7 +92,7 @@ export async function GET() {
       const placaSegura = profile.vehiculoPlaca || `M-${profile.id.slice(-3).toUpperCase()}-${Date.now().toString().slice(-4)}`;
       const nuevaMoto = await db.moto.create({
         data: {
-          nombre: `Moto-${profile.nombre.split(' ')[0]}`,
+          nombre: `Moto-${(profile.nombre || 'Repartidor').split(' ')[0]}`,
           modelo: profile.vehiculoModelo || 'Honda Wave 110',
           placa: placaSegura,
           anio: profile.vehiculoAnio || 2024,
@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
         // Crear una moto para el repartidor si no existía ninguna
         moto = await db.moto.create({
           data: {
-            nombre: `Moto-${profile.nombre.split(' ')[0]}`,
+            nombre: `Moto-${(profile.nombre || 'Repartidor').split(' ')[0]}`,
             modelo: profile.vehiculoModelo || 'Honda Wave 110',
             placa: profile.vehiculoPlaca || `M-${Math.floor(Math.random() * 90000) + 10000}`,
             anio: 2024,

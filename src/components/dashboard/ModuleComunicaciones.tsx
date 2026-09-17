@@ -40,14 +40,15 @@ import {
    HELPERS & STYLING
    ═══════════════════════════════════════════════ */
 
-function getInitials(name: string) {
+function getInitials(name?: string) {
   if (!name) return 'US';
-  return name
+  return String(name)
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2);
+    .slice(0, 2) || 'US';
 }
 
 function hashColor(str: string): string {
@@ -146,7 +147,7 @@ function BuzonPanel() {
       const newConv: Conversacion = {
         id: `CONV-${targetId}`,
         participanteId: targetId,
-        participanteNombre: u.name || u.email.split('@')[0],
+        participanteNombre: u.name || (u.email ? u.email.split('@')[0] : 'Usuario'),
         participanteRol: u.role || 'cliente',
         ultimoMensaje: 'Conversación iniciada',
         ultimoTimestamp: new Date().toISOString(),
@@ -809,7 +810,7 @@ function BuzonPanel() {
                       </div>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--lf-text-main)' }}>
-                          {u.name || u.email.split('@')[0]}
+                          {u.name || (u.email ? u.email.split('@')[0] : 'Usuario')}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>
                           {u.email}

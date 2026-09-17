@@ -357,10 +357,10 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
   /* ─── Init helpers ─── */
   const initials = useMemo(() => {
-    const parts = userName.split(' ');
+    const parts = String(userName || 'Cliente').trim().split(' ').filter(Boolean);
     return parts.length >= 2
       ? (parts[0][0] + parts[1][0]).toUpperCase()
-      : userName.slice(0, 2).toUpperCase();
+      : String(userName || 'Cliente').trim().slice(0, 2).toUpperCase();
   }, [userName]);
 
   const email = 'cliente@logifast.com';

@@ -13,13 +13,14 @@ import { useStore, type Client, type Order } from '@/lib/store';
    HELPERS
    ═══════════════════════════════════════════════ */
 
-function getInitials(name: string) {
-  return name
+function getInitials(name?: string) {
+  return String(name || 'CL')
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2);
+    .slice(0, 2) || 'CL';
 }
 
 function hashColor(str: string): string {
