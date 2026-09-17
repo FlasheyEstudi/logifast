@@ -20,6 +20,11 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "react-hooks/exhaustive-deps": "off",
     "react-hooks/purity": "off",
     "react-hooks/set-state-in-effect": "off",
+    // Diagnósticos SOLO del React Compiler ("Compilation Skipped"). No son bugs de
+    // runtime: el proyecto no compila con React Compiler (react-compiler/react-compiler
+    // ya está en off). Reactivanlos si algún día se adopta el compilador.
+    "react-hooks/preserve-manual-memoization": "off",
+    "react-hooks/immutability": "off",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
     "react/prop-types": "off",
@@ -45,7 +50,13 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-useless-escape": "off",
   },
 }, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills"]
+  // Scripts de Node en CommonJS y carpeta de trabajo temporal: `require` es válido ahí.
+  files: ["scripts/**/*.js", "examples/**/*.js"],
+  rules: {
+    "@typescript-eslint/no-require-imports": "off",
+  },
+}, {
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills", "scratch/**"]
 }];
 
 export default eslintConfig;

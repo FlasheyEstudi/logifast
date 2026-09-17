@@ -105,19 +105,21 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
     }
   }, [isOpen]);
 
+  // Auto-switch a efectivo si el método de pago es inválido o no soportado.
+  // NOTA: este efecto debe vivir ANTES del early return de abajo: un hook no puede
+  // ejecutarse condicionalmente (React rompe el orden de hooks al abrir/cerrar el carrito).
+  React.useEffect(() => {
+    if (cartMetodoPago !== 'efectivo') {
+      setCartMetodoPago('efectivo');
+    }
+  }, [cartMetodoPago, setCartMetodoPago]);
+
   if (!isOpen) return null;
 
   const subtotal = Number(getCartSubtotal()) || 0;
   const delivery = cartItems.length > 0 ? 35 : 0;
   const descuento = Number(cartDescuento) || 0;
   const total = Math.max(0, subtotal + delivery - descuento);
-
-  // Auto-switch to efectivo if invalid or unsupported payment method
-  React.useEffect(() => {
-    if (cartMetodoPago !== 'efectivo') {
-      setCartMetodoPago('efectivo');
-    }
-  }, [cartMetodoPago, setCartMetodoPago]);
 
   // Group items by store
   const grupos = cartItems.reduce((acc, item) => {

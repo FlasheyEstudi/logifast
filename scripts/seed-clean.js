@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * LOGIFAST — Limpieza de datos en Supabase
  * Conserva únicamente los 4 usuarios demo con sus contraseñas encriptadas,

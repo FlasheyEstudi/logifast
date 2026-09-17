@@ -357,7 +357,9 @@ export async function dispararNotificacionNativa({
 
   // 4. Vía Web Notifications API / Service Worker (PWA / Chrome Móvil / Safari)
   if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    const webOptions: NotificationOptions = {
+    // `vibrate` es una extensión no estándar (Chrome/Android + Service Worker); Safari y
+    // Firefox la ignoran, así que se tipa explícitamente en vez de romper la compilación.
+    const webOptions: NotificationOptions & { vibrate?: number[] } = {
       body: cuerpo,
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',

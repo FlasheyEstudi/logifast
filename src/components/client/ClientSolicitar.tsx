@@ -1597,7 +1597,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       opacity: 1,
       scale: 1,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 380,
         damping: 32,
         mass: 0.85,
@@ -1609,7 +1609,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       scale: 0.98,
       transition: {
         duration: 0.22,
-        ease: 'easeOut',
+        ease: 'easeOut' as const,
       },
     }),
   };
@@ -2866,9 +2866,8 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
             ? `${formatSpanishDate(scheduleDate)} a las ${scheduleTime}`
             : undefined
         }
-        subtotal={confirmedOrderData?.subtotal || costBreakdown.base}
-        costoEnvio={confirmedOrderData?.costoEnvio || costBreakdown.base}
-        descuento={costBreakdown.descuento}
+        subtotal={costBreakdown.subtotal}
+        descuento={costBreakdown.promoDiscount}
         total={confirmedOrderData?.total || costBreakdown.total}
         metodoPago={confirmedOrderData?.metodoPago || solicitudEnvio.metodoPago || 'efectivo'}
         distanciaKm={confirmedOrderData?.distanceKm}

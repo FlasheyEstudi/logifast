@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * LOGIFAST — Seed completo
  * Crea: 4 usuarios demo (cliente, repartidor, admin, ingeniero),
