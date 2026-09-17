@@ -398,7 +398,19 @@ export interface MarketingKPI {
 
 export interface ClientNotificacion {
   id: string;
-  tipo: 'orden_confirmada' | 'repartidor_asignado' | 'repartidor_camino' | 'paquete_recogido' | 'entrega_exitosa' | 'incidencia' | 'codigo_nuevo' | 'te_extranamos';
+  tipo:
+    | 'orden_confirmada'
+    | 'repartidor_asignado'
+    | 'repartidor_camino'
+    | 'paquete_recogido'
+    | 'entrega_exitosa'
+    | 'incidencia'
+    | 'codigo_nuevo'
+    | 'te_extranamos'
+    // Tipos que llegan desde administración (marketing / campañas / avisos)
+    | 'promocion'
+    | 'sistema'
+    | 'marketing';
   titulo: string;
   descripcion: string;
   leida: boolean;
@@ -829,6 +841,10 @@ interface AppState {
   setClientNotifOpen: (open: boolean) => void;
   markClientNotifRead: (id: string) => void;
   markAllClientNotifRead: () => void;
+  /** Reemplaza la lista completa (carga inicial desde /api/notificaciones-push). */
+  setClientNotificaciones: (notifs: ClientNotificacion[]) => void;
+  /** Inserta una notificación en vivo al inicio de la lista (evento notificacion:push). */
+  agregarNotificacionCliente: (notif: ClientNotificacion) => void;
   addDireccionGuardada: (dir: DireccionGuardada) => void;
   removeDireccionGuardada: (id: string) => void;
   validateCodigoPromo: (codigo: string) => { valid: boolean; descuento: number; tipo: string };
@@ -1606,6 +1622,13 @@ export const useStore = create<AppState>((set, get) => ({
   })),
   markAllClientNotifRead: () => set((state) => ({
     clientNotificaciones: state.clientNotificaciones.map((n) => ({ ...n, leida: true })),
+  })),
+  setClientNotificaciones: (notifs) => set({ clientNotificaciones: notifs }),
+  agregarNotificacionCliente: (notif) => set((state) => ({
+    // Evita duplicados si el socket reemite el mismo aviso
+    clientNotificaciones: state.clientNotificaciones.some((n) => n.id === notif.id)
+      ? state.clientNotificaciones
+      : [notif, ...state.clientNotificaciones],
   })),
   addDireccionGuardada: (dir) => set((state) => ({
     direccionesGuardadas: [...state.direccionesGuardadas, dir],

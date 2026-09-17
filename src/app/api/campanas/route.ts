@@ -98,9 +98,11 @@ export async function PATCH(request: NextRequest) {
     // Acción de envío inmediato en tiempo real
     if (accion === 'enviar' || estado === 'enviada') {
       const segment = segmento || existing.segmento || 'todos';
+      const tituloFinal = titulo || existing.titulo;
+      const contenidoFinal = contenido || existing.contenido;
       let usersToTarget: Array<{ id: string }> = [];
 
-      if (segment === 'todos') {
+      if (segment === 'todos' || segment === 'Todos') {
         usersToTarget = await db.user.findMany({ select: { id: true } });
       } else if (segment === 'Clientes nuevos') {
         const twoWeeksAgo = new Date(Date.now() - 14 * 86400000);
@@ -109,38 +111,47 @@ export async function PATCH(request: NextRequest) {
           select: { id: true },
         });
       } else {
+        // Segmento por rol real (clientes / repartidores / administradores / ingenieros).
+        // Antes este else forzaba role:'cliente' con take:50, así que cualquier otra
+        // segmentación enviaba a 50 personas y los repartidores nunca recibían nada.
+        const rol = segment.toLowerCase();
+        const rolesValidos = ['cliente', 'repartidor', 'admin', 'ingeniero'];
         usersToTarget = await db.user.findMany({
-          where: { role: 'cliente' },
+          where: rolesValidos.includes(rol) ? { role: rol } : { role: 'cliente' },
           select: { id: true },
-          take: 50,
         });
       }
 
+      let guardadas = 0;
+      let entregadosEnVivo = 0;
+
       if (usersToTarget.length > 0) {
-        await db.notificacionPush.createMany({
-          data: usersToTarget.map((u) => ({
-            userId: u.id,
-            titulo: titulo || existing.titulo,
-            contenido: contenido || existing.contenido,
-            tipo: 'promocion',
-            entidadId: id,
-            leida: false,
-          })),
-        });
+        const LOTE = 500;
+        const filas = usersToTarget.map((u) => ({
+          userId: u.id,
+          titulo: tituloFinal,
+          contenido: contenidoFinal,
+          tipo: 'promocion',
+          entidadId: id,
+          leida: false,
+        }));
+
+        for (let i = 0; i < filas.length; i += LOTE) {
+          const res = await db.notificacionPush.createMany({ data: filas.slice(i, i + LOTE) });
+          guardadas += res.count;
+        }
 
         try {
-          const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
-          usersToTarget.forEach((u) => {
-            emitirEventoRealtime({
-              room: `usuario:${u.id}`,
+          const { emitirEventoRealtimeAsync } = await import('@/lib/realtime-emitter');
+          const salas = usersToTarget.map((u) => `usuario:${u.id}`);
+          for (let i = 0; i < salas.length; i += LOTE) {
+            const r = await emitirEventoRealtimeAsync({
+              rooms: salas.slice(i, i + LOTE),
               event: 'notificacion:push',
-              data: {
-                titulo: titulo || existing.titulo,
-                contenido: contenido || existing.contenido,
-                tipo: 'promocion',
-              },
+              data: { titulo: tituloFinal, contenido: contenidoFinal, tipo: 'promocion', entidadId: id },
             });
-          });
+            entregadosEnVivo += r?.entregados ?? 0;
+          }
         } catch {}
       }
 
@@ -150,13 +161,20 @@ export async function PATCH(request: NextRequest) {
           estado: 'enviada',
           enviadaEn: new Date(),
           destinatarios: usersToTarget.length,
-          titulo: titulo || existing.titulo,
-          contenido: contenido || existing.contenido,
+          titulo: tituloFinal,
+          contenido: contenidoFinal,
           segmento: segment,
         },
       });
 
-      return NextResponse.json({ ok: true, data: updated, enviados: usersToTarget.length });
+      return NextResponse.json({
+        ok: true,
+        data: updated,
+        enviados: usersToTarget.length,
+        guardadas,
+        entregadosEnVivo,
+        sinConexion: usersToTarget.length - entregadosEnVivo,
+      });
     }
 
     const updateData: Record<string, unknown> = {};

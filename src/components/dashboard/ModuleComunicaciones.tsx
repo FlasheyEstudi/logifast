@@ -1009,6 +1009,13 @@ function NotificacionesPanel() {
   const [pushContenido, setPushContenido] = useState('');
   const [pushTipo, setPushTipo] = useState('sistema');
   const [sending, setSending] = useState(false);
+  const [ultimoEnvio, setUltimoEnvio] = useState<{
+    titulo: string;
+    destinatarios: number;
+    entregadosEnVivo: number;
+    sinConexion: number;
+    lotesFallidos: number;
+  } | null>(null);
 
   const handleSendBroadcast = async () => {
     if (!pushTitulo.trim() || !pushContenido.trim()) {
@@ -1031,7 +1038,21 @@ function NotificacionesPanel() {
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Error al enviar');
       }
-      addToast(`Notificación push enviada a ${data.enviadas ?? 'los'} usuarios`);
+      const total = data.destinatarios ?? 0;
+      const enVivo = data.entregadosEnVivo ?? 0;
+      const sinConexion = data.sinConexion ?? 0;
+      setUltimoEnvio({
+        titulo: pushTitulo.trim(),
+        destinatarios: total,
+        entregadosEnVivo: enVivo,
+        sinConexion,
+        lotesFallidos: data.lotesFallidos ?? 0,
+      });
+      addToast(
+        data.lotesFallidos > 0
+          ? `Enviado a ${total} usuarios · ${enVivo} en vivo · ${sinConexion} sin conexión (${data.lotesFallidos} lotes fallaron)`
+          : `Enviado a ${total} usuarios · ${enVivo} en vivo · ${sinConexion} sin conexión`
+      );
       setBroadcastOpen(false);
       setPushTitulo('');
       setPushContenido('');
@@ -1162,6 +1183,33 @@ function NotificacionesPanel() {
                   <X size={14} />
                 </button>
               </div>
+
+              {ultimoEnvio && (
+                <div
+                  style={{
+                    marginBottom: 14,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1px solid var(--lf-border)',
+                    background: 'var(--lf-bg-base)',
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>Último envío: {ultimoEnvio.titulo}</div>
+                  <div style={{ color: 'var(--lf-text-muted)' }}>
+                    Destinatarios: <strong>{ultimoEnvio.destinatarios}</strong> · Entregados en vivo:{' '}
+                    <strong style={{ color: 'var(--exito)' }}>{ultimoEnvio.entregadosEnVivo}</strong> · Sin conexión:{' '}
+                    <strong>{ultimoEnvio.sinConexion}</strong>
+                  </div>
+                  {ultimoEnvio.sinConexion > 0 && (
+                    <div style={{ color: 'var(--lf-text-muted)', marginTop: 4 }}>
+                      Los «sin conexión» quedan en la bandeja de la app y se verán al abrirla. Para que suene con la app
+                      cerrada hace falta Firebase (FCM), que aún no está configurado.
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div>

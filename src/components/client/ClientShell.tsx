@@ -228,6 +228,35 @@ const IOS_TITLE_MAP: Record<ClientModuleKey, string> = {
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 
+/* ─── Formato relativo para el centro de notificaciones ─── */
+function tiempoRelativo(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return '';
+  const diff = Date.now() - t;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'ahora';
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `hace ${d} d`;
+  return new Date(iso).toLocaleDateString('es-NI', { day: 'numeric', month: 'short' });
+}
+
+const ICONO_POR_TIPO: Record<string, string> = {
+  promocion: '🎁',
+  marketing: '📣',
+  sistema: '🔔',
+  codigo_nuevo: '🎟️',
+  orden_confirmada: '📦',
+  repartidor_asignado: '🛵',
+  repartidor_camino: '🛵',
+  paquete_recogido: '📦',
+  entrega_exitosa: '✅',
+  incidencia: '⚠️',
+  te_extranamos: '💛',
+};
+
 export default function ClientShell({ isDark, toggleTheme, onLogout, userName }: ClientShellProps) {
   const {
     clientActiveModule,
@@ -238,6 +267,8 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     setClientNotifOpen,
     markClientNotifRead,
     markAllClientNotifRead,
+    setClientNotificaciones,
+    agregarNotificacionCliente,
     trackingOrderId,
     chatOpen,
     ratingModalOpen,
@@ -276,6 +307,81 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       });
     }
   };
+
+  /* ─── Centro de notificaciones: carga real desde la API ─── */
+  useEffect(() => {
+    let cancelado = false;
+
+    const cargar = () => {
+      fetch('/api/notificaciones-push', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (cancelado || !data?.notificaciones) return;
+          setClientNotificaciones(
+            data.notificaciones.map((n: any) => ({
+              id: n.id,
+              tipo: n.tipo || 'sistema',
+              titulo: n.titulo,
+              descripcion: n.contenido,
+              leida: !!n.leida,
+              relacionadoId: n.entidadId || undefined,
+              timestamp: n.createdAt || new Date().toISOString(),
+            }))
+          );
+        })
+        .catch(() => null);
+    };
+
+    cargar();
+    // Reintento al volver del segundo plano (la PWA/APK puede quedar suspendida)
+    const onVisible = () => { if (document.visibilityState === 'visible') cargar(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    // Avisos en vivo del administrador (campañas, promociones, difusiones)
+    const off = onRealtimeEvent('notificacion:push', (data: any) => {
+      const titulo = data?.titulo || 'LogiFast';
+      const descripcion = data?.contenido || '';
+      agregarNotificacionCliente({
+        id: `live-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        tipo: data?.tipo || 'sistema',
+        titulo,
+        descripcion,
+        leida: false,
+        relacionadoId: data?.entidadId || undefined,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Notificación nativa real en el celular (bandeja de Android)
+      dispararNotificacionNativa({
+        titulo,
+        cuerpo: descripcion,
+        tipoAlerta: data?.tipo === 'promocion' || data?.tipo === 'marketing' ? 'orden' : 'mensaje',
+        extra: data?.entidadId ? { ordenId: data.entidadId, entidadId: data.entidadId } : undefined,
+      }).catch(() => null);
+
+      reproducirSonido('mensaje');
+      cargar();
+    });
+
+    return () => {
+      cancelado = true;
+      document.removeEventListener('visibilitychange', onVisible);
+      off();
+    };
+  }, [setClientNotificaciones, agregarNotificacionCliente]);
+
+  const abrirNotificaciones = useCallback(() => {
+    const abriendo = !clientNotifOpen;
+    setClientNotifOpen(abriendo);
+    if (abriendo && clientNotificaciones.some((n) => !n.leida)) {
+      markAllClientNotifRead();
+      fetch('/api/notificaciones-push', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }).catch(() => null);
+    }
+  }, [clientNotifOpen, clientNotificaciones, setClientNotifOpen, markAllClientNotifRead]);
 
   /* ─── Detección de Orden Activa para Barra de Progreso en Tiempo Real ─── */
   const activeOrder = useMemo(() => {
@@ -999,7 +1105,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               {/* Bell */}
               <div ref={notifRef} style={{ position: 'relative' }}>
                 <button
-                  onClick={() => { setClientNotifOpen(!clientNotifOpen); setAvatarOpen(false); }}
+                  onClick={() => { abrirNotificaciones(); setAvatarOpen(false); }}
                   aria-label="Notificaciones"
                   style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : isDark ? '#98989D' : '#636366', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
                 >
@@ -1010,6 +1116,84 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
                     </span>
                   )}
                 </button>
+
+                {/* ─── Panel de notificaciones (antes no se renderizaba nada) ─── */}
+                <AnimatePresence>
+                  {clientNotifOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                      style={{
+                        position: 'absolute',
+                        top: 40,
+                        right: 0,
+                        width: 'min(340px, calc(100vw - 32px))',
+                        maxHeight: 420,
+                        overflowY: 'auto',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 18,
+                        boxShadow: '0 18px 44px rgba(0,0,0,0.22)',
+                        zIndex: 400,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)' }}>Notificaciones</span>
+                        {clientNotificaciones.length > 0 && (
+                          <button
+                            onClick={() => {
+                              markAllClientNotifRead();
+                              fetch('/api/notificaciones-push', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }).catch(() => null);
+                            }}
+                            style={{ background: 'none', border: 'none', color: 'var(--primario)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                          >
+                            Marcar todas
+                          </button>
+                        )}
+                      </div>
+
+                      {clientNotificaciones.length === 0 ? (
+                        <div style={{ padding: '34px 20px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 26, marginBottom: 8 }}>🔔</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Sin notificaciones</div>
+                          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>
+                            Aquí llegarán tus pedidos, promociones y avisos de LogiFast.
+                          </div>
+                        </div>
+                      ) : (
+                        clientNotificaciones.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => {
+                              markClientNotifRead(n.id);
+                              fetch('/api/notificaciones-push', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: n.id }) }).catch(() => null);
+                              if (n.relacionadoId && (n.tipo === 'orden_confirmada' || n.tipo === 'repartidor_asignado' || n.tipo === 'repartidor_camino' || n.tipo === 'paquete_recogido')) {
+                                setTrackingOrder(n.relacionadoId);
+                                setClientNotifOpen(false);
+                              }
+                            }}
+                            style={{
+                              display: 'flex', gap: 11, padding: '12px 16px',
+                              borderBottom: '1px solid var(--border)',
+                              background: n.leida ? 'transparent' : 'var(--primario-soft)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <span style={{ fontSize: 17, lineHeight: '20px' }}>{ICONO_POR_TIPO[n.tipo] || '🔔'}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{n.titulo}</div>
+                              <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', lineHeight: 1.45, wordBreak: 'break-word' }}>{n.descripcion}</div>
+                              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>{tiempoRelativo(n.timestamp)}</div>
+                            </div>
+                            {!n.leida && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--primario)', flexShrink: 0, marginTop: 6 }} />}
+                          </div>
+                        ))
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Cart */}

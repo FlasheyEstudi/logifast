@@ -80,6 +80,7 @@ export type RealtimeEvent =
   | 'admin:incidencia:nueva'           // nueva incidencia reportada en vivo (admin recibe)
   | 'admin:recarga:actualizada'        // recarga de saldo aprobada/rechazada (admin recibe)
   | 'repartidor:recarga:actualizada'   // recarga de saldo aprobada/rechazada (repartidor recibe)
+  | 'notificacion:push'                // aviso dirigido de administración (campaña, promoción, difusión)
   | 'ingeniero:alerta:nueva'           // alerta técnica o emergencia creada (ingeniero recibe)
   | 'ingeniero:mantenimiento:nuevo'    // orden de mantenimiento creada (ingeniero recibe)
   | 'mantenimiento:iniciado'           // mantenimiento pasó a EN_PROCESO
