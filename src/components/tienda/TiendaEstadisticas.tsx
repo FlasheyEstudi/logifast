@@ -19,6 +19,15 @@ import { TrendingUp, TrendingDown, AlertTriangle, RotateCcw, FileSpreadsheet, Do
 import { notify } from '@/lib/notify';
 import { descargarReporteTienda } from '@/lib/tienda/descarga-cliente';
 
+/**
+ * Panel de la tienda.
+ *
+ * Construido con los mismos componentes del proyecto: clases Tailwind con los tokens
+ * del sistema (--surface, --border, --text, --primario…), igual que el resto de los
+ * módulos del portal. Sin estilos inline salvo lo que no se puede expresar en clases:
+ * los colores de las series de las gráficas, que los necesita recharts en concreto.
+ */
+
 interface Resumen {
   totalVendido: number;
   totalDescuentos: number;
@@ -59,20 +68,17 @@ const PERIODOS = [
   { dias: 0, label: 'Todo' },
 ];
 
-/** Paleta fija: legible en claro y oscuro, sin depender de los tokens de tema. */
-const PALETA = ['var(--primario)', '#30D158', '#FF9F0A', '#BF5AF2', '#FF453A', '#64D2FF'];
+/** Paleta de las series: recharts exige colores concretos, no variables CSS. */
+const PALETA = ['#0A84FF', '#30D158', '#FF9F0A', '#BF5AF2', '#FF453A', '#64D2FF'];
 
-const money = (n: number) =>
-  `C$ ${n.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (n: number) => `C$ ${n.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const metodoLegible = (m: string) =>
   ({ efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', fiado: 'Fiado', devolucion: 'Devoluciones' }[m] || m);
 
-/**
- * Panel de la tienda: cifras del período, comparación con el anterior, horas pico,
- * formas de pago, top de productos y alertas de inventario. Todo sale del mismo libro
- * que los reportes XLSX/PDF, así que la pantalla y el archivo siempre cuadran.
- */
+const TARJETA = 'rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 min-w-0';
+const PANEL = 'rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 min-w-0';
+
 export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
   const [dias, setDias] = useState(30);
   const [datos, setDatos] = useState<Datos | null>(null);
@@ -116,98 +122,57 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
     }
   };
 
-  const muted = isDark ? '#98989D' : '#8E8E93';
-  const grid = isDark ? 'rgba(84,84,88,0.36)' : 'rgba(60,60,67,0.12)';
-  const serie = isDark ? 'var(--primario)' : 'var(--primario)';
+  // Colores de gráficas: no se pueden pasar por clase, así que se calculan por tema.
+  const eje = isDark ? '#98989D' : '#8E8E93';
+  const rejilla = isDark ? 'rgba(84,84,88,0.36)' : 'rgba(60,60,67,0.12)';
+  const serie = isDark ? '#0A84FF' : '#007AFF';
 
-  const tooltip = {
-    contentStyle: {
-      background: 'var(--surface)',
-      border: `1px solid ${grid}`,
-      borderRadius: 10,
-      fontSize: 12,
-      color: 'var(--text)',
-    },
-  };
+  const helper = { contentStyle: { background: 'var(--surface)', border: `1px solid ${rejilla}`, borderRadius: 12, fontSize: 12, color: 'var(--text)' } };
 
   const Variacion = ({ valor, etiqueta }: { valor: number | null; etiqueta: string }) => {
     if (valor === null || !Number.isFinite(valor)) {
-      return <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{etiqueta}</span>;
+      return <span className="text-[11px] text-[var(--text-muted)]">{etiqueta}</span>;
     }
     const sube = valor >= 0;
     return (
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 4,
-          fontSize: 11.5,
-          fontWeight: 700,
-          color: sube ? 'var(--exito)' : 'var(--peligro)',
-        }}
-      >
+      <span className={`inline-flex items-center gap-1 text-[11.5px] font-bold ${sube ? 'text-[var(--exito)]' : 'text-[var(--peligro)]'}`}>
         {sube ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
         {sube ? '+' : ''}
         {valor.toFixed(1)}%
-        <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>{etiqueta}</span>
+        <span className="font-medium text-[var(--text-muted)]">{etiqueta}</span>
       </span>
     );
   };
 
-  const tarjeta = (
-    etiqueta: string,
-    valor: string,
-    pie: React.ReactNode,
-    color?: string
-  ) => (
-    <div
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 16,
-        padding: '14px 16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-        minWidth: 0,
-      }}
-    >
-      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>{etiqueta}</div>
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 800,
-          color: color || 'var(--text)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {valor}
-      </div>
+  const Tarjeta = ({
+    etiqueta,
+    valor,
+    pie,
+    tono = 'text-[var(--text)]',
+  }: {
+    etiqueta: string;
+    valor: string;
+    pie: React.ReactNode;
+    tono?: string;
+  }) => (
+    <div className={`${TARJETA} flex flex-col gap-1.5`}>
+      <span className="text-xs font-semibold text-[var(--text-muted)]">{etiqueta}</span>
+      <span className={`truncate text-[22px] font-extrabold ${tono}`}>{valor}</span>
       {pie}
     </div>
   );
 
-  const panel: React.CSSProperties = {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 16,
-    padding: 16,
-    minWidth: 0,
-  };
-
   const etiquetaVariacion = datos?.comparacion.hayDatos ? datos.comparacion.etiqueta : 'sin datos previos';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* ─── Encabezado y período ─── */}
+    <div className="flex flex-col gap-4">
+      {/* Encabezado y período */}
       <div className="flex flex-wrap items-center gap-3">
-        <div style={{ minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 font-syne text-xl font-extrabold text-[var(--text)]">
             <TrendingUp size={19} /> Panel de la tienda
           </h2>
-          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text-muted)' }}>
+          <p className="mt-1 text-[12.5px] text-[var(--text-muted)]">
             Mismo origen que los reportes XLSX/PDF y la exportación CSV: las devoluciones restan.
           </p>
         </div>
@@ -217,17 +182,11 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
             <button
               key={p.dias}
               onClick={() => setDias(p.dias)}
-              style={{
-                height: 44,
-                padding: '0 16px',
-                borderRadius: 999,
-                border: '1px solid var(--border)',
-                background: dias === p.dias ? 'var(--primary)' : 'var(--bg-alt)',
-                color: dias === p.dias ? '#FFFFFF' : 'var(--text)',
-                fontWeight: 700,
-                fontSize: 12.5,
-                cursor: 'pointer',
-              }}
+              className={`h-11 rounded-full border border-[var(--border)] px-4 text-[12.5px] font-bold transition-colors ${
+                dias === p.dias
+                  ? 'bg-[var(--primario)] text-white'
+                  : 'bg-[var(--bg-alt)] text-[var(--text)] hover:bg-[var(--primario-soft)]'
+              }`}
             >
               {p.label}
             </button>
@@ -235,103 +194,108 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
         </div>
       </div>
 
-      {loading && <div style={{ ...panel, color: 'var(--text-muted)', fontSize: 13.5 }}>Calculando…</div>}
+      {loading && <div className={`${PANEL} text-[13.5px] text-[var(--text-muted)]`}>Calculando…</div>}
 
       {!loading && error && (
-        <div style={{ ...panel, borderColor: 'rgba(239,68,68,.4)', color: 'var(--peligro)', fontSize: 13.5 }}>{error}</div>
+        <div className={`${PANEL} border-[var(--peligro)]/40 text-[13.5px] text-[var(--peligro)]`}>{error}</div>
       )}
 
       {!loading && !error && datos && (
         <>
-          {/* ─── Cifras principales ─── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            {tarjeta(
-              'Vendido neto',
-              money(datos.resumen.totalVendido),
-              <Variacion valor={datos.comparacion.variacionVendido} etiqueta={etiquetaVariacion} />
-            )}
-            {tarjeta(
-              'Comprobantes',
-              String(datos.resumen.numVentas),
-              <Variacion valor={datos.comparacion.variacionVentas} etiqueta={etiquetaVariacion} />
-            )}
-            {tarjeta(
-              'Ticket promedio',
-              money(datos.resumen.ticketPromedio),
-              <Variacion valor={datos.comparacion.variacionTicket} etiqueta={etiquetaVariacion} />
-            )}
-            {tarjeta(
-              'Devuelto',
-              money(datos.resumen.montoDevuelto),
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                {datos.resumen.devoluciones} devolución(es) · {datos.resumen.totalItems} artículos vendidos
-              </span>,
-              datos.resumen.montoDevuelto > 0 ? '#F59E0B' : undefined
-            )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Tarjeta
+              etiqueta="Vendido neto"
+              valor={money(datos.resumen.totalVendido)}
+              pie={<Variacion valor={datos.comparacion.variacionVendido} etiqueta={etiquetaVariacion} />}
+            />
+            <Tarjeta
+              etiqueta="Comprobantes"
+              valor={String(datos.resumen.numVentas)}
+              pie={<Variacion valor={datos.comparacion.variacionVentas} etiqueta={etiquetaVariacion} />}
+            />
+            <Tarjeta
+              etiqueta="Ticket promedio"
+              valor={money(datos.resumen.ticketPromedio)}
+              pie={<Variacion valor={datos.comparacion.variacionTicket} etiqueta={etiquetaVariacion} />}
+            />
+            <Tarjeta
+              etiqueta="Devuelto"
+              valor={money(datos.resumen.montoDevuelto)}
+              pie={
+                <span className="text-[11.5px] text-[var(--text-muted)]">
+                  {datos.resumen.devoluciones} devolución(es) · {datos.resumen.totalItems} artículos
+                </span>
+              }
+              tono={datos.resumen.montoDevuelto > 0 ? 'text-[var(--warning)]' : 'text-[var(--text)]'}
+            />
           </div>
 
-          {/* ─── Datos secundarios ─── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {tarjeta(
-              'Mejor día',
-              datos.resumen.mejorDia ? money(datos.resumen.mejorDia.total) : '—',
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Calendar size={13} /> {datos.resumen.mejorDia?.fecha || 'sin ventas aún'}
-              </span>
-            )}
-            {tarjeta(
-              'Hora pico',
-              datos.resumen.horaPico ? `${datos.resumen.horaPico.hora}:00` : '—',
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Clock size={13} /> {datos.resumen.horaPico ? money(datos.resumen.horaPico.total) : 'sin ventas aún'}
-              </span>
-            )}
-            {tarjeta(
-              'Stock en o bajo el mínimo',
-              String(datos.resumen.productosConStockBajo),
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                {datos.resumen.productosConStockBajo > 0 ? 'revisa Inventario' : 'todo en orden'}
-              </span>,
-              datos.resumen.productosConStockBajo > 0 ? '#F59E0B' : 'var(--exito)'
-            )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Tarjeta
+              etiqueta="Mejor día"
+              valor={datos.resumen.mejorDia ? money(datos.resumen.mejorDia.total) : '—'}
+              pie={
+                <span className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-muted)]">
+                  <Calendar size={13} /> {datos.resumen.mejorDia?.fecha || 'sin ventas aún'}
+                </span>
+              }
+            />
+            <Tarjeta
+              etiqueta="Hora pico"
+              valor={datos.resumen.horaPico ? `${datos.resumen.horaPico.hora}:00` : '—'}
+              pie={
+                <span className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-muted)]">
+                  <Clock size={13} /> {datos.resumen.horaPico ? money(datos.resumen.horaPico.total) : 'sin ventas aún'}
+                </span>
+              }
+            />
+            <Tarjeta
+              etiqueta="Stock en o bajo el mínimo"
+              valor={String(datos.resumen.productosConStockBajo)}
+              pie={
+                <span className="text-[11.5px] text-[var(--text-muted)]">
+                  {datos.resumen.productosConStockBajo > 0 ? 'revisa Inventario' : 'todo en orden'}
+                </span>
+              }
+              tono={datos.resumen.productosConStockBajo > 0 ? 'text-[var(--warning)]' : 'text-[var(--exito)]'}
+            />
           </div>
 
           {datos.resumen.numVentas === 0 ? (
-            <div style={{ ...panel, textAlign: 'center', padding: 32 }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>Todavía no hay ventas en este período</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6 }}>
+            <div className={`${PANEL} py-8 text-center`}>
+              <div className="text-[15px] font-bold text-[var(--text)]">Todavía no hay ventas en este período</div>
+              <div className="mt-1.5 text-[13px] text-[var(--text-muted)]">
                 Las cifras y las gráficas aparecen en cuanto registres ventas en la Caja POS (o devoluciones).
               </div>
             </div>
           ) : (
             <>
-              {/* ─── Gráficas de tiempo ─── */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <div style={panel}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 10 }}>Ventas por hora</div>
-                  <div style={{ height: 200 }}>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className={PANEL}>
+                  <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Ventas por hora</h3>
+                  <div className="h-[200px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={datos.porHora} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={rejilla} vertical={false} />
                         <XAxis
                           dataKey="hora"
                           tickFormatter={(h) => `${h}h`}
-                          tick={{ fill: muted, fontSize: 10.5 }}
-                          axisLine={{ stroke: grid }}
+                          tick={{ fill: eje, fontSize: 10.5 }}
+                          axisLine={{ stroke: rejilla }}
                           tickLine={false}
                           interval={1}
                         />
-                        <YAxis tick={{ fill: muted, fontSize: 10.5 }} axisLine={false} tickLine={false} />
-                        <Tooltip formatter={(v) => money(Number(v))} labelFormatter={(h) => `${h}:00 – ${h}:59`} {...tooltip} />
+                        <YAxis tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
+                        <Tooltip formatter={(v) => money(Number(v))} labelFormatter={(h) => `${h}:00 – ${h}:59`} {...helper} />
                         <Bar dataKey="total" fill={serie} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                <div style={panel}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 10 }}>Ventas por día</div>
-                  <div style={{ height: 200 }}>
+                <div className={PANEL}>
+                  <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Ventas por día</h3>
+                  <div className="h-[200px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={datos.porDia} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
                         <defs>
@@ -340,10 +304,10 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                             <stop offset="100%" stopColor={serie} stopOpacity={0.03} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
-                        <XAxis dataKey="fecha" tick={{ fill: muted, fontSize: 10.5 }} axisLine={{ stroke: grid }} tickLine={false} />
-                        <YAxis tick={{ fill: muted, fontSize: 10.5 }} axisLine={false} tickLine={false} />
-                        <Tooltip formatter={(v) => money(Number(v))} {...tooltip} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={rejilla} vertical={false} />
+                        <XAxis dataKey="fecha" tick={{ fill: eje, fontSize: 10.5 }} axisLine={{ stroke: rejilla }} tickLine={false} />
+                        <YAxis tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
+                        <Tooltip formatter={(v) => money(Number(v))} {...helper} />
                         <Area type="monotone" dataKey="total" stroke={serie} strokeWidth={2} fill="url(#gradPanelVentas)" />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -351,39 +315,32 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                 </div>
               </div>
 
-              {/* ─── Top productos y formas de pago ─── */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <div style={panel}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 10 }}>Top 10 productos</div>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className={PANEL}>
+                  <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Top 10 productos</h3>
                   {datos.topProductos.length === 0 ? (
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Sin artículos vendidos en el período.</div>
+                    <p className="text-[13px] text-[var(--text-muted)]">Sin artículos vendidos en el período.</p>
                   ) : (
-                    <div style={{ height: Math.max(180, datos.topProductos.length * 26 + 20) }}>
+                    <div className="h-[240px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={datos.topProductos.map((p) => ({
-                            nombre: p.nombre.length > 22 ? `${p.nombre.slice(0, 21)}…` : p.nombre,
+                            nombre: p.nombre.length > 20 ? `${p.nombre.slice(0, 19)}…` : p.nombre,
                             monto: p.monto,
                             cantidad: p.cantidad,
                           }))}
                           layout="vertical"
                           margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" stroke={grid} horizontal={false} />
-                          <XAxis type="number" tick={{ fill: muted, fontSize: 10 }} axisLine={false} tickLine={false} />
-                          <YAxis
-                            type="category"
-                            dataKey="nombre"
-                            width={130}
-                            tick={{ fill: muted, fontSize: 10.5 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
+                          <CartesianGrid strokeDasharray="3 3" stroke={rejilla} horizontal={false} />
+                          <XAxis type="number" tick={{ fill: eje, fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <YAxis type="category" dataKey="nombre" width={124} tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
                           <Tooltip
-                            formatter={(v, _n, item) =>
-                              [`${money(Number(v))} · ${(item?.payload as { cantidad?: number })?.cantidad ?? 0} u.`, 'Vendido']
-                            }
-                            {...tooltip}
+                            formatter={(v, _n, item) => [
+                              `${money(Number(v))} · ${(item?.payload as { cantidad?: number })?.cantidad ?? 0} u.`,
+                              'Vendido',
+                            ]}
+                            {...helper}
                           />
                           <Bar dataKey="monto" fill={serie} radius={[0, 4, 4, 0]} />
                         </BarChart>
@@ -392,13 +349,13 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                   )}
                 </div>
 
-                <div style={panel}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 10 }}>Formas de pago</div>
+                <div className={PANEL}>
+                  <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Formas de pago</h3>
                   {datos.porMetodo.length === 0 ? (
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Sin cobros registrados en el período.</div>
+                    <p className="text-[13px] text-[var(--text-muted)]">Sin cobros registrados en el período.</p>
                   ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 190, height: 190, flex: '0 0 auto' }}>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="h-[190px] w-[190px] shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -412,30 +369,20 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                                 <Cell key={i} fill={PALETA[i % PALETA.length]} stroke="none" />
                               ))}
                             </Pie>
-                            <Tooltip formatter={(v) => money(Number(v))} {...tooltip} />
+                            <Tooltip formatter={(v) => money(Number(v))} {...helper} />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
-                      <div style={{ flex: '1 1 160px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <ul className="flex min-w-0 flex-1 flex-col gap-2">
                         {datos.porMetodo.map((m, i) => (
-                          <div key={m.metodo} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
-                            <span
-                              style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: 999,
-                                background: PALETA[i % PALETA.length],
-                                flex: '0 0 auto',
-                              }}
-                            />
-                            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {metodoLegible(m.metodo)}
-                            </span>
-                            <span style={{ color: 'var(--text-muted)', fontSize: 11.5 }}>{m.ventas}</span>
-                            <span style={{ fontWeight: 700 }}>{money(m.total)}</span>
-                          </div>
+                          <li key={m.metodo} className="flex items-center gap-2 text-[12.5px] text-[var(--text)]">
+                            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: PALETA[i % PALETA.length] }} />
+                            <span className="flex-1 truncate">{metodoLegible(m.metodo)}</span>
+                            <span className="text-[11.5px] text-[var(--text-muted)]">{m.ventas}</span>
+                            <span className="font-bold">{money(m.total)}</span>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
                   )}
                 </div>
@@ -443,17 +390,16 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
             </>
           )}
 
-          {/* ─── Alertas de inventario ─── */}
           {datos.alertasStockBajo.length > 0 && (
-            <div style={{ ...panel, borderColor: 'rgba(245,158,11,.35)' }}>
-              <div style={{ fontSize: 13.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8, color: '#F59E0B' }}>
+            <div className={`${PANEL} border-[var(--warning)]/40`}>
+              <h3 className="flex items-center gap-2 text-[13.5px] font-extrabold text-[var(--warning)]">
                 <AlertTriangle size={16} /> Stock en o bajo el mínimo
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" style={{ marginTop: 10 }}>
+              </h3>
+              <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {datos.alertasStockBajo.map((a) => (
-                  <div key={a.productoId} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12.5 }}>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nombre}</span>
-                    <span style={{ fontFamily: 'ui-monospace, monospace', fontWeight: 700 }}>
+                  <div key={a.productoId} className="flex justify-between gap-2.5 text-[12.5px] text-[var(--text)]">
+                    <span className="truncate">{a.nombre}</span>
+                    <span className="font-mono font-bold tabular-nums">
                       {a.stock} / {a.stockMinimo}
                     </span>
                   </div>
@@ -462,70 +408,28 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
             </div>
           )}
 
-          {/* ─── Descargas y refresco ─── */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => descargar('xlsx')}
               disabled={descargando !== null}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                height: 44,
-                padding: '0 16px',
-                borderRadius: 12,
-                border: 'none',
-                background: 'var(--primario)',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: descargando ? 'wait' : 'pointer',
-              }}
+              className="flex h-11 items-center gap-2 rounded-xl bg-[var(--primario)] px-4 text-[13px] font-bold text-white transition-transform active:scale-[0.98] disabled:opacity-60"
             >
               <FileSpreadsheet size={16} /> {descargando === 'xlsx' ? 'Generando…' : 'Reporte Excel'}
             </button>
             <button
               onClick={() => descargar('pdf')}
               disabled={descargando !== null}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                height: 44,
-                padding: '0 16px',
-                borderRadius: 12,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                color: 'var(--text)',
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: descargando ? 'wait' : 'pointer',
-              }}
+              className="flex h-11 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-alt)] px-4 text-[13px] font-bold text-[var(--text)] transition-transform active:scale-[0.98] disabled:opacity-60"
             >
               <Download size={16} /> {descargando === 'pdf' ? 'Generando…' : 'Reporte PDF'}
             </button>
             <button
               onClick={cargar}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                height: 44,
-                padding: '0 16px',
-                borderRadius: 12,
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                color: 'var(--text-muted)',
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
+              className="flex h-11 items-center gap-2 rounded-xl border border-[var(--border)] px-4 text-[13px] font-bold text-[var(--text-muted)] transition-transform active:scale-[0.98]"
             >
               <RotateCcw size={15} /> Actualizar
             </button>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              Los reportes salen con el logo y el nombre de tu tienda.
-            </span>
+            <span className="text-xs text-[var(--text-muted)]">Los reportes salen con el logo y el nombre de tu tienda.</span>
           </div>
         </>
       )}
