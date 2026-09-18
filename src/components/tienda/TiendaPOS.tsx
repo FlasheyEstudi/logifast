@@ -818,8 +818,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* ─── Mobile Floating Bar & Bottom Sheet Drawer ─── */}
-      {/* 1. Floating bottom pill for mobile screen (respeta el espacio exclusivo del navbar derecho) */}
-      <div className="lg:hidden fixed bottom-4 left-3 right-[84px] sm:right-[96px] z-30">
+      {/* 1. Floating bottom pill for mobile screen */}
+      <div className="lg:hidden fixed bottom-[74px] left-3 right-3 z-30">
         <button
           onClick={() => setMobileCartOpen(true)}
           className="w-full h-14 min-h-[52px] px-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-black/25 flex items-center justify-between active:scale-[0.98] transition-all"
@@ -850,11 +850,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         </button>
       </div>
 
-      {/* 2. Bottom Sheet Drawer on Mobile (no invade el espacio del navbar a la derecha) */}
+      {/* 2. Bottom Sheet Drawer on Mobile */}
       {mobileCartOpen && (
         <div
           onClick={() => setMobileCartOpen(false)}
-          className="lg:hidden fixed inset-y-0 left-0 right-[80px] sm:right-[92px] z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end transition-opacity"
+          className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end transition-opacity"
         >
           <div
             onClick={(e) => e.stopPropagation()}
