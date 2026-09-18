@@ -28,70 +28,10 @@ interface OrdenKDS {
   repartidorNombre?: string;
 }
 
-/* ═══════════════════════════════════════════════
-   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
-   ═══════════════════════════════════════════════ */
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-const sectionCard: React.CSSProperties = {
-  background: 'var(--surface)',
-  borderRadius: 'var(--lf-card-radius, 20px)',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--lf-shadow-card)',
-  padding: 20,
-};
-
-const btnPrimary: React.CSSProperties = {
-  padding: '10px 20px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: 'none',
-  background: 'var(--primario)',
-  color: '#FFFFFF',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 8,
-  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-  transition: 'all 0.2s ease',
-};
-
-const btnSecondary: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  transition: 'all 0.2s ease',
-};
-
-const filterPill = (active: boolean): React.CSSProperties => ({
-  padding: '7px 14px',
-  borderRadius: 'var(--lf-pill-radius, 100px)',
-  background: active ? 'var(--primario)' : 'var(--bg-alt)',
-  color: active ? '#FFFFFF' : 'var(--text-muted)',
-  border: `1px solid ${active ? 'var(--primario)' : 'var(--border)'}`,
-  fontWeight: 600,
-  fontSize: 12,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-  transition: 'all 0.18s ease',
-  boxShadow: active ? '0 2px 8px rgba(0, 122, 255, 0.25)' : 'none',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-});
 
 export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: boolean; categoriaTienda?: string }) {
   const [ordenes, setOrdenes] = useState<OrdenKDS[]>([]);
@@ -229,99 +169,93 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
   return (
     <div className="w-full space-y-4 sm:space-y-5">
       {/* ─── Header & KDS Navigation Tabs ─── */}
-      <div style={sectionCard} className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
-                {isComida ? 'Monitor KDS de Cocina' : 'Monitor de Comandas & Despacho'}
-              </h2>
-              {conteo.recibidos > 0 && (
-                <span className="animate-pulse px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-[11px] font-extrabold font-mono shadow-sm">
-                  {conteo.recibidos} NUEVOS
-                </span>
-              )}
+      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+        <CardContent className="p-5 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
+                  {isComida ? 'Monitor KDS de Cocina' : 'Monitor de Comandas & Despacho'}
+                </h2>
+                {conteo.recibidos > 0 && (
+                  <Badge className="animate-pulse px-2.5 py-0.5 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-extrabold font-mono shadow-sm">
+                    {conteo.recibidos} NUEVOS
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                Control en tiempo real de órdenes online y Marketplace para cocina o empaque
+              </p>
             </div>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              Control en tiempo real de órdenes online y Marketplace para cocina o empaque
-            </p>
-          </div>
 
-          {/* Quick Sound & Refresh Controls */}
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              style={btnSecondary}
-              className={`h-11 min-h-[44px] ${
-                soundEnabled
-                  ? '!border-emerald-500/30 !bg-emerald-500/10 !text-emerald-600 dark:!text-emerald-400'
-                  : ''
-              }`}
-            >
-              <Bell size={15} />
-              <span>{soundEnabled ? 'Sonido Activo' : 'Silenciado'}</span>
-            </button>
-
-            <button
-              onClick={cargarOrdenes}
-              style={btnSecondary}
-              className="h-11 min-h-[44px]"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
-              <span className="hidden sm:inline">Actualizar</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-2 border-t border-[var(--border)]">
-          {[
-            { id: 'activos', label: 'En Proceso', count: conteo.activos },
-            { id: 'recibido', label: 'Nuevos', count: conteo.recibidos, highlight: conteo.recibidos > 0 },
-            { id: 'preparando', label: 'Preparando', count: conteo.preparando },
-            { id: 'listo', label: 'Listos para Despacho', count: conteo.listos },
-            { id: 'todos', label: 'Historial', count: conteo.todos },
-          ].map((tab) => {
-            const active = filtroEstado === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setFiltroEstado(tab.id)}
-                style={filterPill(active)}
+            {/* Quick Sound & Refresh Controls */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={`h-10 text-xs font-semibold gap-2 ${
+                  soundEnabled
+                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                    : ''
+                }`}
               >
-                <span>{tab.label}</span>
-                <span
-                  style={{
-                    background: active
-                      ? 'rgba(255, 255, 255, 0.25)'
-                      : tab.highlight
-                      ? '#F59E0B'
-                      : 'var(--border)',
-                    color: active || tab.highlight ? '#FFFFFF' : 'var(--text)',
-                  }}
-                  className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full font-mono ${
-                    tab.highlight && !active ? 'animate-pulse' : ''
-                  }`}
+                <Bell size={15} />
+                <span>{soundEnabled ? 'Sonido Activo' : 'Silenciado'}</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={cargarOrdenes}
+                className="h-10 text-xs font-semibold gap-1.5"
+              >
+                <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
+                <span className="hidden sm:inline">Actualizar</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-2 border-t border-[var(--border)]">
+            {[
+              { id: 'activos', label: 'En Proceso', count: conteo.activos },
+              { id: 'recibido', label: 'Nuevos', count: conteo.recibidos, highlight: conteo.recibidos > 0 },
+              { id: 'preparando', label: 'Preparando', count: conteo.preparando },
+              { id: 'listo', label: 'Listos para Despacho', count: conteo.listos },
+              { id: 'todos', label: 'Historial', count: conteo.todos },
+            ].map((tab) => {
+              const active = filtroEstado === tab.id;
+              return (
+                <Button
+                  key={tab.id}
+                  variant={active ? 'default' : 'secondary'}
+                  size="sm"
+                  onClick={() => setFiltroEstado(tab.id)}
+                  className="h-8 rounded-full text-xs font-semibold px-3 gap-1.5 shrink-0"
                 >
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+                  <span>{tab.label}</span>
+                  <span
+                    className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full font-mono ${
+                      active
+                        ? 'bg-white/25 text-white'
+                        : tab.highlight
+                        ? 'bg-amber-500 text-white animate-pulse'
+                        : 'bg-[var(--border)] text-[var(--text)]'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ─── Orders Grid ─── */}
       {ordenesFiltradas.length === 0 ? (
-        <div
-          style={{
-            padding: '80px 24px',
-            textAlign: 'center',
-            background: 'var(--surface)',
-            border: '1px dashed var(--border)',
-            borderRadius: 20,
-          }}
-        >
+        <div className="py-20 px-6 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-3xl">
           <Clock size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
           <h3 className="text-base font-bold text-[var(--text)] font-syne">
             No hay pedidos en esta sección
@@ -428,37 +362,31 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                   {/* Acciones */}
                   <div className="pt-2 font-sans space-y-1.5">
                     {isRecibido && (
-                      <button
+                      <Button
                         onClick={() => cambiarEstado(ord.id, 'preparando')}
-                        style={{ ...btnPrimary, width: '100%' }}
-                        className="h-10 text-xs font-bold active:scale-95 transition-all"
+                        className="w-full h-10 text-xs font-bold"
                       >
                         Aceptar y Preparar
-                      </button>
+                      </Button>
                     )}
 
                     {isPreparando && (
-                      <button
+                      <Button
                         onClick={() => cambiarEstado(ord.id, 'listo')}
-                        style={{
-                          ...btnPrimary,
-                          width: '100%',
-                          background: 'var(--exito, #34C759)',
-                        }}
-                        className="h-10 text-xs font-bold active:scale-95 transition-all"
+                        className="w-full h-10 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
                       >
                         Marcar Listo
-                      </button>
+                      </Button>
                     )}
 
                     {isListo && (
-                      <button
+                      <Button
+                        variant="secondary"
                         onClick={() => cambiarEstado(ord.id, 'en_camino')}
-                        style={{ ...btnSecondary, width: '100%' }}
-                        className="h-10 text-xs font-bold active:scale-95 transition-all"
+                        className="w-full h-10 text-xs font-bold"
                       >
                         Entregar a Repartidor
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
