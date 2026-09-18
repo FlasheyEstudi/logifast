@@ -11,54 +11,10 @@ import { notify } from '@/lib/notify';
  *  - #8 Pauta: contratar un anuncio en el inicio de la app.
  */
 
-const campo: React.CSSProperties = {
-  width: '100%',
-  minWidth: 0,
-  height: 44,
-  borderRadius: 'var(--lf-input-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  padding: '0 14px',
-  fontSize: 13,
-  outline: 'none',
-  fontFamily: "'DM Sans', sans-serif",
-};
-
-const etiqueta: React.CSSProperties = {
-  fontSize: 11.5,
-  fontWeight: 700,
-  color: 'var(--text-muted)',
-  marginBottom: 4,
-  display: 'block',
-};
-
-const panel: React.CSSProperties = {
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--lf-card-radius, 20px)',
-  boxShadow: 'var(--lf-shadow-card)',
-  padding: 24,
-};
-
-const botonPrimario: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  height: 44,
-  padding: '0 18px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: 'none',
-  background: 'var(--primario)',
-  color: '#FFFFFF',
-  fontWeight: 700,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-  transition: 'all 0.2s ease',
-};
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 const money = (n: number) => `C$ ${n.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fecha = (v: string | null) => (v ? new Date(v).toLocaleDateString('es-NI') : '—');
@@ -67,36 +23,23 @@ export function TiendaComercial() {
   const [abierta, setAbierta] = useState<'equipo' | 'alianzas' | 'pauta' | null>('equipo');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap gap-2">
         {[
           { id: 'equipo' as const, label: 'Equipo de la tienda', icon: <Users size={15} /> },
           { id: 'alianzas' as const, label: 'Alianzas con repartidores', icon: <Star size={15} /> },
           { id: 'pauta' as const, label: 'Publicidad en el inicio', icon: <Megaphone size={15} /> },
         ].map((t) => (
-          <button
+          <Button
             key={t.id}
             type="button"
+            variant={abierta === t.id ? 'default' : 'secondary'}
+            size="sm"
             onClick={() => setAbierta(abierta === t.id ? null : t.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              height: 40,
-              padding: '0 16px',
-              borderRadius: 'var(--lf-pill-radius, 100px)',
-              border: `1px solid ${abierta === t.id ? 'var(--primario)' : 'var(--border)'}`,
-              background: abierta === t.id ? 'var(--primario)' : 'var(--bg-alt)',
-              color: abierta === t.id ? '#FFFFFF' : 'var(--text-muted)',
-              fontWeight: 700,
-              fontSize: 12.5,
-              cursor: 'pointer',
-              boxShadow: abierta === t.id ? '0 2px 8px rgba(0, 122, 255, 0.25)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
+            className="h-9 rounded-full text-xs font-semibold px-4 gap-1.5"
           >
             {t.icon} {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -179,65 +122,95 @@ function SeccionEquipo() {
   };
 
   return (
-    <div style={panel}>
-      <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Users size={17} /> Equipo de la tienda
-      </h3>
-      <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-        Cada persona entra con su propia cuenta y ve <b>solo esta tienda</b>. El rol decide qué puede tocar: el cajero
-        vende pero no cambia precios.
-      </p>
+    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+      <CardContent className="p-6 space-y-4">
+        <h3 className="text-base font-extrabold flex items-center gap-2 text-[var(--text)] m-0">
+          <Users size={17} className="text-primary" /> Equipo de la tienda
+        </h3>
+        <p className="text-xs text-[var(--text-muted)] m-0">
+          Cada persona entra con su propia cuenta y ve <b>solo esta tienda</b>. El rol decide qué puede tocar: el cajero
+          vende pero no cambia precios.
+        </p>
 
-      {esPropietario && (
-        <form onSubmit={invitar} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-3" style={{ marginTop: 14 }}>
-          <div>
-            <label style={etiqueta}>Correo del usuario registrado</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="cajero@correo.com" style={campo} required />
-          </div>
-          <div>
-            <label style={etiqueta}>Rol</label>
-            <select value={rol} onChange={(e) => setRol(e.target.value)} style={campo}>
-              {roles.filter((r) => r !== 'dueno').map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button type="submit" disabled={enviando} style={{ ...botonPrimario, background: enviando ? 'var(--bg-alt)' : 'var(--exito)', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
-              <Plus size={15} /> {enviando ? 'Invitando…' : 'Invitar'}
-            </button>
-          </div>
-        </form>
-      )}
-
-      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {cargando ? (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Cargando equipo…</div>
-        ) : equipo.length === 0 ? (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Todavía no has invitado a nadie.</div>
-        ) : (
-          equipo.map((m) => (
-            <div key={m.id} className="flex flex-wrap items-center gap-3" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
-              <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.nombre}</span>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{m.email}</span>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--primario)' }}>{m.rol.toUpperCase()}</span>
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{m.permisosEfectivos.join(', ') || 'sin permisos'}</span>
-              {esPropietario && (
-                <button
-                  type="button"
-                  onClick={() => quitar(m.id)}
-                  style={{ marginLeft: 'auto', height: 44, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--peligro)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}
-                >
-                  Quitar
-                </button>
-              )}
+        {esPropietario && (
+          <form onSubmit={invitar} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-3 pt-2">
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+                Correo del usuario registrado
+              </label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="cajero@correo.com"
+                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+                required
+              />
             </div>
-          ))
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+                Rol
+              </label>
+              <select
+                value={rol}
+                onChange={(e) => setRol(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primario)]"
+              >
+                {roles.filter((r) => r !== 'dueno').map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <Button
+                type="submit"
+                disabled={enviando}
+                className="h-10 text-xs font-semibold gap-1.5"
+              >
+                <Plus size={15} /> {enviando ? 'Invitando…' : 'Invitar'}
+              </Button>
+            </div>
+          </form>
         )}
-      </div>
-    </div>
+
+        <div className="space-y-2 pt-2">
+          {cargando ? (
+            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando equipo…</div>
+          ) : equipo.length === 0 ? (
+            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Todavía no has invitado a nadie.</div>
+          ) : (
+            equipo.map((m) => (
+              <div
+                key={m.id}
+                className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]"
+              >
+                <span className="font-bold text-sm text-[var(--text)]">{m.nombre}</span>
+                <span className="text-xs text-[var(--text-muted)]">{m.email}</span>
+                <Badge variant="secondary" className="text-[10px] font-bold uppercase">
+                  {m.rol}
+                </Badge>
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  {m.permisosEfectivos.join(', ') || 'sin permisos'}
+                </span>
+                {esPropietario && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => quitar(m.id)}
+                    className="ml-auto h-8 text-xs font-semibold text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                  >
+                    Quitar
+                  </Button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -299,51 +272,81 @@ function SeccionAlianzas() {
   };
 
   return (
-    <div style={panel}>
-      <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Star size={17} /> Alianzas con repartidores
-      </h3>
-      <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-        Ofrece un beneficio a los repartidores; lo ven en su app y queda registrado cada canje.
-      </p>
+    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+      <CardContent className="p-6 space-y-4">
+        <h3 className="text-base font-extrabold flex items-center gap-2 text-[var(--text)] m-0">
+          <Star size={17} className="text-primary" /> Alianzas con repartidores
+        </h3>
+        <p className="text-xs text-[var(--text-muted)] m-0">
+          Ofrece un beneficio a los repartidores; lo ven en su app y queda registrado cada canje.
+        </p>
 
-      <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3" style={{ marginTop: 14 }}>
-        <div>
-          <label style={etiqueta}>Beneficio</label>
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Café gratis al entregar" style={campo} required />
-        </div>
-        <div>
-          <label style={etiqueta}>Valor</label>
-          <input value={valor} onChange={(e) => setValor(e.target.value)} placeholder="10% / C$50" style={campo} />
-        </div>
-        <div>
-          <label style={etiqueta}>Vigencia (días)</label>
-          <input type="number" min="0" value={vigenciaDias} onChange={(e) => setVigenciaDias(e.target.value)} style={campo} />
-        </div>
-        <div className="flex items-end">
-          <button type="submit" disabled={enviando} style={{ ...botonPrimario, background: enviando ? 'var(--bg-alt)' : 'var(--exito)', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
-            <Plus size={15} /> Publicar
-          </button>
-        </div>
-      </form>
+        <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3 pt-2">
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Beneficio</label>
+            <Input
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder="Café gratis al entregar"
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Valor</label>
+            <Input
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              placeholder="10% / C$50"
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Vigencia (días)</label>
+            <Input
+              type="number"
+              min="0"
+              value={vigenciaDias}
+              onChange={(e) => setVigenciaDias(e.target.value)}
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button
+              type="submit"
+              disabled={enviando}
+              className="h-10 text-xs font-semibold gap-1.5"
+            >
+              <Plus size={15} /> Publicar
+            </Button>
+          </div>
+        </form>
 
-      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {cargando ? (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Cargando alianzas…</div>
-        ) : alianzas.length === 0 ? (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Sin alianzas publicadas.</div>
-        ) : (
-          alianzas.map((a) => (
-            <div key={a.id} className="flex flex-wrap items-center gap-3" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
-              <span style={{ fontWeight: 700, fontSize: 13.5 }}>{a.titulo}</span>
-              {a.valor && <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--exito)' }}>{a.valor}</span>}
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>vence {fecha(a.vigenciaFin)}</span>
-              <span style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700 }}>{a.canjes} canje(s)</span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+        <div className="space-y-2 pt-2">
+          {cargando ? (
+            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando alianzas…</div>
+          ) : alianzas.length === 0 ? (
+            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Sin alianzas publicadas.</div>
+          ) : (
+            alianzas.map((a) => (
+              <div
+                key={a.id}
+                className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]"
+              >
+                <span className="font-bold text-sm text-[var(--text)]">{a.titulo}</span>
+                {a.valor && (
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{a.valor}</span>
+                )}
+                <span className="text-[11px] text-[var(--text-muted)]">vence {fecha(a.vigenciaFin)}</span>
+                <Badge variant="outline" className="ml-auto text-[11px] font-bold">
+                  {a.canjes} canje(s)
+                </Badge>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -418,71 +421,124 @@ function SeccionPauta() {
   };
 
   return (
-    <div style={panel}>
-      <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Megaphone size={17} /> Publicidad en el inicio
-      </h3>
-      <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-        Tu anuncio aparece en el inicio de la app mientras esté vigente; se cuentan impresiones y clics.
-      </p>
+    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+      <CardContent className="p-6 space-y-4">
+        <h3 className="text-base font-extrabold flex items-center gap-2 text-[var(--text)] m-0">
+          <Megaphone size={17} className="text-primary" /> Publicidad en el inicio
+        </h3>
+        <p className="text-xs text-[var(--text-muted)] m-0">
+          Tu anuncio aparece en el inicio de la app mientras esté vigente; se cuentan impresiones y clics.
+        </p>
 
-      <form onSubmit={contratar} className="grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ marginTop: 14 }}>
-        <div>
-          <label style={etiqueta}>Título</label>
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="2x1 en Frescl hoy" style={campo} required />
-        </div>
-        <div>
-          <label style={etiqueta}>Subtítulo</label>
-          <input value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} placeholder="Solo por hoy en tu tienda" style={campo} />
-        </div>
-        <div>
-          <label style={etiqueta}>Texto del botón</label>
-          <input value={botonTexto} onChange={(e) => setBotonTexto(e.target.value)} style={campo} />
-        </div>
-        <div>
-          <label style={etiqueta}>Enlace del botón</label>
-          <input value={botonLink} onChange={(e) => setBotonLink(e.target.value)} placeholder="/cliente/explorar" style={campo} />
-        </div>
-        <div>
-          <label style={etiqueta}>Color</label>
-          <input type="color" value={colorFondo} onChange={(e) => setColorFondo(e.target.value)} style={{ ...campo, padding: 4 }} />
-        </div>
-        <div>
-          <label style={etiqueta}>Días de vigencia</label>
-          <input type="number" min="1" value={dias} onChange={(e) => setDias(e.target.value)} style={campo} />
-        </div>
-        <div>
-          <label style={etiqueta}>Tarifa acordada (C$)</label>
-          <input type="number" min="0" value={precioMensual} onChange={(e) => setPrecioMensual(e.target.value)} style={campo} />
-        </div>
-        <div className="flex items-end">
-          <button type="submit" disabled={enviando} style={{ ...botonPrimario, width: '100%', background: enviando ? 'var(--bg-alt)' : 'var(--exito)', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
-            <Plus size={15} /> {enviando ? 'Contratando…' : 'Contratar anuncio'}
-          </button>
-        </div>
-      </form>
+        <form onSubmit={contratar} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Título</label>
+            <Input
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder="2x1 en Frescl hoy"
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Subtítulo</label>
+            <Input
+              value={subtitulo}
+              onChange={(e) => setSubtitulo(e.target.value)}
+              placeholder="Solo por hoy en tu tienda"
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Texto del botón</label>
+            <Input
+              value={botonTexto}
+              onChange={(e) => setBotonTexto(e.target.value)}
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Enlace del botón</label>
+            <Input
+              value={botonLink}
+              onChange={(e) => setBotonLink(e.target.value)}
+              placeholder="/cliente/explorar"
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Color</label>
+            <input
+              type="color"
+              value={colorFondo}
+              onChange={(e) => setColorFondo(e.target.value)}
+              className="w-full h-10 p-1 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] cursor-pointer"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Días de vigencia</label>
+            <Input
+              type="number"
+              min="1"
+              value={dias}
+              onChange={(e) => setDias(e.target.value)}
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Tarifa acordada (C$)</label>
+            <Input
+              type="number"
+              min="0"
+              value={precioMensual}
+              onChange={(e) => setPrecioMensual(e.target.value)}
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button
+              type="submit"
+              disabled={enviando}
+              className="w-full h-10 text-xs font-semibold gap-1.5"
+            >
+              <Plus size={15} /> {enviando ? 'Contratando…' : 'Contratar anuncio'}
+            </Button>
+          </div>
+        </form>
 
-      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {cargando ? (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Cargando anuncios…</div>
-        ) : banners.length === 0 ? (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Sin anuncios contratados.</div>
-        ) : (
-          banners.map((b) => (
-            <div key={b.id} className="flex flex-wrap items-center gap-3" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
-              <span style={{ fontWeight: 700, fontSize: 13.5 }}>{b.titulo}</span>
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>hasta {fecha(b.programadoHasta)}</span>
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                {b.impresiones} vistas · {b.clicks} clics
-              </span>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: b.pagado ? 'var(--exito)' : '#F59E0B' }}>
-                {b.pagado ? 'PAGADO' : b.precioMensual ? `PENDIENTE ${money(b.precioMensual)}` : 'SIN TARIFA'}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+        <div className="space-y-2 pt-2">
+          {cargando ? (
+            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando anuncios…</div>
+          ) : banners.length === 0 ? (
+            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Sin anuncios contratados.</div>
+          ) : (
+            banners.map((b) => (
+              <div
+                key={b.id}
+                className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]"
+              >
+                <span className="font-bold text-sm text-[var(--text)]">{b.titulo}</span>
+                <span className="text-[11px] text-[var(--text-muted)]">hasta {fecha(b.programadoHasta)}</span>
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  {b.impresiones} vistas · {b.clicks} clics
+                </span>
+                <Badge
+                  variant={b.pagado ? 'secondary' : 'outline'}
+                  className={`ml-auto text-[10px] font-bold ${
+                    b.pagado
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0'
+                      : 'text-amber-600 dark:text-amber-400 border-amber-500/30'
+                  }`}
+                >
+                  {b.pagado ? 'PAGADO' : b.precioMensual ? `PENDIENTE ${money(b.precioMensual)}` : 'SIN TARIFA'}
+                </Badge>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
