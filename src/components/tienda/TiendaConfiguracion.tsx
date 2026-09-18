@@ -34,64 +34,10 @@ const DIAS = [
   { key: 'dom', label: 'Domingo' },
 ];
 
-/* ═══════════════════════════════════════════════
-   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
-   ═══════════════════════════════════════════════ */
-
-const sectionCard: React.CSSProperties = {
-  background: 'var(--surface)',
-  borderRadius: 'var(--lf-card-radius, 20px)',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--lf-shadow-card)',
-  padding: 24,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '11px 16px',
-  borderRadius: 'var(--lf-input-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  outline: 'none',
-};
-
-const btnPrimary: React.CSSProperties = {
-  padding: '10px 20px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: 'none',
-  background: 'var(--primario)',
-  color: '#FFFFFF',
-  fontWeight: 600,
-  fontSize: 14,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 8,
-  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-  transition: 'all 0.2s ease',
-};
-
-const btnSecondary: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  transition: 'all 0.2s ease',
-};
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   const [nombre, setNombre] = useState('');
@@ -233,298 +179,300 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   return (
     <div className="w-full space-y-6">
       {/* ─── Tarjeta Principal de Configuración ─── */}
-      <div style={sectionCard} className="space-y-6">
-        <div>
-          <div className="flex items-center gap-2 text-primary mb-1">
-            <Settings size={20} />
-            <span className="text-xs font-bold uppercase tracking-wider">Ajustes Generales</span>
-          </div>
-          <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne">
-            Configuración del Local Comercial & Horarios
-          </h2>
-          <p className="text-xs text-[var(--text-muted)] mt-1">
-            Personaliza el nombre, fachada, banner, tarifas de envío y horarios semanales en LogiFast
-          </p>
-        </div>
-
-        <form onSubmit={guardarConfiguracion} className="space-y-5">
-          {/* Banner & Logo Uploaders */}
-          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
-            <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
-              <label className="text-xs font-bold text-[var(--text)] block mb-2">
-                Foto de Portada / Banner del Local
-              </label>
-              <ImageUploader
-                categoria="tienda_banners"
-                onUploaded={(url) => setBannerUrl(url)}
-                label="Subir Banner de Portada"
-                aspectRatio="wide"
-                previewUrl={bannerUrl || null}
-                className="w-full h-36 rounded-xl"
-              />
+      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+        <CardContent className="p-6 space-y-6">
+          <div>
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <Settings size={20} />
+              <span className="text-xs font-bold uppercase tracking-wider">Ajustes Generales</span>
             </div>
-
-            <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
-              <label className="text-xs font-bold text-[var(--text)] block mb-2">
-                Logotipo del Comercio
-              </label>
-              <ImageUploader
-                categoria="tienda_logos"
-                onUploaded={(url) => setImagenUrl(url)}
-                label="Subir Logotipo"
-                aspectRatio="square"
-                rounded="md"
-                previewUrl={imagenUrl || null}
-                className="w-full h-36 rounded-xl"
-              />
-            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne">
+              Configuración del Local Comercial & Horarios
+            </h2>
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Personaliza el nombre, fachada, banner, tarifas de envío y horarios semanales en LogiFast
+            </p>
           </div>
 
-          {/* Nombre & Categoría */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <form onSubmit={guardarConfiguracion} className="space-y-5">
+            {/* Banner & Logo Uploaders */}
+            <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
+              <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
+                <label className="text-xs font-bold text-[var(--text)] block mb-2">
+                  Foto de Portada / Banner del Local
+                </label>
+                <ImageUploader
+                  categoria="tienda_banners"
+                  onUploaded={(url) => setBannerUrl(url)}
+                  label="Subir Banner de Portada"
+                  aspectRatio="wide"
+                  previewUrl={bannerUrl || null}
+                  className="w-full h-36 rounded-xl"
+                />
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
+                <label className="text-xs font-bold text-[var(--text)] block mb-2">
+                  Logotipo del Comercio
+                </label>
+                <ImageUploader
+                  categoria="tienda_logos"
+                  onUploaded={(url) => setImagenUrl(url)}
+                  label="Subir Logotipo"
+                  aspectRatio="square"
+                  rounded="md"
+                  previewUrl={imagenUrl || null}
+                  className="w-full h-36 rounded-xl"
+                />
+              </div>
+            </div>
+
+            {/* Nombre & Categoría */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  Nombre Comercial *
+                </label>
+                <Input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Ej: Sabor Nica Restaurant"
+                  className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  Categoría de Comercio
+                </label>
+                <select
+                  value={categoria}
+                  onChange={(e) => setCategoria(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primario)] cursor-pointer font-medium"
+                >
+                  <option value="comida">Comida rápida / Restaurante</option>
+                  <option value="tienda">Tienda / Abarrotes</option>
+                  <option value="farmacia">Farmacia</option>
+                  <option value="regalos">Regalos / Flores</option>
+                  <option value="supermercado">Supermercado</option>
+                  <option value="tecnologia">Tecnología</option>
+                  <option value="deportes">Deportes</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Dirección */}
             <div>
               <label className="text-xs font-bold text-[var(--text)] block mb-1">
-                Nombre Comercial *
+                Dirección Física Exacta *
               </label>
-              <input
+              <Input
                 type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej: Sabor Nica Restaurant"
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                value={direccion}
+                onChange={(e) => setDireccion(e.target.value)}
+                placeholder="Ej: De la Rotonda El Guegüense 2c abajo, Managua"
+                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
                 required
               />
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1">
-                Categoría de Comercio
-              </label>
-              <select
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all cursor-pointer font-medium"
-              >
-                <option value="comida">Comida rápida / Restaurante</option>
-                <option value="tienda">Tienda / Abarrotes</option>
-                <option value="farmacia">Farmacia</option>
-                <option value="regalos">Regalos / Flores</option>
-                <option value="supermercado">Supermercado</option>
-                <option value="tecnologia">Tecnología</option>
-                <option value="deportes">Deportes</option>
-              </select>
-            </div>
-          </div>
+            {/* Tarifas de Envío, Pedido Mínimo y Contacto */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  Costo de Envío Base (C$)
+                </label>
+                <Input
+                  type="number"
+                  value={costoEnvio}
+                  onChange={(e) => setCostoEnvio(e.target.value)}
+                  placeholder="20"
+                  className="h-10 text-xs font-mono bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                />
+              </div>
 
-          {/* Dirección */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text)] block mb-1">
-              Dirección Física Exacta *
-            </label>
-            <input
-              type="text"
-              value={direccion}
-              onChange={(e) => setDireccion(e.target.value)}
-              placeholder="Ej: De la Rotonda El Guegüense 2c abajo, Managua"
-              className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
-              required
-            />
-          </div>
+              <div>
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  Pedido Mínimo (C$)
+                </label>
+                <Input
+                  type="number"
+                  value={pedidoMinimo}
+                  onChange={(e) => setPedidoMinimo(e.target.value)}
+                  placeholder="50"
+                  className="h-10 text-xs font-mono bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                />
+              </div>
 
-          {/* Tarifas de Envío, Pedido Mínimo y Contacto */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1">
-                Costo de Envío Base (C$)
-              </label>
-              <input
-                type="number"
-                value={costoEnvio}
-                onChange={(e) => setCostoEnvio(e.target.value)}
-                placeholder="20"
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
-              />
+              <div>
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  Teléfono / WhatsApp
+                </label>
+                <Input
+                  type="text"
+                  value={telefono || whatsapp}
+                  onChange={(e) => {
+                    setTelefono(e.target.value);
+                    setWhatsapp(e.target.value);
+                  }}
+                  placeholder="8888-8888"
+                  className="h-10 text-xs font-mono bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1">
-                Pedido Mínimo (C$)
-              </label>
-              <input
-                type="number"
-                value={pedidoMinimo}
-                onChange={(e) => setPedidoMinimo(e.target.value)}
-                placeholder="50"
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1">
-                Teléfono / WhatsApp
-              </label>
-              <input
-                type="text"
-                value={telefono || whatsapp}
-                onChange={(e) => {
-                  setTelefono(e.target.value);
-                  setWhatsapp(e.target.value);
-                }}
-                placeholder="8888-8888"
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Horarios Semanales */}
-          <div className="p-4 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-3">
-            <div className="flex items-center gap-2">
-              <Clock size={16} className="text-primary" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
-                Horarios de Atención Semanal
-              </h3>
-            </div>
-
-            <div className="space-y-2">
-              {DIAS.map(({ key, label }) => {
-                const item = horarioSemanal[key] || { abre: '08:00', cierra: '20:00', cerrado: false };
-                return (
-                  <div
-                    key={key}
-                    className="p-2.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                  >
-                    <span className="font-bold text-[var(--text)] w-24 shrink-0">
-                      {label}
-                    </span>
-
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                        <span className="text-[11px] text-slate-500 shrink-0">Abre:</span>
-                        <input
-                          type="time"
-                          value={item.abre}
-                          disabled={item.cerrado}
-                          onChange={(e) => updateDaySchedule(key, 'abre', e.target.value)}
-                          className="w-full h-9 min-h-[36px] px-2 rounded-lg bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] text-xs disabled:opacity-50"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                        <span className="text-[11px] text-slate-500 shrink-0">Cierra:</span>
-                        <input
-                          type="time"
-                          value={item.cierra}
-                          disabled={item.cerrado}
-                          onChange={(e) => updateDaySchedule(key, 'cierra', e.target.value)}
-                          className="w-full h-9 min-h-[36px] px-2 rounded-lg bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] text-xs disabled:opacity-50"
-                        />
-                      </div>
-                    </div>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[var(--text-muted)] shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={!!item.cerrado}
-                        onChange={(e) => updateDaySchedule(key, 'cerrado', e.target.checked)}
-                        className="w-4 h-4 rounded text-primary focus:ring-primary"
-                      />
-                      <span>Cerrado</span>
-                    </label>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Coordenadas GPS */}
-          <div className="p-4 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            {/* Horarios Semanales */}
+            <div className="p-4 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-3">
               <div className="flex items-center gap-2">
-                <MapPin size={16} className="text-primary" />
+                <Clock size={16} className="text-primary" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
-                  Ubicación GPS en Mapa *
+                  Horarios de Atención Semanal
                 </h3>
               </div>
 
-              <button
-                type="button"
-                onClick={detectarGPS}
-                style={btnPrimary}
-                className="h-9 min-h-[36px] text-xs self-start sm:self-auto active:scale-95"
-              >
-                <MapPin size={13} />
-                <span>Capturar mi GPS Actual</span>
-              </button>
+              <div className="space-y-2">
+                {DIAS.map(({ key, label }) => {
+                  const item = horarioSemanal[key] || { abre: '08:00', cierra: '20:00', cerrado: false };
+                  return (
+                    <div
+                      key={key}
+                      className="p-2.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                    >
+                      <span className="font-bold text-[var(--text)] w-24 shrink-0">
+                        {label}
+                      </span>
+
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <span className="text-[11px] text-slate-500 shrink-0">Abre:</span>
+                          <Input
+                            type="time"
+                            value={item.abre}
+                            disabled={item.cerrado}
+                            onChange={(e) => updateDaySchedule(key, 'abre', e.target.value)}
+                            className="h-8 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] disabled:opacity-50"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <span className="text-[11px] text-slate-500 shrink-0">Cierra:</span>
+                          <Input
+                            type="time"
+                            value={item.cierra}
+                            disabled={item.cerrado}
+                            onChange={(e) => updateDaySchedule(key, 'cierra', e.target.value)}
+                            className="h-8 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] disabled:opacity-50"
+                          />
+                        </div>
+                      </div>
+
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[var(--text-muted)] shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={!!item.cerrado}
+                          onChange={(e) => updateDaySchedule(key, 'cerrado', e.target.checked)}
+                          className="w-4 h-4 rounded text-primary focus:ring-primary"
+                        />
+                        <span>Cerrado</span>
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-bold text-slate-500 block mb-1">
-                  Latitud (GPS)
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={lat}
-                  onChange={(e) => setLat(e.target.value)}
-                  placeholder="12.1365"
-                  className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
-                  required
-                />
+            {/* Coordenadas GPS */}
+            <div className="p-4 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <MapPin size={16} className="text-primary" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
+                    Ubicación GPS en Mapa *
+                  </h3>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={detectarGPS}
+                  className="h-8 text-xs font-semibold gap-1.5 self-start sm:self-auto"
+                >
+                  <MapPin size={13} />
+                  <span>Capturar mi GPS Actual</span>
+                </Button>
               </div>
 
-              <div>
-                <label className="text-[11px] font-bold text-slate-500 block mb-1">
-                  Longitud (GPS)
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={lng}
-                  onChange={(e) => setLng(e.target.value)}
-                  placeholder="-86.2514"
-                  className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                    Latitud (GPS)
+                  </label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={lat}
+                    onChange={(e) => setLat(e.target.value)}
+                    placeholder="12.1365"
+                    className="h-10 text-xs font-mono bg-[var(--surface)] border-[var(--border)] text-[var(--text)]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                    Longitud (GPS)
+                  </label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={lng}
+                    onChange={(e) => setLng(e.target.value)}
+                    placeholder="-86.2514"
+                    className="h-10 text-xs font-mono bg-[var(--surface)] border-[var(--border)] text-[var(--text)]"
+                    required
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Descripción Corta */}
-          <div>
-            <label className="text-xs font-bold text-[var(--text)] block mb-1">
-              Descripción Comercial del Local
-            </label>
-            <textarea
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Describe los productos y especialidades de tu negocio para los clientes en Marketplace..."
-              rows={3}
-              className="w-full p-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all resize-none"
-            />
-          </div>
+            {/* Descripción Corta */}
+            <div>
+              <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                Descripción Comercial del Local
+              </label>
+              <Textarea
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Describe los productos y especialidades de tu negocio para los clientes en Marketplace..."
+                rows={3}
+                className="text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] resize-none"
+              />
+            </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={guardando}
-            style={{ ...btnPrimary, width: '100%' }}
-            className="h-12 min-h-[48px] active:scale-95 disabled:opacity-50"
-          >
-            {guardando ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Guardando Ajustes...</span>
-              </>
-            ) : (
-              <>
-                <Save size={16} />
-                <span>Guardar Configuración de Tienda</span>
-              </>
-            )}
-          </button>
-        </form>
-      </div>
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              disabled={guardando}
+              className="w-full h-11 text-sm font-semibold gap-2"
+            >
+              {guardando ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Guardando Ajustes...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  <span>Guardar Configuración de Tienda</span>
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Cupones propios de la tienda */}
       <TiendaCupones />
