@@ -267,43 +267,43 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
   return (
     <div className="w-full" style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
-      {/* ─── 1. KPI STAT CARDS (ESTILO LOGIFAST 2.0 ADMIN/CLIENTE) ─── */}
+      {/* ─── 1. KPI STAT CARDS (ESTILO APPLE / LOGIFAST 2.0) ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Productos */}
-        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-[var(--primario)] shadow-sm">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-[var(--primario-soft,rgba(0,122,255,0.1))] text-[var(--primario)] flex items-center justify-center shrink-0">
+        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all">
+          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Package size={22} />
             </div>
             <div className="min-w-0">
               <span className="text-xs font-semibold text-[var(--text-muted)] block">Total Productos</span>
-              <span className="text-xl font-extrabold font-mono text-[var(--text)]">{stats.total}</span>
+              <span className="text-2xl font-black font-mono text-[var(--text)] tracking-tight">{stats.total}</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Publicados */}
-        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-emerald-500 shadow-sm">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all">
+          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <Eye size={22} />
             </div>
             <div className="min-w-0">
               <span className="text-xs font-semibold text-[var(--text-muted)] block">Publicados</span>
-              <span className="text-xl font-extrabold font-mono text-[var(--text)]">{stats.publicados}</span>
+              <span className="text-2xl font-black font-mono text-[var(--text)] tracking-tight">{stats.publicados}</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Alerta Stock */}
-        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-amber-500 shadow-sm">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all">
+          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <AlertTriangle size={22} />
             </div>
             <div className="min-w-0">
               <span className="text-xs font-semibold text-[var(--text-muted)] block">Alerta Stock</span>
-              <span className={`text-xl font-extrabold font-mono ${stats.bajoStock > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text)]'}`}>
+              <span className={`text-2xl font-black font-mono tracking-tight ${stats.bajoStock > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text)]'}`}>
                 {stats.bajoStock}
               </span>
             </div>
@@ -311,14 +311,14 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         </Card>
 
         {/* Valor Inventario */}
-        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-purple-500 shadow-sm">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all">
+          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
               <TrendingUp size={22} />
             </div>
             <div className="min-w-0">
               <span className="text-xs font-semibold text-[var(--text-muted)] block">Valor Inventario</span>
-              <span className="text-lg font-extrabold font-mono text-[var(--text)]">
+              <span className="text-xl font-black font-mono text-[var(--text)] tracking-tight">
                 C$ {stats.valorInventario.toLocaleString('es-NI', { maximumFractionDigits: 0 })}
               </span>
             </div>
@@ -327,11 +327,11 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       </div>
 
       {/* ─── 2. TOOLBAR & CONTROLES DE INVENTARIO ─── */}
-      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-        <CardContent className="p-5 space-y-4">
+      <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+        <CardContent className="p-5 sm:p-6 space-y-4">
           <div className="flex justify-between items-center flex-wrap gap-3.5">
             <div>
-              <h2 className="text-lg font-bold font-syne text-[var(--text)]">
+              <h2 className="text-lg sm:text-xl font-extrabold font-syne text-[var(--text)] tracking-tight">
                 Gestión de Inventario & Catálogo
               </h2>
               <p className="text-xs text-[var(--text-muted)] mt-1">
@@ -339,35 +339,35 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               </p>
             </div>
 
-            <Button onClick={abrirModalCrear} className="h-10 text-sm font-semibold">
-              <Plus size={16} className="mr-1.5" />
+            <Button onClick={abrirModalCrear} className="h-11 px-5 rounded-full text-xs font-bold gap-2 shadow-sm">
+              <Plus size={16} />
               <span>Nuevo Producto</span>
             </Button>
           </div>
 
-          {/* Barra de Búsqueda & Filtros de Estado */}
+          {/* Barra de Búsqueda Cápsula & Filtros de Estado */}
           <div className="flex gap-2.5 flex-wrap items-center pt-3.5 border-t border-[var(--border)]">
-            {/* Input Buscador */}
+            {/* Input Buscador Cápsula */}
             <div className="relative flex-1 min-w-[240px] flex items-center">
-              <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+              <Search size={18} className="absolute left-4 text-slate-400 pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Buscar producto por nombre o SKU..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="pl-9 pr-9 h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                className="h-11 pl-11 pr-10 rounded-full bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-xs sm:text-sm font-medium text-[var(--text)] shadow-xs"
               />
               {busqueda && (
                 <button
                   onClick={() => setBusqueda('')}
-                  className="absolute right-2.5 w-5 h-5 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center"
+                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
 
-            {/* Chips de Estado Rápido */}
+            {/* Chips de Estado Rápido Cápsula */}
             <div className="flex items-center gap-1.5 overflow-x-auto">
               {(
                 [
@@ -384,7 +384,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     variant={active ? 'default' : 'secondary'}
                     size="sm"
                     onClick={() => setFiltroEstado(opt.id)}
-                    className="h-8 rounded-full text-xs font-semibold px-3"
+                    className="h-9 rounded-full text-xs font-bold px-3.5 shadow-xs"
                   >
                     {opt.label}
                   </Button>
@@ -393,23 +393,23 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
             </div>
           </div>
 
-          {/* Slider horizontal de categorías */}
+          {/* Slider horizontal de categorías en cápsulas */}
           {categorias.length > 2 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pt-1 no-scrollbar">
+            <div className="flex items-center gap-2 overflow-x-auto pt-1 no-scrollbar">
               {categorias.map((cat) => {
                 const active = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
                 return (
-                  <button
+                  <Button
                     key={cat}
+                    variant={active ? 'default' : 'outline'}
+                    size="sm"
                     onClick={() => setCategoriaSeleccionada(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                      active
-                        ? 'bg-[var(--surface-elevated,var(--border))] text-[var(--text)] border border-[var(--text)]'
-                        : 'text-[var(--text-muted)] hover:text-[var(--text)] border border-transparent'
+                    className={`h-8 rounded-full text-xs font-bold px-3.5 shrink-0 ${
+                      active ? 'shadow-xs' : 'border-slate-200/70 dark:border-slate-800/70 text-[var(--text-muted)]'
                     }`}
                   >
                     {cat === 'todos' ? 'Todas las Categorías' : cat}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -419,14 +419,14 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
       {/* ─── 3. CONTENIDO: PRODUCTOS (MÓVIL CARDS + DESKTOP TABLA) ─── */}
       {loading ? (
-        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm h-[260px] flex items-center justify-center">
+        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs h-[260px] flex items-center justify-center">
           <CardContent className="flex flex-col items-center gap-2.5 text-[var(--text-muted)] p-6">
-            <div className="w-8 h-8 border-3 border-[var(--primario)]/20 border-t-[var(--primario)] rounded-full animate-spin" />
+            <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
             <span className="text-xs font-semibold">Cargando catálogo de productos...</span>
           </CardContent>
         </Card>
       ) : filtrados.length === 0 ? (
-        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm p-12 text-center">
+        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs p-12 text-center">
           <CardContent className="flex flex-col items-center gap-2.5">
             <Package size={44} className="text-[var(--text-muted)] opacity-40" />
             <h3 className="text-base font-bold font-syne text-[var(--text)]">
@@ -442,16 +442,16 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           {/* ═══════════════════════════════════════════════
               VISTA MÓVIL (Celular: Opción A - Tarjetas Táctiles LogiFast)
               ═══════════════════════════════════════════════ */}
-          <div className="block md:hidden space-y-3">
+          <div className="block md:hidden space-y-3.5">
             {filtrados.map((p) => {
               const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
 
               return (
-                <Card key={p.id} className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-                  <CardContent className="p-3.5 space-y-3">
-                    <div className="flex gap-3 items-start">
-                      {/* Thumbnail */}
-                      <div className="w-[72px] h-[72px] rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] overflow-hidden shrink-0 flex items-center justify-center">
+                <Card key={p.id} className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all overflow-hidden">
+                  <CardContent className="p-4 space-y-3.5">
+                    <div className="flex gap-3.5 items-start">
+                      {/* Thumbnail redondeado moderno */}
+                      <div className="w-20 h-20 rounded-2xl bg-[var(--bg-alt)] border border-slate-200/60 dark:border-slate-800/60 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
                         {p.portadaUrl || p.imagenUrl ? (
                           <img
                             src={p.portadaUrl || p.imagenUrl || ''}
@@ -459,22 +459,22 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <Package size={24} className="text-[var(--text-muted)] opacity-50" />
+                          <Package size={28} className="text-[var(--text-muted)] opacity-40" />
                         )}
                       </div>
 
                       {/* Metadata */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--primario)]">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary">
                             {p.categoriaNombre || 'General'}
                           </span>
                           <Badge
-                            variant={p.disponible ? 'secondary' : 'outline'}
-                            className={`text-[10px] py-0 px-2 font-bold ${
+                            variant="secondary"
+                            className={`text-[10px] py-0.5 px-2.5 rounded-full font-bold ${
                               p.disponible
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                                : 'text-[var(--text-muted)]'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : 'bg-slate-500/10 text-[var(--text-muted)] border border-slate-500/20'
                             }`}
                           >
                             {p.disponible ? 'Publicado' : 'Archivado'}
@@ -482,36 +482,36 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                           {bajoStock && (
                             <Badge
                               variant="destructive"
-                              className="text-[10px] py-0 px-2 font-bold bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+                              className="text-[10px] py-0.5 px-2.5 rounded-full font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
                             >
                               <AlertTriangle size={10} className="mr-1" /> Bajo Stock
                             </Badge>
                           )}
                         </div>
 
-                        <h3 className="text-sm font-bold text-[var(--text)] mt-1 mb-0.5 line-clamp-1 leading-snug">
+                        <h3 className="text-sm sm:text-base font-bold text-[var(--text)] mt-1 mb-0.5 line-clamp-1 leading-snug">
                           {p.nombre}
                         </h3>
 
                         {p.codigoBarras && (
-                          <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                          <span className="text-xs font-mono text-[var(--text-muted)]">
                             SKU: {p.codigoBarras}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Precios & Stock Destacados */}
-                    <div className="grid grid-cols-2 gap-2.5 p-2.5 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]">
+                    {/* Precios & Stock Destacados en Cápsula de Información */}
+                    <div className="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-[var(--bg-alt)]/70 border border-slate-200/50 dark:border-slate-800/50">
                       <div>
                         <span className="text-[11px] text-[var(--text-muted)] block font-semibold">Precio Venta</span>
-                        <span className="text-sm font-extrabold text-[var(--primario)] font-mono">
+                        <span className="text-base font-black text-primary font-mono">
                           C$ {p.precio.toFixed(2)}
                         </span>
                       </div>
                       <div>
                         <span className="text-[11px] text-[var(--text-muted)] block font-semibold">Stock Disponible</span>
-                        <span className={`text-sm font-extrabold font-mono ${bajoStock ? 'text-red-500' : 'text-[var(--text)]'}`}>
+                        <span className={`text-base font-black font-mono ${bajoStock ? 'text-red-500' : 'text-[var(--text)]'}`}>
                           {p.stock ?? 0} {p.unidadMedida || 'und'}
                         </span>
                       </div>
@@ -545,12 +545,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     )}
 
                     {/* Botones de Acción */}
-                    <div className="flex gap-2 pt-2 border-t border-[var(--border)]">
+                    <div className="flex gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
-                        className="flex-1 h-8 text-xs font-semibold"
+                        className="flex-1 h-9 rounded-full text-xs font-semibold"
                       >
                         {p.disponible ? <EyeOff size={13} className="mr-1" /> : <Eye size={13} className="mr-1" />}
                         <span>{p.disponible ? 'Archivar' : 'Publicar'}</span>
@@ -560,7 +560,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                         variant="outline"
                         size="sm"
                         onClick={() => abrirGeneradorEtiquetas(p)}
-                        className="flex-1 h-8 text-xs font-semibold"
+                        className="flex-1 h-9 rounded-full text-xs font-semibold"
                       >
                         <Printer size={13} className="mr-1" />
                         <span>Etiquetas</span>
@@ -570,7 +570,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                         variant="default"
                         size="sm"
                         onClick={() => abrirModalEditar(p)}
-                        className="flex-1 h-8 text-xs font-semibold"
+                        className="flex-1 h-9 rounded-full text-xs font-semibold"
                       >
                         <Edit2 size={13} className="mr-1" />
                         <span>Editar</span>
@@ -585,7 +585,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           {/* ═══════════════════════════════════════════════
               VISTA ESCRITORIO / TABLET (Opción B - Back-Office Tabla Densa)
               ═══════════════════════════════════════════════ */}
-          <Card className="hidden md:block bg-[var(--surface)] border-[var(--border)] shadow-sm overflow-hidden">
+          <Card className="hidden md:block rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]">
@@ -712,14 +712,14 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       {modalOpen && (
         <div
           onClick={() => setModalOpen(false)}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
         >
           <Card
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[580px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border-[var(--border)] shadow-2xl rounded-3xl"
+            className="w-full max-w-[580px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-2xl rounded-3xl"
           >
             <CardContent className="p-6">
-              <div className="flex justify-between items-center pb-4 border-b border-[var(--border)] mb-5">
+              <div className="flex justify-between items-center pb-4 border-b border-slate-200/60 dark:border-slate-800/60 mb-5">
                 <div>
                   <h3 className="text-lg font-bold font-syne text-[var(--text)] m-0">
                     {editingProd ? 'Editar Producto en Catálogo' : 'Crear Nuevo Producto'}
@@ -730,7 +730,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                 </div>
                 <button
                   onClick={() => setModalOpen(false)}
-                  className="w-9 h-9 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)] flex items-center justify-center hover:bg-[var(--surface-elevated)] transition-colors"
+                  className="w-9 h-9 rounded-full border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] text-[var(--text-muted)] flex items-center justify-center hover:bg-[var(--surface-elevated)] transition-colors shadow-xs"
                 >
                   <X size={18} />
                 </button>
@@ -748,6 +748,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     onChange={(e) => setNombre(e.target.value)}
                     placeholder="Ej: Refresco Coca-Cola 355ml"
                     required
+                    className="rounded-2xl h-11"
                   />
                 </div>
 
@@ -762,6 +763,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={categoriaNombre}
                       onChange={(e) => setCategoriaNombre(e.target.value)}
                       placeholder="Ej: Bebidas, Snacks, Lácteos"
+                      className="rounded-2xl h-11"
                     />
                   </div>
 
@@ -773,7 +775,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       <button
                         type="button"
                         onClick={generarCodigoSku}
-                        className="text-[11px] text-[var(--primario)] font-bold bg-transparent border-none cursor-pointer hover:underline"
+                        className="text-[11px] text-primary font-bold bg-transparent border-none cursor-pointer hover:underline"
                       >
                         + Generar SKU
                       </button>
@@ -783,7 +785,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={codigoBarras}
                       onChange={(e) => setCodigoBarras(e.target.value)}
                       placeholder="744..."
-                      className="font-mono"
+                      className="font-mono rounded-2xl h-11"
                     />
                   </div>
                 </div>
@@ -800,7 +802,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={precio}
                       onChange={(e) => setPrecio(e.target.value)}
                       placeholder="C$ 0.00"
-                      className="font-mono"
+                      className="font-mono rounded-2xl h-11"
                       required
                     />
                   </div>
@@ -815,7 +817,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={costo}
                       onChange={(e) => setCosto(e.target.value)}
                       placeholder="C$ 0.00"
-                      className="font-mono"
+                      className="font-mono rounded-2xl h-11"
                     />
                   </div>
 
@@ -828,7 +830,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={stock}
                       onChange={(e) => setStock(e.target.value)}
                       placeholder="10"
-                      className="font-mono"
+                      className="font-mono rounded-2xl h-11"
                     />
                   </div>
 
@@ -842,7 +844,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={stockMinimo}
                       onChange={(e) => setStockMinimo(e.target.value)}
                       placeholder="5"
-                      className="font-mono"
+                      className="font-mono rounded-2xl h-11"
                     />
                   </div>
                 </div>
@@ -858,24 +860,24 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     label="Subir Imagen del Producto"
                     aspectRatio="square"
                     previewUrl={imagenUrl || null}
-                    className="w-full h-32 rounded-xl"
+                    className="w-full h-32 rounded-2xl"
                   />
                 </div>
 
                 {/* Botón Guardar */}
-                <div className="flex gap-2.5 pt-3 border-t border-[var(--border)]">
+                <div className="flex gap-2.5 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setModalOpen(false)}
-                    className="flex-1 h-10 font-semibold"
+                    className="flex-1 h-11 rounded-full font-semibold"
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="flex-[2] h-10 font-semibold"
+                    className="flex-[2] h-11 rounded-full font-semibold shadow-md shadow-primary/20"
                   >
                     {submitting ? 'Guardando...' : (editingProd ? 'Guardar Cambios' : 'Crear Producto')}
                   </Button>
