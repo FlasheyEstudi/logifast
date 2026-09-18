@@ -4,6 +4,45 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, Save, CheckCircle2, Shield, AlertCircle } from '@/components/icons';
 import { notify } from '@/lib/notify';
 
+const sectionCard: React.CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 'var(--lf-card-radius, 20px)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 24,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '11px 16px',
+  borderRadius: 'var(--lf-input-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  outline: 'none',
+};
+
+const btnPrimary: React.CSSProperties = {
+  width: '100%',
+  padding: '12px 24px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: 'none',
+  background: 'var(--primario)',
+  color: '#FFFFFF',
+  fontWeight: 600,
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
+  transition: 'all 0.2s ease',
+};
+
 export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   const [ruc, setRuc] = useState('');
   const [razonSocial, setRazonSocial] = useState('');
@@ -72,7 +111,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 items-start">
       {/* ─── Columna Izquierda: Formulario de Configuración Fiscal ─── */}
-      <div className="p-5 sm:p-6 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-6">
+      <div style={sectionCard} className="space-y-6">
         <div>
           <div className="flex items-center gap-2 text-primary mb-1">
             <FileText size={20} />
@@ -98,7 +137,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={ruc}
                 onChange={(e) => setRuc(e.target.value)}
                 placeholder="Ej: J0310000000000"
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-2xl md:rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                style={inputStyle}
                 required
               />
             </div>
@@ -112,7 +151,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={razonSocial}
                 onChange={(e) => setRazonSocial(e.target.value)}
                 placeholder="Ej: Comercial Distribuidora S.A."
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-2xl md:rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                style={inputStyle}
                 required
               />
             </div>
@@ -127,7 +166,8 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               <select
                 value={regimenDgi}
                 onChange={(e) => setRegimenDgi(e.target.value)}
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-2xl md:rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all cursor-pointer font-medium"
+                style={inputStyle}
+                className="cursor-pointer font-medium"
               >
                 <option value="Cuota Fija">Cuota Fija (Pequeño Contribuyente)</option>
                 <option value="Régimen General">Régimen General (IVA 15%)</option>
@@ -144,7 +184,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={serieFactura}
                 onChange={(e) => setSerieFactura(e.target.value)}
                 placeholder="F001"
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-2xl md:rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                style={inputStyle}
               />
             </div>
           </div>
@@ -159,7 +199,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               value={saludoFactura}
               onChange={(e) => setSaludoFactura(e.target.value)}
               placeholder="Ej: ¡Gracias por preferir nuestros productos!"
-              className="w-full h-11 min-h-[44px] px-3.5 rounded-2xl md:rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+              style={inputStyle}
             />
           </div>
 
@@ -173,12 +213,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               onChange={(e) => setPiePaginaFactura(e.target.value)}
               placeholder="Ej: Conservar este comprobante para cualquier garantía dentro de 15 días."
               rows={3}
-              className="w-full p-3.5 rounded-2xl md:rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all resize-none"
+              style={inputStyle}
+              className="resize-none"
             />
           </div>
 
           {/* Pie de Marca Institucional LogiFast */}
-          <div className="p-3.5 rounded-[22px] md:rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
+          <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 flex items-start gap-3">
             <Shield size={20} className="text-primary shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-bold text-primary">
@@ -194,7 +235,8 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
           <button
             type="submit"
             disabled={guardando}
-            className="w-full h-12 min-h-[48px] rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+            style={btnPrimary}
+            className="active:scale-95 disabled:opacity-50"
           >
             {guardando ? (
               <>
@@ -212,7 +254,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* ─── Columna Derecha: Vista Previa Interactiva del Ticket ─── */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4 lg:sticky lg:top-20">
+      <div style={sectionCard} className="space-y-4 lg:sticky lg:top-20">
         <div>
           <h3 className="text-sm font-bold text-[var(--text)] font-syne">
             Vista Previa de Comprobante

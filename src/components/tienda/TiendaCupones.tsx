@@ -23,7 +23,7 @@ const campo: React.CSSProperties = {
   width: '100%',
   minWidth: 0,
   height: 44,
-  borderRadius: 10,
+  borderRadius: 'var(--lf-input-radius, 14px)',
   border: '1px solid var(--border)',
   background: 'var(--bg-alt)',
   color: 'var(--text)',
@@ -113,8 +113,9 @@ export function TiendaCupones() {
   const panel: React.CSSProperties = {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 'var(--lf-card-radius, 20px)',
+    boxShadow: 'var(--lf-shadow-card)',
+    padding: 24,
   };
 
   return (
@@ -132,14 +133,15 @@ export function TiendaCupones() {
             alignItems: 'center',
             gap: 6,
             height: 44,
-            padding: '0 16px',
-            borderRadius: 10,
+            padding: '0 18px',
+            borderRadius: 'var(--lf-button-radius, 14px)',
             border: 'none',
             background: 'var(--primario)',
             color: '#FFFFFF',
             fontWeight: 700,
             fontSize: 13,
             cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
           }}
         >
           <Plus size={15} /> {creando ? 'Cancelar' : 'Nuevo cupón'}

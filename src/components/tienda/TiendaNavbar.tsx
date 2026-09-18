@@ -150,7 +150,7 @@ export function TiendaNavbar({
           {/* Left: Identidad Tienda + Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-blue-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs border border-[var(--border)]">
+              <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-[var(--primario)] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs border border-[var(--border)]">
                 {tiendaImagenUrl ? (
                   <img
                     src={tiendaImagenUrl}
@@ -176,7 +176,7 @@ export function TiendaNavbar({
                   <span className="text-[10px] text-[var(--text-muted)] capitalize truncate">
                     {tiendaCategoria}
                   </span>
-                  <span className="lg:hidden text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <span className="lg:hidden text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--primario)]/10 text-[var(--primario)]">
                     {TIENDA_MODULO_LABELS[moduloActivo]}
                   </span>
                 </div>
@@ -207,7 +207,7 @@ export function TiendaNavbar({
                   onClick={() => onSelectModulo(m.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     active
-                      ? 'bg-blue-600 text-white shadow-xs font-bold'
+                      ? 'bg-[var(--primario)] text-white shadow-xs font-bold'
                       : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
                   }`}
                 >
@@ -318,14 +318,14 @@ export function TiendaNavbar({
                       }}
                       className={`w-full p-3.5 rounded-2xl border text-left flex items-center gap-3.5 transition-all active:scale-[0.98] ${
                         isSelected
-                          ? 'border-blue-600/50 bg-blue-600/10 ring-2 ring-blue-600/20'
+                          ? 'border-[var(--primario)]/50 bg-[var(--primario)]/10 ring-2 ring-[var(--primario)]/20'
                           : 'border-[var(--border)] bg-[var(--bg-alt)]/50 hover:bg-[var(--bg-alt)]'
                       }`}
                     >
                       <div
                         className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                           isSelected
-                            ? 'bg-blue-600 text-white shadow-xs'
+                            ? 'bg-[var(--primario)] text-white shadow-xs'
                             : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]'
                         }`}
                       >
@@ -338,7 +338,7 @@ export function TiendaNavbar({
                             {item.titulo}
                           </span>
                           {isSelected && (
-                            <span className="w-2 h-2 rounded-full bg-blue-600" />
+                            <span className="w-2 h-2 rounded-full bg-[var(--primario)]" />
                           )}
                         </div>
                         <p className="text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">

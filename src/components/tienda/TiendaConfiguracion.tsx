@@ -34,6 +34,65 @@ const DIAS = [
   { key: 'dom', label: 'Domingo' },
 ];
 
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
+   ═══════════════════════════════════════════════ */
+
+const sectionCard: React.CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 'var(--lf-card-radius, 20px)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 24,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '11px 16px',
+  borderRadius: 'var(--lf-input-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  outline: 'none',
+};
+
+const btnPrimary: React.CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: 'none',
+  background: 'var(--primario)',
+  color: '#FFFFFF',
+  fontWeight: 600,
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
+  transition: 'all 0.2s ease',
+};
+
+const btnSecondary: React.CSSProperties = {
+  padding: '9px 16px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontWeight: 600,
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  transition: 'all 0.2s ease',
+};
+
 export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -174,7 +233,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* ─── Tarjeta Principal de Configuración ─── */}
-      <div className="p-5 sm:p-7 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-6">
+      <div style={sectionCard} className="space-y-6">
         <div>
           <div className="flex items-center gap-2 text-primary mb-1">
             <Settings size={20} />
@@ -390,7 +449,8 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
               <button
                 type="button"
                 onClick={detectarGPS}
-                className="h-9 min-h-[36px] px-3.5 rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm self-start sm:self-auto"
+                style={btnPrimary}
+                className="h-9 min-h-[36px] text-xs self-start sm:self-auto active:scale-95"
               >
                 <MapPin size={13} />
                 <span>Capturar mi GPS Actual</span>
@@ -448,7 +508,8 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
           <button
             type="submit"
             disabled={guardando}
-            className="w-full h-12 min-h-[48px] rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm tracking-wide shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+            style={{ ...btnPrimary, width: '100%' }}
+            className="h-12 min-h-[48px] active:scale-95 disabled:opacity-50"
           >
             {guardando ? (
               <>

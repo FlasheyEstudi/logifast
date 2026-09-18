@@ -59,7 +59,7 @@ export function TiendaApp({
   }, [cargarPerfil]);
 
   return (
-    <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] font-sans transition-colors duration-200 selection:bg-blue-500/20">
+    <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] font-sans transition-colors duration-200 selection:bg-primary/20">
       {/* ─── Encabezado Back-Office Superior ─── */}
       <TiendaNavbar
         isDark={isDark}

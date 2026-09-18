@@ -39,6 +39,77 @@ export interface Producto {
   disponible: boolean;
 }
 
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
+   ═══════════════════════════════════════════════ */
+
+const sectionCard: React.CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 'var(--lf-card-radius, 20px)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 20,
+};
+
+const statCard = (accentColor = 'var(--primario)'): React.CSSProperties => ({
+  background: 'var(--surface)',
+  borderRadius: 16,
+  border: '1px solid var(--border)',
+  borderLeft: `4px solid ${accentColor}`,
+  padding: '16px 20px',
+  boxShadow: 'var(--lf-shadow-card)',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 14,
+});
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '11px 16px',
+  borderRadius: 'var(--lf-input-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  outline: 'none',
+};
+
+const btnPrimary: React.CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: 'none',
+  background: 'var(--primario)',
+  color: '#FFFFFF',
+  fontWeight: 600,
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
+  transition: 'all 0.2s ease',
+};
+
+const btnSecondary: React.CSSProperties = {
+  padding: '9px 16px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'transparent',
+  color: 'var(--text)',
+  fontWeight: 600,
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  transition: 'all 0.2s ease',
+};
+
 export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDark: boolean; categoriaTienda?: string }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -253,103 +324,131 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
   });
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {/* ─── KPI Dashboard Cards ─── */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* ─── 1. KPI STAT CARDS (ESTILO LOGIFAST 2.0 ADMIN/CLIENTE) ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-primary flex items-center justify-center shrink-0">
-            <Package size={20} />
+        {/* Total Productos */}
+        <div style={statCard('var(--primario)')}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: 'var(--primario-soft, rgba(0, 122, 255, 0.1))',
+            color: 'var(--primario)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Package size={22} />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-[var(--text-muted)]">Total Productos</p>
-            <p className="text-lg sm:text-xl font-extrabold text-[var(--text)] font-mono">
+          <div style={{ minWidth: 0 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Total Productos</span>
+            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
               {stats.total}
-            </p>
+            </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-            <Eye size={20} />
+        {/* Publicados */}
+        <div style={statCard('#34C759')}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: 'rgba(52, 199, 89, 0.12)',
+            color: '#34C759',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Eye size={22} />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-[var(--text-muted)]">Publicados</p>
-            <p className="text-lg sm:text-xl font-extrabold text-[var(--text)] font-mono">
+          <div style={{ minWidth: 0 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Publicados</span>
+            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
               {stats.publicados}
-            </p>
+            </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-            <AlertTriangle size={20} />
+        {/* Alerta Stock */}
+        <div style={statCard('#FF9500')}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: 'rgba(255, 149, 0, 0.12)',
+            color: '#FF9500',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <AlertTriangle size={22} />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-[var(--text-muted)]">Alerta Stock</p>
-            <p className="text-lg sm:text-xl font-extrabold text-amber-600 dark:text-amber-400 font-mono">
+          <div style={{ minWidth: 0 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Alerta Stock</span>
+            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: stats.bajoStock > 0 ? '#FF9500' : 'var(--text)' }}>
               {stats.bajoStock}
-            </p>
+            </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
-            <TrendingUp size={20} />
+        {/* Valor Inventario */}
+        <div style={statCard('#AF52DE')}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: 'rgba(175, 82, 222, 0.12)',
+            color: '#AF52DE',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <TrendingUp size={22} />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-[var(--text-muted)]">Valor Inventario</p>
-            <p className="text-lg sm:text-xl font-extrabold text-[var(--text)] font-mono truncate">
+          <div style={{ minWidth: 0 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Valor Inventario</span>
+            <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
               C$ {stats.valorInventario.toLocaleString('es-NI', { maximumFractionDigits: 0 })}
-            </p>
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ─── Header & Controls ─── */}
-      <div className="p-4 sm:p-5 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* ─── 2. TOOLBAR & CONTROLES DE INVENTARIO ─── */}
+      <div style={sectionCard}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
+            <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
               Gestión de Inventario & Catálogo
             </h2>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              Control de productos, costos, código de barras e impresión de etiquetas con SKU/QR
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+              Control de artículos, existencias, código de barras e impresión de etiquetas con SKU/QR
             </p>
           </div>
 
           <button
             onClick={abrirModalCrear}
-            className="h-11 min-h-[44px] px-4 rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 self-start sm:self-auto"
+            style={btnPrimary}
           >
             <Plus size={16} />
             <span>Nuevo Producto</span>
           </button>
         </div>
 
-        {/* Filters Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-[var(--border)]">
-          {/* Search Bar */}
-          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
-            <Search size={16} className="text-slate-400 shrink-0" />
+        {/* Barra de Búsqueda & Filtros de Estado */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+          {/* Input Buscador */}
+          <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
+            <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="text"
               placeholder="Buscar producto por nombre o SKU..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-[var(--text)] text-xs sm:text-sm placeholder:text-slate-400"
+              style={{ ...inputStyle, paddingLeft: 40, paddingRight: busqueda ? 40 : 16 }}
             />
             {busqueda && (
               <button
                 onClick={() => setBusqueda('')}
-                className="w-6 h-6 rounded-full hover:bg-[var(--bg-alt)] text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
+                style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
               >
-                <X size={13} />
+                <X size={15} />
               </button>
             )}
           </div>
 
-          {/* Quick status selector */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 shrink-0">
+          {/* Chips de Estado Rápido */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto' }}>
             {(
               [
                 { id: 'todos', label: 'Todos' },
@@ -357,36 +456,56 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                 { id: 'bajo_stock', label: 'Bajo Stock' },
                 { id: 'ocultos', label: 'Archivados' },
               ] as const
-            ).map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => setFiltroEstado(opt.id)}
-                className={`h-9 min-h-[36px] px-3 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
-                  filtroEstado === opt.id
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                    : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-slate-900'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+            ).map((opt) => {
+              const active = filtroEstado === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setFiltroEstado(opt.id)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 'var(--lf-pill-radius, 100px)',
+                    background: active ? 'var(--primario)' : 'var(--bg-alt)',
+                    color: active ? '#FFFFFF' : 'var(--text-muted)',
+                    border: active ? 'none' : '1px solid var(--border)',
+                    fontWeight: 600,
+                    fontSize: 12,
+                    fontFamily: "'DM Sans', sans-serif",
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Category horizontal pill scroll */}
+        {/* Slider horizontal de categorías */}
         {categorias.length > 2 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto', paddingTop: 12 }}>
             {categorias.map((cat) => {
               const active = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
               return (
                 <button
                   key={cat}
                   onClick={() => setCategoriaSeleccionada(cat)}
-                  className={`h-8 min-h-[32px] px-3 rounded-lg font-bold uppercase tracking-wider text-[10px] whitespace-nowrap transition-all active:scale-95 shrink-0 ${
-                    active
-                      ? 'bg-primary text-white shadow-sm shadow-primary/20'
-                      : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:bg-slate-200'
-                  }`}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    background: active ? 'var(--surface-elevated, var(--border))' : 'transparent',
+                    color: active ? 'var(--text)' : 'var(--text-muted)',
+                    border: active ? '1px solid var(--text)' : '1px solid transparent',
+                    fontWeight: 700,
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease',
+                  }}
                 >
                   {cat === 'todos' ? 'Todas las Categorías' : cat}
                 </button>
@@ -396,120 +515,144 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         )}
       </div>
 
-      {/* ─── Grid / Table of Products ─── */}
+      {/* ─── 3. CONTENIDO: PRODUCTOS (MÓVIL CARDS + DESKTOP TABLA) ─── */}
       {loading ? (
-        <div className="h-72 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse" />
+        <div style={{ ...sectionCard, height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: 'var(--text-muted)' }}>
+            <div className="w-8 h-8 border-3 border-[var(--primario)]/20 border-t-[var(--primario)] rounded-full animate-spin" />
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Cargando catálogo de productos...</span>
+          </div>
+        </div>
       ) : filtrados.length === 0 ? (
-        <div className="py-20 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-[22px] md:rounded-2xl p-6">
-          <Package size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
-          <h3 className="text-base font-bold text-[var(--text)] font-syne">
+        <div style={{ ...sectionCard, padding: 48, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <Package size={44} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+          <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
             No se encontraron productos
           </h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-            Prueba ajustando los filtros de búsqueda o haz clic en "Nuevo Producto" para añadir artículos al inventario.
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, maxWidth: 360 }}>
+            Prueba ajustando los filtros de búsqueda o pulsa "Nuevo Producto" para añadir artículos al catálogo.
           </p>
         </div>
       ) : (
         <>
           {/* ═══════════════════════════════════════════════
-              VISTA MÓVIL (Celular: Opción A - Tarjetas Táctiles iOS/Material)
+              VISTA MÓVIL (Celular: Opción A - Tarjetas Táctiles LogiFast)
               ═══════════════════════════════════════════════ */}
-          <div className="block md:hidden space-y-3.5">
+          <div className="block md:hidden space-y-3">
             {filtrados.map((p) => {
-              const bajoStock =
-                p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+              const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
 
               return (
                 <div
                   key={p.id}
-                  className="p-4 rounded-[22px] bg-[var(--surface)] border border-[var(--border)] shadow-md space-y-3"
+                  style={{
+                    ...sectionCard,
+                    padding: 14,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                  }}
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Imagen Miniatura */}
-                    <div className="relative w-16 h-16 rounded-2xl bg-[var(--bg-alt)] overflow-hidden shrink-0 border border-[var(--border)]/60">
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    {/* Thumbnail */}
+                    <div style={{
+                      width: 72, height: 72, borderRadius: 14,
+                      background: 'var(--bg-alt)',
+                      border: '1px solid var(--border)',
+                      overflow: 'hidden', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
                       {p.portadaUrl || p.imagenUrl ? (
                         <img
                           src={p.portadaUrl || p.imagenUrl || ''}
                           alt={p.nombre}
-                          className="w-full h-full object-cover"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400">
-                          <Package size={24} className="opacity-40" />
-                        </div>
+                        <Package size={24} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
                       )}
                     </div>
 
-                    {/* Información Principal */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-extrabold uppercase text-primary tracking-wider">
+                    {/* Metadata */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--primario)' }}>
                           {p.categoriaNombre || 'General'}
                         </span>
                         <span
-                          className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
-                            p.disponible
-                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-slate-500/15 text-slate-500'
-                          }`}
+                          style={{
+                            fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                            background: p.disponible ? 'rgba(52, 199, 89, 0.12)' : 'rgba(142, 142, 160, 0.12)',
+                            color: p.disponible ? '#34C759' : 'var(--text-muted)',
+                          }}
                         >
                           {p.disponible ? 'Publicado' : 'Archivado'}
                         </span>
                         {bajoStock && (
-                          <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-red-500 text-white flex items-center gap-1">
-                            <AlertTriangle size={9} /> Bajo Stock
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                            background: 'rgba(255, 59, 48, 0.12)', color: '#FF3B30',
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                          }}>
+                            <AlertTriangle size={10} /> Bajo Stock
                           </span>
                         )}
                       </div>
 
-                      <h3 className="text-sm font-bold text-[var(--text)] mt-0.5 leading-snug line-clamp-2">
+                      <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '4px 0 2px 0', lineHeight: 1.3 }}>
                         {p.nombre}
                       </h3>
 
                       {p.codigoBarras && (
-                        <p className="text-[11px] font-mono text-[var(--text-muted)] mt-0.5">
+                        <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
                           SKU: {p.codigoBarras}
-                        </p>
+                        </span>
                       )}
                     </div>
                   </div>
 
                   {/* Precios & Stock Destacados */}
-                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]/50 text-xs">
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
+                    padding: '10px 14px', borderRadius: 12, background: 'var(--bg-alt)',
+                    border: '1px solid var(--border)',
+                  }}>
                     <div>
-                      <span className="text-[10px] font-bold text-[var(--text-muted)] block">Precio Venta</span>
-                      <span className="text-sm font-extrabold text-primary font-mono">
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Precio Venta</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--primario)', fontFamily: "'JetBrains Mono', monospace" }}>
                         C$ {p.precio.toFixed(2)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-[var(--text-muted)] block">Stock Actual</span>
-                      <span
-                        className={`text-sm font-extrabold font-mono ${
-                          bajoStock ? 'text-red-500' : 'text-[var(--text)]'
-                        }`}
-                      >
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Stock Disponible</span>
+                      <span style={{
+                        fontSize: 15, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace",
+                        color: bajoStock ? '#FF3B30' : 'var(--text)',
+                      }}>
                         {p.stock ?? 0} {p.unidadMedida || 'und'}
                       </span>
                     </div>
                   </div>
 
-                  {/* Confirmación antes de archivar en móvil */}
+                  {/* Confirmación antes de archivar */}
                   {archivarConfirmId === p.id && (
-                    <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-xs space-y-2 animate-scale-up">
-                      <p className="text-[11px] font-semibold text-[var(--text)] leading-tight">
-                        ¿Archivar "{p.nombre}"? Dejará de mostrarse en catálogo conservando su historial.
-                      </p>
-                      <div className="flex gap-2">
+                    <div style={{
+                      padding: 12, borderRadius: 12, background: 'rgba(255, 59, 48, 0.08)',
+                      border: '1px solid rgba(255, 59, 48, 0.25)', display: 'flex', flexDirection: 'column', gap: 8,
+                    }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>
+                        ¿Archivar "{p.nombre}"? Dejará de mostrarse a los clientes.
+                      </span>
+                      <div style={{ display: 'flex', gap: 8 }}>
                         <button
                           onClick={() => toggleDisponible(p)}
-                          className="flex-1 h-9 min-h-[36px] rounded-full bg-red-500 text-white font-bold text-xs active:scale-95"
+                          style={{ ...btnPrimary, background: '#FF3B30', padding: '8px 12px', fontSize: 12, flex: 1 }}
                         >
                           Sí, archivar
                         </button>
                         <button
                           onClick={() => setArchivarConfirmId(null)}
-                          className="flex-1 h-9 min-h-[36px] rounded-full bg-[var(--border)] text-[var(--text)] font-bold text-xs active:scale-95"
+                          style={{ ...btnSecondary, padding: '8px 12px', fontSize: 12, flex: 1 }}
                         >
                           Cancelar
                         </button>
@@ -517,11 +660,11 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     </div>
                   )}
 
-                  {/* Botones de Acción Táctiles (Estilo Cliente/Repartidor) */}
-                  <div className="flex items-center gap-2 pt-1 border-t border-[var(--border)]/40">
+                  {/* Botones de Acción */}
+                  <div style={{ display: 'flex', gap: 8, paddingTop: 6, borderTop: '1px solid var(--border)' }}>
                     <button
                       onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
-                      className="h-10 min-h-[40px] px-3.5 rounded-full border border-[var(--border)] text-[var(--text)] font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      style={{ ...btnSecondary, flex: 1 }}
                     >
                       {p.disponible ? <EyeOff size={14} /> : <Eye size={14} />}
                       <span>{p.disponible ? 'Archivar' : 'Publicar'}</span>
@@ -529,7 +672,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
                     <button
                       onClick={() => abrirGeneradorEtiquetas(p)}
-                      className="flex-1 h-10 min-h-[40px] px-3 rounded-full bg-[var(--bg-alt)] hover:bg-slate-200 dark:hover:bg-slate-750 text-[var(--text)] font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      style={{ ...btnSecondary, flex: 1 }}
                     >
                       <Printer size={14} />
                       <span>Etiquetas</span>
@@ -537,7 +680,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
                     <button
                       onClick={() => abrirModalEditar(p)}
-                      className="flex-1 h-10 min-h-[40px] px-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm shadow-blue-500/20"
+                      style={{ ...btnPrimary, flex: 1 }}
                     >
                       <Edit2 size={14} />
                       <span>Editar</span>
@@ -549,178 +692,184 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           </div>
 
           {/* ═══════════════════════════════════════════════
-              VISTA TABLET & COMPUTADORA (Opción B - Back-Office Tabla Densa)
+              VISTA ESCRITORIO / TABLET (Opción B - Back-Office Tabla Densa)
               ═══════════════════════════════════════════════ */}
-          <div className="hidden md:block rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-xs sm:text-sm">
-                <thead>
-                  <tr className="bg-[var(--bg-alt)] border-b border-[var(--border)] text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                    <th className="py-3 px-4 w-12 text-center">Foto</th>
-                    <th className="py-3 px-4">Producto & SKU</th>
-                    <th className="py-3 px-4">Categoría</th>
-                    <th className="py-3 px-4 text-right">Precio Venta</th>
-                    <th className="py-3 px-4 text-right">Costo</th>
-                    <th className="py-3 px-4 text-center">Stock</th>
-                    <th className="py-3 px-4 text-center">Estado</th>
-                    <th className="py-3 px-4 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {filtrados.map((p) => {
-                    const bajoStock =
-                      p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+          <div className="hidden md:block" style={{
+            borderRadius: 16,
+            border: '1px solid var(--border)',
+            overflow: 'hidden',
+            background: 'var(--surface)',
+            boxShadow: 'var(--lf-shadow-card)',
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-alt)', borderBottom: '1px solid var(--border)' }}>
+                  <th style={{ padding: '12px 16px', width: 60, textAlign: 'center', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Foto</th>
+                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Producto & SKU</th>
+                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Categoría</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Precio Venta</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Costo</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Stock</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Estado</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtrados.map((p) => {
+                  const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
 
-                    return (
-                      <tr
-                        key={p.id}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                      >
-                        {/* Miniatura Foto */}
-                        <td className="py-2.5 px-4 text-center">
-                          <div className="w-10 h-10 rounded-lg bg-[var(--bg-alt)] overflow-hidden mx-auto border border-[var(--border)]/60 flex items-center justify-center">
-                            {p.portadaUrl || p.imagenUrl ? (
-                              <img
-                                src={p.portadaUrl || p.imagenUrl || ''}
-                                alt={p.nombre}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Package size={18} className="opacity-40 text-slate-400" />
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Nombre & SKU */}
-                        <td className="py-2.5 px-4">
-                          <span className="font-bold text-[var(--text)] block truncate max-w-xs">
-                            {p.nombre}
-                          </span>
-                          {p.codigoBarras ? (
-                            <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                              SKU: {p.codigoBarras}
-                            </span>
+                  return (
+                    <tr
+                      key={p.id}
+                      style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--primario-soft, rgba(0, 122, 255, 0.04))')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      {/* Foto */}
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 10,
+                          background: 'var(--bg-alt)', border: '1px solid var(--border)',
+                          overflow: 'hidden', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {p.portadaUrl || p.imagenUrl ? (
+                            <img
+                              src={p.portadaUrl || p.imagenUrl || ''}
+                              alt={p.nombre}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                           ) : (
-                            <span className="text-[10px] text-slate-400">Sin SKU</span>
+                            <Package size={18} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
                           )}
-                        </td>
+                        </div>
+                      </td>
 
-                        {/* Categoría */}
-                        <td className="py-2.5 px-4">
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--bg-alt)] text-[var(--text-secondary)]">
-                            {p.categoriaNombre || 'General'}
+                      {/* Nombre & SKU */}
+                      <td style={{ padding: '10px 16px' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--text)', display: 'block' }}>{p.nombre}</span>
+                        {p.codigoBarras && (
+                          <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+                            SKU: {p.codigoBarras}
                           </span>
-                        </td>
+                        )}
+                      </td>
 
-                        {/* Precio Venta */}
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-primary">
-                          C$ {p.precio.toFixed(2)}
-                        </td>
+                      {/* Categoría */}
+                      <td style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                        {p.categoriaNombre || 'General'}
+                      </td>
 
-                        {/* Costo */}
-                        <td className="py-2.5 px-4 text-right font-mono text-[var(--text-muted)]">
-                          {p.costo !== null && p.costo !== undefined ? `C$ ${p.costo.toFixed(2)}` : '—'}
-                        </td>
+                      {/* Precio */}
+                      <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+                        C$ {p.precio.toFixed(2)}
+                      </td>
 
-                        {/* Stock & Alerta */}
-                        <td className="py-2.5 px-4 text-center">
-                          <span
-                            className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-full ${
-                              bajoStock
-                                ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-                                : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                            }`}
+                      {/* Costo */}
+                      <td style={{ padding: '10px 16px', textAlign: 'right', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+                        {p.costo ? `C$ ${p.costo.toFixed(2)}` : '-'}
+                      </td>
+
+                      {/* Stock */}
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                        <span style={{
+                          fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
+                          color: bajoStock ? '#FF3B30' : 'var(--text)',
+                        }}>
+                          {p.stock ?? 0} {p.unidadMedida || 'und'}
+                        </span>
+                      </td>
+
+                      {/* Estado */}
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+                          background: p.disponible ? 'rgba(52, 199, 89, 0.12)' : 'rgba(142, 142, 160, 0.12)',
+                          color: p.disponible ? '#34C759' : 'var(--text-muted)',
+                        }}>
+                          {p.disponible ? 'Publicado' : 'Archivado'}
+                        </span>
+                      </td>
+
+                      {/* Acciones */}
+                      <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: 6 }}>
+                          <button
+                            onClick={() => abrirGeneradorEtiquetas(p)}
+                            title="Imprimir Etiquetas / Código"
+                            style={{ ...btnSecondary, padding: '6px 10px', fontSize: 12 }}
                           >
-                            {p.stock ?? 0} {p.unidadMedida || 'und'}
-                          </span>
-                        </td>
-
-                        {/* Estado */}
-                        <td className="py-2.5 px-4 text-center">
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              p.disponible
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                                : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'
-                            }`}
+                            <Printer size={13} />
+                          </button>
+                          <button
+                            onClick={() => toggleDisponible(p)}
+                            title={p.disponible ? 'Archivar' : 'Publicar'}
+                            style={{ ...btnSecondary, padding: '6px 10px', fontSize: 12 }}
                           >
-                            {p.disponible ? 'Publicado' : 'Archivado'}
-                          </span>
-                        </td>
-
-                        {/* Acciones Compactas Back-Office */}
-                        <td className="py-2.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => abrirGeneradorEtiquetas(p)}
-                              title="Generar etiquetas Código de Barras / QR"
-                              className="h-8 px-2.5 rounded-lg border border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-alt)] text-xs font-bold flex items-center gap-1 active:scale-95 transition-all"
-                            >
-                              <Printer size={13} />
-                              <span className="hidden lg:inline">Etiquetas</span>
-                            </button>
-
-                            <button
-                              onClick={() => abrirModalEditar(p)}
-                              title="Editar producto"
-                              className="h-8 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shadow-sm"
-                            >
-                              <Edit2 size={13} />
-                              <span className="hidden lg:inline">Editar</span>
-                            </button>
-
-                            <button
-                              onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
-                              title={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
-                              className="h-8 w-8 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white hover:bg-[var(--bg-alt)] flex items-center justify-center active:scale-95 transition-all"
-                            >
-                              {p.disponible ? <EyeOff size={13} /> : <Eye size={13} />}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                            {p.disponible ? <EyeOff size={13} /> : <Eye size={13} />}
+                          </button>
+                          <button
+                            onClick={() => abrirModalEditar(p)}
+                            title="Editar"
+                            style={{ ...btnPrimary, padding: '6px 12px', fontSize: 12 }}
+                          >
+                            <Edit2 size={13} />
+                            <span>Editar</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </>
       )}
 
-      {/* ─── Modal Crear / Editar Producto ─── */}
+      {/* ─── MODAL CREAR / EDITAR PRODUCTO (ESTILO LOGIFAST 2.0) ─── */}
       {modalOpen && (
         <div
           onClick={() => setModalOpen(false)}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
+            style={{
+              ...sectionCard,
+              width: '100%', maxWidth: 580, maxHeight: '90vh',
+              overflowY: 'auto', padding: 24, borderRadius: 24,
+              boxShadow: 'var(--shadow-xl)',
+            }}
           >
-            <div className="flex items-center justify-between pb-4 border-b border-[var(--border)] mb-4">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
-                  {editingProd ? 'Editar Producto en Inventario' : 'Crear Nuevo Producto'}
+                <h3 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
+                  {editingProd ? 'Editar Producto en Catálogo' : 'Crear Nuevo Producto'}
                 </h3>
-                <p className="text-xs text-slate-500">
-                  {editingProd ? 'Actualiza los datos del producto' : 'Completa los detalles comerciales y stock'}
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                  {editingProd ? 'Actualiza los datos comerciales y stock' : 'Completa los detalles para agregarlo al inventario'}
                 </p>
               </div>
-
               <button
                 onClick={() => setModalOpen(false)}
-                className="w-10 h-10 rounded-xl hover:bg-[var(--bg-alt)] text-slate-500 flex items-center justify-center active:scale-95 transition-all"
-                aria-label="Cerrar modal"
+                style={{
+                  width: 36, height: 36, borderRadius: 10, border: '1px solid var(--border)',
+                  background: 'var(--bg-alt)', color: 'var(--text-muted)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={guardarProducto} className="space-y-4">
+            <form onSubmit={guardarProducto} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Nombre */}
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
                   Nombre del Producto *
                 </label>
                 <input
@@ -728,15 +877,15 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   placeholder="Ej: Refresco Coca-Cola 355ml"
-                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                  style={inputStyle}
                   required
                 />
               </div>
 
               {/* Categoría & SKU */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                 <div>
-                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
                     Categoría
                   </label>
                   <input
@@ -744,56 +893,37 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={categoriaNombre}
                     onChange={(e) => setCategoriaNombre(e.target.value)}
                     placeholder="Ej: Bebidas, Snacks, Lácteos"
-                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                    style={inputStyle}
                   />
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-[var(--text)]">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
                       Código de Barras / SKU
                     </label>
                     <button
                       type="button"
                       onClick={generarCodigoSku}
-                      className="text-[11px] text-primary font-bold hover:underline flex items-center gap-1 active:scale-95"
+                      style={{ fontSize: 11, color: 'var(--primario)', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}
                     >
-                      <Sparkles size={12} />
-                      <span>Generar SKU</span>
+                      + Generar SKU
                     </button>
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={codigoBarras}
-                      onChange={(e) => setCodigoBarras(e.target.value)}
-                      placeholder="Ej: 7501055301072 o SKU..."
-                      className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
-                    />
-                    {editingProd && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          abrirGeneradorEtiquetas({
-                            ...editingProd,
-                            codigoBarras: codigoBarras || editingProd.codigoBarras,
-                          });
-                        }}
-                        title="Imprimir etiquetas con código de barras o QR"
-                        className="h-11 min-h-[44px] px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-[var(--border)] text-xs font-bold whitespace-nowrap flex items-center gap-1.5 active:scale-95"
-                      >
-                        <Printer size={15} />
-                        <span className="hidden sm:inline">Etiquetas</span>
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={codigoBarras}
+                    onChange={(e) => setCodigoBarras(e.target.value)}
+                    placeholder="744..."
+                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
+                  />
                 </div>
               </div>
 
-              {/* Precios y Costos */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Precios & Stock */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 12 }}>
                 <div>
-                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
                     Precio Venta *
                   </label>
                   <input
@@ -802,13 +932,13 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={precio}
                     onChange={(e) => setPrecio(e.target.value)}
                     placeholder="C$ 0.00"
-                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
                     Costo Compra
                   </label>
                   <input
@@ -817,12 +947,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={costo}
                     onChange={(e) => setCosto(e.target.value)}
                     placeholder="C$ 0.00"
-                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
                     Stock Actual
                   </label>
                   <input
@@ -830,12 +960,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="10"
-                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
                     Stock Mínimo
                   </label>
                   <input
@@ -844,97 +974,41 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={stockMinimo}
                     onChange={(e) => setStockMinimo(e.target.value)}
                     placeholder="5"
-                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
                   />
                 </div>
               </div>
 
-              {/* Unidad de Medida */}
+              {/* Imagen del Producto */}
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
-                  Unidad de Medida
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                  Foto del Producto
                 </label>
-                <select
-                  value={unidadMedida}
-                  onChange={(e) => setUnidadMedida(e.target.value)}
-                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
-                >
-                  <option value="unidad">Unidad (und)</option>
-                  <option value="libra">Libra (lb)</option>
-                  <option value="kilo">Kilogramo (kg)</option>
-                  <option value="litro">Litro (lt)</option>
-                  <option value="paquete">Paquete (paq)</option>
-                  <option value="caja">Caja</option>
-                  <option value="porcion">Porción</option>
-                </select>
-              </div>
-
-              {/* Imágenes */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="p-3 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
-                  <label className="text-xs font-bold text-[var(--text)] block mb-2">
-                    Foto Principal del Producto
-                  </label>
-                  <ImageUploader
-                    categoria="productos"
-                    onUploaded={(url) => setImagenUrl(url)}
-                    label="Foto Principal"
-                    previewUrl={imagenUrl || null}
-                    className="w-24 h-24 rounded-2xl mx-auto"
-                  />
-                </div>
-
-                <div className="p-3 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
-                  <label className="text-xs font-bold text-[var(--text)] block mb-2">
-                    Foto de Portada / Banner
-                  </label>
-                  <ImageUploader
-                    categoria="productos"
-                    onUploaded={(url) => setPortadaUrl(url)}
-                    label="Portada Producto"
-                    previewUrl={portadaUrl || null}
-                    className="w-24 h-24 rounded-2xl mx-auto"
-                  />
-                </div>
-              </div>
-
-              {/* Descripción */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
-                  Descripción Comercial (opcional)
-                </label>
-                <textarea
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Detalles, especificaciones o notas de venta..."
-                  rows={2}
-                  className="w-full p-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all resize-none"
+                <ImageUploader
+                  categoria="tienda_productos"
+                  onUploaded={(url) => setImagenUrl(url)}
+                  label="Subir Imagen del Producto"
+                  aspectRatio="square"
+                  previewUrl={imagenUrl || null}
+                  className="w-full h-32 rounded-xl"
                 />
               </div>
 
-              {/* Botones de acción */}
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--border)]">
+              {/* Botón Guardar */}
+              <div style={{ display: 'flex', gap: 10, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="h-11 min-h-[44px] px-4 rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
+                  style={{ ...btnSecondary, flex: 1 }}
                 >
                   Cancelar
                 </button>
-
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="h-11 min-h-[44px] px-6 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
+                  style={{ ...btnPrimary, flex: 2 }}
                 >
-                  {submitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Guardando...</span>
-                    </>
-                  ) : (
-                    <span>{editingProd ? 'Guardar Cambios' : 'Crear Producto'}</span>
-                  )}
+                  {submitting ? 'Guardando...' : (editingProd ? 'Guardar Cambios' : 'Crear Producto')}
                 </button>
               </div>
             </form>
@@ -942,12 +1016,16 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         </div>
       )}
 
-      {/* ─── Modal de Etiquetas & Códigos (Barras / QR) ─── */}
-      <TiendaEtiquetasModal
-        abierto={etiquetasModalOpen}
-        onCerrar={() => setEtiquetasModalOpen(false)}
-        producto={etiquetasProd}
-      />
+      {/* Modal Generador de Etiquetas */}
+      {etiquetasModalOpen && etiquetasProd && (
+        <TiendaEtiquetasModal
+          producto={etiquetasProd}
+          isDark={isDark}
+          onClose={() => setEtiquetasModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
+
+export default TiendaInventario;

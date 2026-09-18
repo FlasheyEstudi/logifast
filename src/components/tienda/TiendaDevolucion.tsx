@@ -25,6 +25,41 @@ interface Props {
   onDevuelto: () => void | Promise<void>;
 }
 
+const btnPrimary: React.CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: 'none',
+  background: 'var(--primario)',
+  color: '#FFFFFF',
+  fontWeight: 600,
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
+  transition: 'all 0.2s ease',
+};
+
+const btnSecondary: React.CSSProperties = {
+  padding: '9px 16px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontWeight: 600,
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  transition: 'all 0.2s ease',
+};
+
 export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [lineas, setLineas] = useState<LineaDevolucion[]>([]);
@@ -126,7 +161,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[var(--surface)] rounded-[28px] md:rounded-2xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up space-y-4"
+        className="w-full max-w-lg bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up space-y-4"
       >
         <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2.5">
@@ -200,7 +235,8 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
             <button
               onClick={onCerrar}
-              className="w-full h-11 min-h-[44px] rounded-full md:rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs active:scale-95 transition-all"
+              style={{ ...btnPrimary, width: '100%' }}
+              className="h-11 min-h-[44px] active:scale-95"
             >
               Cerrar y Volver a Caja POS
             </button>
@@ -350,7 +386,8 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
             <div className="flex gap-2.5 pt-2">
               <button
                 onClick={onCerrar}
-                className="flex-1 h-11 min-h-[44px] rounded-full md:rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
+                style={btnSecondary}
+                className="flex-1 h-11 min-h-[44px]"
               >
                 Cancelar
               </button>
@@ -358,7 +395,12 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
               <button
                 onClick={enviar}
                 disabled={enviando || lineas.length === 0}
-                className="flex-[2] h-11 min-h-[44px] rounded-full md:rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs tracking-wide shadow-sm active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{
+                  ...btnPrimary,
+                  background: '#10B981',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+                }}
+                className="flex-[2] h-11 min-h-[44px] active:scale-95 disabled:opacity-50"
               >
                 {enviando ? (
                   <>

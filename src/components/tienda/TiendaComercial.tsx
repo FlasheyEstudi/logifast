@@ -15,13 +15,14 @@ const campo: React.CSSProperties = {
   width: '100%',
   minWidth: 0,
   height: 44,
-  borderRadius: 10,
+  borderRadius: 'var(--lf-input-radius, 14px)',
   border: '1px solid var(--border)',
   background: 'var(--bg-alt)',
   color: 'var(--text)',
-  padding: '0 12px',
+  padding: '0 14px',
   fontSize: 13,
   outline: 'none',
+  fontFamily: "'DM Sans', sans-serif",
 };
 
 const etiqueta: React.CSSProperties = {
@@ -35,24 +36,28 @@ const etiqueta: React.CSSProperties = {
 const panel: React.CSSProperties = {
   background: 'var(--surface)',
   border: '1px solid var(--border)',
-  borderRadius: 16,
-  padding: 20,
+  borderRadius: 'var(--lf-card-radius, 20px)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 24,
 };
 
 const botonPrimario: React.CSSProperties = {
-  display: 'flex',
+  display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
   gap: 6,
   height: 44,
-  padding: '0 16px',
-  borderRadius: 10,
+  padding: '0 18px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
   border: 'none',
   background: 'var(--primario)',
   color: '#FFFFFF',
   fontWeight: 700,
   fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
   cursor: 'pointer',
+  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
+  transition: 'all 0.2s ease',
 };
 
 const money = (n: number) => `C$ ${n.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -77,15 +82,17 @@ export function TiendaComercial() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              height: 44,
+              height: 40,
               padding: '0 16px',
-              borderRadius: 999,
-              border: '1px solid var(--border)',
-              background: abierta === t.id ? 'var(--primary)' : 'var(--bg-alt)',
-              color: abierta === t.id ? '#FFFFFF' : 'var(--text)',
+              borderRadius: 'var(--lf-pill-radius, 100px)',
+              border: `1px solid ${abierta === t.id ? 'var(--primario)' : 'var(--border)'}`,
+              background: abierta === t.id ? 'var(--primario)' : 'var(--bg-alt)',
+              color: abierta === t.id ? '#FFFFFF' : 'var(--text-muted)',
               fontWeight: 700,
               fontSize: 12.5,
               cursor: 'pointer',
+              boxShadow: abierta === t.id ? '0 2px 8px rgba(0, 122, 255, 0.25)' : 'none',
+              transition: 'all 0.2s ease',
             }}
           >
             {t.icon} {t.label}

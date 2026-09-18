@@ -14,6 +14,71 @@ import {
 import { notify } from '@/lib/notify';
 import { descargarReporteTienda } from '@/lib/tienda/descarga-cliente';
 
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
+   ═══════════════════════════════════════════════ */
+
+const sectionCard: React.CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 'var(--lf-card-radius, 20px)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 24,
+};
+
+const btnPrimary: React.CSSProperties = {
+  padding: '10px 16px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: 'none',
+  background: 'var(--primario)',
+  color: '#FFFFFF',
+  fontWeight: 600,
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
+  transition: 'all 0.2s ease',
+};
+
+const btnSecondary: React.CSSProperties = {
+  padding: '9px 16px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontWeight: 600,
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  transition: 'all 0.2s ease',
+};
+
+const filterPill = (active: boolean): React.CSSProperties => ({
+  padding: '7px 14px',
+  borderRadius: 'var(--lf-pill-radius, 100px)',
+  background: active ? 'var(--primario)' : 'var(--bg-alt)',
+  color: active ? '#FFFFFF' : 'var(--text-muted)',
+  border: `1px solid ${active ? 'var(--primario)' : 'var(--border)'}`,
+  fontWeight: 600,
+  fontSize: 12,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  transition: 'all 0.18s ease',
+  boxShadow: active ? '0 2px 8px rgba(0, 122, 255, 0.25)' : 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+});
+
 export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
   const [descargando, setDescargando] = useState<string | null>(null);
   const [dias, setDias] = useState(30);
@@ -63,7 +128,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
   return (
     <div className="space-y-5">
       {/* ─── Header ─── */}
-      <div className="p-5 sm:p-6 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
+      <div style={sectionCard} className="space-y-4">
         <div>
           <div className="flex items-center gap-2 text-primary mb-1">
             <BarChart3 size={20} />
@@ -89,19 +154,18 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 { d: 7, l: '7 días' },
                 { d: 30, l: '30 días' },
                 { d: 0, l: 'Todo el Historial' },
-              ].map((p) => (
-                <button
-                  key={p.d}
-                  onClick={() => setDias(p.d)}
-                  className={`h-9 min-h-[36px] px-3.5 rounded-full md:rounded-lg font-bold text-xs transition-all active:scale-95 ${
-                    dias === p.d
-                      ? 'bg-primary text-white shadow-sm shadow-primary/25'
-                      : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {p.l}
-                </button>
-              ))}
+              ].map((p) => {
+                const active = dias === p.d;
+                return (
+                  <button
+                    key={p.d}
+                    onClick={() => setDias(p.d)}
+                    style={filterPill(active)}
+                  >
+                    {p.l}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -117,7 +181,8 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
         {opciones.map((op) => (
           <div
             key={op.id}
-            className="p-5 sm:p-6 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-200"
+            style={sectionCard}
+            className="flex flex-col justify-between hover:shadow-md transition-all duration-200"
           >
             <div>
               <div className="flex items-center gap-3 mb-3">
@@ -145,7 +210,8 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 <button
                   onClick={() => descargarReporte(op.id, 'xlsx')}
                   disabled={descargando !== null}
-                  className="flex-1 h-11 min-h-[44px] rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+                  style={btnPrimary}
+                  className="flex-1 h-11 min-h-[44px] active:scale-95 disabled:opacity-50"
                 >
                   <FileSpreadsheet size={16} />
                   <span>{descargando === `${op.id}-xlsx` ? 'Generando…' : 'Excel (.xlsx)'}</span>
@@ -154,7 +220,8 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 <button
                   onClick={() => descargarReporte(op.id, 'pdf')}
                   disabled={descargando !== null}
-                  className="flex-1 h-11 min-h-[44px] rounded-full md:rounded-xl bg-[var(--bg-alt)] hover:bg-slate-200 dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+                  style={btnSecondary}
+                  className="flex-1 h-11 min-h-[44px] active:scale-95 disabled:opacity-50"
                 >
                   <Download size={16} />
                   <span>{descargando === `${op.id}-pdf` ? 'Generando…' : 'PDF'}</span>
@@ -164,7 +231,8 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
               <button
                 onClick={() => descargarReporte(op.id, 'csv')}
                 disabled={descargando !== null}
-                className="w-full h-9 min-h-[36px] rounded-full md:rounded-xl border border-dashed border-[var(--border)] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-bold active:scale-95 transition-all"
+                style={{ ...btnSecondary, width: '100%', borderStyle: 'dashed', height: 36, fontSize: 11 }}
+                className="active:scale-95"
               >
                 {descargando === `${op.id}-csv` ? 'Generando CSV…' : 'Descargar datos en CSV'}
               </button>

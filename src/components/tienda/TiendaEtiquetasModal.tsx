@@ -21,18 +21,23 @@ import { notify } from '@/lib/notify';
 import type { Producto } from './TiendaInventario';
 
 interface TiendaEtiquetasModalProps {
-  abierto: boolean;
-  onCerrar: () => void;
+  abierto?: boolean;
+  onCerrar?: () => void;
+  onClose?: () => void;
   producto: Producto | null;
   nombreTienda?: string;
+  isDark?: boolean;
 }
 
 export function TiendaEtiquetasModal({
-  abierto,
+  abierto = true,
   onCerrar,
+  onClose,
   producto,
   nombreTienda = 'LogiFast Tienda',
+  isDark,
 }: TiendaEtiquetasModalProps) {
+  const handleCerrar = onCerrar || onClose || (() => {});
   const [tipoCodigo, setTipoCodigo] = useState<'barras' | 'qr'>('barras');
   const [modoImpresion, setModoImpresion] = useState<'cuadricula' | 'adhesivo'>('cuadricula');
   const [codigoValor, setCodigoValor] = useState('');
@@ -147,12 +152,12 @@ export function TiendaEtiquetasModal({
     <>
       {/* ─── MODAL DE INTERFAZ DE USUARIO (Pantalla normal) ─── */}
       <div
-        onClick={onCerrar}
+        onClick={handleCerrar}
         className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 no-print"
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-2xl bg-[var(--surface)] rounded-[28px] md:rounded-2xl border border-[var(--border)] p-5 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto animate-scale-up space-y-5"
+          className="w-full max-w-2xl bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-5 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto animate-scale-up space-y-5"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
@@ -169,8 +174,8 @@ export function TiendaEtiquetasModal({
             </div>
 
             <button
-              onClick={onCerrar}
-              className="w-10 h-10 rounded-full md:rounded-xl hover:bg-[var(--bg-alt)] text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+              onClick={handleCerrar}
+              className="w-10 h-10 rounded-xl hover:bg-[var(--bg-alt)] text-slate-500 flex items-center justify-center active:scale-95 transition-all"
               aria-label="Cerrar modal"
             >
               <X size={20} />
@@ -188,9 +193,9 @@ export function TiendaEtiquetasModal({
                 <button
                   type="button"
                   onClick={() => setTipoCodigo('barras')}
-                  className={`h-11 min-h-[44px] rounded-full md:rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                  className={`h-11 min-h-[44px] rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
                     tipoCodigo === 'barras'
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'bg-[var(--primario)] text-white shadow-sm'
                       : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-alt)]'
                   }`}
                 >
@@ -201,9 +206,9 @@ export function TiendaEtiquetasModal({
                 <button
                   type="button"
                   onClick={() => setTipoCodigo('qr')}
-                  className={`h-11 min-h-[44px] rounded-full md:rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                  className={`h-11 min-h-[44px] rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
                     tipoCodigo === 'qr'
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'bg-[var(--primario)] text-white shadow-sm'
                       : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-alt)]'
                   }`}
                 >
@@ -225,9 +230,9 @@ export function TiendaEtiquetasModal({
                     setModoImpresion('cuadricula');
                     if (cantidadCopias < 12) setCantidadCopias(24);
                   }}
-                  className={`h-11 min-h-[44px] rounded-full md:rounded-xl text-xs font-bold transition-all active:scale-95 flex flex-col items-center justify-center text-center leading-tight cursor-pointer ${
+                  className={`h-11 min-h-[44px] rounded-xl text-xs font-bold transition-all active:scale-95 flex flex-col items-center justify-center text-center leading-tight cursor-pointer ${
                     modoImpresion === 'cuadricula'
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'bg-[var(--primario)] text-white shadow-sm'
                       : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-alt)]'
                   }`}
                 >
@@ -244,9 +249,9 @@ export function TiendaEtiquetasModal({
                     setModoImpresion('adhesivo');
                     if (cantidadCopias > 12) setCantidadCopias(1);
                   }}
-                  className={`h-11 min-h-[44px] rounded-full md:rounded-xl text-xs font-bold transition-all active:scale-95 flex flex-col items-center justify-center text-center leading-tight cursor-pointer ${
+                  className={`h-11 min-h-[44px] rounded-xl text-xs font-bold transition-all active:scale-95 flex flex-col items-center justify-center text-center leading-tight cursor-pointer ${
                     modoImpresion === 'adhesivo'
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'bg-[var(--primario)] text-white shadow-sm'
                       : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-alt)]'
                   }`}
                 >
@@ -420,8 +425,8 @@ export function TiendaEtiquetasModal({
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={onCerrar}
-                className="flex-1 sm:flex-initial h-11 min-h-[44px] px-4 rounded-full md:rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
+                onClick={handleCerrar}
+                className="flex-1 sm:flex-initial h-11 min-h-[44px] px-4 rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
               >
                 Cerrar
               </button>
@@ -429,7 +434,11 @@ export function TiendaEtiquetasModal({
               <button
                 type="button"
                 onClick={ejecutarImpresion}
-                className="flex-[2] sm:flex-initial h-11 min-h-[44px] px-6 rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2"
+                style={{
+                  background: 'var(--primario)',
+                  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
+                }}
+                className="flex-[2] sm:flex-initial h-11 min-h-[44px] px-6 rounded-xl text-white font-bold text-xs tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <Printer size={16} />
                 <span>Imprimir {cantidadCopias} Etiquetas (o PDF)</span>

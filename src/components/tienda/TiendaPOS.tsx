@@ -58,6 +58,83 @@ interface FacturaDatos {
   pieMarcaLogifast: string;
 }
 
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
+   ═══════════════════════════════════════════════ */
+
+const sectionCard: React.CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 'var(--lf-card-radius, 20px)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--lf-shadow-card)',
+  padding: 16,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '11px 16px',
+  borderRadius: 'var(--lf-input-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  outline: 'none',
+};
+
+const btnPrimary: React.CSSProperties = {
+  padding: '10px 20px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: 'none',
+  background: 'var(--primario)',
+  color: '#FFFFFF',
+  fontWeight: 600,
+  fontSize: 14,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
+  transition: 'all 0.2s ease',
+};
+
+const btnSecondary: React.CSSProperties = {
+  padding: '9px 16px',
+  borderRadius: 'var(--lf-button-radius, 14px)',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-alt)',
+  color: 'var(--text)',
+  fontWeight: 600,
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  transition: 'all 0.2s ease',
+};
+
+const filterPill = (active: boolean): React.CSSProperties => ({
+  padding: '7px 14px',
+  borderRadius: 'var(--lf-pill-radius, 100px)',
+  background: active ? 'var(--primario)' : 'var(--bg-alt)',
+  color: active ? '#FFFFFF' : 'var(--text-muted)',
+  border: `1px solid ${active ? 'var(--primario)' : 'var(--border)'}`,
+  fontWeight: 600,
+  fontSize: 12,
+  fontFamily: "'DM Sans', sans-serif",
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  transition: 'all 0.18s ease',
+  boxShadow: active ? '0 2px 8px rgba(0, 122, 255, 0.25)' : 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+});
+
 export function TiendaPOS({ isDark }: { isDark: boolean }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -611,7 +688,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         <button
           onClick={procesarVenta}
           disabled={procesando || carrito.length === 0}
-          className="w-full h-12 min-h-[48px] rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+          style={btnPrimary}
+          className="w-full h-12 min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] transition-all"
         >
           {procesando ? (
             <>
@@ -635,9 +713,23 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       <div className="flex flex-col gap-4 min-w-0">
         
         {/* Barra Superior: Buscador + Escáner + Devolución */}
-        <div className="p-3.5 sm:p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+        <div
+          style={sectionCard}
+          className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5"
+        >
           {/* Input Buscador */}
-          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-full md:rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 14px',
+              borderRadius: 'var(--lf-input-radius, 14px)',
+              background: 'var(--bg-alt)',
+              border: '1px solid var(--border)',
+            }}
+          >
             <Search size={18} className="text-slate-400 shrink-0" />
             <input
               type="text"
@@ -649,7 +741,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             {busqueda && (
               <button
                 onClick={() => setBusqueda('')}
-                className="w-6 h-6 rounded-full hover:bg-[var(--bg-alt)] text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
+                className="w-6 h-6 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
               >
                 <X size={14} />
               </button>
@@ -661,10 +753,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <button
               onClick={abrirEscaner}
               title="Emparejar un celular como lector de códigos de barras"
-              className={`flex-1 sm:flex-initial h-11 min-h-[44px] px-3.5 rounded-full md:rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95 border ${
+              style={btnSecondary}
+              className={`flex-1 sm:flex-initial h-11 min-h-[44px] ${
                 lectorConectado
-                  ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-slate-50 hover:bg-[var(--bg-alt)] dark:hover:bg-slate-750 border-[var(--border)] text-[var(--text)]'
+                  ? '!border-emerald-500/40 !bg-emerald-500/10 !text-emerald-600 dark:!text-emerald-400'
+                  : ''
               }`}
             >
               <Camera size={16} className={lectorConectado ? 'text-emerald-500' : ''} />
@@ -674,7 +767,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <button
               onClick={() => setDevolucionAbierta(true)}
               title="Devolver mercadería al inventario"
-              className="flex-1 sm:flex-initial h-11 min-h-[44px] px-3.5 rounded-full md:rounded-xl text-xs font-bold flex items-center justify-center gap-2 bg-slate-50 hover:bg-[var(--bg-alt)] dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] transition-all active:scale-95"
+              style={btnSecondary}
+              className="flex-1 sm:flex-initial h-11 min-h-[44px]"
             >
               <RotateCcw size={15} />
               <span>Devolución</span>
@@ -691,11 +785,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 <button
                   key={cat}
                   onClick={() => setCategoriaSeleccionada(cat)}
-                  className={`h-9 min-h-[36px] px-3.5 rounded-xl font-bold uppercase tracking-wider text-[11px] whitespace-nowrap transition-all active:scale-95 shrink-0 ${
-                    active
-                      ? 'bg-primary text-white shadow-sm shadow-primary/30'
-                      : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  style={filterPill(active)}
                 >
                   {cat === 'todos' ? 'Todos los Productos' : cat}
                 </button>
@@ -710,12 +800,26 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="h-56 rounded-2xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
+                style={{
+                  height: 220,
+                  borderRadius: 16,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                }}
+                className="animate-pulse"
               />
             ))}
           </div>
         ) : filtrados.length === 0 ? (
-          <div className="py-16 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-2xl p-6">
+          <div
+            style={{
+              padding: '64px 24px',
+              textAlign: 'center',
+              background: 'var(--surface)',
+              border: '1px dashed var(--border)',
+              borderRadius: 16,
+            }}
+          >
             <Package size={40} className="mx-auto mb-3 opacity-30 text-slate-500" />
             <p className="text-base font-bold text-[var(--text)]">
               No se encontraron productos
@@ -736,12 +840,14 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 <div
                   key={p.id}
                   onClick={() => !sinStock && agregarAlCarrito(p)}
-                  className={`group relative flex flex-col rounded-[22px] md:rounded-xl bg-[var(--surface)] border transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] ${
-                    sinStock
-                      ? 'opacity-60 grayscale cursor-not-allowed border-[var(--border)]'
-                      : enCarritoCant > 0
-                      ? 'border-primary/60 ring-2 ring-primary/20 shadow-md shadow-primary/5'
-                      : 'border-[var(--border)] hover:border-primary/40 hover:shadow-md'
+                  style={{
+                    background: 'var(--surface)',
+                    borderRadius: 16,
+                    border: enCarritoCant > 0 ? '1.5px solid var(--primario)' : '1px solid var(--border)',
+                    boxShadow: enCarritoCant > 0 ? '0 4px 16px rgba(0, 122, 255, 0.15)' : 'var(--lf-shadow-card)',
+                  }}
+                  className={`group relative flex flex-col transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] ${
+                    sinStock ? 'opacity-60 grayscale cursor-not-allowed' : ''
                   }`}
                 >
                   {/* Image container */}
@@ -777,7 +883,13 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
                     {/* Quantity in Cart Indicator */}
                     {enCarritoCant > 0 && (
-                      <div className="absolute top-2 left-2 bg-primary text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full shadow-md animate-scale-up font-mono">
+                      <div
+                        style={{
+                          background: 'var(--primario)',
+                          boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
+                        }}
+                        className="absolute top-2 left-2 text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full animate-scale-up font-mono"
+                      >
                         {enCarritoCant} en caja
                       </div>
                     )}
@@ -787,7 +899,10 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   <div className="p-3 flex-1 flex flex-col justify-between gap-2">
                     <div>
                       {p.categoriaNombre && (
-                        <p className="text-[10px] font-extrabold uppercase text-primary/80 tracking-wider mb-0.5 truncate">
+                        <p
+                          style={{ color: 'var(--primario)' }}
+                          className="text-[10px] font-extrabold uppercase tracking-wider mb-0.5 truncate"
+                        >
                           {p.categoriaNombre}
                         </p>
                       )}
@@ -796,11 +911,27 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                       </h4>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-[var(--border)]/80">
-                      <span className="text-sm sm:text-base font-extrabold text-primary font-mono">
+                    <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
+                      <span
+                        style={{ color: 'var(--primario)' }}
+                        className="text-sm sm:text-base font-extrabold font-mono"
+                      >
                         C$ {p.precio.toFixed(2)}
                       </span>
-                      <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                      <div
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          background: 'var(--primario)',
+                          color: '#FFFFFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(0, 122, 255, 0.25)',
+                        }}
+                        className="group-hover:scale-110 transition-transform"
+                      >
                         <Plus size={14} />
                       </div>
                     </div>
@@ -813,7 +944,10 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* ─── Columna Derecha Desktop: Carrito & Cobro POS ─── */}
-      <div className="hidden lg:block sticky top-4 h-[calc(100vh-32px)] p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm overflow-hidden">
+      <div
+        style={sectionCard}
+        className="hidden lg:block sticky top-4 h-[calc(100vh-32px)] overflow-hidden"
+      >
         {renderCartContent(false)}
       </div>
 
@@ -822,7 +956,16 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       <div className="lg:hidden fixed bottom-[74px] left-3 right-3 z-30">
         <button
           onClick={() => setMobileCartOpen(true)}
-          className="w-full h-14 min-h-[52px] px-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-black/25 flex items-center justify-between active:scale-[0.98] transition-all"
+          style={{
+            ...btnPrimary,
+            width: '100%',
+            height: 56,
+            borderRadius: 'var(--lf-pill-radius, 100px)',
+            boxShadow: '0 8px 24px rgba(0, 122, 255, 0.35)',
+            justifyContent: 'space-between',
+            padding: '0 16px',
+          }}
+          className="active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-2.5">
             <div className="relative w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
