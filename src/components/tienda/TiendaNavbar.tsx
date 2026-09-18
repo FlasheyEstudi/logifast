@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Package,
@@ -16,6 +16,7 @@ import {
   SlidersHorizontal,
   TrendingUp,
   ChevronRight,
+  ChevronDown,
   MoreHorizontal,
   X,
   CheckCircle2,
@@ -69,48 +70,67 @@ export function TiendaNavbar({
   onSelectModulo,
 }: TiendaNavbarProps) {
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
-  const modulosDesktop: { id: TiendaModulo; label: string; icon: typeof Clock }[] = [
+  useEffect(() => {
+    if (!moreMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [moreMenuOpen]);
+
+  const modulosPrimarios: { id: TiendaModulo; label: string; icon: typeof Clock }[] = [
     { id: 'kds', label: 'Monitor KDS', icon: Clock },
     { id: 'pos', label: 'Caja POS', icon: CreditCard },
     { id: 'inventario', label: 'Inventario', icon: Package },
     { id: 'kardex', label: 'Kardex', icon: SlidersHorizontal },
-    { id: 'facturacion', label: 'Facturación', icon: FileText },
-    { id: 'reportes', label: 'Reportes', icon: BarChart3 },
-    { id: 'estadisticas', label: 'Métricas', icon: TrendingUp },
-    { id: 'configuracion', label: 'Ajustes', icon: Settings },
   ];
 
-  // Módulos secundarios para el Drawer "Más" en móvil
+  // Módulos secundarios para el Dropdown "Más" en desktop/tablet y Menú Flotante en móvil
   const modulosSecundarios: {
     id: TiendaModulo;
     titulo: string;
     descripcion: string;
+    descripcionCorta: string;
     icon: typeof FileText;
+    tintClass: string;
   }[] = [
     {
       id: 'facturacion',
       titulo: 'Facturación & DGI',
       descripcion: 'Régimen fiscal, serie de facturas y ticket térmico',
+      descripcionCorta: 'Fiscal & Tickets',
       icon: FileText,
+      tintClass: 'bg-blue-500/15 text-blue-500 dark:text-blue-400',
     },
     {
       id: 'reportes',
       titulo: 'Reportes Excel',
       descripcion: 'Cierre de caja, ventas diarias y exportación contable',
+      descripcionCorta: 'Cierres & Excel',
       icon: BarChart3,
+      tintClass: 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400',
     },
     {
       id: 'estadisticas',
       titulo: 'Métricas & Rendimiento',
       descripcion: 'Gráficos de ventas, horas pico y top de productos',
+      descripcionCorta: 'Ventas & Métricas',
       icon: TrendingUp,
+      tintClass: 'bg-violet-500/15 text-violet-500 dark:text-violet-400',
     },
     {
       id: 'configuracion',
       titulo: 'Ajustes del Comercio',
       descripcion: 'Horarios semanales, logo, banner y tarifas de envío',
+      descripcionCorta: 'Ajustes Tienda',
       icon: Settings,
+      tintClass: 'bg-amber-500/15 text-amber-500 dark:text-amber-400',
     },
   ];
 
@@ -123,13 +143,14 @@ export function TiendaNavbar({
     { key: 'mas', label: 'Más', icon: <MoreHorizontal size={18} /> },
   ];
 
-  // Determinar pestaña activa en la barra móvil
-  const isSecondaryActive = ['facturacion', 'reportes', 'estadisticas', 'configuracion'].includes(moduloActivo);
+  // Determinar si un submódulo secundario está activo
+  const activeSecundario = modulosSecundarios.find((m) => m.id === moduloActivo);
+  const isSecondaryActive = !!activeSecundario;
   const activeMobileKey = isSecondaryActive ? 'mas' : moduloActivo;
 
   const handleMobileNavChange = (key: string) => {
     if (key === 'mas') {
-      setMoreDrawerOpen(true);
+      setMoreDrawerOpen((prev) => !prev);
     } else {
       setMoreDrawerOpen(false);
       onSelectModulo(key as TiendaModulo);
@@ -142,15 +163,16 @@ export function TiendaNavbar({
   return (
     <>
       {/* ══════════════════════════════════════════════════════════
-          HEADER SUPERIOR (Opción B: Sobrio Back-Office / Administrador)
+          HEADER SUPERIOR FIJO (Sobrio Back-Office / Administrador)
           ══════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-40 w-full bg-[var(--surface)] border-b border-[var(--border)] shadow-xs">
+      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-[var(--surface)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-xs transition-colors">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-3">
           
           {/* Left: Identidad Tienda + Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-[var(--primario)] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs border border-[var(--border)]">
+              {/* Avatar tienda sin borde duro */}
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden bg-[var(--primario)] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
                 {tiendaImagenUrl ? (
                   <img
                     src={tiendaImagenUrl}
@@ -161,7 +183,7 @@ export function TiendaNavbar({
                   <Store size={16} />
                 )}
                 <span
-                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ring-2 ring-[var(--surface)] ${
+                  className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--surface)] ${
                     isAbierta ? 'bg-emerald-500' : 'bg-amber-500'
                   }`}
                   title={isAbierta ? 'En Línea' : 'Pausada'}
@@ -176,15 +198,15 @@ export function TiendaNavbar({
                   <span className="text-[10px] text-[var(--text-muted)] capitalize truncate">
                     {tiendaCategoria}
                   </span>
-                  <span className="lg:hidden text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--primario)]/10 text-[var(--primario)]">
+                  <span className="md:hidden text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--primario)]/10 text-[var(--primario)]">
                     {TIENDA_MODULO_LABELS[moduloActivo]}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Separador vertical y Breadcrumb (visible en tablet/desktop) */}
-            <div className="hidden sm:flex items-center gap-1.5 pl-3 border-l border-[var(--border)] text-xs">
+            {/* Breadcrumb sutil sin barras verticales bruscas */}
+            <div className="hidden sm:flex items-center gap-1.5 pl-2 text-xs opacity-85">
               <span className="text-[var(--text-muted)] font-medium">Tienda</span>
               <ChevronRight size={13} className="text-[var(--text-muted)]" />
               <span className="font-bold text-[var(--text)]">
@@ -193,22 +215,26 @@ export function TiendaNavbar({
             </div>
           </div>
 
-          {/* Center: Tabs de Navegación de Escritorio (Desktop lg+) */}
+          {/* Center: Tabs de Navegación de Escritorio (Tablet & Desktop md+) */}
           <nav
             aria-label="Módulos de tienda"
-            className="hidden lg:flex items-center gap-1 bg-[var(--bg-alt)] p-1 rounded-xl border border-[var(--border)]"
+            className="hidden md:flex items-center gap-1 bg-[var(--bg-alt)]/80 p-1 rounded-2xl"
           >
-            {modulosDesktop.map((m) => {
+            {modulosPrimarios.map((m) => {
               const active = moduloActivo === m.id;
               const Icon = m.icon;
               return (
                 <button
                   key={m.id}
-                  onClick={() => onSelectModulo(m.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  type="button"
+                  onClick={() => {
+                    setMoreMenuOpen(false);
+                    onSelectModulo(m.id);
+                  }}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none ${
                     active
                       ? 'bg-[var(--primario)] text-white shadow-xs font-bold'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]/70'
                   }`}
                 >
                   <Icon size={14} />
@@ -216,30 +242,120 @@ export function TiendaNavbar({
                 </button>
               );
             })}
+
+            {/* Dropdown "Más" para módulos complementarios */}
+            <div ref={moreRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMoreMenuOpen((v) => !v)}
+                aria-expanded={moreMenuOpen}
+                aria-haspopup="true"
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none ${
+                  isSecondaryActive
+                    ? 'bg-[var(--primario)] text-white shadow-xs font-bold'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]/70'
+                }`}
+              >
+                <MoreHorizontal size={14} />
+                <span>
+                  {isSecondaryActive && activeSecundario
+                    ? activeSecundario.titulo.split(' ')[0]
+                    : 'Más'}
+                </span>
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform duration-200 ${
+                    moreMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {moreMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    className="absolute right-0 top-full mt-2 w-72 rounded-3xl bg-[var(--surface)]/95 shadow-xl p-2.5 z-50 backdrop-blur-2xl border border-[var(--border)]/40"
+                  >
+                    <div className="px-3 py-1.5 text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1 flex items-center justify-between opacity-80">
+                      <span>Módulos de Gestión</span>
+                      <span className="text-[10px] font-normal">4 opciones</span>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      {modulosSecundarios.map((m) => {
+                        const Icon = m.icon;
+                        const isActive = moduloActivo === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => {
+                              onSelectModulo(m.id);
+                              setMoreMenuOpen(false);
+                            }}
+                            className={`flex items-start gap-3 p-2.5 rounded-2xl text-left transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-[var(--primario)]/10 text-[var(--primario)] font-bold'
+                                : 'text-[var(--text)] hover:bg-[var(--bg-alt)]'
+                            }`}
+                          >
+                            <div
+                              className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center transition-colors ${
+                                isActive
+                                  ? 'bg-[var(--primario)] text-white shadow-xs'
+                                  : m.tintClass
+                              }`}
+                            >
+                              <Icon size={15} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold leading-tight truncate">
+                                  {m.titulo}
+                                </span>
+                                {isActive && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--primario)] shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-[11px] text-[var(--text-muted)] line-clamp-1 mt-0.5 leading-normal">
+                                {m.descripcion}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </nav>
 
-          {/* Right: Indicador En Vivo + Tema + Salir */}
+          {/* Right: Indicador En Vivo + Tema + Salir (Sin bordes en iconos) */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Indicador En Vivo (Estilo Admin Dashboard) */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
+            {/* Indicador En Vivo */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>En vivo</span>
             </div>
 
-            {/* Theme Toggle */}
+            {/* Theme Toggle sin borde */}
             <button
               onClick={toggleTheme}
-              className="w-9 h-9 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+              className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-all cursor-pointer active:scale-95"
               aria-label={isDark ? 'Modo Claro' : 'Modo Oscuro'}
               title={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
             >
               {isDark ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-blue-600" />}
             </button>
 
-            {/* Exit / Return button */}
+            {/* Exit / Return button sin borde */}
             <button
               onClick={handleExitAction}
-              className="h-9 px-3 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+              className="h-9 px-3.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
               title={onReturnToClient ? 'Volver a App Cliente' : 'Cerrar Sesión'}
             >
               <LogOut size={14} />
@@ -250,10 +366,10 @@ export function TiendaNavbar({
       </header>
 
       {/* ══════════════════════════════════════════════════════════
-          NAVBAR MÓVIL FLOTANTE (Opción A: Celular Estilo Cliente / Repartidor)
+          NAVBAR MÓVIL FLOTANTE (Móvil Estilo Cliente / Repartidor)
           Ubicado al fondo de la pantalla con SlidingPillTabBar
           ══════════════════════════════════════════════════════════ */}
-      <div className="lg:hidden fixed bottom-3 left-0 right-0 z-40 flex justify-center px-3 pointer-events-none">
+      <div className="md:hidden fixed bottom-3 left-0 right-0 z-40 flex justify-center px-3 pointer-events-none">
         <div className="pointer-events-auto w-full max-w-md">
           <SlidingPillTabBar
             items={mobileNavItems}
@@ -267,98 +383,116 @@ export function TiendaNavbar({
       </div>
 
       {/* ══════════════════════════════════════════════════════════
-          BOTTOM SHEET "MÁS" (Menú Administrativo Móvil)
+          MENÚ FLOTANTE "MÁS" EN MÓVIL (Estilo Cápsula Flotante iOS)
+          Alineado visualmente con la cápsula SlidingPillTabBar
           ══════════════════════════════════════════════════════════ */}
       <AnimatePresence>
         {moreDrawerOpen && (
-          <div
-            onClick={() => setMoreDrawerOpen(false)}
-            className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end"
-          >
+          <>
+            {/* Backdrop táctil para cerrar */}
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ duration: 0.25, ease: [0.2, 0, 0, 1] }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[var(--surface)] rounded-t-[28px] p-5 border-t border-[var(--border)] shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto"
-            >
-              {/* Handle indicator */}
-              <div className="w-12 h-1.5 rounded-full bg-[var(--border)] mx-auto mb-1" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={() => setMoreDrawerOpen(false)}
+              className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-xs"
+            />
 
-              <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
-                <div>
-                  <h3 className="text-base font-bold text-[var(--text)] font-syne">
-                    Gestión & Administración
-                  </h3>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    Módulos complementarios para tu comercio
-                  </p>
+            {/* Tarjeta Flotante Cápsula (Alineada directamente encima de la barra inferior) */}
+            <div className="md:hidden fixed bottom-[calc(env(safe-area-inset-bottom,12px)+68px)] left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, y: 16, scale: 0.94 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 16, scale: 0.94 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 340 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  background: isDark ? 'rgba(20, 22, 32, 0.92)' : 'rgba(255, 255, 255, 0.94)',
+                  backdropFilter: 'blur(32px) saturate(190%)',
+                  WebkitBackdropFilter: 'blur(32px) saturate(190%)',
+                  boxShadow: isDark
+                    ? '0 20px 48px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.12)'
+                    : '0 20px 48px rgba(0, 50, 150, 0.14), inset 0 1px 1.5px rgba(255, 255, 255, 0.9)',
+                }}
+                className="pointer-events-auto w-full max-w-sm rounded-[28px] p-4 flex flex-col gap-3"
+              >
+                {/* Header del menú flotante */}
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold font-syne text-[var(--text)] tracking-tight">
+                      Módulos de Gestión
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--primario)]/10 text-[var(--primario)]">
+                      Tienda
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMoreDrawerOpen(false)}
+                    className="w-7 h-7 rounded-full bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+                    aria-label="Cerrar menú"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setMoreDrawerOpen(false)}
-                  className="w-8 h-8 rounded-full bg-[var(--bg-alt)] text-[var(--text-muted)] flex items-center justify-center active:scale-95 transition-all"
-                  aria-label="Cerrar"
-                >
-                  <X size={16} />
-                </button>
-              </div>
 
-              {/* Lista de módulos secundarios con tarjetas táctiles */}
-              <div className="grid grid-cols-1 gap-2.5">
-                {modulosSecundarios.map((item) => {
-                  const Icon = item.icon;
-                  const isSelected = moduloActivo === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        onSelectModulo(item.id);
-                        setMoreDrawerOpen(false);
-                      }}
-                      className={`w-full p-3.5 rounded-2xl border text-left flex items-center gap-3.5 transition-all active:scale-[0.98] ${
-                        isSelected
-                          ? 'border-[var(--primario)]/50 bg-[var(--primario)]/10 ring-2 ring-[var(--primario)]/20'
-                          : 'border-[var(--border)] bg-[var(--bg-alt)]/50 hover:bg-[var(--bg-alt)]'
-                      }`}
-                    >
-                      <div
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                {/* Grid 2x2 de módulos complementarios (Diseño cápsula limpio sin bordes en iconos) */}
+                <div className="grid grid-cols-2 gap-2">
+                  {modulosSecundarios.map((item) => {
+                    const Icon = item.icon;
+                    const isSelected = moduloActivo === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          onSelectModulo(item.id);
+                          setMoreDrawerOpen(false);
+                        }}
+                        style={{
+                          background: isSelected
+                            ? 'var(--primario)'
+                            : isDark
+                            ? 'rgba(255, 255, 255, 0.05)'
+                            : 'rgba(0, 0, 0, 0.03)',
+                        }}
+                        className={`p-3 rounded-2xl flex flex-col items-start gap-2.5 transition-all text-left cursor-pointer active:scale-95 ${
                           isSelected
-                            ? 'bg-[var(--primario)] text-white shadow-xs'
-                            : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]'
+                            ? 'text-white shadow-md'
+                            : 'text-[var(--text)] hover:bg-[var(--bg-alt)]'
                         }`}
                       >
-                        <Icon size={20} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-[var(--text)] font-syne truncate">
-                            {item.titulo}
-                          </span>
-                          {isSelected && (
-                            <span className="w-2 h-2 rounded-full bg-[var(--primario)]" />
-                          )}
+                        {/* Icono sin borde: color suave o blanco si está activo */}
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected
+                              ? 'bg-white/20 text-white'
+                              : item.tintClass
+                          }`}
+                        >
+                          <Icon size={18} />
                         </div>
-                        <p className="text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">
-                          {item.descripcion}
-                        </p>
-                      </div>
 
-                      <ChevronRight size={16} className="text-[var(--text-muted)] shrink-0" />
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Info de tienda en pie del drawer */}
-              <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--text-muted)]">
-                <span>Estado actual: <strong className={isAbierta ? 'text-emerald-500' : 'text-amber-500'}>{isAbierta ? 'En Línea' : 'Pausada'}</strong></span>
-                <span className="font-mono text-[11px]">LogiFast Tienda 2.0</span>
-              </div>
-            </motion.div>
-          </div>
+                        <div className="min-w-0 w-full">
+                          <span className={`text-xs font-bold font-syne block truncate leading-tight ${
+                            isSelected ? 'text-white' : 'text-[var(--text)]'
+                          }`}>
+                            {item.titulo.split(' ')[0]}
+                          </span>
+                          <span className={`text-[10px] block truncate leading-tight mt-0.5 ${
+                            isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'
+                          }`}>
+                            {item.descripcionCorta}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            </div>
+          </>
         )}
       </AnimatePresence>
     </>

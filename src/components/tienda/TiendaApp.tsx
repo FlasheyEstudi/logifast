@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Component } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   TiendaNavbar,
   type TiendaModulo,
@@ -13,6 +14,7 @@ import { TiendaFacturacion } from './TiendaFacturacion';
 import { TiendaReportesExcel } from './TiendaReportesExcel';
 import { TiendaEstadisticas } from './TiendaEstadisticas';
 import { TiendaConfiguracion } from './TiendaConfiguracion';
+import { AlertCircle, RefreshCw } from '@/components/icons';
 
 interface TiendaAppProps {
   isDark: boolean;
@@ -20,6 +22,62 @@ interface TiendaAppProps {
   onLogout: () => void;
   onReturnToClient?: () => void;
   userName?: string;
+}
+
+// Error Boundary local para aislar fallos en módulos de la tienda
+class TiendaModuloErrorBoundary extends Component<
+  { children: React.ReactNode; modulo: string; onReset: () => void },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error(`[TiendaApp Error en ${this.props.modulo}]:`, error, errorInfo);
+  }
+
+  componentDidUpdate(prevProps: any) {
+    if (prevProps.modulo !== this.props.modulo && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full p-8 rounded-2xl bg-[var(--surface)] border border-rose-500/30 text-center flex flex-col items-center justify-center gap-4 my-6 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+            <AlertCircle size={24} />
+          </div>
+          <div className="max-w-md">
+            <h3 className="text-base font-bold text-[var(--text)] font-syne">
+              Error al cargar el módulo
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Ocurrió un problema inesperado en este apartado ({this.props.modulo}). Puedes reintentar o navegar a otro módulo.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              this.props.onReset();
+            }}
+            className="px-4 py-2 rounded-xl bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+          >
+            <RefreshCw size={14} />
+            <span>Reintentar módulo</span>
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 export function TiendaApp({
@@ -58,9 +116,38 @@ export function TiendaApp({
     cargarPerfil();
   }, [cargarPerfil]);
 
+  const renderModulo = () => {
+    switch (moduloActivo) {
+      case 'kds':
+        return <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />;
+      case 'pos':
+        return <TiendaPOS isDark={isDark} />;
+      case 'inventario':
+        return <TiendaInventario isDark={isDark} categoriaTienda={tiendaCategoria} />;
+      case 'kardex':
+        return <TiendaKardex isDark={isDark} />;
+      case 'facturacion':
+        return <TiendaFacturacion isDark={isDark} />;
+      case 'reportes':
+        return <TiendaReportesExcel isDark={isDark} />;
+      case 'estadisticas':
+        return <TiendaEstadisticas isDark={isDark} />;
+      case 'configuracion':
+        return <TiendaConfiguracion isDark={isDark} />;
+      default:
+        return <TiendaInventario isDark={isDark} categoriaTienda={tiendaCategoria} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] font-sans transition-colors duration-200 selection:bg-primary/20">
-      {/* ─── Encabezado Back-Office Superior ─── */}
+    <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] font-sans transition-colors duration-200 selection:bg-primary/20 relative flex flex-col">
+      {/* Resplandor ambiental de fondo estilo LogiFast 2.0 */}
+      <div
+        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-64 bg-gradient-to-b from-[var(--primario)]/[0.04] to-transparent blur-3xl -z-10"
+        aria-hidden="true"
+      />
+
+      {/* ─── Encabezado Back-Office Superior Fijo ─── */}
       <TiendaNavbar
         isDark={isDark}
         toggleTheme={toggleTheme}
@@ -74,32 +161,22 @@ export function TiendaApp({
         onSelectModulo={(mod) => setModuloActivo(mod)}
       />
 
-      {/* ─── Área Principal de Contenido (Full Width, Centrada y Respaldada) ─── */}
-      <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-5 sm:py-6 pb-28 lg:pb-8">
-        {moduloActivo === 'kds' && (
-          <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />
-        )}
-        {moduloActivo === 'pos' && (
-          <TiendaPOS isDark={isDark} />
-        )}
-        {moduloActivo === 'inventario' && (
-          <TiendaInventario isDark={isDark} categoriaTienda={tiendaCategoria} />
-        )}
-        {moduloActivo === 'kardex' && (
-          <TiendaKardex isDark={isDark} />
-        )}
-        {moduloActivo === 'facturacion' && (
-          <TiendaFacturacion isDark={isDark} />
-        )}
-        {moduloActivo === 'reportes' && (
-          <TiendaReportesExcel isDark={isDark} />
-        )}
-        {moduloActivo === 'estadisticas' && (
-          <TiendaEstadisticas isDark={isDark} />
-        )}
-        {moduloActivo === 'configuracion' && (
-          <TiendaConfiguracion isDark={isDark} />
-        )}
+      {/* ─── Área Principal de Contenido (Full Width, Centrada y con Padding Seguro) ─── */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 pt-[74px] sm:pt-[80px] pb-28 md:pb-12">
+        <TiendaModuloErrorBoundary modulo={moduloActivo} onReset={cargarPerfil}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={moduloActivo}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: [0.25, 1, 0.5, 1] }}
+              className="w-full"
+            >
+              {renderModulo()}
+            </motion.div>
+          </AnimatePresence>
+        </TiendaModuloErrorBoundary>
       </main>
     </div>
   );
