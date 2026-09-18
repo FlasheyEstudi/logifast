@@ -156,11 +156,19 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
     pie: React.ReactNode;
     tono?: string;
   }) => (
-    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-      <CardContent className="p-4 flex flex-col gap-1 min-w-0">
-        <span className="text-xs font-semibold text-[var(--text-muted)]">{etiqueta}</span>
-        <span className={`truncate text-xl font-extrabold ${tono}`}>{valor}</span>
-        {pie}
+    <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs hover:shadow-md transition-all">
+      <CardContent className="p-5 flex flex-col justify-between h-full gap-2.5 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] truncate">
+            {etiqueta}
+          </span>
+        </div>
+        <div className={`truncate text-2xl font-black font-mono tracking-tight ${tono}`}>
+          {valor}
+        </div>
+        <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
+          {pie}
+        </div>
       </CardContent>
     </Card>
   );
@@ -168,55 +176,67 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
   const etiquetaVariacion = datos?.comparacion.hayDatos ? datos.comparacion.etiqueta : 'sin datos previos';
 
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-6">
       {/* Encabezado y período */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="flex items-center gap-2 font-syne text-xl font-extrabold text-[var(--text)]">
-            <TrendingUp size={19} /> Panel de la tienda
-          </h2>
-          <p className="mt-1 text-[12.5px] text-[var(--text-muted)]">
-            Mismo origen que los reportes XLSX/PDF y la exportación CSV: las devoluciones restan.
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <TrendingUp size={22} />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text)]">
+                Panel de Estadísticas
+              </h2>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                Mismo origen que los reportes XLSX/PDF y la exportación CSV: las devoluciones restan.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
+        <div className="inline-flex items-center p-1 rounded-full bg-[var(--bg-alt)]/80 border border-slate-200/60 dark:border-slate-800/60 shadow-xs shrink-0 self-start sm:self-center">
           {PERIODOS.map((p) => {
             const active = dias === p.dias;
             return (
-              <Button
+              <button
                 key={p.dias}
-                variant={active ? 'default' : 'secondary'}
-                size="sm"
+                type="button"
                 onClick={() => setDias(p.dias)}
-                className="h-8 rounded-full text-xs font-semibold px-3"
+                className={`h-8 sm:h-9 px-3.5 sm:px-4 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  active
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
+                }`}
               >
                 {p.label}
-              </Button>
+              </button>
             );
           })}
         </div>
       </div>
 
       {loading && (
-        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-          <CardContent className="p-6 text-center text-xs text-[var(--text-muted)]">
-            Calculando estadísticas…
+        <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs">
+          <CardContent className="p-12 text-center text-xs text-[var(--text-muted)] flex flex-col items-center justify-center gap-3">
+            <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <span>Calculando estadísticas y métricas financieras…</span>
           </CardContent>
         </Card>
       )}
 
       {!loading && error && (
-        <Card className="bg-[var(--surface)] border-red-500/40 shadow-sm">
-          <CardContent className="p-6 text-center text-xs text-red-500 font-medium">
-            {error}
+        <Card className="rounded-3xl border border-red-500/30 bg-red-500/5 shadow-xs">
+          <CardContent className="p-8 text-center text-xs text-red-500 font-semibold flex items-center justify-center gap-2">
+            <AlertTriangle size={16} />
+            <span>{error}</span>
           </CardContent>
         </Card>
       )}
 
       {!loading && !error && datos && (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
             <Tarjeta
               etiqueta="Vendido neto"
               valor={money(datos.resumen.totalVendido)}
@@ -240,11 +260,11 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                   {datos.resumen.devoluciones} devolución(es) · {datos.resumen.totalItems} artículos
                 </span>
               }
-              tono={datos.resumen.montoDevuelto > 0 ? 'text-[var(--warning)]' : 'text-[var(--text)]'}
+              tono={datos.resumen.montoDevuelto > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text)]'}
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
             <Tarjeta
               etiqueta="Mejor día"
               valor={datos.resumen.mejorDia ? money(datos.resumen.mejorDia.total) : '—'}
@@ -264,33 +284,41 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               }
             />
             <Tarjeta
-              etiqueta="Stock en o bajo el mínimo"
+              etiqueta="Stock bajo mínimo"
               valor={String(datos.resumen.productosConStockBajo)}
               pie={
                 <span className="text-[11.5px] text-[var(--text-muted)]">
-                  {datos.resumen.productosConStockBajo > 0 ? 'revisa Inventario' : 'todo en orden'}
+                  {datos.resumen.productosConStockBajo > 0 ? 'Revisa Inventario' : 'Todo en orden'}
                 </span>
               }
-              tono={datos.resumen.productosConStockBajo > 0 ? 'text-[var(--warning)]' : 'text-[var(--exito)]'}
+              tono={datos.resumen.productosConStockBajo > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}
             />
           </div>
 
           {datos.resumen.numVentas === 0 ? (
-            <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm text-center">
-              <CardContent className="p-8 space-y-1.5">
-                <div className="text-base font-bold text-[var(--text)]">Todavía no hay ventas en este período</div>
-                <div className="text-xs text-[var(--text-muted)]">
+            <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs text-center">
+              <CardContent className="p-10 space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
+                  <TrendingUp size={24} />
+                </div>
+                <div className="text-base font-black text-[var(--text)]">Todavía no hay ventas en este período</div>
+                <div className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
                   Las cifras y las gráficas aparecen en cuanto registres ventas en la Caja POS (o devoluciones).
                 </div>
               </CardContent>
             </Card>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-                  <CardContent className="p-5">
-                    <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Ventas por hora</h3>
-                    <div className="h-[200px]">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                        <Clock size={16} />
+                      </div>
+                      <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] m-0">Ventas por hora</h3>
+                    </div>
+                    <div className="h-[210px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={datos.porHora} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke={rejilla} vertical={false} />
@@ -311,10 +339,15 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-                  <CardContent className="p-5">
-                    <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Ventas por día</h3>
-                    <div className="h-[200px]">
+                <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                        <Calendar size={16} />
+                      </div>
+                      <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] m-0">Ventas por día</h3>
+                    </div>
+                    <div className="h-[210px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={datos.porDia} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
                           <defs>
@@ -335,12 +368,12 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                 </Card>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-                  <CardContent className="p-5">
-                    <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Top 10 productos</h3>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+                  <CardContent className="p-5 sm:p-6">
+                    <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] mb-4">Top 10 productos</h3>
                     {datos.topProductos.length === 0 ? (
-                      <p className="text-[13px] text-[var(--text-muted)]">Sin artículos vendidos en el período.</p>
+                      <p className="text-xs text-[var(--text-muted)] py-6 text-center">Sin artículos vendidos en el período.</p>
                     ) : (
                       <div className="h-[240px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -371,13 +404,13 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-                  <CardContent className="p-5">
-                    <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Formas de pago</h3>
+                <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+                  <CardContent className="p-5 sm:p-6">
+                    <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] mb-4">Formas de pago</h3>
                     {datos.porMetodo.length === 0 ? (
-                      <p className="text-[13px] text-[var(--text-muted)]">Sin cobros registrados en el período.</p>
+                      <p className="text-xs text-[var(--text-muted)] py-6 text-center">Sin cobros registrados en el período.</p>
                     ) : (
-                      <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-4">
                         <div className="h-[190px] w-[190px] shrink-0">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -396,13 +429,13 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
-                        <ul className="flex min-w-0 flex-1 flex-col gap-2">
+                        <ul className="flex min-w-0 flex-1 flex-col gap-2.5">
                           {datos.porMetodo.map((m, i) => (
-                            <li key={m.metodo} className="flex items-center gap-2 text-[12.5px] text-[var(--text)]">
+                            <li key={m.metodo} className="flex items-center gap-2 text-xs text-[var(--text)]">
                               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: PALETA[i % PALETA.length] }} />
-                              <span className="flex-1 truncate">{metodoLegible(m.metodo)}</span>
-                              <span className="text-[11.5px] text-[var(--text-muted)]">{m.ventas}</span>
-                              <span className="font-bold">{money(m.total)}</span>
+                              <span className="flex-1 truncate font-medium">{metodoLegible(m.metodo)}</span>
+                              <span className="text-[11px] text-[var(--text-muted)]">{m.ventas} ops</span>
+                              <span className="font-bold font-mono">{money(m.total)}</span>
                             </li>
                           ))}
                         </ul>
@@ -415,17 +448,25 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
           )}
 
           {datos.alertasStockBajo.length > 0 && (
-            <Card className="bg-[var(--surface)] border-amber-500/40 shadow-sm">
-              <CardContent className="p-5">
-                <h3 className="flex items-center gap-2 text-[13.5px] font-extrabold text-[var(--warning)] m-0">
-                  <AlertTriangle size={16} /> Stock en o bajo el mínimo
-                </h3>
-                <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Card className="rounded-3xl border border-amber-500/30 bg-amber-500/5 shadow-xs overflow-hidden">
+              <CardContent className="p-5 sm:p-6">
+                <div className="flex items-center gap-2.5 text-amber-600 dark:text-amber-400 mb-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <AlertTriangle size={18} />
+                  </div>
+                  <h3 className="text-sm sm:text-base font-black tracking-tight m-0">
+                    Stock en o bajo el mínimo
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 pt-1">
                   {datos.alertasStockBajo.map((a) => (
-                    <div key={a.productoId} className="flex justify-between gap-2.5 text-[12.5px] text-[var(--text)]">
-                      <span className="truncate">{a.nombre}</span>
-                      <span className="font-mono font-bold tabular-nums">
-                        {a.stock} / {a.stockMinimo}
+                    <div
+                      key={a.productoId}
+                      className="flex justify-between items-center gap-3 p-3 rounded-2xl bg-[var(--surface)] border border-amber-500/20 text-xs text-[var(--text)] shadow-xs"
+                    >
+                      <span className="font-bold truncate">{a.nombre}</span>
+                      <span className="font-mono font-black text-amber-600 dark:text-amber-400 tabular-nums shrink-0 px-2.5 py-1 rounded-full bg-amber-500/10 text-xs">
+                        {a.stock} / {a.stockMinimo} min
                       </span>
                     </div>
                   ))}
@@ -434,11 +475,11 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
             </Card>
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Button
               onClick={() => descargar('xlsx')}
               disabled={descargando !== null}
-              className="h-10 text-xs font-semibold gap-2"
+              className="h-11 rounded-full px-5 text-xs font-bold gap-2 shadow-md shadow-primary/20"
             >
               <FileSpreadsheet size={16} /> {descargando === 'xlsx' ? 'Generando…' : 'Reporte Excel'}
             </Button>
@@ -446,18 +487,20 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               variant="outline"
               onClick={() => descargar('pdf')}
               disabled={descargando !== null}
-              className="h-10 text-xs font-semibold gap-2"
+              className="h-11 rounded-full px-5 text-xs font-bold gap-2 border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] hover:bg-[var(--bg-alt)]"
             >
               <Download size={16} /> {descargando === 'pdf' ? 'Generando…' : 'Reporte PDF'}
             </Button>
             <Button
               variant="outline"
               onClick={cargar}
-              className="h-10 text-xs font-semibold gap-2"
+              className="h-11 rounded-full px-5 text-xs font-bold gap-2 border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] hover:bg-[var(--bg-alt)]"
             >
               <RotateCcw size={15} /> Actualizar
             </Button>
-            <span className="text-xs text-[var(--text-muted)]">Los reportes salen con el logo y el nombre de tu tienda.</span>
+            <span className="text-xs text-[var(--text-muted)] sm:ml-auto">
+              Los reportes salen con el logo y el nombre de tu tienda.
+            </span>
           </div>
         </>
       )}

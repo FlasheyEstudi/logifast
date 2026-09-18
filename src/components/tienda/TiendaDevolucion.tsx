@@ -127,20 +127,20 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
   return (
     <div
       onClick={onCerrar}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4"
     >
       <Card
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[var(--surface)] rounded-3xl border-[var(--border)] shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg bg-[var(--surface)] rounded-3xl border border-slate-200/70 dark:border-slate-800/70 shadow-2xl max-h-[90vh] overflow-y-auto"
       >
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+        <CardContent className="p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/70 dark:border-slate-800/70">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
                 <RotateCcw size={20} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[var(--text)] font-syne m-0">
+                <h3 className="text-base sm:text-lg font-black tracking-tight text-[var(--text)] m-0">
                   Devolución de Mercadería
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5 mb-0">
@@ -151,7 +151,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
             <button
               onClick={onCerrar}
-              className="w-9 h-9 rounded-lg hover:bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-full hover:bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
               aria-label="Cerrar modal"
             >
               <X size={18} />
@@ -160,19 +160,19 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
           {resultado ? (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-2.5">
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-2.5">
                 <CheckCircle2 size={18} />
                 <span>Devolución Exitosa — #{resultado.numeroComprobante}</span>
               </div>
 
               <div className="space-y-2">
-                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block ml-1">
                   Artículos Reingresados al Kardex
                 </span>
                 {resultado.items.map((it) => (
                   <div
                     key={it.nombreProducto}
-                    className="p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] flex items-center justify-between text-xs"
+                    className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/70 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs"
                   >
                     <span className="font-bold text-[var(--text)] flex-1 truncate pr-2">
                       {it.nombreProducto}
@@ -187,13 +187,13 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                 ))}
               </div>
 
-              <div className="p-3 rounded-xl bg-[var(--bg-alt)] flex justify-between items-center text-sm font-bold">
+              <div className="p-4 rounded-2xl bg-[var(--bg-alt)]/80 flex justify-between items-center text-sm font-bold border border-slate-200/60 dark:border-slate-800/60">
                 <span>Total Reembolsado:</span>
-                <span className="font-mono text-base text-primary">C$ {resultado.totalDevuelto.toFixed(2)}</span>
+                <span className="font-mono text-base font-black text-primary">C$ {resultado.totalDevuelto.toFixed(2)}</span>
               </div>
 
               {resultado.alertasStockBajo.length > 0 && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2">
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2">
                   <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold">Aviso de Stock Mínimo: </span>
@@ -206,26 +206,26 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
               <Button
                 onClick={onCerrar}
-                className="w-full h-11 text-xs font-semibold"
+                className="w-full h-11 rounded-full text-xs font-bold shadow-md shadow-primary/20"
               >
                 Cerrar y Volver a Caja POS
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Buscador de productos con stock */}
+              {/* Buscador de productos cápsula */}
               <div className="relative flex items-center">
-                <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+                <Search size={16} className="absolute left-3.5 text-slate-400 pointer-events-none" />
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   placeholder="Buscar producto por nombre o SKU a devolver…"
-                  className="pl-9 pr-9 h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  className="pl-10 pr-10 h-11 rounded-full text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] focus:ring-2 focus:ring-primary/20 shadow-xs"
                 />
                 {busqueda && (
                   <button
                     onClick={() => setBusqueda('')}
-                    className="absolute right-2.5 w-5 h-5 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center"
+                    className="absolute right-3 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center"
                   >
                     <X size={13} />
                   </button>
@@ -234,7 +234,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
               {/* Resultados de búsqueda */}
               {busqueda.trim() !== '' && (
-                <div className="p-1 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] max-h-48 overflow-y-auto space-y-1">
+                <div className="p-1.5 rounded-2xl bg-[var(--bg-alt)] border border-slate-200/70 dark:border-slate-800/70 max-h-48 overflow-y-auto space-y-1">
                   {candidatos.length === 0 ? (
                     <p className="text-xs text-slate-400 text-center py-3">
                       Sin resultados con stock gestionado
@@ -244,7 +244,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                       <button
                         key={p.id}
                         onClick={() => agregar(p)}
-                        className="w-full p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-700/60 text-left flex items-center justify-between text-xs transition-colors cursor-pointer"
+                        className="w-full p-2.5 rounded-xl hover:bg-[var(--surface)] text-left flex items-center justify-between text-xs transition-colors cursor-pointer"
                       >
                         <span className="font-bold text-[var(--text)] truncate pr-2">
                           {p.nombre}
@@ -252,7 +252,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                         <div className="flex items-center gap-3 shrink-0">
                           <span className="text-slate-400 font-mono">Stock: {p.stock}</span>
                           <span className="font-mono font-bold text-primary">C$ {p.precio.toFixed(2)}</span>
-                          <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+                          <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
                             <Plus size={14} />
                           </div>
                         </div>
@@ -263,16 +263,16 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
               )}
 
               {/* Lista de productos seleccionados para devolución */}
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
                 {lineas.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border)] rounded-2xl">
+                  <div className="py-8 text-center text-xs text-[var(--text-muted)] border border-dashed border-slate-200/80 dark:border-slate-800/80 rounded-2xl">
                     Usa el buscador para añadir los productos que el cliente devuelve
                   </div>
                 ) : (
                   lineas.map((l) => (
                     <div
                       key={l.producto.id}
-                      className="p-3 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-2"
+                      className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/70 border border-slate-200/60 dark:border-slate-800/60 space-y-2.5"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
@@ -285,12 +285,12 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                         </div>
 
                         {/* Quantity Controls */}
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => cambiarCantidad(l.producto.id, -1)}
-                            className="w-8 h-8 rounded-lg"
+                            className="w-8 h-8 rounded-full border-slate-200/70 dark:border-slate-800/70"
                             aria-label="Disminuir"
                           >
                             <Minus size={13} />
@@ -302,7 +302,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                             variant="outline"
                             size="icon"
                             onClick={() => cambiarCantidad(l.producto.id, 1)}
-                            className="w-8 h-8 rounded-lg"
+                            className="w-8 h-8 rounded-full border-slate-200/70 dark:border-slate-800/70"
                             aria-label="Aumentar"
                           >
                             <Plus size={13} />
@@ -311,7 +311,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                             variant="ghost"
                             size="icon"
                             onClick={() => quitar(l.producto.id)}
-                            className="w-8 h-8 ml-1 rounded-lg text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                            className="w-8 h-8 ml-0.5 rounded-full text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
                             aria-label="Eliminar"
                           >
                             <Trash2 size={15} />
@@ -327,7 +327,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                           )
                         }
                         placeholder="Motivo (opcional): dañado, vencido, talla equivocada…"
-                        className="h-9 text-xs bg-[var(--surface)] border-[var(--border)] text-[var(--text)]"
+                        className="h-10 rounded-xl text-xs bg-[var(--surface)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] focus:ring-2 focus:ring-primary/20"
                       />
                     </div>
                   ))
@@ -340,20 +340,20 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                   value={referencia}
                   onChange={(e) => setReferencia(e.target.value)}
                   placeholder="N.º Ticket o Referencia (opcional)"
-                  className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] focus:ring-2 focus:ring-primary/20"
                 />
                 <Input
                   value={clienteNombre}
                   onChange={(e) => setClienteNombre(e.target.value)}
                   placeholder="Nombre del Cliente (opcional)"
-                  className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
               {/* Total Reembolso */}
-              <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)] flex justify-between items-center text-sm font-bold">
+              <div className="p-4 rounded-2xl bg-[var(--bg-alt)]/80 border border-slate-200/60 dark:border-slate-800/60 flex justify-between items-center text-sm font-bold">
                 <span className="text-[var(--text-muted)]">Total a Reembolsar:</span>
-                <span className="font-mono text-lg font-extrabold text-primary">
+                <span className="font-mono text-lg font-black text-primary">
                   C$ {total.toFixed(2)}
                 </span>
               </div>
@@ -363,7 +363,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                 <Button
                   variant="outline"
                   onClick={onCerrar}
-                  className="flex-1 h-11 text-xs font-semibold"
+                  className="flex-1 h-11 rounded-full text-xs font-bold border-slate-200/70 dark:border-slate-800/70"
                 >
                   Cancelar
                 </Button>
@@ -371,7 +371,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                 <Button
                   onClick={enviar}
                   disabled={enviando || lineas.length === 0}
-                  className="flex-[2] h-11 text-xs font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                  className="flex-[2] h-11 rounded-full text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20"
                 >
                   {enviando ? (
                     <>
