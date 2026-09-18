@@ -976,13 +976,19 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     return (
       <SnackbarContext.Provider value={showSnackbar}>
         <div
-          className={`cliente-app lf-tienda-fullscreen w-full h-screen h-[100dvh] overflow-hidden ${isDark ? 'dark' : 'light'}`}
+          className={`lf-tienda-fullscreen w-full h-screen h-[100dvh] overflow-hidden ${isDark ? 'dark' : 'light'}`}
           data-theme={isDark ? 'dark' : 'light'}
           style={{
             position: 'fixed',
             inset: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             zIndex: 9990,
             width: '100vw',
+            maxWidth: '100vw',
+            minWidth: '100vw',
             height: '100dvh',
             overflow: 'hidden',
           }}

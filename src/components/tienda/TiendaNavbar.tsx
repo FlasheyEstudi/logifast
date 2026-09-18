@@ -112,9 +112,9 @@ export function TiendaNavbar({
     },
     {
       id: 'reportes',
-      titulo: 'Reportes Excel',
-      descripcion: 'Cierre de caja, ventas diarias y exportación contable',
-      descripcionCorta: 'Cierres & Excel',
+      titulo: 'Reportes & Descargas',
+      descripcion: 'Cierres de caja, ventas, Kardex y visor de reportes guardados',
+      descripcionCorta: 'Reportes & Archivos',
       icon: BarChart3,
       tintClass: 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400',
     },
