@@ -25,40 +25,10 @@ interface Props {
   onDevuelto: () => void | Promise<void>;
 }
 
-const btnPrimary: React.CSSProperties = {
-  padding: '10px 20px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: 'none',
-  background: 'var(--primario)',
-  color: '#FFFFFF',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 8,
-  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-  transition: 'all 0.2s ease',
-};
-
-const btnSecondary: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  transition: 'all 0.2s ease',
-};
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: Props) {
   const [busqueda, setBusqueda] = useState('');
@@ -159,265 +129,267 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
       onClick={onCerrar}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
     >
-      <div
+      <Card
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up space-y-4"
+        className="w-full max-w-lg bg-[var(--surface)] rounded-3xl border-[var(--border)] shadow-2xl max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-              <RotateCcw size={20} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-[var(--text)] font-syne">
-                Devolución de Mercadería
-              </h3>
-              <p className="text-xs text-slate-500">
-                Reingreso de unidades al inventario y registro en Kardex
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onCerrar}
-            className="w-10 h-10 rounded-xl hover:bg-[var(--bg-alt)] text-slate-500 flex items-center justify-center active:scale-95 transition-all"
-            aria-label="Cerrar modal"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {resultado ? (
-          <div className="space-y-4 animate-scale-up">
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-2.5">
-              <CheckCircle2 size={18} />
-              <span>Devolución Exitosa — #{resultado.numeroComprobante}</span>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Artículos Reingresados al Kardex
-              </span>
-              {resultado.items.map((it) => (
-                <div
-                  key={it.nombreProducto}
-                  className="p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] flex items-center justify-between text-xs"
-                >
-                  <span className="font-bold text-[var(--text)] flex-1 truncate pr-2">
-                    {it.nombreProducto}
-                  </span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono mr-3">
-                    +{it.cantidad}
-                  </span>
-                  <span className="font-mono text-slate-500">
-                    {it.stockAnterior} → <b className="text-primary">{it.stockNuevo}</b>
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-3 rounded-xl bg-[var(--bg-alt)] flex justify-between items-center text-sm font-bold">
-              <span>Total Reembolsado:</span>
-              <span className="font-mono text-base text-primary">C$ {resultado.totalDevuelto.toFixed(2)}</span>
-            </div>
-
-            {resultado.alertasStockBajo.length > 0 && (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2">
-                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">Aviso de Stock Mínimo: </span>
-                  {resultado.alertasStockBajo
-                    .map((a) => `${a.nombreProducto} (${a.stockNuevo}/${a.stockMinimo})`)
-                    .join(', ')}
-                </div>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                <RotateCcw size={20} />
               </div>
-            )}
+              <div>
+                <h3 className="text-base font-bold text-[var(--text)] font-syne m-0">
+                  Devolución de Mercadería
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5 mb-0">
+                  Reingreso de unidades al inventario y registro en Kardex
+                </p>
+              </div>
+            </div>
 
             <button
               onClick={onCerrar}
-              style={{ ...btnPrimary, width: '100%' }}
-              className="h-11 min-h-[44px] active:scale-95"
+              className="w-9 h-9 rounded-lg hover:bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
+              aria-label="Cerrar modal"
             >
-              Cerrar y Volver a Caja POS
+              <X size={18} />
             </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Buscador de productos con stock */}
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
-              <Search size={16} className="text-slate-400 shrink-0" />
-              <input
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar producto por nombre o SKU a devolver…"
-                className="w-full bg-transparent border-none outline-none text-[var(--text)] text-xs sm:text-sm placeholder:text-slate-400"
-              />
-              {busqueda && (
-                <button
-                  onClick={() => setBusqueda('')}
-                  className="w-6 h-6 rounded-full hover:bg-[var(--bg-alt)] text-slate-400 flex items-center justify-center shrink-0"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
 
-            {/* Resultados de búsqueda */}
-            {busqueda.trim() !== '' && (
-              <div className="p-1 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] max-h-48 overflow-y-auto space-y-1">
-                {candidatos.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-3">
-                    Sin resultados con stock gestionado
-                  </p>
+          {resultado ? (
+            <div className="space-y-4">
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-2.5">
+                <CheckCircle2 size={18} />
+                <span>Devolución Exitosa — #{resultado.numeroComprobante}</span>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Artículos Reingresados al Kardex
+                </span>
+                {resultado.items.map((it) => (
+                  <div
+                    key={it.nombreProducto}
+                    className="p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] flex items-center justify-between text-xs"
+                  >
+                    <span className="font-bold text-[var(--text)] flex-1 truncate pr-2">
+                      {it.nombreProducto}
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono mr-3">
+                      +{it.cantidad}
+                    </span>
+                    <span className="font-mono text-[var(--text-muted)]">
+                      {it.stockAnterior} → <b className="text-primary">{it.stockNuevo}</b>
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3 rounded-xl bg-[var(--bg-alt)] flex justify-between items-center text-sm font-bold">
+                <span>Total Reembolsado:</span>
+                <span className="font-mono text-base text-primary">C$ {resultado.totalDevuelto.toFixed(2)}</span>
+              </div>
+
+              {resultado.alertasStockBajo.length > 0 && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2">
+                  <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Aviso de Stock Mínimo: </span>
+                    {resultado.alertasStockBajo
+                      .map((a) => `${a.nombreProducto} (${a.stockNuevo}/${a.stockMinimo})`)
+                      .join(', ')}
+                  </div>
+                </div>
+              )}
+
+              <Button
+                onClick={onCerrar}
+                className="w-full h-11 text-xs font-semibold"
+              >
+                Cerrar y Volver a Caja POS
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Buscador de productos con stock */}
+              <div className="relative flex items-center">
+                <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+                <Input
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar producto por nombre o SKU a devolver…"
+                  className="pl-9 pr-9 h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                />
+                {busqueda && (
+                  <button
+                    onClick={() => setBusqueda('')}
+                    className="absolute right-2.5 w-5 h-5 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Resultados de búsqueda */}
+              {busqueda.trim() !== '' && (
+                <div className="p-1 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] max-h-48 overflow-y-auto space-y-1">
+                  {candidatos.length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-3">
+                      Sin resultados con stock gestionado
+                    </p>
+                  ) : (
+                    candidatos.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => agregar(p)}
+                        className="w-full p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-700/60 text-left flex items-center justify-between text-xs transition-colors cursor-pointer"
+                      >
+                        <span className="font-bold text-[var(--text)] truncate pr-2">
+                          {p.nombre}
+                        </span>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-slate-400 font-mono">Stock: {p.stock}</span>
+                          <span className="font-mono font-bold text-primary">C$ {p.precio.toFixed(2)}</span>
+                          <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+                            <Plus size={14} />
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Lista de productos seleccionados para devolución */}
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {lineas.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border)] rounded-2xl">
+                    Usa el buscador para añadir los productos que el cliente devuelve
+                  </div>
                 ) : (
-                  candidatos.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => agregar(p)}
-                      className="w-full p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-700/60 text-left flex items-center justify-between text-xs transition-colors"
+                  lineas.map((l) => (
+                    <div
+                      key={l.producto.id}
+                      className="p-3 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-2"
                     >
-                      <span className="font-bold text-[var(--text)] truncate pr-2">
-                        {p.nombre}
-                      </span>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-slate-400 font-mono">Stock: {p.stock}</span>
-                        <span className="font-mono font-bold text-primary">C$ {p.precio.toFixed(2)}</span>
-                        <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
-                          <Plus size={14} />
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-bold text-[var(--text)] truncate">
+                            {l.producto.nombre}
+                          </p>
+                          <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                            C$ {l.producto.precio.toFixed(2)} c/u
+                          </p>
+                        </div>
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => cambiarCantidad(l.producto.id, -1)}
+                            className="w-8 h-8 rounded-lg"
+                            aria-label="Disminuir"
+                          >
+                            <Minus size={13} />
+                          </Button>
+                          <span className="w-8 text-center font-bold text-sm font-mono">
+                            {l.cantidad}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => cambiarCantidad(l.producto.id, 1)}
+                            className="w-8 h-8 rounded-lg"
+                            aria-label="Aumentar"
+                          >
+                            <Plus size={13} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => quitar(l.producto.id)}
+                            className="w-8 h-8 ml-1 rounded-lg text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                            aria-label="Eliminar"
+                          >
+                            <Trash2 size={15} />
+                          </Button>
                         </div>
                       </div>
-                    </button>
+
+                      <Input
+                        value={l.motivo}
+                        onChange={(e) =>
+                          setLineas((prev) =>
+                            prev.map((x) => (x.producto.id === l.producto.id ? { ...x, motivo: e.target.value } : x))
+                          )
+                        }
+                        placeholder="Motivo (opcional): dañado, vencido, talla equivocada…"
+                        className="h-9 text-xs bg-[var(--surface)] border-[var(--border)] text-[var(--text)]"
+                      />
+                    </div>
                   ))
                 )}
               </div>
-            )}
 
-            {/* Lista de productos seleccionados para devolución */}
-            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {lineas.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 border border-dashed border-[var(--border)] rounded-2xl">
-                  Usa el buscador para añadir los productos que el cliente devuelve
-                </div>
-              ) : (
-                lineas.map((l) => (
-                  <div
-                    key={l.producto.id}
-                    className="p-3 rounded-2xl bg-[var(--bg-alt)] border border-slate-200/80 dark:border-slate-700/80 space-y-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-[var(--text)] truncate">
-                          {l.producto.nombre}
-                        </p>
-                        <p className="text-[11px] text-slate-500 font-mono">
-                          C$ {l.producto.precio.toFixed(2)} c/u
-                        </p>
-                      </div>
+              {/* Referencia y Cliente */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <Input
+                  value={referencia}
+                  onChange={(e) => setReferencia(e.target.value)}
+                  placeholder="N.º Ticket o Referencia (opcional)"
+                  className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                />
+                <Input
+                  value={clienteNombre}
+                  onChange={(e) => setClienteNombre(e.target.value)}
+                  placeholder="Nombre del Cliente (opcional)"
+                  className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                />
+              </div>
 
-                      {/* Quantity Controls (Target >= 40px) */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => cambiarCantidad(l.producto.id, -1)}
-                          className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[var(--text)] flex items-center justify-center active:scale-95"
-                          aria-label="Disminuir"
-                        >
-                          <Minus size={13} />
-                        </button>
-                        <span className="w-8 text-center font-bold text-sm font-mono">
-                          {l.cantidad}
-                        </span>
-                        <button
-                          onClick={() => cambiarCantidad(l.producto.id, 1)}
-                          className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[var(--text)] flex items-center justify-center active:scale-95"
-                          aria-label="Aumentar"
-                        >
-                          <Plus size={13} />
-                        </button>
-                        <button
-                          onClick={() => quitar(l.producto.id)}
-                          className="w-9 h-9 ml-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center active:scale-95"
-                          aria-label="Eliminar"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </div>
+              {/* Total Reembolso */}
+              <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)] flex justify-between items-center text-sm font-bold">
+                <span className="text-[var(--text-muted)]">Total a Reembolsar:</span>
+                <span className="font-mono text-lg font-extrabold text-primary">
+                  C$ {total.toFixed(2)}
+                </span>
+              </div>
 
-                    <input
-                      value={l.motivo}
-                      onChange={(e) =>
-                        setLineas((prev) =>
-                          prev.map((x) => (x.producto.id === l.producto.id ? { ...x, motivo: e.target.value } : x))
-                        )
-                      }
-                      placeholder="Motivo (opcional): dañado, vencido, talla equivocada…"
-                      className="w-full h-9 px-3 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-xs outline-none focus:border-primary"
-                    />
-                  </div>
-                ))
-              )}
+              {/* Action Buttons */}
+              <div className="flex gap-2.5 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={onCerrar}
+                  className="flex-1 h-11 text-xs font-semibold"
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  onClick={enviar}
+                  disabled={enviando || lineas.length === 0}
+                  className="flex-[2] h-11 text-xs font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                >
+                  {enviando ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Registrando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} />
+                      <span>Confirmar Devolución</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-
-            {/* Referencia y Cliente */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <input
-                value={referencia}
-                onChange={(e) => setReferencia(e.target.value)}
-                placeholder="N.º Ticket o Referencia (opcional)"
-                className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] text-xs focus:outline-none focus:border-primary"
-              />
-              <input
-                value={clienteNombre}
-                onChange={(e) => setClienteNombre(e.target.value)}
-                placeholder="Nombre del Cliente (opcional)"
-                className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] text-xs focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            {/* Total Reembolso */}
-            <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)] flex justify-between items-center text-sm font-bold">
-              <span className="text-[var(--text-muted)]">Total a Reembolsar:</span>
-              <span className="font-mono text-lg font-extrabold text-primary">
-                C$ {total.toFixed(2)}
-              </span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2.5 pt-2">
-              <button
-                onClick={onCerrar}
-                style={btnSecondary}
-                className="flex-1 h-11 min-h-[44px]"
-              >
-                Cancelar
-              </button>
-
-              <button
-                onClick={enviar}
-                disabled={enviando || lineas.length === 0}
-                style={{
-                  ...btnPrimary,
-                  background: '#10B981',
-                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
-                }}
-                className="flex-[2] h-11 min-h-[44px] active:scale-95 disabled:opacity-50"
-              >
-                {enviando ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Registrando...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={16} />
-                    <span>Confirmar Devolución</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
