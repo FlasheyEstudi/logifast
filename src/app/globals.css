@@ -16270,3 +16270,67 @@ body {
 .lf-dash-desktop-nav button, .lf-dash-desktop-nav [role='button'], .lf-dash-bottom-nav button, .lf-dash-bottom-nav [role='button'] {
   min-height: 44px;
 }
+
+/* ═══════════ Capa de diseño del cliente (Fase 4) ═══════════
+   Todo es CSS: pule superficies, movimiento y el marco en tablet/escritorio sin
+   tocar los componentes, así ninguna pantalla se puede romper por esto. */
+
+@keyframes lf-aparecer {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes lf-asentar {
+  from { opacity: 0; transform: scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Cada bloque de la pantalla entra con un pequeño escalón */
+.lf-ios-content > div > * { animation: lf-aparecer .4s cubic-bezier(.22,1,.36,1) both; }
+.lf-ios-content > div > *:nth-child(2) { animation-delay: .05s; }
+.lf-ios-content > div > *:nth-child(3) { animation-delay: .1s; }
+.lf-ios-content > div > *:nth-child(4) { animation-delay: .14s; }
+.lf-ios-content > div > *:nth-child(5) { animation-delay: .18s; }
+.lf-ios-content > div > *:nth-child(n+6) { animation-delay: .22s; }
+
+/* Respuesta al toque, sin exagerar */
+.lf-ios-app button:not(:disabled), .lf-ios-app [role='button'] {
+  transition: transform .18s cubic-bezier(.22,1,.36,1), filter .18s ease, box-shadow .22s ease;
+}
+.lf-ios-app button:not(:disabled):active, .lf-ios-app [role='button']:active { transform: scale(.97); filter: brightness(.97); }
+
+/* Campos: foco claro y transición corta (no toca el valor, solo el borde) */
+.lf-ios-app input, .lf-ios-app select, .lf-ios-app textarea {
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.lf-ios-app input:focus-visible, .lf-ios-app select:focus-visible, .lf-ios-app textarea:focus-visible {
+  outline: none;
+  border-color: var(--primario);
+  box-shadow: 0 0 0 3px var(--primario-soft);
+}
+
+/* Marco en tablet y escritorio: el contenido deja de flotar en el vacío.
+   Se excluye el portal de tienda (.lf-ancho-completo), que necesita todo el ancho. */
+@media (min-width: 900px) {
+  .lf-ios-content { padding-left: 24px; padding-right: 24px; }
+  .lf-client-inner-pad:not(.lf-ancho-completo) {
+    background: var(--ios-surface, var(--surface));
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.04);
+    margin: 18px auto 28px;
+    animation: lf-asentar .45s cubic-bezier(.22,1,.36,1) both;
+  }
+}
+
+/* Barra de desplazamiento fina */
+.lf-ios-content ::-webkit-scrollbar { width: 10px; height: 10px; }
+.lf-ios-content ::-webkit-scrollbar-thumb {
+  background: rgba(120,120,128,.35); border-radius: 999px;
+  border: 3px solid transparent; background-clip: padding-box;
+}
+.lf-ios-content ::-webkit-scrollbar-thumb:hover { background: rgba(120,120,128,.55); background-clip: padding-box; }
+
+/* Quien pide menos movimiento, no lo recibe */
+@media (prefers-reduced-motion: reduce) {
+  .lf-ios-app *, .lf-ios-content > div > * { animation: none !important; transition: none !important; }
+}

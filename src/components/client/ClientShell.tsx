@@ -1213,7 +1213,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               paddingTop: clientActiveModule === 'tienda' ? 0 : 4,
               paddingBottom: clientActiveModule === 'tienda' ? 0 : 16,
             }}
-            className="lf-client-inner-pad"
+            className={`lf-client-inner-pad${clientActiveModule === 'tienda' ? ' lf-ancho-completo' : ''}`}
           >
             {/* ─── PESTAÑAS PRINCIPALES CON KEEP-ALIVE (0ms DE LATENCIA, SIN SKELETONS) ─── */}
             {Array.from(visitedTabs).map((tabKey) => {
