@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface TiendaReportesManagerProps {
   isDark: boolean;
@@ -708,35 +709,35 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                     const rows = lines.slice(1).map((l) => l.split(',').map((c) => c.replace(/^"|"$/g, '')));
 
                     return (
-                      <div className="rounded-xl border border-[var(--border)] overflow-x-auto bg-[var(--surface)]">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-[var(--bg-alt)] border-b border-[var(--border)]">
+                      <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--surface)]">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-[var(--bg-alt)] border-b border-[var(--border)]">
                               {header.map((col, idx) => (
-                                <th
+                                <TableHead
                                   key={idx}
                                   className="p-2.5 font-bold text-[var(--text)] uppercase text-[10px] font-mono whitespace-nowrap"
                                 >
                                   {col}
-                                </th>
+                                </TableHead>
                               ))}
-                            </tr>
-                          </thead>
-                          <tbody>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             {rows.map((row, rIdx) => (
-                              <tr
+                              <TableRow
                                 key={rIdx}
                                 className="border-b border-[var(--border)]/50 hover:bg-[var(--bg-alt)]/50 font-mono text-[11px]"
                               >
                                 {row.map((cell, cIdx) => (
-                                  <td key={cIdx} className="p-2.5 whitespace-nowrap text-[var(--text)]">
+                                  <TableCell key={cIdx} className="p-2.5 whitespace-nowrap text-[var(--text)]">
                                     {cell}
-                                  </td>
+                                  </TableCell>
                                 ))}
-                              </tr>
+                              </TableRow>
                             ))}
-                          </tbody>
-                        </table>
+                          </TableBody>
+                        </Table>
                       </div>
                     );
                   } catch {
