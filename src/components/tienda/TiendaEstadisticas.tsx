@@ -231,7 +231,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
   const etiquetaVariacion = datos?.comparacion.hayDatos ? datos.comparacion.etiqueta : 'sin datos previos';
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-4">
       {/* Encabezado y período */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0">

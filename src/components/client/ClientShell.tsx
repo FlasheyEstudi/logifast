@@ -972,6 +972,31 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     }
   };
 
+  if (clientActiveModule === 'tienda') {
+    return (
+      <SnackbarContext.Provider value={showSnackbar}>
+        <div
+          className={`cliente-app lf-tienda-fullscreen w-full h-screen h-[100dvh] overflow-hidden ${isDark ? 'dark' : 'light'}`}
+          data-theme={isDark ? 'dark' : 'light'}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9990,
+            width: '100vw',
+            height: '100dvh',
+            overflow: 'hidden',
+          }}
+        >
+          <ClientMiTienda
+            isDark={isDark}
+            toggleTheme={toggleTheme}
+            onReturnToClient={() => setClientActiveModule('perfil')}
+          />
+        </div>
+      </SnackbarContext.Provider>
+    );
+  }
+
   return (
     <SnackbarContext.Provider value={showSnackbar}>
       <div
@@ -1111,8 +1136,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         </div>
 
         {/* ═══════ HEADER FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
-        {clientActiveModule !== 'tienda' && (
-          <header
+        <header
             style={{
               position: 'fixed',
               top: 'calc(env(safe-area-inset-top, 10px) + 8px)',
@@ -1183,20 +1207,15 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
               </button>
             </div>
           </header>
-        )}
-
         {/* ─── CONTENT AREA (Navegación controlada exclusivamente por TabBar) ─── */}
         <main
           style={{
             flex: 1,
-            paddingTop: clientActiveModule === 'tienda' ? 0 : 'calc(58px + env(safe-area-inset-top, 0px))',
-            paddingBottom: clientActiveModule === 'tienda' ? 0 : 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
+            paddingTop: 'calc(58px + env(safe-area-inset-top, 0px))',
+            paddingBottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
             minHeight: '100vh',
             backgroundColor: 'var(--ios-bg)',
-            // En escritorio el contenido se estiraba a todo el ancho de la pantalla:
-            // se acota a una columna legible. El portal de tienda sí necesita el ancho
-            // completo (tablas, POS, kardex), así que ese módulo queda exento.
-            maxWidth: clientActiveModule === 'tienda' ? undefined : 600,
+            maxWidth: 600,
             width: '100%',
             marginLeft: 'auto',
             marginRight: 'auto',
@@ -1206,14 +1225,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         >
           <div
             style={{
-              maxWidth: clientActiveModule === 'tienda' ? '100%' : 960,
+              maxWidth: 960,
               margin: '0 auto',
-              paddingLeft: clientActiveModule === 'tienda' ? 0 : 16,
-              paddingRight: clientActiveModule === 'tienda' ? 0 : 16,
-              paddingTop: clientActiveModule === 'tienda' ? 0 : 4,
-              paddingBottom: clientActiveModule === 'tienda' ? 0 : 16,
+              paddingLeft: 16,
+              paddingRight: 16,
+              paddingTop: 4,
+              paddingBottom: 16,
             }}
-            className={`lf-client-inner-pad${clientActiveModule === 'tienda' ? ' lf-ancho-completo' : ''}`}
+            className="lf-client-inner-pad"
           >
             {/* ─── PESTAÑAS PRINCIPALES CON KEEP-ALIVE (0ms DE LATENCIA, SIN SKELETONS) ─── */}
             {Array.from(visitedTabs).map((tabKey) => {
@@ -1242,37 +1261,35 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
         </main>
 
         {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
-        {clientActiveModule !== 'tienda' && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: 'calc(env(safe-area-inset-bottom, 16px) + 8px)',
-              left: 0,
-              right: 0,
-              display: 'flex',
-              justifyContent: 'center',
-              zIndex: 9990,
-              padding: '0 12px',
-              pointerEvents: 'none',
-            }}
-          >
-            <div style={{ pointerEvents: 'auto', width: '100%', maxWidth: 460 }}>
-              <SlidingPillTabBar
-                items={NAV_ITEMS.map((it) => ({
-                  key: it.key,
-                  label: it.label,
-                  icon: <it.Icon />,
-                  badge: it.key === 'pedidos' ? activeOrdersCount : undefined,
-                }))}
-                activeKey={clientActiveModule}
-                onChange={(key) => handleNav(key as ClientModuleKey)}
-                isDark={isDark}
-                accentColor="var(--primario)"
-                ariaLabel="Navegación principal de cliente"
-              />
-            </div>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 8px)',
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            zIndex: 9990,
+            padding: '0 12px',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ pointerEvents: 'auto', width: '100%', maxWidth: 460 }}>
+            <SlidingPillTabBar
+              items={NAV_ITEMS.map((it) => ({
+                key: it.key,
+                label: it.label,
+                icon: <it.Icon />,
+                badge: it.key === 'pedidos' ? activeOrdersCount : undefined,
+              }))}
+              activeKey={clientActiveModule}
+              onChange={(key) => handleNav(key as ClientModuleKey)}
+              isDark={isDark}
+              accentColor="var(--primario)"
+              ariaLabel="Navegación principal de cliente"
+            />
           </div>
-        )}
+        </div>
 
         {/* ═══════ iOS SNACKBAR ═══════ */}
         <AnimatePresence>

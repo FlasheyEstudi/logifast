@@ -324,7 +324,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="w-full" style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
       {/* ─── 1. KPI STAT CARDS (ESTILO LOGIFAST 2.0 ADMIN/CLIENTE) ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Productos */}

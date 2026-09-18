@@ -140,45 +140,33 @@ export function TiendaApp({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)] font-sans transition-colors duration-200 selection:bg-primary/20 relative flex flex-col">
-      {/* Resplandor ambiental de fondo estilo LogiFast 2.0 */}
-      <div
-        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-64 bg-gradient-to-b from-[var(--primario)]/[0.04] to-transparent blur-3xl -z-10"
-        aria-hidden="true"
-      />
-
-      {/* ─── Encabezado Back-Office Superior Fijo ─── */}
-      <TiendaNavbar
-        isDark={isDark}
-        toggleTheme={toggleTheme}
-        onLogout={onLogout}
-        onReturnToClient={onReturnToClient}
-        tiendaNombre={tiendaNombre}
-        tiendaCategoria={tiendaCategoria}
-        tiendaImagenUrl={tiendaImagenUrl}
-        tiendaEstado={tiendaEstado}
-        moduloActivo={moduloActivo}
-        onSelectModulo={(mod) => setModuloActivo(mod)}
-      />
-
-      {/* ─── Área Principal de Contenido (Full Width, Centrada y con Padding Seguro) ─── */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 pt-[74px] sm:pt-[80px] pb-28 md:pb-12">
-        <TiendaModuloErrorBoundary modulo={moduloActivo} onReset={cargarPerfil}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={moduloActivo}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18, ease: [0.25, 1, 0.5, 1] }}
-              className="w-full"
-            >
-              {renderModulo()}
-            </motion.div>
-          </AnimatePresence>
-        </TiendaModuloErrorBoundary>
-      </main>
-    </div>
+    <TiendaNavbar
+      isDark={isDark}
+      toggleTheme={toggleTheme}
+      onLogout={onLogout}
+      onReturnToClient={onReturnToClient}
+      tiendaNombre={tiendaNombre}
+      tiendaCategoria={tiendaCategoria}
+      tiendaImagenUrl={tiendaImagenUrl}
+      tiendaEstado={tiendaEstado}
+      moduloActivo={moduloActivo}
+      onSelectModulo={(mod) => setModuloActivo(mod)}
+    >
+      <TiendaModuloErrorBoundary modulo={moduloActivo} onReset={cargarPerfil}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={moduloActivo}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="w-full"
+          >
+            {renderModulo()}
+          </motion.div>
+        </AnimatePresence>
+      </TiendaModuloErrorBoundary>
+    </TiendaNavbar>
   );
 }
 

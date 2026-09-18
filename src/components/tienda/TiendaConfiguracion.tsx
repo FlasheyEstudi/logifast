@@ -231,7 +231,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* ─── Tarjeta Principal de Configuración ─── */}
       <div style={sectionCard} className="space-y-6">
         <div>

@@ -708,7 +708,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] gap-5 items-start">
+    <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] gap-5 items-start">
       {/* ─── Columna Izquierda: Catálogo Visual POS ─── */}
       <div className="flex flex-col gap-4 min-w-0">
         

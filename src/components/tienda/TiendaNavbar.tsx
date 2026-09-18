@@ -45,6 +45,7 @@ export const TIENDA_MODULO_LABELS: Record<TiendaModulo, string> = {
 };
 
 interface TiendaNavbarProps {
+  children?: React.ReactNode;
   isDark: boolean;
   toggleTheme: () => void;
   onLogout: () => void;
@@ -58,6 +59,7 @@ interface TiendaNavbarProps {
 }
 
 export function TiendaNavbar({
+  children,
   isDark,
   toggleTheme,
   onLogout,
@@ -161,12 +163,22 @@ export function TiendaNavbar({
   const isAbierta = tiendaEstado === 'activo';
 
   return (
-    <>
+    <div className="lf-tienda-layout flex flex-col h-screen h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[var(--bg)] text-[var(--text)] font-sans transition-colors duration-200 selection:bg-primary/20 relative">
+      {/* Resplandor ambiental de fondo estilo LogiFast 2.0 */}
+      <div
+        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-64 bg-gradient-to-b from-[var(--primario)]/[0.04] to-transparent blur-3xl -z-10"
+        aria-hidden="true"
+      />
+
       {/* ══════════════════════════════════════════════════════════
           HEADER SUPERIOR FIJO (Sobrio Back-Office / Administrador)
+          Sticky top: 0, z-index: 50, h-14, shrink-0, Full-Width Edge-to-Edge
           ══════════════════════════════════════════════════════════ */}
-      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-[var(--surface)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-xs transition-colors">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-3">
+      <header
+        className="lf-tienda-header sticky top-0 z-50 shrink-0 w-full bg-[var(--surface)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-xs transition-colors"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="w-full px-3 sm:px-6 h-14 flex items-center justify-between gap-3">
           
           {/* Left: Identidad Tienda + Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
@@ -366,11 +378,28 @@ export function TiendaNavbar({
       </header>
 
       {/* ══════════════════════════════════════════════════════════
-          NAVBAR MÓVIL FLOTANTE (Móvil Estilo Cliente / Repartidor)
-          Ubicado al fondo de la pantalla con SlidingPillTabBar
+          CONTENIDO CON SCROLL INDEPENDIENTE (FULL SCREEN TABLET/DESKTOP)
+          Solo <main> hace scroll. El header y el footer NUNCA se mueven.
           ══════════════════════════════════════════════════════════ */}
-      <div className="md:hidden fixed bottom-3 left-0 right-0 z-40 flex justify-center px-3 pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-md">
+      <main
+        className="lf-tienda-main flex-1 overflow-y-auto w-full px-3 sm:px-6 py-4 pb-20 md:pb-6 focus:outline-none"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        {children}
+      </main>
+
+      {/* ══════════════════════════════════════════════════════════
+          FOOTER MÓVIL STICKY (Abajo en Celular)
+          Sticky bottom: 0, z-index: 50, shrink-0, 100% full-width
+          ══════════════════════════════════════════════════════════ */}
+      <footer
+        className="lf-tienda-footer md:hidden sticky bottom-0 z-50 shrink-0 w-full bg-[var(--surface)]/95 backdrop-blur-xl border-t border-[var(--border)] shadow-lg transition-colors flex items-center justify-center px-3"
+        style={{
+          paddingTop: '6px',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
+        }}
+      >
+        <div className="w-full max-w-md">
           <SlidingPillTabBar
             items={mobileNavItems}
             activeKey={activeMobileKey}
@@ -380,7 +409,7 @@ export function TiendaNavbar({
             ariaLabel="Navegación del portal de tienda"
           />
         </div>
-      </div>
+      </footer>
 
       {/* ══════════════════════════════════════════════════════════
           MENÚ FLOTANTE "MÁS" EN MÓVIL (Estilo Cápsula Flotante iOS)
@@ -495,8 +524,9 @@ export function TiendaNavbar({
           </>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
 
+export const TiendaLayout = TiendaNavbar;
 export default TiendaNavbar;

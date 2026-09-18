@@ -126,7 +126,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="w-full space-y-5">
       {/* ─── Header ─── */}
       <div style={sectionCard} className="space-y-4">
         <div>

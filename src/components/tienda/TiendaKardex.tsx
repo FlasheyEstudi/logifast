@@ -254,7 +254,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
   const prodSeleccionado = productos.find((p) => p.id === productoId);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="w-full" style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
       {/* ─── 1. KPI STAT CARDS ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Movimientos */}

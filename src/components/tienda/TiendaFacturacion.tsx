@@ -109,7 +109,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 items-start">
+    <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 items-start">
       {/* ─── Columna Izquierda: Formulario de Configuración Fiscal ─── */}
       <div style={sectionCard} className="space-y-6">
         <div>

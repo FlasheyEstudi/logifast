@@ -235,7 +235,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
   };
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="w-full space-y-4 sm:space-y-5">
       {/* ─── Header & KDS Navigation Tabs ─── */}
       <div style={sectionCard} className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
