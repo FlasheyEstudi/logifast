@@ -16382,3 +16382,76 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .lf-tienda-contenido > *, .lf-tienda-contenido tbody tr { animation: none !important; transition: none !important; }
 }
+
+/* ═══════════════ Portal de tienda — diseño moderno ═══════════════
+   1) Superficies: eleva las tarjetas que ya existen (background: var(--surface))
+      sin tocar componente por componente. Solo radio, borde y sombra: nada de
+      colores ni tamaños, así no puede romper ninguna pantalla.
+   2) Tablas, campos y botones con el mismo lenguaje en los 8 módulos.
+   3) Movimiento corto y respetuoso de "reducir movimiento". */
+
+.lf-tienda-contenido [style*="var(--surface)"]:not([style*="999"]) {
+  border-radius: 20px !important;
+  box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 10px 30px -18px rgba(16,24,40,.28) !important;
+}
+
+/* Lo que se puede pulsar responde */
+.lf-tienda-contenido [style*="cursor: pointer"] {
+  transition: transform .16s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, border-color .2s ease;
+}
+.lf-tienda-contenido [style*="cursor: pointer"]:hover {
+  box-shadow: 0 12px 30px -14px rgba(16,24,40,.32) !important;
+}
+.lf-tienda-contenido [style*="cursor: pointer"]:active { transform: scale(.985); }
+
+/* Tablas: encabezado claro, filas que se leen y responden */
+.lf-tienda-contenido table { border-collapse: separate; border-spacing: 0; width: 100%; }
+.lf-tienda-contenido thead th {
+  font-size: .72rem !important; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--text-muted) !important; font-weight: 800 !important;
+  background: var(--bg-alt) !important;
+}
+.lf-tienda-contenido tbody tr { transition: background-color .15s ease; }
+.lf-tienda-contenido tbody tr:hover { background: var(--bg-alt) !important; }
+.lf-tienda-contenido tbody td { border-top: 1px solid var(--border); }
+
+/* Campos: mismo radio y foco en todo el portal */
+.lf-tienda-contenido input:not([type="checkbox"]):not([type="radio"]), .lf-tienda-contenido select, .lf-tienda-contenido textarea {
+  border-radius: 12px !important;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.lf-tienda-contenido input:focus-visible, .lf-tienda-contenido select:focus-visible, .lf-tienda-contenido textarea:focus-visible {
+  outline: none !important;
+  border-color: var(--primario, #007AFF) !important;
+  box-shadow: 0 0 0 3px rgba(0,122,255,.16) !important;
+}
+
+/* Botones: radio coherente, mínimo táctil y respuesta al toque */
+.lf-tienda-contenido button:not(:disabled), .lf-tienda-contenido [role="button"], .lf-tienda-contenido select {
+  min-height: 44px;
+}
+.lf-tienda-contenido button:not(:disabled) {
+  border-radius: 12px;
+  transition: transform .18s cubic-bezier(.22,1,.36,1), filter .18s ease, box-shadow .22s ease;
+}
+.lf-tienda-contenido button:not(:disabled):active { transform: scale(.97); filter: brightness(.97); }
+
+/* Movimiento de entrada del módulo */
+@keyframes lf-modulo-entra {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+.lf-tienda-contenido > * { animation: lf-modulo-entra .42s cubic-bezier(.22,1,.36,1) both; }
+.lf-tienda-contenido h1, .lf-tienda-contenido h2, .lf-tienda-contenido h3 { letter-spacing: -.012em; }
+
+/* Barra de desplazamiento fina */
+.lf-tienda-contenido ::-webkit-scrollbar { width: 10px; height: 10px; }
+.lf-tienda-contenido ::-webkit-scrollbar-thumb {
+  background: rgba(120,120,128,.35); border-radius: 999px;
+  border: 3px solid transparent; background-clip: padding-box;
+}
+.lf-tienda-contenido ::-webkit-scrollbar-thumb:hover { background: rgba(120,120,128,.55); background-clip: padding-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-tienda-contenido > *, .lf-tienda-contenido [style*="cursor: pointer"] { animation: none !important; transition: none !important; }
+}

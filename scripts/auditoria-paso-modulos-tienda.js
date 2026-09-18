@@ -1,15 +1,14 @@
 /**
- * Paso de auditoría: recorre todos los módulos del portal de tienda dentro de la
- * misma carga de página (mucho más rápido que recargar por módulo) y devuelve un
- * resumen compacto por módulo: desborde horizontal, elementos que sobresalen,
- * objetivos táctiles < 44 px y estado del nav (¿caben todas las opciones?).
+ * Paso de auditoría del portal de tienda.
+ *
+ * El navbar nuevo es vertical y solo muestra la etiqueta del módulo activo, así que
+ * se navega por los botones del contenedor de navegación (aside), no por texto.
  */
 (async () => {
   const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
-  const vw = () => document.documentElement.clientWidth;
 
   const medir = () => {
-    const ancho = vw();
+    const ancho = document.documentElement.clientWidth;
     const enScroll = (el) => {
       for (let p = el.parentElement; p; p = p.parentElement) {
         const ox = getComputedStyle(p).overflowX;
@@ -20,90 +19,42 @@
     let sobresalen = 0;
     let toques = 0;
     const ejemplos = [];
-    const ejemplosToque = [];
+    const toquesEj = [];
     for (const el of document.querySelectorAll('body *')) {
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
       if (r.right > ancho + 1 && !enScroll(el)) {
         sobresalen++;
-        if (ejemplos.length < 3) {
-          ejemplos.push(`${el.tagName.toLowerCase()}.${String(el.className || '').trim().split(/\s+/).slice(0, 2).join('.')}@${Math.round(r.right)}`);
-        }
+        if (ejemplos.length < 3) ejemplos.push(`${el.tagName.toLowerCase()}.${String(el.className || '').trim().split(/\s+/).slice(0, 2).join('.')}@${Math.round(r.right)}`);
       }
     }
-    for (const el of document.querySelectorAll('button, a, [role="button"], summary')) {
+    for (const el of document.querySelectorAll('button, a, [role="button"], summary, select')) {
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
       if (r.height < 44) {
         toques++;
-        if (ejemplosToque.length < 4) {
-          const etiqueta = (el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim().slice(0, 24);
-          ejemplosToque.push(`${etiqueta}[${Math.round(r.width)}x${Math.round(r.height)}]`);
-        }
+        if (toquesEj.length < 4) toquesEj.push(`${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 16)}[${Math.round(r.width)}x${Math.round(r.height)}]`);
       }
     }
-    return { desborde: document.documentElement.scrollWidth - ancho, sobresalen, toques, ejemplos, ejemplosToque };
+    return { desborde: document.documentElement.scrollWidth - ancho, sobresalen, toques, ejemplos, toquesEj };
   };
 
-  const navs = () => {
-    const items = [...document.querySelectorAll('div, span, li, button, a')].filter((e) => {
-      const t = (e.textContent || '').trim();
-      const r = e.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && /^(Monitor KDS|Caja POS|Inventario|Kardex|Facturación|Reportes|Estadísticas|Perfil|KDS|POS|Stock|DGI|Excel|Gráficas)$/.test(t);
-    });
-    // El nodo hoja más pequeño de cada etiqueta
-    const etiquetas = [...new Set(items.map((e) => (e.textContent || '').trim()))];
-    const contenedor = items[0]?.parentElement;
-    let scrollNav = false;
-    for (let p = contenedor; p; p = p.parentElement) {
-      const ox = getComputedStyle(p).overflowX;
-      if (ox === 'auto' || ox === 'scroll') {
-        scrollNav = p.scrollWidth > p.clientWidth + 2;
-        break;
-      }
-    }
-    return { etiquetas, scrollNav };
-  };
+  const nav = document.querySelector('aside') || document.querySelector('nav');
+  if (!nav) return 'no encontré el navbar del portal';
+  // Se excluyen los controles que no son módulos: Salir navega a /api/auth/logout y
+  // destruye el contexto de evaluación (el paso se caía con "target navigated").
+  const botones = [...nav.querySelectorAll('button')].filter((b) => {
+    const etiqueta = (b.getAttribute('aria-label') || b.getAttribute('title') || b.textContent || '').toLowerCase();
+    return !/salir|logout|noche|día|dia|tema|cerrar/.test(etiqueta);
+  });
+  const salida = [`viewport=${document.documentElement.clientWidth}`, `botonesNav=${botones.length}`];
 
-  const clic = async (textos) => {
-    for (const t of textos) {
-      const el = [...document.querySelectorAll('div, span, li, button, a')]
-        .filter((e) => {
-          const r = e.getBoundingClientRect();
-          return r.width > 0 && r.height > 0 && (e.textContent || '').trim() === t;
-        })
-        .sort((a, b) => a.clientHeight - b.clientHeight)[0];
-      if (el) {
-        el.click();
-        await dormir(900);
-        return t;
-      }
-    }
-    return null;
-  };
-
-  const nav = navs();
-  const salida = [`viewport=${vw()}`, `nav:[${nav.etiquetas.join(', ')}]`, `navScroll=${nav.scrollNav}`];
-
-  const modulos = [
-    ['Monitor KDS', 'KDS'],
-    ['Caja POS', 'POS'],
-    ['Inventario', 'Stock'],
-    ['Kardex', 'Kardex'],
-    ['Facturación', 'DGI'],
-    ['Reportes', 'Excel'],
-    ['Estadísticas', 'Gráficas'],
-    ['Perfil'],
-  ];
-
-  for (const [largo, corto] of modulos) {
-    const entro = await clic(corto ? [largo, corto] : [largo]);
-    if (!entro) {
-      salida.push(`${largo}: NO ENCONTRADO`);
-      continue;
-    }
+  for (let i = 0; i < botones.length; i++) {
+    const etiqueta = (botones[i].getAttribute('aria-label') || botones[i].getAttribute('title') || botones[i].textContent || `mod${i}`).trim().slice(0, 20);
+    botones[i].click();
+    await dormir(1000);
     const m = medir();
-    salida.push(`${largo}: desborde=${m.desborde} sobresalen=${m.sobresalen} toques<44=${m.toques} {${m.ejemplosToque.join(' ')}}${m.ejemplos.length ? ' [' + m.ejemplos.join(' ') + ']' : ''}`);
+    salida.push(`[${i}] ${etiqueta}: desborde=${m.desborde} sobresalen=${m.sobresalen} toques<44=${m.toques} {${m.toquesEj.join(' ')}}${m.ejemplos.length ? ' [' + m.ejemplos.join(' ') + ']' : ''}`);
   }
   return salida.join(' ;; ');
 })();
