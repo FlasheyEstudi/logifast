@@ -60,7 +60,7 @@ const PERIODOS = [
 ];
 
 /** Paleta fija: legible en claro y oscuro, sin depender de los tokens de tema. */
-const PALETA = ['#0A84FF', '#30D158', '#FF9F0A', '#BF5AF2', '#FF453A', '#64D2FF'];
+const PALETA = ['var(--primario)', '#30D158', '#FF9F0A', '#BF5AF2', '#FF453A', '#64D2FF'];
 
 const money = (n: number) =>
   `C$ ${n.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -118,7 +118,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
 
   const muted = isDark ? '#98989D' : '#8E8E93';
   const grid = isDark ? 'rgba(84,84,88,0.36)' : 'rgba(60,60,67,0.12)';
-  const serie = isDark ? '#0A84FF' : '#007AFF';
+  const serie = isDark ? 'var(--primario)' : 'var(--primario)';
 
   const tooltip = {
     contentStyle: {
@@ -143,7 +143,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
           gap: 4,
           fontSize: 11.5,
           fontWeight: 700,
-          color: sube ? '#22C55E' : '#EF4444',
+          color: sube ? 'var(--exito)' : 'var(--peligro)',
         }}
       >
         {sube ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
@@ -238,7 +238,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
       {loading && <div style={{ ...panel, color: 'var(--text-muted)', fontSize: 13.5 }}>Calculando…</div>}
 
       {!loading && error && (
-        <div style={{ ...panel, borderColor: 'rgba(239,68,68,.4)', color: '#EF4444', fontSize: 13.5 }}>{error}</div>
+        <div style={{ ...panel, borderColor: 'rgba(239,68,68,.4)', color: 'var(--peligro)', fontSize: 13.5 }}>{error}</div>
       )}
 
       {!loading && !error && datos && (
@@ -292,7 +292,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
                 {datos.resumen.productosConStockBajo > 0 ? 'revisa Inventario' : 'todo en orden'}
               </span>,
-              datos.resumen.productosConStockBajo > 0 ? '#F59E0B' : '#22C55E'
+              datos.resumen.productosConStockBajo > 0 ? '#F59E0B' : 'var(--exito)'
             )}
           </div>
 
@@ -475,7 +475,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                 padding: '0 16px',
                 borderRadius: 12,
                 border: 'none',
-                background: '#0066FF',
+                background: 'var(--primario)',
                 color: '#FFFFFF',
                 fontWeight: 700,
                 fontSize: 13,

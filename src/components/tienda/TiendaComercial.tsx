@@ -48,7 +48,7 @@ const botonPrimario: React.CSSProperties = {
   padding: '0 16px',
   borderRadius: 10,
   border: 'none',
-  background: '#0066FF',
+  background: 'var(--primario)',
   color: '#FFFFFF',
   fontWeight: 700,
   fontSize: 13,
@@ -198,7 +198,7 @@ function SeccionEquipo() {
             </select>
           </div>
           <div className="flex items-end">
-            <button type="submit" disabled={enviando} style={{ ...botonPrimario, background: enviando ? 'var(--bg-alt)' : '#22C55E', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
+            <button type="submit" disabled={enviando} style={{ ...botonPrimario, background: enviando ? 'var(--bg-alt)' : 'var(--exito)', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
               <Plus size={15} /> {enviando ? 'Invitando…' : 'Invitar'}
             </button>
           </div>
@@ -215,13 +215,13 @@ function SeccionEquipo() {
             <div key={m.id} className="flex flex-wrap items-center gap-3" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
               <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.nombre}</span>
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{m.email}</span>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0066FF' }}>{m.rol.toUpperCase()}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--primario)' }}>{m.rol.toUpperCase()}</span>
               <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{m.permisosEfectivos.join(', ') || 'sin permisos'}</span>
               {esPropietario && (
                 <button
                   type="button"
                   onClick={() => quitar(m.id)}
-                  style={{ marginLeft: 'auto', height: 44, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: '#EF4444', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}
+                  style={{ marginLeft: 'auto', height: 44, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--peligro)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}
                 >
                   Quitar
                 </button>
@@ -314,7 +314,7 @@ function SeccionAlianzas() {
           <input type="number" min="0" value={vigenciaDias} onChange={(e) => setVigenciaDias(e.target.value)} style={campo} />
         </div>
         <div className="flex items-end">
-          <button type="submit" disabled={enviando} style={{ ...botonPrimario, background: enviando ? 'var(--bg-alt)' : '#22C55E', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
+          <button type="submit" disabled={enviando} style={{ ...botonPrimario, background: enviando ? 'var(--bg-alt)' : 'var(--exito)', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
             <Plus size={15} /> Publicar
           </button>
         </div>
@@ -329,7 +329,7 @@ function SeccionAlianzas() {
           alianzas.map((a) => (
             <div key={a.id} className="flex flex-wrap items-center gap-3" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
               <span style={{ fontWeight: 700, fontSize: 13.5 }}>{a.titulo}</span>
-              {a.valor && <span style={{ fontSize: 12.5, fontWeight: 700, color: '#22C55E' }}>{a.valor}</span>}
+              {a.valor && <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--exito)' }}>{a.valor}</span>}
               <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>vence {fecha(a.vigenciaFin)}</span>
               <span style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700 }}>{a.canjes} canje(s)</span>
             </div>
@@ -357,7 +357,7 @@ function SeccionPauta() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [titulo, setTitulo] = useState('');
   const [subtitulo, setSubtitulo] = useState('');
-  const [colorFondo, setColorFondo] = useState('#0066FF');
+  const [colorFondo, setColorFondo] = useState('var(--primario)');
   const [botonTexto, setBotonTexto] = useState('Ver oferta');
   const [botonLink, setBotonLink] = useState('');
   const [dias, setDias] = useState('15');
@@ -449,7 +449,7 @@ function SeccionPauta() {
           <input type="number" min="0" value={precioMensual} onChange={(e) => setPrecioMensual(e.target.value)} style={campo} />
         </div>
         <div className="flex items-end">
-          <button type="submit" disabled={enviando} style={{ ...botonPrimario, width: '100%', background: enviando ? 'var(--bg-alt)' : '#22C55E', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
+          <button type="submit" disabled={enviando} style={{ ...botonPrimario, width: '100%', background: enviando ? 'var(--bg-alt)' : 'var(--exito)', color: enviando ? 'var(--text-muted)' : '#06240F' }}>
             <Plus size={15} /> {enviando ? 'Contratando…' : 'Contratar anuncio'}
           </button>
         </div>
@@ -468,7 +468,7 @@ function SeccionPauta() {
               <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
                 {b.impresiones} vistas · {b.clicks} clics
               </span>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: b.pagado ? '#22C55E' : '#F59E0B' }}>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: b.pagado ? 'var(--exito)' : '#F59E0B' }}>
                 {b.pagado ? 'PAGADO' : b.precioMensual ? `PENDIENTE ${money(b.precioMensual)}` : 'SIN TARIFA'}
               </span>
             </div>

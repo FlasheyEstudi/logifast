@@ -10,6 +10,8 @@ import { useStore, type Order } from '@/lib/store';
 import { useMarketplaceStore, type OrdenCompra } from '@/lib/marketplace-store';
 import PullToRefresh from '@/components/ui/PullToRefresh';
 
+import { ClientRecurrentes } from './ClientRecurrentes';
+
 interface ClientPedidosProps {
   isDark: boolean;
   userName: string;
@@ -398,6 +400,9 @@ export default function ClientPedidos({ isDark, userName, onNavigate, onOpenTrac
           </button>
         </div>
       </div>
+
+      {/* #1 Compras programadas: van con los pedidos, no en el perfil */}
+      <ClientRecurrentes />
 
       {/* RESUMEN CAPSULAR */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" style={{ marginBottom: 16 }}>

@@ -16470,17 +16470,17 @@ body {
 
 /* Botones de marca: mismo radio, peso y sombra en todo el portal.
    Solo botones (en un <span> con ese color la sombra se vería como un halo). */
-.lf-tienda-contenido button[style*="#0066FF"]:not(:disabled) {
+.lf-tienda-contenido button[style*="var(--primario)"]:not(:disabled) {
   border-radius: 12px !important;
   font-weight: 800 !important;
   box-shadow: 0 6px 18px -8px rgba(0,102,255,.5) !important;
 }
-.lf-tienda-contenido button[style*="#22C55E"]:not(:disabled) {
+.lf-tienda-contenido button[style*="var(--exito)"]:not(:disabled) {
   border-radius: 12px !important;
   font-weight: 800 !important;
   box-shadow: 0 6px 18px -8px rgba(34,197,94,.45) !important;
 }
-.lf-tienda-contenido button[style*="#EF4444"]:not(:disabled) {
+.lf-tienda-contenido button[style*="var(--peligro)"]:not(:disabled) {
   border-radius: 12px !important;
   font-weight: 800 !important;
 }

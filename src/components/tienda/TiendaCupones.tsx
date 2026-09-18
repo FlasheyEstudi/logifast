@@ -135,7 +135,7 @@ export function TiendaCupones() {
             padding: '0 16px',
             borderRadius: 10,
             border: 'none',
-            background: '#0066FF',
+            background: 'var(--primario)',
             color: '#FFFFFF',
             fontWeight: 700,
             fontSize: 13,
@@ -198,7 +198,7 @@ export function TiendaCupones() {
                 height: 44,
                 borderRadius: 10,
                 border: 'none',
-                background: guardando ? 'var(--bg-alt)' : '#22C55E',
+                background: guardando ? 'var(--bg-alt)' : 'var(--exito)',
                 color: guardando ? 'var(--text-muted)' : '#06240F',
                 fontWeight: 800,
                 fontSize: 13,
@@ -226,7 +226,7 @@ export function TiendaCupones() {
               style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}
             >
               <span style={{ fontFamily: 'ui-monospace, monospace', fontWeight: 800, fontSize: 13.5 }}>{c.codigo}</span>
-              <span style={{ fontSize: 12.5, fontWeight: 700, color: '#22C55E' }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--exito)' }}>
                 {c.tipoDescuento === 'porcentaje' ? `${c.valor}%` : money(c.valor)}
               </span>
               <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
@@ -238,7 +238,7 @@ export function TiendaCupones() {
                   marginLeft: 'auto',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: c.estado === 'activo' ? '#22C55E' : 'var(--text-muted)',
+                  color: c.estado === 'activo' ? 'var(--exito)' : 'var(--text-muted)',
                 }}
               >
                 {c.estado.toUpperCase()}
