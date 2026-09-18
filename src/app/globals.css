@@ -16334,3 +16334,51 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .lf-ios-app *, .lf-ios-content > div > * { animation: none !important; transition: none !important; }
 }
+
+/* ═══════════ Capa de diseño del portal de tienda ═══════════
+   Se aplica solo al contenido de los módulos (.lf-tienda-contenido), nunca al
+   navbar ni al header, que los está rediseñando otra línea de trabajo.
+   Es aditivo: donde el componente ya trae estilo propio, el estilo propio gana. */
+
+@keyframes lf-modulo-entra {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+.lf-tienda-contenido > * { animation: lf-modulo-entra .42s cubic-bezier(.22,1,.36,1) both; }
+.lf-tienda-contenido h1, .lf-tienda-contenido h2, .lf-tienda-contenido h3 { letter-spacing: -.012em; }
+
+/* Tablas más legibles en cualquier pantalla */
+.lf-tienda-contenido table { border-collapse: separate; border-spacing: 0; width: 100%; }
+.lf-tienda-contenido thead th {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text-muted); font-weight: 800; background: var(--bg-alt);
+}
+.lf-tienda-contenido tbody td { border-top: 1px solid var(--border); }
+.lf-tienda-contenido tbody tr { transition: background-color .15s ease; }
+.lf-tienda-contenido tbody tr:hover { background: var(--bg-alt); }
+
+/* Controles: respuesta al toque y foco visible */
+.lf-tienda-contenido button:not(:disabled) {
+  transition: transform .18s cubic-bezier(.22,1,.36,1), filter .18s ease, box-shadow .22s ease;
+}
+.lf-tienda-contenido button:not(:disabled):active { transform: scale(.97); filter: brightness(.97); }
+.lf-tienda-contenido input, .lf-tienda-contenido select, .lf-tienda-contenido textarea {
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.lf-tienda-contenido input:focus-visible, .lf-tienda-contenido select:focus-visible, .lf-tienda-contenido textarea:focus-visible {
+  outline: none;
+  border-color: var(--primario, #007AFF);
+  box-shadow: 0 0 0 3px rgba(0,122,255,.16);
+}
+
+/* Barra de desplazamiento fina */
+.lf-tienda-contenido ::-webkit-scrollbar { width: 10px; height: 10px; }
+.lf-tienda-contenido ::-webkit-scrollbar-thumb {
+  background: rgba(120,120,128,.35); border-radius: 999px;
+  border: 3px solid transparent; background-clip: padding-box;
+}
+.lf-tienda-contenido ::-webkit-scrollbar-thumb:hover { background: rgba(120,120,128,.55); background-clip: padding-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-tienda-contenido > *, .lf-tienda-contenido tbody tr { animation: none !important; transition: none !important; }
+}

@@ -140,7 +140,7 @@ export function TiendaApp({
           que ningún módulo, tarjeta, tabla ni botón flotante colisione con el dock.
           ═══════════════════════════════════════════════ */}
       <main className="w-full min-h-screen pt-20 pb-16 pl-3 sm:pl-6 lg:pl-8 pr-[76px] sm:pr-[92px] lg:pr-[104px] overflow-x-hidden">
-        <div className="w-full max-w-[1600px] mx-auto">
+        <div className="w-full max-w-[1600px] mx-auto lf-tienda-contenido">
           {moduloActivo === 'kds' && (
             <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />
           )}
