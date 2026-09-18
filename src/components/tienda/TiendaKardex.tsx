@@ -36,76 +36,18 @@ interface MovimientoKardex {
   };
 }
 
-/* ═══════════════════════════════════════════════
-   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
-   ═══════════════════════════════════════════════ */
-
-const sectionCard: React.CSSProperties = {
-  background: 'var(--surface)',
-  borderRadius: 'var(--lf-card-radius, 20px)',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--lf-shadow-card)',
-  padding: 20,
-};
-
-const statCard = (accentColor = 'var(--primario)'): React.CSSProperties => ({
-  background: 'var(--surface)',
-  borderRadius: 16,
-  border: '1px solid var(--border)',
-  borderLeft: `4px solid ${accentColor}`,
-  padding: '16px 20px',
-  boxShadow: 'var(--lf-shadow-card)',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 14,
-});
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '11px 16px',
-  borderRadius: 'var(--lf-input-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontSize: 14,
-  fontFamily: "'DM Sans', sans-serif",
-  outline: 'none',
-};
-
-const btnPrimary: React.CSSProperties = {
-  padding: '10px 20px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: 'none',
-  background: 'var(--primario)',
-  color: '#FFFFFF',
-  fontWeight: 600,
-  fontSize: 14,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 8,
-  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-  transition: 'all 0.2s ease',
-};
-
-const btnSecondary: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'transparent',
-  color: 'var(--text)',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  transition: 'all 0.2s ease',
-};
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 
 export function TiendaKardex({ isDark }: { isDark: boolean }) {
   const [movimientos, setMovimientos] = useState<MovimientoKardex[]>([]);
@@ -258,189 +200,161 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
       {/* ─── 1. KPI STAT CARDS ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Movimientos */}
-        <div style={statCard('var(--primario)')}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'var(--primario-soft, rgba(0, 122, 255, 0.1))',
-            color: 'var(--primario)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <SlidersHorizontal size={22} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Total Movimientos</span>
-            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
-              {stats.total}
-            </span>
-          </div>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-[var(--primario)] shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-[var(--primario-soft,rgba(0,122,255,0.1))] text-[var(--primario)] flex items-center justify-center shrink-0">
+              <SlidersHorizontal size={22} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[var(--text-muted)] block">Total Movimientos</span>
+              <span className="text-xl font-extrabold font-mono text-[var(--text)]">{stats.total}</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Entradas */}
-        <div style={statCard('#34C759')}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'rgba(52, 199, 89, 0.12)',
-            color: '#34C759',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <ArrowDownLeft size={22} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Entradas (Stock)</span>
-            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#34C759' }}>
-              +{stats.cantEntradas}
-            </span>
-          </div>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-emerald-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <ArrowDownLeft size={22} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[var(--text-muted)] block">Entradas (Stock)</span>
+              <span className="text-xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">+{stats.cantEntradas}</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Salidas */}
-        <div style={statCard('#FF3B30')}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'rgba(255, 59, 48, 0.12)',
-            color: '#FF3B30',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <ArrowUpRight size={22} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Salidas / Ventas</span>
-            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#FF3B30' }}>
-              -{stats.cantSalidas}
-            </span>
-          </div>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-red-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+              <ArrowUpRight size={22} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[var(--text-muted)] block">Salidas / Ventas</span>
+              <span className="text-xl font-extrabold font-mono text-red-600 dark:text-red-400">-{stats.cantSalidas}</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Ajustes */}
-        <div style={statCard('#FF9500')}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'rgba(255, 149, 0, 0.12)',
-            color: '#FF9500',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <RotateCcw size={22} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Ajustes Físicos</span>
-            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#FF9500' }}>
-              {stats.cantAjustes}
-            </span>
-          </div>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-amber-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <RotateCcw size={22} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[var(--text-muted)] block">Ajustes Físicos</span>
+              <span className="text-xl font-extrabold font-mono text-amber-600 dark:text-amber-400">{stats.cantAjustes}</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* ─── 2. HEADER & TOOLBAR DE AUDITORÍA ─── */}
-      <div style={sectionCard}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-              Kardex de Inventario & Auditoría
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Trazabilidad inmutable de entradas, salidas por ventas POS y ajustes de stock
-            </p>
-          </div>
+      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex justify-between items-center flex-wrap gap-3.5">
+            <div>
+              <h2 className="text-lg font-bold font-syne text-[var(--text)]">
+                Kardex de Inventario & Auditoría
+              </h2>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                Trazabilidad inmutable de entradas, salidas por ventas POS y ajustes de stock
+              </p>
+            </div>
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              onClick={cargarDatos}
-              style={btnSecondary}
-              title="Recargar movimientos"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              <span className="hidden sm:inline">Actualizar</span>
-            </button>
-
-            <button
-              onClick={() => setModalOpen(true)}
-              style={btnPrimary}
-            >
-              <Plus size={16} />
-              <span>Registrar Movimiento</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Buscador & Filtros */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-          <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
-            <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Buscar por producto, SKU o motivo..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              style={{ ...inputStyle, paddingLeft: 40, paddingRight: busqueda ? 40 : 16 }}
-            />
-            {busqueda && (
-              <button
-                onClick={() => setBusqueda('')}
-                style={{
-                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                  background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
+            <div className="flex gap-2 items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={cargarDatos}
+                title="Recargar movimientos"
+                className="h-10 text-xs font-semibold"
               >
-                <X size={15} />
-              </button>
-            )}
+                <RefreshCw size={14} className={`mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Actualizar</span>
+              </Button>
+
+              <Button
+                onClick={() => setModalOpen(true)}
+                className="h-10 text-sm font-semibold"
+              >
+                <Plus size={16} className="mr-1.5" />
+                <span>Registrar Movimiento</span>
+              </Button>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto' }}>
-            {(
-              [
-                { id: 'todos', label: 'Todos' },
-                { id: 'entradas', label: 'Entradas' },
-                { id: 'salidas', label: 'Salidas' },
-                { id: 'ajustes', label: 'Ajustes' },
-              ] as const
-            ).map((f) => {
-              const active = filtroTipo === f.id;
-              return (
+          {/* Buscador & Filtros */}
+          <div className="flex gap-2.5 flex-wrap items-center pt-3.5 border-t border-[var(--border)]">
+            <div className="relative flex-1 min-w-[240px] flex items-center">
+              <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Buscar por producto, SKU o motivo..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="pl-9 pr-9 h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+              />
+              {busqueda && (
                 <button
-                  key={f.id}
-                  onClick={() => setFiltroTipo(f.id)}
-                  style={{
-                    padding: '8px 14px',
-                    borderRadius: 'var(--lf-pill-radius, 100px)',
-                    background: active ? 'var(--primario)' : 'var(--bg-alt)',
-                    color: active ? '#FFFFFF' : 'var(--text-muted)',
-                    border: active ? 'none' : '1px solid var(--border)',
-                    fontWeight: 600,
-                    fontSize: 12,
-                    fontFamily: "'DM Sans', sans-serif",
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s ease',
-                  }}
+                  onClick={() => setBusqueda('')}
+                  className="absolute right-2.5 w-5 h-5 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center"
                 >
-                  {f.label}
+                  <X size={14} />
                 </button>
-              );
-            })}
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              {(
+                [
+                  { id: 'todos', label: 'Todos' },
+                  { id: 'entradas', label: 'Entradas' },
+                  { id: 'salidas', label: 'Salidas' },
+                  { id: 'ajustes', label: 'Ajustes' },
+                ] as const
+              ).map((f) => {
+                const active = filtroTipo === f.id;
+                return (
+                  <Button
+                    key={f.id}
+                    variant={active ? 'default' : 'secondary'}
+                    size="sm"
+                    onClick={() => setFiltroTipo(f.id)}
+                    className="h-8 rounded-full text-xs font-semibold px-3"
+                  >
+                    {f.label}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* ─── 3. CONTENIDO KARDEX (MÓVIL CARDS + DESKTOP TABLA) ─── */}
       {loading ? (
-        <div style={{ ...sectionCard, height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: 'var(--text-muted)' }}>
+        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm h-[260px] flex items-center justify-center">
+          <CardContent className="flex flex-col items-center gap-2.5 text-[var(--text-muted)] p-6">
             <div className="w-8 h-8 border-3 border-[var(--primario)]/20 border-t-[var(--primario)] rounded-full animate-spin" />
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Cargando movimientos Kardex...</span>
-          </div>
-        </div>
+            <span className="text-xs font-semibold">Cargando movimientos Kardex...</span>
+          </CardContent>
+        </Card>
       ) : movimientosFiltrados.length === 0 ? (
-        <div style={{ ...sectionCard, padding: 48, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <SlidersHorizontal size={44} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
-          <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-            No se encontraron movimientos
-          </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, maxWidth: 360 }}>
-            Las compras, ventas POS y ajustes de stock quedarán registrados aquí automáticamente.
-          </p>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm p-12 text-center">
+          <CardContent className="flex flex-col items-center gap-2.5">
+            <SlidersHorizontal size={44} className="text-[var(--text-muted)] opacity-40" />
+            <h3 className="text-base font-bold font-syne text-[var(--text)]">
+              No se encontraron movimientos
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] max-w-sm">
+              Las compras, ventas POS y ajustes de stock quedarán registrados aquí automáticamente.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <>
           {/* ═══════════════════════════════════════════════
@@ -456,81 +370,71 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                 m.tipo === 'MERMA';
 
               return (
-                <div
-                  key={m.id}
-                  style={{
-                    ...sectionCard,
-                    padding: 14,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                        {m.producto?.nombre || 'Producto'}
-                      </h4>
-                      {m.producto?.codigoBarras && (
-                        <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
-                          SKU: {m.producto.codigoBarras}
+                <Card key={m.id} className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+                  <CardContent className="p-3.5 space-y-2.5">
+                    <div className="flex justify-between items-start gap-2.5">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-[var(--text)] truncate">
+                          {m.producto?.nombre || 'Producto'}
+                        </h4>
+                        {m.producto?.codigoBarras && (
+                          <span className="text-[11px] font-mono text-[var(--text-muted)] block">
+                            SKU: {m.producto.codigoBarras}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Badge Píldora */}
+                      <Badge
+                        variant={esEntrada ? 'secondary' : esSalida ? 'destructive' : 'outline'}
+                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
+                          esEntrada
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0'
+                            : esSalida
+                            ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-0'
+                            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0'
+                        }`}
+                      >
+                        {esEntrada ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
+                        {m.tipo}
+                      </Badge>
+                    </div>
+
+                    {/* Resumen Numérico */}
+                    <div className="grid grid-cols-3 gap-2 p-2 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] text-center">
+                      <div>
+                        <span className="text-[10px] font-bold text-[var(--text-muted)] block uppercase">Anterior</span>
+                        <span className="text-xs font-bold font-mono text-[var(--text-muted)]">
+                          {m.stockAnterior}
                         </span>
-                      )}
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-[var(--text-muted)] block uppercase">Cambio</span>
+                        <span className={`text-xs font-extrabold font-mono ${
+                          esEntrada ? 'text-emerald-600 dark:text-emerald-400' : esSalida ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
+                        }`}>
+                          {esEntrada ? `+${m.cantidad}` : `-${m.cantidad}`}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-[var(--text-muted)] block uppercase">Nuevo</span>
+                        <span className="text-xs font-extrabold font-mono text-[var(--primario)]">
+                          {m.stockNuevo}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Badge Píldora */}
-                    <span
-                      style={{
-                        fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                        background: esEntrada ? 'rgba(52, 199, 89, 0.12)' : esSalida ? 'rgba(255, 59, 48, 0.12)' : 'rgba(255, 149, 0, 0.12)',
-                        color: esEntrada ? '#34C759' : esSalida ? '#FF3B30' : '#FF9500',
-                        display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
-                      }}
-                    >
-                      {esEntrada ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
-                      {m.tipo}
-                    </span>
-                  </div>
-
-                  {/* Resumen Numérico */}
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8,
-                    padding: '8px 12px', borderRadius: 12, background: 'var(--bg-alt)',
-                    border: '1px solid var(--border)', textAlign: 'center',
-                  }}>
-                    <div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Anterior</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
-                        {m.stockAnterior}
+                    {/* Detalle y Fecha */}
+                    <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border)]">
+                      <span className="font-mono">
+                        {new Date(m.createdAt).toLocaleDateString('es-NI')} {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
+                      </span>
+                      <span className="max-w-[180px] truncate text-right">
+                        {m.motivo || 'Operación comercial'}
                       </span>
                     </div>
-                    <div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Cambio</span>
-                      <span style={{
-                        fontSize: 13, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace",
-                        color: esEntrada ? '#34C759' : esSalida ? '#FF3B30' : '#FF9500',
-                      }}>
-                        {esEntrada ? `+${m.cantidad}` : `-${m.cantidad}`}
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Nuevo</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
-                        {m.stockNuevo}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Detalle y Fecha */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: 'var(--text-muted)', paddingTop: 4, borderTop: '1px solid var(--border)' }}>
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                      {new Date(m.createdAt).toLocaleDateString('es-NI')} {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
-                    </span>
-                    <span style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-                      {m.motivo || 'Operación comercial'}
-                    </span>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
@@ -538,26 +442,20 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
           {/* ═══════════════════════════════════════════════
               VISTA ESCRITORIO / TABLET (Opción B - Back-Office Tabla Densa)
               ═══════════════════════════════════════════════ */}
-          <div className="hidden md:block" style={{
-            borderRadius: 16,
-            border: '1px solid var(--border)',
-            overflow: 'hidden',
-            background: 'var(--surface)',
-            boxShadow: 'var(--lf-shadow-card)',
-          }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: 'var(--bg-alt)', borderBottom: '1px solid var(--border)' }}>
-                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Fecha & Hora</th>
-                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Producto / SKU</th>
-                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Tipo Movimiento</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Cantidad</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Stock Ant.</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Nuevo Stock</th>
-                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Motivo / Detalle</th>
-                </tr>
-              </thead>
-              <tbody>
+          <Card className="hidden md:block bg-[var(--surface)] border-[var(--border)] shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]">
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Fecha & Hora</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Producto / SKU</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Tipo Movimiento</TableHead>
+                  <TableHead className="text-right text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Cantidad</TableHead>
+                  <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Stock Ant.</TableHead>
+                  <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Nuevo Stock</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Motivo / Detalle</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {movimientosFiltrados.map((m) => {
                   const esEntrada = m.tipo === 'ENTRADA' || m.tipo === 'DEVOLUCION_CLIENTE';
                   const esSalida =
@@ -567,64 +465,61 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                     m.tipo === 'MERMA';
 
                   return (
-                    <tr
-                      key={m.id}
-                      style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--primario-soft, rgba(0, 122, 255, 0.04))')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap', fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: 'var(--text-muted)' }}>
+                    <TableRow key={m.id}>
+                      <TableCell className="whitespace-nowrap font-mono text-xs text-[var(--text-muted)]">
                         {new Date(m.createdAt).toLocaleDateString('es-NI')} {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
-                      </td>
+                      </TableCell>
 
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{ fontWeight: 700, color: 'var(--text)', display: 'block' }}>
+                      <TableCell>
+                        <span className="font-bold text-[var(--text)] block">
                           {m.producto?.nombre || 'Producto'}
                         </span>
                         {m.producto?.codigoBarras && (
-                          <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+                          <span className="text-[11px] font-mono text-[var(--text-muted)]">
                             SKU: {m.producto.codigoBarras}
                           </span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      <td style={{ padding: '12px 16px' }}>
-                        <span
-                          style={{
-                            fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                            background: esEntrada ? 'rgba(52, 199, 89, 0.12)' : esSalida ? 'rgba(255, 59, 48, 0.12)' : 'rgba(255, 149, 0, 0.12)',
-                            color: esEntrada ? '#34C759' : esSalida ? '#FF3B30' : '#FF9500',
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                          }}
+                      <TableCell>
+                        <Badge
+                          variant={esEntrada ? 'secondary' : esSalida ? 'destructive' : 'outline'}
+                          className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                            esEntrada
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0'
+                              : esSalida
+                              ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-0'
+                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0'
+                          }`}
                         >
                           {esEntrada ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
                           {m.tipo}
-                        </span>
-                      </td>
+                        </Badge>
+                      </TableCell>
 
-                      <td style={{ padding: '12px 16px', textAlign: 'right', fontFamily: "'JetBrains Mono', monospace", fontWeight: 800 }}>
-                        <span style={{ color: esEntrada ? '#34C759' : esSalida ? '#FF3B30' : '#FF9500' }}>
+                      <TableCell className="text-right font-mono font-extrabold">
+                        <span className={esEntrada ? 'text-emerald-600 dark:text-emerald-400' : esSalida ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}>
                           {esEntrada ? `+${m.cantidad}` : `-${m.cantidad}`}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      <td style={{ padding: '12px 16px', textAlign: 'center', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+                      <TableCell className="text-center font-mono text-[var(--text-muted)]">
                         {m.stockAnterior}
-                      </td>
+                      </TableCell>
 
-                      <td style={{ padding: '12px 16px', textAlign: 'center', fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, color: 'var(--primario)' }}>
+                      <TableCell className="text-center font-mono font-extrabold text-[var(--primario)]">
                         {m.stockNuevo}
-                      </td>
+                      </TableCell>
 
-                      <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12 }}>
+                      <TableCell className="text-[var(--text-muted)] text-xs">
                         {m.motivo || 'Operación comercial estándar'}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Card>
         </>
       )}
 
@@ -632,170 +527,155 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
       {modalOpen && (
         <div
           onClick={() => setModalOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
-          }}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
         >
-          <div
+          <Card
             onClick={(e) => e.stopPropagation()}
-            style={{
-              ...sectionCard,
-              width: '100%', maxWidth: 500, maxHeight: '90vh',
-              overflowY: 'auto', padding: 24, borderRadius: 24,
-              boxShadow: 'var(--shadow-xl)',
-            }}
+            className="w-full max-w-[500px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border-[var(--border)] shadow-2xl rounded-3xl"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
-              <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-                  Registrar Movimiento Kardex
-                </h3>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                  Ajuste manual, compra a proveedor o merma física
-                </p>
-              </div>
-              <button
-                onClick={() => setModalOpen(false)}
-                style={{
-                  width: 36, height: 36, borderRadius: 10, border: '1px solid var(--border)',
-                  background: 'var(--bg-alt)', color: 'var(--text-muted)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={registrarMovimiento} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Producto */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                  Producto a Afectar *
-                </label>
-                <select
-                  value={productoId}
-                  onChange={(e) => setProductoId(e.target.value)}
-                  style={{ ...inputStyle, cursor: 'pointer' }}
-                  required
-                >
-                  {productos.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre} (Stock actual: {p.stock ?? 0})
-                    </option>
-                  ))}
-                </select>
-                {prodSeleccionado && (
-                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0 0', fontFamily: "'JetBrains Mono', monospace" }}>
-                    Stock en sistema: <b>{prodSeleccionado.stock ?? 0} {prodSeleccionado.unidadMedida || 'und'}</b>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center pb-4 border-b border-[var(--border)] mb-5">
+                <div>
+                  <h3 className="text-lg font-bold font-syne text-[var(--text)] m-0">
+                    Registrar Movimiento Kardex
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-1 mb-0">
+                    Ajuste manual, compra a proveedor o merma física
                   </p>
-                )}
-              </div>
-
-              {/* Tipo */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                  Tipo de Operación *
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                  {[
-                    { id: 'ENTRADA', label: 'Entrada', desc: 'Compra / Ingreso', color: '#34C759', icon: <ArrowDownLeft size={14} /> },
-                    { id: 'SALIDA', label: 'Salida', desc: 'Merma / Baja', color: '#FF3B30', icon: <ArrowUpRight size={14} /> },
-                    { id: 'AJUSTE', label: 'Ajuste', desc: 'Conteo Físico', color: '#FF9500', icon: <RotateCcw size={14} /> },
-                  ].map((t) => {
-                    const isSelected = tipo === t.id;
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => setTipo(t.id as any)}
-                        style={{
-                          padding: '10px 8px',
-                          borderRadius: 12,
-                          border: isSelected ? `2px solid ${t.color}` : '1px solid var(--border)',
-                          background: isSelected ? 'var(--surface)' : 'var(--bg-alt)',
-                          color: isSelected ? t.color : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 12 }}>
-                          {t.icon} {t.label}
-                        </span>
-                        <span style={{ fontSize: 10, opacity: 0.8 }}>{t.desc}</span>
-                      </button>
-                    );
-                  })}
                 </div>
-              </div>
-
-              {/* Cantidad & Costo */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                    Cantidad ({tipo === 'ENTRADA' ? '+ stock' : tipo === 'SALIDA' ? '- stock' : 'fijar'}) *
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={cantidad}
-                    onChange={(e) => setCantidad(e.target.value)}
-                    placeholder="10"
-                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                    Costo Unitario (C$)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={costoUnitario}
-                    onChange={(e) => setCostoUnitario(e.target.value)}
-                    placeholder="C$ 0.00"
-                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
-                  />
-                </div>
-              </div>
-
-              {/* Motivo */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                  Motivo / Justificación
-                </label>
-                <input
-                  type="text"
-                  value={motivo}
-                  onChange={(e) => setMotivo(e.target.value)}
-                  placeholder="Ej: Factura Proveedor #4092, Conteo mensual..."
-                  style={inputStyle}
-                />
-              </div>
-
-              {/* Botones */}
-              <div style={{ display: 'flex', gap: 10, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
                 <button
-                  type="button"
                   onClick={() => setModalOpen(false)}
-                  style={{ ...btnSecondary, flex: 1 }}
+                  className="w-9 h-9 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)] flex items-center justify-center hover:bg-[var(--surface-elevated)] transition-colors"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{ ...btnPrimary, flex: 2 }}
-                >
-                  {submitting ? 'Registrando...' : 'Registrar en Kardex'}
+                  <X size={18} />
                 </button>
               </div>
-            </form>
-          </div>
+
+              <form onSubmit={registrarMovimiento} className="flex flex-col gap-4">
+                {/* Producto */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                    Producto a Afectar *
+                  </label>
+                  <select
+                    value={productoId}
+                    onChange={(e) => setProductoId(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primario)]"
+                    required
+                  >
+                    {productos.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nombre} (Stock actual: {p.stock ?? 0})
+                      </option>
+                    ))}
+                  </select>
+                  {prodSeleccionado && (
+                    <p className="text-[11px] text-[var(--text-muted)] mt-1 font-mono">
+                      Stock en sistema: <b>{prodSeleccionado.stock ?? 0} {prodSeleccionado.unidadMedida || 'und'}</b>
+                    </p>
+                  )}
+                </div>
+
+                {/* Tipo */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                    Tipo de Operación *
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'ENTRADA', label: 'Entrada', desc: 'Compra / Ingreso', color: 'border-emerald-500 text-emerald-600 dark:text-emerald-400', icon: <ArrowDownLeft size={14} /> },
+                      { id: 'SALIDA', label: 'Salida', desc: 'Merma / Baja', color: 'border-red-500 text-red-600 dark:text-red-400', icon: <ArrowUpRight size={14} /> },
+                      { id: 'AJUSTE', label: 'Ajuste', desc: 'Conteo Físico', color: 'border-amber-500 text-amber-600 dark:text-amber-400', icon: <RotateCcw size={14} /> },
+                    ].map((t) => {
+                      const isSelected = tipo === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setTipo(t.id as any)}
+                          className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                            isSelected
+                              ? `${t.color} border-2 bg-[var(--surface)] font-bold`
+                              : 'border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)]'
+                          }`}
+                        >
+                          <span className="flex items-center gap-1 text-xs">
+                            {t.icon} {t.label}
+                          </span>
+                          <span className="text-[10px] opacity-80">{t.desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Cantidad & Costo */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                      Cantidad ({tipo === 'ENTRADA' ? '+ stock' : tipo === 'SALIDA' ? '- stock' : 'fijar'}) *
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={cantidad}
+                      onChange={(e) => setCantidad(e.target.value)}
+                      placeholder="10"
+                      className="font-mono text-xs h-10 bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                      Costo Unitario (C$)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={costoUnitario}
+                      onChange={(e) => setCostoUnitario(e.target.value)}
+                      placeholder="C$ 0.00"
+                      className="font-mono text-xs h-10 bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                    />
+                  </div>
+                </div>
+
+                {/* Motivo */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                    Motivo / Justificación
+                  </label>
+                  <Input
+                    type="text"
+                    value={motivo}
+                    onChange={(e) => setMotivo(e.target.value)}
+                    placeholder="Ej: Factura Proveedor #4092, Conteo mensual..."
+                    className="text-xs h-10 bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  />
+                </div>
+
+                {/* Botones */}
+                <div className="flex gap-2.5 pt-3 border-t border-[var(--border)]">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setModalOpen(false)}
+                    className="flex-1 h-10 text-xs font-semibold"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 h-10 text-xs font-semibold"
+                  >
+                    {submitting ? 'Registrando...' : 'Registrar en Kardex'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
