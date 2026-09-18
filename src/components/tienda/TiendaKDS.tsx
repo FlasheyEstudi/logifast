@@ -3,16 +3,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Clock,
-  CheckCircle2,
-  AlertCircle,
   Bell,
   RefreshCw,
-  Bike,
-  Package,
-  Phone,
-  MapPin,
-  Flame,
-  Check,
 } from '@/components/icons';
 import { notify } from '@/lib/notify';
 
@@ -350,115 +342,98 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
               <div
                 key={ord.id}
                 style={{
-                  background: 'var(--surface)',
-                  borderRadius: 16,
-                  border: isRecibido
-                    ? '1.5px solid rgba(245, 158, 11, 0.6)'
-                    : isPreparando
-                    ? '1.5px solid rgba(0, 122, 255, 0.6)'
-                    : isListo
-                    ? '1.5px solid rgba(16, 185, 129, 0.6)'
-                    : '1px solid var(--border)',
-                  boxShadow: 'var(--lf-shadow-card)',
+                  filter: 'drop-shadow(var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15)))',
                 }}
-                className="flex flex-col justify-between overflow-hidden transition-all duration-200"
+                className="w-full max-w-[320px] mx-auto"
               >
-                {/* Order Top Banner */}
                 <div
-                  className={`px-4 py-3 border-b flex items-center justify-between gap-2 ${
-                    isRecibido
-                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300'
+                  style={{
+                    background: 'var(--surface)',
+                    color: 'var(--text)',
+                    clipPath:
+                      'polygon(0% 0%, 100% 0%, 100% calc(100% - 10px), 97.5% 100%, 95% calc(100% - 10px), 92.5% 100%, 90% calc(100% - 10px), 87.5% 100%, 85% calc(100% - 10px), 82.5% 100%, 80% calc(100% - 10px), 77.5% 100%, 75% calc(100% - 10px), 72.5% 100%, 70% calc(100% - 10px), 67.5% 100%, 65% calc(100% - 10px), 62.5% 100%, 60% calc(100% - 10px), 57.5% 100%, 55% calc(100% - 10px), 52.5% 100%, 50% calc(100% - 10px), 47.5% 100%, 45% calc(100% - 10px), 42.5% 100%, 40% calc(100% - 10px), 37.5% 100%, 35% calc(100% - 10px), 32.5% 100%, 30% calc(100% - 10px), 27.5% 100%, 25% calc(100% - 10px), 22.5% 100%, 20% calc(100% - 10px), 17.5% 100%, 15% calc(100% - 10px), 12.5% 100%, 10% calc(100% - 10px), 7.5% 100%, 5% calc(100% - 10px), 2.5% 100%, 0% calc(100% - 10px))',
+                    borderTop: isRecibido
+                      ? '4px solid var(--peligro, #FF3B30)'
                       : isPreparando
-                      ? 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300'
+                      ? '4px solid var(--warning, #FF9500)'
                       : isListo
-                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]'
-                  }`}
+                      ? '4px solid var(--exito, #34C759)'
+                      : '4px solid var(--border)',
+                  }}
+                  className="p-4 pb-8 font-mono text-xs flex flex-col gap-3 transition-colors duration-200"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-extrabold font-mono tracking-tight">
-                      #{ord.id.slice(-5).toUpperCase()}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full font-mono ${elapsed.color}`}
-                    >
-                      {elapsed.mins >= 30 && <AlertCircle size={11} className="shrink-0" />}
-                      <span>{elapsed.label}</span>
-                    </span>
-                  </div>
-
-                  <span className="text-xs font-bold uppercase tracking-wider">
-                    {ord.estado}
-                  </span>
-                </div>
-
-                {/* Customer & Delivery Information */}
-                <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-bold text-[var(--text)]">
-                          {ord.clienteNombre}
-                        </h4>
-                        <p className="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-1.5">
-                          <MapPin size={13} className="text-slate-400 shrink-0" />
-                          <span className="truncate">{ord.direccionEntrega}</span>
-                        </p>
-                      </div>
-
-                      {ord.clienteTelefono && (
-                        <a
-                          href={`tel:${ord.clienteTelefono}`}
-                          className="w-8 h-8 rounded-lg bg-[var(--bg-alt)] text-[var(--text-secondary)] flex items-center justify-center shrink-0 hover:bg-primary/10 hover:text-primary transition-colors"
-                          title="Llamar al cliente"
-                        >
-                          <Phone size={14} />
-                        </a>
-                      )}
+                  {/* Cabecera comanda */}
+                  <div className="text-center pb-2 border-b border-dashed border-[var(--border)]">
+                    <div className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
+                      LOGIFAST KDS
                     </div>
-
-                    {/* Order Items List */}
-                    <div className="mt-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-1.5">
-                      <div className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider mb-1">
-                        {isComida ? 'Comanda para Preparar' : 'Artículos a Empacar'}
-                      </div>
-                      {ord.items.map((it, idx) => (
-                        <div
-                          key={idx}
-                          className="flex justify-between items-center text-xs text-[var(--text)]"
-                        >
-                          <span className="font-semibold">
-                            <span className="font-mono font-bold text-primary mr-1.5">{it.cantidad}x</span>
-                            {it.nombreProducto}
-                          </span>
-                          <span className="font-mono text-slate-500 text-[11px]">
-                            C$ {(it.cantidad * it.precioUnitario).toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
+                    <div className="text-xl font-black tracking-tight text-[var(--text)] mt-0.5">
+                      PEDIDO #{ord.id.slice(-5).toUpperCase()}
+                    </div>
+                    <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                      {ord.createdAt}
+                    </div>
+                    <div className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[var(--bg-alt)] text-[var(--text)]">
+                      {ord.estado} &middot; {elapsed.label}
                     </div>
                   </div>
 
-                  {/* Financial Total */}
-                  <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[var(--text-muted)]">
-                      Pago: <span className="capitalize font-bold text-[var(--text)]">{ord.metodoPago}</span>
+                  {/* Cliente y Entrega */}
+                  <div className="space-y-1 pb-2 border-b border-dashed border-[var(--border)]">
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="text-[10px] uppercase font-bold text-[var(--text-muted)]">CLIENTE:</span>
+                      <span className="font-bold text-[var(--text)] text-right truncate">{ord.clienteNombre}</span>
+                    </div>
+                    {ord.clienteTelefono && (
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)]">TEL:</span>
+                        <span className="text-[var(--text)]">{ord.clienteTelefono}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-start gap-2 text-[11px]">
+                      <span className="text-[10px] uppercase font-bold text-[var(--text-muted)]">ENTREGA:</span>
+                      <span className="text-[var(--text-muted)] text-right truncate">{ord.direccionEntrega}</span>
+                    </div>
+                  </div>
+
+                  {/* Productos */}
+                  <div className="space-y-1.5 pb-2 border-b border-dashed border-[var(--border)]">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                      <span>CANT / ARTICULO</span>
+                      <span>PRECIO</span>
+                    </div>
+                    {ord.items.map((it, idx) => (
+                      <div key={idx} className="flex justify-between items-start gap-2">
+                        <span className="font-bold text-[var(--text)] flex-1">
+                          <span className="font-black text-[var(--primario)] mr-1">{it.cantidad}x</span>
+                          {it.nombreProducto}
+                        </span>
+                        <span className="text-[var(--text-muted)] shrink-0">
+                          C$ {(it.cantidad * it.precioUnitario).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-between items-baseline pt-1">
+                    <span className="text-[11px] font-bold uppercase text-[var(--text-muted)]">
+                      TOTAL ({ord.metodoPago}):
                     </span>
-                    <span className="text-base font-extrabold text-primary font-mono">
+                    <span className="text-base font-black text-[var(--text)]">
                       C$ {ord.total.toFixed(2)}
                     </span>
                   </div>
 
-                  {/* Action Transition Buttons */}
-                  <div className="pt-2">
+                  {/* Acciones */}
+                  <div className="pt-2 font-sans space-y-1.5">
                     {isRecibido && (
                       <button
                         onClick={() => cambiarEstado(ord.id, 'preparando')}
                         style={{ ...btnPrimary, width: '100%' }}
-                        className="h-11 min-h-[44px] active:scale-95 transition-all"
+                        className="h-10 text-xs font-bold active:scale-95 transition-all"
                       >
-                        <Flame size={16} />
-                        <span>{isComida ? 'Aceptar & Preparar Platos' : 'Aceptar & Alistar Pedido'}</span>
+                        Aceptar y Preparar
                       </button>
                     )}
 
@@ -468,29 +443,21 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                         style={{
                           ...btnPrimary,
                           width: '100%',
-                          background: '#10B981',
-                          boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+                          background: 'var(--exito, #34C759)',
                         }}
-                        className="h-11 min-h-[44px] active:scale-95 transition-all"
+                        className="h-10 text-xs font-bold active:scale-95 transition-all"
                       >
-                        <Check size={16} />
-                        <span>{isComida ? 'Marcar Comanda Lista' : 'Marcar Paquete Empacado'}</span>
+                        Marcar Listo
                       </button>
                     )}
 
                     {isListo && (
                       <button
                         onClick={() => cambiarEstado(ord.id, 'en_camino')}
-                        style={{
-                          ...btnPrimary,
-                          width: '100%',
-                          background: '#0F172A',
-                          boxShadow: '0 4px 14px rgba(15, 23, 42, 0.25)',
-                        }}
-                        className="h-11 min-h-[44px] active:scale-95 transition-all"
+                        style={{ ...btnSecondary, width: '100%' }}
+                        className="h-10 text-xs font-bold active:scale-95 transition-all"
                       >
-                        <Bike size={16} />
-                        <span>Entregar a Repartidor</span>
+                        Entregar a Repartidor
                       </button>
                     )}
                   </div>
