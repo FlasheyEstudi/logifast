@@ -51,38 +51,64 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, onReturnToClient, use
 
   return (
     <div
+      className={`min-h-screen flex flex-row w-full bg-[var(--bg)] text-[var(--text)] overflow-x-hidden ${
+        isDark ? 'dark' : 'light'
+      }`}
+      data-theme={isDark ? 'dark' : 'light'}
       style={{
-        minHeight: '100vh',
-        background: 'var(--bg-base)',
-        color: 'var(--text)',
-        fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+        fontFamily: "var(--font-dm-sans), 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Layout Navbar Dedicado Propio para Tiendas */}
-      <TiendaNavbar
-        isDark={isDark}
-        toggleTheme={toggleTheme}
-        onLogout={onLogout}
-        onReturnToClient={onReturnToClient}
-        tiendaNombre={tiendaNombre}
-        tiendaCategoria={tiendaCategoria}
-        tiendaImagenUrl={tiendaImagenUrl}
-        tiendaEstado={tiendaEstado}
-        moduloActivo={moduloActivo}
-        onSelectModulo={(mod) => setModuloActivo(mod)}
-      />
-
-      {/* Main Module Content View pegado limpiamente al layout superior */}
-      <main className="w-full max-w-[1440px] mx-auto pt-20 pb-28 lg:pb-12 px-3 sm:px-6">
-        {moduloActivo === 'kds' && <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />}
-        {moduloActivo === 'inventario' && <TiendaInventario isDark={isDark} categoriaTienda={tiendaCategoria} />}
-        {moduloActivo === 'kardex' && <TiendaKardex isDark={isDark} />}
-        {moduloActivo === 'pos' && <TiendaPOS isDark={isDark} />}
-        {moduloActivo === 'facturacion' && <TiendaFacturacion isDark={isDark} />}
-        {moduloActivo === 'reportes' && <TiendaReportesExcel isDark={isDark} />}
-        {moduloActivo === 'estadisticas' && <TiendaEstadisticas isDark={isDark} />}
-        {moduloActivo === 'configuracion' && <TiendaConfiguracion isDark={isDark} />}
+      {/* ─── Área Principal del Módulo Activo (Lado Izquierdo) ─── */}
+      <main className="flex-1 min-w-0 min-h-screen p-3 sm:p-5 lg:p-6 xl:p-8 overflow-y-auto">
+        <div className="w-full max-w-[1400px] mx-auto">
+          {moduloActivo === 'kds' && (
+            <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />
+          )}
+          {moduloActivo === 'inventario' && (
+            <TiendaInventario isDark={isDark} categoriaTienda={tiendaCategoria} />
+          )}
+          {moduloActivo === 'kardex' && (
+            <TiendaKardex isDark={isDark} />
+          )}
+          {moduloActivo === 'pos' && (
+            <TiendaPOS isDark={isDark} />
+          )}
+          {moduloActivo === 'facturacion' && (
+            <TiendaFacturacion isDark={isDark} />
+          )}
+          {moduloActivo === 'reportes' && (
+            <TiendaReportesExcel isDark={isDark} />
+          )}
+          {moduloActivo === 'estadisticas' && (
+            <TiendaEstadisticas isDark={isDark} />
+          )}
+          {moduloActivo === 'configuracion' && (
+            <TiendaConfiguracion isDark={isDark} />
+          )}
+        </div>
       </main>
+
+      {/* ─── Barra de Navegación Vertical Exclusiva (Lado Derecho) ───
+          Reserva un espacio 100% físico e impenetrable en el layout.
+          El contenido de los módulos no puede superponerse ni meterse en este carril. */}
+      <aside
+        aria-label="Panel Lateral de Navegación"
+        className="w-[64px] sm:w-[72px] xl:w-64 shrink-0 h-screen sticky top-0 border-l border-[var(--border)] bg-[var(--surface)] z-40 flex flex-col justify-between select-none shadow-sm"
+      >
+        <TiendaNavbar
+          isDark={isDark}
+          toggleTheme={toggleTheme}
+          onLogout={onLogout}
+          onReturnToClient={onReturnToClient}
+          tiendaNombre={tiendaNombre}
+          tiendaCategoria={tiendaCategoria}
+          tiendaImagenUrl={tiendaImagenUrl}
+          tiendaEstado={tiendaEstado}
+          moduloActivo={moduloActivo}
+          onSelectModulo={(mod) => setModuloActivo(mod)}
+        />
+      </aside>
     </div>
   );
 }

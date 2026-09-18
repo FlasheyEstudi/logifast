@@ -256,49 +256,49 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
     <div className="space-y-5">
       {/* ─── KPI Dashboard Cards ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-primary flex items-center justify-center shrink-0">
             <Package size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Productos</p>
-            <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white font-mono">
+            <p className="text-xs font-bold text-[var(--text-muted)]">Total Productos</p>
+            <p className="text-lg sm:text-xl font-extrabold text-[var(--text)] font-mono">
               {stats.total}
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
             <Eye size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Publicados</p>
-            <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white font-mono">
+            <p className="text-xs font-bold text-[var(--text-muted)]">Publicados</p>
+            <p className="text-lg sm:text-xl font-extrabold text-[var(--text)] font-mono">
               {stats.publicados}
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
             <AlertTriangle size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Alerta Stock</p>
+            <p className="text-xs font-bold text-[var(--text-muted)]">Alerta Stock</p>
             <p className="text-lg sm:text-xl font-extrabold text-amber-600 dark:text-amber-400 font-mono">
               {stats.bajoStock}
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
             <TrendingUp size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Valor Inventario</p>
-            <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white font-mono truncate">
+            <p className="text-xs font-bold text-[var(--text-muted)]">Valor Inventario</p>
+            <p className="text-lg sm:text-xl font-extrabold text-[var(--text)] font-mono truncate">
               C$ {stats.valorInventario.toLocaleString('es-NI', { maximumFractionDigits: 0 })}
             </p>
           </div>
@@ -306,13 +306,13 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       </div>
 
       {/* ─── Header & Controls ─── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+            <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
               Gestión de Inventario & Catálogo
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
               Control de productos, costos, código de barras e impresión de etiquetas con SKU/QR
             </p>
           </div>
@@ -327,21 +327,21 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         </div>
 
         {/* Filters Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-[var(--border)]">
           {/* Search Bar */}
-          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
             <Search size={16} className="text-slate-400 shrink-0" />
             <input
               type="text"
               placeholder="Buscar producto por nombre o SKU..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-slate-400"
+              className="w-full bg-transparent border-none outline-none text-[var(--text)] text-xs sm:text-sm placeholder:text-slate-400"
             />
             {busqueda && (
               <button
                 onClick={() => setBusqueda('')}
-                className="w-6 h-6 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
+                className="w-6 h-6 rounded-full hover:bg-[var(--bg-alt)] text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
               >
                 <X size={13} />
               </button>
@@ -364,7 +364,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                 className={`h-9 min-h-[36px] px-3 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
                   filtroEstado === opt.id
                     ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-slate-900'
                 }`}
               >
                 {opt.label}
@@ -385,7 +385,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   className={`h-8 min-h-[32px] px-3 rounded-lg font-bold uppercase tracking-wider text-[10px] whitespace-nowrap transition-all active:scale-95 shrink-0 ${
                     active
                       ? 'bg-primary text-white shadow-sm shadow-primary/20'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                      : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:bg-slate-200'
                   }`}
                 >
                   {cat === 'todos' ? 'Todas las Categorías' : cat}
@@ -402,14 +402,14 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <div
               key={n}
-              className="h-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 animate-pulse"
+              className="h-72 rounded-2xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
             />
           ))}
         </div>
       ) : filtrados.length === 0 ? (
-        <div className="py-20 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-6">
+        <div className="py-20 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-3xl p-6">
           <Package size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
-          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 font-syne">
+          <h3 className="text-base font-bold text-[var(--text)] font-syne">
             No se encontraron productos
           </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -425,10 +425,10 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
             return (
               <div
                 key={p.id}
-                className="group rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 flex flex-col overflow-hidden"
+                className="group rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 flex flex-col overflow-hidden"
               >
                 {/* Image Cover Preview */}
-                <div className="relative h-40 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div className="relative h-40 w-full bg-[var(--bg-alt)] overflow-hidden">
                   {p.portadaUrl || p.imagenUrl ? (
                     <img
                       src={p.portadaUrl || p.imagenUrl || ''}
@@ -467,20 +467,20 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     <span className="text-[10px] font-extrabold uppercase text-primary tracking-wider">
                       {p.categoriaNombre || 'General'}
                     </span>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 line-clamp-2 leading-snug">
+                    <h3 className="text-sm font-bold text-[var(--text)] mt-0.5 line-clamp-2 leading-snug">
                       {p.nombre}
                     </h3>
                     {p.codigoBarras && (
-                      <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-1">
+                      <p className="text-[11px] font-mono text-[var(--text-muted)] mt-1">
                         SKU: {p.codigoBarras}
                       </p>
                     )}
                   </div>
 
                   {/* Price & Stock info pills */}
-                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-xs">
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-[var(--bg-alt)] border border-slate-200/60 dark:border-slate-700/60 text-xs">
                     <div>
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] block">
                         Precio Venta
                       </span>
                       <span className="text-sm font-extrabold text-primary font-mono">
@@ -489,12 +489,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     </div>
 
                     <div>
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] block">
                         Stock Actual
                       </span>
                       <span
                         className={`text-sm font-extrabold font-mono ${
-                          bajoStock ? 'text-red-500' : 'text-slate-900 dark:text-white'
+                          bajoStock ? 'text-red-500' : 'text-[var(--text)]'
                         }`}
                       >
                         {p.stock ?? 0} {p.unidadMedida || 'und'}
@@ -505,7 +505,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   {/* Confirmación antes de archivar */}
                   {archivarConfirmId === p.id && (
                     <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs space-y-2 animate-scale-up">
-                      <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">
+                      <p className="text-[11px] font-semibold text-[var(--text)] leading-tight">
                         ¿Archivar "{p.nombre}"? Dejará de mostrarse en catálogo, conservando su historial.
                       </p>
                       <div className="flex gap-2">
@@ -517,7 +517,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                         </button>
                         <button
                           onClick={() => setArchivarConfirmId(null)}
-                          className="flex-1 h-8 min-h-[32px] rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] active:scale-95"
+                          className="flex-1 h-8 min-h-[32px] rounded-lg bg-[var(--border)] text-[var(--text)] font-bold text-[11px] active:scale-95"
                         >
                           Cancelar
                         </button>
@@ -526,11 +526,11 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   )}
 
                   {/* Action Buttons (3 columnas táctiles con targets de 44px) */}
-                  <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-[var(--border)]">
                     <button
                       onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
                       title={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
-                      className="h-11 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
+                      className="h-11 min-h-[44px] rounded-xl border border-[var(--border)] text-[var(--text)] hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
                     >
                       {p.disponible ? <EyeOff size={14} /> : <Eye size={14} />}
                       <span className="truncate">{p.disponible ? 'Archivar' : 'Publicar'}</span>
@@ -539,7 +539,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     <button
                       onClick={() => abrirGeneradorEtiquetas(p)}
                       title="Generar e imprimir etiquetas con código de barras o QR"
-                      className="h-11 min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
+                      className="h-11 min-h-[44px] rounded-xl bg-[var(--bg-alt)] hover:bg-slate-200 dark:hover:bg-slate-750 text-[var(--text)] font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all border border-[var(--border)]"
                     >
                       <Tag size={14} />
                       <span>Etiquetas</span>
@@ -568,11 +568,11 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
+            className="w-full max-w-xl bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
           >
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--border)] mb-4">
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+                <h3 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
                   {editingProd ? 'Editar Producto en Inventario' : 'Crear Nuevo Producto'}
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -582,7 +582,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
               <button
                 onClick={() => setModalOpen(false)}
-                className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+                className="w-10 h-10 rounded-xl hover:bg-[var(--bg-alt)] text-slate-500 flex items-center justify-center active:scale-95 transition-all"
                 aria-label="Cerrar modal"
               >
                 <X size={20} />
@@ -592,7 +592,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
             <form onSubmit={guardarProducto} className="space-y-4">
               {/* Nombre */}
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
                   Nombre del Producto *
                 </label>
                 <input
@@ -600,7 +600,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   placeholder="Ej: Refresco Coca-Cola 355ml"
-                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                   required
                 />
               </div>
@@ -608,7 +608,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               {/* Categoría & SKU */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
                     Categoría
                   </label>
                   <input
@@ -616,13 +616,13 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={categoriaNombre}
                     onChange={(e) => setCategoriaNombre(e.target.value)}
                     placeholder="Ej: Bebidas, Snacks, Lácteos"
-                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                   />
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label className="text-xs font-bold text-[var(--text)]">
                       Código de Barras / SKU
                     </label>
                     <button
@@ -640,7 +640,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={codigoBarras}
                       onChange={(e) => setCodigoBarras(e.target.value)}
                       placeholder="Ej: 7501055301072 o SKU..."
-                      className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                     />
                     {editingProd && (
                       <button
@@ -652,7 +652,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                           });
                         }}
                         title="Imprimir etiquetas con código de barras o QR"
-                        className="h-11 min-h-[44px] px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 active:scale-95"
+                        className="h-11 min-h-[44px] px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-[var(--border)] text-xs font-bold whitespace-nowrap flex items-center gap-1.5 active:scale-95"
                       >
                         <Printer size={15} />
                         <span className="hidden sm:inline">Etiquetas</span>
@@ -665,7 +665,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               {/* Precios y Costos */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
                     Precio Venta *
                   </label>
                   <input
@@ -674,13 +674,13 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={precio}
                     onChange={(e) => setPrecio(e.target.value)}
                     placeholder="C$ 0.00"
-                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
                     Costo Compra
                   </label>
                   <input
@@ -689,12 +689,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={costo}
                     onChange={(e) => setCosto(e.target.value)}
                     placeholder="C$ 0.00"
-                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
                     Stock Actual
                   </label>
                   <input
@@ -702,12 +702,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="10"
-                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
                     Stock Mínimo
                   </label>
                   <input
@@ -716,20 +716,20 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={stockMinimo}
                     onChange={(e) => setStockMinimo(e.target.value)}
                     placeholder="5"
-                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                   />
                 </div>
               </div>
 
               {/* Unidad de Medida */}
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
                   Unidad de Medida
                 </label>
                 <select
                   value={unidadMedida}
                   onChange={(e) => setUnidadMedida(e.target.value)}
-                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                 >
                   <option value="unidad">Unidad (und)</option>
                   <option value="libra">Libra (lb)</option>
@@ -743,8 +743,8 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
               {/* Imágenes */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
+                <div className="p-3 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-2">
                     Foto Principal del Producto
                   </label>
                   <ImageUploader
@@ -756,8 +756,8 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   />
                 </div>
 
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
+                <div className="p-3 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-2">
                     Foto de Portada / Banner
                   </label>
                   <ImageUploader
@@ -772,7 +772,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
               {/* Descripción */}
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
                   Descripción Comercial (opcional)
                 </label>
                 <textarea
@@ -780,16 +780,16 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   onChange={(e) => setDescripcion(e.target.value)}
                   placeholder="Detalles, especificaciones o notas de venta..."
                   rows={2}
-                  className="w-full p-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                  className="w-full p-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all resize-none"
                 />
               </div>
 
               {/* Botones de acción */}
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="h-11 min-h-[44px] px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
+                  className="h-11 min-h-[44px] px-4 rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
                 >
                   Cancelar
                 </button>

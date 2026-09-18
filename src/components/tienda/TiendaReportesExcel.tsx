@@ -63,24 +63,24 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
   return (
     <div className="space-y-5">
       {/* ─── Header ─── */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+      <div className="p-5 sm:p-6 rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
         <div>
           <div className="flex items-center gap-2 text-primary mb-1">
             <BarChart3 size={20} />
             <span className="text-xs font-bold uppercase tracking-wider">Centro de Exportación</span>
           </div>
-          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white font-syne">
+          <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne">
             Reportes Financieros & Operativos
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-[var(--text-muted)] mt-1">
             Exporta tus datos en hojas de cálculo Excel (.xlsx), informes ejecutivos PDF con tu logotipo y membrete oficial, o formato CSV universal.
           </p>
         </div>
 
         {/* Period Selector Pills */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--border)]">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-bold text-[var(--text)]">
               Período de Análisis:
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -96,7 +96,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                   className={`h-9 min-h-[36px] px-3 rounded-xl font-bold text-xs transition-all active:scale-95 ${
                     dias === p.d
                       ? 'bg-primary text-white shadow-sm shadow-primary/25'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {p.l}
@@ -117,7 +117,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
         {opciones.map((op) => (
           <div
             key={op.id}
-            className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-200"
+            className="p-5 sm:p-6 rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-200"
           >
             <div>
               <div className="flex items-center gap-3 mb-3">
@@ -125,7 +125,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                   {op.icon}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                  <h3 className="text-sm font-bold text-[var(--text)] leading-snug">
                     {op.titulo}
                   </h3>
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-mono">
@@ -134,13 +134,13 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 </div>
               </div>
 
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-2">
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed mt-2">
                 {op.descripcion}
               </p>
             </div>
 
             {/* Action Buttons */}
-            <div className="space-y-2 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="space-y-2 mt-6 pt-4 border-t border-[var(--border)]">
               <div className="flex gap-2">
                 <button
                   onClick={() => descargarReporte(op.id, 'xlsx')}
@@ -154,7 +154,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 <button
                   onClick={() => descargarReporte(op.id, 'pdf')}
                   disabled={descargando !== null}
-                  className="flex-1 h-11 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+                  className="flex-1 h-11 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
                 >
                   <Download size={16} />
                   <span>{descargando === `${op.id}-pdf` ? 'Generando…' : 'PDF'}</span>
@@ -164,7 +164,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
               <button
                 onClick={() => descargarReporte(op.id, 'csv')}
                 disabled={descargando !== null}
-                className="w-full h-9 min-h-[36px] rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-bold active:scale-95 transition-all"
+                className="w-full h-9 min-h-[36px] rounded-xl border border-dashed border-[var(--border)] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-bold active:scale-95 transition-all"
               >
                 {descargando === `${op.id}-csv` ? 'Generando CSV…' : 'Descargar datos en CSV'}
               </button>

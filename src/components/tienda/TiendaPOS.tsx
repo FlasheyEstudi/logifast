@@ -20,6 +20,7 @@ import {
   Package,
   Sparkles,
   Layers,
+  AlertTriangle,
 } from '@/components/icons';
 import { notify } from '@/lib/notify';
 import { onRealtimeEvent, realtime } from '@/services/realtime';
@@ -387,23 +388,23 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     <div className="flex flex-col h-full">
       {/* Drawer Drag Header on mobile */}
       {isDrawer && (
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
+        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <ShoppingCart size={18} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white font-syne">
+              <h3 className="text-base font-bold text-[var(--text)] font-syne">
                 Caja Registradora POS
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 {totalItemsCount} {totalItemsCount === 1 ? 'producto' : 'productos'} en venta
               </p>
             </div>
           </div>
           <button
             onClick={() => setMobileCartOpen(false)}
-            className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+            className="w-10 h-10 rounded-xl hover:bg-[var(--bg-alt)] text-slate-500 flex items-center justify-center active:scale-95 transition-all"
             aria-label="Cerrar carrito"
           >
             <X size={20} />
@@ -415,10 +416,10 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 min-h-[140px]">
         {carrito.length === 0 ? (
           <div className="text-center py-12 px-4 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center mb-3">
+            <div className="w-14 h-14 rounded-2xl bg-[var(--bg-alt)] flex items-center justify-center mb-3">
               <ShoppingCart size={24} className="opacity-50" />
             </div>
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Carrito de venta vacío</p>
+            <p className="text-sm font-semibold text-[var(--text)]">Carrito de venta vacío</p>
             <p className="text-xs mt-1 text-slate-500 max-w-[220px]">
               Toca los productos del catálogo o escanea un código para añadirlos
             </p>
@@ -427,14 +428,14 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
           carrito.map((it) => (
             <div
               key={it.producto.id}
-              className="group p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3 transition-colors"
+              className="group p-3 rounded-xl bg-[var(--bg-alt)] border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3 transition-colors"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                <p className="text-sm font-bold text-[var(--text)] truncate">
                   {it.producto.nombre}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                  <span className="text-xs text-[var(--text-muted)] font-mono">
                     C$ {it.precioUnitario.toFixed(2)} c/u
                   </span>
                   <span className="text-xs font-bold text-primary font-mono">
@@ -447,19 +448,19 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => modificarCantidad(it.producto.id, -1)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-sm"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[var(--text)] flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-sm"
                   aria-label={`Disminuir ${it.producto.nombre}`}
                 >
                   <Minus size={14} />
                 </button>
 
-                <span className="w-8 text-center font-bold text-sm text-slate-900 dark:text-white font-mono">
+                <span className="w-8 text-center font-bold text-sm text-[var(--text)] font-mono">
                   {it.cantidad}
                 </span>
 
                 <button
                   onClick={() => modificarCantidad(it.producto.id, 1)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-sm"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[var(--text)] flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-sm"
                   aria-label={`Aumentar ${it.producto.nombre}`}
                 >
                   <Plus size={14} />
@@ -479,11 +480,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* Checkout Form & Controls */}
-      <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3 shrink-0">
+      <div className="pt-3 border-t border-[var(--border)] space-y-3 shrink-0">
         {/* Customer info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
               Cliente
             </label>
             <input
@@ -491,11 +492,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               placeholder="Nombre del Cliente"
               value={clienteNombre}
               onChange={(e) => setClienteNombre(e.target.value)}
-              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
               RUC / Cédula (opcional)
             </label>
             <input
@@ -503,7 +504,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               placeholder="RUC / Cédula"
               value={clienteRuc}
               onChange={(e) => setClienteRuc(e.target.value)}
-              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
             />
           </div>
         </div>
@@ -511,23 +512,23 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         {/* Payment Method & Received Amount */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
               Método de Pago
             </label>
             <select
               value={metodoPago}
               onChange={(e) => setMetodoPago(e.target.value as any)}
-              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer font-medium"
+              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all cursor-pointer font-medium"
             >
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="tarjeta">💳 Tarjeta Débito/Crédito</option>
-              <option value="transferencia">🏦 Transferencia Bancaria</option>
-              <option value="fiado">📝 Crédito / Fiado</option>
+              <option value="efectivo">Efectivo (Córdobas / Dólares)</option>
+              <option value="tarjeta">Tarjeta Débito / Crédito</option>
+              <option value="transferencia">Transferencia Bancaria</option>
+              <option value="fiado">Crédito / Cuenta por Cobrar</option>
             </select>
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
               Efectivo Recibido (C$)
             </label>
             <input
@@ -535,7 +536,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               placeholder="C$ 0.00"
               value={montoRecibido}
               onChange={(e) => setMontoRecibido(e.target.value)}
-              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
             />
           </div>
         </div>
@@ -543,14 +544,14 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         {/* Quick Cash Buttons (Only for Efectivo) */}
         {metodoPago === 'efectivo' && totalSum > 0 && (
           <div>
-            <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+            <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
               Atajos de Cobro
             </div>
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
                 onClick={() => setCashAmount(totalSum)}
-                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-200 active:scale-95 transition-all"
+                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[11px] font-bold text-[var(--text)] active:scale-95 transition-all"
               >
                 Exacto
               </button>
@@ -580,8 +581,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         )}
 
         {/* Totals Breakdown */}
-        <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 space-y-1.5">
-          <div className="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
+        <div className="p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-1.5">
+          <div className="flex justify-between items-center text-xs text-[var(--text-muted)]">
             <span>Subtotal</span>
             <span className="font-mono">C$ {subtotalSum.toFixed(2)}</span>
           </div>
@@ -634,21 +635,21 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       <div className="flex flex-col gap-4 min-w-0">
         
         {/* Barra Superior: Buscador + Escáner + Devolución */}
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           {/* Input Buscador */}
-          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
             <Search size={18} className="text-slate-400 shrink-0" />
             <input
               type="text"
               placeholder="Buscar producto o escanea SKU con lector..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white text-sm placeholder:text-slate-400"
+              className="w-full bg-transparent border-none outline-none text-[var(--text)] text-sm placeholder:text-slate-400"
             />
             {busqueda && (
               <button
                 onClick={() => setBusqueda('')}
-                className="w-6 h-6 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
+                className="w-6 h-6 rounded-full hover:bg-[var(--bg-alt)] text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
               >
                 <X size={14} />
               </button>
@@ -663,7 +664,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               className={`flex-1 sm:flex-initial h-11 min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95 border ${
                 lectorConectado
                   ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+                  : 'bg-slate-50 hover:bg-[var(--bg-alt)] dark:hover:bg-slate-750 border-[var(--border)] text-[var(--text)]'
               }`}
             >
               <Camera size={16} className={lectorConectado ? 'text-emerald-500' : ''} />
@@ -673,7 +674,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <button
               onClick={() => setDevolucionAbierta(true)}
               title="Devolver mercadería al inventario"
-              className="flex-1 sm:flex-initial h-11 min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-all active:scale-95"
+              className="flex-1 sm:flex-initial h-11 min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 bg-slate-50 hover:bg-[var(--bg-alt)] dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] transition-all active:scale-95"
             >
               <RotateCcw size={15} />
               <span>Devolución</span>
@@ -693,7 +694,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   className={`h-9 min-h-[36px] px-3.5 rounded-xl font-bold uppercase tracking-wider text-[11px] whitespace-nowrap transition-all active:scale-95 shrink-0 ${
                     active
                       ? 'bg-primary text-white shadow-sm shadow-primary/30'
-                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {cat === 'todos' ? 'Todos los Productos' : cat}
@@ -709,14 +710,14 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="h-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 animate-pulse"
+                className="h-56 rounded-2xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
               />
             ))}
           </div>
         ) : filtrados.length === 0 ? (
-          <div className="py-16 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl p-6">
+          <div className="py-16 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-2xl p-6">
             <Package size={40} className="mx-auto mb-3 opacity-30 text-slate-500" />
-            <p className="text-base font-bold text-slate-800 dark:text-slate-200">
+            <p className="text-base font-bold text-[var(--text)]">
               No se encontraron productos
             </p>
             <p className="text-xs text-slate-500 mt-1">
@@ -735,16 +736,16 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 <div
                   key={p.id}
                   onClick={() => !sinStock && agregarAlCarrito(p)}
-                  className={`group relative flex flex-col rounded-2xl bg-white dark:bg-slate-900 border transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] ${
+                  className={`group relative flex flex-col rounded-2xl bg-[var(--surface)] border transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] ${
                     sinStock
-                      ? 'opacity-60 grayscale cursor-not-allowed border-slate-200 dark:border-slate-800'
+                      ? 'opacity-60 grayscale cursor-not-allowed border-[var(--border)]'
                       : enCarritoCant > 0
                       ? 'border-primary/60 ring-2 ring-primary/20 shadow-md shadow-primary/5'
-                      : 'border-slate-200/80 dark:border-slate-800 hover:border-primary/40 hover:shadow-md'
+                      : 'border-[var(--border)] hover:border-primary/40 hover:shadow-md'
                   }`}
                 >
                   {/* Image container */}
-                  <div className="relative h-32 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <div className="relative h-32 w-full bg-[var(--bg-alt)] overflow-hidden">
                     {p.imagenUrl || p.portadaUrl ? (
                       <img
                         src={p.imagenUrl || p.portadaUrl || ''}
@@ -790,12 +791,12 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                           {p.categoriaNombre}
                         </p>
                       )}
-                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
+                      <h4 className="text-xs sm:text-sm font-bold text-[var(--text)] leading-snug line-clamp-2">
                         {p.nombre}
                       </h4>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between pt-1 border-t border-[var(--border)]/80">
                       <span className="text-sm sm:text-base font-extrabold text-primary font-mono">
                         C$ {p.precio.toFixed(2)}
                       </span>
@@ -812,28 +813,28 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* ─── Columna Derecha Desktop: Carrito & Cobro POS ─── */}
-      <div className="hidden lg:block sticky top-20 h-[calc(100vh-100px)] p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      <div className="hidden lg:block sticky top-4 h-[calc(100vh-32px)] p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm overflow-hidden">
         {renderCartContent(false)}
       </div>
 
       {/* ─── Mobile Floating Bar & Bottom Sheet Drawer ─── */}
-      {/* 1. Floating bottom pill for mobile screen */}
-      <div className="lg:hidden fixed bottom-20 left-3 right-3 z-30">
+      {/* 1. Floating bottom pill for mobile screen (respeta el espacio exclusivo del navbar derecho) */}
+      <div className="lg:hidden fixed bottom-4 left-3 right-[76px] sm:right-[84px] z-30">
         <button
           onClick={() => setMobileCartOpen(true)}
-          className="w-full h-14 min-h-[52px] px-4 rounded-2xl bg-slate-900 dark:bg-blue-600 text-white shadow-xl shadow-black/20 flex items-center justify-between active:scale-[0.98] transition-all"
+          className="w-full h-14 min-h-[52px] px-4 rounded-2xl bg-[var(--primario)] text-white shadow-xl shadow-black/20 flex items-center justify-between active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-2.5">
-            <div className="relative w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+            <div className="relative w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
               <ShoppingCart size={18} />
               {totalItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold flex items-center justify-center font-mono ring-2 ring-slate-900 dark:ring-blue-600">
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--exito)] text-white text-[10px] font-extrabold flex items-center justify-center font-mono ring-2 ring-[var(--primario)]">
                   {totalItemsCount}
                 </span>
               )}
             </div>
             <div className="text-left">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              <div className="text-xs font-bold uppercase tracking-wider text-white/80">
                 {carrito.length === 0 ? 'Caja Registradora' : `${totalItemsCount} ítems listos`}
               </div>
               <div className="text-base font-extrabold font-mono text-white">
@@ -842,25 +843,25 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-bold bg-white/15 px-3 py-1.5 rounded-xl">
+          <div className="flex items-center gap-1.5 text-xs font-bold bg-white/20 px-3 py-1.5 rounded-xl">
             <span>{carrito.length === 0 ? 'Ver Caja' : 'Cobrar'}</span>
             <ChevronUp size={16} />
           </div>
         </button>
       </div>
 
-      {/* 2. Bottom Sheet Drawer on Mobile */}
+      {/* 2. Bottom Sheet Drawer on Mobile (no invade el espacio del navbar a la derecha) */}
       {mobileCartOpen && (
         <div
           onClick={() => setMobileCartOpen(false)}
-          className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end transition-opacity"
+          className="lg:hidden fixed inset-y-0 left-0 right-[64px] sm:right-[72px] z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end transition-opacity"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-h-[85vh] bg-white dark:bg-slate-900 rounded-t-3xl p-4 sm:p-5 flex flex-col border-t border-slate-200 dark:border-slate-800 shadow-2xl animate-slide-up"
+            className="w-full max-h-[85vh] bg-[var(--surface)] rounded-t-3xl p-4 sm:p-5 flex flex-col border-t border-[var(--border)] shadow-2xl animate-slide-up"
           >
             {/* Grab handle indicator */}
-            <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mb-3" />
+            <div className="w-12 h-1.5 rounded-full bg-[var(--border)] mx-auto mb-3" />
             {renderCartContent(true)}
           </div>
         </div>
@@ -882,7 +883,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
+            className="w-full max-w-md bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
@@ -890,7 +891,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   <Camera size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white font-syne">
+                  <h3 className="text-base font-bold text-[var(--text)] font-syne">
                     Escáner Inalámbrico
                   </h3>
                   <p className="text-xs text-slate-500">Usa tu celular como lector de barras</p>
@@ -901,36 +902,39 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 className={`text-[11px] font-extrabold px-3 py-1 rounded-full ${
                   lectorConectado
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                    : 'bg-[var(--bg-alt)] text-slate-500'
                 }`}
               >
                 {lectorConectado ? 'CONECTADO' : 'ESPERANDO...'}
               </span>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
+            <p className="text-xs text-[var(--text-muted)] mt-4 leading-relaxed">
               En tu celular abre la URL <b>{origenWeb}/escaner</b> e ingresa el siguiente PIN de sesión:
             </p>
 
             {/* PIN Display */}
             <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 text-center text-4xl sm:text-5xl font-extrabold tracking-widest font-mono py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+              <div className="flex-1 text-center text-4xl sm:text-5xl font-extrabold tracking-widest font-mono py-3 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)]">
                 {escanerPin}
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--bg-alt)] flex items-center justify-center text-slate-400">
                 <Wifi size={24} className={lectorConectado ? 'text-emerald-500 animate-pulse' : ''} />
               </div>
             </div>
 
             {origenWeb.includes('localhost') || origenWeb.includes('127.0.0.1') ? (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
-                ⚠️ El celular no puede abrir <b>localhost</b>. Accede usando la IP de tu PC en la red WiFi local (ej. http://192.168.1.10:3000/escaner).
+              <div className="p-3 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/20 text-[var(--warning)] text-xs flex items-start gap-2.5">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                <p className="leading-snug">
+                  El celular no puede abrir <b>localhost</b>. Accede usando la IP de tu PC en la red WiFi local (ej. http://192.168.1.10:3000/escaner).
+                </p>
               </div>
             ) : null}
 
             {/* Últimos Escaneos */}
             <div className="mt-5">
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">
                 Últimas Lecturas
               </div>
               {ultimosEscaneos.length === 0 ? (
@@ -942,9 +946,9 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   {ultimosEscaneos.map((e, i) => (
                     <div
                       key={`${e.codigo}-${i}`}
-                      className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-xs"
+                      className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] text-xs"
                     >
-                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                      <span className="font-mono font-bold text-[var(--text)]">
                         {e.codigo}
                       </span>
                       <span
@@ -967,7 +971,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
             <button
               onClick={cerrarEscaner}
-              className="w-full mt-5 h-11 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
+              className="w-full mt-5 h-11 min-h-[44px] rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
             >
               Cerrar Sesión de Escaneo
             </button>

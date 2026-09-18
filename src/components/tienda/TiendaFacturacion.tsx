@@ -72,16 +72,16 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 items-start">
       {/* ─── Columna Izquierda: Formulario de Configuración Fiscal ─── */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
+      <div className="p-5 sm:p-6 rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-6">
         <div>
           <div className="flex items-center gap-2 text-primary mb-1">
             <FileText size={20} />
             <span className="text-xs font-bold uppercase tracking-wider">Cumplimiento Tributario</span>
           </div>
-          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white font-syne">
+          <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne">
             Configuración de Facturación & DGI
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-[var(--text-muted)] mt-1">
             Ajustes fiscales para la emisión legal de comprobantes y tickets térmicos en Caja POS y ventas
           </p>
         </div>
@@ -90,7 +90,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
           {/* RUC & Razón Social */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              <label className="text-xs font-bold text-[var(--text)] block mb-1">
                 Número RUC de la Empresa *
               </label>
               <input
@@ -98,13 +98,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={ruc}
                 onChange={(e) => setRuc(e.target.value)}
                 placeholder="Ej: J0310000000000"
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              <label className="text-xs font-bold text-[var(--text)] block mb-1">
                 Razón Social Legal *
               </label>
               <input
@@ -112,7 +112,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={razonSocial}
                 onChange={(e) => setRazonSocial(e.target.value)}
                 placeholder="Ej: Comercial Distribuidora S.A."
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                 required
               />
             </div>
@@ -121,13 +121,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
           {/* Régimen & Serie */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              <label className="text-xs font-bold text-[var(--text)] block mb-1">
                 Régimen Fiscal DGI
               </label>
               <select
                 value={regimenDgi}
                 onChange={(e) => setRegimenDgi(e.target.value)}
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer font-medium"
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all cursor-pointer font-medium"
               >
                 <option value="Cuota Fija">Cuota Fija (Pequeño Contribuyente)</option>
                 <option value="Régimen General">Régimen General (IVA 15%)</option>
@@ -136,7 +136,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              <label className="text-xs font-bold text-[var(--text)] block mb-1">
                 Serie de Comprobante / Serie Factura
               </label>
               <input
@@ -144,14 +144,14 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={serieFactura}
                 onChange={(e) => setSerieFactura(e.target.value)}
                 placeholder="F001"
-                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
               />
             </div>
           </div>
 
           {/* Saludo */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+            <label className="text-xs font-bold text-[var(--text)] block mb-1">
               Mensaje de Saludo o Agradecimiento en la Factura
             </label>
             <input
@@ -159,13 +159,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               value={saludoFactura}
               onChange={(e) => setSaludoFactura(e.target.value)}
               placeholder="Ej: ¡Gracias por su compra! Vuelva pronto."
-              className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
             />
           </div>
 
           {/* Pie de Página */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+            <label className="text-xs font-bold text-[var(--text)] block mb-1">
               Pie de Página Legal o Términos de Garantía
             </label>
             <textarea
@@ -173,7 +173,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               onChange={(e) => setPiePaginaFactura(e.target.value)}
               placeholder="Ej: Conservar este comprobante para cualquier garantía dentro de 15 días."
               rows={3}
-              className="w-full p-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+              className="w-full p-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all resize-none"
             />
           </div>
 
@@ -184,7 +184,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               <p className="text-xs font-bold text-primary">
                 Pie de Marca Institucional Permanente
               </p>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+              <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">
                 Todas las facturas y comprobantes térmicos emitidos incluirán la certificación "Generado por LogiFast PWA - Sistema POS & E-Commerce".
               </p>
             </div>
@@ -212,9 +212,9 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* ─── Columna Derecha: Vista Previa Interactiva del Ticket ─── */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 lg:sticky lg:top-20">
+      <div className="p-5 sm:p-6 rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4 lg:sticky lg:top-20">
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-syne">
+          <h3 className="text-sm font-bold text-[var(--text)] font-syne">
             Vista Previa de Comprobante
           </h3>
           <p className="text-xs text-slate-500">

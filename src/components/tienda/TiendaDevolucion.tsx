@@ -126,15 +126,15 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up space-y-4"
+        className="w-full max-w-lg bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up space-y-4"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
               <RotateCcw size={20} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white font-syne">
+              <h3 className="text-base font-bold text-[var(--text)] font-syne">
                 Devolución de Mercadería
               </h3>
               <p className="text-xs text-slate-500">
@@ -145,7 +145,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
           <button
             onClick={onCerrar}
-            className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+            className="w-10 h-10 rounded-xl hover:bg-[var(--bg-alt)] text-slate-500 flex items-center justify-center active:scale-95 transition-all"
             aria-label="Cerrar modal"
           >
             <X size={20} />
@@ -166,9 +166,9 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
               {resultado.items.map((it) => (
                 <div
                   key={it.nombreProducto}
-                  className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between text-xs"
+                  className="p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] flex items-center justify-between text-xs"
                 >
-                  <span className="font-bold text-slate-800 dark:text-slate-200 flex-1 truncate pr-2">
+                  <span className="font-bold text-[var(--text)] flex-1 truncate pr-2">
                     {it.nombreProducto}
                   </span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono mr-3">
@@ -181,7 +181,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
               ))}
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center text-sm font-bold">
+            <div className="p-3 rounded-xl bg-[var(--bg-alt)] flex justify-between items-center text-sm font-bold">
               <span>Total Reembolsado:</span>
               <span className="font-mono text-base text-primary">C$ {resultado.totalDevuelto.toFixed(2)}</span>
             </div>
@@ -208,18 +208,18 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
         ) : (
           <div className="space-y-4">
             {/* Buscador de productos con stock */}
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
               <Search size={16} className="text-slate-400 shrink-0" />
               <input
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar producto por nombre o SKU a devolver…"
-                className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-slate-400"
+                className="w-full bg-transparent border-none outline-none text-[var(--text)] text-xs sm:text-sm placeholder:text-slate-400"
               />
               {busqueda && (
                 <button
                   onClick={() => setBusqueda('')}
-                  className="w-6 h-6 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 flex items-center justify-center shrink-0"
+                  className="w-6 h-6 rounded-full hover:bg-[var(--bg-alt)] text-slate-400 flex items-center justify-center shrink-0"
                 >
                   <X size={13} />
                 </button>
@@ -228,7 +228,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
             {/* Resultados de búsqueda */}
             {busqueda.trim() !== '' && (
-              <div className="p-1 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 max-h-48 overflow-y-auto space-y-1">
+              <div className="p-1 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] max-h-48 overflow-y-auto space-y-1">
                 {candidatos.length === 0 ? (
                   <p className="text-xs text-slate-400 text-center py-3">
                     Sin resultados con stock gestionado
@@ -240,7 +240,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                       onClick={() => agregar(p)}
                       className="w-full p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-700/60 text-left flex items-center justify-between text-xs transition-colors"
                     >
-                      <span className="font-bold text-slate-900 dark:text-white truncate pr-2">
+                      <span className="font-bold text-[var(--text)] truncate pr-2">
                         {p.nombre}
                       </span>
                       <div className="flex items-center gap-3 shrink-0">
@@ -259,18 +259,18 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
             {/* Lista de productos seleccionados para devolución */}
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {lineas.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                <div className="py-8 text-center text-xs text-slate-400 border border-dashed border-[var(--border)] rounded-2xl">
                   Usa el buscador para añadir los productos que el cliente devuelve
                 </div>
               ) : (
                 lineas.map((l) => (
                   <div
                     key={l.producto.id}
-                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2"
+                    className="p-3 rounded-2xl bg-[var(--bg-alt)] border border-slate-200/80 dark:border-slate-700/80 space-y-2"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                        <p className="text-xs sm:text-sm font-bold text-[var(--text)] truncate">
                           {l.producto.nombre}
                         </p>
                         <p className="text-[11px] text-slate-500 font-mono">
@@ -282,7 +282,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => cambiarCantidad(l.producto.id, -1)}
-                          className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center active:scale-95"
+                          className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[var(--text)] flex items-center justify-center active:scale-95"
                           aria-label="Disminuir"
                         >
                           <Minus size={13} />
@@ -292,7 +292,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                         </span>
                         <button
                           onClick={() => cambiarCantidad(l.producto.id, 1)}
-                          className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center active:scale-95"
+                          className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[var(--text)] flex items-center justify-center active:scale-95"
                           aria-label="Aumentar"
                         >
                           <Plus size={13} />
@@ -315,7 +315,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                         )
                       }
                       placeholder="Motivo (opcional): dañado, vencido, talla equivocada…"
-                      className="w-full h-9 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs outline-none focus:border-primary"
+                      className="w-full h-9 px-3 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-xs outline-none focus:border-primary"
                     />
                   </div>
                 ))
@@ -328,19 +328,19 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                 value={referencia}
                 onChange={(e) => setReferencia(e.target.value)}
                 placeholder="N.º Ticket o Referencia (opcional)"
-                className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-primary"
+                className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] text-xs focus:outline-none focus:border-primary"
               />
               <input
                 value={clienteNombre}
                 onChange={(e) => setClienteNombre(e.target.value)}
                 placeholder="Nombre del Cliente (opcional)"
-                className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-primary"
+                className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] text-xs focus:outline-none focus:border-primary"
               />
             </div>
 
             {/* Total Reembolso */}
-            <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center text-sm font-bold">
-              <span className="text-slate-600 dark:text-slate-400">Total a Reembolsar:</span>
+            <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)] flex justify-between items-center text-sm font-bold">
+              <span className="text-[var(--text-muted)]">Total a Reembolsar:</span>
               <span className="font-mono text-lg font-extrabold text-primary">
                 C$ {total.toFixed(2)}
               </span>
@@ -350,7 +350,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
             <div className="flex gap-2.5 pt-2">
               <button
                 onClick={onCerrar}
-                className="flex-1 h-11 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
+                className="flex-1 h-11 min-h-[44px] rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
               >
                 Cancelar
               </button>

@@ -186,48 +186,48 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
     <div className="space-y-4 sm:space-y-5">
       {/* ─── KPI Dashboard Cards ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-primary flex items-center justify-center shrink-0">
             <SlidersHorizontal size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Movimientos</p>
-            <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white font-mono">
+            <p className="text-xs font-bold text-[var(--text-muted)]">Total Movimientos</p>
+            <p className="text-lg sm:text-xl font-extrabold text-[var(--text)] font-mono">
               {stats.total}
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
             <ArrowDownLeft size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Entradas (Stock)</p>
+            <p className="text-xs font-bold text-[var(--text-muted)]">Entradas (Stock)</p>
             <p className="text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
               +{stats.cantEntradas}
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
             <ArrowUpRight size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Salidas / Ventas</p>
+            <p className="text-xs font-bold text-[var(--text-muted)]">Salidas / Ventas</p>
             <p className="text-lg sm:text-xl font-extrabold text-red-600 dark:text-red-400 font-mono">
               -{stats.cantSalidas}
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
             <RotateCcw size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Ajustes Físicos</p>
+            <p className="text-xs font-bold text-[var(--text-muted)]">Ajustes Físicos</p>
             <p className="text-lg sm:text-xl font-extrabold text-amber-600 dark:text-amber-400 font-mono">
               {stats.cantAjustes}
             </p>
@@ -236,13 +236,13 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* ─── Header & Controls ─── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+            <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
               Kardex de Inventario & Auditoría
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
               Registro inmutable de entradas por compra, ventas POS, despachos delivery y mermas
             </p>
           </div>
@@ -250,7 +250,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={cargarDatos}
-              className="h-11 min-h-[44px] px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-2 transition-all active:scale-95"
+              className="h-11 min-h-[44px] px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] text-xs font-bold flex items-center gap-2 transition-all active:scale-95"
               title="Recargar movimientos"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
@@ -268,20 +268,20 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-[var(--border)]">
+          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
             <Search size={16} className="text-slate-400 shrink-0" />
             <input
               type="text"
               placeholder="Buscar por producto, SKU o motivo..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-slate-400"
+              className="w-full bg-transparent border-none outline-none text-[var(--text)] text-xs sm:text-sm placeholder:text-slate-400"
             />
             {busqueda && (
               <button
                 onClick={() => setBusqueda('')}
-                className="w-6 h-6 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
+                className="w-6 h-6 rounded-full hover:bg-[var(--bg-alt)] text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
               >
                 <X size={13} />
               </button>
@@ -303,7 +303,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                 className={`h-9 min-h-[36px] px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
                   filtroTipo === f.id
                     ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-slate-900'
                 }`}
               >
                 {f.label}
@@ -315,11 +315,11 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
 
       {/* ─── Table or Card Stream ─── */}
       {loading ? (
-        <div className="h-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 animate-pulse" />
+        <div className="h-64 rounded-2xl bg-[var(--surface)] border border-[var(--border)] animate-pulse" />
       ) : movimientosFiltrados.length === 0 ? (
-        <div className="py-20 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-6">
+        <div className="py-20 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-3xl p-6">
           <SlidersHorizontal size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
-          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 font-syne">
+          <h3 className="text-base font-bold text-[var(--text)] font-syne">
             No se encontraron movimientos
           </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -327,11 +327,11 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
           </p>
         </div>
       ) : (
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] border-collapse text-left text-xs sm:text-sm">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <tr className="bg-[var(--bg-alt)] border-b border-[var(--border)] text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                   <th className="py-3 px-4">Fecha & Hora</th>
                   <th className="py-3 px-4">Producto / SKU</th>
                   <th className="py-3 px-4">Tipo Movimiento</th>
@@ -355,12 +355,12 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                       key={m.id}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                     >
-                      <td className="py-3 px-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      <td className="py-3 px-4 whitespace-nowrap text-xs text-[var(--text-muted)] font-mono">
                         {new Date(m.createdAt).toLocaleDateString('es-NI')} {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
                       </td>
 
                       <td className="py-3 px-4">
-                        <span className="font-bold text-slate-900 dark:text-white block">
+                        <span className="font-bold text-[var(--text)] block">
                           {m.producto?.nombre || 'Producto'}
                         </span>
                         {m.producto?.codigoBarras && (
@@ -399,7 +399,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                         </span>
                       </td>
 
-                      <td className="py-3 px-4 text-center font-mono text-slate-500 dark:text-slate-400">
+                      <td className="py-3 px-4 text-center font-mono text-[var(--text-muted)]">
                         {m.stockAnterior}
                       </td>
 
@@ -407,7 +407,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                         {m.stockNuevo}
                       </td>
 
-                      <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate">
+                      <td className="py-3 px-4 text-xs text-[var(--text-muted)] max-w-xs truncate">
                         {m.motivo || 'Operación comercial estándar'}
                       </td>
                     </tr>
@@ -427,11 +427,11 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
+            className="w-full max-w-md bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-4">
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+                <h3 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
                   Registrar Movimiento Kardex
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -441,7 +441,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
 
               <button
                 onClick={() => setModalOpen(false)}
-                className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+                className="w-10 h-10 rounded-xl hover:bg-[var(--bg-alt)] text-slate-500 flex items-center justify-center active:scale-95 transition-all"
                 aria-label="Cerrar modal"
               >
                 <X size={20} />
@@ -451,13 +451,13 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
             <form onSubmit={registrarMovimiento} className="space-y-4">
               {/* Selector de Producto */}
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
                   Producto a Afectar *
                 </label>
                 <select
                   value={productoId}
                   onChange={(e) => setProductoId(e.target.value)}
-                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                   required
                 >
                   {productos.map((p) => (
@@ -476,27 +476,30 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
 
               {/* Tipo de Movimiento */}
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
                   Tipo de Movimiento *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'ENTRADA', label: '📥 Entrada', desc: 'Compra / Ingreso' },
-                    { id: 'SALIDA', label: '📤 Salida', desc: 'Merma / Baja' },
-                    { id: 'AJUSTE', label: '🔄 Ajuste', desc: 'Conteo Físico' },
+                    { id: 'ENTRADA', label: 'Entrada', desc: 'Compra / Ingreso', icon: <ArrowDownLeft size={14} className="text-[var(--exito)]" /> },
+                    { id: 'SALIDA', label: 'Salida', desc: 'Merma / Baja', icon: <ArrowUpRight size={14} className="text-[var(--peligro)]" /> },
+                    { id: 'AJUSTE', label: 'Ajuste', desc: 'Conteo Físico', icon: <RotateCcw size={14} className="text-[var(--warning)]" /> },
                   ].map((t) => (
                     <button
                       key={t.id}
                       type="button"
                       onClick={() => setTipo(t.id as any)}
-                      className={`p-2.5 rounded-xl border text-center transition-all active:scale-95 ${
+                      className={`p-2.5 rounded-xl border text-center transition-all active:scale-95 cursor-pointer flex flex-col items-center justify-center ${
                         tipo === t.id
-                          ? 'border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary'
-                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300'
+                          ? 'border-[var(--primario)] bg-[var(--primario-soft)] text-[var(--primario)] font-bold ring-1 ring-[var(--primario)]'
+                          : 'border-[var(--border)] bg-[var(--bg-alt)]/60 text-[var(--text-muted)] hover:text-[var(--text)]'
                       }`}
                     >
-                      <span className="text-xs block font-bold">{t.label}</span>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">{t.desc}</span>
+                      <span className="flex items-center gap-1.5 text-xs font-bold">
+                        {t.icon}
+                        <span>{t.label}</span>
+                      </span>
+                      <span className="text-[10px] opacity-75 block mt-0.5">{t.desc}</span>
                     </button>
                   ))}
                 </div>
@@ -505,7 +508,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
               {/* Cantidad y Costo Unitario */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
                     Cantidad ({tipo === 'ENTRADA' ? '+ stock' : tipo === 'SALIDA' ? '- stock' : 'fijar'}) *
                   </label>
                   <input
@@ -514,13 +517,13 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                     value={cantidad}
                     onChange={(e) => setCantidad(e.target.value)}
                     placeholder="10"
-                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1">
                     Costo Unitario (C$)
                   </label>
                   <input
@@ -529,14 +532,14 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                     value={costoUnitario}
                     onChange={(e) => setCostoUnitario(e.target.value)}
                     placeholder="C$ 0.00"
-                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                   />
                 </div>
               </div>
 
               {/* Motivo */}
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1">
                   Motivo / Justificación
                 </label>
                 <input
@@ -544,16 +547,16 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                   value={motivo}
                   onChange={(e) => setMotivo(e.target.value)}
                   placeholder="Ej: Factura Proveedor #4092, Producto caducado, etc."
-                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="h-11 min-h-[44px] px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
+                  className="h-11 min-h-[44px] px-4 rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
                 >
                   Cancelar
                 </button>
