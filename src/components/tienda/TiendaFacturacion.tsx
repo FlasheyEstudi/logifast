@@ -77,26 +77,28 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 items-start">
       {/* ─── Columna Izquierda: Formulario de Configuración Fiscal ─── */}
-      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-        <CardContent className="p-6 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 text-primary mb-1">
-              <FileText size={20} />
-              <span className="text-xs font-bold uppercase tracking-wider">Cumplimiento Tributario</span>
+      <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+        <CardContent className="p-5 sm:p-6 space-y-6">
+          <div className="flex items-start gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+              <FileText size={22} />
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne">
-              Configuración de Facturación & DGI
-            </h2>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
-              Ajustes fiscales para la emisión legal de comprobantes y tickets térmicos en Caja POS y ventas
-            </p>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-primary">Cumplimiento Tributario</div>
+              <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne mt-0.5">
+                Configuración de Facturación & DGI
+              </h2>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 font-medium">
+                Ajustes fiscales para la emisión legal de comprobantes y tickets térmicos en Caja POS y ventas
+              </p>
+            </div>
           </div>
 
           <form onSubmit={guardarFacturacion} className="space-y-4">
             {/* RUC & Razón Social */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Número RUC de la Empresa *
                 </label>
                 <Input
@@ -104,12 +106,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={ruc}
                   onChange={(e) => setRuc(e.target.value)}
                   placeholder="Ej: J0310000000000"
+                  className="h-11 rounded-2xl"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Razón Social Legal *
                 </label>
                 <Input
@@ -117,6 +120,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={razonSocial}
                   onChange={(e) => setRazonSocial(e.target.value)}
                   placeholder="Ej: Comercial Distribuidora S.A."
+                  className="h-11 rounded-2xl"
                   required
                 />
               </div>
@@ -125,13 +129,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             {/* Régimen & Serie */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Régimen Fiscal DGI
                 </label>
                 <select
                   value={regimenDgi}
                   onChange={(e) => setRegimenDgi(e.target.value)}
-                  className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 cursor-pointer text-[var(--text)] dark:bg-input/30"
+                  className="w-full h-11 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] px-3.5 py-1 text-sm shadow-xs transition-all outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer text-[var(--text)] font-medium"
                 >
                   <option value="Cuota Fija" className="bg-[var(--surface)] text-[var(--text)]">Cuota Fija (Pequeño Contribuyente)</option>
                   <option value="Régimen General" className="bg-[var(--surface)] text-[var(--text)]">Régimen General (IVA 15%)</option>
@@ -140,7 +144,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Serie de Comprobante / Serie Factura
                 </label>
                 <Input
@@ -148,13 +152,14 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={serieFactura}
                   onChange={(e) => setSerieFactura(e.target.value)}
                   placeholder="F001"
+                  className="h-11 rounded-2xl font-mono"
                 />
               </div>
             </div>
 
             {/* Saludo */}
             <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                 Mensaje de Saludo o Agradecimiento en la Factura
               </label>
               <Input
@@ -162,12 +167,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={saludoFactura}
                 onChange={(e) => setSaludoFactura(e.target.value)}
                 placeholder="Ej: ¡Gracias por preferir nuestros productos!"
+                className="h-11 rounded-2xl"
               />
             </div>
 
             {/* Pie de Página */}
             <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                 Políticas de Cambio / Pie de Comprobante
               </label>
               <Textarea
@@ -175,18 +181,18 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 onChange={(e) => setPiePaginaFactura(e.target.value)}
                 placeholder="Ej: Conservar este comprobante para cualquier garantía dentro de 15 días."
                 rows={3}
-                className="resize-none"
+                className="resize-none rounded-2xl"
               />
             </div>
 
             {/* Pie de Marca Institucional LogiFast */}
-            <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 flex items-start gap-3">
+            <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-start gap-3 shadow-xs">
               <Shield size={20} className="text-primary shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-primary">
                   Pie de Marca Institucional Permanente
                 </p>
-                <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed font-medium">
                   Todas las facturas y comprobantes térmicos emitidos incluirán la certificación "Generado por LogiFast PWA - Sistema POS & E-Commerce".
                 </p>
               </div>
@@ -196,7 +202,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             <Button
               type="submit"
               disabled={guardando}
-              className="w-full h-11 text-sm font-semibold"
+              className="w-full h-12 rounded-full text-sm font-bold shadow-md shadow-primary/20 active:scale-[0.99] transition-transform"
             >
               {guardando ? (
                 <>
@@ -215,21 +221,21 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
       </Card>
 
       {/* ─── Columna Derecha: Vista Previa Interactiva del Ticket ─── */}
-      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm lg:sticky lg:top-20">
-        <CardContent className="p-6 space-y-4">
+      <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs lg:sticky lg:top-20">
+        <CardContent className="p-5 sm:p-6 space-y-4">
           <div>
             <h3 className="text-sm font-bold text-[var(--text)] font-syne">
               Vista Previa de Comprobante
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 font-medium">
               Así se imprimirá el ticket en la impresora térmica de 58mm / 80mm
             </p>
           </div>
 
-          <div className="bg-white text-black rounded-2xl p-5 shadow-lg border border-slate-200 font-mono text-xs printable-ticket space-y-3">
+          <div className="bg-white text-black rounded-3xl p-6 shadow-xl border border-slate-200 font-mono text-xs printable-ticket space-y-3">
             <div className="text-center pb-2 border-b border-dashed border-black/40 space-y-0.5">
               <div className="text-sm font-black tracking-tight uppercase">{razonSocial || 'MI TIENDA S.A.'}</div>
-              <div className="text-[11px] text-slate-600">RUC: {ruc || 'J0310000000000'}</div>
+              <div className="text-[11px] text-slate-600">{ruc || 'J0310000000000'}</div>
               <div className="text-[11px] text-slate-600">DGI: {regimenDgi}</div>
               <div className="pt-1.5 text-[11px] font-bold">
                 FACTURA POS #{serieFactura}-000104
