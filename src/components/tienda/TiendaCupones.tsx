@@ -94,52 +94,58 @@ export function TiendaCupones() {
   };
 
   return (
-    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-      <CardContent className="p-6 space-y-4">
+    <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+      <CardContent className="p-5 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-base font-extrabold flex items-center gap-2 text-[var(--text)] m-0">
-            <Tag size={17} className="text-primary" /> Cupones de mi tienda
-          </h3>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+              <Tag size={18} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold font-syne text-[var(--text)] m-0">
+                Cupones de mi tienda
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 m-0 font-medium">
+                Solo aplican a los productos de tu tienda. Los cupones globales de LogiFast siguen vigentes.
+              </p>
+            </div>
+          </div>
           <Button
             type="button"
             onClick={() => setCreando((v) => !v)}
             variant={creando ? 'outline' : 'default'}
             size="sm"
-            className="h-9 text-xs font-semibold gap-1.5"
+            className="h-10 rounded-full px-4 text-xs font-bold gap-1.5 shadow-xs"
           >
             <Plus size={15} /> {creando ? 'Cancelar' : 'Nuevo cupón'}
           </Button>
         </div>
 
-        <p className="text-xs text-[var(--text-muted)] m-0">
-          Solo aplican a los productos de tu tienda. Los cupones globales de LogiFast siguen vigentes.
-        </p>
-
         {creando && (
-          <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Código</label>
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Código</label>
               <Input
                 value={codigo}
                 onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
                 placeholder="EJ. VERANO20"
-                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono uppercase"
+                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono uppercase"
                 required
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Tipo</label>
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Tipo</label>
               <select
                 value={tipoDescuento}
                 onChange={(e) => setTipoDescuento(e.target.value as 'porcentaje' | 'fijo')}
-                className="w-full h-10 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primario)]"
+                className="w-full h-11 px-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
               >
                 <option value="porcentaje">Porcentaje (%)</option>
                 <option value="fijo">Monto fijo (C$)</option>
               </select>
             </div>
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
                 {tipoDescuento === 'porcentaje' ? 'Descuento (%)' : 'Descuento (C$)'}
               </label>
               <Input
@@ -147,12 +153,12 @@ export function TiendaCupones() {
                 min="1"
                 value={valor}
                 onChange={(e) => setValor(e.target.value)}
-                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
                 required
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
                 Compra mínima (C$, 0 = sin mínimo)
               </label>
               <Input
@@ -160,11 +166,11 @@ export function TiendaCupones() {
                 min="0"
                 value={montoMinimo}
                 onChange={(e) => setMontoMinimo(e.target.value)}
-                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
                 Tope de descuento (C$, 0 = sin tope)
               </label>
               <Input
@@ -172,11 +178,11 @@ export function TiendaCupones() {
                 min="0"
                 value={descuentoMaximo}
                 onChange={(e) => setDescuentoMaximo(e.target.value)}
-                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
                 Vigencia (días)
               </label>
               <Input
@@ -184,11 +190,11 @@ export function TiendaCupones() {
                 min="1"
                 value={vigenciaDias}
                 onChange={(e) => setVigenciaDias(e.target.value)}
-                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
                 Usos máximos (0 = ilimitado)
               </label>
               <Input
@@ -196,14 +202,14 @@ export function TiendaCupones() {
                 min="0"
                 value={maxUsos}
                 onChange={(e) => setMaxUsos(e.target.value)}
-                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
               />
             </div>
             <div className="flex items-end">
               <Button
                 type="submit"
                 disabled={guardando}
-                className="w-full h-10 text-xs font-semibold"
+                className="w-full h-11 rounded-full text-xs font-bold shadow-md shadow-primary/20"
               >
                 {guardando ? 'Creando…' : 'Crear cupón'}
               </Button>
@@ -211,7 +217,7 @@ export function TiendaCupones() {
           </form>
         )}
 
-        <div className="space-y-2 pt-2">
+        <div className="space-y-2.5 pt-2">
           {loading ? (
             <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando cupones…</div>
           ) : cupones.length === 0 ? (
@@ -222,21 +228,21 @@ export function TiendaCupones() {
             cupones.map((c) => (
               <div
                 key={c.id}
-                className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]"
+                className="flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 shadow-xs"
               >
                 <span className="font-mono font-bold text-sm text-[var(--text)]">{c.codigo}</span>
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                   {c.tipoDescuento === 'porcentaje' ? `${c.valor}%` : money(c.valor)}
                 </span>
-                <span className="text-[11px] text-[var(--text-muted)]">
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">
                   {c.montoMinimo ? `mínimo ${money(c.montoMinimo)}` : 'sin mínimo'} · usos {c.usosActuales}
                   {c.maxUsos > 0 ? `/${c.maxUsos}` : ''} · vence {new Date(c.vigenciaFin).toLocaleDateString('es-NI')}
                 </span>
                 <Badge
                   variant={c.estado === 'activo' ? 'secondary' : 'outline'}
-                  className={`ml-auto text-[10px] font-bold uppercase ${
+                  className={`ml-auto text-[10px] font-bold uppercase rounded-full px-3 py-0.5 ${
                     c.estado === 'activo'
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                       : 'text-[var(--text-muted)]'
                   }`}
                 >

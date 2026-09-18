@@ -122,20 +122,26 @@ function SeccionEquipo() {
   };
 
   return (
-    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-      <CardContent className="p-6 space-y-4">
-        <h3 className="text-base font-extrabold flex items-center gap-2 text-[var(--text)] m-0">
-          <Users size={17} className="text-primary" /> Equipo de la tienda
-        </h3>
-        <p className="text-xs text-[var(--text-muted)] m-0">
-          Cada persona entra con su propia cuenta y ve <b>solo esta tienda</b>. El rol decide qué puede tocar: el cajero
-          vende pero no cambia precios.
-        </p>
+    <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+      <CardContent className="p-5 sm:p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+            <Users size={18} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold font-syne text-[var(--text)] m-0">
+              Equipo de la tienda
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5 m-0 font-medium">
+              Cada persona entra con su propia cuenta y ve <b>solo esta tienda</b>. El rol decide qué puede tocar.
+            </p>
+          </div>
+        </div>
 
         {esPropietario && (
-          <form onSubmit={invitar} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-3 pt-2">
+          <form onSubmit={invitar} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
                 Correo del usuario registrado
               </label>
               <Input
@@ -143,18 +149,18 @@ function SeccionEquipo() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="cajero@correo.com"
-                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70"
                 required
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
                 Rol
               </label>
               <select
                 value={rol}
                 onChange={(e) => setRol(e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primario)]"
+                className="w-full h-11 px-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
               >
                 {roles.filter((r) => r !== 'dueno').map((r) => (
                   <option key={r} value={r}>
@@ -167,7 +173,7 @@ function SeccionEquipo() {
               <Button
                 type="submit"
                 disabled={enviando}
-                className="h-10 text-xs font-semibold gap-1.5"
+                className="h-11 rounded-full px-5 text-xs font-bold gap-1.5 shadow-md shadow-primary/20"
               >
                 <Plus size={15} /> {enviando ? 'Invitando…' : 'Invitar'}
               </Button>
@@ -175,7 +181,7 @@ function SeccionEquipo() {
           </form>
         )}
 
-        <div className="space-y-2 pt-2">
+        <div className="space-y-2.5 pt-2">
           {cargando ? (
             <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando equipo…</div>
           ) : equipo.length === 0 ? (
@@ -184,14 +190,14 @@ function SeccionEquipo() {
             equipo.map((m) => (
               <div
                 key={m.id}
-                className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]"
+                className="flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 shadow-xs"
               >
                 <span className="font-bold text-sm text-[var(--text)]">{m.nombre}</span>
                 <span className="text-xs text-[var(--text-muted)]">{m.email}</span>
-                <Badge variant="secondary" className="text-[10px] font-bold uppercase">
+                <Badge variant="secondary" className="text-[10px] font-bold uppercase rounded-full px-2.5 py-0.5">
                   {m.rol}
                 </Badge>
-                <span className="text-[11px] text-[var(--text-muted)]">
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">
                   {m.permisosEfectivos.join(', ') || 'sin permisos'}
                 </span>
                 {esPropietario && (
@@ -200,7 +206,7 @@ function SeccionEquipo() {
                     variant="outline"
                     size="sm"
                     onClick={() => quitar(m.id)}
-                    className="ml-auto h-8 text-xs font-semibold text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                    className="ml-auto h-8 rounded-full px-3 text-xs font-semibold text-red-500 hover:text-red-600 hover:bg-red-500/10 shadow-xs"
                   >
                     Quitar
                   </Button>
@@ -272,57 +278,64 @@ function SeccionAlianzas() {
   };
 
   return (
-    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-      <CardContent className="p-6 space-y-4">
-        <h3 className="text-base font-extrabold flex items-center gap-2 text-[var(--text)] m-0">
-          <Star size={17} className="text-primary" /> Alianzas con repartidores
-        </h3>
-        <p className="text-xs text-[var(--text-muted)] m-0">
-          Ofrece un beneficio a los repartidores; lo ven en su app y queda registrado cada canje.
-        </p>
-
-        <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3 pt-2">
+    <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+      <CardContent className="p-5 sm:p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+            <Star size={18} />
+          </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Beneficio</label>
+            <h3 className="text-base font-bold font-syne text-[var(--text)] m-0">
+              Alianzas con repartidores
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5 m-0 font-medium">
+              Ofrece un beneficio a los repartidores; lo ven en su app y queda registrado cada canje.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
+          <div>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Beneficio</label>
             <Input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Café gratis al entregar"
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70"
               required
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Valor</label>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Valor</label>
             <Input
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="10% / C$50"
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Vigencia (días)</label>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Vigencia (días)</label>
             <Input
               type="number"
               min="0"
               value={vigenciaDias}
               onChange={(e) => setVigenciaDias(e.target.value)}
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70"
             />
           </div>
           <div className="flex items-end">
             <Button
               type="submit"
               disabled={enviando}
-              className="h-10 text-xs font-semibold gap-1.5"
+              className="h-11 rounded-full px-5 text-xs font-bold gap-1.5 shadow-md shadow-primary/20"
             >
               <Plus size={15} /> Publicar
             </Button>
           </div>
         </form>
 
-        <div className="space-y-2 pt-2">
+        <div className="space-y-2.5 pt-2">
           {cargando ? (
             <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando alianzas…</div>
           ) : alianzas.length === 0 ? (
@@ -331,14 +344,14 @@ function SeccionAlianzas() {
             alianzas.map((a) => (
               <div
                 key={a.id}
-                className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]"
+                className="flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 shadow-xs"
               >
                 <span className="font-bold text-sm text-[var(--text)]">{a.titulo}</span>
                 {a.valor && (
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{a.valor}</span>
                 )}
-                <span className="text-[11px] text-[var(--text-muted)]">vence {fecha(a.vigenciaFin)}</span>
-                <Badge variant="outline" className="ml-auto text-[11px] font-bold">
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">vence {fecha(a.vigenciaFin)}</span>
+                <Badge variant="outline" className="ml-auto text-[11px] font-bold rounded-full px-3 py-0.5">
                   {a.canjes} canje(s)
                 </Badge>
               </div>
@@ -421,111 +434,121 @@ function SeccionPauta() {
   };
 
   return (
-    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-      <CardContent className="p-6 space-y-4">
-        <h3 className="text-base font-extrabold flex items-center gap-2 text-[var(--text)] m-0">
-          <Megaphone size={17} className="text-primary" /> Publicidad en el inicio
-        </h3>
-        <p className="text-xs text-[var(--text-muted)] m-0">
-          Tu anuncio aparece en el inicio de la app mientras esté vigente; se cuentan impresiones y clics.
-        </p>
-
-        <form onSubmit={contratar} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+    <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+      <CardContent className="p-5 sm:p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Megaphone size={19} />
+          </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Título</label>
+            <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] m-0">
+              Publicidad en el inicio
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] m-0 mt-0.5">
+              Tu anuncio aparece en el inicio de la app mientras esté vigente; se cuentan impresiones y clics.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={contratar} className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+          <div>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Título</label>
             <Input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              placeholder="2x1 en Frescl hoy"
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              placeholder="2x1 en Fresco hoy"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
               required
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Subtítulo</label>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Subtítulo</label>
             <Input
               value={subtitulo}
               onChange={(e) => setSubtitulo(e.target.value)}
               placeholder="Solo por hoy en tu tienda"
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Texto del botón</label>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Texto del botón</label>
             <Input
               value={botonTexto}
               onChange={(e) => setBotonTexto(e.target.value)}
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Enlace del botón</label>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Enlace del botón</label>
             <Input
               value={botonLink}
               onChange={(e) => setBotonLink(e.target.value)}
               placeholder="/cliente/explorar"
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Color</label>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Color</label>
             <input
               type="color"
               value={colorFondo}
               onChange={(e) => setColorFondo(e.target.value)}
-              className="w-full h-10 p-1 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] cursor-pointer"
+              className="w-full h-11 p-1 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] cursor-pointer"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Días de vigencia</label>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Días de vigencia</label>
             <Input
               type="number"
               min="1"
               value={dias}
               onChange={(e) => setDias(e.target.value)}
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Tarifa acordada (C$)</label>
+            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Tarifa acordada (C$)</label>
             <Input
               type="number"
               min="0"
               value={precioMensual}
               onChange={(e) => setPrecioMensual(e.target.value)}
-              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div className="flex items-end">
             <Button
               type="submit"
               disabled={enviando}
-              className="w-full h-10 text-xs font-semibold gap-1.5"
+              className="w-full h-11 rounded-full text-xs font-bold gap-1.5 shadow-md shadow-primary/20"
             >
               <Plus size={15} /> {enviando ? 'Contratando…' : 'Contratar anuncio'}
             </Button>
           </div>
         </form>
 
-        <div className="space-y-2 pt-2">
+        <div className="space-y-2.5 pt-2">
           {cargando ? (
-            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando anuncios…</div>
+            <div className="text-xs text-[var(--text-muted)] py-6 text-center">Cargando anuncios…</div>
           ) : banners.length === 0 ? (
-            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Sin anuncios contratados.</div>
+            <div className="text-xs text-[var(--text-muted)] py-6 text-center">Sin anuncios contratados.</div>
           ) : (
             banners.map((b) => (
               <div
                 key={b.id}
-                className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]"
+                className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 transition-all hover:bg-[var(--bg-alt)]"
               >
-                <span className="font-bold text-sm text-[var(--text)]">{b.titulo}</span>
-                <span className="text-[11px] text-[var(--text-muted)]">hasta {fecha(b.programadoHasta)}</span>
-                <span className="text-[11px] text-[var(--text-muted)]">
-                  {b.impresiones} vistas · {b.clicks} clics
-                </span>
+                <div className="space-y-1">
+                  <div className="font-bold text-sm text-[var(--text)]">{b.titulo}</div>
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                    <span>Hasta {fecha(b.programadoHasta)}</span>
+                    <span>•</span>
+                    <span>{b.impresiones} vistas · {b.clicks} clics</span>
+                  </div>
+                </div>
                 <Badge
                   variant={b.pagado ? 'secondary' : 'outline'}
-                  className={`ml-auto text-[10px] font-bold ${
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${
                     b.pagado
                       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0'
                       : 'text-amber-600 dark:text-amber-400 border-amber-500/30'

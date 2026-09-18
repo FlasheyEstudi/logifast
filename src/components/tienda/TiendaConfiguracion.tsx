@@ -179,25 +179,27 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   return (
     <div className="w-full space-y-6">
       {/* ─── Tarjeta Principal de Configuración ─── */}
-      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
-        <CardContent className="p-6 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 text-primary mb-1">
-              <Settings size={20} />
-              <span className="text-xs font-bold uppercase tracking-wider">Ajustes Generales</span>
+      <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+        <CardContent className="p-5 sm:p-6 space-y-6">
+          <div className="flex items-start gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+              <Settings size={22} />
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne">
-              Configuración del Local Comercial & Horarios
-            </h2>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
-              Personaliza el nombre, fachada, banner, tarifas de envío y horarios semanales en LogiFast
-            </p>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-primary">Ajustes Generales</div>
+              <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne mt-0.5">
+                Configuración del Local Comercial & Horarios
+              </h2>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 font-medium">
+                Personaliza el nombre, fachada, banner, tarifas de envío y horarios semanales en LogiFast
+              </p>
+            </div>
           </div>
 
           <form onSubmit={guardarConfiguracion} className="space-y-5">
             {/* Banner & Logo Uploaders */}
             <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
-              <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
+              <div className="p-4 rounded-3xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60">
                 <label className="text-xs font-bold text-[var(--text)] block mb-2">
                   Foto de Portada / Banner del Local
                 </label>
@@ -207,11 +209,11 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                   label="Subir Banner de Portada"
                   aspectRatio="wide"
                   previewUrl={bannerUrl || null}
-                  className="w-full h-36 rounded-xl"
+                  className="w-full h-36 rounded-2xl"
                 />
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/50 border border-[var(--border)]">
+              <div className="p-4 rounded-3xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60">
                 <label className="text-xs font-bold text-[var(--text)] block mb-2">
                   Logotipo del Comercio
                 </label>
@@ -222,7 +224,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                   aspectRatio="square"
                   rounded="md"
                   previewUrl={imagenUrl || null}
-                  className="w-full h-36 rounded-xl"
+                  className="w-full h-36 rounded-2xl"
                 />
               </div>
             </div>
@@ -230,7 +232,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
             {/* Nombre & Categoría */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Nombre Comercial *
                 </label>
                 <Input
@@ -238,19 +240,19 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   placeholder="Ej: Sabor Nica Restaurant"
-                  className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  className="h-11 rounded-2xl bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Categoría de Comercio
                 </label>
                 <select
                   value={categoria}
                   onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primario)] cursor-pointer font-medium"
+                  className="w-full h-11 px-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] text-[var(--text)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer font-medium"
                 >
                   <option value="comida">Comida rápida / Restaurante</option>
                   <option value="tienda">Tienda / Abarrotes</option>
@@ -265,7 +267,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
 
             {/* Dirección */}
             <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                 Dirección Física Exacta *
               </label>
               <Input
@@ -273,7 +275,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                 value={direccion}
                 onChange={(e) => setDireccion(e.target.value)}
                 placeholder="Ej: De la Rotonda El Guegüense 2c abajo, Managua"
-                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                className="h-11 rounded-2xl bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
                 required
               />
             </div>
@@ -281,7 +283,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
             {/* Tarifas de Envío, Pedido Mínimo y Contacto */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Costo de Envío Base (C$)
                 </label>
                 <Input
@@ -289,12 +291,12 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                   value={costoEnvio}
                   onChange={(e) => setCostoEnvio(e.target.value)}
                   placeholder="20"
-                  className="h-10 text-xs font-mono bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  className="h-11 rounded-2xl font-mono bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Pedido Mínimo (C$)
                 </label>
                 <Input
@@ -302,12 +304,12 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                   value={pedidoMinimo}
                   onChange={(e) => setPedidoMinimo(e.target.value)}
                   placeholder="50"
-                  className="h-10 text-xs font-mono bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  className="h-11 rounded-2xl font-mono bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                   Teléfono / WhatsApp
                 </label>
                 <Input
@@ -318,15 +320,15 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                     setWhatsapp(e.target.value);
                   }}
                   placeholder="8888-8888"
-                  className="h-10 text-xs font-mono bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+                  className="h-11 rounded-2xl font-mono bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
                 />
               </div>
             </div>
 
             {/* Horarios Semanales */}
-            <div className="p-4 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-3">
+            <div className="p-4 sm:p-5 rounded-3xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 space-y-3.5">
               <div className="flex items-center gap-2">
-                <Clock size={16} className="text-primary" />
+                <Clock size={18} className="text-primary" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
                   Horarios de Atención Semanal
                 </h3>
@@ -338,7 +340,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                   return (
                     <div
                       key={key}
-                      className="p-2.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                      className="p-3 rounded-2xl bg-[var(--surface)] border border-slate-200/60 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-xs"
                     >
                       <span className="font-bold text-[var(--text)] w-24 shrink-0">
                         {label}
@@ -346,24 +348,24 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
 
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                          <span className="text-[11px] text-slate-500 shrink-0">Abre:</span>
+                          <span className="text-[11px] text-slate-500 shrink-0 font-medium">Abre:</span>
                           <Input
                             type="time"
                             value={item.abre}
                             disabled={item.cerrado}
                             onChange={(e) => updateDaySchedule(key, 'abre', e.target.value)}
-                            className="h-8 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] disabled:opacity-50"
+                            className="h-9 rounded-xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] disabled:opacity-50"
                           />
                         </div>
 
                         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                          <span className="text-[11px] text-slate-500 shrink-0">Cierra:</span>
+                          <span className="text-[11px] text-slate-500 shrink-0 font-medium">Cierra:</span>
                           <Input
                             type="time"
                             value={item.cierra}
                             disabled={item.cerrado}
                             onChange={(e) => updateDaySchedule(key, 'cierra', e.target.value)}
-                            className="h-8 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] disabled:opacity-50"
+                            className="h-9 rounded-xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] disabled:opacity-50"
                           />
                         </div>
                       </div>
@@ -384,10 +386,10 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
             </div>
 
             {/* Coordenadas GPS */}
-            <div className="p-4 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-3">
+            <div className="p-4 sm:p-5 rounded-3xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 space-y-3.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <MapPin size={16} className="text-primary" />
+                  <MapPin size={18} className="text-primary" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
                     Ubicación GPS en Mapa *
                   </h3>
@@ -398,7 +400,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                   variant="outline"
                   size="sm"
                   onClick={detectarGPS}
-                  className="h-8 text-xs font-semibold gap-1.5 self-start sm:self-auto"
+                  className="h-9 rounded-full px-4 text-xs font-bold gap-1.5 self-start sm:self-auto shadow-xs"
                 >
                   <MapPin size={13} />
                   <span>Capturar mi GPS Actual</span>
@@ -407,7 +409,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                  <label className="text-[11px] font-bold text-slate-500 block mb-1.5">
                     Latitud (GPS)
                   </label>
                   <Input
@@ -416,13 +418,13 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                     value={lat}
                     onChange={(e) => setLat(e.target.value)}
                     placeholder="12.1365"
-                    className="h-10 text-xs font-mono bg-[var(--surface)] border-[var(--border)] text-[var(--text)]"
+                    className="h-11 rounded-2xl text-xs font-mono bg-[var(--surface)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                  <label className="text-[11px] font-bold text-slate-500 block mb-1.5">
                     Longitud (GPS)
                   </label>
                   <Input
@@ -431,7 +433,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                     value={lng}
                     onChange={(e) => setLng(e.target.value)}
                     placeholder="-86.2514"
-                    className="h-10 text-xs font-mono bg-[var(--surface)] border-[var(--border)] text-[var(--text)]"
+                    className="h-11 rounded-2xl text-xs font-mono bg-[var(--surface)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
                     required
                   />
                 </div>
@@ -440,7 +442,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
 
             {/* Descripción Corta */}
             <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1">
+              <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
                 Descripción Comercial del Local
               </label>
               <Textarea
@@ -448,7 +450,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
                 onChange={(e) => setDescripcion(e.target.value)}
                 placeholder="Describe los productos y especialidades de tu negocio para los clientes en Marketplace..."
                 rows={3}
-                className="text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] resize-none"
+                className="text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] resize-none rounded-2xl p-3.5"
               />
             </div>
 
@@ -456,7 +458,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
             <Button
               type="submit"
               disabled={guardando}
-              className="w-full h-11 text-sm font-semibold gap-2"
+              className="w-full h-12 rounded-full text-sm font-bold gap-2 shadow-md shadow-primary/20 active:scale-[0.99] transition-transform"
             >
               {guardando ? (
                 <>
