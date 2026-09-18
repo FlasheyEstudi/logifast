@@ -1,12 +1,72 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@plugin "flyonui";
-@import "../../node_modules/flyonui/variants.css";
 @import "../../node_modules/preline/variants.css";
 @source "../../node_modules/preline/dist/*.js";
 
-@plugin "flyonui" {
-  themes: light --default, dark --prefersdark, soft;
+/* ══════════════════════════════════════════════════════════════════════
+   MODO OSCURO POR CLASE, NO POR SISTEMA OPERATIVO
+   ──────────────────────────────────────────────────────────────────────
+   tailwind.config.ts declara darkMode:"class", pero Tailwind 4 no lee ese
+   archivo sin un @config (que aquí no existe). Medido: las variantes dark:
+   compilaban a @media (prefers-color-scheme: dark), o sea seguían al
+   sistema operativo en vez de al toggle de la app.
+   La app marca el tema con .dark y data-theme="dark" en <html> y <body>
+   (ver configStore.aplicarTema). Esto los conecta.
+   ══════════════════════════════════════════════════════════════════════ */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOS NOMBRES DEL KIT -> LOS TOKENS DE LOGIFAST
+   ──────────────────────────────────────────────────────────────────────
+   flyonui ya no está: sus clases de componente no se usaban en la app y
+   su --color-primary era oklch(57.59% .247 287.24) = VIOLETA. Por eso el
+   kit shadcn (Button, Badge, Switch, Slider, Checkbox, Progress,
+   Tooltip) y el portal de tienda pintaban violeta mientras el resto de la
+   app usaba var(--primario) = #007AFF.
+   Aquí esos nombres apuntan a los tokens reales. `inline` hace que las
+   utilidades usen var(--token) directamente, de modo que el valor sigue
+   cambiando con [data-theme="dark"].
+   ══════════════════════════════════════════════════════════════════════ */
+@theme inline {
+  /* Superficies y texto */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Marca — azul LogiFast */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  /* Neutros */
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Estados */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: #FFFFFF;
+  --color-success: var(--exito);
+  --color-warning: var(--warning);
+  --color-error: var(--peligro);
+  --color-info: var(--info);
+
+  /* Bordes, campos y foco */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Gráficas */
+  --color-chart-1: hsl(var(--chart-1-hsl));
+  --color-chart-2: hsl(var(--chart-2-hsl));
+  --color-chart-3: hsl(var(--chart-3-hsl));
+  --color-chart-4: hsl(var(--chart-4-hsl));
+  --color-chart-5: hsl(var(--chart-5-hsl));
 }
 
 /* ========================================

@@ -1400,7 +1400,7 @@ export default function Home() {
                         <input 
                           type="checkbox" 
                           id="regTerms"
-                          className="checkbox checkbox-xs checkbox-primary mt-0.5 border-[var(--border)] bg-transparent"
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer rounded-[4px] border border-[var(--border)] bg-transparent accent-[var(--primario)]"
                           checked={regTerms}
                           onChange={(e) => setRegTerms(e.target.checked)}
                         />
