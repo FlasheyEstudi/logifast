@@ -169,21 +169,21 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
   return (
     <div className="w-full space-y-4 sm:space-y-5">
       {/* ─── Header & KDS Navigation Tabs ─── */}
-      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+      <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
         <CardContent className="p-5 sm:p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
                   {isComida ? 'Monitor KDS de Cocina' : 'Monitor de Comandas & Despacho'}
                 </h2>
                 {conteo.recibidos > 0 && (
-                  <Badge className="animate-pulse px-2.5 py-0.5 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-extrabold font-mono shadow-sm">
+                  <Badge className="animate-pulse px-3 py-0.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold font-mono shadow-xs">
                     {conteo.recibidos} NUEVOS
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 font-medium">
                 Control en tiempo real de órdenes online y Marketplace para cocina o empaque
               </p>
             </div>
@@ -194,7 +194,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                 variant="outline"
                 size="sm"
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`h-10 text-xs font-semibold gap-2 ${
+                className={`h-10 rounded-full px-4 text-xs font-bold gap-2 shadow-xs ${
                   soundEnabled
                     ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
                     : ''
@@ -208,7 +208,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                 variant="outline"
                 size="sm"
                 onClick={cargarOrdenes}
-                className="h-10 text-xs font-semibold gap-1.5"
+                className="h-10 rounded-full px-4 text-xs font-bold gap-1.5 shadow-xs"
               >
                 <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
                 <span className="hidden sm:inline">Actualizar</span>
@@ -217,7 +217,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-2 border-t border-[var(--border)]">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
             {[
               { id: 'activos', label: 'En Proceso', count: conteo.activos },
               { id: 'recibido', label: 'Nuevos', count: conteo.recibidos, highlight: conteo.recibidos > 0 },
@@ -232,16 +232,20 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                   variant={active ? 'default' : 'secondary'}
                   size="sm"
                   onClick={() => setFiltroEstado(tab.id)}
-                  className="h-8 rounded-full text-xs font-semibold px-3 gap-1.5 shrink-0"
+                  className={`h-9 rounded-full text-xs font-bold px-4 gap-2 shrink-0 transition-all ${
+                    active
+                      ? 'shadow-sm shadow-primary/25'
+                      : 'bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 text-[var(--text-muted)] hover:text-[var(--text)]'
+                  }`}
                 >
                   <span>{tab.label}</span>
                   <span
-                    className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full font-mono ${
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full font-mono ${
                       active
                         ? 'bg-white/25 text-white'
                         : tab.highlight
                         ? 'bg-amber-500 text-white animate-pulse'
-                        : 'bg-[var(--border)] text-[var(--text)]'
+                        : 'bg-[var(--bg-alt)] text-[var(--text)]'
                     }`}
                   >
                     {tab.count}
@@ -255,7 +259,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
 
       {/* ─── Orders Grid ─── */}
       {ordenesFiltradas.length === 0 ? (
-        <div className="py-20 px-6 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-3xl">
+        <div className="py-20 px-6 text-center bg-[var(--surface)] border border-dashed border-slate-200/70 dark:border-slate-800/70 rounded-3xl">
           <Clock size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
           <h3 className="text-base font-bold text-[var(--text)] font-syne">
             No hay pedidos en esta sección
@@ -265,7 +269,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
           {ordenesFiltradas.map((ord) => {
             const elapsed = getElapsedInfo(ord.createdAt);
             const isRecibido = ord.estado === 'recibido';
@@ -275,45 +279,47 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
             return (
               <div
                 key={ord.id}
-                style={{
-                  filter: 'drop-shadow(var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15)))',
-                }}
-                className="w-full max-w-[320px] mx-auto"
+                className="w-full max-w-[360px] mx-auto rounded-3xl overflow-hidden bg-[var(--surface)] border border-slate-200/80 dark:border-slate-800/80 shadow-xs hover:shadow-md transition-all flex flex-col"
               >
+                {/* Status Color Banner */}
                 <div
-                  style={{
-                    background: 'var(--surface)',
-                    color: 'var(--text)',
-                    clipPath:
-                      'polygon(0% 0%, 100% 0%, 100% calc(100% - 10px), 97.5% 100%, 95% calc(100% - 10px), 92.5% 100%, 90% calc(100% - 10px), 87.5% 100%, 85% calc(100% - 10px), 82.5% 100%, 80% calc(100% - 10px), 77.5% 100%, 75% calc(100% - 10px), 72.5% 100%, 70% calc(100% - 10px), 67.5% 100%, 65% calc(100% - 10px), 62.5% 100%, 60% calc(100% - 10px), 57.5% 100%, 55% calc(100% - 10px), 52.5% 100%, 50% calc(100% - 10px), 47.5% 100%, 45% calc(100% - 10px), 42.5% 100%, 40% calc(100% - 10px), 37.5% 100%, 35% calc(100% - 10px), 32.5% 100%, 30% calc(100% - 10px), 27.5% 100%, 25% calc(100% - 10px), 22.5% 100%, 20% calc(100% - 10px), 17.5% 100%, 15% calc(100% - 10px), 12.5% 100%, 10% calc(100% - 10px), 7.5% 100%, 5% calc(100% - 10px), 2.5% 100%, 0% calc(100% - 10px))',
-                    borderTop: isRecibido
-                      ? '4px solid var(--peligro, #FF3B30)'
+                  className={`h-2 w-full ${
+                    isRecibido
+                      ? 'bg-red-500'
                       : isPreparando
-                      ? '4px solid var(--warning, #FF9500)'
+                      ? 'bg-amber-500'
                       : isListo
-                      ? '4px solid var(--exito, #34C759)'
-                      : '4px solid var(--border)',
-                  }}
-                  className="p-4 pb-8 font-mono text-xs flex flex-col gap-3 transition-colors duration-200"
-                >
+                      ? 'bg-emerald-500'
+                      : 'bg-slate-400'
+                  }`}
+                />
+
+                <div className="p-5 font-mono text-xs flex flex-col gap-3.5 flex-1 justify-between">
                   {/* Cabecera comanda */}
-                  <div className="text-center pb-2 border-b border-dashed border-[var(--border)]">
-                    <div className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
-                      LOGIFAST KDS
+                  <div className="pb-3 border-b border-dashed border-slate-200/80 dark:border-slate-800 space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] font-sans">
+                        LOGIFAST KDS
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${elapsed.color} font-sans`}>
+                        {elapsed.label}
+                      </span>
                     </div>
-                    <div className="text-xl font-black tracking-tight text-[var(--text)] mt-0.5">
+
+                    <div className="text-lg font-black tracking-tight text-[var(--text)]">
                       PEDIDO #{ord.id.slice(-5).toUpperCase()}
                     </div>
-                    <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                      {ord.createdAt}
-                    </div>
-                    <div className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[var(--bg-alt)] text-[var(--text)]">
-                      {ord.estado} &middot; {elapsed.label}
+
+                    <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)]">
+                      <span>{ord.createdAt}</span>
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--bg-alt)] text-[var(--text)]">
+                        {ord.estado}
+                      </span>
                     </div>
                   </div>
 
                   {/* Cliente y Entrega */}
-                  <div className="space-y-1 pb-2 border-b border-dashed border-[var(--border)]">
+                  <div className="space-y-1.5 pb-3 border-b border-dashed border-slate-200/80 dark:border-slate-800">
                     <div className="flex justify-between items-start gap-2">
                       <span className="text-[10px] uppercase font-bold text-[var(--text-muted)]">CLIENTE:</span>
                       <span className="font-bold text-[var(--text)] text-right truncate">{ord.clienteNombre}</span>
@@ -331,18 +337,18 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                   </div>
 
                   {/* Productos */}
-                  <div className="space-y-1.5 pb-2 border-b border-dashed border-[var(--border)]">
+                  <div className="space-y-1.5 pb-3 border-b border-dashed border-slate-200/80 dark:border-slate-800 flex-1">
                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      <span>CANT / ARTICULO</span>
+                      <span>CANT / ARTÍCULO</span>
                       <span>PRECIO</span>
                     </div>
                     {ord.items.map((it, idx) => (
                       <div key={idx} className="flex justify-between items-start gap-2">
                         <span className="font-bold text-[var(--text)] flex-1">
-                          <span className="font-black text-[var(--primario)] mr-1">{it.cantidad}x</span>
+                          <span className="font-black text-primary mr-1.5">{it.cantidad}x</span>
                           {it.nombreProducto}
                         </span>
-                        <span className="text-[var(--text-muted)] shrink-0">
+                        <span className="text-[var(--text-muted)] shrink-0 font-medium">
                           C$ {(it.cantidad * it.precioUnitario).toFixed(2)}
                         </span>
                       </div>
@@ -354,17 +360,17 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                     <span className="text-[11px] font-bold uppercase text-[var(--text-muted)]">
                       TOTAL ({ord.metodoPago}):
                     </span>
-                    <span className="text-base font-black text-[var(--text)]">
+                    <span className="text-base font-black text-[var(--text)] font-mono">
                       C$ {ord.total.toFixed(2)}
                     </span>
                   </div>
 
                   {/* Acciones */}
-                  <div className="pt-2 font-sans space-y-1.5">
+                  <div className="pt-2 font-sans space-y-2">
                     {isRecibido && (
                       <Button
                         onClick={() => cambiarEstado(ord.id, 'preparando')}
-                        className="w-full h-10 text-xs font-bold"
+                        className="w-full h-11 rounded-full text-xs font-bold shadow-md shadow-primary/20"
                       >
                         Aceptar y Preparar
                       </Button>
@@ -373,7 +379,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                     {isPreparando && (
                       <Button
                         onClick={() => cambiarEstado(ord.id, 'listo')}
-                        className="w-full h-10 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                        className="w-full h-11 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20"
                       >
                         Marcar Listo
                       </Button>
@@ -383,7 +389,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                       <Button
                         variant="secondary"
                         onClick={() => cambiarEstado(ord.id, 'en_camino')}
-                        className="w-full h-10 text-xs font-bold"
+                        className="w-full h-11 rounded-full text-xs font-bold shadow-xs"
                       >
                         Entregar a Repartidor
                       </Button>
