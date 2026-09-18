@@ -58,64 +58,14 @@ interface FacturaDatos {
   pieMarcaLogifast: string;
 }
 
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+
 /* ═══════════════════════════════════════════════
-   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
+   CATEGORY FILTER PILL
    ═══════════════════════════════════════════════ */
-
-const sectionCard: React.CSSProperties = {
-  background: 'var(--surface)',
-  borderRadius: 'var(--lf-card-radius, 20px)',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--lf-shadow-card)',
-  padding: 16,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '11px 16px',
-  borderRadius: 'var(--lf-input-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  outline: 'none',
-};
-
-const btnPrimary: React.CSSProperties = {
-  padding: '10px 20px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: 'none',
-  background: 'var(--primario)',
-  color: '#FFFFFF',
-  fontWeight: 600,
-  fontSize: 14,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 8,
-  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-  transition: 'all 0.2s ease',
-};
-
-const btnSecondary: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  transition: 'all 0.2s ease',
-};
 
 const filterPill = (active: boolean): React.CSSProperties => ({
   padding: '7px 14px',
@@ -564,24 +514,24 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
               Cliente
             </label>
-            <input
+            <Input
               type="text"
               placeholder="Nombre del Cliente"
               value={clienteNombre}
               onChange={(e) => setClienteNombre(e.target.value)}
-              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
             />
           </div>
           <div>
             <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
               RUC / Cédula (opcional)
             </label>
-            <input
+            <Input
               type="text"
               placeholder="RUC / Cédula"
               value={clienteRuc}
               onChange={(e) => setClienteRuc(e.target.value)}
-              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
             />
           </div>
         </div>
@@ -595,12 +545,12 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <select
               value={metodoPago}
               onChange={(e) => setMetodoPago(e.target.value as any)}
-              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all cursor-pointer font-medium"
+              className="w-full h-10 px-3 rounded-md text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all cursor-pointer font-medium"
             >
-              <option value="efectivo">Efectivo (Córdobas / Dólares)</option>
-              <option value="tarjeta">Tarjeta Débito / Crédito</option>
-              <option value="transferencia">Transferencia Bancaria</option>
-              <option value="fiado">Crédito / Cuenta por Cobrar</option>
+              <option value="efectivo" className="bg-[var(--surface)] text-[var(--text)]">Efectivo (Córdobas / Dólares)</option>
+              <option value="tarjeta" className="bg-[var(--surface)] text-[var(--text)]">Tarjeta Débito / Crédito</option>
+              <option value="transferencia" className="bg-[var(--surface)] text-[var(--text)]">Transferencia Bancaria</option>
+              <option value="fiado" className="bg-[var(--surface)] text-[var(--text)]">Crédito / Cuenta por Cobrar</option>
             </select>
           </div>
 
@@ -608,12 +558,12 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
               Efectivo Recibido (C$)
             </label>
-            <input
+            <Input
               type="number"
               placeholder="C$ 0.00"
               value={montoRecibido}
               onChange={(e) => setMontoRecibido(e.target.value)}
-              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)] transition-all"
+              className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] font-mono"
             />
           </div>
         </div>
@@ -625,34 +575,42 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               Atajos de Cobro
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setCashAmount(totalSum)}
-                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[11px] font-bold text-[var(--text)] active:scale-95 transition-all"
+                className="h-8 px-2.5 text-[11px] font-bold text-[var(--text)]"
               >
                 Exacto
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => addCashAmount(50)}
-                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold active:scale-95 transition-all"
+                className="h-8 px-2.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
               >
                 +C$50
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => addCashAmount(100)}
-                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold active:scale-95 transition-all"
+                className="h-8 px-2.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
               >
                 +C$100
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => addCashAmount(500)}
-                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold active:scale-95 transition-all"
+                className="h-8 px-2.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
               >
                 +C$500
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -685,24 +643,23 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         </div>
 
         {/* Submit Button */}
-        <button
+        <Button
           onClick={procesarVenta}
           disabled={procesando || carrito.length === 0}
-          style={btnPrimary}
-          className="w-full h-12 min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] transition-all"
+          className="w-full h-12 min-h-[48px] text-sm font-bold shadow-md"
         >
           {procesando ? (
             <>
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
               <span>Procesando Venta...</span>
             </>
           ) : (
             <>
-              <CheckCircle2 size={18} />
+              <CheckCircle2 size={18} className="mr-2" />
               <span>Cobrar & Generar Factura</span>
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -713,68 +670,56 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       <div className="flex flex-col gap-4 min-w-0">
         
         {/* Barra Superior: Buscador + Escáner + Devolución */}
-        <div
-          style={sectionCard}
-          className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5"
-        >
-          {/* Input Buscador */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '8px 14px',
-              borderRadius: 'var(--lf-input-radius, 14px)',
-              background: 'var(--bg-alt)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <Search size={18} className="text-slate-400 shrink-0" />
-            <input
-              type="text"
-              placeholder="Buscar producto o escanea SKU con lector..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-[var(--text)] text-sm placeholder:text-slate-400"
-            />
-            {busqueda && (
-              <button
-                onClick={() => setBusqueda('')}
-                className="w-6 h-6 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
+        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+          <CardContent className="p-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            {/* Input Buscador */}
+            <div className="relative flex-1 flex items-center">
+              <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Buscar producto o escanea SKU con lector..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="pl-9 pr-8 h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+              />
+              {busqueda && (
+                <button
+                  onClick={() => setBusqueda('')}
+                  className="absolute right-2.5 w-5 h-5 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Botones de acción rápida en fila responsive */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant={lectorConectado ? 'default' : 'secondary'}
+                onClick={abrirEscaner}
+                title="Emparejar un celular como lector de códigos de barras"
+                className={`flex-1 sm:flex-initial h-10 min-h-[40px] text-xs font-semibold ${
+                  lectorConectado
+                    ? '!bg-emerald-600 hover:!bg-emerald-700 text-white'
+                    : ''
+                }`}
               >
-                <X size={14} />
-              </button>
-            )}
-          </div>
+                <Camera size={15} className="mr-1.5" />
+                <span>{lectorConectado ? 'Lector Activo' : 'Escáner Celular'}</span>
+              </Button>
 
-          {/* Botones de acción rápida en fila responsive */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={abrirEscaner}
-              title="Emparejar un celular como lector de códigos de barras"
-              style={btnSecondary}
-              className={`flex-1 sm:flex-initial h-11 min-h-[44px] ${
-                lectorConectado
-                  ? '!border-emerald-500/40 !bg-emerald-500/10 !text-emerald-600 dark:!text-emerald-400'
-                  : ''
-              }`}
-            >
-              <Camera size={16} className={lectorConectado ? 'text-emerald-500' : ''} />
-              <span>{lectorConectado ? 'Lector Activo' : 'Escáner Celular'}</span>
-            </button>
-
-            <button
-              onClick={() => setDevolucionAbierta(true)}
-              title="Devolver mercadería al inventario"
-              style={btnSecondary}
-              className="flex-1 sm:flex-initial h-11 min-h-[44px]"
-            >
-              <RotateCcw size={15} />
-              <span>Devolución</span>
-            </button>
-          </div>
-        </div>
+              <Button
+                variant="secondary"
+                onClick={() => setDevolucionAbierta(true)}
+                title="Devolver mercadería al inventario"
+                className="flex-1 sm:flex-initial h-10 min-h-[40px] text-xs font-semibold"
+              >
+                <RotateCcw size={14} className="mr-1.5" />
+                <span>Devolución</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Category Pills Slider */}
         {categorias.length > 2 && (
@@ -944,12 +889,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* ─── Columna Derecha Desktop: Carrito & Cobro POS ─── */}
-      <div
-        style={sectionCard}
-        className="hidden lg:block sticky top-4 h-[calc(100vh-32px)] overflow-hidden"
-      >
-        {renderCartContent(false)}
-      </div>
+      <Card className="hidden lg:block sticky top-4 h-[calc(100vh-32px)] overflow-hidden bg-[var(--surface)] border-[var(--border)] shadow-sm">
+        <CardContent className="p-4 h-full flex flex-col overflow-hidden">
+          {renderCartContent(false)}
+        </CardContent>
+      </Card>
 
       {/* ─── Mobile Floating Bar & Bottom Sheet Drawer ─── */}
       {/* 1. Floating bottom pill for mobile screen */}
@@ -957,15 +901,17 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         <button
           onClick={() => setMobileCartOpen(true)}
           style={{
-            ...btnPrimary,
             width: '100%',
             height: 56,
             borderRadius: 'var(--lf-pill-radius, 100px)',
+            background: 'var(--primario)',
             boxShadow: '0 8px 24px rgba(0, 122, 255, 0.35)',
             justifyContent: 'space-between',
             padding: '0 16px',
+            display: 'inline-flex',
+            alignItems: 'center',
           }}
-          className="active:scale-[0.98] transition-all"
+          className="active:scale-[0.98] transition-all text-white font-semibold"
         >
           <div className="flex items-center gap-2.5">
             <div className="relative w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
@@ -1041,15 +987,16 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 </div>
               </div>
 
-              <span
+              <Badge
+                variant={lectorConectado ? 'default' : 'secondary'}
                 className={`text-[11px] font-extrabold px-3 py-1 rounded-full ${
                   lectorConectado
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30'
-                    : 'bg-[var(--bg-alt)] text-slate-500'
+                    : 'text-slate-500'
                 }`}
               >
                 {lectorConectado ? 'CONECTADO' : 'ESPERANDO...'}
-              </span>
+              </Badge>
             </div>
 
             <p className="text-xs text-[var(--text-muted)] mt-4 leading-relaxed">
@@ -1112,12 +1059,13 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               )}
             </div>
 
-            <button
+            <Button
+              variant="outline"
               onClick={cerrarEscaner}
-              className="w-full mt-5 h-11 min-h-[44px] rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
+              className="w-full mt-5 h-11 min-h-[44px] text-xs font-bold"
             >
               Cerrar Sesión de Escaneo
-            </button>
+            </Button>
           </div>
         </div>
       )}
