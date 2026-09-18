@@ -3,6 +3,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, Tag } from '@/components/icons';
 import { notify } from '@/lib/notify';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 interface Cupon {
   id: string;
@@ -18,27 +22,6 @@ interface Cupon {
 }
 
 const money = (n: number) => `C$ ${n.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-const campo: React.CSSProperties = {
-  width: '100%',
-  minWidth: 0,
-  height: 44,
-  borderRadius: 'var(--lf-input-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  padding: '0 12px',
-  fontSize: 13,
-  outline: 'none',
-};
-
-const etiqueta: React.CSSProperties = {
-  fontSize: 11.5,
-  fontWeight: 700,
-  color: 'var(--text-muted)',
-  marginBottom: 4,
-  display: 'block',
-};
 
 /**
  * #6 — Cupones propios de la tienda.
@@ -110,146 +93,161 @@ export function TiendaCupones() {
     }
   };
 
-  const panel: React.CSSProperties = {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--lf-card-radius, 20px)',
-    boxShadow: 'var(--lf-shadow-card)',
-    padding: 24,
-  };
-
   return (
-    <div style={panel}>
-      <div className="flex flex-wrap items-center gap-3">
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Tag size={17} /> Cupones de mi tienda
-        </h3>
-        <button
-          type="button"
-          onClick={() => setCreando((v) => !v)}
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            height: 44,
-            padding: '0 18px',
-            borderRadius: 'var(--lf-button-radius, 14px)',
-            border: 'none',
-            background: 'var(--primario)',
-            color: '#FFFFFF',
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-          }}
-        >
-          <Plus size={15} /> {creando ? 'Cancelar' : 'Nuevo cupón'}
-        </button>
-      </div>
+    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+      <CardContent className="p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-base font-extrabold flex items-center gap-2 text-[var(--text)] m-0">
+            <Tag size={17} className="text-primary" /> Cupones de mi tienda
+          </h3>
+          <Button
+            type="button"
+            onClick={() => setCreando((v) => !v)}
+            variant={creando ? 'outline' : 'default'}
+            size="sm"
+            className="h-9 text-xs font-semibold gap-1.5"
+          >
+            <Plus size={15} /> {creando ? 'Cancelar' : 'Nuevo cupón'}
+          </Button>
+        </div>
 
-      <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-        Solo aplican a los productos de tu tienda. Los cupones globales de LogiFast siguen vigentes.
-      </p>
+        <p className="text-xs text-[var(--text-muted)] m-0">
+          Solo aplican a los productos de tu tienda. Los cupones globales de LogiFast siguen vigentes.
+        </p>
 
-      {creando && (
-        <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ marginTop: 14 }}>
-          <div>
-            <label style={etiqueta}>Código</label>
-            <input
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
-              placeholder="EJ. VERANO20"
-              style={campo}
-              required
-            />
-          </div>
-          <div>
-            <label style={etiqueta}>Tipo</label>
-            <select value={tipoDescuento} onChange={(e) => setTipoDescuento(e.target.value as 'porcentaje' | 'fijo')} style={campo}>
-              <option value="porcentaje">Porcentaje (%)</option>
-              <option value="fijo">Monto fijo (C$)</option>
-            </select>
-          </div>
-          <div>
-            <label style={etiqueta}>{tipoDescuento === 'porcentaje' ? 'Descuento (%)' : 'Descuento (C$)'}</label>
-            <input type="number" min="1" value={valor} onChange={(e) => setValor(e.target.value)} style={campo} required />
-          </div>
-          <div>
-            <label style={etiqueta}>Compra mínima (C$, 0 = sin mínimo)</label>
-            <input type="number" min="0" value={montoMinimo} onChange={(e) => setMontoMinimo(e.target.value)} style={campo} />
-          </div>
-          <div>
-            <label style={etiqueta}>Tope de descuento (C$, 0 = sin tope)</label>
-            <input type="number" min="0" value={descuentoMaximo} onChange={(e) => setDescuentoMaximo(e.target.value)} style={campo} />
-          </div>
-          <div>
-            <label style={etiqueta}>Vigencia (días)</label>
-            <input type="number" min="1" value={vigenciaDias} onChange={(e) => setVigenciaDias(e.target.value)} style={campo} />
-          </div>
-          <div>
-            <label style={etiqueta}>Usos máximos (0 = ilimitado)</label>
-            <input type="number" min="0" value={maxUsos} onChange={(e) => setMaxUsos(e.target.value)} style={campo} />
-          </div>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={guardando}
-              style={{
-                width: '100%',
-                height: 44,
-                borderRadius: 10,
-                border: 'none',
-                background: guardando ? 'var(--bg-alt)' : 'var(--exito)',
-                color: guardando ? 'var(--text-muted)' : '#06240F',
-                fontWeight: 800,
-                fontSize: 13,
-                cursor: guardando ? 'wait' : 'pointer',
-              }}
-            >
-              {guardando ? 'Creando…' : 'Crear cupón'}
-            </button>
-          </div>
-        </form>
-      )}
-
-      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {loading ? (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Cargando cupones…</div>
-        ) : cupones.length === 0 ? (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-            Todavía no tienes cupones propios. Crea uno para atraer clientes con un descuento que solo aplica en tu tienda.
-          </div>
-        ) : (
-          cupones.map((c) => (
-            <div
-              key={c.id}
-              className="flex flex-wrap items-center gap-3"
-              style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}
-            >
-              <span style={{ fontFamily: 'ui-monospace, monospace', fontWeight: 800, fontSize: 13.5 }}>{c.codigo}</span>
-              <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--exito)' }}>
-                {c.tipoDescuento === 'porcentaje' ? `${c.valor}%` : money(c.valor)}
-              </span>
-              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                {c.montoMinimo ? `mínimo ${money(c.montoMinimo)}` : 'sin mínimo'} · usos {c.usosActuales}
-                {c.maxUsos > 0 ? `/${c.maxUsos}` : ''} · vence {new Date(c.vigenciaFin).toLocaleDateString('es-NI')}
-              </span>
-              <span
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: c.estado === 'activo' ? 'var(--exito)' : 'var(--text-muted)',
-                }}
-              >
-                {c.estado.toUpperCase()}
-              </span>
+        {creando && (
+          <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Código</label>
+              <Input
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
+                placeholder="EJ. VERANO20"
+                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono uppercase"
+                required
+              />
             </div>
-          ))
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">Tipo</label>
+              <select
+                value={tipoDescuento}
+                onChange={(e) => setTipoDescuento(e.target.value as 'porcentaje' | 'fijo')}
+                className="w-full h-10 px-3 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--primario)]"
+              >
+                <option value="porcentaje">Porcentaje (%)</option>
+                <option value="fijo">Monto fijo (C$)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+                {tipoDescuento === 'porcentaje' ? 'Descuento (%)' : 'Descuento (C$)'}
+              </label>
+              <Input
+                type="number"
+                min="1"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+                Compra mínima (C$, 0 = sin mínimo)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                value={montoMinimo}
+                onChange={(e) => setMontoMinimo(e.target.value)}
+                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+                Tope de descuento (C$, 0 = sin tope)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                value={descuentoMaximo}
+                onChange={(e) => setDescuentoMaximo(e.target.value)}
+                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+                Vigencia (días)
+              </label>
+              <Input
+                type="number"
+                min="1"
+                value={vigenciaDias}
+                onChange={(e) => setVigenciaDias(e.target.value)}
+                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-[var(--text-muted)] block mb-1">
+                Usos máximos (0 = ilimitado)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                value={maxUsos}
+                onChange={(e) => setMaxUsos(e.target.value)}
+                className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button
+                type="submit"
+                disabled={guardando}
+                className="w-full h-10 text-xs font-semibold"
+              >
+                {guardando ? 'Creando…' : 'Crear cupón'}
+              </Button>
+            </div>
+          </form>
         )}
-      </div>
-    </div>
+
+        <div className="space-y-2 pt-2">
+          {loading ? (
+            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando cupones…</div>
+          ) : cupones.length === 0 ? (
+            <div className="text-xs text-[var(--text-muted)] py-4 text-center">
+              Todavía no tienes cupones propios. Crea uno para atraer clientes con un descuento que solo aplica en tu tienda.
+            </div>
+          ) : (
+            cupones.map((c) => (
+              <div
+                key={c.id}
+                className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]"
+              >
+                <span className="font-mono font-bold text-sm text-[var(--text)]">{c.codigo}</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  {c.tipoDescuento === 'porcentaje' ? `${c.valor}%` : money(c.valor)}
+                </span>
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  {c.montoMinimo ? `mínimo ${money(c.montoMinimo)}` : 'sin mínimo'} · usos {c.usosActuales}
+                  {c.maxUsos > 0 ? `/${c.maxUsos}` : ''} · vence {new Date(c.vigenciaFin).toLocaleDateString('es-NI')}
+                </span>
+                <Badge
+                  variant={c.estado === 'activo' ? 'secondary' : 'outline'}
+                  className={`ml-auto text-[10px] font-bold uppercase ${
+                    c.estado === 'activo'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0'
+                      : 'text-[var(--text-muted)]'
+                  }`}
+                >
+                  {c.estado}
+                </Badge>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
