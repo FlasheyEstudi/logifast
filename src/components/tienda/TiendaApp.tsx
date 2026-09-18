@@ -15,6 +15,8 @@ import { TiendaReportesExcel } from './TiendaReportesExcel';
 import { TiendaEstadisticas } from './TiendaEstadisticas';
 import { TiendaConfiguracion } from './TiendaConfiguracion';
 import { AlertCircle, RefreshCw } from '@/components/icons';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface TiendaAppProps {
   isDark: boolean;
@@ -51,29 +53,32 @@ class TiendaModuloErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="w-full p-8 rounded-2xl bg-[var(--surface)] border border-rose-500/30 text-center flex flex-col items-center justify-center gap-4 my-6 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
-            <AlertCircle size={24} />
-          </div>
-          <div className="max-w-md">
-            <h3 className="text-base font-bold text-[var(--text)] font-syne">
-              Error al cargar el módulo
-            </h3>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
-              Ocurrió un problema inesperado en este apartado ({this.props.modulo}). Puedes reintentar o navegar a otro módulo.
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              this.setState({ hasError: false, error: null });
-              this.props.onReset();
-            }}
-            className="px-4 py-2 rounded-xl bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-          >
-            <RefreshCw size={14} />
-            <span>Reintentar módulo</span>
-          </button>
-        </div>
+        <Card className="w-full bg-[var(--surface)] border-rose-500/30 shadow-sm my-6">
+          <CardContent className="p-8 text-center flex flex-col items-center justify-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+              <AlertCircle size={24} />
+            </div>
+            <div className="max-w-md">
+              <h3 className="text-base font-bold text-[var(--text)] font-syne">
+                Error al cargar el módulo
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                Ocurrió un problema inesperado en este apartado ({this.props.modulo}). Puedes reintentar o navegar a otro módulo.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                this.props.onReset();
+              }}
+              size="sm"
+              className="gap-2 font-bold"
+            >
+              <RefreshCw size={14} />
+              <span>Reintentar módulo</span>
+            </Button>
+          </CardContent>
+        </Card>
       );
     }
     return this.props.children;
