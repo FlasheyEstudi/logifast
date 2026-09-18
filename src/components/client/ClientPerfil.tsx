@@ -363,7 +363,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       : String(userName || 'Cliente').trim().slice(0, 2).toUpperCase();
   }, [userName]);
 
-  const email = 'cliente@logifast.com';
+  // El correo sale de la sesión real (antes estaba fijo como 'cliente@logifast.com',
+  // así que cualquier cuenta nueva veía el correo del usuario de demostración).
+  const [email, setEmail] = useState('');
 
   /* ─── Foto de perfil subible ─── */
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -429,6 +431,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
           setCurrentName(data.user.name);
           setEditName(data.user.name);
         }
+        if (data?.user?.email) setEmail(data.user.email);
         if (data?.user?.telefono) {
           setEditPhone(data.user.telefono);
         }
@@ -898,9 +901,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
                 </div>
                 <button
                   onClick={() => {
+                    // Los datos reales (nombre, teléfono, dirección) ya se cargaron de
+                    // /api/auth/me al montar; antes se sobreescribían con los del demo.
                     setEditName(currentName);
-                    setEditPhone('+505 8888-1234');
-                    setEditAddress('Col. Los Robles, Managua');
                     setEditing(true);
                   }}
                   style={{
