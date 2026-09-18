@@ -18,13 +18,24 @@ import {
 
 export type TiendaModulo =
   | 'kds'
+  | 'pos'
   | 'inventario'
   | 'kardex'
-  | 'pos'
   | 'facturacion'
   | 'reportes'
   | 'estadisticas'
   | 'configuracion';
+
+export const TIENDA_MODULO_LABELS: Record<TiendaModulo, string> = {
+  kds: 'Monitor KDS',
+  pos: 'Caja Registradora POS',
+  inventario: 'Inventario & Catálogo',
+  kardex: 'Kardex & Movimientos',
+  facturacion: 'Facturación & DGI',
+  reportes: 'Reportes Financieros',
+  estadisticas: 'Métricas & Ventas',
+  configuracion: 'Configuración Tienda',
+};
 
 interface TiendaNavbarProps {
   isDark: boolean;
@@ -51,133 +62,295 @@ export function TiendaNavbar({
   moduloActivo,
   onSelectModulo,
 }: TiendaNavbarProps) {
-  const modulos: { id: TiendaModulo; label: string; shortLabel: string; icon: React.ReactNode }[] = [
-    { id: 'kds', label: 'Monitor KDS', shortLabel: 'KDS', icon: <Clock size={19} /> },
-    { id: 'pos', label: 'Caja Registradora POS', shortLabel: 'POS', icon: <CreditCard size={19} /> },
-    { id: 'inventario', label: 'Inventario & Catálogo', shortLabel: 'Stock', icon: <Package size={19} /> },
-    { id: 'kardex', label: 'Kardex & Movimientos', shortLabel: 'Kardex', icon: <SlidersHorizontal size={19} /> },
-    { id: 'facturacion', label: 'Facturación & DGI', shortLabel: 'DGI', icon: <FileText size={19} /> },
-    { id: 'reportes', label: 'Reportes Financieros', shortLabel: 'Excel', icon: <BarChart3 size={19} /> },
-    { id: 'estadisticas', label: 'Métricas & Ventas', shortLabel: 'Métricas', icon: <TrendingUp size={19} /> },
-    { id: 'configuracion', label: 'Configuración Tienda', shortLabel: 'Perfil', icon: <Settings size={19} /> },
+  const modulos: { id: TiendaModulo; label: string; icon: typeof Clock }[] = [
+    { id: 'kds', label: 'Monitor KDS', icon: Clock },
+    { id: 'pos', label: 'Caja Registradora POS', icon: CreditCard },
+    { id: 'inventario', label: 'Inventario & Catálogo', icon: Package },
+    { id: 'kardex', label: 'Kardex & Movimientos', icon: SlidersHorizontal },
+    { id: 'facturacion', label: 'Facturación & DGI', icon: FileText },
+    { id: 'reportes', label: 'Reportes Financieros', icon: BarChart3 },
+    { id: 'estadisticas', label: 'Métricas & Ventas', icon: TrendingUp },
+    { id: 'configuracion', label: 'Configuración', icon: Settings },
   ];
 
   const handleExitAction = onReturnToClient || onLogout;
   const isAbierta = tiendaEstado === 'activo';
 
   return (
-    <div className="flex flex-col h-full justify-between select-none">
-      {/* ─── Encabezado de la Tienda (Identidad / Avatar) ─── */}
-      <div className="p-2 sm:p-3 xl:p-4 border-b border-[var(--border)] flex flex-col items-center xl:items-start shrink-0">
-        <div className="flex items-center gap-3 w-full justify-center xl:justify-start">
-          {/* Avatar del Comercio */}
-          <div className="relative shrink-0 w-10 h-10 xl:w-11 xl:h-11 rounded-xl overflow-hidden bg-[var(--primario)] flex items-center justify-center text-white font-bold text-sm shadow-sm ring-1 ring-black/5 dark:ring-white/10">
-            {tiendaImagenUrl ? (
-              <img
-                src={tiendaImagenUrl}
-                alt={tiendaNombre}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Store size={20} />
-            )}
-            {/* Indicador de Estado (Verde / Ámbar) - Cero Emojis */}
-            <span
-              className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-[var(--surface)] ${
-                isAbierta ? 'bg-[var(--exito)]' : 'bg-[var(--warning)]'
-              }`}
-              title={isAbierta ? 'Tienda Abierta y Operativa' : 'Tienda Pausada'}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        justifyContent: 'space-between',
+        userSelect: 'none',
+        background: 'var(--lf-surface, #ffffff)',
+      }}
+    >
+      {/* ─── Cabecera de la Tienda (Identidad / Avatar) ─── */}
+      <div
+        style={{
+          padding: '14px 12px',
+          borderBottom: '1px solid var(--lf-border, rgba(60, 60, 67, 0.12))',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            overflow: 'hidden',
+            background: 'var(--lf-accent, #007AFF)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: 14,
+            flexShrink: 0,
+          }}
+        >
+          {tiendaImagenUrl ? (
+            <img
+              src={tiendaImagenUrl}
+              alt={tiendaNombre}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
-          </div>
+          ) : (
+            <Store size={20} />
+          )}
+          {/* Indicador de Estado - CERO EMOJIS */}
+          <span
+            style={{
+              position: 'absolute',
+              bottom: 2,
+              right: 2,
+              width: 9,
+              height: 9,
+              borderRadius: '50%',
+              background: isAbierta ? 'var(--lf-success, #34C759)' : 'var(--lf-warning, #FF9500)',
+              border: '2px solid var(--lf-surface, #ffffff)',
+            }}
+            title={isAbierta ? 'Tienda Abierta' : 'Tienda Pausada'}
+          />
+        </div>
 
-          {/* Información Expandida (Solo pantallas XL) */}
-          <div className="hidden xl:flex flex-col min-w-0 flex-1">
-            <h1 className="text-sm font-bold text-[var(--text)] truncate font-syne tracking-tight">
-              {tiendaNombre || 'Mi Tienda'}
-            </h1>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span
-                className={`inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                  isAbierta
-                    ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]/20'
-                    : 'bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/20'
-                }`}
-              >
-                {isAbierta ? 'Abierta' : 'Pausada'}
-              </span>
-              <span className="text-[11px] text-[var(--text-muted)] capitalize truncate">
-                {tiendaCategoria}
-              </span>
-            </div>
+        <div className="hidden lg:flex" style={{ flexDirection: 'column', minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: 'var(--lf-text-main, #1C1C1E)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              fontFamily: "var(--font-syne), 'Syne', sans-serif",
+            }}
+          >
+            {tiendaNombre || 'Mi Tienda'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 6px',
+                borderRadius: 6,
+                background: isAbierta ? 'rgba(52, 199, 89, 0.12)' : 'rgba(255, 149, 0, 0.12)',
+                color: isAbierta ? 'var(--lf-success, #34C759)' : 'var(--lf-warning, #FF9500)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {isAbierta ? 'Abierta' : 'Pausada'}
+            </span>
+            <span
+              style={{
+                fontSize: 11,
+                color: 'var(--lf-text-muted, #8E8E93)',
+                textTransform: 'capitalize',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {tiendaCategoria}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ─── Lista Vertical de Módulos (Scrollable si pantalla pequeña) ─── */}
+      {/* ─── Lista Vertical de Navegación (8 Módulos) ─── */}
       <nav
-        aria-label="Navegación de Tienda"
-        className="flex-1 overflow-y-auto p-1.5 sm:p-2 xl:p-3 space-y-1 sm:space-y-1.5 no-scrollbar"
+        aria-label="Navegación vertical de la tienda"
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '10px 8px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+        }}
+        className="no-scrollbar"
       >
-        {modulos.map((m) => {
-          const active = moduloActivo === m.id;
+        {modulos.map((item) => {
+          const Icon = item.icon;
+          const isActive = moduloActivo === item.id;
           return (
             <button
-              key={m.id}
-              onClick={() => onSelectModulo(m.id)}
-              title={m.label}
-              className={`w-full min-h-[44px] rounded-xl flex items-center transition-all duration-150 cursor-pointer ${
-                active
-                  ? 'bg-[var(--primario-soft)] text-[var(--primario)] font-bold shadow-xs'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-alt)]/60 font-medium'
-              } justify-center xl:justify-start px-0 xl:px-3 gap-3`}
+              key={item.id}
+              onClick={() => onSelectModulo(item.id)}
+              title={item.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 10px',
+                borderRadius: 10,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12.5,
+                fontWeight: isActive ? 700 : 500,
+                background: isActive ? 'var(--lf-accent-soft, rgba(0, 122, 255, 0.08))' : 'transparent',
+                color: isActive ? 'var(--lf-accent, #007AFF)' : 'var(--lf-text-muted, #8E8E93)',
+                transition: 'all 0.18s ease',
+                width: '100%',
+                minHeight: 44,
+                textAlign: 'left',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.background = 'var(--lf-accent-soft, rgba(0, 122, 255, 0.04))';
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.background = 'transparent';
+              }}
             >
-              <span
-                className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
-                  active
-                    ? 'bg-[var(--primario)] text-white shadow-xs'
-                    : 'text-[var(--text-muted)] group-hover:text-[var(--text)]'
-                }`}
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isActive ? 'var(--lf-accent, #007AFF)' : 'transparent',
+                  color: isActive ? '#ffffff' : 'inherit',
+                  flexShrink: 0,
+                  transition: 'background 0.18s ease, color 0.18s ease',
+                }}
               >
-                {m.icon}
-              </span>
-              <span className="hidden xl:inline text-xs font-semibold tracking-tight truncate">
-                {m.label}
+                <Icon size={16} />
+              </div>
+              <span
+                className="hidden lg:inline"
+                style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {item.label}
               </span>
             </button>
           );
         })}
       </nav>
 
-      {/* ─── Acciones Rápidas Inferiores (Tema & Salir) ─── */}
-      <div className="p-1.5 sm:p-2 xl:p-3 border-t border-[var(--border)] flex flex-col gap-1 sm:gap-1.5 bg-[var(--surface)] shrink-0">
+      {/* ─── Pie de Barra (Tema & Salir) ─── */}
+      <div
+        style={{
+          padding: '10px 8px',
+          borderTop: '1px solid var(--lf-border, rgba(60, 60, 67, 0.12))',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          flexShrink: 0,
+        }}
+      >
         {/* Toggle Modo Claro / Oscuro */}
         <button
           onClick={toggleTheme}
           title={isDark ? 'Modo Claro' : 'Modo Oscuro'}
           aria-label={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
-          className="w-full min-h-[44px] rounded-xl flex items-center justify-center xl:justify-start px-0 xl:px-3 gap-3 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-alt)]/60 transition-all cursor-pointer text-xs font-medium"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '10px',
+            borderRadius: 10,
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 12.5,
+            fontWeight: 500,
+            background: 'transparent',
+            color: 'var(--lf-text-muted, #8E8E93)',
+            transition: 'all 0.18s ease',
+            width: '100%',
+            minHeight: 44,
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--lf-accent-soft, rgba(0, 122, 255, 0.04))')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
-          <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-[var(--primario)]">
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          </span>
-          <span className="hidden xl:inline font-semibold">
-            {isDark ? 'Modo Claro' : 'Modo Oscuro'}
-          </span>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--lf-accent, #007AFF)',
+              flexShrink: 0,
+            }}
+          >
+            {isDark ? <Sun size={17} /> : <Moon size={17} />}
+          </div>
+          <span className="hidden lg:inline">{isDark ? 'Modo Claro' : 'Modo Oscuro'}</span>
         </button>
 
-        {/* Salir / Volver a Cliente */}
+        {/* Salir / Retornar */}
         <button
           onClick={handleExitAction}
           title={onReturnToClient ? 'Volver a vista Cliente' : 'Cerrar sesión'}
           aria-label={onReturnToClient ? 'Volver a vista Cliente' : 'Cerrar sesión'}
-          className="w-full min-h-[44px] rounded-xl flex items-center justify-center xl:justify-start px-0 xl:px-3 gap-3 text-[var(--peligro)] hover:bg-[var(--peligro)]/10 transition-all cursor-pointer text-xs font-semibold"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '10px',
+            borderRadius: 10,
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 12.5,
+            fontWeight: 600,
+            background: 'transparent',
+            color: 'var(--lf-danger, #FF3B30)',
+            transition: 'all 0.18s ease',
+            width: '100%',
+            minHeight: 44,
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 59, 48, 0.08)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
-          <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg">
-            <LogOut size={18} />
-          </span>
-          <span className="hidden xl:inline truncate">
-            {onReturnToClient ? 'Salir a Cliente' : 'Cerrar Sesión'}
-          </span>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <LogOut size={16} />
+          </div>
+          <span className="hidden lg:inline">{onReturnToClient ? 'Salir a Cliente' : 'Cerrar Sesión'}</span>
         </button>
       </div>
     </div>
