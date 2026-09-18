@@ -157,30 +157,32 @@ export function TiendaEtiquetasModal({
       {/* ─── MODAL DE INTERFAZ DE USUARIO (Pantalla normal) ─── */}
       <div
         onClick={handleCerrar}
-        className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 no-print"
+        className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 no-print"
       >
         <Card
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-2xl bg-[var(--surface)] rounded-3xl border-[var(--border)] shadow-2xl max-h-[92vh] overflow-y-auto"
+          className="w-full max-w-2xl bg-[var(--surface)] rounded-3xl border border-slate-200/70 dark:border-slate-800/70 shadow-2xl max-h-[92vh] overflow-y-auto"
         >
           <CardContent className="p-5 sm:p-6 space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Tag size={18} className="text-primary" />
-                  <h3 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/70 dark:border-slate-800/70">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Tag size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black tracking-tight text-[var(--text)] m-0">
                     Generador de Etiquetas & Códigos
                   </h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate max-w-md m-0">
+                    Producto: <b className="text-[var(--text)]">{producto.nombre}</b> · Precio: <b className="text-primary font-mono">C$ {producto.precio.toFixed(2)}</b>
+                  </p>
                 </div>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate max-w-md">
-                  Producto: <b>{producto.nombre}</b> · Precio: <b>C$ {producto.precio.toFixed(2)}</b>
-                </p>
               </div>
 
               <button
                 onClick={handleCerrar}
-                className="w-9 h-9 rounded-lg hover:bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full hover:bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
                 aria-label="Cerrar modal"
               >
                 <X size={18} />
@@ -190,8 +192,8 @@ export function TiendaEtiquetasModal({
             {/* Selector de Tipo de Código & Formato de Impresión */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Tipo de código: Barras o QR */}
-              <div className="p-3 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
+              <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/70 border border-slate-200/60 dark:border-slate-800/60 space-y-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block ml-1">
                   1. Tipo de Código
                 </span>
                 <div className="grid grid-cols-2 gap-2">
@@ -200,7 +202,7 @@ export function TiendaEtiquetasModal({
                     variant={tipoCodigo === 'barras' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setTipoCodigo('barras')}
-                    className="h-10 text-xs font-semibold gap-1.5"
+                    className="h-11 rounded-xl text-xs font-bold gap-1.5"
                   >
                     <Barcode size={17} />
                     <span>Código Barras</span>
@@ -211,7 +213,7 @@ export function TiendaEtiquetasModal({
                     variant={tipoCodigo === 'qr' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setTipoCodigo('qr')}
-                    className="h-10 text-xs font-semibold gap-1.5"
+                    className="h-11 rounded-xl text-xs font-bold gap-1.5"
                   >
                     <QrCode size={16} />
                     <span>Código QR 2D</span>
@@ -220,8 +222,8 @@ export function TiendaEtiquetasModal({
               </div>
 
               {/* Formato: Hoja para recortar vs Rollo Adhesivo */}
-              <div className="p-3 rounded-2xl bg-[var(--bg-alt)] border border-[var(--border)] space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
+              <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/70 border border-slate-200/60 dark:border-slate-800/60 space-y-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block ml-1">
                   2. Destino de Impresión
                 </span>
                 <div className="grid grid-cols-2 gap-2">
@@ -233,13 +235,13 @@ export function TiendaEtiquetasModal({
                       setModoImpresion('cuadricula');
                       if (cantidadCopias < 12) setCantidadCopias(24);
                     }}
-                    className="h-11 flex-col py-1"
+                    className="h-11 rounded-xl flex-col py-1"
                   >
-                    <span className="flex items-center gap-1.5 text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-xs font-bold">
                       <FileText size={13} />
                       <span>Hoja Carta / A4</span>
                     </span>
-                    <span className="text-[9px] opacity-75">Múltiples para recortar</span>
+                    <span className="text-[9px] opacity-75 font-normal">Múltiples para recortar</span>
                   </Button>
 
                   <Button
@@ -250,13 +252,13 @@ export function TiendaEtiquetasModal({
                       setModoImpresion('adhesivo');
                       if (cantidadCopias > 12) setCantidadCopias(1);
                     }}
-                    className="h-11 flex-col py-1"
+                    className="h-11 rounded-xl flex-col py-1"
                   >
-                    <span className="flex items-center gap-1.5 text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-xs font-bold">
                       <Tag size={13} />
                       <span>Rollo Adhesivo</span>
                     </span>
-                    <span className="text-[9px] opacity-75">Impresora Térmica</span>
+                    <span className="text-[9px] opacity-75 font-normal">Impresora Térmica</span>
                   </Button>
                 </div>
               </div>
@@ -265,7 +267,7 @@ export function TiendaEtiquetasModal({
             {/* Edición de Valor del Código & Copias */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">
                   Contenido / SKU del Código
                 </label>
                 <div className="flex gap-2">
@@ -274,7 +276,7 @@ export function TiendaEtiquetasModal({
                     value={codigoValor}
                     onChange={(e) => setCodigoValor(e.target.value)}
                     placeholder="Ej: 7501055301072"
-                    className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] font-mono"
+                    className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] font-mono focus:ring-2 focus:ring-primary/20"
                   />
                   <Button
                     type="button"
@@ -282,7 +284,7 @@ export function TiendaEtiquetasModal({
                     size="sm"
                     onClick={generarNuevoCodigo}
                     title="Generar SKU numérico aleatorio"
-                    className="h-10 text-xs font-semibold gap-1.5 shrink-0"
+                    className="h-11 rounded-2xl px-4 text-xs font-bold gap-1.5 shrink-0 border-slate-200/70 dark:border-slate-800/70"
                   >
                     <RotateCcw size={14} />
                     <span className="hidden sm:inline">Generar</span>
@@ -291,7 +293,7 @@ export function TiendaEtiquetasModal({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1">
+                <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">
                   Cantidad de Etiquetas
                 </label>
                 <div className="flex items-center gap-2">
@@ -302,7 +304,7 @@ export function TiendaEtiquetasModal({
                     value={Number.isFinite(cantidadCopias) ? cantidadCopias : ''}
                     onChange={(e) => setCantidadCopias(e.target.value === '' ? NaN : Math.max(1, Number(e.target.value) || 1))}
                     onBlur={() => { if (!Number.isFinite(cantidadCopias)) setCantidadCopias(1); }}
-                    className="h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] font-mono text-center"
+                    className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] font-mono text-center focus:ring-2 focus:ring-primary/20"
                   />
                   <div className="flex gap-1 shrink-0">
                     {[6, 24, 48].map((num) => (
@@ -312,7 +314,7 @@ export function TiendaEtiquetasModal({
                         variant="secondary"
                         size="sm"
                         onClick={() => setCantidadCopias(num)}
-                        className="px-2 h-10 text-[10px] font-bold"
+                        className="px-2.5 h-11 rounded-2xl text-[10px] font-bold"
                       >
                         {num}
                       </Button>
@@ -323,12 +325,12 @@ export function TiendaEtiquetasModal({
             </div>
 
             {/* Opciones de la Etiqueta (Checkboxes) */}
-            <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/40 border border-[var(--border)]">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-2">
+            <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-2.5 ml-1">
                 Elementos Visibles en Cada Etiqueta
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)]">
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] p-2 rounded-xl hover:bg-[var(--surface)] transition-colors">
                   <input
                     type="checkbox"
                     checked={mostrarNombre}
@@ -338,7 +340,7 @@ export function TiendaEtiquetasModal({
                   <span>Nombre</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)]">
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] p-2 rounded-xl hover:bg-[var(--surface)] transition-colors">
                   <input
                     type="checkbox"
                     checked={mostrarPrecio}
@@ -348,7 +350,7 @@ export function TiendaEtiquetasModal({
                   <span>Precio (C$)</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)]">
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] p-2 rounded-xl hover:bg-[var(--surface)] transition-colors">
                   <input
                     type="checkbox"
                     checked={mostrarTienda}
@@ -358,7 +360,7 @@ export function TiendaEtiquetasModal({
                   <span>Comercio</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)]">
+                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] p-2 rounded-xl hover:bg-[var(--surface)] transition-colors">
                   <input
                     type="checkbox"
                     checked={mostrarTextoCodigo}
@@ -372,11 +374,11 @@ export function TiendaEtiquetasModal({
 
             {/* ─── VISTA PREVIA INDIVIDUAL DE ETIQUETA ─── */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
+              <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider block ml-1">
                 Vista Previa de Etiqueta (Tamaño Real de Muestra)
               </span>
-              <div className="flex justify-center p-4 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-[var(--border)]">
-                <div className="w-56 p-3 bg-white text-black rounded-xl border-2 border-dashed border-slate-400 shadow-sm flex flex-col items-center text-center font-sans">
+              <div className="flex justify-center p-4 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200/70 dark:border-slate-800/70">
+                <div className="w-56 p-3 bg-white text-black rounded-xl border-2 border-dashed border-slate-300 shadow-sm flex flex-col items-center text-center font-sans">
                   {mostrarTienda && (
                     <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-500 truncate max-w-full">
                       {nombreTienda}
@@ -413,12 +415,12 @@ export function TiendaEtiquetasModal({
             </div>
 
             {/* Botones de Acción */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[var(--border)]">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200/70 dark:border-slate-800/70">
               <Button
                 type="button"
                 variant="outline"
                 onClick={descargarImagen}
-                className="w-full sm:w-auto h-11 text-xs font-semibold gap-2"
+                className="w-full sm:w-auto h-11 rounded-full px-5 text-xs font-bold gap-2 border-slate-200/70 dark:border-slate-800/70"
               >
                 <Download size={15} />
                 <span>Descargar Imagen {tipoCodigo === 'qr' ? '(PNG)' : '(SVG)'}</span>
@@ -429,7 +431,7 @@ export function TiendaEtiquetasModal({
                   type="button"
                   variant="outline"
                   onClick={handleCerrar}
-                  className="flex-1 sm:flex-initial h-11 text-xs font-semibold"
+                  className="flex-1 sm:flex-initial h-11 rounded-full px-5 text-xs font-bold border-slate-200/70 dark:border-slate-800/70"
                 >
                   Cerrar
                 </Button>
@@ -437,10 +439,10 @@ export function TiendaEtiquetasModal({
                 <Button
                   type="button"
                   onClick={ejecutarImpresion}
-                  className="flex-[2] sm:flex-initial h-11 text-xs font-semibold gap-2"
+                  className="flex-[2] sm:flex-initial h-11 rounded-full px-6 text-xs font-bold gap-2 shadow-md shadow-primary/20"
                 >
                   <Printer size={16} />
-                  <span>Imprimir {cantidadCopias} Etiquetas (o PDF)</span>
+                  <span>Imprimir {cantidadCopias} Etiquetas</span>
                 </Button>
               </div>
             </div>

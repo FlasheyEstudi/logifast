@@ -87,15 +87,15 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
   ];
 
   return (
-    <div className="w-full space-y-5">
+    <div className="w-full space-y-6">
       {/* ─── PESTAÑAS PRINCIPALES: GENERAR VS GUARDADOS ─── */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs">
+      <div className="inline-flex items-center gap-2 p-1.5 rounded-full bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
         <button
           type="button"
           onClick={() => setTabActiva('generar')}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`py-2.5 px-5 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
             tabActiva === 'generar'
-              ? 'bg-[var(--primario)] text-white shadow-xs'
+              ? 'bg-primary text-white shadow-xs'
               : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-alt)]'
           }`}
         >
@@ -106,9 +106,9 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
         <button
           type="button"
           onClick={() => setTabActiva('guardados')}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`py-2.5 px-5 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
             tabActiva === 'guardados'
-              ? 'bg-[var(--primario)] text-white shadow-xs'
+              ? 'bg-primary text-white shadow-xs'
               : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-alt)]'
           }`}
         >
@@ -118,7 +118,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
             className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold ${
               tabActiva === 'guardados'
                 ? 'bg-white/20 text-white'
-                : 'bg-[var(--primario)]/10 text-[var(--primario)]'
+                : 'bg-primary/10 text-primary'
             }`}
           >
             {reportesGuardadosCount}
@@ -134,20 +134,21 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
       ) : (
         <>
           {/* ─── Header ─── */}
-          <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
             <CardContent className="p-6 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 text-primary mb-1">
-                    <BarChart3 size={20} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Centro de Exportación</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <BarChart3 size={24} />
                   </div>
-                  <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne">
-                    Reportes Financieros & Operativos
-                  </h2>
-                  <p className="text-xs text-[var(--text-muted)] mt-1">
-                    Exporta tus datos en hojas de cálculo Excel (.xlsx), informes ejecutivos PDF con tu logotipo y membrete oficial, o formato CSV universal.
-                  </p>
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-black tracking-tight text-[var(--text)]">
+                      Reportes Financieros & Operativos
+                    </h2>
+                    <p className="text-xs text-[var(--text-muted)] mt-1">
+                      Exporta tus datos en hojas de cálculo Excel (.xlsx), informes ejecutivos PDF con tu logotipo y membrete oficial, o formato CSV universal.
+                    </p>
+                  </div>
                 </div>
 
                 {reportesGuardadosCount > 0 && (
@@ -156,38 +157,41 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                     variant="outline"
                     size="sm"
                     onClick={() => setTabActiva('guardados')}
-                    className="self-start sm:self-center h-9 text-xs font-bold gap-2"
+                    className="self-start sm:self-center h-10 rounded-full px-4 text-xs font-bold gap-2 border-slate-200/70 dark:border-slate-800/70"
                   >
-                    <Download size={14} className="text-[var(--primario)]" />
+                    <Download size={14} className="text-primary" />
                     <span>Ver {reportesGuardadosCount} Guardados</span>
                   </Button>
                 )}
               </div>
 
               {/* Period Selector Pills */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--border)]">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[var(--text)]">
-                    Período de Análisis:
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-200/70 dark:border-slate-800/70">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-[var(--text-muted)]">
+                    Período:
                   </span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="inline-flex items-center p-1 rounded-full bg-[var(--bg-alt)]/80 border border-slate-200/60 dark:border-slate-800/60 shadow-xs">
                     {[
                       { d: 1, l: 'Hoy' },
                       { d: 7, l: '7 días' },
                       { d: 30, l: '30 días' },
-                      { d: 0, l: 'Todo el Historial' },
+                      { d: 0, l: 'Todo' },
                     ].map((p) => {
                       const active = dias === p.d;
                       return (
-                        <Button
+                        <button
                           key={p.d}
-                          variant={active ? 'default' : 'secondary'}
-                          size="sm"
+                          type="button"
                           onClick={() => setDias(p.d)}
-                          className="h-8 rounded-full text-xs font-semibold px-3"
+                          className={`h-8 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                            active
+                              ? 'bg-primary text-white shadow-xs'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
+                          }`}
                         >
                           {p.l}
-                        </Button>
+                        </button>
                       );
                     })}
                   </div>
@@ -206,7 +210,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
             {opciones.map((op) => (
               <Card
                 key={op.id}
-                className="bg-[var(--surface)] border-[var(--border)] shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden"
               >
                 <CardContent className="p-6 flex flex-col justify-between h-full">
                   <div>
@@ -217,7 +221,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                         {op.icon}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-[var(--text)] leading-snug">
+                        <h3 className="text-sm font-black tracking-tight text-[var(--text)] leading-snug">
                           {op.titulo}
                         </h3>
                         <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-mono">
@@ -232,12 +236,12 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="space-y-2 mt-6 pt-4 border-t border-[var(--border)]">
+                  <div className="space-y-2 mt-6 pt-4 border-t border-slate-200/70 dark:border-slate-800/70">
                     <div className="flex gap-2">
                       <Button
                         onClick={() => descargarReporte(op.id, 'xlsx')}
                         disabled={descargando !== null}
-                        className="flex-1 h-10 text-xs font-semibold gap-1.5"
+                        className="flex-1 h-11 rounded-full text-xs font-bold gap-1.5 shadow-md shadow-primary/20"
                       >
                         <FileSpreadsheet size={16} />
                         <span>{descargando === `${op.id}-xlsx` ? 'Guardando…' : 'Excel (.xlsx)'}</span>
@@ -247,7 +251,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                         variant="outline"
                         onClick={() => descargarReporte(op.id, 'pdf')}
                         disabled={descargando !== null}
-                        className="flex-1 h-10 text-xs font-semibold gap-1.5"
+                        className="flex-1 h-11 rounded-full text-xs font-bold gap-1.5 border-slate-200/70 dark:border-slate-800/70"
                       >
                         <Download size={16} />
                         <span>{descargando === `${op.id}-pdf` ? 'Guardando…' : 'PDF'}</span>
@@ -259,7 +263,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                       size="sm"
                       onClick={() => descargarReporte(op.id, 'csv')}
                       disabled={descargando !== null}
-                      className="w-full h-8 text-[11px] border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"
+                      className="w-full h-9 rounded-full text-[11px] font-bold border border-dashed border-slate-200/80 dark:border-slate-800/80 text-[var(--text-muted)] hover:text-[var(--text)]"
                     >
                       {descargando === `${op.id}-csv` ? 'Guardando CSV…' : 'Descargar datos en CSV'}
                     </Button>

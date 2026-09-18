@@ -229,14 +229,14 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
   return (
     <div className="w-full space-y-4">
       {/* ─── BARRA DE CONTROL SUPERIOR ─── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs space-y-4">
+      <div className="p-5 rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
+              <span className="text-base sm:text-lg font-black tracking-tight text-[var(--text)]">
                 Reportes Descargados & Guardados
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--primario)]/10 text-[var(--primario)]">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary">
                 {reportes.length}
               </span>
             </div>
@@ -248,7 +248,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
           <div className="flex items-center gap-2">
             <button
               onClick={cargarLista}
-              className="p-2 rounded-xl bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer flex items-center justify-center border border-slate-200/60 dark:border-slate-800/60"
               title="Refrescar lista"
             >
               <RefreshCw size={15} className={cargando ? 'animate-spin' : ''} />
@@ -257,7 +257,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
             {reportes.length > 0 && (
               <button
                 onClick={() => setConfirmandoBorrarTodo(true)}
-                className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+                className="px-3.5 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
               >
                 <Trash2 size={13} />
                 <span>Borrar todo</span>
@@ -267,7 +267,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
             {onGenerarNuevo && (
               <button
                 onClick={onGenerarNuevo}
-                className="px-3.5 py-1.5 rounded-xl bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-full bg-primary text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
               >
                 <Download size={13} />
                 <span>Generar Reporte</span>
@@ -277,25 +277,25 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
         </div>
 
         {/* Buscador y Filtros por Formato */}
-        <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center pt-3 border-t border-[var(--border)]">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center pt-3 border-t border-slate-200/70 dark:border-slate-800/70">
           <div className="flex-1 relative">
             <Search
               size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
             />
             <input
               type="text"
               placeholder="Buscar por nombre de archivo o título..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--primario)] transition-colors"
+              className="w-full pl-10 pr-9 h-11 rounded-full bg-[var(--bg-alt)] border border-slate-200/70 dark:border-slate-800/70 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none focus:ring-2 focus:ring-primary/20 shadow-xs transition-colors"
             />
             {busqueda && (
               <button
                 onClick={() => setBusqueda('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center"
               >
-                <X size={14} />
+                <X size={13} />
               </button>
             )}
           </div>
@@ -305,7 +305,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               variant={formatoFiltro === 'todos' ? 'default' : 'secondary'}
               size="sm"
               onClick={() => setFormatoFiltro('todos')}
-              className="h-8 rounded-full text-xs font-semibold px-3"
+              className="h-8 rounded-full text-xs font-bold px-3.5"
             >
               Todos ({reportes.length})
             </Button>
@@ -313,7 +313,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               variant={formatoFiltro === 'xlsx' ? 'default' : 'secondary'}
               size="sm"
               onClick={() => setFormatoFiltro('xlsx')}
-              className="h-8 rounded-full text-xs font-semibold px-3 gap-1.5"
+              className="h-8 rounded-full text-xs font-bold px-3.5 gap-1.5"
             >
               <FileSpreadsheet size={13} />
               <span>Excel ({reportes.filter((r) => r.formato === 'xlsx').length})</span>
@@ -322,7 +322,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               variant={formatoFiltro === 'pdf' ? 'default' : 'secondary'}
               size="sm"
               onClick={() => setFormatoFiltro('pdf')}
-              className="h-8 rounded-full text-xs font-semibold px-3 gap-1.5"
+              className="h-8 rounded-full text-xs font-bold px-3.5 gap-1.5"
             >
               <FileText size={13} />
               <span>PDF ({reportes.filter((r) => r.formato === 'pdf').length})</span>
@@ -331,7 +331,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               variant={formatoFiltro === 'csv' ? 'default' : 'secondary'}
               size="sm"
               onClick={() => setFormatoFiltro('csv')}
-              className="h-8 rounded-full text-xs font-semibold px-3 gap-1.5"
+              className="h-8 rounded-full text-xs font-bold px-3.5 gap-1.5"
             >
               <SlidersHorizontal size={13} />
               <span>CSV ({reportes.filter((r) => r.formato === 'csv').length})</span>
@@ -342,19 +342,19 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
 
       {/* ─── LISTA DE REPORTES GUARDADOS ─── */}
       {cargando ? (
-        <div className="p-12 text-center rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex flex-col items-center justify-center gap-3">
-          <div className="w-7 h-7 border-3 border-[var(--primario)]/20 border-t-[var(--primario)] rounded-full animate-spin" />
+        <div className="p-12 text-center rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
           <span className="text-xs text-[var(--text-muted)] font-semibold">
             Cargando historial de reportes...
           </span>
         </div>
       ) : reportesFiltrados.length === 0 ? (
-        <div className="p-10 text-center rounded-2xl bg-[var(--surface)] border border-[var(--border)] flex flex-col items-center justify-center gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center">
+        <div className="p-10 text-center rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 flex flex-col items-center justify-center gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
             <Download size={26} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[var(--text)] font-syne">
+            <h3 className="text-sm font-bold text-[var(--text)]">
               {busqueda || formatoFiltro !== 'todos'
                 ? 'No hay reportes que coincidan con la búsqueda'
                 : 'No tienes reportes guardados aún'}
@@ -362,13 +362,13 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
             <p className="text-xs text-[var(--text-muted)] max-w-sm mt-1 mx-auto leading-relaxed">
               {busqueda || formatoFiltro !== 'todos'
                 ? 'Prueba restableciendo los filtros o buscando por otro término.'
-                : 'Genera un nuevo reporte en Excel, PDF o CSV desde la pestaña "Generar Reportes" y quedará guardado permanentemente aquí para abrirlo o compartirlo cuando lo necesites.'}
+                : 'Genera un nuevo reporte en Excel, PDF o CSV desde la pestaña "Centro de Generación" y quedará guardado permanentemente aquí para abrirlo o compartirlo cuando lo necesites.'}
             </p>
           </div>
           {onGenerarNuevo && (
             <button
               onClick={onGenerarNuevo}
-              className="mt-2 px-4 py-2 rounded-xl bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-2 shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+              className="mt-2 px-5 py-2.5 rounded-full bg-primary text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-primary/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
             >
               <Sparkles size={14} />
               <span>Generar mi primer reporte</span>
@@ -376,7 +376,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
           )}
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {reportesFiltrados.map((rep) => {
             const badge = getFormatoBadge(rep.formato);
             const isAbriendo = abriendoId === rep.id;
@@ -384,12 +384,12 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
             return (
               <div
                 key={rep.id}
-                className="p-3.5 sm:p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--primario)]/40 hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="p-4 sm:p-5 rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 hover:border-primary/40 hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 {/* Info Principal */}
-                <div className="flex items-start sm:items-center gap-3 min-w-0">
+                <div className="flex items-start sm:items-center gap-3.5 min-w-0">
                   <div
-                    className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${badge.bg}`}
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${badge.bg}`}
                   >
                     {badge.icon}
                   </div>
@@ -400,7 +400,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                         {rep.titulo}
                       </span>
                       <span
-                        className={`text-[9px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded-md border ${badge.bg}`}
+                        className={`text-[9px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-full border ${badge.bg}`}
                       >
                         {badge.label}
                       </span>
@@ -419,13 +419,13 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                 </div>
 
                 {/* Botones de Acción */}
-                <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0 flex-wrap">
+                <div className="flex items-center gap-2 self-end sm:self-center shrink-0 flex-wrap">
                   {rep.formato === 'pdf' ? (
                     <>
                       <button
                         onClick={() => handleCompartir(rep)}
                         disabled={isAbriendo}
-                        className="px-3 py-1.5 rounded-xl bg-[var(--primario)] hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                         title="Abrir con lector PDF de la tablet / celular"
                       >
                         <FileText size={14} />
@@ -435,7 +435,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleAbrir(rep)}
                         disabled={isAbriendo}
-                        className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                        className="px-3.5 py-2 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-slate-200/70 dark:border-slate-800/70 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
                         title="Ver en modal de la aplicación"
                       >
                         <Eye size={13} />
@@ -447,7 +447,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleAbrir(rep)}
                         disabled={isAbriendo}
-                        className="px-3 py-1.5 rounded-xl bg-[var(--primario)] hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                       >
                         <Eye size={14} />
                         <span>Ver Tabla</span>
@@ -456,7 +456,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleCompartir(rep)}
                         disabled={isAbriendo}
-                        className="p-2 rounded-xl bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] transition-all cursor-pointer active:scale-95"
+                        className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-center transition-all cursor-pointer active:scale-95"
                         title="Abrir con app externa o compartir"
                       >
                         <Share2 size={14} />
@@ -467,7 +467,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleAbrir(rep)}
                         disabled={isAbriendo}
-                        className="px-3 py-1.5 rounded-xl bg-[var(--primario)] hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                         title="Abrir en Microsoft Excel, Google Sheets u Office"
                       >
                         <FileSpreadsheet size={14} />
@@ -477,7 +477,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleCompartir(rep)}
                         disabled={isAbriendo}
-                        className="p-2 rounded-xl bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] transition-all cursor-pointer active:scale-95"
+                        className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-center transition-all cursor-pointer active:scale-95"
                         title="Compartir reporte"
                       >
                         <Share2 size={14} />
@@ -487,7 +487,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
 
                   <button
                     onClick={() => setReporteParaBorrar(rep)}
-                    className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-all cursor-pointer active:scale-95"
+                    className="w-9 h-9 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 flex items-center justify-center transition-all cursor-pointer active:scale-95"
                     title="Eliminar del almacenamiento"
                   >
                     <Trash2 size={14} />
@@ -502,34 +502,34 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
       {/* ─── MODAL DE CONFIRMACIÓN PARA BORRAR UN REPORTE ─── */}
       <AnimatePresence>
         {reporteParaBorrar && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
             <motion.div
               initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.94, opacity: 0 }}
-              className="w-full max-w-sm rounded-3xl bg-[var(--surface)] border border-[var(--border)] p-5 shadow-2xl space-y-4"
+              className="w-full max-w-sm rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 p-6 shadow-2xl space-y-4"
             >
               <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center mx-auto">
                 <Trash2 size={24} />
               </div>
               <div className="text-center">
-                <h3 className="text-base font-bold text-[var(--text)] font-syne">
+                <h3 className="text-base font-black tracking-tight text-[var(--text)]">
                   ¿Eliminar este reporte?
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] mt-1 break-words">
                   Se eliminará <strong>{reporteParaBorrar.nombre}</strong> del almacenamiento local de la app.
                 </p>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2.5 pt-2">
                 <button
                   onClick={() => setReporteParaBorrar(null)}
-                  className="flex-1 py-2 rounded-xl bg-[var(--bg-alt)] text-[var(--text)] text-xs font-bold hover:bg-[var(--surface)] border border-[var(--border)] cursor-pointer"
+                  className="flex-1 h-11 rounded-full bg-[var(--bg-alt)] text-[var(--text)] text-xs font-bold hover:bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => handleEliminarUno(reporteParaBorrar)}
-                  className="flex-1 py-2 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 cursor-pointer shadow-xs active:scale-95"
+                  className="flex-1 h-11 rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 cursor-pointer shadow-md shadow-rose-500/20 active:scale-95"
                 >
                   Sí, eliminar
                 </button>
@@ -542,34 +542,34 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
       {/* ─── MODAL DE CONFIRMACIÓN PARA BORRAR TODO ─── */}
       <AnimatePresence>
         {confirmandoBorrarTodo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
             <motion.div
               initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.94, opacity: 0 }}
-              className="w-full max-w-sm rounded-3xl bg-[var(--surface)] border border-[var(--border)] p-5 shadow-2xl space-y-4"
+              className="w-full max-w-sm rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 p-6 shadow-2xl space-y-4"
             >
               <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center mx-auto">
                 <AlertTriangle size={24} />
               </div>
               <div className="text-center">
-                <h3 className="text-base font-bold text-[var(--text)] font-syne">
+                <h3 className="text-base font-black tracking-tight text-[var(--text)]">
                   ¿Borrar todo el historial?
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] mt-1">
                   Se eliminarán los {reportes.length} reportes guardados ({totalTamanoFormateado}). Esta acción no se puede deshacer.
                 </p>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2.5 pt-2">
                 <button
                   onClick={() => setConfirmandoBorrarTodo(false)}
-                  className="flex-1 py-2 rounded-xl bg-[var(--bg-alt)] text-[var(--text)] text-xs font-bold hover:bg-[var(--surface)] border border-[var(--border)] cursor-pointer"
+                  className="flex-1 h-11 rounded-full bg-[var(--bg-alt)] text-[var(--text)] text-xs font-bold hover:bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleEliminarTodo}
-                  className="flex-1 py-2 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 cursor-pointer shadow-xs active:scale-95"
+                  className="flex-1 h-11 rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 cursor-pointer shadow-md shadow-rose-500/20 active:scale-95"
                 >
                   Eliminar todo
                 </button>
