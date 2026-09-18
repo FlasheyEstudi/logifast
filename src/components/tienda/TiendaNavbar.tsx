@@ -108,7 +108,7 @@ export function TiendaNavbar({
       descripcion: 'Régimen fiscal, serie de facturas y ticket térmico',
       descripcionCorta: 'Fiscal & Tickets',
       icon: FileText,
-      tintClass: 'bg-blue-500/15 text-blue-500 dark:text-blue-400',
+      tintClass: 'bg-[var(--primario)]/15 text-[var(--primario)]',
     },
     {
       id: 'reportes',
@@ -116,7 +116,7 @@ export function TiendaNavbar({
       descripcion: 'Cierres de caja, ventas, Kardex y visor de reportes guardados',
       descripcionCorta: 'Reportes & Archivos',
       icon: BarChart3,
-      tintClass: 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400',
+      tintClass: 'bg-[var(--exito)]/15 text-[var(--exito)]',
     },
     {
       id: 'estadisticas',
@@ -124,7 +124,7 @@ export function TiendaNavbar({
       descripcion: 'Gráficos de ventas, horas pico y top de productos',
       descripcionCorta: 'Ventas & Métricas',
       icon: TrendingUp,
-      tintClass: 'bg-violet-500/15 text-violet-500 dark:text-violet-400',
+      tintClass: 'bg-[var(--md-tertiary)]/15 text-[var(--md-tertiary)]',
     },
     {
       id: 'configuracion',
@@ -132,7 +132,7 @@ export function TiendaNavbar({
       descripcion: 'Horarios semanales, logo, banner y tarifas de envío',
       descripcionCorta: 'Ajustes Tienda',
       icon: Settings,
-      tintClass: 'bg-amber-500/15 text-amber-500 dark:text-amber-400',
+      tintClass: 'bg-[var(--warning)]/15 text-[var(--warning)]',
     },
   ];
 
@@ -175,7 +175,7 @@ export function TiendaNavbar({
           Sticky top: 0, z-index: 50, h-14, shrink-0, Full-Width Edge-to-Edge
           ══════════════════════════════════════════════════════════ */}
       <header
-        className="lf-tienda-header sticky top-0 z-50 shrink-0 w-full bg-[var(--surface)]/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 shadow-xs transition-colors"
+        className="lf-tienda-header sticky top-0 z-50 shrink-0 w-full bg-[var(--surface)]/90 backdrop-blur-xl border-b border-[var(--border)] shadow-[var(--lf-shadow-card)] transition-colors"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 h-15 flex items-center justify-between gap-3">
@@ -184,7 +184,7 @@ export function TiendaNavbar({
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center gap-2.5 min-w-0">
               {/* Avatar tienda sin borde duro */}
-              <div className="relative w-9 h-9 rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
+              <div className="relative w-9 h-9 rounded-[var(--lf-card-radius)] overflow-hidden bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-[var(--lf-shadow-card)]">
                 {tiendaImagenUrl ? (
                   <img
                     src={tiendaImagenUrl}
@@ -196,7 +196,7 @@ export function TiendaNavbar({
                 )}
                 <span
                   className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--surface)] ${
-                    isAbierta ? 'bg-emerald-500' : 'bg-amber-500'
+                    isAbierta ? 'bg-[var(--exito)]' : 'bg-[var(--warning)]'
                   }`}
                   title={isAbierta ? 'En Línea' : 'Pausada'}
                 />
@@ -210,7 +210,7 @@ export function TiendaNavbar({
                   <span className="text-[11px] font-medium text-[var(--text-muted)] capitalize truncate">
                     {tiendaCategoria}
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                     {TIENDA_MODULO_LABELS[moduloActivo]}
                   </span>
                 </div>
@@ -221,7 +221,7 @@ export function TiendaNavbar({
           {/* Center: Tabs de Navegación de Escritorio (Tablet & Desktop md+) */}
           <nav
             aria-label="Módulos de tienda"
-            className="hidden md:flex items-center gap-1 bg-[var(--bg-alt)]/90 backdrop-blur-md p-1.5 rounded-full border border-slate-200/60 dark:border-slate-800/60 shadow-xs"
+            className="hidden md:flex items-center gap-1 bg-[var(--bg-alt)]/90 backdrop-blur-md p-1.5 rounded-full border border-[var(--border)] shadow-[var(--lf-shadow-card)]"
           >
             {modulosPrimarios.map((m) => {
               const active = moduloActivo === m.id;
@@ -236,7 +236,7 @@ export function TiendaNavbar({
                   }}
                   className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
                     active
-                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      ? 'bg-primary text-primary-foreground shadow-[var(--lf-shadow-card)]'
                       : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
                   }`}
                 >
@@ -255,7 +255,7 @@ export function TiendaNavbar({
                 aria-haspopup="true"
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
                   isSecondaryActive
-                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    ? 'bg-primary text-primary-foreground shadow-[var(--lf-shadow-card)]'
                     : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
                 }`}
               >
@@ -280,11 +280,11 @@ export function TiendaNavbar({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.97 }}
                     transition={{ duration: 0.15, ease: 'easeOut' }}
-                    className="absolute right-0 top-full mt-2 w-72 rounded-3xl bg-[var(--surface)]/95 shadow-xl p-2.5 z-50 backdrop-blur-2xl border border-[var(--border)]/40"
+                    className="absolute right-0 top-full mt-2 w-72 rounded-[var(--lf-card-radius)] bg-[var(--surface)]/95 shadow-[var(--lf-shadow-float)] p-2.5 z-50 backdrop-blur-2xl border border-[var(--border)]/40"
                   >
                     <div className="px-3 py-1.5 text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1 flex items-center justify-between opacity-80">
                       <span>Módulos de Gestión</span>
-                      <span className="text-[10px] font-normal">4 opciones</span>
+                      <span className="text-[11px] font-normal">4 opciones</span>
                     </div>
 
                     <div className="flex flex-col gap-1">
@@ -299,7 +299,7 @@ export function TiendaNavbar({
                               onSelectModulo(m.id);
                               setMoreMenuOpen(false);
                             }}
-                            className={`flex items-start gap-3 p-2.5 rounded-2xl text-left transition-all cursor-pointer ${
+                            className={`flex items-start gap-3 p-2.5 rounded-[var(--lf-card-radius)] text-left transition-all cursor-pointer ${
                               isActive
                                 ? 'bg-primary/10 text-primary font-bold'
                                 : 'text-[var(--text)] hover:bg-[var(--bg-alt)]'
@@ -308,7 +308,7 @@ export function TiendaNavbar({
                             <div
                               className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center transition-colors ${
                                 isActive
-                                  ? 'bg-primary text-primary-foreground shadow-xs'
+                                  ? 'bg-primary text-primary-foreground shadow-[var(--lf-shadow-card)]'
                                   : m.tintClass
                               }`}
                             >
@@ -340,25 +340,25 @@ export function TiendaNavbar({
           {/* Right: Indicador En Vivo + Tema + Salir (Sin bordes en iconos) */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Indicador En Vivo */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--exito)]/10 border border-[var(--exito)] text-[var(--exito)] text-xs font-bold">
+              <span className="w-2 h-2 rounded-full bg-[var(--exito)] animate-pulse" />
               <span>En vivo</span>
             </div>
 
             {/* Theme Toggle cápsula */}
             <button
               onClick={toggleTheme}
-              className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] border border-slate-200/60 dark:border-slate-800/60 text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs"
+              className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-[var(--lf-shadow-card)]"
               aria-label={isDark ? 'Modo Claro' : 'Modo Oscuro'}
               title={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
             >
-              {isDark ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-blue-600" />}
+              {isDark ? <Sun size={16} className="text-[var(--warning)]" /> : <Moon size={16} className="text-[var(--primario)]" />}
             </button>
 
             {/* Exit / Return button cápsula */}
             <button
               onClick={handleExitAction}
-              className="h-9 px-3.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+              className="h-9 px-3.5 rounded-full bg-[var(--peligro)]/10 hover:bg-[var(--peligro)]/20 border border-[var(--peligro)] text-[var(--peligro)] font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
               title={onReturnToClient ? 'Volver a App Cliente' : 'Cerrar Sesión'}
             >
               <LogOut size={14} />
@@ -443,7 +443,7 @@ export function TiendaNavbar({
                     <span className="text-xs font-bold font-syne text-[var(--text)] tracking-tight">
                       Módulos de Gestión
                     </span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--primario)]/10 text-[var(--primario)]">
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--primario)]/10 text-[var(--primario)]">
                       Tienda
                     </span>
                   </div>
@@ -477,9 +477,9 @@ export function TiendaNavbar({
                             ? 'rgba(255, 255, 255, 0.05)'
                             : 'rgba(0, 0, 0, 0.03)',
                         }}
-                        className={`p-3 rounded-2xl flex flex-col items-start gap-2.5 transition-all text-left cursor-pointer active:scale-95 ${
+                        className={`p-3 rounded-[var(--lf-card-radius)] flex flex-col items-start gap-2.5 transition-all text-left cursor-pointer active:scale-95 ${
                           isSelected
-                            ? 'text-white shadow-md'
+                            ? 'text-white shadow-[var(--lf-shadow-card)]'
                             : 'text-[var(--text)] hover:bg-[var(--bg-alt)]'
                         }`}
                       >
@@ -500,7 +500,7 @@ export function TiendaNavbar({
                           }`}>
                             {item.titulo.split(' ')[0]}
                           </span>
-                          <span className={`text-[10px] block truncate leading-tight mt-0.5 ${
+                          <span className={`text-[11px] block truncate leading-tight mt-0.5 ${
                             isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'
                           }`}>
                             {item.descripcionCorta}

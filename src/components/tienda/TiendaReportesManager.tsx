@@ -203,24 +203,24 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
         return {
           label: 'EXCEL',
           ext: '.xlsx',
-          icon: <FileSpreadsheet size={16} className="text-emerald-500" />,
-          bg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+          icon: <FileSpreadsheet size={16} className="text-[var(--exito)]" />,
+          bg: 'bg-[var(--exito)]/15 text-[var(--exito)] border-[var(--exito)]',
           accentColor: '#10B981',
         };
       case 'pdf':
         return {
           label: 'PDF',
           ext: '.pdf',
-          icon: <FileText size={16} className="text-rose-500" />,
-          bg: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20',
+          icon: <FileText size={16} className="text-[var(--peligro)]" />,
+          bg: 'bg-[var(--peligro)]/15 text-[var(--peligro)] border-[var(--peligro)]',
           accentColor: '#EF4444',
         };
       case 'csv':
         return {
           label: 'CSV',
           ext: '.csv',
-          icon: <SlidersHorizontal size={16} className="text-blue-500" />,
-          bg: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20',
+          icon: <SlidersHorizontal size={16} className="text-[var(--primario)]" />,
+          bg: 'bg-[var(--primario)]/15 text-[var(--primario)] border-[var(--primario)]',
           accentColor: '#3B82F6',
         };
     }
@@ -229,7 +229,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
   return (
     <div className="w-full space-y-4">
       {/* ─── BARRA DE CONTROL SUPERIOR ─── */}
-      <div className="p-5 rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs space-y-4">
+      <div className="p-5 rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
           <div className="flex items-center gap-2">
             <button
               onClick={cargarLista}
-              className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer flex items-center justify-center border border-slate-200/60 dark:border-slate-800/60"
+              className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer flex items-center justify-center border border-[var(--border)]"
               title="Refrescar lista"
             >
               <RefreshCw size={15} className={cargando ? 'animate-spin' : ''} />
@@ -257,7 +257,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
             {reportes.length > 0 && (
               <button
                 onClick={() => setConfirmandoBorrarTodo(true)}
-                className="px-3.5 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+                className="px-3.5 py-1.5 rounded-full bg-[var(--peligro)]/10 hover:bg-[var(--peligro)]/20 text-[var(--peligro)] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
               >
                 <Trash2 size={13} />
                 <span>Borrar todo</span>
@@ -267,7 +267,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
             {onGenerarNuevo && (
               <button
                 onClick={onGenerarNuevo}
-                className="px-4 py-2 rounded-full bg-primary text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-full bg-primary text-white text-xs font-bold flex items-center gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
               >
                 <Download size={13} />
                 <span>Generar Reporte</span>
@@ -277,7 +277,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
         </div>
 
         {/* Buscador y Filtros por Formato */}
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center pt-3 border-t border-slate-200/70 dark:border-slate-800/70">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center pt-3 border-t border-[var(--border)]">
           <div className="flex-1 relative">
             <Search
               size={15}
@@ -288,7 +288,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               placeholder="Buscar por nombre de archivo o título..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-10 pr-9 h-11 rounded-full bg-[var(--bg-alt)] border border-slate-200/70 dark:border-slate-800/70 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none focus:ring-2 focus:ring-primary/20 shadow-xs transition-colors"
+              className="w-full pl-10 pr-9 h-11 rounded-full bg-[var(--bg-alt)] border border-[var(--border)] text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none focus:ring-2 focus:ring-primary/20 shadow-[var(--lf-shadow-card)] transition-colors"
             />
             {busqueda && (
               <button
@@ -342,15 +342,15 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
 
       {/* ─── LISTA DE REPORTES GUARDADOS ─── */}
       {cargando ? (
-        <div className="p-12 text-center rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 flex flex-col items-center justify-center gap-3">
+        <div className="p-12 text-center rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] flex flex-col items-center justify-center gap-3">
           <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
           <span className="text-xs text-[var(--text-muted)] font-semibold">
             Cargando historial de reportes...
           </span>
         </div>
       ) : reportesFiltrados.length === 0 ? (
-        <div className="p-10 text-center rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 flex flex-col items-center justify-center gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+        <div className="p-10 text-center rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] flex flex-col items-center justify-center gap-3">
+          <div className="w-14 h-14 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center">
             <Download size={26} />
           </div>
           <div>
@@ -368,7 +368,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
           {onGenerarNuevo && (
             <button
               onClick={onGenerarNuevo}
-              className="mt-2 px-5 py-2.5 rounded-full bg-primary text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-primary/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+              className="mt-2 px-5 py-2.5 rounded-full bg-primary text-white text-xs font-bold flex items-center gap-2 shadow-[var(--lf-shadow-card)] shadow-primary/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
             >
               <Sparkles size={14} />
               <span>Generar mi primer reporte</span>
@@ -384,12 +384,12 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
             return (
               <div
                 key={rep.id}
-                className="p-4 sm:p-5 rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 hover:border-primary/40 hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="p-4 sm:p-5 rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] hover:border-primary/40 hover:shadow-[var(--lf-shadow-card)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 {/* Info Principal */}
                 <div className="flex items-start sm:items-center gap-3.5 min-w-0">
                   <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${badge.bg}`}
+                    className={`w-12 h-12 rounded-[var(--lf-card-radius)] flex items-center justify-center shrink-0 border ${badge.bg}`}
                   >
                     {badge.icon}
                   </div>
@@ -400,7 +400,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                         {rep.titulo}
                       </span>
                       <span
-                        className={`text-[9px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-full border ${badge.bg}`}
+                        className={`text-[11px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-full border ${badge.bg}`}
                       >
                         {badge.label}
                       </span>
@@ -425,7 +425,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleCompartir(rep)}
                         disabled={isAbriendo}
-                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                         title="Abrir con lector PDF de la tablet / celular"
                       >
                         <FileText size={14} />
@@ -435,7 +435,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleAbrir(rep)}
                         disabled={isAbriendo}
-                        className="px-3.5 py-2 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-slate-200/70 dark:border-slate-800/70 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                        className="px-3.5 py-2 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
                         title="Ver en modal de la aplicación"
                       >
                         <Eye size={13} />
@@ -447,7 +447,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleAbrir(rep)}
                         disabled={isAbriendo}
-                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                       >
                         <Eye size={14} />
                         <span>Ver Tabla</span>
@@ -456,7 +456,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleCompartir(rep)}
                         disabled={isAbriendo}
-                        className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                        className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] flex items-center justify-center transition-all cursor-pointer active:scale-95"
                         title="Abrir con app externa o compartir"
                       >
                         <Share2 size={14} />
@@ -467,7 +467,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleAbrir(rep)}
                         disabled={isAbriendo}
-                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 rounded-full bg-primary hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                         title="Abrir en Microsoft Excel, Google Sheets u Office"
                       >
                         <FileSpreadsheet size={14} />
@@ -477,7 +477,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                       <button
                         onClick={() => handleCompartir(rep)}
                         disabled={isAbriendo}
-                        className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                        className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] flex items-center justify-center transition-all cursor-pointer active:scale-95"
                         title="Compartir reporte"
                       >
                         <Share2 size={14} />
@@ -487,7 +487,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
 
                   <button
                     onClick={() => setReporteParaBorrar(rep)}
-                    className="w-9 h-9 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                    className="w-9 h-9 rounded-full bg-[var(--peligro)]/10 hover:bg-[var(--peligro)]/20 text-[var(--peligro)] flex items-center justify-center transition-all cursor-pointer active:scale-95"
                     title="Eliminar del almacenamiento"
                   >
                     <Trash2 size={14} />
@@ -507,9 +507,9 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.94, opacity: 0 }}
-              className="w-full max-w-sm rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 p-6 shadow-2xl space-y-4"
+              className="w-full max-w-sm rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] p-6 shadow-[var(--lf-shadow-float)] space-y-4"
             >
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--peligro)]/15 text-[var(--peligro)] flex items-center justify-center mx-auto">
                 <Trash2 size={24} />
               </div>
               <div className="text-center">
@@ -523,13 +523,13 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               <div className="flex gap-2.5 pt-2">
                 <button
                   onClick={() => setReporteParaBorrar(null)}
-                  className="flex-1 h-11 rounded-full bg-[var(--bg-alt)] text-[var(--text)] text-xs font-bold hover:bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 cursor-pointer"
+                  className="flex-1 h-11 rounded-full bg-[var(--bg-alt)] text-[var(--text)] text-xs font-bold hover:bg-[var(--surface)] border border-[var(--border)] cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => handleEliminarUno(reporteParaBorrar)}
-                  className="flex-1 h-11 rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 cursor-pointer shadow-md shadow-rose-500/20 active:scale-95"
+                  className="flex-1 h-11 rounded-full bg-[var(--peligro)] text-white text-xs font-bold hover:bg-[var(--peligro)]/90 cursor-pointer shadow-[var(--lf-shadow-card)] shadow-[var(--peligro)]/20 active:scale-95"
                 >
                   Sí, eliminar
                 </button>
@@ -547,9 +547,9 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.94, opacity: 0 }}
-              className="w-full max-w-sm rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 p-6 shadow-2xl space-y-4"
+              className="w-full max-w-sm rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] p-6 shadow-[var(--lf-shadow-float)] space-y-4"
             >
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--peligro)]/15 text-[var(--peligro)] flex items-center justify-center mx-auto">
                 <AlertTriangle size={24} />
               </div>
               <div className="text-center">
@@ -563,13 +563,13 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               <div className="flex gap-2.5 pt-2">
                 <button
                   onClick={() => setConfirmandoBorrarTodo(false)}
-                  className="flex-1 h-11 rounded-full bg-[var(--bg-alt)] text-[var(--text)] text-xs font-bold hover:bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 cursor-pointer"
+                  className="flex-1 h-11 rounded-full bg-[var(--bg-alt)] text-[var(--text)] text-xs font-bold hover:bg-[var(--surface)] border border-[var(--border)] cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleEliminarTodo}
-                  className="flex-1 h-11 rounded-full bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 cursor-pointer shadow-md shadow-rose-500/20 active:scale-95"
+                  className="flex-1 h-11 rounded-full bg-[var(--peligro)] text-white text-xs font-bold hover:bg-[var(--peligro)]/90 cursor-pointer shadow-[var(--lf-shadow-card)] shadow-[var(--peligro)]/20 active:scale-95"
                 >
                   Eliminar todo
                 </button>
@@ -587,19 +587,19 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.97 }}
-              className="flex-1 flex flex-col w-full max-w-5xl mx-auto rounded-2xl sm:rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden"
+              className="flex-1 flex flex-col w-full max-w-5xl mx-auto rounded-[var(--lf-card-radius)] sm:rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-float)] overflow-hidden"
             >
               {/* Header del visor */}
               <div className="p-3 sm:p-4 border-b border-[var(--border)] flex items-center justify-between gap-3 bg-[var(--surface)] shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--peligro)]/15 text-[var(--peligro)] flex items-center justify-center shrink-0">
                     <FileText size={18} />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-xs sm:text-sm font-bold text-[var(--text)] truncate">
                       {reportePdfPreview.nombre}
                     </h4>
-                    <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                    <span className="text-[11px] text-[var(--text-muted)] font-mono">
                       {reportePdfPreview.tamanoFormateado} · {formatearFecha(reportePdfPreview.fecha)}
                     </span>
                   </div>
@@ -608,7 +608,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => handleCompartir(reportePdfPreview)}
-                    className="px-3 py-1.5 rounded-xl bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                    className="px-3 py-1.5 rounded-xl bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-1.5 shadow-[var(--lf-shadow-card)] cursor-pointer active:scale-95"
                   >
                     <Share2 size={13} />
                     <span className="hidden sm:inline">Abrir en App Externa / Compartir</span>
@@ -624,14 +624,14 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               </div>
 
               {/* Contenedor del PDF con barra de compatibilidad móvil */}
-              <div className="flex-1 w-full bg-slate-900 overflow-hidden relative flex flex-col">
-                <div className="px-4 py-2 bg-slate-800 border-b border-slate-700 flex items-center justify-between gap-3 text-white text-xs">
-                  <span className="text-[11px] text-slate-300">
+              <div className="flex-1 w-full bg-[var(--bg-alt)] overflow-hidden relative flex flex-col">
+                <div className="px-4 py-2 bg-[var(--bg-alt)] border-b border-[var(--border)] flex items-center justify-between gap-3 text-white text-xs">
+                  <span className="text-[11px] text-[var(--text-muted)]">
                     ¿No visualizas el documento aquí abajo?
                   </span>
                   <button
                     onClick={() => handleCompartir(reportePdfPreview)}
-                    className="px-3 py-1 rounded-lg bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-90 active:scale-95 cursor-pointer shadow-xs"
+                    className="px-3 py-1 rounded-lg bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-90 active:scale-95 cursor-pointer shadow-[var(--lf-shadow-card)]"
                   >
                     <ArrowUpRight size={14} />
                     <span>Abrir con Visor del Dispositivo</span>
@@ -664,18 +664,18 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.97 }}
-              className="flex-1 flex flex-col w-full max-w-5xl mx-auto rounded-2xl sm:rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-2xl overflow-hidden"
+              className="flex-1 flex flex-col w-full max-w-5xl mx-auto rounded-[var(--lf-card-radius)] sm:rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-float)] overflow-hidden"
             >
               <div className="p-3 sm:p-4 border-b border-[var(--border)] flex items-center justify-between gap-3 bg-[var(--surface)] shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--primario)]/15 text-[var(--primario)] flex items-center justify-center shrink-0">
                     <SlidersHorizontal size={18} />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-xs sm:text-sm font-bold text-[var(--text)] truncate">
                       {reporteCsvPreview.nombre}
                     </h4>
-                    <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                    <span className="text-[11px] text-[var(--text-muted)] font-mono">
                       Visualizador de datos CSV
                     </span>
                   </div>
@@ -684,7 +684,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => handleCompartir(reporteCsvPreview)}
-                    className="px-3 py-1.5 rounded-xl bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                    className="px-3 py-1.5 rounded-xl bg-[var(--primario)] text-white text-xs font-bold flex items-center gap-1.5 shadow-[var(--lf-shadow-card)] cursor-pointer active:scale-95"
                   >
                     <Share2 size={13} />
                     <span>Compartir</span>
@@ -716,7 +716,7 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
                               {header.map((col, idx) => (
                                 <TableHead
                                   key={idx}
-                                  className="p-2.5 font-bold text-[var(--text)] uppercase text-[10px] font-mono whitespace-nowrap"
+                                  className="p-2.5 font-bold text-[var(--text)] uppercase text-[11px] font-mono whitespace-nowrap"
                                 >
                                   {col}
                                 </TableHead>

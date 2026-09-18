@@ -94,11 +94,11 @@ export function TiendaCupones() {
   };
 
   return (
-    <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+    <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
       <CardContent className="p-5 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
               <Tag size={18} />
             </div>
             <div>
@@ -115,21 +115,21 @@ export function TiendaCupones() {
             onClick={() => setCreando((v) => !v)}
             variant={creando ? 'outline' : 'default'}
             size="sm"
-            className="h-10 rounded-full px-4 text-xs font-bold gap-1.5 shadow-xs"
+            className="h-10 rounded-full px-4 text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)]"
           >
             <Plus size={15} /> {creando ? 'Cancelar' : 'Nuevo cupón'}
           </Button>
         </div>
 
         {creando && (
-          <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
+          <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[var(--border)]">
             <div>
               <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Código</label>
               <Input
                 value={codigo}
                 onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
                 placeholder="EJ. VERANO20"
-                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono uppercase"
+                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono uppercase"
                 required
               />
             </div>
@@ -138,7 +138,7 @@ export function TiendaCupones() {
               <select
                 value={tipoDescuento}
                 onChange={(e) => setTipoDescuento(e.target.value as 'porcentaje' | 'fijo')}
-                className="w-full h-11 px-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                className="w-full h-11 px-3.5 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
               >
                 <option value="porcentaje">Porcentaje (%)</option>
                 <option value="fijo">Monto fijo (C$)</option>
@@ -153,7 +153,7 @@ export function TiendaCupones() {
                 min="1"
                 value={valor}
                 onChange={(e) => setValor(e.target.value)}
-                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
+                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
                 required
               />
             </div>
@@ -166,7 +166,7 @@ export function TiendaCupones() {
                 min="0"
                 value={montoMinimo}
                 onChange={(e) => setMontoMinimo(e.target.value)}
-                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
+                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
               />
             </div>
             <div>
@@ -178,7 +178,7 @@ export function TiendaCupones() {
                 min="0"
                 value={descuentoMaximo}
                 onChange={(e) => setDescuentoMaximo(e.target.value)}
-                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
+                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
               />
             </div>
             <div>
@@ -190,7 +190,7 @@ export function TiendaCupones() {
                 min="1"
                 value={vigenciaDias}
                 onChange={(e) => setVigenciaDias(e.target.value)}
-                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
+                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
               />
             </div>
             <div>
@@ -202,14 +202,14 @@ export function TiendaCupones() {
                 min="0"
                 value={maxUsos}
                 onChange={(e) => setMaxUsos(e.target.value)}
-                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 font-mono"
+                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
               />
             </div>
             <div className="flex items-end">
               <Button
                 type="submit"
                 disabled={guardando}
-                className="w-full h-11 rounded-full text-xs font-bold shadow-md shadow-primary/20"
+                className="w-full h-11 rounded-full text-xs font-bold shadow-[var(--lf-shadow-card)] shadow-primary/20"
               >
                 {guardando ? 'Creando…' : 'Crear cupón'}
               </Button>
@@ -228,10 +228,10 @@ export function TiendaCupones() {
             cupones.map((c) => (
               <div
                 key={c.id}
-                className="flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 shadow-xs"
+                className="flex flex-wrap items-center gap-3 p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] shadow-[var(--lf-shadow-card)]"
               >
                 <span className="font-mono font-bold text-sm text-[var(--text)]">{c.codigo}</span>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-bold text-[var(--exito)]">
                   {c.tipoDescuento === 'porcentaje' ? `${c.valor}%` : money(c.valor)}
                 </span>
                 <span className="text-[11px] text-[var(--text-muted)] font-medium">
@@ -240,9 +240,9 @@ export function TiendaCupones() {
                 </span>
                 <Badge
                   variant={c.estado === 'activo' ? 'secondary' : 'outline'}
-                  className={`ml-auto text-[10px] font-bold uppercase rounded-full px-3 py-0.5 ${
+                  className={`ml-auto text-[11px] font-bold uppercase rounded-full px-3 py-0.5 ${
                     c.estado === 'activo'
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]'
                       : 'text-[var(--text-muted)]'
                   }`}
                 >

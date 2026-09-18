@@ -270,9 +270,9 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       {/* ─── 1. KPI STAT CARDS (ESTILO APPLE / LOGIFAST 2.0) ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Productos */}
-        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all">
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
           <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Package size={22} />
             </div>
             <div className="min-w-0">
@@ -283,9 +283,9 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         </Card>
 
         {/* Publicados */}
-        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all">
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
           <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--exito)]/10 text-[var(--exito)] flex items-center justify-center shrink-0">
               <Eye size={22} />
             </div>
             <div className="min-w-0">
@@ -296,14 +296,14 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         </Card>
 
         {/* Alerta Stock */}
-        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all">
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
           <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--warning)]/10 text-[var(--warning)] flex items-center justify-center shrink-0">
               <AlertTriangle size={22} />
             </div>
             <div className="min-w-0">
               <span className="text-xs font-semibold text-[var(--text-muted)] block">Alerta Stock</span>
-              <span className={`text-2xl font-black font-mono tracking-tight ${stats.bajoStock > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text)]'}`}>
+              <span className={`text-2xl font-black font-mono tracking-tight ${stats.bajoStock > 0 ? 'text-[var(--warning)] text-[var(--warning)]' : 'text-[var(--text)]'}`}>
                 {stats.bajoStock}
               </span>
             </div>
@@ -311,9 +311,9 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         </Card>
 
         {/* Valor Inventario */}
-        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all">
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
           <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--md-tertiary)]/10 text-[var(--md-tertiary)] flex items-center justify-center shrink-0">
               <TrendingUp size={22} />
             </div>
             <div className="min-w-0">
@@ -327,7 +327,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       </div>
 
       {/* ─── 2. TOOLBAR & CONTROLES DE INVENTARIO ─── */}
-      <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+      <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
         <CardContent className="p-5 sm:p-6 space-y-4">
           <div className="flex justify-between items-center flex-wrap gap-3.5">
             <div>
@@ -339,7 +339,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               </p>
             </div>
 
-            <Button onClick={abrirModalCrear} className="h-11 px-5 rounded-full text-xs font-bold gap-2 shadow-sm">
+            <Button onClick={abrirModalCrear} className="h-11 px-5 rounded-full text-xs font-bold gap-2 shadow-[var(--lf-shadow-card)]">
               <Plus size={16} />
               <span>Nuevo Producto</span>
             </Button>
@@ -349,18 +349,18 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           <div className="flex gap-2.5 flex-wrap items-center pt-3.5 border-t border-[var(--border)]">
             {/* Input Buscador Cápsula */}
             <div className="relative flex-1 min-w-[240px] flex items-center">
-              <Search size={18} className="absolute left-4 text-slate-400 pointer-events-none" />
+              <Search size={18} className="absolute left-4 text-[var(--text-muted)] pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Buscar producto por nombre o SKU..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="h-11 pl-11 pr-10 rounded-full bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-xs sm:text-sm font-medium text-[var(--text)] shadow-xs"
+                className="h-11 pl-11 pr-10 rounded-full bg-[var(--bg-alt)] border-[var(--border)] text-xs sm:text-sm font-medium text-[var(--text)] shadow-[var(--lf-shadow-card)]"
               />
               {busqueda && (
                 <button
                   onClick={() => setBusqueda('')}
-                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
+                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-muted)]/90 flex items-center justify-center transition-colors"
                 >
                   <X size={14} />
                 </button>
@@ -384,7 +384,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     variant={active ? 'default' : 'secondary'}
                     size="sm"
                     onClick={() => setFiltroEstado(opt.id)}
-                    className="h-9 rounded-full text-xs font-bold px-3.5 shadow-xs"
+                    className="h-9 rounded-full text-xs font-bold px-3.5 shadow-[var(--lf-shadow-card)]"
                   >
                     {opt.label}
                   </Button>
@@ -405,7 +405,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     size="sm"
                     onClick={() => setCategoriaSeleccionada(cat)}
                     className={`h-8 rounded-full text-xs font-bold px-3.5 shrink-0 ${
-                      active ? 'shadow-xs' : 'border-slate-200/70 dark:border-slate-800/70 text-[var(--text-muted)]'
+                      active ? 'shadow-[var(--lf-shadow-card)]' : 'border-[var(--border)] border-[var(--border)] text-[var(--text-muted)]'
                     }`}
                   >
                     {cat === 'todos' ? 'Todas las Categorías' : cat}
@@ -419,14 +419,14 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
       {/* ─── 3. CONTENIDO: PRODUCTOS (MÓVIL CARDS + DESKTOP TABLA) ─── */}
       {loading ? (
-        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs h-[260px] flex items-center justify-center">
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] h-[260px] flex items-center justify-center">
           <CardContent className="flex flex-col items-center gap-2.5 text-[var(--text-muted)] p-6">
             <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
             <span className="text-xs font-semibold">Cargando catálogo de productos...</span>
           </CardContent>
         </Card>
       ) : filtrados.length === 0 ? (
-        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs p-12 text-center">
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] p-12 text-center">
           <CardContent className="flex flex-col items-center gap-2.5">
             <Package size={44} className="text-[var(--text-muted)] opacity-40" />
             <h3 className="text-base font-bold font-syne text-[var(--text)]">
@@ -447,11 +447,11 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
 
               return (
-                <Card key={p.id} className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md transition-all overflow-hidden">
+                <Card key={p.id} className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all overflow-hidden">
                   <CardContent className="p-4 space-y-3.5">
                     <div className="flex gap-3.5 items-start">
                       {/* Thumbnail redondeado moderno */}
-                      <div className="w-20 h-20 rounded-2xl bg-[var(--bg-alt)] border border-slate-200/60 dark:border-slate-800/60 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+                      <div className="w-20 h-20 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] overflow-hidden shrink-0 flex items-center justify-center shadow-[var(--lf-shadow-card)]">
                         {p.portadaUrl || p.imagenUrl ? (
                           <img
                             src={p.portadaUrl || p.imagenUrl || ''}
@@ -466,15 +466,15 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       {/* Metadata */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary">
                             {p.categoriaNombre || 'General'}
                           </span>
                           <Badge
                             variant="secondary"
-                            className={`text-[10px] py-0.5 px-2.5 rounded-full font-bold ${
+                            className={`text-[11px] py-0.5 px-2.5 rounded-full font-bold ${
                               p.disponible
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                                : 'bg-slate-500/10 text-[var(--text-muted)] border border-slate-500/20'
+                                ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]'
+                                : 'bg-[var(--bg-alt)] text-[var(--text-muted)] border border-[var(--border)]'
                             }`}
                           >
                             {p.disponible ? 'Publicado' : 'Archivado'}
@@ -482,7 +482,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                           {bajoStock && (
                             <Badge
                               variant="destructive"
-                              className="text-[10px] py-0.5 px-2.5 rounded-full font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                              className="text-[11px] py-0.5 px-2.5 rounded-full font-bold bg-[var(--peligro)]/10 text-[var(--peligro)] border border-[var(--peligro)]"
                             >
                               <AlertTriangle size={10} className="mr-1" /> Bajo Stock
                             </Badge>
@@ -502,7 +502,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     </div>
 
                     {/* Precios & Stock Destacados en Cápsula de Información */}
-                    <div className="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-[var(--bg-alt)]/70 border border-slate-200/50 dark:border-slate-800/50">
+                    <div className="grid grid-cols-2 gap-2 p-3 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/70 border border-[var(--border)]">
                       <div>
                         <span className="text-[11px] text-[var(--text-muted)] block font-semibold">Precio Venta</span>
                         <span className="text-base font-black text-primary font-mono">
@@ -511,7 +511,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       </div>
                       <div>
                         <span className="text-[11px] text-[var(--text-muted)] block font-semibold">Stock Disponible</span>
-                        <span className={`text-base font-black font-mono ${bajoStock ? 'text-red-500' : 'text-[var(--text)]'}`}>
+                        <span className={`text-base font-black font-mono ${bajoStock ? 'text-[var(--peligro)]' : 'text-[var(--text)]'}`}>
                           {p.stock ?? 0} {p.unidadMedida || 'und'}
                         </span>
                       </div>
@@ -519,7 +519,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
                     {/* Confirmación antes de archivar */}
                     {archivarConfirmId === p.id && (
-                      <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 space-y-2">
+                      <div className="p-3 rounded-xl bg-[var(--peligro)]/10 border border-[var(--peligro)] space-y-2">
                         <span className="text-xs font-semibold text-[var(--text)] block">
                           ¿Archivar "{p.nombre}"? Dejará de mostrarse a los clientes.
                         </span>
@@ -545,7 +545,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     )}
 
                     {/* Botones de Acción */}
-                    <div className="flex gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                    <div className="flex gap-2 pt-2 border-t border-[var(--border)]">
                       <Button
                         variant="outline"
                         size="sm"
@@ -585,10 +585,10 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           {/* ═══════════════════════════════════════════════
               VISTA ESCRITORIO / TABLET (Opción B - Back-Office Tabla Densa)
               ═══════════════════════════════════════════════ */}
-          <Card className="hidden md:block rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs overflow-hidden">
+          <Card className="hidden md:block rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]">
+                <TableRow className="bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]/90">
                   <TableHead className="w-[60px] text-center text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Foto</TableHead>
                   <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Producto & SKU</TableHead>
                   <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Categoría</TableHead>
@@ -647,7 +647,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
                       {/* Stock */}
                       <TableCell className="text-center">
-                        <span className={`font-mono font-bold ${bajoStock ? 'text-red-500' : 'text-[var(--text)]'}`}>
+                        <span className={`font-mono font-bold ${bajoStock ? 'text-[var(--peligro)]' : 'text-[var(--text)]'}`}>
                           {p.stock ?? 0} {p.unidadMedida || 'und'}
                         </span>
                       </TableCell>
@@ -658,7 +658,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                           variant={p.disponible ? 'secondary' : 'outline'}
                           className={`text-[11px] font-bold px-2.5 py-0.5 ${
                             p.disponible
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                              ? 'bg-[var(--exito)]/10 text-[var(--exito)] border-[var(--exito)]'
                               : 'text-[var(--text-muted)]'
                           }`}
                         >
@@ -716,10 +716,10 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         >
           <Card
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[580px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-2xl rounded-3xl"
+            className="w-full max-w-[580px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-float)] rounded-[var(--lf-card-radius)]"
           >
             <CardContent className="p-6">
-              <div className="flex justify-between items-center pb-4 border-b border-slate-200/60 dark:border-slate-800/60 mb-5">
+              <div className="flex justify-between items-center pb-4 border-b border-[var(--border)] mb-5">
                 <div>
                   <h3 className="text-lg font-bold font-syne text-[var(--text)] m-0">
                     {editingProd ? 'Editar Producto en Catálogo' : 'Crear Nuevo Producto'}
@@ -730,7 +730,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                 </div>
                 <button
                   onClick={() => setModalOpen(false)}
-                  className="w-9 h-9 rounded-full border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] text-[var(--text-muted)] flex items-center justify-center hover:bg-[var(--surface-elevated)] transition-colors shadow-xs"
+                  className="w-9 h-9 rounded-full border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)] flex items-center justify-center hover:bg-[var(--surface-elevated)] transition-colors shadow-[var(--lf-shadow-card)]"
                 >
                   <X size={18} />
                 </button>
@@ -748,7 +748,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     onChange={(e) => setNombre(e.target.value)}
                     placeholder="Ej: Refresco Coca-Cola 355ml"
                     required
-                    className="rounded-2xl h-11"
+                    className="rounded-[var(--lf-card-radius)] h-11"
                   />
                 </div>
 
@@ -763,7 +763,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={categoriaNombre}
                       onChange={(e) => setCategoriaNombre(e.target.value)}
                       placeholder="Ej: Bebidas, Snacks, Lácteos"
-                      className="rounded-2xl h-11"
+                      className="rounded-[var(--lf-card-radius)] h-11"
                     />
                   </div>
 
@@ -785,7 +785,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={codigoBarras}
                       onChange={(e) => setCodigoBarras(e.target.value)}
                       placeholder="744..."
-                      className="font-mono rounded-2xl h-11"
+                      className="font-mono rounded-[var(--lf-card-radius)] h-11"
                     />
                   </div>
                 </div>
@@ -802,7 +802,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={precio}
                       onChange={(e) => setPrecio(e.target.value)}
                       placeholder="C$ 0.00"
-                      className="font-mono rounded-2xl h-11"
+                      className="font-mono rounded-[var(--lf-card-radius)] h-11"
                       required
                     />
                   </div>
@@ -817,7 +817,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={costo}
                       onChange={(e) => setCosto(e.target.value)}
                       placeholder="C$ 0.00"
-                      className="font-mono rounded-2xl h-11"
+                      className="font-mono rounded-[var(--lf-card-radius)] h-11"
                     />
                   </div>
 
@@ -830,7 +830,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={stock}
                       onChange={(e) => setStock(e.target.value)}
                       placeholder="10"
-                      className="font-mono rounded-2xl h-11"
+                      className="font-mono rounded-[var(--lf-card-radius)] h-11"
                     />
                   </div>
 
@@ -844,7 +844,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       value={stockMinimo}
                       onChange={(e) => setStockMinimo(e.target.value)}
                       placeholder="5"
-                      className="font-mono rounded-2xl h-11"
+                      className="font-mono rounded-[var(--lf-card-radius)] h-11"
                     />
                   </div>
                 </div>
@@ -860,12 +860,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     label="Subir Imagen del Producto"
                     aspectRatio="square"
                     previewUrl={imagenUrl || null}
-                    className="w-full h-32 rounded-2xl"
+                    className="w-full h-32 rounded-[var(--lf-card-radius)]"
                   />
                 </div>
 
                 {/* Botón Guardar */}
-                <div className="flex gap-2.5 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
+                <div className="flex gap-2.5 pt-3 border-t border-[var(--border)]">
                   <Button
                     type="button"
                     variant="outline"
@@ -877,7 +877,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="flex-[2] h-11 rounded-full font-semibold shadow-md shadow-primary/20"
+                    className="flex-[2] h-11 rounded-full font-semibold shadow-[var(--lf-shadow-card)] shadow-primary/20"
                   >
                     {submitting ? 'Guardando...' : (editingProd ? 'Guardar Cambios' : 'Crear Producto')}
                   </Button>

@@ -136,7 +136,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
     }
     const sube = valor >= 0;
     return (
-      <span className={`inline-flex items-center gap-1 text-[11.5px] font-bold ${sube ? 'text-[var(--exito)]' : 'text-[var(--peligro)]'}`}>
+      <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${sube ? 'text-[var(--exito)]' : 'text-[var(--peligro)]'}`}>
         {sube ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
         {sube ? '+' : ''}
         {valor.toFixed(1)}%
@@ -156,7 +156,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
     pie: React.ReactNode;
     tono?: string;
   }) => (
-    <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs hover:shadow-md transition-all">
+    <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
       <CardContent className="p-5 flex flex-col justify-between h-full gap-2.5 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] truncate">
@@ -166,7 +166,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
         <div className={`truncate text-2xl font-black font-mono tracking-tight ${tono}`}>
           {valor}
         </div>
-        <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
+        <div className="pt-2 border-t border-[var(--border)]">
           {pie}
         </div>
       </CardContent>
@@ -181,7 +181,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <TrendingUp size={22} />
             </div>
             <div>
@@ -195,7 +195,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
           </div>
         </div>
 
-        <div className="inline-flex items-center p-1 rounded-full bg-[var(--bg-alt)]/80 border border-slate-200/60 dark:border-slate-800/60 shadow-xs shrink-0 self-start sm:self-center">
+        <div className="inline-flex items-center p-1 rounded-full bg-[var(--bg-alt)]/80 border border-[var(--border)] shadow-[var(--lf-shadow-card)] shrink-0 self-start sm:self-center">
           {PERIODOS.map((p) => {
             const active = dias === p.dias;
             return (
@@ -205,7 +205,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                 onClick={() => setDias(p.dias)}
                 className={`h-8 sm:h-9 px-3.5 sm:px-4 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   active
-                    ? 'bg-primary text-white shadow-xs'
+                    ? 'bg-primary text-white shadow-[var(--lf-shadow-card)]'
                     : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
                 }`}
               >
@@ -217,7 +217,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
       </div>
 
       {loading && (
-        <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs">
+        <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)]">
           <CardContent className="p-12 text-center text-xs text-[var(--text-muted)] flex flex-col items-center justify-center gap-3">
             <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
             <span>Calculando estadísticas y métricas financieras…</span>
@@ -226,8 +226,8 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
       )}
 
       {!loading && error && (
-        <Card className="rounded-3xl border border-red-500/30 bg-red-500/5 shadow-xs">
-          <CardContent className="p-8 text-center text-xs text-red-500 font-semibold flex items-center justify-center gap-2">
+        <Card className="rounded-[var(--lf-card-radius)] border border-[var(--peligro)] bg-[var(--peligro)]/5 shadow-[var(--lf-shadow-card)]">
+          <CardContent className="p-8 text-center text-xs text-[var(--peligro)] font-semibold flex items-center justify-center gap-2">
             <AlertTriangle size={16} />
             <span>{error}</span>
           </CardContent>
@@ -256,11 +256,11 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               etiqueta="Devuelto"
               valor={money(datos.resumen.montoDevuelto)}
               pie={
-                <span className="text-[11.5px] text-[var(--text-muted)]">
+                <span className="text-[11px] text-[var(--text-muted)]">
                   {datos.resumen.devoluciones} devolución(es) · {datos.resumen.totalItems} artículos
                 </span>
               }
-              tono={datos.resumen.montoDevuelto > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text)]'}
+              tono={datos.resumen.montoDevuelto > 0 ? 'text-[var(--warning)]' : 'text-[var(--text)]'}
             />
           </div>
 
@@ -269,7 +269,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               etiqueta="Mejor día"
               valor={datos.resumen.mejorDia ? money(datos.resumen.mejorDia.total) : '—'}
               pie={
-                <span className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-muted)]">
+                <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
                   <Calendar size={13} /> {datos.resumen.mejorDia?.fecha || 'sin ventas aún'}
                 </span>
               }
@@ -278,7 +278,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               etiqueta="Hora pico"
               valor={datos.resumen.horaPico ? `${datos.resumen.horaPico.hora}:00` : '—'}
               pie={
-                <span className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-muted)]">
+                <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
                   <Clock size={13} /> {datos.resumen.horaPico ? money(datos.resumen.horaPico.total) : 'sin ventas aún'}
                 </span>
               }
@@ -287,18 +287,18 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               etiqueta="Stock bajo mínimo"
               valor={String(datos.resumen.productosConStockBajo)}
               pie={
-                <span className="text-[11.5px] text-[var(--text-muted)]">
+                <span className="text-[11px] text-[var(--text-muted)]">
                   {datos.resumen.productosConStockBajo > 0 ? 'Revisa Inventario' : 'Todo en orden'}
                 </span>
               }
-              tono={datos.resumen.productosConStockBajo > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}
+              tono={datos.resumen.productosConStockBajo > 0 ? 'text-[var(--warning)]' : 'text-[var(--exito)]'}
             />
           </div>
 
           {datos.resumen.numVentas === 0 ? (
-            <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs text-center">
+            <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] text-center">
               <CardContent className="p-10 space-y-2">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
                   <TrendingUp size={24} />
                 </div>
                 <div className="text-base font-black text-[var(--text)]">Todavía no hay ventas en este período</div>
@@ -310,10 +310,10 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
           ) : (
             <>
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+                <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] overflow-hidden">
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-xl bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center">
                         <Clock size={16} />
                       </div>
                       <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] m-0">Ventas por hora</h3>
@@ -339,10 +339,10 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+                <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] overflow-hidden">
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-xl bg-[var(--exito)]/10 text-[var(--exito)] flex items-center justify-center">
                         <Calendar size={16} />
                       </div>
                       <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] m-0">Ventas por día</h3>
@@ -369,7 +369,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               </div>
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+                <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] overflow-hidden">
                   <CardContent className="p-5 sm:p-6">
                     <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] mb-4">Top 10 productos</h3>
                     {datos.topProductos.length === 0 ? (
@@ -404,7 +404,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+                <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] overflow-hidden">
                   <CardContent className="p-5 sm:p-6">
                     <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] mb-4">Formas de pago</h3>
                     {datos.porMetodo.length === 0 ? (
@@ -448,10 +448,10 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
           )}
 
           {datos.alertasStockBajo.length > 0 && (
-            <Card className="rounded-3xl border border-amber-500/30 bg-amber-500/5 shadow-xs overflow-hidden">
+            <Card className="rounded-[var(--lf-card-radius)] border border-[var(--warning)] bg-[var(--warning)]/5 shadow-[var(--lf-shadow-card)] overflow-hidden">
               <CardContent className="p-5 sm:p-6">
-                <div className="flex items-center gap-2.5 text-amber-600 dark:text-amber-400 mb-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                <div className="flex items-center gap-2.5 text-[var(--warning)] mb-3">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--warning)]/10 flex items-center justify-center shrink-0">
                     <AlertTriangle size={18} />
                   </div>
                   <h3 className="text-sm sm:text-base font-black tracking-tight m-0">
@@ -462,10 +462,10 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
                   {datos.alertasStockBajo.map((a) => (
                     <div
                       key={a.productoId}
-                      className="flex justify-between items-center gap-3 p-3 rounded-2xl bg-[var(--surface)] border border-amber-500/20 text-xs text-[var(--text)] shadow-xs"
+                      className="flex justify-between items-center gap-3 p-3 rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--warning)] text-xs text-[var(--text)] shadow-[var(--lf-shadow-card)]"
                     >
                       <span className="font-bold truncate">{a.nombre}</span>
-                      <span className="font-mono font-black text-amber-600 dark:text-amber-400 tabular-nums shrink-0 px-2.5 py-1 rounded-full bg-amber-500/10 text-xs">
+                      <span className="font-mono font-black text-[var(--warning)] tabular-nums shrink-0 px-2.5 py-1 rounded-full bg-[var(--warning)]/10 text-xs">
                         {a.stock} / {a.stockMinimo} min
                       </span>
                     </div>
@@ -479,7 +479,7 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
             <Button
               onClick={() => descargar('xlsx')}
               disabled={descargando !== null}
-              className="h-11 rounded-full px-5 text-xs font-bold gap-2 shadow-md shadow-primary/20"
+              className="h-11 rounded-full px-5 text-xs font-bold gap-2 shadow-[var(--lf-shadow-card)] shadow-primary/20"
             >
               <FileSpreadsheet size={16} /> {descargando === 'xlsx' ? 'Generando…' : 'Reporte Excel'}
             </Button>
@@ -487,14 +487,14 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
               variant="outline"
               onClick={() => descargar('pdf')}
               disabled={descargando !== null}
-              className="h-11 rounded-full px-5 text-xs font-bold gap-2 border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] hover:bg-[var(--bg-alt)]"
+              className="h-11 rounded-full px-5 text-xs font-bold gap-2 border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--bg-alt)]"
             >
               <Download size={16} /> {descargando === 'pdf' ? 'Generando…' : 'Reporte PDF'}
             </Button>
             <Button
               variant="outline"
               onClick={cargar}
-              className="h-11 rounded-full px-5 text-xs font-bold gap-2 border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] hover:bg-[var(--bg-alt)]"
+              className="h-11 rounded-full px-5 text-xs font-bold gap-2 border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--bg-alt)]"
             >
               <RotateCcw size={15} /> Actualizar
             </Button>

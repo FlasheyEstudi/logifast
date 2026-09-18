@@ -16458,4 +16458,40 @@ body {
   width: 100% !important;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   CLASES QUE LA TIENDA YA INVOCABA Y NO EXISTÍAN
+   ──────────────────────────────────────────────────────────────────────
+   Detectadas midiendo los className de src/components/tienda contra el CSS
+   compilado: no producían ninguna regla. No se inventa diseño: las
+   animaciones se conectan a los keyframes ya declarados arriba.
+   ══════════════════════════════════════════════════════════════════════ */
+@keyframes lfFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in { animation: lfFadeIn 0.2s ease-out both; }
+.animate-scale-up { animation: scaleIn 0.18s ease-out both; }
+.animate-slide-up { animation: slideUp 0.24s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-scale-up,
+  .animate-slide-up { animation: none; }
+}
+
+/* Oculta la barra de scroll conservando el desplazamiento (POS, KDS, Kardex) */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Impresión de tickets y comprobantes (POS y Facturación) */
+@media print {
+  .no-print { display: none !important; }
+  .printable-ticket {
+    box-shadow: none !important;
+    border: 0 !important;
+    margin: 0 !important;
+  }
+}
+
 

@@ -77,10 +77,10 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 items-start">
       {/* ─── Columna Izquierda: Formulario de Configuración Fiscal ─── */}
-      <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+      <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
         <CardContent className="p-5 sm:p-6 space-y-6">
           <div className="flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
               <FileText size={22} />
             </div>
             <div>
@@ -106,7 +106,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={ruc}
                   onChange={(e) => setRuc(e.target.value)}
                   placeholder="Ej: J0310000000000"
-                  className="h-11 rounded-2xl"
+                  className="h-11 rounded-[var(--lf-card-radius)]"
                   required
                 />
               </div>
@@ -120,7 +120,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={razonSocial}
                   onChange={(e) => setRazonSocial(e.target.value)}
                   placeholder="Ej: Comercial Distribuidora S.A."
-                  className="h-11 rounded-2xl"
+                  className="h-11 rounded-[var(--lf-card-radius)]"
                   required
                 />
               </div>
@@ -135,7 +135,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 <select
                   value={regimenDgi}
                   onChange={(e) => setRegimenDgi(e.target.value)}
-                  className="w-full h-11 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] px-3.5 py-1 text-sm shadow-xs transition-all outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer text-[var(--text)] font-medium"
+                  className="w-full h-11 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] px-3.5 py-1 text-sm shadow-[var(--lf-shadow-card)] transition-all outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer text-[var(--text)] font-medium"
                 >
                   <option value="Cuota Fija" className="bg-[var(--surface)] text-[var(--text)]">Cuota Fija (Pequeño Contribuyente)</option>
                   <option value="Régimen General" className="bg-[var(--surface)] text-[var(--text)]">Régimen General (IVA 15%)</option>
@@ -152,7 +152,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={serieFactura}
                   onChange={(e) => setSerieFactura(e.target.value)}
                   placeholder="F001"
-                  className="h-11 rounded-2xl font-mono"
+                  className="h-11 rounded-[var(--lf-card-radius)] font-mono"
                 />
               </div>
             </div>
@@ -167,7 +167,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={saludoFactura}
                 onChange={(e) => setSaludoFactura(e.target.value)}
                 placeholder="Ej: ¡Gracias por preferir nuestros productos!"
-                className="h-11 rounded-2xl"
+                className="h-11 rounded-[var(--lf-card-radius)]"
               />
             </div>
 
@@ -181,12 +181,12 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 onChange={(e) => setPiePaginaFactura(e.target.value)}
                 placeholder="Ej: Conservar este comprobante para cualquier garantía dentro de 15 días."
                 rows={3}
-                className="resize-none rounded-2xl"
+                className="resize-none rounded-[var(--lf-card-radius)]"
               />
             </div>
 
             {/* Pie de Marca Institucional LogiFast */}
-            <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-start gap-3 shadow-xs">
+            <div className="p-4 rounded-[var(--lf-card-radius)] bg-primary/10 border border-primary/20 flex items-start gap-3 shadow-[var(--lf-shadow-card)]">
               <Shield size={20} className="text-primary shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-primary">
@@ -202,7 +202,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             <Button
               type="submit"
               disabled={guardando}
-              className="w-full h-12 rounded-full text-sm font-bold shadow-md shadow-primary/20 active:scale-[0.99] transition-transform"
+              className="w-full h-12 rounded-full text-sm font-bold shadow-[var(--lf-shadow-card)] shadow-primary/20 active:scale-[0.99] transition-transform"
             >
               {guardando ? (
                 <>
@@ -221,26 +221,26 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
       </Card>
 
       {/* ─── Columna Derecha: Vista Previa Interactiva del Ticket ─── */}
-      <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs lg:sticky lg:top-20">
+      <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] lg:sticky lg:top-20">
         <CardContent className="p-5 sm:p-6 space-y-4">
           <div>
             <h3 className="text-sm font-bold text-[var(--text)] font-syne">
               Vista Previa de Comprobante
             </h3>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-[var(--text-muted)] font-medium">
               Así se imprimirá el ticket en la impresora térmica de 58mm / 80mm
             </p>
           </div>
 
-          <div className="bg-white text-black rounded-3xl p-6 shadow-xl border border-slate-200 font-mono text-xs printable-ticket space-y-3">
+          <div className="bg-[var(--surface)] text-black rounded-[var(--lf-card-radius)] p-6 shadow-[var(--lf-shadow-float)] border border-[var(--border)] font-mono text-xs printable-ticket space-y-3">
             <div className="text-center pb-2 border-b border-dashed border-black/40 space-y-0.5">
               <div className="text-sm font-black tracking-tight uppercase">{razonSocial || 'MI TIENDA S.A.'}</div>
-              <div className="text-[11px] text-slate-600">{ruc || 'J0310000000000'}</div>
-              <div className="text-[11px] text-slate-600">DGI: {regimenDgi}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">{ruc || 'J0310000000000'}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">DGI: {regimenDgi}</div>
               <div className="pt-1.5 text-[11px] font-bold">
                 FACTURA POS #{serieFactura}-000104
               </div>
-              <div suppressHydrationWarning className="text-[10px] text-slate-500">
+              <div suppressHydrationWarning className="text-[11px] text-[var(--text-muted)]">
                 Fecha: {new Date().toLocaleDateString('es-NI')}
               </div>
             </div>
@@ -261,7 +261,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               <span>C$ 350.00</span>
             </div>
 
-            <div className="text-center pt-2 space-y-1 text-[10px] text-slate-600">
+            <div className="text-center pt-2 space-y-1 text-[11px] text-[var(--text-muted)]">
               <div>{saludoFactura || '¡Gracias por su compra!'}</div>
               <div>{piePaginaFactura || 'Conservar este comprobante.'}</div>
               <div className="font-bold text-black pt-1">

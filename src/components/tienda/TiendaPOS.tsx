@@ -394,9 +394,9 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     <div className="flex flex-col h-full">
       {/* Drawer Drag Header on mobile */}
       {isDrawer && (
-        <div className="flex items-center justify-between pb-3.5 border-b border-slate-200/60 dark:border-slate-800/60 shrink-0">
+        <div className="flex items-center justify-between pb-3.5 border-b border-[var(--border)] shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
+            <div className="w-9 h-9 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shadow-[var(--lf-shadow-card)]">
               <ShoppingCart size={18} />
             </div>
             <div>
@@ -410,7 +410,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
           </div>
           <button
             onClick={() => setMobileCartOpen(false)}
-            className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface-elevated)] text-slate-500 flex items-center justify-center active:scale-95 transition-all shadow-xs"
+            className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface-elevated)] text-[var(--text-muted)] flex items-center justify-center active:scale-95 transition-all shadow-[var(--lf-shadow-card)]"
             aria-label="Cerrar carrito"
           >
             <X size={18} />
@@ -421,12 +421,12 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       {/* Cart Items List */}
       <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 min-h-[140px]">
         {carrito.length === 0 ? (
-          <div className="text-center py-12 px-4 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
-            <div className="w-16 h-16 rounded-3xl bg-[var(--bg-alt)] flex items-center justify-center mb-3 shadow-xs">
+          <div className="text-center py-12 px-4 flex flex-col items-center justify-center text-[var(--text-muted)]">
+            <div className="w-16 h-16 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] flex items-center justify-center mb-3 shadow-[var(--lf-shadow-card)]">
               <ShoppingCart size={26} className="opacity-40" />
             </div>
             <p className="text-sm font-bold text-[var(--text)]">Carrito de venta vacío</p>
-            <p className="text-xs mt-1 text-slate-500 max-w-[220px]">
+            <p className="text-xs mt-1 text-[var(--text-muted)] max-w-[220px]">
               Toca los productos del catálogo o escanea un código para añadirlos
             </p>
           </div>
@@ -434,7 +434,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
           carrito.map((it) => (
             <div
               key={it.producto.id}
-              className="group p-3 sm:p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between gap-3 transition-colors hover:border-slate-300 dark:hover:border-slate-700"
+              className="group p-3 sm:p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] flex items-center justify-between gap-3 transition-colors hover:border-[var(--border)]/90"
             >
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-[var(--text)] truncate">
@@ -454,7 +454,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => modificarCantidad(it.producto.id, -1)}
-                  className="w-9 h-9 rounded-full bg-[var(--surface)] border border-slate-200/70 dark:border-slate-700/70 text-[var(--text)] flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-xs"
+                  className="w-9 h-9 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-[var(--lf-shadow-card)]"
                   aria-label={`Disminuir ${it.producto.nombre}`}
                 >
                   <Minus size={14} />
@@ -466,7 +466,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
                 <button
                   onClick={() => modificarCantidad(it.producto.id, 1)}
-                  className="w-9 h-9 rounded-full bg-[var(--surface)] border border-slate-200/70 dark:border-slate-700/70 text-[var(--text)] flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-xs"
+                  className="w-9 h-9 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-[var(--lf-shadow-card)]"
                   aria-label={`Aumentar ${it.producto.nombre}`}
                 >
                   <Plus size={14} />
@@ -474,7 +474,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
                 <button
                   onClick={() => eliminarDelCarrito(it.producto.id)}
-                  className="w-9 h-9 ml-1 rounded-full text-red-500 hover:bg-red-500/10 flex items-center justify-center active:scale-95 transition-all"
+                  className="w-9 h-9 ml-1 rounded-full text-[var(--peligro)] hover:bg-[var(--peligro)]/10 flex items-center justify-center active:scale-95 transition-all"
                   aria-label={`Eliminar ${it.producto.nombre}`}
                 >
                   <Trash2 size={15} />
@@ -486,7 +486,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* Checkout Form & Controls */}
-      <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/60 space-y-3 shrink-0">
+      <div className="pt-3 border-t border-[var(--border)] space-y-3 shrink-0">
         {/* Customer info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
@@ -498,7 +498,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               placeholder="Nombre del Cliente"
               value={clienteNombre}
               onChange={(e) => setClienteNombre(e.target.value)}
-              className="h-10 text-xs rounded-xl bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
+              className="h-10 text-xs rounded-xl bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
             />
           </div>
           <div>
@@ -510,7 +510,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               placeholder="RUC / Cédula"
               value={clienteRuc}
               onChange={(e) => setClienteRuc(e.target.value)}
-              className="h-10 text-xs rounded-xl bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)]"
+              className="h-10 text-xs rounded-xl bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
             />
           </div>
         </div>
@@ -524,7 +524,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <select
               value={metodoPago}
               onChange={(e) => setMetodoPago(e.target.value as any)}
-              className="w-full h-10 px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer font-medium"
+              className="w-full h-10 px-3 rounded-xl text-xs bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer font-medium"
             >
               <option value="efectivo" className="bg-[var(--surface)] text-[var(--text)]">Efectivo (Córdobas / Dólares)</option>
               <option value="tarjeta" className="bg-[var(--surface)] text-[var(--text)]">Tarjeta Débito / Crédito</option>
@@ -542,7 +542,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               placeholder="C$ 0.00"
               value={montoRecibido}
               onChange={(e) => setMontoRecibido(e.target.value)}
-              className="h-10 text-xs rounded-xl bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] font-mono"
+              className="h-10 text-xs rounded-xl bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] font-mono"
             />
           </div>
         </div>
@@ -550,7 +550,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         {/* Quick Cash Buttons (Only for Efectivo) */}
         {metodoPago === 'efectivo' && totalSum > 0 && (
           <div>
-            <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
+            <div className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
               Atajos de Cobro
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -559,7 +559,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant="secondary"
                 size="sm"
                 onClick={() => setCashAmount(totalSum)}
-                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--text)] shadow-xs"
+                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--text)] shadow-[var(--lf-shadow-card)]"
               >
                 Exacto
               </Button>
@@ -568,7 +568,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant="outline"
                 size="sm"
                 onClick={() => addCashAmount(50)}
-                className="h-8 px-3 rounded-full text-xs font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 shadow-xs"
+                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--exito)] border-[var(--exito)] hover:bg-[var(--exito)]/10 shadow-[var(--lf-shadow-card)]"
               >
                 +C$50
               </Button>
@@ -577,7 +577,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant="outline"
                 size="sm"
                 onClick={() => addCashAmount(100)}
-                className="h-8 px-3 rounded-full text-xs font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 shadow-xs"
+                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--exito)] border-[var(--exito)] hover:bg-[var(--exito)]/10 shadow-[var(--lf-shadow-card)]"
               >
                 +C$100
               </Button>
@@ -586,7 +586,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant="outline"
                 size="sm"
                 onClick={() => addCashAmount(500)}
-                className="h-8 px-3 rounded-full text-xs font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 shadow-xs"
+                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--exito)] border-[var(--exito)] hover:bg-[var(--exito)]/10 shadow-[var(--lf-shadow-card)]"
               >
                 +C$500
               </Button>
@@ -595,27 +595,27 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         )}
 
         {/* Totals Breakdown */}
-        <div className="p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 space-y-1.5">
+        <div className="p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] space-y-1.5">
           <div className="flex justify-between items-center text-xs text-[var(--text-muted)] font-medium">
             <span>Subtotal</span>
             <span className="font-mono">C$ {subtotalSum.toFixed(2)}</span>
           </div>
 
           {descNum > 0 && (
-            <div className="flex justify-between items-center text-xs text-amber-600 dark:text-amber-400 font-semibold">
+            <div className="flex justify-between items-center text-xs text-[var(--warning)] font-semibold">
               <span>Descuento aplicado</span>
               <span className="font-mono">- C$ {descNum.toFixed(2)}</span>
             </div>
           )}
 
           {metodoPago === 'efectivo' && (
-            <div className="flex justify-between items-center text-xs text-emerald-600 dark:text-emerald-400 font-bold pt-1.5 border-t border-slate-200/60 dark:border-slate-800/60">
+            <div className="flex justify-between items-center text-xs text-[var(--exito)] font-bold pt-1.5 border-t border-[var(--border)]">
               <span>Cambio a devolver</span>
               <span className="font-mono text-sm">C$ {cambio.toFixed(2)}</span>
             </div>
           )}
 
-          <div className="flex justify-between items-center text-base font-black text-primary pt-1.5 border-t border-slate-200/60 dark:border-slate-800/60">
+          <div className="flex justify-between items-center text-base font-black text-primary pt-1.5 border-t border-[var(--border)]">
             <span className="font-syne">TOTAL COBRAR</span>
             <span className="font-mono text-lg tracking-tight">C$ {totalSum.toFixed(2)}</span>
           </div>
@@ -625,7 +625,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         <Button
           onClick={procesarVenta}
           disabled={procesando || carrito.length === 0}
-          className="w-full h-12 rounded-full text-sm font-bold shadow-md shadow-primary/20 transition-transform active:scale-[0.99]"
+          className="w-full h-12 rounded-full text-sm font-bold shadow-[var(--lf-shadow-card)] shadow-primary/20 transition-transform active:scale-[0.99]"
         >
           {procesando ? (
             <>
@@ -649,22 +649,22 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       <div className="flex flex-col gap-4 min-w-0">
         
         {/* Barra Superior: Buscador + Escáner + Devolución */}
-        <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
           <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             {/* Input Buscador en Cápsula */}
             <div className="relative flex-1 flex items-center">
-              <Search size={18} className="absolute left-4 text-slate-400 pointer-events-none" />
+              <Search size={18} className="absolute left-4 text-[var(--text-muted)] pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Buscar producto o escanea SKU con lector..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="pl-11 pr-10 h-11 sm:h-12 rounded-full text-xs sm:text-sm bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 text-[var(--text)] focus:ring-2 focus:ring-primary/20 shadow-xs"
+                className="pl-11 pr-10 h-11 sm:h-12 rounded-full text-xs sm:text-sm bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-primary/20 shadow-[var(--lf-shadow-card)]"
               />
               {busqueda && (
                 <button
                   onClick={() => setBusqueda('')}
-                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
+                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-muted)]/90 flex items-center justify-center transition-colors"
                 >
                   <X size={14} />
                 </button>
@@ -677,9 +677,9 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant={lectorConectado ? 'default' : 'secondary'}
                 onClick={abrirEscaner}
                 title="Emparejar un celular como lector de códigos de barras"
-                className={`flex-1 sm:flex-initial h-11 rounded-full px-4 text-xs font-bold shadow-xs ${
+                className={`flex-1 sm:flex-initial h-11 rounded-full px-4 text-xs font-bold shadow-[var(--lf-shadow-card)] ${
                   lectorConectado
-                    ? '!bg-emerald-600 hover:!bg-emerald-700 text-white'
+                    ? '!bg-[var(--exito)] hover:!bg-[var(--exito)]/90 text-white'
                     : ''
                 }`}
               >
@@ -691,7 +691,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant="secondary"
                 onClick={() => setDevolucionAbierta(true)}
                 title="Devolver mercadería al inventario"
-                className="flex-1 sm:flex-initial h-11 rounded-full px-4 text-xs font-bold shadow-xs"
+                className="flex-1 sm:flex-initial h-11 rounded-full px-4 text-xs font-bold shadow-[var(--lf-shadow-card)]"
               >
                 <RotateCcw size={14} className="mr-1.5" />
                 <span>Devolución</span>
@@ -712,7 +712,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   size="sm"
                   onClick={() => setCategoriaSeleccionada(cat)}
                   className={`h-9 rounded-full text-xs font-bold px-4 shrink-0 transition-all ${
-                    active ? 'shadow-sm shadow-primary/25' : 'bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 text-[var(--text-muted)] hover:text-[var(--text)]'
+                    active ? 'shadow-[var(--lf-shadow-card)] shadow-primary/25' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]'
                   }`}
                 >
                   {cat === 'todos' ? 'Todos los Productos' : cat}
@@ -728,17 +728,17 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="h-[240px] rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 animate-pulse"
+                className="h-[240px] rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] animate-pulse"
               />
             ))}
           </div>
         ) : filtrados.length === 0 ? (
-          <div className="py-16 px-6 text-center bg-[var(--surface)] border border-dashed border-slate-200/70 dark:border-slate-800/70 rounded-3xl">
-            <Package size={42} className="mx-auto mb-3 opacity-30 text-slate-500" />
+          <div className="py-16 px-6 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-[var(--lf-card-radius)]">
+            <Package size={42} className="mx-auto mb-3 opacity-30 text-[var(--text-muted)]" />
             <p className="text-base font-bold text-[var(--text)]">
               No se encontraron productos
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[var(--text-muted)] mt-1">
               Prueba buscando con otro término o revisa la categoría seleccionada
             </p>
           </div>
@@ -754,10 +754,10 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 <div
                   key={p.id}
                   onClick={() => !sinStock && agregarAlCarrito(p)}
-                  className={`group relative flex flex-col transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] rounded-3xl bg-[var(--surface)] ${
+                  className={`group relative flex flex-col transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] rounded-[var(--lf-card-radius)] bg-[var(--surface)] ${
                     enCarritoCant > 0
-                      ? 'border-2 border-primary shadow-md shadow-primary/15'
-                      : 'border border-slate-200/70 dark:border-slate-800/70 shadow-xs hover:shadow-md'
+                      ? 'border-2 border-primary shadow-[var(--lf-shadow-card)] shadow-primary/15'
+                      : 'border border-[var(--border)] hover:shadow-[var(--lf-shadow-card)]'
                   } ${sinStock ? 'opacity-60 grayscale cursor-not-allowed' : ''}`}
                 >
                   {/* Image container */}
@@ -769,8 +769,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center font-bold text-slate-400 dark:text-slate-600 text-xl font-syne">
-                        {p.nombre.slice(0, 2).toUpperCase()}
+                      <div className="w-full h-full flex items-center justify-center bg-[var(--bg-alt)]">
+                        <Package size={30} className="text-[var(--text-muted)] opacity-40" />
                       </div>
                     )}
 
@@ -778,11 +778,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                     <div className="absolute bottom-2.5 right-2.5">
                       {p.stock !== null && p.stock !== undefined ? (
                         <span
-                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full font-mono ${
+                          className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono ${
                             sinStock
-                              ? 'bg-red-500 text-white'
+                              ? 'bg-[var(--peligro)] text-white'
                               : bajoStock
-                              ? 'bg-amber-500 text-white'
+                              ? 'bg-[var(--warning)] text-white'
                               : 'bg-black/60 text-white backdrop-blur-md'
                           }`}
                         >
@@ -793,7 +793,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
                     {/* Quantity in Cart Indicator */}
                     {enCarritoCant > 0 && (
-                      <div className="absolute top-2.5 left-2.5 text-white text-xs font-bold px-2.5 py-0.5 rounded-full animate-scale-up font-mono bg-primary shadow-md shadow-primary/30">
+                      <div className="absolute top-2.5 left-2.5 text-white text-xs font-bold px-2.5 py-0.5 rounded-full animate-scale-up font-mono bg-primary shadow-[var(--lf-shadow-card)] shadow-primary/30">
                         {enCarritoCant} en caja
                       </div>
                     )}
@@ -803,7 +803,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   <div className="p-3.5 flex-1 flex flex-col justify-between gap-2.5">
                     <div>
                       {p.categoriaNombre && (
-                        <p className="text-primary text-[10px] font-extrabold uppercase tracking-wider mb-1 truncate">
+                        <p className="text-primary text-[11px] font-extrabold uppercase tracking-wider mb-1 truncate">
                           {p.categoriaNombre}
                         </p>
                       )}
@@ -812,11 +812,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                       </h4>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
+                    <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
                       <span className="text-primary text-sm sm:text-base font-black font-mono">
                         C$ {p.precio.toFixed(2)}
                       </span>
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/25 group-hover:scale-110 transition-transform">
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[var(--lf-shadow-card)] shadow-primary/25 group-hover:scale-110 transition-transform">
                         <Plus size={16} />
                       </div>
                     </div>
@@ -829,7 +829,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* ─── Columna Derecha Desktop: Carrito & Cobro POS ─── */}
-      <Card className="hidden lg:block sticky top-4 h-[calc(100vh-32px)] overflow-hidden rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+      <Card className="hidden lg:block sticky top-4 h-[calc(100vh-32px)] overflow-hidden rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
         <CardContent className="p-5 h-full flex flex-col overflow-hidden">
           {renderCartContent(false)}
         </CardContent>
@@ -840,13 +840,13 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       <div className="lg:hidden fixed bottom-[74px] left-3 right-3 z-30">
         <button
           onClick={() => setMobileCartOpen(true)}
-          className="w-full h-14 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 flex justify-between items-center px-4 active:scale-[0.98] transition-all font-semibold"
+          className="w-full h-14 rounded-full bg-primary text-primary-foreground shadow-[var(--lf-shadow-float)] shadow-primary/30 flex justify-between items-center px-4 active:scale-[0.98] transition-all font-semibold"
         >
           <div className="flex items-center gap-2.5">
-            <div className="relative w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shadow-xs">
+            <div className="relative w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shadow-[var(--lf-shadow-card)]">
               <ShoppingCart size={18} />
               {totalItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold flex items-center justify-center font-mono ring-2 ring-blue-600">
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--exito)] text-white text-[11px] font-extrabold flex items-center justify-center font-mono ring-2 ring-[var(--primario)]">
                   {totalItemsCount}
                 </span>
               )}
@@ -861,7 +861,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-bold bg-white/20 px-3.5 py-1.5 rounded-full shadow-xs">
+          <div className="flex items-center gap-1.5 text-xs font-bold bg-white/20 px-3.5 py-1.5 rounded-full shadow-[var(--lf-shadow-card)]">
             <span>{carrito.length === 0 ? 'Ver Caja' : 'Cobrar'}</span>
             <ChevronUp size={16} />
           </div>
@@ -876,10 +876,10 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-h-[85vh] bg-[var(--surface)] rounded-t-[32px] p-4 sm:p-5 flex flex-col border-t border-slate-200/70 dark:border-slate-800/70 shadow-2xl animate-slide-up"
+            className="w-full max-h-[85vh] bg-[var(--surface)] rounded-t-[32px] p-4 sm:p-5 flex flex-col border-t border-[var(--border)] shadow-[var(--lf-shadow-float)] animate-slide-up"
           >
             {/* Grab handle indicator */}
-            <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mb-3" />
+            <div className="w-12 h-1.5 rounded-full bg-[var(--bg-alt)] mx-auto mb-3" />
             {renderCartContent(true)}
           </div>
         </div>
@@ -901,18 +901,18 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-[var(--surface)] rounded-3xl border border-slate-200/70 dark:border-slate-800/70 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
+            className="w-full max-w-md bg-[var(--surface)] rounded-[var(--lf-card-radius)] border border-[var(--border)] p-6 shadow-[var(--lf-shadow-float)] max-h-[90vh] overflow-y-auto animate-scale-up"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
+                <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shadow-[var(--lf-shadow-card)]">
                   <Camera size={20} />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-[var(--text)] font-syne">
                     Escáner Inalámbrico
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">Usa tu celular como lector de barras</p>
+                  <p className="text-xs text-[var(--text-muted)] font-medium">Usa tu celular como lector de barras</p>
                 </div>
               </div>
 
@@ -920,8 +920,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant={lectorConectado ? 'default' : 'secondary'}
                 className={`text-[11px] font-extrabold px-3 py-1 rounded-full ${
                   lectorConectado
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30'
-                    : 'text-slate-500'
+                    ? 'bg-[var(--exito)]/15 text-[var(--exito)] ring-1 ring-[var(--exito)]/30'
+                    : 'text-[var(--text-muted)]'
                 }`}
               >
                 {lectorConectado ? 'CONECTADO' : 'ESPERANDO...'}
@@ -934,16 +934,16 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
             {/* PIN Display */}
             <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 text-center text-4xl sm:text-5xl font-extrabold tracking-widest font-mono py-3.5 rounded-2xl bg-[var(--bg-alt)] border border-slate-200/60 dark:border-slate-800/60 text-[var(--text)] shadow-xs">
+              <div className="flex-1 text-center text-4xl sm:text-5xl font-extrabold tracking-widest font-mono py-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] shadow-[var(--lf-shadow-card)]">
                 {escanerPin}
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-[var(--bg-alt)] border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center text-slate-400 shadow-xs">
-                <Wifi size={24} className={lectorConectado ? 'text-emerald-500 animate-pulse' : ''} />
+              <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] shadow-[var(--lf-shadow-card)]">
+                <Wifi size={24} className={lectorConectado ? 'text-[var(--exito)] animate-pulse' : ''} />
               </div>
             </div>
 
             {origenWeb.includes('localhost') || origenWeb.includes('127.0.0.1') ? (
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2.5">
+              <div className="p-3 rounded-[var(--lf-card-radius)] bg-[var(--warning)]/10 border border-[var(--warning)] text-[var(--warning)] text-xs flex items-start gap-2.5">
                 <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                 <p className="leading-snug font-medium">
                   El celular no puede abrir <b>localhost</b>. Accede usando la IP de tu PC en la red WiFi local (ej. http://192.168.1.10:3000/escaner).
@@ -957,7 +957,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 Últimas Lecturas
               </div>
               {ultimosEscaneos.length === 0 ? (
-                <div className="text-xs text-slate-400 italic py-2">
+                <div className="text-xs text-[var(--text-muted)] italic py-2">
                   No hay lecturas registradas en esta sesión.
                 </div>
               ) : (
@@ -965,7 +965,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   {ultimosEscaneos.map((e, i) => (
                     <div
                       key={`${e.codigo}-${i}`}
-                      className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[var(--bg-alt)] border border-slate-200/60 dark:border-slate-800/60 text-xs"
+                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] text-xs"
                     >
                       <span className="font-mono font-bold text-[var(--text)]">
                         {e.codigo}
@@ -973,15 +973,15 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                       <span
                         className={`flex-1 truncate font-medium ${
                           e.estado === 'ok'
-                            ? 'text-emerald-600 dark:text-emerald-400'
+                            ? 'text-[var(--exito)] text-[var(--exito)]'
                             : e.estado === 'ambiguo'
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-red-500'
+                            ? 'text-[var(--warning)] text-[var(--warning)]'
+                            : 'text-[var(--peligro)]'
                         }`}
                       >
                         {e.detalle}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">{e.hora}</span>
+                      <span className="text-[11px] text-[var(--text-muted)] font-mono">{e.hora}</span>
                     </div>
                   ))}
                 </div>
@@ -991,7 +991,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <Button
               variant="outline"
               onClick={cerrarEscaner}
-              className="w-full mt-5 h-11 rounded-full text-xs font-bold shadow-xs"
+              className="w-full mt-5 h-11 rounded-full text-xs font-bold shadow-[var(--lf-shadow-card)]"
             >
               Cerrar Sesión de Escaneo
             </Button>
@@ -1002,20 +1002,20 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       {/* ─── Modal Factura / Comprobante Térmico POS ─── */}
       {facturaEmitida && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-sm bg-white text-black rounded-3xl p-6 shadow-2xl border border-slate-200 font-mono text-xs printable-ticket animate-scale-up">
+          <div className="w-full max-w-sm bg-[var(--surface)] text-black rounded-[var(--lf-card-radius)] p-6 shadow-[var(--lf-shadow-float)] border border-[var(--border)] font-mono text-xs printable-ticket animate-scale-up">
             <div className="text-center pb-3 border-b border-dashed border-black/40 space-y-0.5">
               <div className="text-base font-black tracking-tight">{facturaEmitida.tiendaNombre}</div>
-              <div className="text-[11px] text-slate-600">{facturaEmitida.razonSocial}</div>
-              <div className="text-[11px] text-slate-600">RUC: {facturaEmitida.tiendaRuc}</div>
-              <div className="text-[11px] text-slate-600">DGI: {facturaEmitida.regimenDgi}</div>
-              <div className="text-[11px] text-slate-600">{facturaEmitida.direccion}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">{facturaEmitida.razonSocial}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">RUC: {facturaEmitida.tiendaRuc}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">DGI: {facturaEmitida.regimenDgi}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">{facturaEmitida.direccion}</div>
               {facturaEmitida.telefono && (
-                <div className="text-[11px] text-slate-600">Tel: {facturaEmitida.telefono}</div>
+                <div className="text-[11px] text-[var(--text-muted)]">Tel: {facturaEmitida.telefono}</div>
               )}
               <div className="pt-2 text-[11px] font-bold">
                 COMPROBANTE #{facturaEmitida.numeroComprobante}
               </div>
-              <div className="text-[10px] text-slate-500">
+              <div className="text-[11px] text-[var(--text-muted)]">
                 {facturaEmitida.fecha} · {facturaEmitida.hora}
               </div>
               <div className="text-[11px] font-medium pt-1">
@@ -1041,18 +1041,18 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 <span>TOTAL:</span>
                 <span>C$ {facturaEmitida.total.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-[var(--text-muted)]">
                 <span>Pago ({facturaEmitida.metodoPago}):</span>
                 <span>C$ {facturaEmitida.montoRecibido.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-[var(--text-muted)]">
                 <span>Cambio:</span>
                 <span>C$ {facturaEmitida.cambioDado.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Footer message */}
-            <div className="text-center pt-3 space-y-1 text-[10px] text-slate-600">
+            <div className="text-center pt-3 space-y-1 text-[11px] text-[var(--text-muted)]">
               <div>{facturaEmitida.saludoFactura}</div>
               <div>{facturaEmitida.piePaginaFactura}</div>
               <div className="font-bold text-black pt-1">
@@ -1064,7 +1064,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <div className="flex gap-2 mt-5 no-print">
               <button
                 onClick={imprimirFactura}
-                className="flex-1 h-11 rounded-full bg-black hover:bg-slate-800 text-white font-bold flex items-center justify-center gap-2 active:scale-95 transition-all text-xs shadow-md"
+                className="flex-1 h-11 rounded-full bg-black hover:bg-[var(--bg-alt)] text-white font-bold flex items-center justify-center gap-2 active:scale-95 transition-all text-xs shadow-[var(--lf-shadow-card)]"
               >
                 <Printer size={15} />
                 <span>Imprimir Ticket</span>
@@ -1072,7 +1072,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
               <button
                 onClick={() => setFacturaEmitida(null)}
-                className="h-11 px-5 rounded-full bg-slate-100 hover:bg-slate-200 text-black font-bold active:scale-95 transition-all text-xs shadow-xs"
+                className="h-11 px-5 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]/90 text-black font-bold active:scale-95 transition-all text-xs shadow-[var(--lf-shadow-card)]"
               >
                 Cerrar
               </button>

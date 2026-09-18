@@ -122,10 +122,10 @@ function SeccionEquipo() {
   };
 
   return (
-    <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+    <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
       <CardContent className="p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
             <Users size={18} />
           </div>
           <div>
@@ -139,7 +139,7 @@ function SeccionEquipo() {
         </div>
 
         {esPropietario && (
-          <form onSubmit={invitar} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
+          <form onSubmit={invitar} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-3 pt-3 border-t border-[var(--border)]">
             <div>
               <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
                 Correo del usuario registrado
@@ -149,7 +149,7 @@ function SeccionEquipo() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="cajero@correo.com"
-                className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70"
+                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)]"
                 required
               />
             </div>
@@ -160,7 +160,7 @@ function SeccionEquipo() {
               <select
                 value={rol}
                 onChange={(e) => setRol(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                className="w-full h-11 px-3.5 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
               >
                 {roles.filter((r) => r !== 'dueno').map((r) => (
                   <option key={r} value={r}>
@@ -173,7 +173,7 @@ function SeccionEquipo() {
               <Button
                 type="submit"
                 disabled={enviando}
-                className="h-11 rounded-full px-5 text-xs font-bold gap-1.5 shadow-md shadow-primary/20"
+                className="h-11 rounded-full px-5 text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20"
               >
                 <Plus size={15} /> {enviando ? 'Invitando…' : 'Invitar'}
               </Button>
@@ -190,11 +190,11 @@ function SeccionEquipo() {
             equipo.map((m) => (
               <div
                 key={m.id}
-                className="flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 shadow-xs"
+                className="flex flex-wrap items-center gap-3 p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] shadow-[var(--lf-shadow-card)]"
               >
                 <span className="font-bold text-sm text-[var(--text)]">{m.nombre}</span>
                 <span className="text-xs text-[var(--text-muted)]">{m.email}</span>
-                <Badge variant="secondary" className="text-[10px] font-bold uppercase rounded-full px-2.5 py-0.5">
+                <Badge variant="secondary" className="text-[11px] font-bold uppercase rounded-full px-2.5 py-0.5">
                   {m.rol}
                 </Badge>
                 <span className="text-[11px] text-[var(--text-muted)] font-medium">
@@ -206,7 +206,7 @@ function SeccionEquipo() {
                     variant="outline"
                     size="sm"
                     onClick={() => quitar(m.id)}
-                    className="ml-auto h-8 rounded-full px-3 text-xs font-semibold text-red-500 hover:text-red-600 hover:bg-red-500/10 shadow-xs"
+                    className="ml-auto h-8 rounded-full px-3 text-xs font-semibold text-[var(--peligro)] hover:text-[var(--peligro)]/90 hover:bg-[var(--peligro)]/10 shadow-[var(--lf-shadow-card)]"
                   >
                     Quitar
                   </Button>
@@ -278,10 +278,10 @@ function SeccionAlianzas() {
   };
 
   return (
-    <Card className="rounded-3xl bg-[var(--surface)] border border-slate-200/70 dark:border-slate-800/70 shadow-xs">
+    <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
       <CardContent className="p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
             <Star size={18} />
           </div>
           <div>
@@ -294,14 +294,14 @@ function SeccionAlianzas() {
           </div>
         </div>
 
-        <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
+        <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3 pt-3 border-t border-[var(--border)]">
           <div>
             <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Beneficio</label>
             <Input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Café gratis al entregar"
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)]"
               required
             />
           </div>
@@ -311,7 +311,7 @@ function SeccionAlianzas() {
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="10% / C$50"
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)]"
             />
           </div>
           <div>
@@ -321,14 +321,14 @@ function SeccionAlianzas() {
               min="0"
               value={vigenciaDias}
               onChange={(e) => setVigenciaDias(e.target.value)}
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)]"
             />
           </div>
           <div className="flex items-end">
             <Button
               type="submit"
               disabled={enviando}
-              className="h-11 rounded-full px-5 text-xs font-bold gap-1.5 shadow-md shadow-primary/20"
+              className="h-11 rounded-full px-5 text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20"
             >
               <Plus size={15} /> Publicar
             </Button>
@@ -344,11 +344,11 @@ function SeccionAlianzas() {
             alianzas.map((a) => (
               <div
                 key={a.id}
-                className="flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 shadow-xs"
+                className="flex flex-wrap items-center gap-3 p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] shadow-[var(--lf-shadow-card)]"
               >
                 <span className="font-bold text-sm text-[var(--text)]">{a.titulo}</span>
                 {a.valor && (
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{a.valor}</span>
+                  <span className="text-xs font-bold text-[var(--exito)]">{a.valor}</span>
                 )}
                 <span className="text-[11px] text-[var(--text-muted)] font-medium">vence {fecha(a.vigenciaFin)}</span>
                 <Badge variant="outline" className="ml-auto text-[11px] font-bold rounded-full px-3 py-0.5">
@@ -434,10 +434,10 @@ function SeccionPauta() {
   };
 
   return (
-    <Card className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--surface)] shadow-xs overflow-hidden">
+    <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] overflow-hidden">
       <CardContent className="p-5 sm:p-6 space-y-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <Megaphone size={19} />
           </div>
           <div>
@@ -457,7 +457,7 @@ function SeccionPauta() {
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="2x1 en Fresco hoy"
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
               required
             />
           </div>
@@ -467,7 +467,7 @@ function SeccionPauta() {
               value={subtitulo}
               onChange={(e) => setSubtitulo(e.target.value)}
               placeholder="Solo por hoy en tu tienda"
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
@@ -475,7 +475,7 @@ function SeccionPauta() {
             <Input
               value={botonTexto}
               onChange={(e) => setBotonTexto(e.target.value)}
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
@@ -484,7 +484,7 @@ function SeccionPauta() {
               value={botonLink}
               onChange={(e) => setBotonLink(e.target.value)}
               placeholder="/cliente/explorar"
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
@@ -493,7 +493,7 @@ function SeccionPauta() {
               type="color"
               value={colorFondo}
               onChange={(e) => setColorFondo(e.target.value)}
-              className="w-full h-11 p-1 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-[var(--bg-alt)] cursor-pointer"
+              className="w-full h-11 p-1 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] cursor-pointer"
             />
           </div>
           <div>
@@ -503,7 +503,7 @@ function SeccionPauta() {
               min="1"
               value={dias}
               onChange={(e) => setDias(e.target.value)}
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div>
@@ -513,14 +513,14 @@ function SeccionPauta() {
               min="0"
               value={precioMensual}
               onChange={(e) => setPrecioMensual(e.target.value)}
-              className="h-11 rounded-2xl text-xs bg-[var(--bg-alt)] border-slate-200/70 dark:border-slate-800/70 focus:ring-2 focus:ring-primary/20"
+              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div className="flex items-end">
             <Button
               type="submit"
               disabled={enviando}
-              className="w-full h-11 rounded-full text-xs font-bold gap-1.5 shadow-md shadow-primary/20"
+              className="w-full h-11 rounded-full text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20"
             >
               <Plus size={15} /> {enviando ? 'Contratando…' : 'Contratar anuncio'}
             </Button>
@@ -536,7 +536,7 @@ function SeccionPauta() {
             banners.map((b) => (
               <div
                 key={b.id}
-                className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-alt)]/60 border border-slate-200/60 dark:border-slate-800/60 transition-all hover:bg-[var(--bg-alt)]"
+                className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] transition-all hover:bg-[var(--bg-alt)]/90"
               >
                 <div className="space-y-1">
                   <div className="font-bold text-sm text-[var(--text)]">{b.titulo}</div>
@@ -550,8 +550,8 @@ function SeccionPauta() {
                   variant={b.pagado ? 'secondary' : 'outline'}
                   className={`rounded-full px-3 py-1 text-xs font-bold ${
                     b.pagado
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0'
-                      : 'text-amber-600 dark:text-amber-400 border-amber-500/30'
+                      ? 'bg-[var(--exito)]/10 text-[var(--exito)] border-0'
+                      : 'text-[var(--warning)] text-[var(--warning)] border-[var(--warning)]'
                   }`}
                 >
                   {b.pagado ? 'PAGADO' : b.precioMensual ? `PENDIENTE ${money(b.precioMensual)}` : 'SIN TARIFA'}

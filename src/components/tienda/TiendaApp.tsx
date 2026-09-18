@@ -53,9 +53,9 @@ class TiendaModuloErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <Card className="w-full bg-[var(--surface)] border-rose-500/30 shadow-sm my-6">
+        <Card className="w-full bg-[var(--surface)] border-[var(--peligro)] shadow-[var(--lf-shadow-card)] my-6">
           <CardContent className="p-8 text-center flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--peligro)]/10 text-[var(--peligro)] flex items-center justify-center">
               <AlertCircle size={24} />
             </div>
             <div className="max-w-md">
