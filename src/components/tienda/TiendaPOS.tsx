@@ -63,27 +63,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
-/* ═══════════════════════════════════════════════
-   CATEGORY FILTER PILL
-   ═══════════════════════════════════════════════ */
-
-const filterPill = (active: boolean): React.CSSProperties => ({
-  padding: '7px 14px',
-  borderRadius: 'var(--lf-pill-radius, 100px)',
-  background: active ? 'var(--primario)' : 'var(--bg-alt)',
-  color: active ? '#FFFFFF' : 'var(--text-muted)',
-  border: `1px solid ${active ? 'var(--primario)' : 'var(--border)'}`,
-  fontWeight: 600,
-  fontSize: 12,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-  transition: 'all 0.18s ease',
-  boxShadow: active ? '0 2px 8px rgba(0, 122, 255, 0.25)' : 'none',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-});
 
 export function TiendaPOS({ isDark }: { isDark: boolean }) {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -727,13 +706,15 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             {categorias.map((cat) => {
               const active = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
               return (
-                <button
+                <Button
                   key={cat}
+                  variant={active ? 'default' : 'secondary'}
+                  size="sm"
                   onClick={() => setCategoriaSeleccionada(cat)}
-                  style={filterPill(active)}
+                  className="h-8 rounded-full text-xs font-semibold px-3 shrink-0"
                 >
                   {cat === 'todos' ? 'Todos los Productos' : cat}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -745,26 +726,12 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                style={{
-                  height: 220,
-                  borderRadius: 16,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                }}
-                className="animate-pulse"
+                className="h-[220px] rounded-2xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
               />
             ))}
           </div>
         ) : filtrados.length === 0 ? (
-          <div
-            style={{
-              padding: '64px 24px',
-              textAlign: 'center',
-              background: 'var(--surface)',
-              border: '1px dashed var(--border)',
-              borderRadius: 16,
-            }}
-          >
+          <div className="py-16 px-6 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-2xl">
             <Package size={40} className="mx-auto mb-3 opacity-30 text-slate-500" />
             <p className="text-base font-bold text-[var(--text)]">
               No se encontraron productos
@@ -785,15 +752,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 <div
                   key={p.id}
                   onClick={() => !sinStock && agregarAlCarrito(p)}
-                  style={{
-                    background: 'var(--surface)',
-                    borderRadius: 16,
-                    border: enCarritoCant > 0 ? '1.5px solid var(--primario)' : '1px solid var(--border)',
-                    boxShadow: enCarritoCant > 0 ? '0 4px 16px rgba(0, 122, 255, 0.15)' : 'var(--lf-shadow-card)',
-                  }}
-                  className={`group relative flex flex-col transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] ${
-                    sinStock ? 'opacity-60 grayscale cursor-not-allowed' : ''
-                  }`}
+                  className={`group relative flex flex-col transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] rounded-2xl bg-[var(--surface)] ${
+                    enCarritoCant > 0
+                      ? 'border-2 border-primary shadow-md shadow-primary/10'
+                      : 'border border-[var(--border)] shadow-sm'
+                  } ${sinStock ? 'opacity-60 grayscale cursor-not-allowed' : ''}`}
                 >
                   {/* Image container */}
                   <div className="relative h-32 w-full bg-[var(--bg-alt)] overflow-hidden">
@@ -828,13 +791,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
                     {/* Quantity in Cart Indicator */}
                     {enCarritoCant > 0 && (
-                      <div
-                        style={{
-                          background: 'var(--primario)',
-                          boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
-                        }}
-                        className="absolute top-2 left-2 text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full animate-scale-up font-mono"
-                      >
+                      <div className="absolute top-2 left-2 text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full animate-scale-up font-mono bg-primary shadow-sm shadow-primary/30">
                         {enCarritoCant} en caja
                       </div>
                     )}
@@ -844,10 +801,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   <div className="p-3 flex-1 flex flex-col justify-between gap-2">
                     <div>
                       {p.categoriaNombre && (
-                        <p
-                          style={{ color: 'var(--primario)' }}
-                          className="text-[10px] font-extrabold uppercase tracking-wider mb-0.5 truncate"
-                        >
+                        <p className="text-primary text-[10px] font-extrabold uppercase tracking-wider mb-0.5 truncate">
                           {p.categoriaNombre}
                         </p>
                       )}
@@ -857,26 +811,10 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
-                      <span
-                        style={{ color: 'var(--primario)' }}
-                        className="text-sm sm:text-base font-extrabold font-mono"
-                      >
+                      <span className="text-primary text-sm sm:text-base font-extrabold font-mono">
                         C$ {p.precio.toFixed(2)}
                       </span>
-                      <div
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: '50%',
-                          background: 'var(--primario)',
-                          color: '#FFFFFF',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(0, 122, 255, 0.25)',
-                        }}
-                        className="group-hover:scale-110 transition-transform"
-                      >
+                      <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm shadow-primary/25 group-hover:scale-110 transition-transform">
                         <Plus size={14} />
                       </div>
                     </div>
@@ -900,18 +838,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       <div className="lg:hidden fixed bottom-[74px] left-3 right-3 z-30">
         <button
           onClick={() => setMobileCartOpen(true)}
-          style={{
-            width: '100%',
-            height: 56,
-            borderRadius: 'var(--lf-pill-radius, 100px)',
-            background: 'var(--primario)',
-            boxShadow: '0 8px 24px rgba(0, 122, 255, 0.35)',
-            justifyContent: 'space-between',
-            padding: '0 16px',
-            display: 'inline-flex',
-            alignItems: 'center',
-          }}
-          className="active:scale-[0.98] transition-all text-white font-semibold"
+          className="w-full h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex justify-between items-center px-4 active:scale-[0.98] transition-all font-semibold"
         >
           <div className="flex items-center gap-2.5">
             <div className="relative w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
