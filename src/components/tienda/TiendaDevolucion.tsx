@@ -126,7 +126,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[var(--surface)] rounded-3xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up space-y-4"
+        className="w-full max-w-lg bg-[var(--surface)] rounded-[28px] md:rounded-2xl border border-[var(--border)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up space-y-4"
       >
         <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2.5">
@@ -200,7 +200,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
             <button
               onClick={onCerrar}
-              className="w-full h-11 min-h-[44px] rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs active:scale-95 transition-all"
+              className="w-full h-11 min-h-[44px] rounded-full md:rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs active:scale-95 transition-all"
             >
               Cerrar y Volver a Caja POS
             </button>
@@ -350,7 +350,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
             <div className="flex gap-2.5 pt-2">
               <button
                 onClick={onCerrar}
-                className="flex-1 h-11 min-h-[44px] rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
+                className="flex-1 h-11 min-h-[44px] rounded-full md:rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-xs hover:bg-[var(--bg-alt)] active:scale-95 transition-all"
               >
                 Cancelar
               </button>
@@ -358,7 +358,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
               <button
                 onClick={enviar}
                 disabled={enviando || lineas.length === 0}
-                className="flex-[2] h-11 min-h-[44px] rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold text-xs tracking-wide shadow-md shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-[2] h-11 min-h-[44px] rounded-full md:rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs tracking-wide shadow-sm active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {enviando ? (
                   <>

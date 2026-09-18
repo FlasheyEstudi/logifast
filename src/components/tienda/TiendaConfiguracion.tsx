@@ -174,7 +174,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* ─── Tarjeta Principal de Configuración ─── */}
-      <div className="p-5 sm:p-7 rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-6">
+      <div className="p-5 sm:p-7 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-6">
         <div>
           <div className="flex items-center gap-2 text-primary mb-1">
             <Settings size={20} />
@@ -390,7 +390,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
               <button
                 type="button"
                 onClick={detectarGPS}
-                className="h-9 min-h-[36px] px-3.5 rounded-xl bg-primary text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm self-start sm:self-auto"
+                className="h-9 min-h-[36px] px-3.5 rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm self-start sm:self-auto"
               >
                 <MapPin size={13} />
                 <span>Capturar mi GPS Actual</span>
@@ -448,7 +448,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
           <button
             type="submit"
             disabled={guardando}
-            className="w-full h-12 min-h-[48px] rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+            className="w-full h-12 min-h-[48px] rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm tracking-wide shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
           >
             {guardando ? (
               <>

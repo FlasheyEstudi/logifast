@@ -253,10 +253,10 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {/* ─── KPI Dashboard Cards ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-primary flex items-center justify-center shrink-0">
             <Package size={20} />
           </div>
@@ -268,7 +268,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
             <Eye size={20} />
           </div>
@@ -280,7 +280,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
             <AlertTriangle size={20} />
           </div>
@@ -292,7 +292,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
+        <div className="p-4 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
             <TrendingUp size={20} />
           </div>
@@ -306,7 +306,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       </div>
 
       {/* ─── Header & Controls ─── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
+      <div className="p-4 sm:p-5 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
@@ -319,7 +319,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
           <button
             onClick={abrirModalCrear}
-            className="h-11 min-h-[44px] px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 self-start sm:self-auto"
+            className="h-11 min-h-[44px] px-4 rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 self-start sm:self-auto"
           >
             <Plus size={16} />
             <span>Nuevo Producto</span>
@@ -396,18 +396,11 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         )}
       </div>
 
-      {/* ─── Grid of Products ─── */}
+      {/* ─── Grid / Table of Products ─── */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div
-              key={n}
-              className="h-72 rounded-2xl bg-[var(--surface)] border border-[var(--border)] animate-pulse"
-            />
-          ))}
-        </div>
+        <div className="h-72 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] animate-pulse" />
       ) : filtrados.length === 0 ? (
-        <div className="py-20 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-3xl p-6">
+        <div className="py-20 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-[22px] md:rounded-2xl p-6">
           <Package size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
           <h3 className="text-base font-bold text-[var(--text)] font-syne">
             No se encontraron productos
@@ -417,81 +410,80 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtrados.map((p) => {
-            const bajoStock =
-              p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+        <>
+          {/* ═══════════════════════════════════════════════
+              VISTA MÓVIL (Celular: Opción A - Tarjetas Táctiles iOS/Material)
+              ═══════════════════════════════════════════════ */}
+          <div className="block md:hidden space-y-3.5">
+            {filtrados.map((p) => {
+              const bajoStock =
+                p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
 
-            return (
-              <div
-                key={p.id}
-                className="group rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 flex flex-col overflow-hidden"
-              >
-                {/* Image Cover Preview */}
-                <div className="relative h-40 w-full bg-[var(--bg-alt)] overflow-hidden">
-                  {p.portadaUrl || p.imagenUrl ? (
-                    <img
-                      src={p.portadaUrl || p.imagenUrl || ''}
-                      alt={p.nombre}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-600">
-                      <ImageIcon size={32} className="opacity-40" />
+              return (
+                <div
+                  key={p.id}
+                  className="p-4 rounded-[22px] bg-[var(--surface)] border border-[var(--border)] shadow-md space-y-3"
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Imagen Miniatura */}
+                    <div className="relative w-16 h-16 rounded-2xl bg-[var(--bg-alt)] overflow-hidden shrink-0 border border-[var(--border)]/60">
+                      {p.portadaUrl || p.imagenUrl ? (
+                        <img
+                          src={p.portadaUrl || p.imagenUrl || ''}
+                          alt={p.nombre}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400">
+                          <Package size={24} className="opacity-40" />
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  {/* Top Badges */}
-                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
-                    <span
-                      className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                        p.disponible
-                          ? 'bg-emerald-500 text-white shadow-sm'
-                          : 'bg-slate-700 text-slate-200'
-                      }`}
-                    >
-                      {p.disponible ? 'Publicado' : 'Archivado'}
-                    </span>
+                    {/* Información Principal */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-extrabold uppercase text-primary tracking-wider">
+                          {p.categoriaNombre || 'General'}
+                        </span>
+                        <span
+                          className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
+                            p.disponible
+                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-slate-500/15 text-slate-500'
+                          }`}
+                        >
+                          {p.disponible ? 'Publicado' : 'Archivado'}
+                        </span>
+                        {bajoStock && (
+                          <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-red-500 text-white flex items-center gap-1">
+                            <AlertTriangle size={9} /> Bajo Stock
+                          </span>
+                        )}
+                      </div>
 
-                    {bajoStock && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-500 text-white flex items-center gap-1 shadow-sm">
-                        <AlertTriangle size={10} /> Bajo Stock
-                      </span>
-                    )}
-                  </div>
-                </div>
+                      <h3 className="text-sm font-bold text-[var(--text)] mt-0.5 leading-snug line-clamp-2">
+                        {p.nombre}
+                      </h3>
 
-                {/* Card Body */}
-                <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase text-primary tracking-wider">
-                      {p.categoriaNombre || 'General'}
-                    </span>
-                    <h3 className="text-sm font-bold text-[var(--text)] mt-0.5 line-clamp-2 leading-snug">
-                      {p.nombre}
-                    </h3>
-                    {p.codigoBarras && (
-                      <p className="text-[11px] font-mono text-[var(--text-muted)] mt-1">
-                        SKU: {p.codigoBarras}
-                      </p>
-                    )}
+                      {p.codigoBarras && (
+                        <p className="text-[11px] font-mono text-[var(--text-muted)] mt-0.5">
+                          SKU: {p.codigoBarras}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Price & Stock info pills */}
-                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-[var(--bg-alt)] border border-slate-200/60 dark:border-slate-700/60 text-xs">
+                  {/* Precios & Stock Destacados */}
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]/50 text-xs">
                     <div>
-                      <span className="text-[10px] font-bold text-[var(--text-muted)] block">
-                        Precio Venta
-                      </span>
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] block">Precio Venta</span>
                       <span className="text-sm font-extrabold text-primary font-mono">
                         C$ {p.precio.toFixed(2)}
                       </span>
                     </div>
-
                     <div>
-                      <span className="text-[10px] font-bold text-[var(--text-muted)] block">
-                        Stock Actual
-                      </span>
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] block">Stock Actual</span>
                       <span
                         className={`text-sm font-extrabold font-mono ${
                           bajoStock ? 'text-red-500' : 'text-[var(--text)]'
@@ -502,22 +494,22 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     </div>
                   </div>
 
-                  {/* Confirmación antes de archivar */}
+                  {/* Confirmación antes de archivar en móvil */}
                   {archivarConfirmId === p.id && (
-                    <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs space-y-2 animate-scale-up">
+                    <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-xs space-y-2 animate-scale-up">
                       <p className="text-[11px] font-semibold text-[var(--text)] leading-tight">
-                        ¿Archivar "{p.nombre}"? Dejará de mostrarse en catálogo, conservando su historial.
+                        ¿Archivar "{p.nombre}"? Dejará de mostrarse en catálogo conservando su historial.
                       </p>
                       <div className="flex gap-2">
                         <button
                           onClick={() => toggleDisponible(p)}
-                          className="flex-1 h-8 min-h-[32px] rounded-lg bg-red-500 text-white font-bold text-[11px] active:scale-95"
+                          className="flex-1 h-9 min-h-[36px] rounded-full bg-red-500 text-white font-bold text-xs active:scale-95"
                         >
                           Sí, archivar
                         </button>
                         <button
                           onClick={() => setArchivarConfirmId(null)}
-                          className="flex-1 h-8 min-h-[32px] rounded-lg bg-[var(--border)] text-[var(--text)] font-bold text-[11px] active:scale-95"
+                          className="flex-1 h-9 min-h-[36px] rounded-full bg-[var(--border)] text-[var(--text)] font-bold text-xs active:scale-95"
                         >
                           Cancelar
                         </button>
@@ -525,39 +517,175 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     </div>
                   )}
 
-                  {/* Action Buttons (3 columnas táctiles con targets de 44px) */}
-                  <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-[var(--border)]">
+                  {/* Botones de Acción Táctiles (Estilo Cliente/Repartidor) */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-[var(--border)]/40">
                     <button
                       onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
-                      title={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
-                      className="h-11 min-h-[44px] rounded-xl border border-[var(--border)] text-[var(--text)] hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
+                      className="h-10 min-h-[40px] px-3.5 rounded-full border border-[var(--border)] text-[var(--text)] font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                     >
                       {p.disponible ? <EyeOff size={14} /> : <Eye size={14} />}
-                      <span className="truncate">{p.disponible ? 'Archivar' : 'Publicar'}</span>
+                      <span>{p.disponible ? 'Archivar' : 'Publicar'}</span>
                     </button>
 
                     <button
                       onClick={() => abrirGeneradorEtiquetas(p)}
-                      title="Generar e imprimir etiquetas con código de barras o QR"
-                      className="h-11 min-h-[44px] rounded-xl bg-[var(--bg-alt)] hover:bg-slate-200 dark:hover:bg-slate-750 text-[var(--text)] font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all border border-[var(--border)]"
+                      className="flex-1 h-10 min-h-[40px] px-3 rounded-full bg-[var(--bg-alt)] hover:bg-slate-200 dark:hover:bg-slate-750 text-[var(--text)] font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                     >
-                      <Tag size={14} />
+                      <Printer size={14} />
                       <span>Etiquetas</span>
                     </button>
 
                     <button
                       onClick={() => abrirModalEditar(p)}
-                      className="h-11 min-h-[44px] rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
+                      className="flex-1 h-10 min-h-[40px] px-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm shadow-blue-500/20"
                     >
                       <Edit2 size={14} />
                       <span>Editar</span>
                     </button>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+
+          {/* ═══════════════════════════════════════════════
+              VISTA TABLET & COMPUTADORA (Opción B - Back-Office Tabla Densa)
+              ═══════════════════════════════════════════════ */}
+          <div className="hidden md:block rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left text-xs sm:text-sm">
+                <thead>
+                  <tr className="bg-[var(--bg-alt)] border-b border-[var(--border)] text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                    <th className="py-3 px-4 w-12 text-center">Foto</th>
+                    <th className="py-3 px-4">Producto & SKU</th>
+                    <th className="py-3 px-4">Categoría</th>
+                    <th className="py-3 px-4 text-right">Precio Venta</th>
+                    <th className="py-3 px-4 text-right">Costo</th>
+                    <th className="py-3 px-4 text-center">Stock</th>
+                    <th className="py-3 px-4 text-center">Estado</th>
+                    <th className="py-3 px-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {filtrados.map((p) => {
+                    const bajoStock =
+                      p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+
+                    return (
+                      <tr
+                        key={p.id}
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                      >
+                        {/* Miniatura Foto */}
+                        <td className="py-2.5 px-4 text-center">
+                          <div className="w-10 h-10 rounded-lg bg-[var(--bg-alt)] overflow-hidden mx-auto border border-[var(--border)]/60 flex items-center justify-center">
+                            {p.portadaUrl || p.imagenUrl ? (
+                              <img
+                                src={p.portadaUrl || p.imagenUrl || ''}
+                                alt={p.nombre}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Package size={18} className="opacity-40 text-slate-400" />
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Nombre & SKU */}
+                        <td className="py-2.5 px-4">
+                          <span className="font-bold text-[var(--text)] block truncate max-w-xs">
+                            {p.nombre}
+                          </span>
+                          {p.codigoBarras ? (
+                            <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                              SKU: {p.codigoBarras}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">Sin SKU</span>
+                          )}
+                        </td>
+
+                        {/* Categoría */}
+                        <td className="py-2.5 px-4">
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--bg-alt)] text-[var(--text-secondary)]">
+                            {p.categoriaNombre || 'General'}
+                          </span>
+                        </td>
+
+                        {/* Precio Venta */}
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-primary">
+                          C$ {p.precio.toFixed(2)}
+                        </td>
+
+                        {/* Costo */}
+                        <td className="py-2.5 px-4 text-right font-mono text-[var(--text-muted)]">
+                          {p.costo !== null && p.costo !== undefined ? `C$ ${p.costo.toFixed(2)}` : '—'}
+                        </td>
+
+                        {/* Stock & Alerta */}
+                        <td className="py-2.5 px-4 text-center">
+                          <span
+                            className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-full ${
+                              bajoStock
+                                ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                                : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            }`}
+                          >
+                            {p.stock ?? 0} {p.unidadMedida || 'und'}
+                          </span>
+                        </td>
+
+                        {/* Estado */}
+                        <td className="py-2.5 px-4 text-center">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              p.disponible
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'
+                            }`}
+                          >
+                            {p.disponible ? 'Publicado' : 'Archivado'}
+                          </span>
+                        </td>
+
+                        {/* Acciones Compactas Back-Office */}
+                        <td className="py-2.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => abrirGeneradorEtiquetas(p)}
+                              title="Generar etiquetas Código de Barras / QR"
+                              className="h-8 px-2.5 rounded-lg border border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-alt)] text-xs font-bold flex items-center gap-1 active:scale-95 transition-all"
+                            >
+                              <Printer size={13} />
+                              <span className="hidden lg:inline">Etiquetas</span>
+                            </button>
+
+                            <button
+                              onClick={() => abrirModalEditar(p)}
+                              title="Editar producto"
+                              className="h-8 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shadow-sm"
+                            >
+                              <Edit2 size={13} />
+                              <span className="hidden lg:inline">Editar</span>
+                            </button>
+
+                            <button
+                              onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
+                              title={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
+                              className="h-8 w-8 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white hover:bg-[var(--bg-alt)] flex items-center justify-center active:scale-95 transition-all"
+                            >
+                              {p.disponible ? <EyeOff size={13} /> : <Eye size={13} />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       {/* ─── Modal Crear / Editar Producto ─── */}

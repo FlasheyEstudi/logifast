@@ -172,7 +172,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* ─── Header & KDS Navigation Tabs ─── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
+      <div className="p-4 sm:p-5 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -194,7 +194,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`h-11 min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 border ${
+              className={`h-11 min-h-[44px] px-3.5 rounded-full md:rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 border ${
                 soundEnabled
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
                   : 'bg-[var(--bg-alt)] border-[var(--border)] text-slate-500'
@@ -206,7 +206,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
 
             <button
               onClick={cargarOrdenes}
-              className="h-11 min-h-[44px] px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] text-xs font-bold flex items-center gap-2 transition-all active:scale-95"
+              className="h-11 min-h-[44px] px-3.5 rounded-full md:rounded-xl bg-[var(--bg-alt)] hover:bg-slate-200 dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] text-xs font-bold flex items-center gap-2 transition-all active:scale-95"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
               <span className="hidden sm:inline">Actualizar</span>
@@ -228,7 +228,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
               <button
                 key={tab.id}
                 onClick={() => setFiltroEstado(tab.id)}
-                className={`h-10 min-h-[40px] px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 flex items-center gap-2 shrink-0 ${
+                className={`h-10 min-h-[40px] px-3.5 rounded-full md:rounded-lg text-xs font-bold whitespace-nowrap transition-all active:scale-95 flex items-center gap-2 shrink-0 ${
                   active
                     ? 'bg-primary text-white shadow-sm shadow-primary/25'
                     : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white'
@@ -236,7 +236,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
               >
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md font-mono ${
+                  className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full md:rounded-md font-mono ${
                     active
                       ? 'bg-white/20 text-white'
                       : tab.highlight
@@ -274,7 +274,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
             return (
               <div
                 key={ord.id}
-                className={`rounded-2xl bg-[var(--surface)] border shadow-sm flex flex-col justify-between overflow-hidden transition-all duration-200 ${
+                className={`rounded-[22px] md:rounded-xl bg-[var(--surface)] border shadow-sm flex flex-col justify-between overflow-hidden transition-all duration-200 ${
                   isRecibido
                     ? 'border-amber-500/60 ring-2 ring-amber-500/20 shadow-amber-500/5'
                     : isPreparando
@@ -375,7 +375,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                     {isRecibido && (
                       <button
                         onClick={() => cambiarEstado(ord.id, 'preparando')}
-                        className="w-full h-11 min-h-[44px] rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                        className="w-full h-11 min-h-[44px] rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
                       >
                         <Flame size={16} />
                         <span>{isComida ? 'Aceptar & Preparar Platos' : 'Aceptar & Alistar Pedido'}</span>
@@ -385,7 +385,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                     {isPreparando && (
                       <button
                         onClick={() => cambiarEstado(ord.id, 'listo')}
-                        className="w-full h-11 min-h-[44px] rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold text-xs tracking-wide shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                        className="w-full h-11 min-h-[44px] rounded-full md:rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs tracking-wide shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
                       >
                         <Check size={16} />
                         <span>{isComida ? 'Marcar Comanda Lista' : 'Marcar Paquete Empacado'}</span>
@@ -395,7 +395,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                     {isListo && (
                       <button
                         onClick={() => cambiarEstado(ord.id, 'en_camino')}
-                        className="w-full h-11 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs tracking-wide shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"
+                        className="w-full h-11 min-h-[44px] rounded-full md:rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs tracking-wide shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
                       >
                         <Bike size={16} />
                         <span>Entregar a Repartidor</span>

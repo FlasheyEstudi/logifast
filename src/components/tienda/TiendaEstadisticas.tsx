@@ -76,8 +76,8 @@ const money = (n: number) => `C$ ${n.toLocaleString('es-NI', { minimumFractionDi
 const metodoLegible = (m: string) =>
   ({ efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', fiado: 'Fiado', devolucion: 'Devoluciones' }[m] || m);
 
-const TARJETA = 'rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 min-w-0';
-const PANEL = 'rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 min-w-0';
+const TARJETA = 'rounded-[22px] md:rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 min-w-0 shadow-sm';
+const PANEL = 'rounded-[22px] md:rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 min-w-0 shadow-sm';
 
 export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
   const [dias, setDias] = useState(30);
@@ -182,10 +182,10 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
             <button
               key={p.dias}
               onClick={() => setDias(p.dias)}
-              className={`h-11 rounded-full border border-[var(--border)] px-4 text-[12.5px] font-bold transition-colors ${
+              className={`h-11 rounded-full md:rounded-lg border border-[var(--border)] px-4 text-[12.5px] font-bold transition-colors ${
                 dias === p.dias
-                  ? 'bg-[var(--primario)] text-white'
-                  : 'bg-[var(--bg-alt)] text-[var(--text)] hover:bg-[var(--primario-soft)]'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-[var(--bg-alt)] text-[var(--text)] hover:bg-blue-600/10'
               }`}
             >
               {p.label}
@@ -412,20 +412,20 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
             <button
               onClick={() => descargar('xlsx')}
               disabled={descargando !== null}
-              className="flex h-11 items-center gap-2 rounded-xl bg-[var(--primario)] px-4 text-[13px] font-bold text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+              className="flex h-11 items-center gap-2 rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 px-4 text-[13px] font-bold text-white transition-transform active:scale-[0.98] disabled:opacity-60 shadow-sm"
             >
               <FileSpreadsheet size={16} /> {descargando === 'xlsx' ? 'Generando…' : 'Reporte Excel'}
             </button>
             <button
               onClick={() => descargar('pdf')}
               disabled={descargando !== null}
-              className="flex h-11 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-alt)] px-4 text-[13px] font-bold text-[var(--text)] transition-transform active:scale-[0.98] disabled:opacity-60"
+              className="flex h-11 items-center gap-2 rounded-full md:rounded-xl border border-[var(--border)] bg-[var(--bg-alt)] hover:bg-[var(--surface)] px-4 text-[13px] font-bold text-[var(--text)] transition-transform active:scale-[0.98] disabled:opacity-60 shadow-sm"
             >
               <Download size={16} /> {descargando === 'pdf' ? 'Generando…' : 'Reporte PDF'}
             </button>
             <button
               onClick={cargar}
-              className="flex h-11 items-center gap-2 rounded-xl border border-[var(--border)] px-4 text-[13px] font-bold text-[var(--text-muted)] transition-transform active:scale-[0.98]"
+              className="flex h-11 items-center gap-2 rounded-full md:rounded-xl border border-[var(--border)] px-4 text-[13px] font-bold text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-alt)] transition-transform active:scale-[0.98]"
             >
               <RotateCcw size={15} /> Actualizar
             </button>

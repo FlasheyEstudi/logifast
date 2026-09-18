@@ -63,7 +63,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
   return (
     <div className="space-y-5">
       {/* ─── Header ─── */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
+      <div className="p-5 sm:p-6 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm space-y-4">
         <div>
           <div className="flex items-center gap-2 text-primary mb-1">
             <BarChart3 size={20} />
@@ -93,7 +93,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 <button
                   key={p.d}
                   onClick={() => setDias(p.d)}
-                  className={`h-9 min-h-[36px] px-3 rounded-xl font-bold text-xs transition-all active:scale-95 ${
+                  className={`h-9 min-h-[36px] px-3.5 rounded-full md:rounded-lg font-bold text-xs transition-all active:scale-95 ${
                     dias === p.d
                       ? 'bg-primary text-white shadow-sm shadow-primary/25'
                       : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-slate-900 dark:hover:text-white'
@@ -117,7 +117,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
         {opciones.map((op) => (
           <div
             key={op.id}
-            className="p-5 sm:p-6 rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-200"
+            className="p-5 sm:p-6 rounded-[22px] md:rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-200"
           >
             <div>
               <div className="flex items-center gap-3 mb-3">
@@ -145,7 +145,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 <button
                   onClick={() => descargarReporte(op.id, 'xlsx')}
                   disabled={descargando !== null}
-                  className="flex-1 h-11 min-h-[44px] rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+                  className="flex-1 h-11 min-h-[44px] rounded-full md:rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
                 >
                   <FileSpreadsheet size={16} />
                   <span>{descargando === `${op.id}-xlsx` ? 'Generando…' : 'Excel (.xlsx)'}</span>
@@ -154,7 +154,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                 <button
                   onClick={() => descargarReporte(op.id, 'pdf')}
                   disabled={descargando !== null}
-                  className="flex-1 h-11 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+                  className="flex-1 h-11 min-h-[44px] rounded-full md:rounded-xl bg-[var(--bg-alt)] hover:bg-slate-200 dark:hover:bg-slate-750 border border-[var(--border)] text-[var(--text)] font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
                 >
                   <Download size={16} />
                   <span>{descargando === `${op.id}-pdf` ? 'Generando…' : 'PDF'}</span>
@@ -164,7 +164,7 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
               <button
                 onClick={() => descargarReporte(op.id, 'csv')}
                 disabled={descargando !== null}
-                className="w-full h-9 min-h-[36px] rounded-xl border border-dashed border-[var(--border)] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-bold active:scale-95 transition-all"
+                className="w-full h-9 min-h-[36px] rounded-full md:rounded-xl border border-dashed border-[var(--border)] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-bold active:scale-95 transition-all"
               >
                 {descargando === `${op.id}-csv` ? 'Generando CSV…' : 'Descargar datos en CSV'}
               </button>
