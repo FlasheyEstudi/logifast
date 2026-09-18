@@ -175,16 +175,16 @@ export function TiendaNavbar({
           Sticky top: 0, z-index: 50, h-14, shrink-0, Full-Width Edge-to-Edge
           ══════════════════════════════════════════════════════════ */}
       <header
-        className="lf-tienda-header sticky top-0 z-50 shrink-0 w-full bg-[var(--surface)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-xs transition-colors"
+        className="lf-tienda-header sticky top-0 z-50 shrink-0 w-full bg-[var(--surface)]/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 shadow-xs transition-colors"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="w-full px-3 sm:px-6 h-14 flex items-center justify-between gap-3">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 h-15 flex items-center justify-between gap-3">
           
           {/* Left: Identidad Tienda + Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center gap-2.5 min-w-0">
               {/* Avatar tienda sin borde duro */}
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden bg-[var(--primario)] flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
+              <div className="relative w-9 h-9 rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
                 {tiendaImagenUrl ? (
                   <img
                     src={tiendaImagenUrl}
@@ -192,7 +192,7 @@ export function TiendaNavbar({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Store size={16} />
+                  <Store size={18} />
                 )}
                 <span
                   className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--surface)] ${
@@ -203,34 +203,25 @@ export function TiendaNavbar({
               </div>
 
               <div className="flex flex-col min-w-0">
-                <span className="text-xs sm:text-sm font-bold text-[var(--text)] truncate font-syne leading-tight">
+                <span className="text-sm sm:text-base font-extrabold text-[var(--text)] truncate font-syne tracking-tight leading-tight">
                   {tiendaNombre || 'Mi Tienda'}
                 </span>
-                <div className="flex items-center gap-1.5 leading-none mt-0.5">
-                  <span className="text-[10px] text-[var(--text-muted)] capitalize truncate">
+                <div className="flex items-center gap-1.5 leading-none mt-1">
+                  <span className="text-[11px] font-medium text-[var(--text-muted)] capitalize truncate">
                     {tiendaCategoria}
                   </span>
-                  <span className="md:hidden text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--primario)]/10 text-[var(--primario)]">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                     {TIENDA_MODULO_LABELS[moduloActivo]}
                   </span>
                 </div>
               </div>
-            </div>
-
-            {/* Breadcrumb sutil sin barras verticales bruscas */}
-            <div className="hidden sm:flex items-center gap-1.5 pl-2 text-xs opacity-85">
-              <span className="text-[var(--text-muted)] font-medium">Tienda</span>
-              <ChevronRight size={13} className="text-[var(--text-muted)]" />
-              <span className="font-bold text-[var(--text)]">
-                {TIENDA_MODULO_LABELS[moduloActivo]}
-              </span>
             </div>
           </div>
 
           {/* Center: Tabs de Navegación de Escritorio (Tablet & Desktop md+) */}
           <nav
             aria-label="Módulos de tienda"
-            className="hidden md:flex items-center gap-1 bg-[var(--bg-alt)]/80 p-1 rounded-2xl"
+            className="hidden md:flex items-center gap-1 bg-[var(--bg-alt)]/90 backdrop-blur-md p-1.5 rounded-full border border-slate-200/60 dark:border-slate-800/60 shadow-xs"
           >
             {modulosPrimarios.map((m) => {
               const active = moduloActivo === m.id;
@@ -243,10 +234,10 @@ export function TiendaNavbar({
                     setMoreMenuOpen(false);
                     onSelectModulo(m.id);
                   }}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
                     active
-                      ? 'bg-[var(--primario)] text-white shadow-xs font-bold'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]/70'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
                   }`}
                 >
                   <Icon size={14} />
@@ -262,10 +253,10 @@ export function TiendaNavbar({
                 onClick={() => setMoreMenuOpen((v) => !v)}
                 aria-expanded={moreMenuOpen}
                 aria-haspopup="true"
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
                   isSecondaryActive
-                    ? 'bg-[var(--primario)] text-white shadow-xs font-bold'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]/70'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
                 }`}
               >
                 <MoreHorizontal size={14} />
@@ -310,14 +301,14 @@ export function TiendaNavbar({
                             }}
                             className={`flex items-start gap-3 p-2.5 rounded-2xl text-left transition-all cursor-pointer ${
                               isActive
-                                ? 'bg-[var(--primario)]/10 text-[var(--primario)] font-bold'
+                                ? 'bg-primary/10 text-primary font-bold'
                                 : 'text-[var(--text)] hover:bg-[var(--bg-alt)]'
                             }`}
                           >
                             <div
                               className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center transition-colors ${
                                 isActive
-                                  ? 'bg-[var(--primario)] text-white shadow-xs'
+                                  ? 'bg-primary text-primary-foreground shadow-xs'
                                   : m.tintClass
                               }`}
                             >
@@ -329,7 +320,7 @@ export function TiendaNavbar({
                                   {m.titulo}
                                 </span>
                                 {isActive && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--primario)] shrink-0" />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                                 )}
                               </div>
                               <p className="text-[11px] text-[var(--text-muted)] line-clamp-1 mt-0.5 leading-normal">
@@ -349,25 +340,25 @@ export function TiendaNavbar({
           {/* Right: Indicador En Vivo + Tema + Salir (Sin bordes en iconos) */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Indicador En Vivo */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>En vivo</span>
             </div>
 
-            {/* Theme Toggle sin borde */}
+            {/* Theme Toggle cápsula */}
             <button
               onClick={toggleTheme}
-              className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-all cursor-pointer active:scale-95"
+              className="w-9 h-9 rounded-full bg-[var(--bg-alt)] hover:bg-[var(--surface)] border border-slate-200/60 dark:border-slate-800/60 text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs"
               aria-label={isDark ? 'Modo Claro' : 'Modo Oscuro'}
               title={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
             >
               {isDark ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-blue-600" />}
             </button>
 
-            {/* Exit / Return button sin borde */}
+            {/* Exit / Return button cápsula */}
             <button
               onClick={handleExitAction}
-              className="h-9 px-3.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+              className="h-9 px-3.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
               title={onReturnToClient ? 'Volver a App Cliente' : 'Cerrar Sesión'}
             >
               <LogOut size={14} />
@@ -382,7 +373,7 @@ export function TiendaNavbar({
           Solo <main> hace scroll. El header y el footer NUNCA se mueven.
           ══════════════════════════════════════════════════════════ */}
       <main
-        className="lf-tienda-main flex-1 overflow-y-auto w-full px-3 sm:px-6 py-4 pb-20 md:pb-6 focus:outline-none"
+        className="lf-tienda-main flex-1 overflow-y-auto w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-24 md:pb-8 focus:outline-none"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {children}
