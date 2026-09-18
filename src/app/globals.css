@@ -16494,3 +16494,27 @@ body {
 .dark .lf-tienda-contenido [style*="cursor: pointer"]:hover {
   box-shadow: 0 16px 34px -18px rgba(0,0,0,.85) !important;
 }
+
+/* ── Cierre del rediseño: el portal usa los MISMOS tokens que el resto del proyecto ──
+   Radios, elevaciones y anillo de foco salen del sistema de diseño (--radius,
+   --md-elevation-*, --ring-hsl), no de valores inventados. Al ser tokens con
+   variante por tema, el modo oscuro queda correcto sin reglas aparte. */
+
+.lf-tienda-contenido [style*="var(--surface)"]:not([style*="999"]) {
+  border-radius: var(--radius) !important;
+  box-shadow: var(--md-elevation-3) !important;
+}
+.lf-tienda-contenido [style*="cursor: pointer"]:hover {
+  box-shadow: var(--md-elevation-4) !important;
+}
+.lf-tienda-contenido button:not(:disabled) { border-radius: var(--radius); }
+.lf-tienda-contenido input:not([type="checkbox"]):not([type="radio"]), .lf-tienda-contenido select, .lf-tienda-contenido textarea {
+  border-radius: calc(var(--radius) - 2px) !important;
+}
+.lf-tienda-contenido input:focus-visible, .lf-tienda-contenido select:focus-visible, .lf-tienda-contenido textarea:focus-visible {
+  border-color: hsl(var(--ring-hsl)) !important;
+  box-shadow: 0 0 0 3px hsl(var(--ring-hsl) / .18) !important;
+}
+/* El tema oscuro ya queda cubierto por los tokens de elevación */
+[data-theme="dark"] .lf-tienda-contenido [style*="var(--surface)"],
+.dark .lf-tienda-contenido [style*="var(--surface)"] { box-shadow: var(--md-elevation-3) !important; }
