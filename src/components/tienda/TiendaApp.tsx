@@ -73,7 +73,7 @@ export function TiendaApp({ isDark, toggleTheme, onLogout, onReturnToClient, use
       />
 
       {/* Main Module Content View pegado limpiamente al layout superior */}
-      <main className="w-[96%] sm:w-[98%] lg:w-full max-w-[1400px] mx-auto pt-16 sm:pt-14 pb-44 px-2 sm:px-4">
+      <main className="w-full max-w-[1440px] mx-auto pt-20 pb-28 lg:pb-12 px-3 sm:px-6">
         {moduloActivo === 'kds' && <TiendaKDS isDark={isDark} categoriaTienda={tiendaCategoria} />}
         {moduloActivo === 'inventario' && <TiendaInventario isDark={isDark} categoriaTienda={tiendaCategoria} />}
         {moduloActivo === 'kardex' && <TiendaKardex isDark={isDark} />}

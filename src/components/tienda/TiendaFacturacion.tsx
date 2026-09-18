@@ -70,33 +70,27 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
-      {/* Columna Izquierda: Formulario de Configuración Fiscal */}
-      <div
-        style={{
-          background: 'var(--surface)',
-          borderRadius: 20,
-          border: '1px solid var(--border)',
-          padding: 24,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 20,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
-        }}
-      >
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 items-start">
+      {/* ─── Columna Izquierda: Formulario de Configuración Fiscal ─── */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
         <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--text)' }}>
+          <div className="flex items-center gap-2 text-primary mb-1">
+            <FileText size={20} />
+            <span className="text-xs font-bold uppercase tracking-wider">Cumplimiento Tributario</span>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white font-syne">
             Configuración de Facturación & DGI
           </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-            Ajustes fiscales para la emisión de comprobantes, tickets y facturas en POS y ventas.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Ajustes fiscales para la emisión legal de comprobantes y tickets térmicos en Caja POS y ventas
           </p>
         </div>
 
-        <form onSubmit={guardarFacturacion} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <form onSubmit={guardarFacturacion} className="space-y-4">
+          {/* RUC & Razón Social */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 Número RUC de la Empresa *
               </label>
               <input
@@ -104,23 +98,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={ruc}
                 onChange={(e) => setRuc(e.target.value)}
                 placeholder="Ej: J0310000000000"
-                style={{
-                  width: '100%',
-                  height: 40,
-                  borderRadius: 10,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-alt)',
-                  padding: '0 12px',
-                  color: 'var(--text)',
-                  fontSize: 13,
-                  marginTop: 4,
-                }}
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 required
               />
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 Razón Social Legal *
               </label>
               <input
@@ -128,41 +112,22 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={razonSocial}
                 onChange={(e) => setRazonSocial(e.target.value)}
                 placeholder="Ej: Comercial Distribuidora S.A."
-                style={{
-                  width: '100%',
-                  height: 40,
-                  borderRadius: 10,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-alt)',
-                  padding: '0 12px',
-                  color: 'var(--text)',
-                  fontSize: 13,
-                  marginTop: 4,
-                }}
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 required
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {/* Régimen & Serie */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 Régimen Fiscal DGI
               </label>
               <select
                 value={regimenDgi}
                 onChange={(e) => setRegimenDgi(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: 40,
-                  borderRadius: 10,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-alt)',
-                  padding: '0 12px',
-                  color: 'var(--text)',
-                  fontSize: 13,
-                  marginTop: 4,
-                }}
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer font-medium"
               >
                 <option value="Cuota Fija">Cuota Fija (Pequeño Contribuyente)</option>
                 <option value="Régimen General">Régimen General (IVA 15%)</option>
@@ -171,7 +136,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 Serie de Comprobante / Serie Factura
               </label>
               <input
@@ -179,23 +144,14 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={serieFactura}
                 onChange={(e) => setSerieFactura(e.target.value)}
                 placeholder="F001"
-                style={{
-                  width: '100%',
-                  height: 40,
-                  borderRadius: 10,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-alt)',
-                  padding: '0 12px',
-                  color: 'var(--text)',
-                  fontSize: 13,
-                  marginTop: 4,
-                }}
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
           </div>
 
+          {/* Saludo */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
               Mensaje de Saludo o Agradecimiento en la Factura
             </label>
             <input
@@ -203,22 +159,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               value={saludoFactura}
               onChange={(e) => setSaludoFactura(e.target.value)}
               placeholder="Ej: ¡Gracias por su compra! Vuelva pronto."
-              style={{
-                width: '100%',
-                height: 40,
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 12px',
-                color: 'var(--text)',
-                fontSize: 13,
-                marginTop: 4,
-              }}
+              className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
 
+          {/* Pie de Página */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
               Pie de Página Legal o Términos de Garantía
             </label>
             <textarea
@@ -226,131 +173,89 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               onChange={(e) => setPiePaginaFactura(e.target.value)}
               placeholder="Ej: Conservar este comprobante para cualquier garantía dentro de 15 días."
               rows={3}
-              style={{
-                width: '100%',
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: 10,
-                color: 'var(--text)',
-                fontSize: 13,
-                marginTop: 4,
-              }}
+              className="w-full p-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
             />
           </div>
 
           {/* Pie de Marca Institucional LogiFast */}
-          <div
-            style={{
-              background: 'rgba(0,102,255,0.08)',
-              border: '1px solid rgba(0,102,255,0.2)',
-              borderRadius: 12,
-              padding: 12,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}
-          >
-            <Shield size={20} style={{ color: '#0066FF' }} />
+          <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
+            <Shield size={20} className="text-primary shrink-0 mt-0.5" />
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#0066FF' }}>
+              <p className="text-xs font-bold text-primary">
                 Pie de Marca Institucional Permanente
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                Todas las facturas emitidas llevarán la leyenda "Generado por LogiFast PWA - Sistema POS & E-Commerce".
-              </div>
+              </p>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                Todas las facturas y comprobantes térmicos emitidos incluirán la certificación "Generado por LogiFast PWA - Sistema POS & E-Commerce".
+              </p>
             </div>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={guardando}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              height: 44,
-              borderRadius: 12,
-              border: 'none',
-              background: '#0066FF',
-              color: 'white',
-              fontSize: 14,
-              fontWeight: 800,
-              cursor: 'pointer',
-              marginTop: 10,
-              boxShadow: '0 4px 14px rgba(0,102,255,0.3)',
-            }}
+            className="w-full h-12 min-h-[48px] rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
           >
-            <Save size={16} />
-            <span>{guardando ? 'Guardando Ajustes...' : 'Guardar Configuración Fiscal'}</span>
+            {guardando ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Guardando Ajustes...</span>
+              </>
+            ) : (
+              <>
+                <Save size={16} />
+                <span>Guardar Configuración Fiscal</span>
+              </>
+            )}
           </button>
         </form>
       </div>
 
-      {/* Columna Derecha: Vista Previa Interactiva del Ticket/Factura */}
-      <div
-        style={{
-          background: 'var(--surface)',
-          borderRadius: 20,
-          border: '1px solid var(--border)',
-          padding: 20,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
-        }}
-      >
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>
-          Vista Previa de Factura Térmica
+      {/* ─── Columna Derecha: Vista Previa Interactiva del Ticket ─── */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 lg:sticky lg:top-20">
+        <div>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-syne">
+            Vista Previa de Comprobante
+          </h3>
+          <p className="text-xs text-slate-500">
+            Así se imprimirá el ticket en la impresora térmica de 58mm / 80mm
+          </p>
         </div>
 
-        <div
-          style={{
-            background: '#FFFFFF',
-            color: '#000000',
-            width: '100%',
-            borderRadius: 12,
-            padding: 20,
-            fontFamily: "'Courier New', Courier, monospace",
-            fontSize: 11,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-          }}
-        >
-          <div style={{ textAlign: 'center', marginBottom: 8 }}>
-            <div style={{ fontSize: 14, fontWeight: 'bold' }}>{razonSocial || 'MI TIENDA S.A.'}</div>
-            <div>RUC: {ruc || 'J0310000000000'}</div>
-            <div>DGI: {regimenDgi}</div>
-            <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }} />
-            <div>FACTURA POS #{serieFactura}-000104</div>
-            <div suppressHydrationWarning>Fecha: {new Date().toLocaleDateString('es-NI')}</div>
+        <div className="bg-white text-black rounded-2xl p-5 shadow-lg border border-slate-200 font-mono text-xs printable-ticket space-y-3">
+          <div className="text-center pb-2 border-b border-dashed border-black/40 space-y-0.5">
+            <div className="text-sm font-black tracking-tight uppercase">{razonSocial || 'MI TIENDA S.A.'}</div>
+            <div className="text-[11px] text-slate-600">RUC: {ruc || 'J0310000000000'}</div>
+            <div className="text-[11px] text-slate-600">DGI: {regimenDgi}</div>
+            <div className="pt-1.5 text-[11px] font-bold">
+              FACTURA POS #{serieFactura}-000104
+            </div>
+            <div suppressHydrationWarning className="text-[10px] text-slate-500">
+              Fecha: {new Date().toLocaleDateString('es-NI')}
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div className="py-2 border-b border-dashed border-black/40 space-y-1 text-xs">
+            <div className="flex justify-between">
               <span>2x Producto Muestra A</span>
-              <span>C$ 240.00</span>
+              <span className="font-bold">C$ 240.00</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="flex justify-between">
               <span>1x Producto Muestra B</span>
-              <span>C$ 110.00</span>
+              <span className="font-bold">C$ 110.00</span>
             </div>
           </div>
 
-          <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }} />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+          <div className="py-2 border-b border-dashed border-black/40 flex justify-between font-black text-sm">
             <span>TOTAL:</span>
             <span>C$ 350.00</span>
           </div>
 
-          <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }} />
-
-          <div style={{ textAlign: 'center', fontSize: 9, marginTop: 6 }}>
+          <div className="text-center pt-2 space-y-1 text-[10px] text-slate-600">
             <div>{saludoFactura || '¡Gracias por su compra!'}</div>
-            <div style={{ marginTop: 2 }}>{piePaginaFactura || 'Conservar este comprobante.'}</div>
-            <div style={{ marginTop: 6, fontWeight: 'bold' }}>
-              *** Generado por LogiFast PWA - Sistema POS & E-Commerce ***
+            <div>{piePaginaFactura || 'Conservar este comprobante.'}</div>
+            <div className="font-bold text-black pt-1">
+              *** Generado por LogiFast PWA ***
             </div>
           </div>
         </div>

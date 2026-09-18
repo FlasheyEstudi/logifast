@@ -1,7 +1,20 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { SlidersHorizontal, Plus, ArrowUpRight, ArrowDownLeft, RefreshCw, Package } from '@/components/icons';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  SlidersHorizontal,
+  Plus,
+  ArrowUpRight,
+  ArrowDownLeft,
+  RefreshCw,
+  Package,
+  Search,
+  X,
+  TrendingUp,
+  AlertTriangle,
+  RotateCcw,
+  CheckCircle2,
+} from '@/components/icons';
 import { notify } from '@/lib/notify';
 import type { Producto } from './TiendaInventario';
 
@@ -28,6 +41,8 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState<'todos' | 'entradas' | 'salidas' | 'ajustes'>('todos');
 
   // Form Movimiento
   const [productoId, setProductoId] = useState('');
@@ -111,218 +126,338 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
     }
   };
 
+  // Resumen Kardex KPI
+  const stats = useMemo(() => {
+    let cantEntradas = 0;
+    let cantSalidas = 0;
+    let cantAjustes = 0;
+
+    movimientos.forEach((m) => {
+      if (m.tipo === 'ENTRADA' || m.tipo === 'DEVOLUCION_CLIENTE') {
+        cantEntradas += m.cantidad;
+      } else if (
+        m.tipo === 'SALIDA' ||
+        m.tipo === 'VENTA_POS' ||
+        m.tipo === 'VENTA_DELIVERY' ||
+        m.tipo === 'MERMA'
+      ) {
+        cantSalidas += m.cantidad;
+      } else if (m.tipo === 'AJUSTE') {
+        cantAjustes += m.cantidad;
+      }
+    });
+
+    return {
+      total: movimientos.length,
+      cantEntradas,
+      cantSalidas,
+      cantAjustes,
+    };
+  }, [movimientos]);
+
+  // Filtrado
+  const movimientosFiltrados = useMemo(() => {
+    return movimientos.filter((m) => {
+      const matchBusqueda =
+        (m.producto?.nombre && m.producto.nombre.toLowerCase().includes(busqueda.toLowerCase())) ||
+        (m.producto?.codigoBarras && m.producto.codigoBarras.includes(busqueda)) ||
+        (m.motivo && m.motivo.toLowerCase().includes(busqueda.toLowerCase()));
+
+      let matchTipo = true;
+      if (filtroTipo === 'entradas') {
+        matchTipo = m.tipo === 'ENTRADA' || m.tipo === 'DEVOLUCION_CLIENTE';
+      } else if (filtroTipo === 'salidas') {
+        matchTipo =
+          m.tipo === 'SALIDA' ||
+          m.tipo === 'VENTA_POS' ||
+          m.tipo === 'VENTA_DELIVERY' ||
+          m.tipo === 'MERMA';
+      } else if (filtroTipo === 'ajustes') {
+        matchTipo = m.tipo === 'AJUSTE';
+      }
+
+      return matchBusqueda && matchTipo;
+    });
+  }, [movimientos, busqueda, filtroTipo]);
+
+  const prodSeleccionado = productos.find((p) => p.id === productoId);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'var(--surface)',
-          padding: '16px 20px',
-          borderRadius: 16,
-          border: '1px solid var(--border)',
-          flexWrap: 'wrap',
-          gap: 16,
-        }}
-      >
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
-            Kardex de Inventario (Entradas & Salidas)
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-            Historial de auditoría física de mercancías, compras a proveedores y mermas.
-          </p>
+    <div className="space-y-4 sm:space-y-5">
+      {/* ─── KPI Dashboard Cards ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-primary flex items-center justify-center shrink-0">
+            <SlidersHorizontal size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Movimientos</p>
+            <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white font-mono">
+              {stats.total}
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            onClick={() => setModalOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '0 16px',
-              height: 44,
-              borderRadius: 10,
-              background: '#0066FF',
-              color: 'white',
-              border: 'none',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(0,102,255,0.3)',
-            }}
-          >
-            <Plus size={16} />
-            <span>Registrar Movimiento</span>
-          </button>
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+            <ArrowDownLeft size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Entradas (Stock)</p>
+            <p className="text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+              +{stats.cantEntradas}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+            <ArrowUpRight size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Salidas / Ventas</p>
+            <p className="text-lg sm:text-xl font-extrabold text-red-600 dark:text-red-400 font-mono">
+              -{stats.cantSalidas}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+            <RotateCcw size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Ajustes Físicos</p>
+            <p className="text-lg sm:text-xl font-extrabold text-amber-600 dark:text-amber-400 font-mono">
+              {stats.cantAjustes}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Table of Kardex Movements */}
-      {movimientos.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            background: 'var(--surface)',
-            borderRadius: 16,
-            border: '1px dashed var(--border)',
-            color: 'var(--text-muted)',
-          }}
-        >
-          <SlidersHorizontal size={40} style={{ opacity: 0.4, marginBottom: 12 }} />
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-            No hay movimientos registrados en el Kardex
+      {/* ─── Header & Controls ─── */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+              Kardex de Inventario & Auditoría
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Registro inmutable de entradas por compra, ventas POS, despachos delivery y mermas
+            </p>
           </div>
-          <div style={{ fontSize: 13, marginTop: 4 }}>
-            Las ventas en POS y compras a proveedores registrarán movimientos aquí automáticamente.
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={cargarDatos}
+              className="h-11 min-h-[44px] px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-2 transition-all active:scale-95"
+              title="Recargar movimientos"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
+              <span className="hidden sm:inline">Actualizar</span>
+            </button>
+
+            <button
+              onClick={() => setModalOpen(true)}
+              className="h-11 min-h-[44px] px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <Plus size={16} />
+              <span>Registrar Movimiento</span>
+            </button>
           </div>
         </div>
-      ) : (
-        <div
-          style={{
-            background: 'var(--surface)',
-            borderRadius: 16,
-            border: '1px solid var(--border)',
-            // La tabla tiene más columnas de las que caben en un celular. Antes el
-            // contenedor las recortaba (overflow: hidden) y varias columnas quedaban
-            // inalcanzables; ahora la tabla se desliza en horizontal dentro del panel.
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            WebkitOverflowScrolling: 'touch',
-          }}
-        >
-          <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-            <thead>
-              <tr
-                style={{
-                  background: 'var(--bg-alt)',
-                  borderBottom: '1px solid var(--border)',
-                  color: 'var(--text-muted)',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                }}
+
+        {/* Filter and Search Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+            <Search size={16} className="text-slate-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar por producto, SKU o motivo..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-slate-400"
+            />
+            {busqueda && (
+              <button
+                onClick={() => setBusqueda('')}
+                className="w-6 h-6 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
               >
-                <th style={{ padding: '12px 16px' }}>Fecha & Hora</th>
-                <th style={{ padding: '12px 16px' }}>Producto / SKU</th>
-                <th style={{ padding: '12px 16px' }}>Tipo</th>
-                <th style={{ padding: '12px 16px' }}>Cantidad</th>
-                <th style={{ padding: '12px 16px' }}>Stock Anterior</th>
-                <th style={{ padding: '12px 16px' }}>Nuevo Stock</th>
-                <th style={{ padding: '12px 16px' }}>Motivo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {movimientos.map((m) => {
-                const esEntrada = m.tipo === 'ENTRADA';
-                const esSalida = m.tipo === 'SALIDA' || m.tipo === 'VENTA_POS' || m.tipo === 'VENTA_DELIVERY';
-                return (
-                  <tr
-                    key={m.id}
-                    style={{
-                      borderBottom: '1px solid var(--border)',
-                      color: 'var(--text)',
-                    }}
-                  >
-                    <td style={{ padding: '12px 16px', fontSize: 12 }}>
-                      {new Date(m.createdAt).toLocaleDateString('es-NI')} {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
-                    </td>
+                <X size={13} />
+              </button>
+            )}
+          </div>
 
-                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>
-                      {m.producto?.nombre || 'Producto'}
-                      {m.producto?.codigoBarras && (
-                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>SKU: {m.producto.codigoBarras}</div>
-                      )}
-                    </td>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 shrink-0">
+            {(
+              [
+                { id: 'todos', label: 'Todos' },
+                { id: 'entradas', label: 'Entradas' },
+                { id: 'salidas', label: 'Salidas' },
+                { id: 'ajustes', label: 'Ajustes' },
+              ] as const
+            ).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFiltroTipo(f.id)}
+                className={`h-9 min-h-[36px] px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
+                  filtroTipo === f.id
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-                    <td style={{ padding: '12px 16px' }}>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: 999,
-                          background: esEntrada
-                            ? 'rgba(52, 199, 89, 0.15)'
-                            : esSalida
-                            ? 'rgba(255, 59, 48, 0.15)'
-                            : 'rgba(255, 149, 0, 0.15)',
-                          color: esEntrada ? '#34C759' : esSalida ? '#FF3B30' : '#FF9500',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        {esEntrada ? <ArrowDownLeft size={10} /> : <ArrowUpRight size={10} />}
-                        {m.tipo}
-                      </span>
-                    </td>
+      {/* ─── Table or Card Stream ─── */}
+      {loading ? (
+        <div className="h-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 animate-pulse" />
+      ) : movimientosFiltrados.length === 0 ? (
+        <div className="py-20 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-6">
+          <SlidersHorizontal size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 font-syne">
+            No se encontraron movimientos
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Las ventas en caja POS, compras a proveedores o despachos registrarán movimientos aquí automáticamente.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[700px] border-collapse text-left text-xs sm:text-sm">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-4">Fecha & Hora</th>
+                  <th className="py-3 px-4">Producto / SKU</th>
+                  <th className="py-3 px-4">Tipo Movimiento</th>
+                  <th className="py-3 px-4 text-right">Cantidad</th>
+                  <th className="py-3 px-4 text-center">Stock Ant.</th>
+                  <th className="py-3 px-4 text-center">Nuevo Stock</th>
+                  <th className="py-3 px-4">Motivo / Detalle</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {movimientosFiltrados.map((m) => {
+                  const esEntrada = m.tipo === 'ENTRADA' || m.tipo === 'DEVOLUCION_CLIENTE';
+                  const esSalida =
+                    m.tipo === 'SALIDA' ||
+                    m.tipo === 'VENTA_POS' ||
+                    m.tipo === 'VENTA_DELIVERY' ||
+                    m.tipo === 'MERMA';
 
-                    <td style={{ padding: '12px 16px', fontWeight: 700 }}>
-                      {esEntrada ? `+${m.cantidad}` : `-${m.cantidad}`}
-                    </td>
+                  return (
+                    <tr
+                      key={m.id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                    >
+                      <td className="py-3 px-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-mono">
+                        {new Date(m.createdAt).toLocaleDateString('es-NI')} {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
+                      </td>
 
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{m.stockAnterior}</td>
-                    <td style={{ padding: '12px 16px', fontWeight: 800, color: '#0066FF' }}>{m.stockNuevo}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-muted)' }}>{m.motivo || 'N/A'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td className="py-3 px-4">
+                        <span className="font-bold text-slate-900 dark:text-white block">
+                          {m.producto?.nombre || 'Producto'}
+                        </span>
+                        {m.producto?.codigoBarras && (
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            SKU: {m.producto.codigoBarras}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                            esEntrada
+                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                              : esSalida
+                              ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                              : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                          }`}
+                        >
+                          {esEntrada ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
+                          {m.tipo}
+                        </span>
+                      </td>
+
+                      <td className="py-3 px-4 text-right font-mono font-bold">
+                        <span
+                          className={
+                            esEntrada
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : esSalida
+                              ? 'text-red-500'
+                              : 'text-amber-500'
+                          }
+                        >
+                          {esEntrada ? `+${m.cantidad}` : `-${m.cantidad}`}
+                        </span>
+                      </td>
+
+                      <td className="py-3 px-4 text-center font-mono text-slate-500 dark:text-slate-400">
+                        {m.stockAnterior}
+                      </td>
+
+                      <td className="py-3 px-4 text-center font-mono font-extrabold text-primary">
+                        {m.stockNuevo}
+                      </td>
+
+                      <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400 max-w-xs truncate">
+                        {m.motivo || 'Operación comercial estándar'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Modal Registrar Movimiento */}
+      {/* ─── Modal Registrar Movimiento Kardex ─── */}
       {modalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-          }}
+          onClick={() => setModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <div
-            style={{
-              background: 'var(--surface)',
-              width: '100%',
-              maxWidth: 480,
-              borderRadius: 20,
-              padding: 24,
-              border: '1px solid var(--border)',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-            }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
           >
-            <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text)' }}>
-              Registrar Movimiento de Inventario
-            </h3>
-
-            <form onSubmit={registrarMovimiento} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Producto *</label>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+                  Registrar Movimiento Kardex
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Ajuste manual, compra a proveedor o merma física
+                </p>
+              </div>
+
+              <button
+                onClick={() => setModalOpen(false)}
+                className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+                aria-label="Cerrar modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={registrarMovimiento} className="space-y-4">
+              {/* Selector de Producto */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Producto a Afectar *
+                </label>
                 <select
                   value={productoId}
                   onChange={(e) => setProductoId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: 40,
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-alt)',
-                    padding: '0 12px',
-                    color: 'var(--text)',
-                    marginTop: 4,
-                  }}
+                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   required
                 >
                   {productos.map((p) => (
@@ -331,87 +466,94 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                     </option>
                   ))}
                 </select>
+
+                {prodSeleccionado && (
+                  <p className="text-[11px] text-slate-500 mt-1 font-mono">
+                    Stock en sistema: <b>{prodSeleccionado.stock ?? 0} {prodSeleccionado.unidadMedida || 'und'}</b>
+                  </p>
+                )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Tipo de Movimiento</label>
-                  <select
-                    value={tipo}
-                    onChange={(e) => setTipo(e.target.value as any)}
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      borderRadius: 10,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                      padding: '0 12px',
-                      color: 'var(--text)',
-                      marginTop: 4,
-                    }}
-                  >
-                    <option value="ENTRADA">ENTRADA (Compra)</option>
-                    <option value="SALIDA">SALIDA (Merma / Retiro)</option>
-                    <option value="AJUSTE">AJUSTE (Conteo Físico)</option>
-                  </select>
+              {/* Tipo de Movimiento */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Tipo de Movimiento *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'ENTRADA', label: '📥 Entrada', desc: 'Compra / Ingreso' },
+                    { id: 'SALIDA', label: '📤 Salida', desc: 'Merma / Baja' },
+                    { id: 'AJUSTE', label: '🔄 Ajuste', desc: 'Conteo Físico' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTipo(t.id as any)}
+                      className={`p-2.5 rounded-xl border text-center transition-all active:scale-95 ${
+                        tipo === t.id
+                          ? 'border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      <span className="text-xs block font-bold">{t.label}</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">{t.desc}</span>
+                    </button>
+                  ))}
                 </div>
+              </div>
 
+              {/* Cantidad y Costo Unitario */}
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Cantidad *</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Cantidad ({tipo === 'ENTRADA' ? '+ stock' : tipo === 'SALIDA' ? '- stock' : 'fijar'}) *
+                  </label>
                   <input
                     type="number"
+                    min={1}
                     value={cantidad}
                     onChange={(e) => setCantidad(e.target.value)}
                     placeholder="10"
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      borderRadius: 10,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                      padding: '0 12px',
-                      color: 'var(--text)',
-                      marginTop: 4,
-                    }}
+                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Costo Unitario (C$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={costoUnitario}
+                    onChange={(e) => setCostoUnitario(e.target.value)}
+                    placeholder="C$ 0.00"
+                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
               </div>
 
+              {/* Motivo */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Motivo o Observación</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Motivo / Justificación
+                </label>
                 <input
                   type="text"
                   value={motivo}
                   onChange={(e) => setMotivo(e.target.value)}
-                  placeholder="Ej: Factura de proveedor #4092, o Merma de insumos"
-                  style={{
-                    width: '100%',
-                    height: 40,
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-alt)',
-                    padding: '0 12px',
-                    color: 'var(--text)',
-                    marginTop: 4,
-                  }}
+                  placeholder="Ej: Factura Proveedor #4092, Producto caducado, etc."
+                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  style={{
-                    height: 40,
-                    padding: '0 16px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-alt)',
-                    color: 'var(--text)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="h-11 min-h-[44px] px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
                 >
                   Cancelar
                 </button>
@@ -419,18 +561,16 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    height: 40,
-                    padding: '0 20px',
-                    borderRadius: 10,
-                    border: 'none',
-                    background: '#0066FF',
-                    color: 'white',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
+                  className="h-11 min-h-[44px] px-6 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
                 >
-                  {submitting ? 'Registrando...' : 'Registrar Movimiento'}
+                  {submitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Registrando...</span>
+                    </>
+                  ) : (
+                    <span>Registrar en Kardex</span>
+                  )}
                 </button>
               </div>
             </form>

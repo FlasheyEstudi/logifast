@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Minus, Trash2, Search, CheckCircle2 } from '@/components/icons';
+import { Plus, Minus, Trash2, Search, CheckCircle2, RotateCcw, X, AlertTriangle } from '@/components/icons';
 import { notify } from '@/lib/notify';
 import type { Producto } from './TiendaInventario';
 
@@ -22,17 +22,9 @@ interface Props {
   abierto: boolean;
   onCerrar: () => void;
   productos: Producto[];
-  /** Se llama tras registrar: el POS recarga el catálogo para reflejar el stock nuevo. */
   onDevuelto: () => void | Promise<void>;
 }
 
-/**
- * Devolución de mercadería desde el POS.
- *
- * Reingresa unidades al inventario (Kardex `DEVOLUCION`) y registra el reembolso.
- * Solo acepta productos que gestionan stock (`stock !== null`): el resto no tiene
- * existencias que reingresar y la API lo rechazaría.
- */
 export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [lineas, setLineas] = useState<LineaDevolucion[]>([]);
@@ -58,11 +50,6 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
       .filter((p) => p.nombre.toLowerCase().includes(q) || (p.codigoBarras && p.codigoBarras.includes(q)))
       .slice(0, 8);
   }, [busqueda, productos]);
-
-  const sinControlDeStock = useMemo(
-    () => (busqueda.trim() ? productos.filter((p) => p.stock === null || p.stock === undefined).length : 0),
-    [busqueda, productos]
-  );
 
   const total = lineas.reduce((s, l) => s + l.producto.precio * l.cantidad, 0);
 
@@ -135,217 +122,191 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
   return (
     <div
       onClick={onCerrar}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-        zIndex: 60,
-      }}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: 560,
-          background: 'var(--surface)',
-          borderRadius: 18,
-          border: '1px solid var(--border)',
-          padding: 20,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-        }}
+        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up space-y-4"
       >
-        <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800 }}>Devolución de mercadería</h3>
-        <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0 }}>
-          Las unidades vuelven al inventario y quedan registradas en el Kardex.
-        </p>
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+              <RotateCcw size={20} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white font-syne">
+                Devolución de Mercadería
+              </h3>
+              <p className="text-xs text-slate-500">
+                Reingreso de unidades al inventario y registro en Kardex
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onCerrar}
+            className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+            aria-label="Cerrar modal"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
         {resultado ? (
-          <div style={{ marginTop: 16 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 12px',
-                borderRadius: 12,
-                background: 'rgba(34,197,94,.12)',
-                border: '1px solid rgba(34,197,94,.35)',
-                color: '#22C55E',
-                fontWeight: 700,
-                fontSize: 13.5,
-              }}
-            >
-              <CheckCircle2 size={16} /> Devuelto — comprobante {resultado.numeroComprobante}
+          <div className="space-y-4 animate-scale-up">
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center gap-2.5">
+              <CheckCircle2 size={18} />
+              <span>Devolución Exitosa — #{resultado.numeroComprobante}</span>
             </div>
 
-            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Artículos Reingresados al Kardex
+              </span>
               {resultado.items.map((it) => (
                 <div
                   key={it.nombreProducto}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                    padding: '8px 10px',
-                    borderRadius: 10,
-                    background: 'var(--bg-alt)',
-                    border: '1px solid var(--border)',
-                    fontSize: 13,
-                  }}
+                  className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between text-xs"
                 >
-                  <span style={{ flex: 1 }}>{it.nombreProducto}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>+{it.cantidad}</span>
-                  <span style={{ fontFamily: 'ui-monospace, monospace', fontWeight: 700 }}>
-                    {it.stockAnterior} → {it.stockNuevo}
+                  <span className="font-bold text-slate-800 dark:text-slate-200 flex-1 truncate pr-2">
+                    {it.nombreProducto}
+                  </span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono mr-3">
+                    +{it.cantidad}
+                  </span>
+                  <span className="font-mono text-slate-500">
+                    {it.stockAnterior} → <b className="text-primary">{it.stockNuevo}</b>
                   </span>
                 </div>
               ))}
             </div>
 
-            <div style={{ marginTop: 12, fontSize: 14, fontWeight: 800 }}>
-              Total devuelto: C$ {resultado.totalDevuelto.toFixed(2)}
+            <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center text-sm font-bold">
+              <span>Total Reembolsado:</span>
+              <span className="font-mono text-base text-primary">C$ {resultado.totalDevuelto.toFixed(2)}</span>
             </div>
 
             {resultado.alertasStockBajo.length > 0 && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: '10px 12px',
-                  borderRadius: 12,
-                  background: 'rgba(245,158,11,.12)',
-                  border: '1px solid rgba(245,158,11,.35)',
-                  color: '#F59E0B',
-                  fontSize: 12.5,
-                  lineHeight: 1.5,
-                }}
-              >
-                <b>Stock bajo:</b>{' '}
-                {resultado.alertasStockBajo
-                  .map((a) => `${a.nombreProducto} (${a.stockNuevo}/${a.stockMinimo})`)
-                  .join(', ')}
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Aviso de Stock Mínimo: </span>
+                  {resultado.alertasStockBajo
+                    .map((a) => `${a.nombreProducto} (${a.stockNuevo}/${a.stockMinimo})`)
+                    .join(', ')}
+                </div>
               </div>
             )}
 
             <button
               onClick={onCerrar}
-              style={{
-                width: '100%',
-                marginTop: 16,
-                height: 42,
-                borderRadius: 12,
-                border: 'none',
-                background: 'var(--bg-alt)',
-                color: 'var(--text)',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              className="w-full h-11 min-h-[44px] rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs active:scale-95 transition-all"
             >
-              Cerrar
+              Cerrar y Volver a Caja POS
             </button>
           </div>
         ) : (
-          <div style={{ marginTop: 14 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '0 12px',
-                height: 42,
-                borderRadius: 12,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-              }}
-            >
-              <Search size={16} style={{ color: 'var(--text-muted)' }} />
+          <div className="space-y-4">
+            {/* Buscador de productos con stock */}
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+              <Search size={16} className="text-slate-400 shrink-0" />
               <input
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar producto por nombre o código…"
-                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 14 }}
+                placeholder="Buscar producto por nombre o SKU a devolver…"
+                className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-slate-400"
               />
+              {busqueda && (
+                <button
+                  onClick={() => setBusqueda('')}
+                  className="w-6 h-6 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 flex items-center justify-center shrink-0"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
 
+            {/* Resultados de búsqueda */}
             {busqueda.trim() !== '' && (
-              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div className="p-1 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 max-h-48 overflow-y-auto space-y-1">
                 {candidatos.length === 0 ? (
-                  <div style={{ fontSize: 12.5, color: 'var(--text-muted)', padding: '6px 2px' }}>
-                    Sin resultados con stock gestionado{sinControlDeStock > 0 ? ' (hay productos del catálogo que no controlan existencias)' : ''}.
-                  </div>
+                  <p className="text-xs text-slate-400 text-center py-3">
+                    Sin resultados con stock gestionado
+                  </p>
                 ) : (
                   candidatos.map((p) => (
                     <button
                       key={p.id}
                       onClick={() => agregar(p)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 10,
-                        padding: '9px 10px',
-                        borderRadius: 10,
-                        border: '1px solid var(--border)',
-                        background: 'var(--surface)',
-                        color: 'var(--text)',
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
+                      className="w-full p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-700/60 text-left flex items-center justify-between text-xs transition-colors"
                     >
-                      <span style={{ flex: 1 }}>{p.nombre}</span>
-                      <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>stock {p.stock}</span>
-                      <span style={{ fontWeight: 700 }}>C$ {p.precio.toFixed(2)}</span>
+                      <span className="font-bold text-slate-900 dark:text-white truncate pr-2">
+                        {p.nombre}
+                      </span>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-slate-400 font-mono">Stock: {p.stock}</span>
+                        <span className="font-mono font-bold text-primary">C$ {p.precio.toFixed(2)}</span>
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+                          <Plus size={14} />
+                        </div>
+                      </div>
                     </button>
                   ))
                 )}
               </div>
             )}
 
-            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Lista de productos seleccionados para devolución */}
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {lineas.length === 0 ? (
-                <div style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Aún no hay productos en la devolución.</div>
+                <div className="py-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                  Usa el buscador para añadir los productos que el cliente devuelve
+                </div>
               ) : (
                 lineas.map((l) => (
                   <div
                     key={l.producto.id}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: 12,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                    }}
+                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600 }}>{l.producto.nombre}</span>
-                      <button
-                        onClick={() => cambiarCantidad(l.producto.id, -1)}
-                        aria-label="Quitar una unidad"
-                        style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer' }}
-                      >
-                        <Minus size={13} />
-                      </button>
-                      <span style={{ minWidth: 22, textAlign: 'center', fontWeight: 800 }}>{l.cantidad}</span>
-                      <button
-                        onClick={() => cambiarCantidad(l.producto.id, 1)}
-                        aria-label="Agregar una unidad"
-                        style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer' }}
-                      >
-                        <Plus size={13} />
-                      </button>
-                      <button
-                        onClick={() => quitar(l.producto.id)}
-                        aria-label="Quitar de la devolución"
-                        style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: '#EF4444', cursor: 'pointer' }}
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                          {l.producto.nombre}
+                        </p>
+                        <p className="text-[11px] text-slate-500 font-mono">
+                          C$ {l.producto.precio.toFixed(2)} c/u
+                        </p>
+                      </div>
+
+                      {/* Quantity Controls (Target >= 40px) */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => cambiarCantidad(l.producto.id, -1)}
+                          className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center active:scale-95"
+                          aria-label="Disminuir"
+                        >
+                          <Minus size={13} />
+                        </button>
+                        <span className="w-8 text-center font-bold text-sm font-mono">
+                          {l.cantidad}
+                        </span>
+                        <button
+                          onClick={() => cambiarCantidad(l.producto.id, 1)}
+                          className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center active:scale-95"
+                          aria-label="Aumentar"
+                        >
+                          <Plus size={13} />
+                        </button>
+                        <button
+                          onClick={() => quitar(l.producto.id)}
+                          className="w-9 h-9 ml-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center active:scale-95"
+                          aria-label="Eliminar"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
+
                     <input
                       value={l.motivo}
                       onChange={(e) =>
@@ -353,66 +314,63 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                           prev.map((x) => (x.producto.id === l.producto.id ? { ...x, motivo: e.target.value } : x))
                         )
                       }
-                      placeholder="Motivo (opcional): dañado, talla equivocada…"
-                      style={{
-                        width: '100%',
-                        marginTop: 8,
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        border: '1px solid var(--border)',
-                        background: 'var(--surface)',
-                        color: 'var(--text)',
-                        fontSize: 12.5,
-                        outline: 'none',
-                      }}
+                      placeholder="Motivo (opcional): dañado, vencido, talla equivocada…"
+                      className="w-full h-9 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs outline-none focus:border-primary"
                     />
                   </div>
                 ))
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            {/* Referencia y Cliente */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <input
                 value={referencia}
                 onChange={(e) => setReferencia(e.target.value)}
-                placeholder="N.º de factura o referencia (opcional)"
-                style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-alt)', color: 'var(--text)', fontSize: 13, outline: 'none' }}
+                placeholder="N.º Ticket o Referencia (opcional)"
+                className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-primary"
               />
               <input
                 value={clienteNombre}
                 onChange={(e) => setClienteNombre(e.target.value)}
-                placeholder="Cliente (opcional)"
-                style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-alt)', color: 'var(--text)', fontSize: 13, outline: 'none' }}
+                placeholder="Nombre del Cliente (opcional)"
+                className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-primary"
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Total a devolver</span>
-              <span style={{ fontSize: 18, fontWeight: 800 }}>C$ {total.toFixed(2)}</span>
+            {/* Total Reembolso */}
+            <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center text-sm font-bold">
+              <span className="text-slate-600 dark:text-slate-400">Total a Reembolsar:</span>
+              <span className="font-mono text-lg font-extrabold text-primary">
+                C$ {total.toFixed(2)}
+              </span>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            {/* Action Buttons */}
+            <div className="flex gap-2.5 pt-2">
               <button
                 onClick={onCerrar}
-                style={{ flex: 1, height: 44, borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontWeight: 700, cursor: 'pointer' }}
+                className="flex-1 h-11 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
               >
                 Cancelar
               </button>
+
               <button
                 onClick={enviar}
                 disabled={enviando || lineas.length === 0}
-                style={{
-                  flex: 2,
-                  height: 44,
-                  borderRadius: 12,
-                  border: 'none',
-                  background: lineas.length === 0 || enviando ? '#2A2A33' : '#22C55E',
-                  color: lineas.length === 0 || enviando ? 'var(--text-muted)' : '#06240F',
-                  fontWeight: 800,
-                  cursor: enviando || lineas.length === 0 ? 'not-allowed' : 'pointer',
-                }}
+                className="flex-[2] h-11 min-h-[44px] rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold text-xs tracking-wide shadow-md shadow-emerald-500/20 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {enviando ? 'Registrando…' : 'Registrar devolución'}
+                {enviando ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Registrando...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} />
+                    <span>Confirmar Devolución</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

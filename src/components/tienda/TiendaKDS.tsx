@@ -1,7 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, CheckCircle2, AlertCircle, Bell, RefreshCw, Bike } from '@/components/icons';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Bell,
+  RefreshCw,
+  Bike,
+  Package,
+  Phone,
+  MapPin,
+  Flame,
+  Check,
+} from '@/components/icons';
 import { notify } from '@/lib/notify';
 
 interface ItemOrden {
@@ -26,9 +38,17 @@ interface OrdenKDS {
 
 export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: boolean; categoriaTienda?: string }) {
   const [ordenes, setOrdenes] = useState<OrdenKDS[]>([]);
-  const [catTienda, setCatTienda] = useState(categoriaTienda);
+  const [catTienda] = useState(categoriaTienda);
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [filtroEstado, setFiltroEstado] = useState<string>('activos');
+  const [ahora, setAhora] = useState(Date.now());
+
+  // Actualizar timer cada minuto para recalcular minutos transcurridos
+  useEffect(() => {
+    const timer = setInterval(() => setAhora(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const cargarOrdenes = useCallback(async () => {
     try {
@@ -47,7 +67,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
         createdAt: p.fecha ? `${p.fecha} ${p.hora || ''}` : new Date().toISOString(),
       }));
 
-      // Reproducir sonido si hay órdenes nuevas recibidas sin aceptar
+      // Alerta sonora si hay nuevos pedidos recibidos
       const hayNuevas = ordenesRecibidas.some((o) => o.estado === 'recibido');
       if (hayNuevas && soundEnabled) {
         try {
@@ -99,9 +119,7 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
         body: JSON.stringify({ id: ordenId, estado: nuevoEstado }),
       });
       if (res.ok) {
-        notify.success(`Pedido marcado como ${nuevoEstado}`);
-        // El modo retiro (pedido listo para recoger en tienda) aún no existe: toda compra
-        // crea envío con repartidor. Cuando se implemente, aquí se notificará al cliente.
+        notify.success(`Pedido actualizado a ${nuevoEstado}`);
         cargarOrdenes();
       } else {
         const data = await res.json().catch(() => null);
@@ -112,230 +130,274 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
     }
   };
 
-  const getStatusColor = (estado: string) => {
-    switch (estado) {
-      case 'recibido': return '#FF9500';
-      case 'preparando': return '#0066FF';
-      case 'listo': return '#34C759';
-      case 'entregado': return '#8E8E93';
-      default: return '#FF9500';
+  const isComida = catTienda === 'comida';
+
+  // Conteo por estado
+  const conteo = useMemo(() => {
+    const recibidos = ordenes.filter((o) => o.estado === 'recibido').length;
+    const preparando = ordenes.filter((o) => o.estado === 'preparando').length;
+    const listos = ordenes.filter((o) => o.estado === 'listo').length;
+    const activos = recibidos + preparando + listos;
+    return { activos, recibidos, preparando, listos, todos: ordenes.length };
+  }, [ordenes]);
+
+  // Filtrado
+  const ordenesFiltradas = useMemo(() => {
+    if (filtroEstado === 'activos') {
+      return ordenes.filter((o) => o.estado === 'recibido' || o.estado === 'preparando' || o.estado === 'listo');
+    }
+    if (filtroEstado === 'recibido') return ordenes.filter((o) => o.estado === 'recibido');
+    if (filtroEstado === 'preparando') return ordenes.filter((o) => o.estado === 'preparando');
+    if (filtroEstado === 'listo') return ordenes.filter((o) => o.estado === 'listo');
+    return ordenes;
+  }, [ordenes, filtroEstado]);
+
+  // Cálculo de tiempo transcurrido
+  const getElapsedInfo = (createdAt: string) => {
+    try {
+      const diffMs = ahora - new Date(createdAt).getTime();
+      const mins = Math.max(0, Math.floor(diffMs / 60000));
+      if (mins < 15) {
+        return { mins, label: `${mins}m`, color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' };
+      }
+      if (mins < 30) {
+        return { mins, label: `${mins}m`, color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' };
+      }
+      return { mins, label: `⚠️ ${mins}m`, color: 'bg-red-500/15 text-red-600 dark:text-red-400 font-extrabold' };
+    } catch {
+      return { mins: 0, label: '0m', color: 'bg-slate-100 text-slate-500' };
     }
   };
 
-  const isComida = catTienda === 'comida';
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Controles de Alerta en Barra Delgada */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
-        <button
-          onClick={() => setSoundEnabled(!soundEnabled)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '6px 12px',
-            minHeight: 44,
-            borderRadius: 9999,
-            border: `1px solid ${soundEnabled ? 'rgba(52, 199, 89, 0.4)' : 'var(--border)'}`,
-            background: soundEnabled ? 'rgba(52, 199, 89, 0.1)' : 'var(--bg-alt)',
-            color: soundEnabled ? '#34C759' : 'var(--text-muted)',
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          <Bell size={14} />
-          <span>{soundEnabled ? 'Sonido Activo' : 'Silenciado'}</span>
-        </button>
-
-        <button
-          onClick={cargarOrdenes}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '6px 12px',
-            minHeight: 44,
-            borderRadius: 9999,
-            border: '1px solid var(--border)',
-            background: 'var(--bg-alt)',
-            color: 'var(--text)',
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          <span>Actualizar</span>
-        </button>
-      </div>
-
-      {/* Orders Grid */}
-      {ordenes.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            background: 'var(--surface)',
-            borderRadius: 16,
-            border: '1px dashed var(--border)',
-            color: 'var(--text-muted)',
-          }}
-        >
-          <Clock size={40} style={{ opacity: 0.4, marginBottom: 12 }} />
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-            No hay pedidos activos en este momento
+    <div className="space-y-4 sm:space-y-5">
+      {/* ─── Header & KDS Navigation Tabs ─── */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+                {isComida ? 'Monitor KDS de Cocina' : 'Monitor de Comandas & Despacho'}
+              </h2>
+              {conteo.recibidos > 0 && (
+                <span className="animate-pulse px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-[11px] font-extrabold font-mono shadow-sm">
+                  {conteo.recibidos} NUEVOS
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Control en tiempo real de órdenes online y Marketplace para cocina o empaque
+            </p>
           </div>
-          <div style={{ fontSize: 13, marginTop: 4 }}>
-            Los nuevos pedidos recibidos desde la app o Marketplace sonarás aquí al instante.
+
+          {/* Quick Sound & Refresh Controls */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`h-11 min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 border ${
+                soundEnabled
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'
+              }`}
+            >
+              <Bell size={15} />
+              <span>{soundEnabled ? 'Sonido Activo' : 'Silenciado'}</span>
+            </button>
+
+            <button
+              onClick={cargarOrdenes}
+              className="h-11 min-h-[44px] px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-2 transition-all active:scale-95"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
+              <span className="hidden sm:inline">Actualizar</span>
+            </button>
           </div>
         </div>
+
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-2 border-t border-slate-100 dark:border-slate-800">
+          {[
+            { id: 'activos', label: 'En Proceso', count: conteo.activos },
+            { id: 'recibido', label: 'Nuevos', count: conteo.recibidos, highlight: conteo.recibidos > 0 },
+            { id: 'preparando', label: 'Preparando', count: conteo.preparando },
+            { id: 'listo', label: 'Listos para Despacho', count: conteo.listos },
+            { id: 'todos', label: 'Historial', count: conteo.todos },
+          ].map((tab) => {
+            const active = filtroEstado === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setFiltroEstado(tab.id)}
+                className={`h-10 min-h-[40px] px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 flex items-center gap-2 shrink-0 ${
+                  active
+                    ? 'bg-primary text-white shadow-sm shadow-primary/25'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md font-mono ${
+                    active
+                      ? 'bg-white/20 text-white'
+                      : tab.highlight
+                      ? 'bg-amber-500 text-white animate-pulse'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Orders Grid ─── */}
+      {ordenesFiltradas.length === 0 ? (
+        <div className="py-20 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-6">
+          <Clock size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 font-syne">
+            No hay pedidos en esta sección
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Cuando un cliente realice un pedido desde la app móvil o el Marketplace, aparecerá aquí al instante.
+          </p>
+        </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {ordenes.map((ord) => {
-            const colorStatus = getStatusColor(ord.estado);
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {ordenesFiltradas.map((ord) => {
+            const elapsed = getElapsedInfo(ord.createdAt);
+            const isRecibido = ord.estado === 'recibido';
+            const isPreparando = ord.estado === 'preparando';
+            const isListo = ord.estado === 'listo';
+
             return (
               <div
                 key={ord.id}
-                style={{
-                  background: 'var(--surface)',
-                  borderRadius: 16,
-                  border: `2px solid ${colorStatus}`,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
-                }}
+                className={`rounded-2xl bg-white dark:bg-slate-900 border shadow-sm flex flex-col justify-between overflow-hidden transition-all duration-200 ${
+                  isRecibido
+                    ? 'border-amber-500/60 ring-2 ring-amber-500/20 shadow-amber-500/5'
+                    : isPreparando
+                    ? 'border-blue-500/60'
+                    : isListo
+                    ? 'border-emerald-500/60'
+                    : 'border-slate-200/80 dark:border-slate-800'
+                }`}
               >
-                {/* Order Top Bar */}
+                {/* Order Top Banner */}
                 <div
-                  style={{
-                    background: colorStatus,
-                    color: '#FFFFFF',
-                    padding: '12px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
+                  className={`px-4 py-3 border-b flex items-center justify-between gap-2 ${
+                    isRecibido
+                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300'
+                      : isPreparando
+                      ? 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300'
+                      : isListo
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                  }`}
                 >
-                  <div style={{ fontWeight: 800, fontSize: 16 }}>
-                    Pedido #{ord.id.slice(-5).toUpperCase()}
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>
-                    {ord.estado}
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                      Cliente: {ord.clienteNombre}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                      {ord.direccionEntrega}
-                    </div>
-                  </div>
-
-                  {/* Items breakdown */}
-                  <div
-                    style={{
-                      background: 'var(--bg-alt)',
-                      padding: 12,
-                      borderRadius: 10,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                    }}
-                  >
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                      {isComida ? 'Ítems de Comanda' : 'Productos a Empacar'}
-                    </div>
-                    {ord.items.map((it, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: 'var(--text)',
-                        }}
-                      >
-                        <span>{it.cantidad}x {it.nombreProducto}</span>
-                        <span>C$ {(it.cantidad * it.precioUnitario).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 8 }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Pago: {ord.metodoPago}</span>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: '#0066FF' }}>
-                      Total: C$ {ord.total.toFixed(2)}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-extrabold font-mono tracking-tight">
+                      #{ord.id.slice(-5).toUpperCase()}
+                    </span>
+                    <span
+                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full font-mono ${elapsed.color}`}
+                    >
+                      {elapsed.label}
                     </span>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-                    {ord.estado === 'recibido' && (
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    {ord.estado}
+                  </span>
+                </div>
+
+                {/* Customer & Delivery Information */}
+                <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                          {ord.clienteNombre}
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
+                          <MapPin size={13} className="text-slate-400 shrink-0" />
+                          <span className="truncate">{ord.direccionEntrega}</span>
+                        </p>
+                      </div>
+
+                      {ord.clienteTelefono && (
+                        <a
+                          href={`tel:${ord.clienteTelefono}`}
+                          className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                          title="Llamar al cliente"
+                        >
+                          <Phone size={14} />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Order Items List */}
+                    <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
+                      <div className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider mb-1">
+                        {isComida ? 'Comanda para Preparar' : 'Artículos a Empacar'}
+                      </div>
+                      {ord.items.map((it, idx) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center text-xs text-slate-800 dark:text-slate-200"
+                        >
+                          <span className="font-semibold">
+                            <span className="font-mono font-bold text-primary mr-1.5">{it.cantidad}x</span>
+                            {it.nombreProducto}
+                          </span>
+                          <span className="font-mono text-slate-500 text-[11px]">
+                            C$ {(it.cantidad * it.precioUnitario).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Financial Total */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      Pago: <span className="capitalize font-bold text-slate-700 dark:text-slate-300">{ord.metodoPago}</span>
+                    </span>
+                    <span className="text-base font-extrabold text-primary font-mono">
+                      C$ {ord.total.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Action Transition Buttons (Min height 44px) */}
+                  <div className="pt-2">
+                    {isRecibido && (
                       <button
                         onClick={() => cambiarEstado(ord.id, 'preparando')}
-                        style={{
-                          gridColumn: 'span 2',
-                          height: 40,
-                          borderRadius: 10,
-                          background: '#0066FF',
-                          color: 'white',
-                          border: 'none',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
+                        className="w-full h-11 min-h-[44px] rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
                       >
-                        {isComida ? 'Aceptar y Preparar Platos' : 'Aceptar y Alistar Paquete'}
+                        <Flame size={16} />
+                        <span>{isComida ? 'Aceptar & Preparar Platos' : 'Aceptar & Alistar Pedido'}</span>
                       </button>
                     )}
-                    {ord.estado === 'preparando' && (
+
+                    {isPreparando && (
                       <button
                         onClick={() => cambiarEstado(ord.id, 'listo')}
-                        style={{
-                          gridColumn: 'span 2',
-                          height: 40,
-                          borderRadius: 10,
-                          background: '#34C759',
-                          color: 'white',
-                          border: 'none',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
+                        className="w-full h-11 min-h-[44px] rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold text-xs tracking-wide shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
                       >
-                        {isComida ? 'Marcar Pedido Listo' : 'Marcar Paquete Empacado y Listo'}
+                        <Check size={16} />
+                        <span>{isComida ? 'Marcar Comanda Lista' : 'Marcar Paquete Empacado'}</span>
                       </button>
                     )}
-                    {ord.estado === 'listo' && (
+
+                    {isListo && (
                       <button
                         onClick={() => cambiarEstado(ord.id, 'en_camino')}
-                        style={{
-                          gridColumn: 'span 2',
-                          height: 40,
-                          borderRadius: 10,
-                          background: '#8E8E93',
-                          color: 'white',
-                          border: 'none',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
+                        className="w-full h-11 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs tracking-wide shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"
                       >
-                        Entregar al Repartidor
+                        <Bike size={16} />
+                        <span>Entregar a Repartidor</span>
                       </button>
                     )}
                   </div>

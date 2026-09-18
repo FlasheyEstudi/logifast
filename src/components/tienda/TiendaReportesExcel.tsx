@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BarChart3, Download, FileSpreadsheet, Package, CreditCard, SlidersHorizontal } from '@/components/icons';
+import {
+  BarChart3,
+  Download,
+  FileSpreadsheet,
+  Package,
+  CreditCard,
+  SlidersHorizontal,
+  Calendar,
+  Sparkles,
+} from '@/components/icons';
 import { notify } from '@/lib/notify';
 import { descargarReporteTienda } from '@/lib/tienda/descarga-cliente';
 
@@ -28,191 +37,136 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
     {
       id: 'inventario' as const,
       titulo: 'Reporte Completo de Inventario & Stock',
-      descripcion: 'Exporta la lista de productos con costos, precios, stock actual, stock mínimo y código de barras SKU.',
-      icon: <Package size={24} style={{ color: '#0066FF' }} />,
+      descripcion:
+        'Exporta el catálogo de productos con costos de adquisición, precios de venta, stock actual, stock mínimo de alerta y código de barras SKU.',
+      icon: <Package size={22} />,
+      color: 'from-blue-500/15 to-blue-600/10 text-primary border-blue-500/20',
     },
     {
       id: 'ventas' as const,
-      titulo: 'Reporte de Ventas en Punto de Venta (POS)',
-      descripcion: 'Detalle financiero de ventas registradas en caja, método de pago, cliente, subtotal y total cobrado.',
-      icon: <CreditCard size={24} style={{ color: '#34C759' }} />,
+      titulo: 'Reporte de Ventas en Caja Registradora POS',
+      descripcion:
+        'Detalle financiero auditado de todas las ventas cobradas en caja, desglose de método de pago (efectivo, tarjeta, transferencia), cliente y monto total.',
+      icon: <CreditCard size={22} />,
+      color: 'from-emerald-500/15 to-emerald-600/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
     },
     {
       id: 'kardex' as const,
-      titulo: 'Reporte de Movimientos Kardex de Inventario',
-      descripcion: 'Auditoría de compras a proveedores, entradas, salidas y mermas con fecha, hora y responsable.',
-      icon: <SlidersHorizontal size={24} style={{ color: '#FF9500' }} />,
+      titulo: 'Reporte de Movimientos Kardex & Auditoría',
+      descripcion:
+        'Auditoría física completa de ingresos por compras a proveedores, ventas en mostrador, despachos delivery y mermas con fecha, hora y trazabilidad.',
+      icon: <SlidersHorizontal size={22} />,
+      color: 'from-amber-500/15 to-amber-600/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Header */}
-      <div
-        style={{
-          background: 'var(--surface)',
-          padding: '16px 20px',
-          borderRadius: 16,
-          border: '1px solid var(--border)',
-        }}
-      >
-        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-          Reportes con la identidad de tu tienda
-        </h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-          Descarga en Excel (.xlsx) o PDF: los dos salen con tu logo, el nombre y el color de tu tienda, y con la marca de
-          LogiFast. El CSV clásico sigue disponible.
-        </p>
+    <div className="space-y-5">
+      {/* ─── Header ─── */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div>
+          <div className="flex items-center gap-2 text-primary mb-1">
+            <BarChart3 size={20} />
+            <span className="text-xs font-bold uppercase tracking-wider">Centro de Exportación</span>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white font-syne">
+            Reportes Financieros & Operativos
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Exporta tus datos en hojas de cálculo Excel (.xlsx), informes ejecutivos PDF con tu logotipo y membrete oficial, o formato CSV universal.
+          </p>
+        </div>
+
+        {/* Period Selector Pills */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Período de Análisis:
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { d: 1, l: 'Hoy' },
+                { d: 7, l: '7 días' },
+                { d: 30, l: '30 días' },
+                { d: 0, l: 'Todo el Historial' },
+              ].map((p) => (
+                <button
+                  key={p.d}
+                  onClick={() => setDias(p.d)}
+                  className={`h-9 min-h-[36px] px-3 rounded-xl font-bold text-xs transition-all active:scale-95 ${
+                    dias === p.d
+                      ? 'bg-primary text-white shadow-sm shadow-primary/25'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {p.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+            <Sparkles size={13} className="text-amber-500" />
+            <span>Los reportes incluyen membrete y logo de tu tienda</span>
+          </div>
+        </div>
       </div>
 
-      {/* Período que abarcan los reportes */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Período:</span>
-        {[
-          { d: 1, l: 'Hoy' },
-          { d: 7, l: '7 días' },
-          { d: 30, l: '30 días' },
-          { d: 0, l: 'Todo' },
-        ].map((p) => (
-          <button
-            key={p.d}
-            onClick={() => setDias(p.d)}
-            style={{
-              height: 44,
-              padding: '0 16px',
-              borderRadius: 999,
-              border: '1px solid var(--border)',
-              background: dias === p.d ? '#0066FF' : 'var(--bg-alt)',
-              color: dias === p.d ? '#FFFFFF' : 'var(--text)',
-              fontWeight: 700,
-              fontSize: 12.5,
-              cursor: 'pointer',
-            }}
-          >
-            {p.l}
-          </button>
-        ))}
-        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-          Los archivos salen con tu logo y el nombre de tu tienda.
-        </span>
-      </div>
-
-      {/* Grid de Opciones de Descarga */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: 16,
-        }}
-      >
+      {/* ─── Grid de Opciones de Descarga ─── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {opciones.map((op) => (
           <div
             key={op.id}
-            style={{
-              background: 'var(--surface)',
-              borderRadius: 16,
-              border: '1px solid var(--border)',
-              padding: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
-            }}
+            className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-200"
           >
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    background: 'var(--bg-alt)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${op.color} border flex items-center justify-center shrink-0`}>
                   {op.icon}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
                     {op.titulo}
                   </h3>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#34C759' }}>
-                    Excel .XLSX y PDF
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-mono">
+                    Excel · PDF · CSV
                   </span>
                 </div>
               </div>
 
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.4, margin: 0 }}>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-2">
                 {op.descripcion}
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 20, flexWrap: 'wrap' }}>
-              <button
-                onClick={() => descargarReporte(op.id, 'xlsx')}
-                disabled={descargando !== null}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  flex: '1 1 170px',
-                  height: 44,
-                  borderRadius: 10,
-                  border: 'none',
-                  background: '#0066FF',
-                  color: 'white',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: descargando ? 'wait' : 'pointer',
-                  boxShadow: '0 4px 14px rgba(0,102,255,0.3)',
-                }}
-              >
-                <FileSpreadsheet size={16} />
-                <span>{descargando === `${op.id}-xlsx` ? 'Generando…' : 'Excel .xlsx'}</span>
-              </button>
+            {/* Action Buttons */}
+            <div className="space-y-2 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => descargarReporte(op.id, 'xlsx')}
+                  disabled={descargando !== null}
+                  className="flex-1 h-11 min-h-[44px] rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  <FileSpreadsheet size={16} />
+                  <span>{descargando === `${op.id}-xlsx` ? 'Generando…' : 'Excel (.xlsx)'}</span>
+                </button>
 
-              <button
-                onClick={() => descargarReporte(op.id, 'pdf')}
-                disabled={descargando !== null}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  flex: '1 1 130px',
-                  height: 44,
-                  borderRadius: 10,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-alt)',
-                  color: 'var(--text)',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: descargando ? 'wait' : 'pointer',
-                }}
-              >
-                <Download size={16} />
-                <span>{descargando === `${op.id}-pdf` ? 'Generando…' : 'PDF'}</span>
-              </button>
+                <button
+                  onClick={() => descargarReporte(op.id, 'pdf')}
+                  disabled={descargando !== null}
+                  className="flex-1 h-11 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  <Download size={16} />
+                  <span>{descargando === `${op.id}-pdf` ? 'Generando…' : 'PDF'}</span>
+                </button>
+              </div>
 
               <button
                 onClick={() => descargarReporte(op.id, 'csv')}
                 disabled={descargando !== null}
-                style={{
-                  height: 44,
-                  padding: '0 14px',
-                  borderRadius: 10,
-                  border: '1px dashed var(--border)',
-                  background: 'transparent',
-                  color: 'var(--text-muted)',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: descargando ? 'wait' : 'pointer',
-                }}
+                className="w-full h-9 min-h-[36px] rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-bold active:scale-95 transition-all"
               >
-                CSV
+                {descargando === `${op.id}-csv` ? 'Generando CSV…' : 'Descargar datos en CSV'}
               </button>
             </div>
           </div>

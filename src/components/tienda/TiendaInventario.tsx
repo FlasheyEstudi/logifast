@@ -1,7 +1,22 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, Search, Edit2, CheckCircle2, AlertTriangle, Eye, EyeOff, Image as ImageIcon } from '@/components/icons';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  Package,
+  Plus,
+  Search,
+  Edit2,
+  CheckCircle2,
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Image as ImageIcon,
+  X,
+  DollarSign,
+  TrendingUp,
+  Tag,
+  Layers,
+} from '@/components/icons';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import { notify } from '@/lib/notify';
 
@@ -25,9 +40,10 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todos');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'publicados' | 'bajo_stock' | 'ocultos'>('todos');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Producto | null>(null);
-  // Confirmación local antes de archivar (no hay borrado duro: el Kardex conserva la trazabilidad)
   const [archivarConfirmId, setArchivarConfirmId] = useState<string | null>(null);
 
   // Form State
@@ -126,7 +142,6 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           precio: Number(precio),
           costo: Number(costo) || 0,
           stock: Number(stock) || 0,
-          // stockMinimo 0 es un valor válido: sólo se usa 5 cuando el campo queda vacío.
           stockMinimo: stockMinimo === '' ? 5 : Number(stockMinimo) || 0,
           codigoBarras,
           unidadMedida,
@@ -159,7 +174,6 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         body: JSON.stringify({ id: p.id, disponible: !p.disponible }),
       });
       if (res.ok) {
-        // Archivar es reversible y no borra el producto: su historial de Kardex se conserva.
         notify.success(
           p.disponible
             ? 'Producto archivado del catálogo'
@@ -173,284 +187,319 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
     }
   };
 
-  const filtrados = productos.filter((p) =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (p.codigoBarras && p.codigoBarras.includes(busqueda))
-  );
+  // Resumen Métricas KPI
+  const stats = useMemo(() => {
+    const total = productos.length;
+    const publicados = productos.filter((p) => p.disponible).length;
+    const bajoStock = productos.filter(
+      (p) => p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5)
+    ).length;
+    const valorInventario = productos.reduce((acc, p) => {
+      const cant = p.stock ?? 0;
+      const c = p.costo ?? p.precio * 0.7;
+      return acc + cant * c;
+    }, 0);
+
+    return { total, publicados, bajoStock, valorInventario };
+  }, [productos]);
+
+  // Categorías Únicas
+  const categorias = useMemo(() => {
+    const set = new Set<string>();
+    productos.forEach((p) => {
+      if (p.categoriaNombre && p.categoriaNombre.trim()) {
+        set.add(p.categoriaNombre.trim());
+      }
+    });
+    return ['todos', ...Array.from(set)];
+  }, [productos]);
+
+  // Filtrado de Productos
+  const filtrados = productos.filter((p) => {
+    const matchBusqueda =
+      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (p.codigoBarras && p.codigoBarras.includes(busqueda));
+
+    const matchCat =
+      categoriaSeleccionada === 'todos' ||
+      (p.categoriaNombre && p.categoriaNombre.toLowerCase() === categoriaSeleccionada.toLowerCase());
+
+    let matchEstado = true;
+    if (filtroEstado === 'publicados') matchEstado = p.disponible;
+    else if (filtroEstado === 'ocultos') matchEstado = !p.disponible;
+    else if (filtroEstado === 'bajo_stock') {
+      matchEstado = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+    }
+
+    return matchBusqueda && matchCat && matchEstado;
+  });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Header & Controls */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
-          background: 'var(--surface)',
-          padding: '16px 20px',
-          borderRadius: 16,
-          border: '1px solid var(--border)',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
-            Gestión de Inventario & Catálogo
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-            Control de productos, costos, código de barras e imágenes publicadas en Marketplace.
-          </p>
+    <div className="space-y-5">
+      {/* ─── KPI Dashboard Cards ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-primary flex items-center justify-center shrink-0">
+            <Package size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Productos</p>
+            <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white font-mono">
+              {stats.total}
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'var(--bg-alt)',
-              padding: '8px 12px',
-              borderRadius: 10,
-              border: '1px solid var(--border)',
-              width: 240,
-            }}
-          >
-            <Search size={16} style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Buscar producto o SKU..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: 'var(--text)',
-                fontSize: 13,
-                width: '100%',
-              }}
-            />
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+            <Eye size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Publicados</p>
+            <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white font-mono">
+              {stats.publicados}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+            <AlertTriangle size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Alerta Stock</p>
+            <p className="text-lg sm:text-xl font-extrabold text-amber-600 dark:text-amber-400 font-mono">
+              {stats.bajoStock}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
+            <TrendingUp size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Valor Inventario</p>
+            <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white font-mono truncate">
+              C$ {stats.valorInventario.toLocaleString('es-NI', { maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Header & Controls ─── */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+              Gestión de Inventario & Catálogo
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Control de productos, costos, código de barras e imágenes para Marketplace
+            </p>
           </div>
 
           <button
             onClick={abrirModalCrear}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '0 16px',
-              height: 44,
-              borderRadius: 10,
-              background: '#0066FF',
-              color: 'white',
-              border: 'none',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(0,102,255,0.3)',
-            }}
+            className="h-11 min-h-[44px] px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 self-start sm:self-auto"
           >
             <Plus size={16} />
             <span>Nuevo Producto</span>
           </button>
         </div>
-      </div>
 
-      {/* Grid of Inventory Products */}
-      {filtrados.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            background: 'var(--surface)',
-            borderRadius: 16,
-            border: '1px dashed var(--border)',
-            color: 'var(--text-muted)',
-          }}
-        >
-          <Package size={40} style={{ opacity: 0.4, marginBottom: 12 }} />
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-            No se encontraron productos en el inventario
+        {/* Filters Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+          {/* Search Bar */}
+          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+            <Search size={16} className="text-slate-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar producto por nombre o SKU..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white text-xs sm:text-sm placeholder:text-slate-400"
+            />
+            {busqueda && (
+              <button
+                onClick={() => setBusqueda('')}
+                className="w-6 h-6 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
-          <div style={{ fontSize: 13, marginTop: 4 }}>
-            Haz clic en "Nuevo Producto" para añadir elementos a tu catálogo comercial.
+
+          {/* Quick status selector */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 shrink-0">
+            {(
+              [
+                { id: 'todos', label: 'Todos' },
+                { id: 'publicados', label: 'Publicados' },
+                { id: 'bajo_stock', label: 'Bajo Stock' },
+                { id: 'ocultos', label: 'Archivados' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => setFiltroEstado(opt.id)}
+                className={`h-9 min-h-[36px] px-3 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
+                  filtroEstado === opt.id
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Category horizontal pill scroll */}
+        {categorias.length > 2 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            {categorias.map((cat) => {
+              const active = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCategoriaSeleccionada(cat)}
+                  className={`h-8 min-h-[32px] px-3 rounded-lg font-bold uppercase tracking-wider text-[10px] whitespace-nowrap transition-all active:scale-95 shrink-0 ${
+                    active
+                      ? 'bg-primary text-white shadow-sm shadow-primary/20'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  {cat === 'todos' ? 'Todas las Categorías' : cat}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Grid of Products ─── */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div
+              key={n}
+              className="h-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 animate-pulse"
+            />
+          ))}
+        </div>
+      ) : filtrados.length === 0 ? (
+        <div className="py-20 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-6">
+          <Package size={44} className="mx-auto mb-3 opacity-30 text-slate-500" />
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 font-syne">
+            No se encontraron productos
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Prueba ajustando los filtros de búsqueda o haz clic en "Nuevo Producto" para añadir artículos al inventario.
+          </p>
+        </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 16,
-          }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtrados.map((p) => {
-            const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+            const bajoStock =
+              p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+
             return (
               <div
                 key={p.id}
-                style={{
-                  background: 'var(--surface)',
-                  borderRadius: 16,
-                  border: '1px solid var(--border)',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                }}
+                className="group rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 flex flex-col overflow-hidden"
               >
                 {/* Image Cover Preview */}
-                <div style={{ position: 'relative', height: 140, background: 'var(--bg-alt)' }}>
+                <div className="relative h-40 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   {p.portadaUrl || p.imagenUrl ? (
                     <img
                       src={p.portadaUrl || p.imagenUrl || ''}
                       alt={p.nombre}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      <ImageIcon size={32} />
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-600">
+                      <ImageIcon size={32} className="opacity-40" />
                     </div>
                   )}
 
-                  {/* Badges */}
-                  <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
+                  {/* Top Badges */}
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
                     <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: 999,
-                        background: p.disponible ? '#34C759' : '#8E8E93',
-                        color: 'white',
-                      }}
+                      className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                        p.disponible
+                          ? 'bg-emerald-500 text-white shadow-sm'
+                          : 'bg-slate-700 text-slate-200'
+                      }`}
                     >
-                      {p.disponible ? 'Publicado' : 'Agotado/Oculto'}
+                      {p.disponible ? 'Publicado' : 'Archivado'}
                     </span>
 
                     {bajoStock && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: 999,
-                          background: '#FF3B30',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-500 text-white flex items-center gap-1 shadow-sm">
                         <AlertTriangle size={10} /> Bajo Stock
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Info */}
-                <div style={{ padding: 14, flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Card Body */}
+                <div className="p-4 flex-1 flex flex-col justify-between gap-3">
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#0066FF', textTransform: 'uppercase' }}>
+                    <span className="text-[10px] font-extrabold uppercase text-primary tracking-wider">
                       {p.categoriaNombre || 'General'}
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>
+                    </span>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 line-clamp-2 leading-snug">
                       {p.nombre}
-                    </div>
+                    </h3>
                     {p.codigoBarras && (
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                      <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-1">
                         SKU: {p.codigoBarras}
-                      </div>
+                      </p>
                     )}
                   </div>
 
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: 8,
-                      background: 'var(--bg-alt)',
-                      padding: 8,
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  >
+                  {/* Price & Stock info pills */}
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-xs">
                     <div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Precio Venta</div>
-                      <div style={{ fontWeight: 800, color: 'var(--text)' }}>C$ {p.precio.toFixed(2)}</div>
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                        Precio Venta
+                      </span>
+                      <span className="text-sm font-extrabold text-primary font-mono">
+                        C$ {p.precio.toFixed(2)}
+                      </span>
                     </div>
+
                     <div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Costo / Stock</div>
-                      <div style={{ fontWeight: 700, color: bajoStock ? '#FF3B30' : 'var(--text)' }}>
-                        C$ {(p.costo || 0).toFixed(2)} | {p.stock ?? 0} {p.unidadMedida || 'und'}
-                      </div>
-                      {bajoStock && (
-                        <div
-                          style={{ fontSize: 10, fontWeight: 700, color: '#FF3B30', marginTop: 2 }}
-                          title="Stock por debajo del mínimo configurado"
-                        >
-                          Mínimo: {p.stockMinimo ?? 5} {p.unidadMedida || 'und'}
-                        </div>
-                      )}
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                        Stock Actual
+                      </span>
+                      <span
+                        className={`text-sm font-extrabold font-mono ${
+                          bajoStock ? 'text-red-500' : 'text-slate-900 dark:text-white'
+                        }`}
+                      >
+                        {p.stock ?? 0} {p.unidadMedida || 'und'}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Confirmación antes de archivar (archivar no borra: el Kardex lo referencia) */}
+                  {/* Confirmación antes de archivar */}
                   {archivarConfirmId === p.id && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 6,
-                        background: 'var(--bg-alt)',
-                        border: '1px solid #FF3B30',
-                        borderRadius: 8,
-                        padding: 8,
-                      }}
-                    >
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>
-                        ¿Archivar "{p.nombre}" del catálogo? Dejará de publicarse, pero su historial de Kardex se conserva.
-                      </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                    <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs space-y-2 animate-scale-up">
+                      <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">
+                        ¿Archivar "{p.nombre}"? Dejará de mostrarse en catálogo, conservando su historial.
+                      </p>
+                      <div className="flex gap-2">
                         <button
                           onClick={() => toggleDisponible(p)}
-                          style={{
-                            flex: 1,
-                            height: 30,
-                            borderRadius: 8,
-                            border: 'none',
-                            background: '#FF3B30',
-                            color: 'white',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                          }}
+                          className="flex-1 h-8 min-h-[32px] rounded-lg bg-red-500 text-white font-bold text-[11px] active:scale-95"
                         >
                           Sí, archivar
                         </button>
                         <button
                           onClick={() => setArchivarConfirmId(null)}
-                          style={{
-                            flex: 1,
-                            height: 30,
-                            borderRadius: 8,
-                            border: '1px solid var(--border)',
-                            background: 'var(--surface)',
-                            color: 'var(--text)',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
+                          className="flex-1 h-8 min-h-[32px] rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] active:scale-95"
                         >
                           Cancelar
                         </button>
@@ -458,51 +507,22 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     </div>
                   )}
 
-                  {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 6 }}>
+                  {/* Action Buttons (Touch target >= 44px) */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <button
                       onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
                       title={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
-                      aria-label={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
-                      style={{
-                        flex: 1,
-                        height: 44,
-                        borderRadius: 8,
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg-alt)',
-                        color: 'var(--text)',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 4,
-                      }}
+                      className="flex-1 h-11 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                     >
-                      {p.disponible ? <EyeOff size={14} /> : <Eye size={14} />}
-                      <span>{p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}</span>
+                      {p.disponible ? <EyeOff size={15} /> : <Eye size={15} />}
+                      <span>{p.disponible ? 'Archivar' : 'Publicar'}</span>
                     </button>
 
                     <button
                       onClick={() => abrirModalEditar(p)}
-                      style={{
-                        flex: 1,
-                        height: 44,
-                        borderRadius: 8,
-                        border: 'none',
-                        background: 'rgba(0,102,255,0.1)',
-                        color: '#0066FF',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 4,
-                      }}
+                      className="flex-1 h-11 min-h-[44px] rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                     >
-                      <Edit2 size={14} />
+                      <Edit2 size={15} />
                       <span>Editar</span>
                     </button>
                   </div>
@@ -513,171 +533,127 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         </div>
       )}
 
-      {/* Modal Crear / Editar Producto */}
+      {/* ─── Modal Crear / Editar Producto ─── */}
       {modalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-          }}
+          onClick={() => setModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <div
-            style={{
-              background: 'var(--surface)',
-              width: '100%',
-              maxWidth: 600,
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              borderRadius: 20,
-              padding: 24,
-              border: '1px solid var(--border)',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-            }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
           >
-            <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text)' }}>
-              {editingProd ? 'Editar Producto del Inventario' : 'Crear Nuevo Producto en Inventario'}
-            </h3>
-
-            <form onSubmit={guardarProducto} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-syne">
+                  {editingProd ? 'Editar Producto en Inventario' : 'Crear Nuevo Producto'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {editingProd ? 'Actualiza los datos del producto' : 'Completa los detalles comerciales y stock'}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setModalOpen(false)}
+                className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+                aria-label="Cerrar modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={guardarProducto} className="space-y-4">
+              {/* Nombre */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                   Nombre del Producto *
                 </label>
                 <input
                   type="text"
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej: Hamburguesa Doble Queso"
-                  style={{
-                    width: '100%',
-                    height: 40,
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-alt)',
-                    padding: '0 12px',
-                    color: 'var(--text)',
-                    marginTop: 4,
-                  }}
+                  placeholder="Ej: Refresco Coca-Cola 355ml"
+                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   required
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {/* Categoría & SKU */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Categoría</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Categoría
+                  </label>
                   <input
                     type="text"
                     value={categoriaNombre}
                     onChange={(e) => setCategoriaNombre(e.target.value)}
-                    placeholder="Ej: Comida, Bebidas, Ropa"
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      borderRadius: 10,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                      padding: '0 12px',
-                      color: 'var(--text)',
-                      marginTop: 4,
-                    }}
+                    placeholder="Ej: Bebidas, Snacks, Lácteos"
+                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Código de Barras / SKU</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Código de Barras / SKU
+                  </label>
                   <input
                     type="text"
                     value={codigoBarras}
                     onChange={(e) => setCodigoBarras(e.target.value)}
-                    placeholder="Ej: 7441000123"
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      borderRadius: 10,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                      padding: '0 12px',
-                      color: 'var(--text)',
-                      marginTop: 4,
-                    }}
+                    placeholder="Ej: 7501055301072"
+                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
+              {/* Precios y Costos */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Precio Venta (C$) *</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Precio Venta *
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={precio}
                     onChange={(e) => setPrecio(e.target.value)}
-                    placeholder="150.00"
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      borderRadius: 10,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                      padding: '0 12px',
-                      color: 'var(--text)',
-                      marginTop: 4,
-                    }}
+                    placeholder="C$ 0.00"
+                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Costo (C$)</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Costo Compra
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={costo}
                     onChange={(e) => setCosto(e.target.value)}
-                    placeholder="90.00"
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      borderRadius: 10,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                      padding: '0 12px',
-                      color: 'var(--text)',
-                      marginTop: 4,
-                    }}
+                    placeholder="C$ 0.00"
+                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Stock Actual</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Stock Actual
+                  </label>
                   <input
                     type="number"
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
-                    placeholder="25"
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      borderRadius: 10,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                      padding: '0 12px',
-                      color: 'var(--text)',
-                      marginTop: 4,
-                    }}
+                    placeholder="10"
+                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
-                    Stock mínimo (alerta)
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Stock Mínimo
                   </label>
                   <input
                     type="number"
@@ -685,24 +661,35 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     value={stockMinimo}
                     onChange={(e) => setStockMinimo(e.target.value)}
                     placeholder="5"
-                    style={{
-                      width: '100%',
-                      height: 40,
-                      borderRadius: 10,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-alt)',
-                      padding: '0 12px',
-                      color: 'var(--text)',
-                      marginTop: 4,
-                    }}
+                    className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
               </div>
 
-              {/* Subida de Imagen Principal e Imagen de Portada */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+              {/* Unidad de Medida */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Unidad de Medida
+                </label>
+                <select
+                  value={unidadMedida}
+                  onChange={(e) => setUnidadMedida(e.target.value)}
+                  className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                >
+                  <option value="unidad">Unidad (und)</option>
+                  <option value="libra">Libra (lb)</option>
+                  <option value="kilo">Kilogramo (kg)</option>
+                  <option value="litro">Litro (lt)</option>
+                  <option value="paquete">Paquete (paq)</option>
+                  <option value="caja">Caja</option>
+                  <option value="porcion">Porción</option>
+                </select>
+              </div>
+
+              {/* Imágenes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
                     Foto Principal del Producto
                   </label>
                   <ImageUploader
@@ -710,12 +697,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     onUploaded={(url) => setImagenUrl(url)}
                     label="Foto Principal"
                     previewUrl={imagenUrl || null}
-                    className="w-20 h-20"
+                    className="w-24 h-24 rounded-2xl mx-auto"
                   />
                 </div>
 
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
                     Foto de Portada / Banner
                   </label>
                   <ImageUploader
@@ -723,44 +710,31 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     onUploaded={(url) => setPortadaUrl(url)}
                     label="Portada Producto"
                     previewUrl={portadaUrl || null}
-                    className="w-20 h-20"
+                    className="w-24 h-24 rounded-2xl mx-auto"
                   />
                 </div>
               </div>
 
+              {/* Descripción */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Descripción</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Descripción Comercial (opcional)
+                </label>
                 <textarea
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Detalles, ingredientes, especificaciones..."
+                  placeholder="Detalles, especificaciones o notas de venta..."
                   rows={2}
-                  style={{
-                    width: '100%',
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-alt)',
-                    padding: 10,
-                    color: 'var(--text)',
-                    marginTop: 4,
-                  }}
+                  className="w-full p-3 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
+              {/* Botones de acción */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  style={{
-                    height: 40,
-                    padding: '0 16px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-alt)',
-                    color: 'var(--text)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="h-11 min-h-[44px] px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
                 >
                   Cancelar
                 </button>
@@ -768,18 +742,16 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    height: 40,
-                    padding: '0 20px',
-                    borderRadius: 10,
-                    border: 'none',
-                    background: '#0066FF',
-                    color: 'white',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
+                  className="h-11 min-h-[44px] px-6 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
                 >
-                  {submitting ? 'Guardando...' : editingProd ? 'Guardar Cambios' : 'Crear Producto'}
+                  {submitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <span>{editingProd ? 'Guardar Cambios' : 'Crear Producto'}</span>
+                  )}
                 </button>
               </div>
             </form>

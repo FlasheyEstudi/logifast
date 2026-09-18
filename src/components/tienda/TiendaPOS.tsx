@@ -1,7 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { CreditCard, ShoppingCart, Plus, Minus, Trash2, Printer, CheckCircle2, User, Search, DollarSign, Camera, Wifi, RotateCcw } from '@/components/icons';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import {
+  CreditCard,
+  ShoppingCart,
+  Plus,
+  Minus,
+  Trash2,
+  Printer,
+  CheckCircle2,
+  User,
+  Search,
+  DollarSign,
+  Camera,
+  Wifi,
+  RotateCcw,
+  X,
+  ChevronUp,
+  Package,
+  Sparkles,
+  Layers,
+} from '@/components/icons';
 import { notify } from '@/lib/notify';
 import { onRealtimeEvent, realtime } from '@/services/realtime';
 import type { Producto } from './TiendaInventario';
@@ -42,7 +61,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('todos');
   const [carrito, setCarrito] = useState<ItemCarritoPOS[]>([]);
+
+  // Drawer para Carrito Móvil
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // Datos Cliente / Pago POS
   const [clienteNombre, setClienteNombre] = useState('Cliente General');
@@ -55,7 +78,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   // Modal Factura / Imprimir
   const [facturaEmitida, setFacturaEmitida] = useState<FacturaDatos | null>(null);
 
-  // Escáner inalámbrico: el celular del operador transmite los códigos que lee.
+  // Escáner inalámbrico
   const [escanerAbierto, setEscanerAbierto] = useState(false);
   const [escanerPin, setEscanerPin] = useState('');
   const [lectorConectado, setLectorConectado] = useState(false);
@@ -66,7 +89,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
   // Devolución de mercadería (reingreso de stock + Kardex)
   const [devolucionAbierta, setDevolucionAbierta] = useState(false);
-  const escanerPinRef = useRef('');                       // sesión viva, leída desde los listeners
+  const escanerPinRef = useRef('');
   const manejarCodigoRef = useRef<(codigo: string, origen: 'inalambrico' | 'pistola') => void>(() => {});
 
   useEffect(() => {
@@ -93,7 +116,6 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   }, [cargarProductos]);
 
   const agregarAlCarrito = (p: Producto) => {
-    // stock === null (o sin definir) => el producto no gestiona stock: sin tope
     const stockDisponible = p.stock ?? null;
 
     if (stockDisponible !== null) {
@@ -148,7 +170,6 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         return;
       }
 
-      // Un código desconocido no debe romper la venta: queda en el buscador para revisarlo a mano.
       setBusqueda(codigo);
       if (encontrados.length === 0) {
         registrar('sin-producto', 'Sin producto con ese código');
@@ -159,17 +180,14 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         if (escanerPinRef.current) realtime.escanerResultado(escanerPinRef.current, codigo, true, null);
       }
     },
-    [productos, agregarAlCarrito]
+    [productos, carrito]
   );
 
-  // Los listeners de socket se registran una sola vez; la lógica se lee del ref
-  // para no reconectar cada vez que cambia el catálogo o el carrito.
   useEffect(() => {
     manejarCodigoRef.current = manejarCodigo;
   }, [manejarCodigo]);
 
-  // Pistolas lectoras físicas: se comportan como un teclado que teclea en ráfaga y
-  // termina con Enter. Se distingue del tecleo humano por la velocidad de la ráfaga.
+  // Pistolas lectoras físicas
   useEffect(() => {
     let buffer = '';
     let inicioRafaga = 0;
@@ -227,7 +245,6 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     ];
     return () => {
       offs.forEach((off) => off());
-      // Al salir del POS la sesión se cierra: el celular recibe `escaner:cerrada`.
       if (escanerPinRef.current) realtime.escanerCerrar(escanerPinRef.current);
     };
   }, []);
@@ -252,7 +269,6 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
   const modificarCantidad = (prodId: string, delta: number) => {
     const item = carrito.find((it) => it.producto.id === prodId);
-    // stock === null (o sin definir) => el producto no gestiona stock: sin tope
     const stockDisponible = item?.producto.stock ?? null;
 
     if (item && delta > 0 && stockDisponible !== null && item.cantidad + delta > stockDisponible) {
@@ -283,6 +299,17 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   const totalSum = Math.max(0, subtotalSum - descNum);
   const recibidoNum = Number(montoRecibido) || totalSum;
   const cambio = Math.max(0, recibidoNum - totalSum);
+  const totalItemsCount = carrito.reduce((sum, it) => sum + it.cantidad, 0);
+
+  // Botones de Efectivo Rápido
+  const setCashAmount = (amount: number) => {
+    setMontoRecibido(String(amount));
+  };
+
+  const addCashAmount = (addVal: number) => {
+    const current = Number(montoRecibido) || 0;
+    setMontoRecibido(String(current + addVal));
+  };
 
   const procesarVenta = async () => {
     if (carrito.length === 0) {
@@ -318,6 +345,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         setMontoRecibido('');
         setClienteNombre('Cliente General');
         setClienteRuc('');
+        setMobileCartOpen(false);
         cargarProductos();
       } else {
         notify.error(data.error || 'Error al registrar la venta POS');
@@ -333,394 +361,512 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     window.print();
   };
 
-  const filtrados = productos.filter((p) =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (p.codigoBarras && p.codigoBarras.includes(busqueda))
-  );
+  // Categorías dinámicas
+  const categorias = useMemo(() => {
+    const cats = new Set<string>();
+    productos.forEach((p) => {
+      if (p.categoriaNombre && p.categoriaNombre.trim()) {
+        cats.add(p.categoriaNombre.trim());
+      }
+    });
+    return ['todos', ...Array.from(cats)];
+  }, [productos]);
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
-      {/* Columna Izquierda: Catálogo Visual POS con Imágenes */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Search Bar */}
-        <div
-          style={{
-            background: 'var(--surface)',
-            padding: 14,
-            borderRadius: 16,
-            border: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}
-        >
-          <Search size={18} style={{ color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o escanea SKU con lector..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--text)',
-              fontSize: 14,
-              width: '100%',
-            }}
-          />
+  const filtrados = productos.filter((p) => {
+    const matchBusqueda =
+      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (p.codigoBarras && p.codigoBarras.includes(busqueda));
+    const matchCat =
+      categoriaSeleccionada === 'todos' ||
+      (p.categoriaNombre && p.categoriaNombre.toLowerCase() === categoriaSeleccionada.toLowerCase());
+    return matchBusqueda && matchCat;
+  });
+
+  // Reusable Checkout Cart Panel (Rendered on Desktop column & Mobile Drawer)
+  const renderCartContent = (isDrawer = false) => (
+    <div className="flex flex-col h-full">
+      {/* Drawer Drag Header on mobile */}
+      {isDrawer && (
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <ShoppingCart size={18} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white font-syne">
+                Caja Registradora POS
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {totalItemsCount} {totalItemsCount === 1 ? 'producto' : 'productos'} en venta
+              </p>
+            </div>
+          </div>
           <button
-            onClick={abrirEscaner}
-            title="Emparejar un celular como lector de códigos de barras"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              height: 44,
-              padding: '0 12px',
-              borderRadius: 10,
-              border: lectorConectado ? '1px solid rgba(34,197,94,.5)' : '1px solid var(--border)',
-              background: lectorConectado ? 'rgba(34,197,94,.12)' : 'var(--bg-alt)',
-              color: lectorConectado ? '#22C55E' : 'var(--text)',
-              fontWeight: 700,
-              fontSize: 12.5,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
+            onClick={() => setMobileCartOpen(false)}
+            className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-all"
+            aria-label="Cerrar carrito"
           >
-            <Camera size={15} />
-            {escanerAbierto ? (lectorConectado ? 'Lector activo' : 'Esperando…') : 'Escáner'}
-          </button>
-          <button
-            onClick={() => setDevolucionAbierta(true)}
-            title="Devolver mercadería al inventario"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              height: 44,
-              padding: '0 12px',
-              borderRadius: 10,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-alt)',
-              color: 'var(--text)',
-              fontWeight: 700,
-              fontSize: 12.5,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <RotateCcw size={15} /> Devolución
+            <X size={20} />
           </button>
         </div>
+      )}
 
-        {/* Product Grid */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            gap: 12,
-            maxHeight: 'calc(100vh - 200px)',
-            overflowY: 'auto',
-            paddingRight: 4,
-          }}
-        >
-          {filtrados.map((p) => (
+      {/* Cart Items List */}
+      <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 min-h-[140px]">
+        {carrito.length === 0 ? (
+          <div className="text-center py-12 px-4 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center mb-3">
+              <ShoppingCart size={24} className="opacity-50" />
+            </div>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Carrito de venta vacío</p>
+            <p className="text-xs mt-1 text-slate-500 max-w-[220px]">
+              Toca los productos del catálogo o escanea un código para añadirlos
+            </p>
+          </div>
+        ) : (
+          carrito.map((it) => (
             <div
-              key={p.id}
-              onClick={() => agregarAlCarrito(p)}
-              style={{
-                background: 'var(--surface)',
-                borderRadius: 14,
-                border: '1px solid var(--border)',
-                overflow: 'hidden',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-              className="hover:shadow-md hover:-translate-y-0.5"
+              key={it.producto.id}
+              className="group p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3 transition-colors"
             >
-              <div style={{ height: 110, background: 'var(--bg-alt)', position: 'relative' }}>
-                {p.imagenUrl || p.portadaUrl ? (
-                  <img
-                    src={p.imagenUrl || p.portadaUrl || ''}
-                    alt={p.nombre}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--text-muted)',
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {p.nombre.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: 6,
-                    right: 6,
-                    background: 'rgba(0,0,0,0.75)',
-                    color: 'white',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '2px 6px',
-                    borderRadius: 6,
-                  }}
-                >
-                  Stock: {p.stock ?? 0}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                  {it.producto.nombre}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    C$ {it.precioUnitario.toFixed(2)} c/u
+                  </span>
+                  <span className="text-xs font-bold text-primary font-mono">
+                    = C$ {it.subtotal.toFixed(2)}
+                  </span>
                 </div>
               </div>
 
-              <div style={{ padding: 10, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
-                  {p.nombre}
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#0066FF', marginTop: 6 }}>
-                  C$ {p.precio.toFixed(2)}
-                </div>
+              {/* Quantity Controls (Target >= 40px) */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => modificarCantidad(it.producto.id, -1)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-sm"
+                  aria-label={`Disminuir ${it.producto.nombre}`}
+                >
+                  <Minus size={14} />
+                </button>
+
+                <span className="w-8 text-center font-bold text-sm text-slate-900 dark:text-white font-mono">
+                  {it.cantidad}
+                </span>
+
+                <button
+                  onClick={() => modificarCantidad(it.producto.id, 1)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:border-primary active:scale-95 transition-all shadow-sm"
+                  aria-label={`Aumentar ${it.producto.nombre}`}
+                >
+                  <Plus size={14} />
+                </button>
+
+                <button
+                  onClick={() => eliminarDelCarrito(it.producto.id)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 ml-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center active:scale-95 transition-all"
+                  aria-label={`Eliminar ${it.producto.nombre}`}
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+          ))
+        )}
       </div>
 
-      {/* Columna Derecha: Carrito y Cobro POS */}
-      <div
-        style={{
-          background: 'var(--surface)',
-          borderRadius: 20,
-          border: '1px solid var(--border)',
-          padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          height: 'calc(100vh - 120px)',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-          <ShoppingCart size={20} style={{ color: '#0066FF' }} />
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-            Caja Registradora POS
-          </h3>
-        </div>
-
-        {/* Items List */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {carrito.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: 40, fontSize: 13 }}>
-              Haz clic en los productos para agregarlos a la venta
-            </div>
-          ) : (
-            carrito.map((it) => (
-              <div
-                key={it.producto.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: 'var(--bg-alt)',
-                  padding: 10,
-                  borderRadius: 12,
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                    {it.producto.nombre}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    C$ {it.precioUnitario.toFixed(2)} c/u
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button
-                    onClick={() => modificarCantidad(it.producto.id, -1)}
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 6,
-                      border: '1px solid var(--border)',
-                      background: 'var(--surface)',
-                      color: 'var(--text)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Minus size={12} />
-                  </button>
-
-                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', width: 20, textAlign: 'center' }}>
-                    {it.cantidad}
-                  </span>
-
-                  <button
-                    onClick={() => modificarCantidad(it.producto.id, 1)}
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 6,
-                      border: '1px solid var(--border)',
-                      background: 'var(--surface)',
-                      color: 'var(--text)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Plus size={12} />
-                  </button>
-
-                  <button
-                    onClick={() => eliminarDelCarrito(it.producto.id)}
-                    style={{
-                      border: 'none',
-                      background: 'transparent',
-                      color: '#FF453A',
-                      cursor: 'pointer',
-                      marginLeft: 4,
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Customer & Payment Form */}
-        <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* En celular se apilan: los inputs no bajan de su ancho intrínseco y desbordaban */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {/* Checkout Form & Controls */}
+      <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3 shrink-0">
+        {/* Customer info */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              Cliente
+            </label>
             <input
               type="text"
               placeholder="Nombre del Cliente"
               value={clienteNombre}
               onChange={(e) => setClienteNombre(e.target.value)}
-              style={{
-                width: '100%',
-                minWidth: 0,
-                height: 34,
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 8px',
-                fontSize: 12,
-                color: 'var(--text)',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="RUC / Cédula Cliente"
-              value={clienteRuc}
-              onChange={(e) => setClienteRuc(e.target.value)}
-              style={{
-                width: '100%',
-                minWidth: 0,
-                height: 34,
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 8px',
-                fontSize: 12,
-                color: 'var(--text)',
-              }}
+              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
+          <div>
+            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              RUC / Cédula (opcional)
+            </label>
+            <input
+              type="text"
+              placeholder="RUC / Cédula"
+              value={clienteRuc}
+              onChange={(e) => setClienteRuc(e.target.value)}
+              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+          </div>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* Payment Method & Received Amount */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              Método de Pago
+            </label>
             <select
               value={metodoPago}
               onChange={(e) => setMetodoPago(e.target.value as any)}
-              style={{
-                width: '100%',
-                minWidth: 0,
-                height: 34,
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 8px',
-                fontSize: 12,
-                color: 'var(--text)',
-              }}
+              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer font-medium"
             >
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta Débito/Crédito</option>
-              <option value="transferencia">Transferencia Bancaria</option>
-              <option value="fiado">Crédito / Fiado</option>
+              <option value="efectivo">💵 Efectivo</option>
+              <option value="tarjeta">💳 Tarjeta Débito/Crédito</option>
+              <option value="transferencia">🏦 Transferencia Bancaria</option>
+              <option value="fiado">📝 Crédito / Fiado</option>
             </select>
+          </div>
 
+          <div>
+            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              Efectivo Recibido (C$)
+            </label>
             <input
               type="number"
-              placeholder="Efectivo Recibido (C$)"
+              placeholder="C$ 0.00"
               value={montoRecibido}
               onChange={(e) => setMontoRecibido(e.target.value)}
-              style={{
-                width: '100%',
-                minWidth: 0,
-                height: 34,
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 8px',
-                fontSize: 12,
-                color: 'var(--text)',
-              }}
+              className="w-full h-10 min-h-[40px] px-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
+        </div>
 
-          {/* Totals */}
-          <div style={{ background: 'var(--bg-alt)', padding: 10, borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-muted)' }}>
-              <span>Subtotal:</span>
-              <span>C$ {subtotalSum.toFixed(2)}</span>
+        {/* Quick Cash Buttons (Only for Efectivo) */}
+        {metodoPago === 'efectivo' && totalSum > 0 && (
+          <div>
+            <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              Atajos de Cobro
             </div>
-            {metodoPago === 'efectivo' && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#34C759', fontWeight: 600 }}>
-                <span>Cambio a devolver:</span>
-                <span>C$ {cambio.toFixed(2)}</span>
-              </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCashAmount(totalSum)}
+                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-200 active:scale-95 transition-all"
+              >
+                Exacto
+              </button>
+              <button
+                type="button"
+                onClick={() => addCashAmount(50)}
+                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold active:scale-95 transition-all"
+              >
+                +C$50
+              </button>
+              <button
+                type="button"
+                onClick={() => addCashAmount(100)}
+                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold active:scale-95 transition-all"
+              >
+                +C$100
+              </button>
+              <button
+                type="button"
+                onClick={() => addCashAmount(500)}
+                className="px-2.5 py-1.5 min-h-[36px] rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold active:scale-95 transition-all"
+              >
+                +C$500
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Totals Breakdown */}
+        <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 space-y-1.5">
+          <div className="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
+            <span>Subtotal</span>
+            <span className="font-mono">C$ {subtotalSum.toFixed(2)}</span>
+          </div>
+
+          {descNum > 0 && (
+            <div className="flex justify-between items-center text-xs text-amber-600 dark:text-amber-400 font-semibold">
+              <span>Descuento aplicado</span>
+              <span className="font-mono">- C$ {descNum.toFixed(2)}</span>
+            </div>
+          )}
+
+          {metodoPago === 'efectivo' && (
+            <div className="flex justify-between items-center text-xs text-emerald-600 dark:text-emerald-400 font-bold pt-1 border-t border-slate-200/80 dark:border-slate-700">
+              <span>Cambio a devolver</span>
+              <span className="font-mono text-sm">C$ {cambio.toFixed(2)}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center text-base font-extrabold text-primary pt-1.5 border-t border-slate-200/80 dark:border-slate-700">
+            <span className="font-syne">TOTAL COBRAR</span>
+            <span className="font-mono text-lg tracking-tight">C$ {totalSum.toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          onClick={procesarVenta}
+          disabled={procesando || carrito.length === 0}
+          className="w-full h-12 min-h-[48px] rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+        >
+          {procesando ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span>Procesando Venta...</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 size={18} />
+              <span>Cobrar & Generar Factura</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] gap-5 items-start">
+      {/* ─── Columna Izquierda: Catálogo Visual POS ─── */}
+      <div className="flex flex-col gap-4 min-w-0">
+        
+        {/* Barra Superior: Buscador + Escáner + Devolución */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Input Buscador */}
+          <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+            <Search size={18} className="text-slate-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar producto o escanea SKU con lector..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-white text-sm placeholder:text-slate-400"
+            />
+            {busqueda && (
+              <button
+                onClick={() => setBusqueda('')}
+                className="w-6 h-6 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 flex items-center justify-center shrink-0"
+              >
+                <X size={14} />
+              </button>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 800, color: '#0066FF', marginTop: 4 }}>
-              <span>TOTAL COBRAR:</span>
-              <span>C$ {totalSum.toFixed(2)}</span>
+          </div>
+
+          {/* Botones de acción rápida en fila responsive */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={abrirEscaner}
+              title="Emparejar un celular como lector de códigos de barras"
+              className={`flex-1 sm:flex-initial h-11 min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95 border ${
+                lectorConectado
+                  ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <Camera size={16} className={lectorConectado ? 'text-emerald-500' : ''} />
+              <span>{lectorConectado ? 'Lector Activo' : 'Escáner Celular'}</span>
+            </button>
+
+            <button
+              onClick={() => setDevolucionAbierta(true)}
+              title="Devolver mercadería al inventario"
+              className="flex-1 sm:flex-initial h-11 min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-all active:scale-95"
+            >
+              <RotateCcw size={15} />
+              <span>Devolución</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Category Pills Slider */}
+        {categorias.length > 2 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            {categorias.map((cat) => {
+              const active = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCategoriaSeleccionada(cat)}
+                  className={`h-9 min-h-[36px] px-3.5 rounded-xl font-bold uppercase tracking-wider text-[11px] whitespace-nowrap transition-all active:scale-95 shrink-0 ${
+                    active
+                      ? 'bg-primary text-white shadow-sm shadow-primary/30'
+                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {cat === 'todos' ? 'Todos los Productos' : cat}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Product Grid */}
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-3">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div
+                key={n}
+                className="h-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : filtrados.length === 0 ? (
+          <div className="py-16 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl p-6">
+            <Package size={40} className="mx-auto mb-3 opacity-30 text-slate-500" />
+            <p className="text-base font-bold text-slate-800 dark:text-slate-200">
+              No se encontraron productos
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Prueba buscando con otro término o revisa la categoría seleccionada
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[calc(100vh-230px)] overflow-y-auto pr-1">
+            {filtrados.map((p) => {
+              const itemEnCarrito = carrito.find((it) => it.producto.id === p.id);
+              const enCarritoCant = itemEnCarrito?.cantidad || 0;
+              const sinStock = p.stock !== null && p.stock !== undefined && p.stock <= 0;
+              const bajoStock = p.stock !== null && p.stock !== undefined && p.stock > 0 && p.stock <= (p.stockMinimo ?? 5);
+
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => !sinStock && agregarAlCarrito(p)}
+                  className={`group relative flex flex-col rounded-2xl bg-white dark:bg-slate-900 border transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] ${
+                    sinStock
+                      ? 'opacity-60 grayscale cursor-not-allowed border-slate-200 dark:border-slate-800'
+                      : enCarritoCant > 0
+                      ? 'border-primary/60 ring-2 ring-primary/20 shadow-md shadow-primary/5'
+                      : 'border-slate-200/80 dark:border-slate-800 hover:border-primary/40 hover:shadow-md'
+                  }`}
+                >
+                  {/* Image container */}
+                  <div className="relative h-32 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    {p.imagenUrl || p.portadaUrl ? (
+                      <img
+                        src={p.imagenUrl || p.portadaUrl || ''}
+                        alt={p.nombre}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-bold text-slate-400 dark:text-slate-600 text-xl font-syne">
+                        {p.nombre.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+
+                    {/* Stock Pill Badge */}
+                    <div className="absolute bottom-2 right-2">
+                      {p.stock !== null && p.stock !== undefined ? (
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md font-mono ${
+                            sinStock
+                              ? 'bg-red-500 text-white'
+                              : bajoStock
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-black/70 text-white backdrop-blur-sm'
+                          }`}
+                        >
+                          Stock: {p.stock}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {/* Quantity in Cart Indicator */}
+                    {enCarritoCant > 0 && (
+                      <div className="absolute top-2 left-2 bg-primary text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full shadow-md animate-scale-up font-mono">
+                        {enCarritoCant} en caja
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Body Info */}
+                  <div className="p-3 flex-1 flex flex-col justify-between gap-2">
+                    <div>
+                      {p.categoriaNombre && (
+                        <p className="text-[10px] font-extrabold uppercase text-primary/80 tracking-wider mb-0.5 truncate">
+                          {p.categoriaNombre}
+                        </p>
+                      )}
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
+                        {p.nombre}
+                      </h4>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                      <span className="text-sm sm:text-base font-extrabold text-primary font-mono">
+                        C$ {p.precio.toFixed(2)}
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Plus size={14} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Columna Derecha Desktop: Carrito & Cobro POS ─── */}
+      <div className="hidden lg:block sticky top-20 h-[calc(100vh-100px)] p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        {renderCartContent(false)}
+      </div>
+
+      {/* ─── Mobile Floating Bar & Bottom Sheet Drawer ─── */}
+      {/* 1. Floating bottom pill for mobile screen */}
+      <div className="lg:hidden fixed bottom-20 left-3 right-3 z-30">
+        <button
+          onClick={() => setMobileCartOpen(true)}
+          className="w-full h-14 min-h-[52px] px-4 rounded-2xl bg-slate-900 dark:bg-blue-600 text-white shadow-xl shadow-black/20 flex items-center justify-between active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+              <ShoppingCart size={18} />
+              {totalItemsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold flex items-center justify-center font-mono ring-2 ring-slate-900 dark:ring-blue-600">
+                  {totalItemsCount}
+                </span>
+              )}
+            </div>
+            <div className="text-left">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                {carrito.length === 0 ? 'Caja Registradora' : `${totalItemsCount} ítems listos`}
+              </div>
+              <div className="text-base font-extrabold font-mono text-white">
+                C$ {totalSum.toFixed(2)}
+              </div>
             </div>
           </div>
 
-          <button
-            onClick={procesarVenta}
-            disabled={procesando || carrito.length === 0}
-            style={{
-              height: 44,
-              borderRadius: 12,
-              border: 'none',
-              background: '#0066FF',
-              color: 'white',
-              fontSize: 15,
-              fontWeight: 800,
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(0,102,255,0.4)',
-            }}
-          >
-            {procesando ? 'Procesando Venta...' : 'Cobrar & Generar Factura'}
-          </button>
-        </div>
+          <div className="flex items-center gap-1.5 text-xs font-bold bg-white/15 px-3 py-1.5 rounded-xl">
+            <span>{carrito.length === 0 ? 'Ver Caja' : 'Cobrar'}</span>
+            <ChevronUp size={16} />
+          </div>
+        </button>
       </div>
 
-      {/* Modal Factura / Imprimir Ticket */}
+      {/* 2. Bottom Sheet Drawer on Mobile */}
+      {mobileCartOpen && (
+        <div
+          onClick={() => setMobileCartOpen(false)}
+          className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end transition-opacity"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-h-[85vh] bg-white dark:bg-slate-900 rounded-t-3xl p-4 sm:p-5 flex flex-col border-t border-slate-200 dark:border-slate-800 shadow-2xl animate-slide-up"
+          >
+            {/* Grab handle indicator */}
+            <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mb-3" />
+            {renderCartContent(true)}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Modal Devolución de Mercadería ─── */}
       <TiendaDevolucion
         abierto={devolucionAbierta}
         onCerrar={() => setDevolucionAbierta(false)}
@@ -728,112 +874,91 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         onDevuelto={cargarProductos}
       />
 
-      {/* Escáner inalámbrico: la tablet espera al celular del operador */}
+      {/* ─── Modal Escáner Inalámbrico (PIN Celular) ─── */}
       {escanerAbierto && (
         <div
           onClick={cerrarEscaner}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,.55)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-            zIndex: 60,
-          }}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: 460,
-              background: 'var(--surface)',
-              borderRadius: 18,
-              border: '1px solid var(--border)',
-              padding: 20,
-              maxHeight: '90vh',
-              overflowY: 'auto',
-            }}
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-up"
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Camera size={18} /> Escáner inalámbrico
-              </h3>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Camera size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white font-syne">
+                    Escáner Inalámbrico
+                  </h3>
+                  <p className="text-xs text-slate-500">Usa tu celular como lector de barras</p>
+                </div>
+              </div>
+
               <span
-                style={{
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  padding: '4px 10px',
-                  borderRadius: 999,
-                  background: lectorConectado ? 'rgba(34,197,94,.15)' : 'rgba(148,163,184,.15)',
-                  color: lectorConectado ? '#22C55E' : 'var(--text-muted)',
-                }}
+                className={`text-[11px] font-extrabold px-3 py-1 rounded-full ${
+                  lectorConectado
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}
               >
-                {lectorConectado ? 'LECTOR CONECTADO' : 'ESPERANDO LECTOR…'}
+                {lectorConectado ? 'CONECTADO' : 'ESPERANDO...'}
               </span>
             </div>
 
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '10px 0 0', lineHeight: 1.5 }}>
-              En el celular abre <b>{origenWeb}/escaner</b> y teclea este PIN:
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
+              En tu celular abre la URL <b>{origenWeb}/escaner</b> e ingresa el siguiente PIN de sesión:
             </p>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-              <div
-                style={{
-                  flex: 1,
-                  textAlign: 'center',
-                  fontSize: 38,
-                  fontWeight: 800,
-                  letterSpacing: 10,
-                  fontFamily: 'ui-monospace, monospace',
-                  padding: '10px 0',
-                  borderRadius: 14,
-                  background: 'var(--bg-alt)',
-                  border: '1px solid var(--border)',
-                }}
-              >
+            {/* PIN Display */}
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 text-center text-4xl sm:text-5xl font-extrabold tracking-widest font-mono py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                 {escanerPin}
               </div>
-              <Wifi size={22} style={{ color: lectorConectado ? '#22C55E' : 'var(--text-muted)' }} />
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                <Wifi size={24} className={lectorConectado ? 'text-emerald-500 animate-pulse' : ''} />
+              </div>
             </div>
 
             {origenWeb.includes('localhost') || origenWeb.includes('127.0.0.1') ? (
-              <p style={{ fontSize: 12, color: '#F59E0B', margin: '10px 0 0' }}>
-                El celular no puede abrir <b>localhost</b>: usa la IP de esta PC en la red (ej. http://192.168.1.10:3000/escaner).
-              </p>
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
+                ⚠️ El celular no puede abrir <b>localhost</b>. Accede usando la IP de tu PC en la red WiFi local (ej. http://192.168.1.10:3000/escaner).
+              </div>
             ) : null}
 
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>ÚLTIMAS LECTURAS</div>
+            {/* Últimos Escaneos */}
+            <div className="mt-5">
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                Últimas Lecturas
+              </div>
               {ultimosEscaneos.length === 0 ? (
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Sin lecturas todavía.</div>
+                <div className="text-xs text-slate-400 italic py-2">
+                  No hay lecturas registradas en esta sesión.
+                </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div className="space-y-1.5">
                   {ultimosEscaneos.map((e, i) => (
                     <div
                       key={`${e.codigo}-${i}`}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '8px 10px',
-                        borderRadius: 10,
-                        background: 'var(--bg-alt)',
-                        border: '1px solid var(--border)',
-                      }}
+                      className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-xs"
                     >
-                      <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 13, fontWeight: 700 }}>{e.codigo}</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        {e.codigo}
+                      </span>
                       <span
-                        style={{
-                          flex: 1,
-                          fontSize: 12,
-                          color: e.estado === 'ok' ? '#22C55E' : e.estado === 'ambiguo' ? '#F59E0B' : '#EF4444',
-                        }}
+                        className={`flex-1 truncate font-medium ${
+                          e.estado === 'ok'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : e.estado === 'ambiguo'
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-red-500'
+                        }`}
                       >
                         {e.detalle}
                       </span>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{e.hora}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{e.hora}</span>
                     </div>
                   ))}
                 </div>
@@ -842,134 +967,88 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
             <button
               onClick={cerrarEscaner}
-              style={{
-                width: '100%',
-                marginTop: 16,
-                height: 42,
-                borderRadius: 12,
-                border: '1px solid var(--border)',
-                background: 'transparent',
-                color: 'var(--text)',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              className="w-full mt-5 h-11 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
             >
-              Cerrar sesión de escaneo
+              Cerrar Sesión de Escaneo
             </button>
           </div>
         </div>
       )}
 
+      {/* ─── Modal Factura / Comprobante Térmico POS ─── */}
       {facturaEmitida && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            background: 'rgba(0,0,0,0.65)',
-            backdropFilter: 'blur(6px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-          }}
-        >
-          <div
-            style={{
-              background: '#FFFFFF',
-              color: '#000000',
-              width: 380,
-              maxWidth: '100%',
-              borderRadius: 16,
-              padding: 24,
-              fontFamily: "'Courier New', Courier, monospace",
-              fontSize: 12,
-              boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-            }}
-            className="printable-ticket"
-          >
-            <div style={{ textAlign: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 16, fontWeight: 'bold' }}>{facturaEmitida.tiendaNombre}</div>
-              <div>{facturaEmitida.razonSocial}</div>
-              <div>RUC: {facturaEmitida.tiendaRuc}</div>
-              <div>DGI: {facturaEmitida.regimenDgi}</div>
-              <div>{facturaEmitida.direccion}</div>
-              {facturaEmitida.telefono && <div>Tel: {facturaEmitida.telefono}</div>}
-              <div style={{ borderBottom: '1px dashed #000', margin: '8px 0' }} />
-              <div>COMPROBANTE POS #{facturaEmitida.numeroComprobante}</div>
-              <div>{facturaEmitida.fecha} - {facturaEmitida.hora}</div>
-              <div>Cliente: {facturaEmitida.clienteNombre}</div>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white text-black rounded-3xl p-6 shadow-2xl border border-slate-200 font-mono text-xs printable-ticket animate-scale-up">
+            <div className="text-center pb-3 border-b border-dashed border-black/40 space-y-0.5">
+              <div className="text-base font-black tracking-tight">{facturaEmitida.tiendaNombre}</div>
+              <div className="text-[11px] text-slate-600">{facturaEmitida.razonSocial}</div>
+              <div className="text-[11px] text-slate-600">RUC: {facturaEmitida.tiendaRuc}</div>
+              <div className="text-[11px] text-slate-600">DGI: {facturaEmitida.regimenDgi}</div>
+              <div className="text-[11px] text-slate-600">{facturaEmitida.direccion}</div>
+              {facturaEmitida.telefono && (
+                <div className="text-[11px] text-slate-600">Tel: {facturaEmitida.telefono}</div>
+              )}
+              <div className="pt-2 text-[11px] font-bold">
+                COMPROBANTE #{facturaEmitida.numeroComprobante}
+              </div>
+              <div className="text-[10px] text-slate-500">
+                {facturaEmitida.fecha} · {facturaEmitida.hora}
+              </div>
+              <div className="text-[11px] font-medium pt-1">
+                Cliente: {facturaEmitida.clienteNombre}
+              </div>
             </div>
 
-            <div style={{ borderBottom: '1px dashed #000', margin: '8px 0' }} />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Items table */}
+            <div className="py-3 border-b border-dashed border-black/40 space-y-1.5">
               {facturaEmitida.items.map((it, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{it.cantidad}x {it.nombreProducto}</span>
-                  <span>C${it.subtotal.toFixed(2)}</span>
+                <div key={idx} className="flex justify-between items-center text-xs">
+                  <span className="truncate pr-2">
+                    {it.cantidad}x {it.nombreProducto}
+                  </span>
+                  <span className="font-bold shrink-0">C${it.subtotal.toFixed(2)}</span>
                 </div>
               ))}
             </div>
 
-            <div style={{ borderBottom: '1px dashed #000', margin: '8px 0' }} />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-              <span>TOTAL:</span>
-              <span>C$ {facturaEmitida.total.toFixed(2)}</span>
+            {/* Financial summary */}
+            <div className="py-3 border-b border-dashed border-black/40 space-y-1 text-xs">
+              <div className="flex justify-between font-black text-sm">
+                <span>TOTAL:</span>
+                <span>C$ {facturaEmitida.total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Pago ({facturaEmitida.metodoPago}):</span>
+                <span>C$ {facturaEmitida.montoRecibido.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Cambio:</span>
+                <span>C$ {facturaEmitida.cambioDado.toFixed(2)}</span>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Pago ({facturaEmitida.metodoPago}):</span>
-              <span>C$ {facturaEmitida.montoRecibido.toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Cambio:</span>
-              <span>C$ {facturaEmitida.cambioDado.toFixed(2)}</span>
-            </div>
 
-            <div style={{ borderBottom: '1px dashed #000', margin: '8px 0' }} />
-
-            <div style={{ textAlign: 'center', fontSize: 10, marginTop: 8 }}>
+            {/* Footer message */}
+            <div className="text-center pt-3 space-y-1 text-[10px] text-slate-600">
               <div>{facturaEmitida.saludoFactura}</div>
-              <div style={{ marginTop: 4 }}>{facturaEmitida.piePaginaFactura}</div>
-              <div style={{ marginTop: 8, fontWeight: 'bold' }}>
+              <div>{facturaEmitida.piePaginaFactura}</div>
+              <div className="font-bold text-black pt-1">
                 *** {facturaEmitida.pieMarcaLogifast} ***
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }} className="no-print">
+            {/* Action Buttons (Excluded from print) */}
+            <div className="flex gap-2 mt-5 no-print">
               <button
                 onClick={imprimirFactura}
-                style={{
-                  flex: 1,
-                  height: 38,
-                  borderRadius: 8,
-                  background: '#000000',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                }}
+                className="flex-1 h-11 min-h-[44px] rounded-xl bg-black hover:bg-slate-800 text-white font-bold flex items-center justify-center gap-2 active:scale-95 transition-all text-xs"
               >
-                <Printer size={14} /> Imprimir Ticket
+                <Printer size={15} />
+                <span>Imprimir Ticket</span>
               </button>
 
               <button
                 onClick={() => setFacturaEmitida(null)}
-                style={{
-                  height: 38,
-                  padding: '0 16px',
-                  borderRadius: 8,
-                  background: '#E5E5EA',
-                  color: '#000000',
-                  border: 'none',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                }}
+                className="h-11 min-h-[44px] px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-black font-bold active:scale-95 transition-all text-xs"
               >
                 Cerrar
               </button>

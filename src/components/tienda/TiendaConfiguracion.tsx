@@ -1,7 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, Save, MapPin, Store, Image as ImageIcon, Phone, Clock, DollarSign, Truck } from '@/components/icons';
+import {
+  Settings,
+  Save,
+  MapPin,
+  Store,
+  Image as ImageIcon,
+  Phone,
+  Clock,
+  DollarSign,
+  Truck,
+  Sparkles,
+} from '@/components/icons';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import { notify } from '@/lib/notify';
 import { TiendaCupones } from './TiendaCupones';
@@ -97,7 +108,7 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
       notify.error('Geolocalización no soportada en este navegador');
       return;
     }
-    notify.info('Obteniendo ubicación GPS...');
+    notify.info('Obteniendo coordenadas GPS de alta precisión...');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLat(pos.coords.latitude);
@@ -161,411 +172,303 @@ export function TiendaConfiguracion({ isDark }: { isDark: boolean }) {
   };
 
   return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        borderRadius: 20,
-        border: '1px solid var(--border)',
-        padding: 24,
-        boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
-        maxWidth: 920,
-        margin: '0 auto',
-      }}
-    >
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-          Configuración del Local Comercial & Horarios
-        </h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-          Personaliza la fachada, logotipo, banner, tarifas de envío y horarios semanales en LogiFast.
-        </p>
-      </div>
-
-      <form onSubmit={guardarConfiguracion} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {/* Banner Cover Image & Logo Uploaders */}
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-              Foto de Portada / Banner del Local
-            </label>
-            <ImageUploader
-              categoria="tienda_banners"
-              onUploaded={(url) => setBannerUrl(url)}
-              label="Subir Banner de Portada"
-              aspectRatio="wide"
-              previewUrl={bannerUrl || null}
-              className="w-full h-36"
-            />
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* ─── Tarjeta Principal de Configuración ─── */}
+      <div className="p-5 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
+        <div>
+          <div className="flex items-center gap-2 text-primary mb-1">
+            <Settings size={20} />
+            <span className="text-xs font-bold uppercase tracking-wider">Ajustes Generales</span>
           </div>
-
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-              Logotipo del Comercio
-            </label>
-            <ImageUploader
-              categoria="tienda_logos"
-              onUploaded={(url) => setImagenUrl(url)}
-              label="Subir Logotipo"
-              aspectRatio="square"
-              rounded="md"
-              previewUrl={imagenUrl || null}
-              className="w-full h-36"
-            />
-          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white font-syne">
+            Configuración del Local Comercial & Horarios
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Personaliza el nombre, fachada, banner, tarifas de envío y horarios semanales en LogiFast
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <form onSubmit={guardarConfiguracion} className="space-y-5">
+          {/* Banner & Logo Uploaders */}
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
+                Foto de Portada / Banner del Local
+              </label>
+              <ImageUploader
+                categoria="tienda_banners"
+                onUploaded={(url) => setBannerUrl(url)}
+                label="Subir Banner de Portada"
+                aspectRatio="wide"
+                previewUrl={bannerUrl || null}
+                className="w-full h-36 rounded-xl"
+              />
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
+                Logotipo del Comercio
+              </label>
+              <ImageUploader
+                categoria="tienda_logos"
+                onUploaded={(url) => setImagenUrl(url)}
+                label="Subir Logotipo"
+                aspectRatio="square"
+                rounded="md"
+                previewUrl={imagenUrl || null}
+                className="w-full h-36 rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* Nombre & Categoría */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Nombre Comercial *
+              </label>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Ej: Sabor Nica Restaurant"
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Categoría de Comercio
+              </label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer font-medium"
+              >
+                <option value="comida">🍔 Comida rápida / Restaurante</option>
+                <option value="tienda">🏪 Tienda / Abarrotes</option>
+                <option value="farmacia">💊 Farmacia</option>
+                <option value="regalos">🎁 Regalos / Flores</option>
+                <option value="supermercado">🛒 Supermercado</option>
+                <option value="tecnologia">📱 Tecnología</option>
+                <option value="deportes">⚽ Deportes</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Dirección */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Nombre Comercial *</label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Dirección Física Exacta *
+            </label>
             <input
               type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Ej: Sabor Nica Restaurant"
-              style={{
-                width: '100%',
-                height: 40,
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 12px',
-                color: 'var(--text)',
-                fontSize: 13,
-                marginTop: 4,
-              }}
+              value={direccion}
+              onChange={(e) => setDireccion(e.target.value)}
+              placeholder="Ej: De la Rotonda El Guegüense 2c abajo, Managua"
+              className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               required
             />
           </div>
 
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Categoría de Comercio</label>
-            <select
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-              style={{
-                width: '100%',
-                height: 40,
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 12px',
-                color: 'var(--text)',
-                fontSize: 13,
-                marginTop: 4,
-              }}
-            >
-              <option value="comida">Comida rápida / Restaurante</option>
-              <option value="tienda">Tienda / Abarrotes</option>
-              <option value="farmacia">Farmacia</option>
-              <option value="regalos">Regalos / Flores</option>
-              <option value="supermercado">Supermercado</option>
-              <option value="tecnologia">Tecnología</option>
-              <option value="deportes">Deportes</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Dirección Física Exacta *</label>
-          <input
-            type="text"
-            value={direccion}
-            onChange={(e) => setDireccion(e.target.value)}
-            placeholder="Ej: De la Rotonda El Guegüense 2c abajo, Managua"
-            style={{
-              width: '100%',
-              height: 40,
-              borderRadius: 10,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-alt)',
-              padding: '0 12px',
-              color: 'var(--text)',
-              fontSize: 13,
-              marginTop: 4,
-            }}
-            required
-          />
-        </div>
-
-        {/* Tarifas de Envío y Pedido Mínimo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Costo de Envío Base (C$)</label>
-            <input
-              type="number"
-              value={costoEnvio}
-              onChange={(e) => setCostoEnvio(e.target.value)}
-              placeholder="20"
-              style={{
-                width: '100%',
-                height: 40,
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 12px',
-                color: 'var(--text)',
-                fontSize: 13,
-                marginTop: 4,
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Pedido Mínimo (C$)</label>
-            <input
-              type="number"
-              value={pedidoMinimo}
-              onChange={(e) => setPedidoMinimo(e.target.value)}
-              placeholder="50"
-              style={{
-                width: '100%',
-                height: 40,
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 12px',
-                color: 'var(--text)',
-                fontSize: 13,
-                marginTop: 4,
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Teléfono / WhatsApp</label>
-            <input
-              type="text"
-              value={telefono || whatsapp}
-              onChange={(e) => {
-                setTelefono(e.target.value);
-                setWhatsapp(e.target.value);
-              }}
-              placeholder="8888-8888"
-              style={{
-                width: '100%',
-                height: 40,
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-alt)',
-                padding: '0 12px',
-                color: 'var(--text)',
-                fontSize: 13,
-                marginTop: 4,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Horarios de Atención Semanales */}
-        <div style={{ background: 'var(--bg-alt)', padding: 16, borderRadius: 14, border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-            <Clock size={16} color="#0066FF" />
-            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>
-              Horarios de Apertura y Cierre Semanal
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {DIAS.map(({ key, label }) => {
-              const item = horarioSemanal[key] || { abre: '08:00', cierra: '20:00', cerrado: false };
-              return (
-                <div
-                  key={key}
-                  className="grid grid-cols-2 md:grid-cols-[120px_1fr_1fr_90px] gap-3"
-                  style={{
-                    alignItems: 'center',
-                    background: 'var(--surface)',
-                    padding: '8px 12px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{label}</span>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Abre:</span>
-                    <input
-                      type="time"
-                      value={item.abre}
-                      disabled={item.cerrado}
-                      onChange={(e) => updateDaySchedule(key, 'abre', e.target.value)}
-                      style={{
-                        height: 32,
-                        borderRadius: 6,
-                        border: '1px solid var(--border)',
-                        background: item.cerrado ? 'var(--bg-alt)' : 'var(--surface)',
-                        color: 'var(--text)',
-                        padding: '0 6px',
-                        fontSize: 12,
-                        width: '100%',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Cierra:</span>
-                    <input
-                      type="time"
-                      value={item.cierra}
-                      disabled={item.cerrado}
-                      onChange={(e) => updateDaySchedule(key, 'cierra', e.target.value)}
-                      style={{
-                        height: 32,
-                        borderRadius: 6,
-                        border: '1px solid var(--border)',
-                        background: item.cerrado ? 'var(--bg-alt)' : 'var(--surface)',
-                        color: 'var(--text)',
-                        padding: '0 6px',
-                        fontSize: 12,
-                        width: '100%',
-                      }}
-                    />
-                  </div>
-
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)' }}>
-                    <input
-                      type="checkbox"
-                      checked={!!item.cerrado}
-                      onChange={(e) => updateDaySchedule(key, 'cerrado', e.target.checked)}
-                    />
-                    <span>Cerrado</span>
-                  </label>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Coordenadas GPS */}
-        <div style={{ background: 'var(--bg-alt)', padding: 14, borderRadius: 12, border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <MapPin size={16} color="#0066FF" />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
-                Ubicación GPS Exacta en Mapa (Geolocalización) *
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={detectarGPS}
-              style={{
-                padding: '6px 12px',
-                minHeight: 44,
-                borderRadius: 8,
-                border: 'none',
-                background: '#0066FF',
-                color: '#ffffff',
-                fontSize: 11,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              Detectar Mi GPS
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Tarifas de Envío, Pedido Mínimo y Contacto */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>Latitud (GPS)</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Costo de Envío Base (C$)
+              </label>
               <input
                 type="number"
-                step="any"
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                placeholder="12.1365"
-                style={{
-                  width: '100%',
-                  height: 38,
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                  padding: '0 10px',
-                  color: 'var(--text)',
-                  fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  marginTop: 2,
-                }}
-                required
+                value={costoEnvio}
+                onChange={(e) => setCostoEnvio(e.target.value)}
+                placeholder="20"
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
+
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>Longitud (GPS)</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Pedido Mínimo (C$)
+              </label>
               <input
                 type="number"
-                step="any"
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-                placeholder="-86.2514"
-                style={{
-                  width: '100%',
-                  height: 38,
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                  padding: '0 10px',
-                  color: 'var(--text)',
-                  fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  marginTop: 2,
+                value={pedidoMinimo}
+                onChange={(e) => setPedidoMinimo(e.target.value)}
+                placeholder="50"
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                Teléfono / WhatsApp
+              </label>
+              <input
+                type="text"
+                value={telefono || whatsapp}
+                onChange={(e) => {
+                  setTelefono(e.target.value);
+                  setWhatsapp(e.target.value);
                 }}
-                required
+                placeholder="8888-8888"
+                className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
           </div>
-        </div>
 
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Descripción Corta del Local</label>
-          <textarea
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Describe la especialidad de tu tienda para tus clientes..."
-            rows={3}
-            style={{
-              width: '100%',
-              borderRadius: 10,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-alt)',
-              padding: 10,
-              color: 'var(--text)',
-              fontSize: 13,
-              marginTop: 4,
-            }}
-          />
-        </div>
+          {/* Horarios Semanales */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-3">
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="text-primary" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                Horarios de Atención Semanal
+              </h3>
+            </div>
 
-        <button
-          type="submit"
-          disabled={guardando}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            height: 44,
-            borderRadius: 12,
-            border: 'none',
-            background: '#0066FF',
-            color: 'white',
-            fontSize: 14,
-            fontWeight: 800,
-            cursor: 'pointer',
-            marginTop: 8,
-            boxShadow: '0 4px 14px rgba(0,102,255,0.3)',
-          }}
-        >
-          <Save size={16} />
-          <span>{guardando ? 'Guardando Ajustes...' : 'Guardar Configuración de Tienda'}</span>
-        </button>
-      </form>
+            <div className="space-y-2">
+              {DIAS.map(({ key, label }) => {
+                const item = horarioSemanal[key] || { abre: '08:00', cierra: '20:00', cerrado: false };
+                return (
+                  <div
+                    key={key}
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                  >
+                    <span className="font-bold text-slate-900 dark:text-white w-24 shrink-0">
+                      {label}
+                    </span>
 
-      {/* #6 — Cupones propios de la tienda: solo aplican a sus productos */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                        <span className="text-[11px] text-slate-500 shrink-0">Abre:</span>
+                        <input
+                          type="time"
+                          value={item.abre}
+                          disabled={item.cerrado}
+                          onChange={(e) => updateDaySchedule(key, 'abre', e.target.value)}
+                          className="w-full h-9 min-h-[36px] px-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs disabled:opacity-50"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                        <span className="text-[11px] text-slate-500 shrink-0">Cierra:</span>
+                        <input
+                          type="time"
+                          value={item.cierra}
+                          disabled={item.cerrado}
+                          onChange={(e) => updateDaySchedule(key, 'cierra', e.target.value)}
+                          className="w-full h-9 min-h-[36px] px-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs disabled:opacity-50"
+                        />
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={!!item.cerrado}
+                        onChange={(e) => updateDaySchedule(key, 'cerrado', e.target.checked)}
+                        className="w-4 h-4 rounded text-primary focus:ring-primary"
+                      />
+                      <span>Cerrado</span>
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Coordenadas GPS */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <MapPin size={16} className="text-primary" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Ubicación GPS en Mapa *
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={detectarGPS}
+                className="h-9 min-h-[36px] px-3.5 rounded-xl bg-primary text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm self-start sm:self-auto"
+              >
+                <MapPin size={13} />
+                <span>Capturar mi GPS Actual</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                  Latitud (GPS)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  placeholder="12.1365"
+                  className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                  Longitud (GPS)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  placeholder="-86.2514"
+                  className="w-full h-10 min-h-[40px] px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Descripción Corta */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Descripción Comercial del Local
+            </label>
+            <textarea
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              placeholder="Describe los productos y especialidades de tu negocio para los clientes en Marketplace..."
+              rows={3}
+              className="w-full p-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={guardando}
+            className="w-full h-12 min-h-[48px] rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+          >
+            {guardando ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Guardando Ajustes...</span>
+              </>
+            ) : (
+              <>
+                <Save size={16} />
+                <span>Guardar Configuración de Tienda</span>
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+
+      {/* Cupones propios de la tienda */}
       <TiendaCupones />
 
-      {/* #7/#10 equipo con roles, #9 alianzas y #8 publicidad contratada */}
+      {/* Equipo con roles, alianzas y publicidad contratada */}
       <TiendaComercial />
     </div>
   );

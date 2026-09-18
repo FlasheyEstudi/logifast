@@ -58,258 +58,147 @@ export function TiendaNavbar({
     { id: 'kardex', label: 'Kardex', shortLabel: 'Kardex', icon: <SlidersHorizontal size={18} /> },
     { id: 'facturacion', label: 'Facturación', shortLabel: 'DGI', icon: <FileText size={18} /> },
     { id: 'reportes', label: 'Reportes', shortLabel: 'Excel', icon: <BarChart3 size={18} /> },
-    { id: 'estadisticas', label: 'Estadísticas', shortLabel: 'Gráficas', icon: <TrendingUp size={18} /> },
+    { id: 'estadisticas', label: 'Estadísticas', shortLabel: 'Métricas', icon: <TrendingUp size={18} /> },
     { id: 'configuracion', label: 'Perfil', shortLabel: 'Perfil', icon: <Settings size={18} /> },
   ];
 
   const handleExitAction = onReturnToClient || onLogout;
+  const isAbierta = tiendaEstado === 'activo';
 
   return (
     <>
-      {/* ─── CÁPSULA FLOTANTE IZQUIERDA FIJA EN LA PARTE MÁS ALTA (Identidad Comercio) ─── */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 12,
-          left: 16,
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '6px 14px 6px 8px',
-          borderRadius: 9999,
-          background: isDark ? 'rgba(15, 17, 26, 0.92)' : 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.12)',
-          boxShadow: isDark
-            ? '0 12px 30px rgba(0, 0, 0, 0.45)'
-            : '0 8px 24px rgba(0, 0, 0, 0.08)',
-          maxWidth: 'calc(60vw - 20px)',
-          transition: 'all 0.3s ease',
-        }}
-      >
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 9999,
-            overflow: 'hidden',
-            background: 'linear-gradient(135deg, #0066FF, #00C853)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            flexShrink: 0,
-            boxShadow: '0 4px 12px rgba(0, 102, 255, 0.35)',
-            border: isDark ? '2px solid rgba(255, 255, 255, 0.2)' : '2px solid rgba(255, 255, 255, 0.9)',
-          }}
-        >
-          {tiendaImagenUrl ? (
-            <img
-              src={tiendaImagenUrl}
-              alt={tiendaNombre}
-              crossOrigin="anonymous"
-              referrerPolicy="no-referrer"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <Store size={18} />
-          )}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 800,
-              lineHeight: 1.1,
-              color: isDark ? '#FFFFFF' : '#0F172A',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {tiendaNombre || 'Mi Tienda'}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: '#0066FF',
-                textTransform: 'capitalize',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tiendaCategoria}
-            </span>
-            <span
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                padding: '1px 5px',
-                borderRadius: 9999,
-                background: tiendaEstado === 'activo' ? 'rgba(52, 199, 89, 0.18)' : 'rgba(255, 149, 0, 0.18)',
-                color: tiendaEstado === 'activo' ? '#34C759' : '#FF9500',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tiendaEstado === 'activo' ? 'Abierta' : 'Pausada'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── CÁPSULAS FLOTANTES DERECHAS FIJAS EN LA PARTE MÁS ALTA (Acciones Independientes) ─── */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 12,
-          right: 16,
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        {/* Cápsula Modo Día / Noche */}
-        <button
-          onClick={toggleTheme}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '0 14px',
-            height: 44,
-            borderRadius: 9999,
-            border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.12)',
-            background: isDark ? 'rgba(15, 17, 26, 0.92)' : 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            color: isDark ? '#FFFFFF' : '#0F172A',
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: isDark
-              ? '0 10px 25px rgba(0, 0, 0, 0.4)'
-              : '0 6px 20px rgba(0, 0, 0, 0.08)',
-            transition: 'all 0.2s ease',
-          }}
-          title={isDark ? 'Cambiar a Modo Día' : 'Cambiar a Modo Noche'}
-        >
-          {isDark ? <Sun size={15} style={{ color: '#FFCC00' }} /> : <Moon size={15} style={{ color: '#0066FF' }} />}
-          <span className="hidden sm:inline">{isDark ? 'Modo Día' : 'Modo Noche'}</span>
-        </button>
-
-        {/* Cápsula Única Salir a Cliente / Salir */}
-        <button
-          onClick={handleExitAction}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '0 14px',
-            height: 44,
-            borderRadius: 9999,
-            border: '1px solid rgba(255, 69, 58, 0.35)',
-            background: isDark ? 'rgba(255, 69, 58, 0.18)' : 'rgba(255, 69, 58, 0.12)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            color: '#FF453A',
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: '0 6px 20px rgba(255, 69, 58, 0.15)',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <LogOut size={14} />
-          <span className="hidden sm:inline">{onReturnToClient ? 'Salir a Cliente' : 'Salir'}</span>
-        </button>
-      </div>
-
-      {/* ─── DOCK FLOTANTE INFERIOR DE NAVEGACIÓN DEDICADO ─── */}
-      <nav
-        style={{
-          position: 'fixed',
-          bottom: 14,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          width: '96%',
-          maxWidth: 680,
-          height: 62,
-          borderRadius: 9999,
-          background: isDark ? 'rgba(15, 17, 26, 0.94)' : 'rgba(255, 255, 255, 0.96)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.12)',
-          boxShadow: isDark
-            ? '0 20px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(0, 102, 255, 0.2)'
-            : '0 14px 32px rgba(0, 0, 0, 0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-around',
-          padding: '0 6px',
-          overflow: 'hidden',
-          transition: 'all 0.3s ease',
-        }}
-      >
-        {modulos.map((m) => {
-          const active = moduloActivo === m.id;
-          return (
-            <button
-              key={m.id}
-              onClick={() => onSelectModulo(m.id)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2,
-                flex: 1,
-                minWidth: 0,
-                border: 'none',
-                background: 'transparent',
-                color: active ? '#0066FF' : isDark ? 'rgba(255, 255, 255, 0.5)' : '#64748B',
-                cursor: 'pointer',
-                padding: '4px 2px',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <div
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 9999,
-                  background: active
-                    ? isDark
-                      ? 'rgba(0, 102, 255, 0.25)'
-                      : 'rgba(0, 102, 255, 0.12)'
-                    : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {m.icon}
-              </div>
+      {/* ─── HEADER SUPERIOR INTEGRADO PRO (DESKTOP & MOBILE) ─── */}
+      <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-white/90 dark:bg-[#0d121c]/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
+        <div className="w-full max-w-[1440px] h-full mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4">
+          
+          {/* Identidad del Comercio (Izquierda) */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative shrink-0 w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-bold text-sm shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+              {tiendaImagenUrl ? (
+                <img
+                  src={tiendaImagenUrl}
+                  alt={tiendaNombre}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Store size={20} />
+              )}
+              {/* Badge de estado en el avatar */}
               <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: active ? 800 : 500,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                }}
-              >
-                {m.shortLabel}
+                className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-white dark:ring-[#0d121c] ${
+                  isAbierta ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+                title={isAbierta ? 'Tienda Abierta' : 'Tienda Pausada'}
+              />
+            </div>
+
+            <div className="min-w-0 flex flex-col justify-center">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate tracking-tight font-syne">
+                  {tiendaNombre || 'Mi Tienda'}
+                </h1>
+                <span
+                  className={`hidden sm:inline-flex text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                    isAbierta
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                  }`}
+                >
+                  {isAbierta ? 'Abierta' : 'Pausada'}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 capitalize truncate -mt-0.5">
+                Panel Comercial · {tiendaCategoria}
               </span>
+            </div>
+          </div>
+
+          {/* Navegación por Módulos en Desktop & Tablet (Centro) */}
+          <nav className="hidden lg:flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+            {modulos.map((m) => {
+              const active = moduloActivo === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onSelectModulo(m.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                    active
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <span className={active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}>
+                    {m.icon}
+                  </span>
+                  <span>{m.shortLabel}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Acciones Rápidas (Derecha) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Toggle Día / Noche */}
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/80 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-800/60 transition-all cursor-pointer"
+              title={isDark ? 'Modo Día' : 'Modo Noche'}
+              aria-label="Cambiar tema"
+            >
+              {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-blue-600" />}
             </button>
-          );
-        })}
-      </nav>
+
+            {/* Salir / Volver a Cliente */}
+            <button
+              onClick={handleExitAction}
+              className="h-10 sm:h-11 px-3 sm:px-4 rounded-xl flex items-center gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs sm:text-sm font-bold transition-all cursor-pointer"
+              title={onReturnToClient ? 'Volver a vista Cliente' : 'Cerrar sesión'}
+            >
+              <LogOut size={15} />
+              <span className="hidden sm:inline">{onReturnToClient ? 'Salir a Cliente' : 'Salir'}</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ─── NAVEGACIÓN MÓVIL Y TABLET (DOCK INFERIOR RESPONSIVO) ─── */}
+      <div className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
+        <nav className="h-16 rounded-2xl bg-white/95 dark:bg-[#0d121c]/95 backdrop-blur-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xl shadow-black/15 flex items-center px-1.5 overflow-x-auto no-scrollbar">
+          <div className="flex items-center justify-between w-full min-w-max gap-1 px-1">
+            {modulos.map((m) => {
+              const active = moduloActivo === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onSelectModulo(m.id)}
+                  className={`flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px] py-1 px-1.5 rounded-xl transition-all cursor-pointer ${
+                    active
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <div
+                    className={`w-9 h-7 rounded-lg flex items-center justify-center transition-all ${
+                      active
+                        ? 'bg-blue-600/15 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                        : 'text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    {m.icon}
+                  </div>
+                  <span
+                    className={`text-[10px] sm:text-[11px] leading-tight mt-0.5 tracking-tight ${
+                      active ? 'font-bold' : 'font-medium'
+                    }`}
+                  >
+                    {m.shortLabel}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
     </>
   );
 }
