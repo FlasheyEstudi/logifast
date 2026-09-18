@@ -39,76 +39,18 @@ export interface Producto {
   disponible: boolean;
 }
 
-/* ═══════════════════════════════════════════════
-   DESIGN SYSTEM CONSTANTS (LOGIFAST 2.0 UNIFIED)
-   ═══════════════════════════════════════════════ */
-
-const sectionCard: React.CSSProperties = {
-  background: 'var(--surface)',
-  borderRadius: 'var(--lf-card-radius, 20px)',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--lf-shadow-card)',
-  padding: 20,
-};
-
-const statCard = (accentColor = 'var(--primario)'): React.CSSProperties => ({
-  background: 'var(--surface)',
-  borderRadius: 16,
-  border: '1px solid var(--border)',
-  borderLeft: `4px solid ${accentColor}`,
-  padding: '16px 20px',
-  boxShadow: 'var(--lf-shadow-card)',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 14,
-});
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '11px 16px',
-  borderRadius: 'var(--lf-input-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontSize: 14,
-  fontFamily: "'DM Sans', sans-serif",
-  outline: 'none',
-};
-
-const btnPrimary: React.CSSProperties = {
-  padding: '10px 20px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: 'none',
-  background: 'var(--primario)',
-  color: '#FFFFFF',
-  fontWeight: 600,
-  fontSize: 14,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 8,
-  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-  transition: 'all 0.2s ease',
-};
-
-const btnSecondary: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'transparent',
-  color: 'var(--text)',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  transition: 'all 0.2s ease',
-};
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 
 export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDark: boolean; categoriaTienda?: string }) {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -328,211 +270,173 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       {/* ─── 1. KPI STAT CARDS (ESTILO LOGIFAST 2.0 ADMIN/CLIENTE) ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Productos */}
-        <div style={statCard('var(--primario)')}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'var(--primario-soft, rgba(0, 122, 255, 0.1))',
-            color: 'var(--primario)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <Package size={22} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Total Productos</span>
-            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
-              {stats.total}
-            </span>
-          </div>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-[var(--primario)] shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-[var(--primario-soft,rgba(0,122,255,0.1))] text-[var(--primario)] flex items-center justify-center shrink-0">
+              <Package size={22} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[var(--text-muted)] block">Total Productos</span>
+              <span className="text-xl font-extrabold font-mono text-[var(--text)]">{stats.total}</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Publicados */}
-        <div style={statCard('#34C759')}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'rgba(52, 199, 89, 0.12)',
-            color: '#34C759',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <Eye size={22} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Publicados</span>
-            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
-              {stats.publicados}
-            </span>
-          </div>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-emerald-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Eye size={22} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[var(--text-muted)] block">Publicados</span>
+              <span className="text-xl font-extrabold font-mono text-[var(--text)]">{stats.publicados}</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Alerta Stock */}
-        <div style={statCard('#FF9500')}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'rgba(255, 149, 0, 0.12)',
-            color: '#FF9500',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <AlertTriangle size={22} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Alerta Stock</span>
-            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: stats.bajoStock > 0 ? '#FF9500' : 'var(--text)' }}>
-              {stats.bajoStock}
-            </span>
-          </div>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-amber-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <AlertTriangle size={22} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[var(--text-muted)] block">Alerta Stock</span>
+              <span className={`text-xl font-extrabold font-mono ${stats.bajoStock > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--text)]'}`}>
+                {stats.bajoStock}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Valor Inventario */}
-        <div style={statCard('#AF52DE')}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'rgba(175, 82, 222, 0.12)',
-            color: '#AF52DE',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <TrendingUp size={22} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block' }}>Valor Inventario</span>
-            <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
-              C$ {stats.valorInventario.toLocaleString('es-NI', { maximumFractionDigits: 0 })}
-            </span>
-          </div>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] border-l-4 border-l-purple-500 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+              <TrendingUp size={22} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[var(--text-muted)] block">Valor Inventario</span>
+              <span className="text-lg font-extrabold font-mono text-[var(--text)]">
+                C$ {stats.valorInventario.toLocaleString('es-NI', { maximumFractionDigits: 0 })}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* ─── 2. TOOLBAR & CONTROLES DE INVENTARIO ─── */}
-      <div style={sectionCard}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-              Gestión de Inventario & Catálogo
-            </h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Control de artículos, existencias, código de barras e impresión de etiquetas con SKU/QR
-            </p>
+      <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex justify-between items-center flex-wrap gap-3.5">
+            <div>
+              <h2 className="text-lg font-bold font-syne text-[var(--text)]">
+                Gestión de Inventario & Catálogo
+              </h2>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                Control de artículos, existencias, código de barras e impresión de etiquetas con SKU/QR
+              </p>
+            </div>
+
+            <Button onClick={abrirModalCrear} className="h-10 text-sm font-semibold">
+              <Plus size={16} className="mr-1.5" />
+              <span>Nuevo Producto</span>
+            </Button>
           </div>
 
-          <button
-            onClick={abrirModalCrear}
-            style={btnPrimary}
-          >
-            <Plus size={16} />
-            <span>Nuevo Producto</span>
-          </button>
-        </div>
-
-        {/* Barra de Búsqueda & Filtros de Estado */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-          {/* Input Buscador */}
-          <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
-            <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Buscar producto por nombre o SKU..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              style={{ ...inputStyle, paddingLeft: 40, paddingRight: busqueda ? 40 : 16 }}
-            />
-            {busqueda && (
-              <button
-                onClick={() => setBusqueda('')}
-                style={{
-                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                  background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <X size={15} />
-              </button>
-            )}
-          </div>
-
-          {/* Chips de Estado Rápido */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto' }}>
-            {(
-              [
-                { id: 'todos', label: 'Todos' },
-                { id: 'publicados', label: 'Publicados' },
-                { id: 'bajo_stock', label: 'Bajo Stock' },
-                { id: 'ocultos', label: 'Archivados' },
-              ] as const
-            ).map((opt) => {
-              const active = filtroEstado === opt.id;
-              return (
+          {/* Barra de Búsqueda & Filtros de Estado */}
+          <div className="flex gap-2.5 flex-wrap items-center pt-3.5 border-t border-[var(--border)]">
+            {/* Input Buscador */}
+            <div className="relative flex-1 min-w-[240px] flex items-center">
+              <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Buscar producto por nombre o SKU..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="pl-9 pr-9 h-10 text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)]"
+              />
+              {busqueda && (
                 <button
-                  key={opt.id}
-                  onClick={() => setFiltroEstado(opt.id)}
-                  style={{
-                    padding: '8px 14px',
-                    borderRadius: 'var(--lf-pill-radius, 100px)',
-                    background: active ? 'var(--primario)' : 'var(--bg-alt)',
-                    color: active ? '#FFFFFF' : 'var(--text-muted)',
-                    border: active ? 'none' : '1px solid var(--border)',
-                    fontWeight: 600,
-                    fontSize: 12,
-                    fontFamily: "'DM Sans', sans-serif",
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s ease',
-                  }}
+                  onClick={() => setBusqueda('')}
+                  className="absolute right-2.5 w-5 h-5 rounded-full hover:bg-[var(--surface)] text-slate-400 hover:text-slate-600 flex items-center justify-center"
                 >
-                  {opt.label}
+                  <X size={14} />
                 </button>
-              );
-            })}
-          </div>
-        </div>
+              )}
+            </div>
 
-        {/* Slider horizontal de categorías */}
-        {categorias.length > 2 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto', paddingTop: 12 }}>
-            {categorias.map((cat) => {
-              const active = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setCategoriaSeleccionada(cat)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 8,
-                    background: active ? 'var(--surface-elevated, var(--border))' : 'transparent',
-                    color: active ? 'var(--text)' : 'var(--text-muted)',
-                    border: active ? '1px solid var(--text)' : '1px solid transparent',
-                    fontWeight: 700,
-                    fontSize: 11,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {cat === 'todos' ? 'Todas las Categorías' : cat}
-                </button>
-              );
-            })}
+            {/* Chips de Estado Rápido */}
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              {(
+                [
+                  { id: 'todos', label: 'Todos' },
+                  { id: 'publicados', label: 'Publicados' },
+                  { id: 'bajo_stock', label: 'Bajo Stock' },
+                  { id: 'ocultos', label: 'Archivados' },
+                ] as const
+              ).map((opt) => {
+                const active = filtroEstado === opt.id;
+                return (
+                  <Button
+                    key={opt.id}
+                    variant={active ? 'default' : 'secondary'}
+                    size="sm"
+                    onClick={() => setFiltroEstado(opt.id)}
+                    className="h-8 rounded-full text-xs font-semibold px-3"
+                  >
+                    {opt.label}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Slider horizontal de categorías */}
+          {categorias.length > 2 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pt-1 no-scrollbar">
+              {categorias.map((cat) => {
+                const active = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setCategoriaSeleccionada(cat)}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                      active
+                        ? 'bg-[var(--surface-elevated,var(--border))] text-[var(--text)] border border-[var(--text)]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text)] border border-transparent'
+                    }`}
+                  >
+                    {cat === 'todos' ? 'Todas las Categorías' : cat}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ─── 3. CONTENIDO: PRODUCTOS (MÓVIL CARDS + DESKTOP TABLA) ─── */}
       {loading ? (
-        <div style={{ ...sectionCard, height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, color: 'var(--text-muted)' }}>
+        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm h-[260px] flex items-center justify-center">
+          <CardContent className="flex flex-col items-center gap-2.5 text-[var(--text-muted)] p-6">
             <div className="w-8 h-8 border-3 border-[var(--primario)]/20 border-t-[var(--primario)] rounded-full animate-spin" />
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Cargando catálogo de productos...</span>
-          </div>
-        </div>
+            <span className="text-xs font-semibold">Cargando catálogo de productos...</span>
+          </CardContent>
+        </Card>
       ) : filtrados.length === 0 ? (
-        <div style={{ ...sectionCard, padding: 48, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <Package size={44} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
-          <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-            No se encontraron productos
-          </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, maxWidth: 360 }}>
-            Prueba ajustando los filtros de búsqueda o pulsa "Nuevo Producto" para añadir artículos al catálogo.
-          </p>
-        </div>
+        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm p-12 text-center">
+          <CardContent className="flex flex-col items-center gap-2.5">
+            <Package size={44} className="text-[var(--text-muted)] opacity-40" />
+            <h3 className="text-base font-bold font-syne text-[var(--text)]">
+              No se encontraron productos
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] max-w-sm">
+              Prueba ajustando los filtros de búsqueda o pulsa "Nuevo Producto" para añadir artículos al catálogo.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <>
           {/* ═══════════════════════════════════════════════
@@ -543,150 +447,137 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
 
               return (
-                <div
-                  key={p.id}
-                  style={{
-                    ...sectionCard,
-                    padding: 14,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    {/* Thumbnail */}
-                    <div style={{
-                      width: 72, height: 72, borderRadius: 14,
-                      background: 'var(--bg-alt)',
-                      border: '1px solid var(--border)',
-                      overflow: 'hidden', flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {p.portadaUrl || p.imagenUrl ? (
-                        <img
-                          src={p.portadaUrl || p.imagenUrl || ''}
-                          alt={p.nombre}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <Package size={24} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
-                      )}
-                    </div>
-
-                    {/* Metadata */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--primario)' }}>
-                          {p.categoriaNombre || 'General'}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-                            background: p.disponible ? 'rgba(52, 199, 89, 0.12)' : 'rgba(142, 142, 160, 0.12)',
-                            color: p.disponible ? '#34C759' : 'var(--text-muted)',
-                          }}
-                        >
-                          {p.disponible ? 'Publicado' : 'Archivado'}
-                        </span>
-                        {bajoStock && (
-                          <span style={{
-                            fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-                            background: 'rgba(255, 59, 48, 0.12)', color: '#FF3B30',
-                            display: 'inline-flex', alignItems: 'center', gap: 3,
-                          }}>
-                            <AlertTriangle size={10} /> Bajo Stock
-                          </span>
+                <Card key={p.id} className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+                  <CardContent className="p-3.5 space-y-3">
+                    <div className="flex gap-3 items-start">
+                      {/* Thumbnail */}
+                      <div className="w-[72px] h-[72px] rounded-xl bg-[var(--bg-alt)] border border-[var(--border)] overflow-hidden shrink-0 flex items-center justify-center">
+                        {p.portadaUrl || p.imagenUrl ? (
+                          <img
+                            src={p.portadaUrl || p.imagenUrl || ''}
+                            alt={p.nombre}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package size={24} className="text-[var(--text-muted)] opacity-50" />
                         )}
                       </div>
 
-                      <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '4px 0 2px 0', lineHeight: 1.3 }}>
-                        {p.nombre}
-                      </h3>
+                      {/* Metadata */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--primario)]">
+                            {p.categoriaNombre || 'General'}
+                          </span>
+                          <Badge
+                            variant={p.disponible ? 'secondary' : 'outline'}
+                            className={`text-[10px] py-0 px-2 font-bold ${
+                              p.disponible
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                : 'text-[var(--text-muted)]'
+                            }`}
+                          >
+                            {p.disponible ? 'Publicado' : 'Archivado'}
+                          </Badge>
+                          {bajoStock && (
+                            <Badge
+                              variant="destructive"
+                              className="text-[10px] py-0 px-2 font-bold bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+                            >
+                              <AlertTriangle size={10} className="mr-1" /> Bajo Stock
+                            </Badge>
+                          )}
+                        </div>
 
-                      {p.codigoBarras && (
-                        <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
-                          SKU: {p.codigoBarras}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                        <h3 className="text-sm font-bold text-[var(--text)] mt-1 mb-0.5 line-clamp-1 leading-snug">
+                          {p.nombre}
+                        </h3>
 
-                  {/* Precios & Stock Destacados */}
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
-                    padding: '10px 14px', borderRadius: 12, background: 'var(--bg-alt)',
-                    border: '1px solid var(--border)',
-                  }}>
-                    <div>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Precio Venta</span>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--primario)', fontFamily: "'JetBrains Mono', monospace" }}>
-                        C$ {p.precio.toFixed(2)}
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Stock Disponible</span>
-                      <span style={{
-                        fontSize: 15, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace",
-                        color: bajoStock ? '#FF3B30' : 'var(--text)',
-                      }}>
-                        {p.stock ?? 0} {p.unidadMedida || 'und'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Confirmación antes de archivar */}
-                  {archivarConfirmId === p.id && (
-                    <div style={{
-                      padding: 12, borderRadius: 12, background: 'rgba(255, 59, 48, 0.08)',
-                      border: '1px solid rgba(255, 59, 48, 0.25)', display: 'flex', flexDirection: 'column', gap: 8,
-                    }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>
-                        ¿Archivar "{p.nombre}"? Dejará de mostrarse a los clientes.
-                      </span>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                          onClick={() => toggleDisponible(p)}
-                          style={{ ...btnPrimary, background: '#FF3B30', padding: '8px 12px', fontSize: 12, flex: 1 }}
-                        >
-                          Sí, archivar
-                        </button>
-                        <button
-                          onClick={() => setArchivarConfirmId(null)}
-                          style={{ ...btnSecondary, padding: '8px 12px', fontSize: 12, flex: 1 }}
-                        >
-                          Cancelar
-                        </button>
+                        {p.codigoBarras && (
+                          <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                            SKU: {p.codigoBarras}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  )}
 
-                  {/* Botones de Acción */}
-                  <div style={{ display: 'flex', gap: 8, paddingTop: 6, borderTop: '1px solid var(--border)' }}>
-                    <button
-                      onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
-                      style={{ ...btnSecondary, flex: 1 }}
-                    >
-                      {p.disponible ? <EyeOff size={14} /> : <Eye size={14} />}
-                      <span>{p.disponible ? 'Archivar' : 'Publicar'}</span>
-                    </button>
+                    {/* Precios & Stock Destacados */}
+                    <div className="grid grid-cols-2 gap-2.5 p-2.5 rounded-xl bg-[var(--bg-alt)] border border-[var(--border)]">
+                      <div>
+                        <span className="text-[11px] text-[var(--text-muted)] block font-semibold">Precio Venta</span>
+                        <span className="text-sm font-extrabold text-[var(--primario)] font-mono">
+                          C$ {p.precio.toFixed(2)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-[var(--text-muted)] block font-semibold">Stock Disponible</span>
+                        <span className={`text-sm font-extrabold font-mono ${bajoStock ? 'text-red-500' : 'text-[var(--text)]'}`}>
+                          {p.stock ?? 0} {p.unidadMedida || 'und'}
+                        </span>
+                      </div>
+                    </div>
 
-                    <button
-                      onClick={() => abrirGeneradorEtiquetas(p)}
-                      style={{ ...btnSecondary, flex: 1 }}
-                    >
-                      <Printer size={14} />
-                      <span>Etiquetas</span>
-                    </button>
+                    {/* Confirmación antes de archivar */}
+                    {archivarConfirmId === p.id && (
+                      <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 space-y-2">
+                        <span className="text-xs font-semibold text-[var(--text)] block">
+                          ¿Archivar "{p.nombre}"? Dejará de mostrarse a los clientes.
+                        </span>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => toggleDisponible(p)}
+                            className="flex-1 h-8 text-xs font-semibold"
+                          >
+                            Sí, archivar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setArchivarConfirmId(null)}
+                            className="flex-1 h-8 text-xs font-semibold"
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
 
-                    <button
-                      onClick={() => abrirModalEditar(p)}
-                      style={{ ...btnPrimary, flex: 1 }}
-                    >
-                      <Edit2 size={14} />
-                      <span>Editar</span>
-                    </button>
-                  </div>
-                </div>
+                    {/* Botones de Acción */}
+                    <div className="flex gap-2 pt-2 border-t border-[var(--border)]">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
+                        className="flex-1 h-8 text-xs font-semibold"
+                      >
+                        {p.disponible ? <EyeOff size={13} className="mr-1" /> : <Eye size={13} className="mr-1" />}
+                        <span>{p.disponible ? 'Archivar' : 'Publicar'}</span>
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => abrirGeneradorEtiquetas(p)}
+                        className="flex-1 h-8 text-xs font-semibold"
+                      >
+                        <Printer size={13} className="mr-1" />
+                        <span>Etiquetas</span>
+                      </Button>
+
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => abrirModalEditar(p)}
+                        className="flex-1 h-8 text-xs font-semibold"
+                      >
+                        <Edit2 size={13} className="mr-1" />
+                        <span>Editar</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
@@ -694,135 +585,126 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           {/* ═══════════════════════════════════════════════
               VISTA ESCRITORIO / TABLET (Opción B - Back-Office Tabla Densa)
               ═══════════════════════════════════════════════ */}
-          <div className="hidden md:block" style={{
-            borderRadius: 16,
-            border: '1px solid var(--border)',
-            overflow: 'hidden',
-            background: 'var(--surface)',
-            boxShadow: 'var(--lf-shadow-card)',
-          }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: 'var(--bg-alt)', borderBottom: '1px solid var(--border)' }}>
-                  <th style={{ padding: '12px 16px', width: 60, textAlign: 'center', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Foto</th>
-                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Producto & SKU</th>
-                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Categoría</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Precio Venta</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Costo</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Stock</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Estado</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
+          <Card className="hidden md:block bg-[var(--surface)] border-[var(--border)] shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]">
+                  <TableHead className="w-[60px] text-center text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Foto</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Producto & SKU</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Categoría</TableHead>
+                  <TableHead className="text-right text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Precio Venta</TableHead>
+                  <TableHead className="text-right text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Costo</TableHead>
+                  <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Stock</TableHead>
+                  <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Estado</TableHead>
+                  <TableHead className="text-right text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filtrados.map((p) => {
                   const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
 
                   return (
-                    <tr
-                      key={p.id}
-                      style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--primario-soft, rgba(0, 122, 255, 0.04))')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
+                    <TableRow key={p.id}>
                       {/* Foto */}
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <div style={{
-                          width: 40, height: 40, borderRadius: 10,
-                          background: 'var(--bg-alt)', border: '1px solid var(--border)',
-                          overflow: 'hidden', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
+                      <TableCell className="text-center">
+                        <div className="w-10 h-10 rounded-lg bg-[var(--bg-alt)] border border-[var(--border)] overflow-hidden mx-auto flex items-center justify-center">
                           {p.portadaUrl || p.imagenUrl ? (
                             <img
                               src={p.portadaUrl || p.imagenUrl || ''}
                               alt={p.nombre}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              className="w-full h-full object-cover"
                             />
                           ) : (
-                            <Package size={18} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+                            <Package size={18} className="text-[var(--text-muted)] opacity-50" />
                           )}
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* Nombre & SKU */}
-                      <td style={{ padding: '10px 16px' }}>
-                        <span style={{ fontWeight: 700, color: 'var(--text)', display: 'block' }}>{p.nombre}</span>
+                      <TableCell>
+                        <span className="font-bold text-[var(--text)] block">{p.nombre}</span>
                         {p.codigoBarras && (
-                          <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+                          <span className="text-[11px] font-mono text-[var(--text-muted)]">
                             SKU: {p.codigoBarras}
                           </span>
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* Categoría */}
-                      <td style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                      <TableCell className="text-[var(--text-muted)] font-medium">
                         {p.categoriaNombre || 'General'}
-                      </td>
+                      </TableCell>
 
                       {/* Precio */}
-                      <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>
+                      <TableCell className="text-right font-extrabold font-mono text-[var(--primario)]">
                         C$ {p.precio.toFixed(2)}
-                      </td>
+                      </TableCell>
 
                       {/* Costo */}
-                      <td style={{ padding: '10px 16px', textAlign: 'right', fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
+                      <TableCell className="text-right font-mono text-[var(--text-muted)]">
                         {p.costo ? `C$ ${p.costo.toFixed(2)}` : '-'}
-                      </td>
+                      </TableCell>
 
                       {/* Stock */}
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <span style={{
-                          fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
-                          color: bajoStock ? '#FF3B30' : 'var(--text)',
-                        }}>
+                      <TableCell className="text-center">
+                        <span className={`font-mono font-bold ${bajoStock ? 'text-red-500' : 'text-[var(--text)]'}`}>
                           {p.stock ?? 0} {p.unidadMedida || 'und'}
                         </span>
-                      </td>
+                      </TableCell>
 
                       {/* Estado */}
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <span style={{
-                          fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                          background: p.disponible ? 'rgba(52, 199, 89, 0.12)' : 'rgba(142, 142, 160, 0.12)',
-                          color: p.disponible ? '#34C759' : 'var(--text-muted)',
-                        }}>
+                      <TableCell className="text-center">
+                        <Badge
+                          variant={p.disponible ? 'secondary' : 'outline'}
+                          className={`text-[11px] font-bold px-2.5 py-0.5 ${
+                            p.disponible
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                              : 'text-[var(--text-muted)]'
+                          }`}
+                        >
                           {p.disponible ? 'Publicado' : 'Archivado'}
-                        </span>
-                      </td>
+                        </Badge>
+                      </TableCell>
 
                       {/* Acciones */}
-                      <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: 6 }}>
-                          <button
+                      <TableCell className="text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => abrirGeneradorEtiquetas(p)}
                             title="Imprimir Etiquetas / Código"
-                            style={{ ...btnSecondary, padding: '6px 10px', fontSize: 12 }}
                           >
                             <Printer size={13} />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => toggleDisponible(p)}
                             title={p.disponible ? 'Archivar' : 'Publicar'}
-                            style={{ ...btnSecondary, padding: '6px 10px', fontSize: 12 }}
                           >
                             {p.disponible ? <EyeOff size={13} /> : <Eye size={13} />}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="h-8 gap-1.5 text-xs font-semibold"
                             onClick={() => abrirModalEditar(p)}
                             title="Editar"
-                            style={{ ...btnPrimary, padding: '6px 12px', fontSize: 12 }}
                           >
                             <Edit2 size={13} />
                             <span>Editar</span>
-                          </button>
+                          </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Card>
         </>
       )}
 
@@ -830,189 +712,177 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       {modalOpen && (
         <div
           onClick={() => setModalOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
-          }}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
         >
-          <div
+          <Card
             onClick={(e) => e.stopPropagation()}
-            style={{
-              ...sectionCard,
-              width: '100%', maxWidth: 580, maxHeight: '90vh',
-              overflowY: 'auto', padding: 24, borderRadius: 24,
-              boxShadow: 'var(--shadow-xl)',
-            }}
+            className="w-full max-w-[580px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border-[var(--border)] shadow-2xl rounded-3xl"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
-              <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-                  {editingProd ? 'Editar Producto en Catálogo' : 'Crear Nuevo Producto'}
-                </h3>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                  {editingProd ? 'Actualiza los datos comerciales y stock' : 'Completa los detalles para agregarlo al inventario'}
-                </p>
-              </div>
-              <button
-                onClick={() => setModalOpen(false)}
-                style={{
-                  width: 36, height: 36, borderRadius: 10, border: '1px solid var(--border)',
-                  background: 'var(--bg-alt)', color: 'var(--text-muted)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={guardarProducto} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Nombre */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                  Nombre del Producto *
-                </label>
-                <input
-                  type="text"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej: Refresco Coca-Cola 355ml"
-                  style={inputStyle}
-                  required
-                />
-              </div>
-
-              {/* Categoría & SKU */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center pb-4 border-b border-[var(--border)] mb-5">
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                    Categoría
-                  </label>
-                  <input
-                    type="text"
-                    value={categoriaNombre}
-                    onChange={(e) => setCategoriaNombre(e.target.value)}
-                    placeholder="Ej: Bebidas, Snacks, Lácteos"
-                    style={inputStyle}
-                  />
+                  <h3 className="text-lg font-bold font-syne text-[var(--text)] m-0">
+                    {editingProd ? 'Editar Producto en Catálogo' : 'Crear Nuevo Producto'}
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-1 mb-0">
+                    {editingProd ? 'Actualiza los datos comerciales y stock' : 'Completa los detalles para agregarlo al inventario'}
+                  </p>
                 </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
-                      Código de Barras / SKU
-                    </label>
-                    <button
-                      type="button"
-                      onClick={generarCodigoSku}
-                      style={{ fontSize: 11, color: 'var(--primario)', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                      + Generar SKU
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={codigoBarras}
-                    onChange={(e) => setCodigoBarras(e.target.value)}
-                    placeholder="744..."
-                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
-                  />
-                </div>
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="w-9 h-9 rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)] flex items-center justify-center hover:bg-[var(--surface-elevated)] transition-colors"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
-              {/* Precios & Stock */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 12 }}>
+              <form onSubmit={guardarProducto} className="flex flex-col gap-4">
+                {/* Nombre */}
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                    Precio Venta *
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                    Nombre del Producto *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={precio}
-                    onChange={(e) => setPrecio(e.target.value)}
-                    placeholder="C$ 0.00"
-                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
+                  <Input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Ej: Refresco Coca-Cola 355ml"
                     required
                   />
                 </div>
 
+                {/* Categoría & SKU */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                      Categoría
+                    </label>
+                    <Input
+                      type="text"
+                      value={categoriaNombre}
+                      onChange={(e) => setCategoriaNombre(e.target.value)}
+                      placeholder="Ej: Bebidas, Snacks, Lácteos"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-bold text-[var(--text)]">
+                        Código de Barras / SKU
+                      </label>
+                      <button
+                        type="button"
+                        onClick={generarCodigoSku}
+                        className="text-[11px] text-[var(--primario)] font-bold bg-transparent border-none cursor-pointer hover:underline"
+                      >
+                        + Generar SKU
+                      </button>
+                    </div>
+                    <Input
+                      type="text"
+                      value={codigoBarras}
+                      onChange={(e) => setCodigoBarras(e.target.value)}
+                      placeholder="744..."
+                      className="font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Precios & Stock */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                      Precio Venta *
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={precio}
+                      onChange={(e) => setPrecio(e.target.value)}
+                      placeholder="C$ 0.00"
+                      className="font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                      Costo Compra
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={costo}
+                      onChange={(e) => setCosto(e.target.value)}
+                      placeholder="C$ 0.00"
+                      className="font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                      Stock Actual
+                    </label>
+                    <Input
+                      type="number"
+                      value={stock}
+                      onChange={(e) => setStock(e.target.value)}
+                      placeholder="10"
+                      className="font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                      Stock Mínimo
+                    </label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={stockMinimo}
+                      onChange={(e) => setStockMinimo(e.target.value)}
+                      placeholder="5"
+                      className="font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Imagen del Producto */}
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                    Costo Compra
+                  <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                    Foto del Producto
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={costo}
-                    onChange={(e) => setCosto(e.target.value)}
-                    placeholder="C$ 0.00"
-                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
+                  <ImageUploader
+                    categoria="tienda_productos"
+                    onUploaded={(url) => setImagenUrl(url)}
+                    label="Subir Imagen del Producto"
+                    aspectRatio="square"
+                    previewUrl={imagenUrl || null}
+                    className="w-full h-32 rounded-xl"
                   />
                 </div>
 
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                    Stock Actual
-                  </label>
-                  <input
-                    type="number"
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                    placeholder="10"
-                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
-                  />
+                {/* Botón Guardar */}
+                <div className="flex gap-2.5 pt-3 border-t border-[var(--border)]">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setModalOpen(false)}
+                    className="flex-1 h-10 font-semibold"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-[2] h-10 font-semibold"
+                  >
+                    {submitting ? 'Guardando...' : (editingProd ? 'Guardar Cambios' : 'Crear Producto')}
+                  </Button>
                 </div>
-
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                    Stock Mínimo
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={stockMinimo}
-                    onChange={(e) => setStockMinimo(e.target.value)}
-                    placeholder="5"
-                    style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
-                  />
-                </div>
-              </div>
-
-              {/* Imagen del Producto */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-                  Foto del Producto
-                </label>
-                <ImageUploader
-                  categoria="tienda_productos"
-                  onUploaded={(url) => setImagenUrl(url)}
-                  label="Subir Imagen del Producto"
-                  aspectRatio="square"
-                  previewUrl={imagenUrl || null}
-                  className="w-full h-32 rounded-xl"
-                />
-              </div>
-
-              {/* Botón Guardar */}
-              <div style={{ display: 'flex', gap: 10, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  style={{ ...btnSecondary, flex: 1 }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{ ...btnPrimary, flex: 2 }}
-                >
-                  {submitting ? 'Guardando...' : (editingProd ? 'Guardar Cambios' : 'Crear Producto')}
-                </button>
-              </div>
-            </form>
-          </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       )}
 
