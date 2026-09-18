@@ -16,9 +16,12 @@ import {
   TrendingUp,
   Tag,
   Layers,
+  Sparkles,
+  Printer,
 } from '@/components/icons';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import { notify } from '@/lib/notify';
+import { TiendaEtiquetasModal } from './TiendaEtiquetasModal';
 
 export interface Producto {
   id: string;
@@ -45,6 +48,10 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Producto | null>(null);
   const [archivarConfirmId, setArchivarConfirmId] = useState<string | null>(null);
+
+  // Modal de Etiquetas & Códigos (Barras / QR)
+  const [etiquetasProd, setEtiquetasProd] = useState<Producto | null>(null);
+  const [etiquetasModalOpen, setEtiquetasModalOpen] = useState(false);
 
   // Form State
   const [nombre, setNombre] = useState('');
@@ -112,6 +119,17 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
     setPortadaUrl(p.portadaUrl || '');
     setDisponible(p.disponible);
     setModalOpen(true);
+  };
+
+  const abrirGeneradorEtiquetas = (p: Producto) => {
+    setEtiquetasProd(p);
+    setEtiquetasModalOpen(true);
+  };
+
+  const generarCodigoSku = () => {
+    const randomSku = `744${Math.floor(100000000 + Math.random() * 900000000)}`;
+    setCodigoBarras(randomSku);
+    notify.info(`Código SKU generado: ${randomSku}`);
   };
 
   const guardarProducto = async (e: React.FormEvent) => {
@@ -295,7 +313,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               Gestión de Inventario & Catálogo
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Control de productos, costos, código de barras e imágenes para Marketplace
+              Control de productos, costos, código de barras e impresión de etiquetas con SKU/QR
             </p>
           </div>
 
@@ -507,22 +525,31 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     </div>
                   )}
 
-                  {/* Action Buttons (Touch target >= 44px) */}
-                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                  {/* Action Buttons (3 columnas táctiles con targets de 44px) */}
+                  <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <button
                       onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
                       title={p.disponible ? 'Archivar del catálogo' : 'Publicar en catálogo'}
-                      className="flex-1 h-11 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      className="h-11 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
                     >
-                      {p.disponible ? <EyeOff size={15} /> : <Eye size={15} />}
-                      <span>{p.disponible ? 'Archivar' : 'Publicar'}</span>
+                      {p.disponible ? <EyeOff size={14} /> : <Eye size={14} />}
+                      <span className="truncate">{p.disponible ? 'Archivar' : 'Publicar'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => abrirGeneradorEtiquetas(p)}
+                      title="Generar e imprimir etiquetas con código de barras o QR"
+                      className="h-11 min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
+                    >
+                      <Tag size={14} />
+                      <span>Etiquetas</span>
                     </button>
 
                     <button
                       onClick={() => abrirModalEditar(p)}
-                      className="flex-1 h-11 min-h-[44px] rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      className="h-11 min-h-[44px] rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
                     >
-                      <Edit2 size={15} />
+                      <Edit2 size={14} />
                       <span>Editar</span>
                     </button>
                   </div>
@@ -594,16 +621,44 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Código de Barras / SKU
-                  </label>
-                  <input
-                    type="text"
-                    value={codigoBarras}
-                    onChange={(e) => setCodigoBarras(e.target.value)}
-                    placeholder="Ej: 7501055301072"
-                    className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Código de Barras / SKU
+                    </label>
+                    <button
+                      type="button"
+                      onClick={generarCodigoSku}
+                      className="text-[11px] text-primary font-bold hover:underline flex items-center gap-1 active:scale-95"
+                    >
+                      <Sparkles size={12} />
+                      <span>Generar SKU</span>
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={codigoBarras}
+                      onChange={(e) => setCodigoBarras(e.target.value)}
+                      placeholder="Ej: 7501055301072 o SKU..."
+                      className="w-full h-11 min-h-[44px] px-3.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    />
+                    {editingProd && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          abrirGeneradorEtiquetas({
+                            ...editingProd,
+                            codigoBarras: codigoBarras || editingProd.codigoBarras,
+                          });
+                        }}
+                        title="Imprimir etiquetas con código de barras o QR"
+                        className="h-11 min-h-[44px] px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 active:scale-95"
+                      >
+                        <Printer size={15} />
+                        <span className="hidden sm:inline">Etiquetas</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -758,6 +813,13 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           </div>
         </div>
       )}
+
+      {/* ─── Modal de Etiquetas & Códigos (Barras / QR) ─── */}
+      <TiendaEtiquetasModal
+        abierto={etiquetasModalOpen}
+        onCerrar={() => setEtiquetasModalOpen(false)}
+        producto={etiquetasProd}
+      />
     </div>
   );
 }
