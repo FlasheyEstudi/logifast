@@ -178,8 +178,9 @@ export default function DetalleMotoModal() {
               </label>
               <input
                 type="number"
-                value={nuevoKm}
-                onChange={(e) => setNuevoKm(Number(e.target.value))}
+                value={Number.isFinite(nuevoKm) ? nuevoKm : ''}
+                onChange={(e) => setNuevoKm(e.target.value === '' ? NaN : Number(e.target.value))}
+                onBlur={() => { if (!Number.isFinite(nuevoKm)) setNuevoKm(0); }}
                 style={{
                   width: '100%',
                   padding: '10px 12px',

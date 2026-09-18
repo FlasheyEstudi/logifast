@@ -229,8 +229,9 @@ export function SonidoToggle() {
                 min={0}
                 max={100}
                 step={1}
-                value={volumenSonido}
-                onChange={(e) => setVolumen(Number(e.target.value))}
+                value={Number.isFinite(volumenSonido) ? volumenSonido : ''}
+                onChange={(e) => setVolumen(e.target.value === '' ? NaN : Number(e.target.value))}
+                onBlur={() => { if (!Number.isFinite(volumenSonido)) setVolumen(50); }}
                 aria-label="Volumen del sonido"
                 style={{
                   width: '100%',

@@ -169,8 +169,9 @@ export default function CrearMotoModal() {
                 </label>
                 <input
                   type="number"
-                  value={anio}
-                  onChange={(e) => setAnio(Number(e.target.value))}
+                  value={Number.isFinite(anio) ? anio : ''}
+                  onChange={(e) => setAnio(e.target.value === '' ? NaN : Number(e.target.value))}
+                  onBlur={() => { if (!Number.isFinite(anio)) setAnio(new Date().getFullYear()); }}
                   style={{
                     width: '100%',
                     padding: '10px 14px',

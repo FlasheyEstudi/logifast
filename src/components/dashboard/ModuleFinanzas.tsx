@@ -450,8 +450,9 @@ export default function ModuleFinanzas() {
                     type="range"
                     min="3"
                     max="24"
-                    value={developmentMonths}
-                    onChange={(e) => setDevelopmentMonths(parseInt(e.target.value))}
+                    value={Number.isFinite(developmentMonths) ? developmentMonths : ''}
+                    onChange={(e) => setDevelopmentMonths(e.target.value === '' ? NaN : parseInt(e.target.value, 10))}
+                    onBlur={() => { if (!Number.isFinite(developmentMonths)) setDevelopmentMonths(1); }}
                     style={{ width: '100%', accentColor: '#FF6600' }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--lf-text-muted)', marginTop: 4 }}>
@@ -470,8 +471,9 @@ export default function ModuleFinanzas() {
                     type="range"
                     min="20"
                     max="150"
-                    value={profitMargin}
-                    onChange={(e) => setProfitMargin(parseInt(e.target.value))}
+                    value={Number.isFinite(profitMargin) ? profitMargin : ''}
+                    onChange={(e) => setProfitMargin(e.target.value === '' ? NaN : parseInt(e.target.value, 10))}
+                    onBlur={() => { if (!Number.isFinite(profitMargin)) setProfitMargin(1); }}
                     style={{ width: '100%', accentColor: '#FF6600' }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--lf-text-muted)', marginTop: 4 }}>

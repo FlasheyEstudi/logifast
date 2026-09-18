@@ -291,8 +291,9 @@ export function TiendaEtiquetasModal({
                   type="number"
                   min={1}
                   max={200}
-                  value={cantidadCopias}
-                  onChange={(e) => setCantidadCopias(Math.max(1, Number(e.target.value) || 1))}
+                  value={Number.isFinite(cantidadCopias) ? cantidadCopias : ''}
+                  onChange={(e) => setCantidadCopias(e.target.value === '' ? NaN : Math.max(1, Number(e.target.value) || 1))}
+                  onBlur={() => { if (!Number.isFinite(cantidadCopias)) setCantidadCopias(1); }}
                   className="w-full h-11 min-h-[44px] px-3 rounded-xl text-sm bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] font-mono text-center focus:outline-none focus:ring-2 focus:ring-[var(--primario)]/20 focus:border-[var(--primario)]"
                 />
                 <div className="flex gap-1">

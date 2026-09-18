@@ -706,6 +706,11 @@ export default function Home() {
       addToast(`¡Bienvenido, ${user.name}!`, 'Cuenta creada con éxito', 'success');
       setCurrentView('dashboard');
       window.location.hash = '#/dashboard';
+      // El registro YA deja la sesión creada en el servidor, pero la app todavía tiene
+      // en memoria el perfil de demostración. Se recarga para que arranque leyendo la
+      // sesión real: antes te dejaba en el perfil demo y había que iniciar sesión otra vez.
+      window.location.reload();
+      return;
     } catch (err) {
       console.error('[REGISTER]', err);
       setRegLoading(false);
