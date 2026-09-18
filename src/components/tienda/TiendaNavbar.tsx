@@ -70,290 +70,97 @@ export function TiendaNavbar({
     { id: 'facturacion', label: 'Facturación & DGI', icon: FileText },
     { id: 'reportes', label: 'Reportes Financieros', icon: BarChart3 },
     { id: 'estadisticas', label: 'Métricas & Ventas', icon: TrendingUp },
-    { id: 'configuracion', label: 'Configuración', icon: Settings },
+    { id: 'configuracion', label: 'Configuración Tienda', icon: Settings },
   ];
 
   const handleExitAction = onReturnToClient || onLogout;
   const isAbierta = tiendaEstado === 'activo';
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        justifyContent: 'space-between',
-        userSelect: 'none',
-        background: 'var(--lf-surface, #ffffff)',
-      }}
+    <nav
+      aria-label="Dock de Navegación Vertical Estilo Mac"
+      className="flex flex-col items-center py-2.5 px-2 rounded-full bg-white/85 dark:bg-[#0f111a]/85 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-2xl shadow-black/20 dark:shadow-black/60 transition-all duration-300"
     >
-      {/* ─── Cabecera de la Tienda (Identidad / Avatar) ─── */}
-      <div
-        style={{
-          padding: '14px 12px',
-          borderBottom: '1px solid var(--lf-border, rgba(60, 60, 67, 0.12))',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            position: 'relative',
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            overflow: 'hidden',
-            background: 'var(--lf-accent, #007AFF)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ffffff',
-            fontWeight: 700,
-            fontSize: 14,
-            flexShrink: 0,
-          }}
-        >
-          {tiendaImagenUrl ? (
-            <img
-              src={tiendaImagenUrl}
-              alt={tiendaNombre}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <Store size={20} />
-          )}
-          {/* Indicador de Estado - CERO EMOJIS */}
-          <span
-            style={{
-              position: 'absolute',
-              bottom: 2,
-              right: 2,
-              width: 9,
-              height: 9,
-              borderRadius: '50%',
-              background: isAbierta ? 'var(--lf-success, #34C759)' : 'var(--lf-warning, #FF9500)',
-              border: '2px solid var(--lf-surface, #ffffff)',
-            }}
-            title={isAbierta ? 'Tienda Abierta' : 'Tienda Pausada'}
+      {/* ─── Avatar de la Tienda en el Dock (Miniatura con Estado) ─── */}
+      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-bold text-xs shadow-md border-2 border-white/80 dark:border-white/20 mb-1 shrink-0">
+        {tiendaImagenUrl ? (
+          <img
+            src={tiendaImagenUrl}
+            alt={tiendaNombre}
+            className="w-full h-full object-cover"
           />
-        </div>
-
-        <div className="hidden lg:flex" style={{ flexDirection: 'column', minWidth: 0, flex: 1 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: 'var(--lf-text-main, #1C1C1E)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              fontFamily: "var(--font-syne), 'Syne', sans-serif",
-            }}
-          >
-            {tiendaNombre || 'Mi Tienda'}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '2px 6px',
-                borderRadius: 6,
-                background: isAbierta ? 'rgba(52, 199, 89, 0.12)' : 'rgba(255, 149, 0, 0.12)',
-                color: isAbierta ? 'var(--lf-success, #34C759)' : 'var(--lf-warning, #FF9500)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              {isAbierta ? 'Abierta' : 'Pausada'}
-            </span>
-            <span
-              style={{
-                fontSize: 11,
-                color: 'var(--lf-text-muted, #8E8E93)',
-                textTransform: 'capitalize',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tiendaCategoria}
-            </span>
-          </div>
-        </div>
+        ) : (
+          <Store size={18} />
+        )}
+        {/* Indicador de Estado - Cero Emojis */}
+        <span
+          className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-[#0f111a] ${
+            isAbierta ? 'bg-emerald-500' : 'bg-amber-500'
+          }`}
+          title={isAbierta ? 'Tienda Abierta y Operativa' : 'Tienda Pausada'}
+        />
       </div>
 
-      {/* ─── Lista Vertical de Navegación (8 Módulos) ─── */}
-      <nav
-        aria-label="Navegación vertical de la tienda"
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '10px 8px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-        }}
-        className="no-scrollbar"
-      >
-        {modulos.map((item) => {
-          const Icon = item.icon;
-          const isActive = moduloActivo === item.id;
+      {/* Separador de Cristal */}
+      <div className="w-5 h-[1px] bg-black/10 dark:bg-white/10 my-1 shrink-0" />
+
+      {/* ─── 8 Módulos Verticales con Tooltip Flotante Estilo macOS Dock ─── */}
+      <div className="flex flex-col items-center gap-1.5 my-0.5">
+        {modulos.map((m) => {
+          const active = moduloActivo === m.id;
+          const Icon = m.icon;
           return (
             <button
-              key={item.id}
-              onClick={() => onSelectModulo(item.id)}
-              title={item.label}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '10px 10px',
-                borderRadius: 10,
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 12.5,
-                fontWeight: isActive ? 700 : 500,
-                background: isActive ? 'var(--lf-accent-soft, rgba(0, 122, 255, 0.08))' : 'transparent',
-                color: isActive ? 'var(--lf-accent, #007AFF)' : 'var(--lf-text-muted, #8E8E93)',
-                transition: 'all 0.18s ease',
-                width: '100%',
-                minHeight: 44,
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) e.currentTarget.style.background = 'var(--lf-accent-soft, rgba(0, 122, 255, 0.04))';
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) e.currentTarget.style.background = 'transparent';
-              }}
+              key={m.id}
+              onClick={() => onSelectModulo(m.id)}
+              className={`relative group w-11 h-11 min-h-[44px] rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                active
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/35 scale-105'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'
+              }`}
+              aria-label={m.label}
             >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: isActive ? 'var(--lf-accent, #007AFF)' : 'transparent',
-                  color: isActive ? '#ffffff' : 'inherit',
-                  flexShrink: 0,
-                  transition: 'background 0.18s ease, color 0.18s ease',
-                }}
-              >
-                <Icon size={16} />
-              </div>
-              <span
-                className="hidden lg:inline"
-                style={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {item.label}
+              <Icon size={19} />
+
+              {/* Tooltip flotante hacia la izquierda (estilo macOS Dock) */}
+              <span className="absolute right-full mr-3.5 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl bg-slate-900/90 dark:bg-white/95 text-white dark:text-slate-900 text-xs font-bold whitespace-nowrap shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-150 -translate-x-1 group-hover:translate-x-0 z-50">
+                {m.label}
               </span>
             </button>
           );
         })}
-      </nav>
+      </div>
 
-      {/* ─── Pie de Barra (Tema & Salir) ─── */}
-      <div
-        style={{
-          padding: '10px 8px',
-          borderTop: '1px solid var(--lf-border, rgba(60, 60, 67, 0.12))',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-          flexShrink: 0,
-        }}
-      >
-        {/* Toggle Modo Claro / Oscuro */}
+      {/* Separador de Cristal */}
+      <div className="w-5 h-[1px] bg-black/10 dark:bg-white/10 my-1 shrink-0" />
+
+      {/* ─── Acciones de Pie del Dock (Tema y Salir) ─── */}
+      <div className="flex flex-col items-center gap-1.5 mt-0.5">
+        {/* Toggle Tema (Día / Noche) */}
         <button
           onClick={toggleTheme}
-          title={isDark ? 'Modo Claro' : 'Modo Oscuro'}
-          aria-label={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '10px',
-            borderRadius: 10,
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 12.5,
-            fontWeight: 500,
-            background: 'transparent',
-            color: 'var(--lf-text-muted, #8E8E93)',
-            transition: 'all 0.18s ease',
-            width: '100%',
-            minHeight: 44,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--lf-accent-soft, rgba(0, 122, 255, 0.04))')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          className="relative group w-11 h-11 min-h-[44px] rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
+          aria-label={isDark ? 'Modo Claro' : 'Modo Oscuro'}
         >
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 7,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--lf-accent, #007AFF)',
-              flexShrink: 0,
-            }}
-          >
-            {isDark ? <Sun size={17} /> : <Moon size={17} />}
-          </div>
-          <span className="hidden lg:inline">{isDark ? 'Modo Claro' : 'Modo Oscuro'}</span>
+          {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-blue-600" />}
+          <span className="absolute right-full mr-3.5 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl bg-slate-900/90 dark:bg-white/95 text-white dark:text-slate-900 text-xs font-bold whitespace-nowrap shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-150 -translate-x-1 group-hover:translate-x-0 z-50">
+            {isDark ? 'Modo Claro' : 'Modo Oscuro'}
+          </span>
         </button>
 
-        {/* Salir / Retornar */}
+        {/* Salir / Retornar a Cliente */}
         <button
           onClick={handleExitAction}
-          title={onReturnToClient ? 'Volver a vista Cliente' : 'Cerrar sesión'}
-          aria-label={onReturnToClient ? 'Volver a vista Cliente' : 'Cerrar sesión'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '10px',
-            borderRadius: 10,
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 12.5,
-            fontWeight: 600,
-            background: 'transparent',
-            color: 'var(--lf-danger, #FF3B30)',
-            transition: 'all 0.18s ease',
-            width: '100%',
-            minHeight: 44,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 59, 48, 0.08)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          className="relative group w-11 h-11 min-h-[44px] rounded-full flex items-center justify-center text-rose-600 hover:bg-rose-500/10 transition-all cursor-pointer"
+          aria-label={onReturnToClient ? 'Salir a Cliente' : 'Cerrar Sesión'}
         >
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 7,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <LogOut size={16} />
-          </div>
-          <span className="hidden lg:inline">{onReturnToClient ? 'Salir a Cliente' : 'Cerrar Sesión'}</span>
+          <LogOut size={17} />
+          <span className="absolute right-full mr-3.5 top-1/2 -translate-y-1/2 px-3 py-1 rounded-xl bg-rose-600 text-white text-xs font-bold whitespace-nowrap shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-150 -translate-x-1 group-hover:translate-x-0 z-50">
+            {onReturnToClient ? 'Salir a Cliente' : 'Cerrar Sesión'}
+          </span>
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
 

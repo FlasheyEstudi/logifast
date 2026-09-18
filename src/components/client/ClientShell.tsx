@@ -1193,6 +1193,13 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
             paddingBottom: clientActiveModule === 'tienda' ? 0 : 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
             minHeight: '100vh',
             backgroundColor: 'var(--ios-bg)',
+            // En escritorio el contenido se estiraba a todo el ancho de la pantalla:
+            // se acota a una columna legible. El portal de tienda sí necesita el ancho
+            // completo (tablas, POS, kardex), así que ese módulo queda exento.
+            maxWidth: clientActiveModule === 'tienda' ? undefined : 600,
+            width: '100%',
+            marginLeft: 'auto',
+            marginRight: 'auto',
             transition: 'padding 0.3s ease, background-color 0.3s ease',
           }}
           className="lf-client-content-padded lf-ios-content"
