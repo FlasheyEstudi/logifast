@@ -29,25 +29,15 @@ import {
 import { notify } from '@/lib/notify';
 import { AnimatePresence, motion } from 'framer-motion';
 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
 interface TiendaReportesManagerProps {
   isDark: boolean;
   onGenerarNuevo?: () => void;
 }
-
-const formatPillStyle = (active: boolean, color: string): React.CSSProperties => ({
-  padding: '6px 14px',
-  borderRadius: 999,
-  fontSize: 12,
-  fontWeight: 700,
-  cursor: 'pointer',
-  border: `1px solid ${active ? color : 'var(--border)'}`,
-  background: active ? color : 'var(--bg-alt)',
-  color: active ? '#FFFFFF' : 'var(--text-muted)',
-  transition: 'all 0.18s ease',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-});
 
 export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportesManagerProps) {
   const [reportes, setReportes] = useState<ReporteGuardado[]>([]);
@@ -310,33 +300,41 @@ export function TiendaReportesManager({ isDark, onGenerarNuevo }: TiendaReportes
           </div>
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            <button
+            <Button
+              variant={formatoFiltro === 'todos' ? 'default' : 'secondary'}
+              size="sm"
               onClick={() => setFormatoFiltro('todos')}
-              style={formatPillStyle(formatoFiltro === 'todos', 'var(--primario)')}
+              className="h-8 rounded-full text-xs font-semibold px-3"
             >
               Todos ({reportes.length})
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={formatoFiltro === 'xlsx' ? 'default' : 'secondary'}
+              size="sm"
               onClick={() => setFormatoFiltro('xlsx')}
-              style={formatPillStyle(formatoFiltro === 'xlsx', '#10B981')}
+              className="h-8 rounded-full text-xs font-semibold px-3 gap-1.5"
             >
               <FileSpreadsheet size={13} />
               <span>Excel ({reportes.filter((r) => r.formato === 'xlsx').length})</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={formatoFiltro === 'pdf' ? 'default' : 'secondary'}
+              size="sm"
               onClick={() => setFormatoFiltro('pdf')}
-              style={formatPillStyle(formatoFiltro === 'pdf', '#EF4444')}
+              className="h-8 rounded-full text-xs font-semibold px-3 gap-1.5"
             >
               <FileText size={13} />
               <span>PDF ({reportes.filter((r) => r.formato === 'pdf').length})</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={formatoFiltro === 'csv' ? 'default' : 'secondary'}
+              size="sm"
               onClick={() => setFormatoFiltro('csv')}
-              style={formatPillStyle(formatoFiltro === 'csv', '#3B82F6')}
+              className="h-8 rounded-full text-xs font-semibold px-3 gap-1.5"
             >
               <SlidersHorizontal size={13} />
               <span>CSV ({reportes.filter((r) => r.formato === 'csv').length})</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
