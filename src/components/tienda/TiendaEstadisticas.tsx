@@ -76,74 +76,9 @@ const money = (n: number) => `C$ ${n.toLocaleString('es-NI', { minimumFractionDi
 const metodoLegible = (m: string) =>
   ({ efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', fiado: 'Fiado', devolucion: 'Devoluciones' }[m] || m);
 
-const sectionCard: React.CSSProperties = {
-  background: 'var(--surface)',
-  borderRadius: 'var(--lf-card-radius, 20px)',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--lf-shadow-card)',
-  padding: 20,
-};
-
-const statCard: React.CSSProperties = {
-  background: 'var(--surface)',
-  borderRadius: 16,
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--lf-shadow-card)',
-  padding: '16px 20px',
-};
-
-const btnPrimary: React.CSSProperties = {
-  padding: '10px 20px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: 'none',
-  background: 'var(--primario)',
-  color: '#FFFFFF',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 8,
-  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)',
-  transition: 'all 0.2s ease',
-};
-
-const btnSecondary: React.CSSProperties = {
-  padding: '9px 16px',
-  borderRadius: 'var(--lf-button-radius, 14px)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-alt)',
-  color: 'var(--text)',
-  fontWeight: 600,
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  transition: 'all 0.2s ease',
-};
-
-const filterPill = (active: boolean): React.CSSProperties => ({
-  padding: '7px 14px',
-  borderRadius: 'var(--lf-pill-radius, 100px)',
-  background: active ? 'var(--primario)' : 'var(--bg-alt)',
-  color: active ? '#FFFFFF' : 'var(--text-muted)',
-  border: `1px solid ${active ? 'var(--primario)' : 'var(--border)'}`,
-  fontWeight: 600,
-  fontSize: 12,
-  fontFamily: "'DM Sans', sans-serif",
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-  transition: 'all 0.18s ease',
-  boxShadow: active ? '0 2px 8px rgba(0, 122, 255, 0.25)' : 'none',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-});
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
   const [dias, setDias] = useState(30);
@@ -221,11 +156,13 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
     pie: React.ReactNode;
     tono?: string;
   }) => (
-    <div style={statCard} className="flex flex-col gap-1.5 min-w-0">
-      <span className="text-xs font-semibold text-[var(--text-muted)]">{etiqueta}</span>
-      <span className={`truncate text-[22px] font-extrabold ${tono}`}>{valor}</span>
-      {pie}
-    </div>
+    <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+      <CardContent className="p-4 flex flex-col gap-1 min-w-0">
+        <span className="text-xs font-semibold text-[var(--text-muted)]">{etiqueta}</span>
+        <span className={`truncate text-xl font-extrabold ${tono}`}>{valor}</span>
+        {pie}
+      </CardContent>
+    </Card>
   );
 
   const etiquetaVariacion = datos?.comparacion.hayDatos ? datos.comparacion.etiqueta : 'sin datos previos';
@@ -243,26 +180,38 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+        <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
           {PERIODOS.map((p) => {
             const active = dias === p.dias;
             return (
-              <button
+              <Button
                 key={p.dias}
+                variant={active ? 'default' : 'secondary'}
+                size="sm"
                 onClick={() => setDias(p.dias)}
-                style={filterPill(active)}
+                className="h-8 rounded-full text-xs font-semibold px-3"
               >
                 {p.label}
-              </button>
+              </Button>
             );
           })}
         </div>
       </div>
 
-      {loading && <div style={sectionCard} className="text-[13.5px] text-[var(--text-muted)]">Calculando…</div>}
+      {loading && (
+        <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+          <CardContent className="p-6 text-center text-xs text-[var(--text-muted)]">
+            Calculando estadísticas…
+          </CardContent>
+        </Card>
+      )}
 
       {!loading && error && (
-        <div style={sectionCard} className="border-[var(--peligro)]/40 text-[13.5px] text-[var(--peligro)]">{error}</div>
+        <Card className="bg-[var(--surface)] border-red-500/40 shadow-sm">
+          <CardContent className="p-6 text-center text-xs text-red-500 font-medium">
+            {error}
+          </CardContent>
+        </Card>
       )}
 
       {!loading && !error && datos && (
@@ -327,176 +276,187 @@ export function TiendaEstadisticas({ isDark }: { isDark: boolean }) {
           </div>
 
           {datos.resumen.numVentas === 0 ? (
-            <div style={sectionCard} className="py-8 text-center">
-              <div className="text-[15px] font-bold text-[var(--text)]">Todavía no hay ventas en este período</div>
-              <div className="mt-1.5 text-[13px] text-[var(--text-muted)]">
-                Las cifras y las gráficas aparecen en cuanto registres ventas en la Caja POS (o devoluciones).
-              </div>
-            </div>
+            <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm text-center">
+              <CardContent className="p-8 space-y-1.5">
+                <div className="text-base font-bold text-[var(--text)]">Todavía no hay ventas en este período</div>
+                <div className="text-xs text-[var(--text-muted)]">
+                  Las cifras y las gráficas aparecen en cuanto registres ventas en la Caja POS (o devoluciones).
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <div style={sectionCard}>
-                  <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Ventas por hora</h3>
-                  <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={datos.porHora} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={rejilla} vertical={false} />
-                        <XAxis
-                          dataKey="hora"
-                          tickFormatter={(h) => `${h}h`}
-                          tick={{ fill: eje, fontSize: 10.5 }}
-                          axisLine={{ stroke: rejilla }}
-                          tickLine={false}
-                          interval={1}
-                        />
-                        <YAxis tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
-                        <Tooltip formatter={(v) => money(Number(v))} labelFormatter={(h) => `${h}:00 – ${h}:59`} {...helper} />
-                        <Bar dataKey="total" fill={serie} radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div style={sectionCard}>
-                  <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Ventas por día</h3>
-                  <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={datos.porDia} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="gradPanelVentas" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={serie} stopOpacity={0.45} />
-                            <stop offset="100%" stopColor={serie} stopOpacity={0.03} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={rejilla} vertical={false} />
-                        <XAxis dataKey="fecha" tick={{ fill: eje, fontSize: 10.5 }} axisLine={{ stroke: rejilla }} tickLine={false} />
-                        <YAxis tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
-                        <Tooltip formatter={(v) => money(Number(v))} {...helper} />
-                        <Area type="monotone" dataKey="total" stroke={serie} strokeWidth={2} fill="url(#gradPanelVentas)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <div style={sectionCard}>
-                  <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Top 10 productos</h3>
-                  {datos.topProductos.length === 0 ? (
-                    <p className="text-[13px] text-[var(--text-muted)]">Sin artículos vendidos en el período.</p>
-                  ) : (
-                    <div className="h-[240px]">
+                <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Ventas por hora</h3>
+                    <div className="h-[200px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={datos.topProductos.map((p) => ({
-                            nombre: p.nombre.length > 20 ? `${p.nombre.slice(0, 19)}…` : p.nombre,
-                            monto: p.monto,
-                            cantidad: p.cantidad,
-                          }))}
-                          layout="vertical"
-                          margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke={rejilla} horizontal={false} />
-                          <XAxis type="number" tick={{ fill: eje, fontSize: 10 }} axisLine={false} tickLine={false} />
-                          <YAxis type="category" dataKey="nombre" width={124} tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
-                          <Tooltip
-                            formatter={(v, _n, item) => [
-                              `${money(Number(v))} · ${(item?.payload as { cantidad?: number })?.cantidad ?? 0} u.`,
-                              'Vendido',
-                            ]}
-                            {...helper}
+                        <BarChart data={datos.porHora} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={rejilla} vertical={false} />
+                          <XAxis
+                            dataKey="hora"
+                            tickFormatter={(h) => `${h}h`}
+                            tick={{ fill: eje, fontSize: 10.5 }}
+                            axisLine={{ stroke: rejilla }}
+                            tickLine={false}
+                            interval={1}
                           />
-                          <Bar dataKey="monto" fill={serie} radius={[0, 4, 4, 0]} />
+                          <YAxis tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
+                          <Tooltip formatter={(v) => money(Number(v))} labelFormatter={(h) => `${h}:00 – ${h}:59`} {...helper} />
+                          <Bar dataKey="total" fill={serie} radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
 
-                <div style={sectionCard}>
-                  <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Formas de pago</h3>
-                  {datos.porMetodo.length === 0 ? (
-                    <p className="text-[13px] text-[var(--text-muted)]">Sin cobros registrados en el período.</p>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="h-[190px] w-[190px] shrink-0">
+                <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Ventas por día</h3>
+                    <div className="h-[200px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={datos.porDia} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="gradPanelVentas" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={serie} stopOpacity={0.45} />
+                              <stop offset="100%" stopColor={serie} stopOpacity={0.03} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke={rejilla} vertical={false} />
+                          <XAxis dataKey="fecha" tick={{ fill: eje, fontSize: 10.5 }} axisLine={{ stroke: rejilla }} tickLine={false} />
+                          <YAxis tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
+                          <Tooltip formatter={(v) => money(Number(v))} {...helper} />
+                          <Area type="monotone" dataKey="total" stroke={serie} strokeWidth={2} fill="url(#gradPanelVentas)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Top 10 productos</h3>
+                    {datos.topProductos.length === 0 ? (
+                      <p className="text-[13px] text-[var(--text-muted)]">Sin artículos vendidos en el período.</p>
+                    ) : (
+                      <div className="h-[240px]">
                         <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={datos.porMetodo.map((m) => ({ name: metodoLegible(m.metodo), value: Math.abs(m.total) }))}
-                              dataKey="value"
-                              innerRadius={48}
-                              outerRadius={78}
-                              paddingAngle={2}
-                            >
-                              {datos.porMetodo.map((_, i) => (
-                                <Cell key={i} fill={PALETA[i % PALETA.length]} stroke="none" />
-                              ))}
-                            </Pie>
-                              <Tooltip formatter={(v) => money(Number(v))} {...helper} />
-                          </PieChart>
+                          <BarChart
+                            data={datos.topProductos.map((p) => ({
+                              nombre: p.nombre.length > 20 ? `${p.nombre.slice(0, 19)}…` : p.nombre,
+                              monto: p.monto,
+                              cantidad: p.cantidad,
+                            }))}
+                            layout="vertical"
+                            margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke={rejilla} horizontal={false} />
+                            <XAxis type="number" tick={{ fill: eje, fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <YAxis type="category" dataKey="nombre" width={124} tick={{ fill: eje, fontSize: 10.5 }} axisLine={false} tickLine={false} />
+                            <Tooltip
+                              formatter={(v, _n, item) => [
+                                `${money(Number(v))} · ${(item?.payload as { cantidad?: number })?.cantidad ?? 0} u.`,
+                                'Vendido',
+                              ]}
+                              {...helper}
+                            />
+                            <Bar dataKey="monto" fill={serie} radius={[0, 4, 4, 0]} />
+                          </BarChart>
                         </ResponsiveContainer>
                       </div>
-                      <ul className="flex min-w-0 flex-1 flex-col gap-2">
-                        {datos.porMetodo.map((m, i) => (
-                          <li key={m.metodo} className="flex items-center gap-2 text-[12.5px] text-[var(--text)]">
-                            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: PALETA[i % PALETA.length] }} />
-                            <span className="flex-1 truncate">{metodoLegible(m.metodo)}</span>
-                            <span className="text-[11.5px] text-[var(--text-muted)]">{m.ventas}</span>
-                            <span className="font-bold">{money(m.total)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-[var(--surface)] border-[var(--border)] shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="mb-2.5 text-[13.5px] font-extrabold text-[var(--text)]">Formas de pago</h3>
+                    {datos.porMetodo.length === 0 ? (
+                      <p className="text-[13px] text-[var(--text-muted)]">Sin cobros registrados en el período.</p>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="h-[190px] w-[190px] shrink-0">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={datos.porMetodo.map((m) => ({ name: metodoLegible(m.metodo), value: Math.abs(m.total) }))}
+                                dataKey="value"
+                                innerRadius={48}
+                                outerRadius={78}
+                                paddingAngle={2}
+                              >
+                                {datos.porMetodo.map((_, i) => (
+                                  <Cell key={i} fill={PALETA[i % PALETA.length]} stroke="none" />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(v) => money(Number(v))} {...helper} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <ul className="flex min-w-0 flex-1 flex-col gap-2">
+                          {datos.porMetodo.map((m, i) => (
+                            <li key={m.metodo} className="flex items-center gap-2 text-[12.5px] text-[var(--text)]">
+                              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: PALETA[i % PALETA.length] }} />
+                              <span className="flex-1 truncate">{metodoLegible(m.metodo)}</span>
+                              <span className="text-[11.5px] text-[var(--text-muted)]">{m.ventas}</span>
+                              <span className="font-bold">{money(m.total)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </>
           )}
 
           {datos.alertasStockBajo.length > 0 && (
-            <div style={{ ...sectionCard, borderColor: 'rgba(245, 158, 11, 0.4)' }}>
-              <h3 className="flex items-center gap-2 text-[13.5px] font-extrabold text-[var(--warning)]">
-                <AlertTriangle size={16} /> Stock en o bajo el mínimo
-              </h3>
-              <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {datos.alertasStockBajo.map((a) => (
-                  <div key={a.productoId} className="flex justify-between gap-2.5 text-[12.5px] text-[var(--text)]">
-                    <span className="truncate">{a.nombre}</span>
-                    <span className="font-mono font-bold tabular-nums">
-                      {a.stock} / {a.stockMinimo}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card className="bg-[var(--surface)] border-amber-500/40 shadow-sm">
+              <CardContent className="p-5">
+                <h3 className="flex items-center gap-2 text-[13.5px] font-extrabold text-[var(--warning)] m-0">
+                  <AlertTriangle size={16} /> Stock en o bajo el mínimo
+                </h3>
+                <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {datos.alertasStockBajo.map((a) => (
+                    <div key={a.productoId} className="flex justify-between gap-2.5 text-[12.5px] text-[var(--text)]">
+                      <span className="truncate">{a.nombre}</span>
+                      <span className="font-mono font-bold tabular-nums">
+                        {a.stock} / {a.stockMinimo}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            <Button
               onClick={() => descargar('xlsx')}
               disabled={descargando !== null}
-              style={btnPrimary}
-              className="h-11 active:scale-[0.98] disabled:opacity-60"
+              className="h-10 text-xs font-semibold gap-2"
             >
               <FileSpreadsheet size={16} /> {descargando === 'xlsx' ? 'Generando…' : 'Reporte Excel'}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => descargar('pdf')}
               disabled={descargando !== null}
-              style={btnSecondary}
-              className="h-11 active:scale-[0.98] disabled:opacity-60"
+              className="h-10 text-xs font-semibold gap-2"
             >
               <Download size={16} /> {descargando === 'pdf' ? 'Generando…' : 'Reporte PDF'}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               onClick={cargar}
-              style={btnSecondary}
-              className="h-11 active:scale-[0.98]"
+              className="h-10 text-xs font-semibold gap-2"
             >
               <RotateCcw size={15} /> Actualizar
-            </button>
+            </Button>
             <span className="text-xs text-[var(--text-muted)]">Los reportes salen con el logo y el nombre de tu tienda.</span>
           </div>
         </>
