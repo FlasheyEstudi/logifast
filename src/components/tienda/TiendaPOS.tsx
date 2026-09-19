@@ -60,6 +60,7 @@ interface FacturaDatos {
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import QRCode from 'qrcode';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
@@ -88,6 +89,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   // Escáner inalámbrico
   const [escanerAbierto, setEscanerAbierto] = useState(false);
   const [escanerPin, setEscanerPin] = useState('');
+  const [escanerQr, setEscanerQr] = useState<string | null>(null);
   const [lectorConectado, setLectorConectado] = useState(false);
   const [ultimosEscaneos, setUltimosEscaneos] = useState<
     { codigo: string; estado: 'ok' | 'sin-producto' | 'ambiguo'; detalle: string; hora: string }[]
@@ -263,8 +265,26 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     setLectorConectado(false);
     setUltimosEscaneos([]);
     setEscanerAbierto(true);
+    setEscanerQr(null);
     realtime.escanerAbrir(pin);
+    if (origenWeb) {
+      QRCode.toDataURL(`${origenWeb}/escaner?pin=${pin}`, { width: 360, margin: 1 })
+        .then(setEscanerQr)
+        .catch(() => setEscanerQr(null));
+    }
   };
+
+  // ─── Apertura del escáner pedida desde el navbar (bandera + evento) ───
+  useEffect(() => {
+    const abrir = () => abrirEscaner();
+    window.addEventListener('pos:abrir-escaner', abrir);
+    if (typeof window !== 'undefined' && sessionStorage.getItem('pos_pending_escaner') === '1') {
+      sessionStorage.removeItem('pos_pending_escaner');
+      abrirEscaner();
+    }
+    return () => window.removeEventListener('pos:abrir-escaner', abrir);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const cerrarEscaner = () => {
     if (escanerPinRef.current) realtime.escanerCerrar(escanerPinRef.current);
@@ -272,6 +292,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     setEscanerPin('');
     setLectorConectado(false);
     setEscanerAbierto(false);
+    setEscanerQr(null);
   };
 
   const modificarCantidad = (prodId: string, delta: number) => {
@@ -946,6 +967,20 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 <Wifi size={24} className={lectorConectado ? 'text-[var(--exito)] animate-pulse' : ''} />
               </div>
             </div>
+
+            {/* QR de emparejamiento: el celular lo escanea y entra directo al lector */}
+            {escanerQr && (
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <img
+                  src={escanerQr}
+                  alt="QR para conectar el celular como lector"
+                  className="w-44 h-44 rounded-xl border border-[var(--border)] bg-white"
+                />
+                <p className="text-xs text-[var(--text-muted)] text-center leading-snug">
+                  Escanea este QR con la cámara de tu celular (o abre <b>{origenWeb}/escaner</b> y teclea el PIN).
+                </p>
+              </div>
+            )}
 
             {origenWeb.includes('localhost') || origenWeb.includes('127.0.0.1') ? (
               <div className="p-3 rounded-[var(--lf-card-radius)] bg-[var(--warning)]/10 border border-[var(--warning)] text-[var(--warning)] text-xs flex items-start gap-2.5">

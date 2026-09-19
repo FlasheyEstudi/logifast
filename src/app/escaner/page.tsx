@@ -221,6 +221,20 @@ export default function EscanerPage() {
     setEstado('Desemparejado');
   };
 
+  // ─── PIN por URL (?pin=XXXXXX): el celular escanea el QR de la caja y entra directo ───
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const param = new URLSearchParams(window.location.search).get('pin');
+    if (!param) return;
+    const limpio = param.replace(/\D/g, '').slice(0, 6);
+    if (limpio.length === 6) {
+      setPin(limpio);
+      pinRef.current = limpio;
+      setEstado('Emparejando…');
+      realtime.escanerUnir(limpio);
+    }
+  }, []);
+
   const color = (ok: boolean | null) => (ok === null ? 'var(--text-muted)' : ok ? '#22C55E' : '#EF4444');
 
   return (

@@ -23,8 +23,6 @@ import {
   QrCode,
 } from '@/components/icons';
 import SlidingPillTabBar, { type SlidingTabItem } from '@/components/ui/SlidingPillTabBar';
-import QRSyncModal from './qr-sync/QRSyncModal';
-import QRSyncScanner from './qr-sync/QRSyncScanner';
 
 export type TiendaModulo =
   | 'kds'
@@ -76,8 +74,6 @@ export function TiendaNavbar({
 }: TiendaNavbarProps) {
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [qrSyncOpen, setQrSyncOpen] = useState(false);
-  const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -344,22 +340,31 @@ export function TiendaNavbar({
 
           {/* Right: Indicador En Vivo + Tema + Salir (Sin bordes en iconos) */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Conectar Celular (desktop): genera QR para usar el celular como extensión del POS */}
+            {/* Conectar Celular (desktop): abre el escáner inalámbrico del POS con QR */}
             <button
-              onClick={() => setQrSyncOpen(true)}
+              onClick={() => {
+                sessionStorage.setItem('pos_pending_escaner', '1');
+                if (moduloActivo === 'pos') {
+                  window.dispatchEvent(new CustomEvent('pos:abrir-escaner'));
+                } else {
+                  onSelectModulo('pos');
+                }
+              }}
               className="hidden md:flex h-11 px-3.5 rounded-full bg-[var(--primario)]/10 hover:bg-[var(--primario)]/20 border border-[var(--primario)]/30 text-[var(--primario)] font-bold text-xs items-center gap-1.5 transition-colors cursor-pointer active:scale-95 shrink-0"
-              title="Usar el celular como extensión del POS"
+              title="Usar el celular como lector de barras del POS"
             >
               <QrCode size={14} />
               <span>Conectar Celular</span>
             </button>
 
-            {/* Escanear QR POS (móvil) */}
+            {/* Lector de barras (móvil): abre /escaner en el celular */}
             <button
-              onClick={() => setQrScannerOpen(true)}
+              onClick={() => {
+                window.location.href = '/escaner';
+              }}
               className="md:hidden h-11 w-11 rounded-full bg-[var(--primario)]/10 border border-[var(--primario)]/30 text-[var(--primario)] flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-              aria-label="Escanear QR POS"
-              title="Escanear QR del POS"
+              aria-label="Abrir lector de barras"
+              title="Usar este celular como lector de barras del POS"
             >
               <QrCode size={15} />
             </button>
@@ -523,10 +528,6 @@ export function TiendaNavbar({
           </>
         )}
       </AnimatePresence>
-
-      {/* Vinculación QR POS (PC genera, móvil escanea) */}
-      <QRSyncModal open={qrSyncOpen} onClose={() => setQrSyncOpen(false)} />
-      <QRSyncScanner open={qrScannerOpen} onClose={() => setQrScannerOpen(false)} />
     </div>
   );
 }
