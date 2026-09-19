@@ -2031,28 +2031,9 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
           />
         </div>
 
-        {/* Tema — 3-state segmented control wired to configStore */}
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6, fontFamily: "'DM Sans', sans-serif" }}>
-            Tema
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
-            Claro, oscuro o seguir al sistema
-          </div>
-          <TemaToggle />
-        </div>
-
-        {/* Sonido — toggle + volume slider + test button wired to configStore */}
-        <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>
-            Sonido
-          </div>
-          <SonidoToggle />
-        </div>
-
         {/* Configuración: general, tema, ayuda, facturas y cuenta */}
         <button
-          onClick={() => router.push('/configuracion')}
+          onClick={() => (onNavigate as any)('configuracion')}
           style={{
             width: '100%',
             padding: '12px 20px',

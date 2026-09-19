@@ -23,6 +23,8 @@ import {
   QrCode,
 } from '@/components/icons';
 import SlidingPillTabBar, { type SlidingTabItem } from '@/components/ui/SlidingPillTabBar';
+import { realtime } from '@/services/realtime';
+import { notify } from '@/lib/notify';
 
 export type TiendaModulo =
   | 'kds'
@@ -161,6 +163,39 @@ export function TiendaNavbar({
   };
 
   const handleExitAction = onReturnToClient || onLogout;
+
+  /* QR de conexión: en celular abre la CÁMARA para escanear el QR del POS;
+     en PC/tablet abre el modal con el QR grande (sin recargar nunca). */
+  const tocarQr = async () => {
+    const esApp = !!(window as any).Capacitor?.isNativePlatform?.();
+    const esMovil = esApp || (window.innerWidth <= 768 && (navigator.maxTouchPoints > 0 || 'ontouchstart' in window));
+    if (!esMovil) {
+      sessionStorage.setItem('pos_pending_escaner', '1');
+      if (moduloActivo === 'pos') {
+        window.dispatchEvent(new CustomEvent('pos:abrir-escaner'));
+      } else {
+        onSelectModulo('pos');
+      }
+      return;
+    }
+    try {
+      const { BarcodeScanner } = await import('@capacitor-community/barcode-scanner');
+      if (esApp) { try { await BarcodeScanner.prepare?.(); } catch { /* seguir */ } }
+      const resultado: any = await BarcodeScanner.startScan();
+      if (resultado?.hasContent && resultado.content) {
+        const m = String(resultado.content).match(/(?:escaner\?pin=|pin[=:])(\d{6})/i);
+        if (m?.[1]) {
+          realtime.escanerUnir(m[1]);
+          window.location.href = esApp ? `/escaner.html?pin=${m[1]}` : `/escaner?pin=${m[1]}`;
+        } else {
+          notify.error('Ese QR no es del POS. Escanea el código que muestra la caja.');
+        }
+      }
+      try { await BarcodeScanner.stopScan?.(); } catch { /* ignorar */ }
+    } catch {
+      window.location.href = esApp ? '/escaner.html' : '/escaner';
+    }
+  };
   const isAbierta = tiendaEstado === 'activo';
 
   return (
@@ -340,16 +375,9 @@ export function TiendaNavbar({
 
           {/* Right: Indicador En Vivo + Tema + Salir (Sin bordes en iconos) */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* QR arriba: abre el modal de conexión del celular (nunca recarga la página) */}
+            {/* QR arriba: celular → cámara; PC/tablet → modal con QR grande (sin recargar) */}
             <button
-              onClick={() => {
-                sessionStorage.setItem('pos_pending_escaner', '1');
-                if (moduloActivo === 'pos') {
-                  window.dispatchEvent(new CustomEvent('pos:abrir-escaner'));
-                } else {
-                  onSelectModulo('pos');
-                }
-              }}
+              onClick={tocarQr}
               className="h-11 px-3.5 rounded-full bg-[var(--primario)]/10 hover:bg-[var(--primario)]/20 border border-[var(--primario)]/30 text-[var(--primario)] font-bold text-xs items-center gap-1.5 transition-colors cursor-pointer active:scale-95 shrink-0 flex"
               title="Conectar el celular como lector del POS"
             >

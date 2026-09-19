@@ -77,6 +77,8 @@ import ClientAyuda from './ClientAyuda';
 import ClientPuntos from './ClientPuntos';
 import ClientMiTienda from './ClientMiTienda';
 import ClientTracking from './ClientTracking';
+import ConfiguracionView from './ConfiguracionView';
+import FacturaView from './FacturaView';
 import ClientChat from './ClientChat';
 import ClientRating from './ClientRating';
 
@@ -486,6 +488,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
          Se ven con el celular bloqueado o en la bandeja de notificaciones;
          no se muestra nada dentro de la app. Sin emojis (texto limpio). ─── */
   const ultimoEstadoNotifRef = useRef<string>('');
+  const [subview, setSubview] = useState<'configuracion' | 'factura' | null>(null);
   useEffect(() => {
     if (!activeOrder?.id) return;
     const etiquetas: Record<string, { titulo: string; cuerpo: string }> = {
@@ -907,6 +910,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
 
   const handleNav = useCallback(
     (mod: ClientModuleKey, pushHistory = true) => {
+      // Subvistas de perfil (sin recarga de página): configuración y factura
+      if ((mod as string) === 'configuracion' || (mod as string) === 'factura') {
+        setSubview(mod as 'configuracion' | 'factura');
+        return;
+      }
       if (mod === clientActiveModule) return;
 
       if (pushHistory && typeof window !== 'undefined') {
@@ -1316,6 +1324,38 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
             )}
           </div>
         </main>
+
+        {/* Subvistas de perfil: Configuración y Factura (dentro de la app, sin recargar) */}
+        <AnimatePresence>
+          {subview === 'configuracion' && (
+            <motion.div
+              key="configuracion"
+              initial={{ opacity: 0, x: '100%' }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 260 }}
+              style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--bg)', color: 'var(--text)', overflowY: 'auto' }}
+            >
+              <ConfiguracionView
+                onClose={() => setSubview(null)}
+                onLogout={onLogout}
+                onVerFactura={() => setSubview('factura')}
+              />
+            </motion.div>
+          )}
+          {subview === 'factura' && (
+            <motion.div
+              key="factura"
+              initial={{ opacity: 0, x: '100%' }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 260 }}
+              style={{ position: 'fixed', inset: 0, zIndex: 9996, backgroundColor: 'var(--bg)', color: 'var(--text)', overflowY: 'auto' }}
+            >
+              <FacturaView onClose={() => setSubview(null)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
         <div
