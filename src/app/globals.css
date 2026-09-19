@@ -16502,18 +16502,6 @@ body {
   }
 }
 
-
-
-/* Full-bleed nativo para secciones del inicio del cliente (móvil y tablet vertical).
-   En escritorio (>1024px) las secciones vuelven al ancho de la columna del shell. */
-@media (max-width: 1024px) {
-  .lf-inicio-fullbleed {
-    width: 100vw !important;
-    margin-left: calc(50% - 50vw) !important;
-    margin-right: calc(50% - 50vw) !important;
-  }
-}
-
 /* Línea de escaneo del visor QR del POS */
 @keyframes lf-qr-scan {
   0%, 100% { transform: translateY(-120px); }

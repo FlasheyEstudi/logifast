@@ -196,6 +196,51 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     manejarCodigoRef.current = manejarCodigo;
   }, [manejarCodigo]);
 
+  // ─── Escaneo con cámara (único botón "Escanear"): plugin nativo en la app, zxing en web ───
+  const procesarCodigoEscaneado = useCallback(
+    (crudo: string) => {
+      const codigo = String(crudo ?? '').trim();
+      if (!codigo) return;
+      // Flujo 1: QR de sesión del POS (…/escaner?pin=XXXXXX) → conecta este dispositivo como lector extensión
+      const m = codigo.match(/(?:escaner\?pin=|pin[=:])(\d{6})/i);
+      if (m && m[1]) {
+        const pin = m[1];
+        escanerPinRef.current = pin;
+        setEscanerPin(pin);
+        setLectorConectado(false);
+        setUltimosEscaneos([]);
+        setEscanerAbierto(true);
+        realtime.escanerUnir(pin);
+        notify.success('Celular conectado como lector del POS');
+        return;
+      }
+      // Flujo 2: código de barras / QR de producto → agregar directo al carrito
+      manejarCodigo(codigo, 'pistola');
+    },
+    [manejarCodigo]
+  );
+
+  const escanearConCamara = useCallback(async () => {
+    try {
+      const [{ BarcodeScanner }, { Capacitor }] = await Promise.all([
+        import('@capacitor-community/barcode-scanner'),
+        import('@capacitor/core'),
+      ]);
+      if (Capacitor.isNativePlatform?.()) {
+        try { await BarcodeScanner.prepare?.(); } catch { /* seguir */ }
+      }
+      const resultado: any = await BarcodeScanner.startScan();
+      if (resultado?.hasContent && resultado.content) {
+        procesarCodigoEscaneado(resultado.content);
+      }
+      try { await BarcodeScanner.stopScan?.(); } catch { /* ignorar */ }
+    } catch (e: any) {
+      notify.error('No se pudo abrir la cámara. Ingresa el código manualmente.');
+      const manual = window.prompt('Código de barras / QR (manual):');
+      if (manual?.trim()) procesarCodigoEscaneado(manual.trim());
+    }
+  }, [procesarCodigoEscaneado]);
+
   // Pistolas lectoras físicas
   useEffect(() => {
     let buffer = '';
@@ -701,8 +746,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
             <div className="flex items-center gap-2 shrink-0">
               <Button
                 variant={lectorConectado ? 'default' : 'secondary'}
-                onClick={abrirEscaner}
-                title="Emparejar un celular como lector de códigos de barras"
+                onClick={escanearConCamara}
+                title="Escanear con la cámara un código o QR"
                 className={`flex-1 sm:flex-initial h-11 rounded-full px-4 text-xs font-bold shadow-[var(--lf-shadow-card)] ${
                   lectorConectado
                     ? '!bg-[var(--exito)] hover:!bg-[var(--exito)]/90 text-white'
@@ -710,7 +755,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 }`}
               >
                 <Camera size={15} className="mr-1.5" />
-                <span>{lectorConectado ? 'Lector Activo' : 'Escáner Celular'}</span>
+                <span>{lectorConectado ? 'Lector Activo' : 'Escanear'}</span>
               </Button>
 
               <Button

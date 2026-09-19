@@ -340,7 +340,7 @@ export function TiendaNavbar({
 
           {/* Right: Indicador En Vivo + Tema + Salir (Sin bordes en iconos) */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Conectar Celular (desktop): abre el escáner inalámbrico del POS con QR */}
+            {/* QR arriba: abre el modal de conexión del celular (nunca recarga la página) */}
             <button
               onClick={() => {
                 sessionStorage.setItem('pos_pending_escaner', '1');
@@ -350,23 +350,11 @@ export function TiendaNavbar({
                   onSelectModulo('pos');
                 }
               }}
-              className="hidden md:flex h-11 px-3.5 rounded-full bg-[var(--primario)]/10 hover:bg-[var(--primario)]/20 border border-[var(--primario)]/30 text-[var(--primario)] font-bold text-xs items-center gap-1.5 transition-colors cursor-pointer active:scale-95 shrink-0"
-              title="Usar el celular como lector de barras del POS"
+              className="h-11 px-3.5 rounded-full bg-[var(--primario)]/10 hover:bg-[var(--primario)]/20 border border-[var(--primario)]/30 text-[var(--primario)] font-bold text-xs items-center gap-1.5 transition-colors cursor-pointer active:scale-95 shrink-0 flex"
+              title="Conectar el celular como lector del POS"
             >
               <QrCode size={14} />
-              <span>Conectar Celular</span>
-            </button>
-
-            {/* Lector de barras (móvil): abre /escaner en el celular */}
-            <button
-              onClick={() => {
-                window.location.href = '/escaner';
-              }}
-              className="md:hidden h-11 w-11 rounded-full bg-[var(--primario)]/10 border border-[var(--primario)]/30 text-[var(--primario)] flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-              aria-label="Abrir lector de barras"
-              title="Usar este celular como lector de barras del POS"
-            >
-              <QrCode size={15} />
+              <span className="hidden sm:inline">Conectar Celular</span>
             </button>
 
             {/* Indicador En Vivo */}

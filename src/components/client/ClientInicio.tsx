@@ -578,7 +578,6 @@ export default function ClientInicio({
 
         return (
           <div
-            className="lf-inicio-fullbleed"
             style={{
               width: '100%',
               borderRadius: 24,
@@ -1178,7 +1177,7 @@ export default function ClientInicio({
       )}
 
       {/* ── TIENDAS DESTACADAS ── */}
-      <div className="lf-inicio-fullbleed" style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingLeft: 16, paddingRight: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', paddingLeft: 16, paddingRight: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3
             style={{
@@ -1213,7 +1212,7 @@ export default function ClientInicio({
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))', gap: 12, justifyContent: 'center' }}>
           {featuredTiendas.map((tienda) => (
             <div
               key={tienda.id}

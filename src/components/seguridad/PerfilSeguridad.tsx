@@ -106,7 +106,8 @@ export default function PerfilSeguridad({ onLogout }: PerfilSeguridadProps) {
         Seguridad
       </div>
 
-      {/* Huella / Face ID */}
+      {/* Huella / Face ID (solo si el dispositivo lo soporta) */}
+      {bioDisp && (
       <div
         style={{
           display: 'flex',
@@ -175,6 +176,7 @@ export default function PerfilSeguridad({ onLogout }: PerfilSeguridadProps) {
           />
         </button>
       </div>
+      )}
 
       {/* Cambiar contraseña */}
       <button
@@ -273,27 +275,6 @@ export default function PerfilSeguridad({ onLogout }: PerfilSeguridadProps) {
           {msg.texto}
         </div>
       )}
-
-      {/* Cierre de sesión rápido */}
-      <button
-        type="button"
-        onClick={onLogout}
-        style={{
-          width: '100%',
-          marginTop: 10,
-          minHeight: 44,
-          borderRadius: 'var(--lf-button-radius, 14px)',
-          border: '1px solid var(--peligro)',
-          background: 'transparent',
-          color: 'var(--peligro)',
-          fontSize: 13,
-          fontWeight: 700,
-          fontFamily: "'DM Sans', sans-serif",
-          cursor: 'pointer',
-        }}
-      >
-        Cerrar sesión rápido
-      </button>
     </div>
   );
 }

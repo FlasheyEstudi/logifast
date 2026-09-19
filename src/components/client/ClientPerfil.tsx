@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import PerfilSeguridad from '@/components/seguridad/PerfilSeguridad';
 import MisFacturas from '@/components/client/MisFacturas';
 import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
-  LogOut, Shield, Bell, Globe, ChevronRight, AlertTriangle,
+  LogOut, Shield, Bell, Globe, ChevronRight, AlertTriangle, Settings,
   Star, Banknote, CreditCard, Copy, Home, Building, ShoppingBag, Package,
   Heart, ShoppingCart, Gift, Users, Vibrate,
 } from '@/components/icons';
@@ -182,6 +183,7 @@ const sectionCard: React.CSSProperties = {
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
 export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientPerfilProps) {
+  const router = useRouter();
   const {
     direccionesGuardadas,
     addDireccionGuardada,
@@ -2048,50 +2050,16 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
           <SonidoToggle />
         </div>
 
-        <MisFacturas />
-
-        {/* Lector de barras del POS (acceso para dueños de tienda) */}
-        <div style={{ marginTop: 16 }}>
-          <button
-            type="button"
-            onClick={() => {
-              const esApp = !!(window as any).Capacitor?.isNativePlatform?.();
-              window.location.href = esApp ? '/escaner.html' : '/escaner';
-            }}
-            style={{
-              width: '100%',
-              minHeight: 44,
-              borderRadius: 'var(--lf-button-radius, 14px)',
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text)',
-              fontSize: 13,
-              fontWeight: 700,
-              fontFamily: "'DM Sans', sans-serif",
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-            }}
-          >
-            <span style={{ fontSize: 16 }}>📷</span>
-            Lector de barras (POS)
-          </button>
-        </div>
-
-        <PerfilSeguridad onLogout={onLogout} />
-
-        {/* Cerrar sesion */}
+        {/* Configuración: general, tema, ayuda, facturas y cuenta */}
         <button
-          onClick={() => setLogoutModal(true)}
+          onClick={() => router.push('/configuracion')}
           style={{
             width: '100%',
             padding: '12px 20px',
             borderRadius: 'var(--lf-button-radius, 16px)',
-            border: '1px solid var(--peligro)',
-            background: 'transparent',
-            color: 'var(--peligro)',
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--text)',
             fontWeight: 600,
             fontSize: 14,
             cursor: 'pointer',
@@ -2103,128 +2071,11 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
             marginTop: 16,
           }}
         >
-          <LogOut size={18} /> Cerrar sesion
+          <Settings size={18} /> Configuración
         </button>
 
-        {/* Eliminar cuenta */}
-        <button
-          onClick={() => { setDeleteModal(true); setDeleteText(''); }}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--peligro)',
-            fontSize: 12,
-            marginTop: 12,
-            opacity: 0.6,
-            fontFamily: "'DM Sans', sans-serif",
-            display: 'block',
-            margin: '12px auto 0',
-          }}
-        >
-          Eliminar cuenta
-        </button>
+
       </div>
-
-      {/* ═══════════════════════════════════════════
-          LOGOUT MODAL
-          ═══════════════════════════════════════════ */}
-      <AnimatePresence>
-        {logoutModal && (
-          <Modal onClose={() => setLogoutModal(false)}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: '50%',
-                background: 'rgba(255,23,68,0.1)', margin: '0 auto 16px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <LogOut size={24} style={{ color: 'var(--peligro)' }} />
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 8 }}>
-                Cerrar sesion?
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>
-                Se cerrara tu sesion actual.
-              </p>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-                <button style={btnGhost} onClick={() => setLogoutModal(false)}>
-                  Cancelar
-                </button>
-                <button
-                  style={{ ...btnPrimary, background: 'var(--peligro)' }}
-                  onClick={() => {
-                    setLogoutModal(false);
-                    onLogout();
-                  }}
-                >
-                  Confirmar
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
-      </AnimatePresence>
-
-      {/* ═══════════════════════════════════════════
-          DELETE ACCOUNT MODAL
-          ═══════════════════════════════════════════ */}
-      <AnimatePresence>
-        {deleteModal && (
-          <Modal onClose={() => setDeleteModal(false)}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: '50%',
-                background: 'rgba(255,23,68,0.1)', margin: '0 auto 16px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Trash2 size={24} style={{ color: 'var(--peligro)' }} />
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: "'Syne', sans-serif", marginBottom: 8 }}>
-                Eliminar cuenta
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16, fontFamily: "'DM Sans', sans-serif" }}>
-                Esta accion es irreversible. Se eliminaran todos tus datos.
-              </p>
-              <div style={{ textAlign: 'left', marginBottom: 12 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
-                  Escribe <strong style={{ color: 'var(--peligro)' }}>ELIMINAR</strong> para confirmar
-                </label>
-                <input className="lf-input" style={inputStyle} value={deleteText} onChange={(e) => setDeleteText(e.target.value)} placeholder="ELIMINAR" />
-              </div>
-              <div style={{ textAlign: 'left', marginBottom: 12 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4, display: 'block', fontFamily: "'DM Sans', sans-serif" }}>
-                  Contraseña de seguridad
-                </label>
-                <input
-                  type="password"
-                  className="lf-input"
-                  style={inputStyle}
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Tu contraseña para verificar"
-                />
-              </div>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
-                <button style={btnGhost} onClick={() => { setDeleteModal(false); setDeletePassword(''); setDeleteText(''); }}>
-                  Cancelar
-                </button>
-                <button
-                  style={{
-                    ...btnPrimary,
-                    background: deleteText === 'ELIMINAR' && deletePassword ? 'var(--peligro)' : 'var(--text-muted)',
-                    cursor: deleteText === 'ELIMINAR' && deletePassword && !isDeletingAccount ? 'pointer' : 'not-allowed',
-                    opacity: deleteText === 'ELIMINAR' && deletePassword && !isDeletingAccount ? 1 : 0.5,
-                  }}
-                  disabled={deleteText !== 'ELIMINAR' || !deletePassword || isDeletingAccount}
-                  onClick={handleDeleteAccount}
-                >
-                  <Trash2 size={14} /> {isDeletingAccount ? 'Eliminando...' : 'Eliminar permanentemente'}
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
-      </AnimatePresence>
 
       {/* ═══════════════════════════════════════════
           MODAL: POLÍTICA DE PRIVACIDAD
