@@ -35,6 +35,7 @@ model User {
   auditLogs            AuditLog[]
   calificacionesDadas  CalificacionRepartidor[]
   carritos             CarritoItem[]
+  qrSyncSessions       QrSyncSession[]
   chatsRepartidor      ChatRepartidor[]
   comentarios          Comentario[]
   direcciones          DireccionCliente[]
@@ -1168,5 +1169,20 @@ model BeneficioRedimido {
 
   @@index([beneficioId])
   @@index([repartidorId])
+}
+
+// Vinculación QR del POS (PC genera, móvil escanea): estado persistente multi-instancia.
+model QrSyncSession {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique // sha256 del token JWT; nunca se guarda el token crudo
+  estado    String   @default("pendiente") // "pendiente" | "vinculado" | "expirado"
+  creadoEn  DateTime @default(now())
+  expiraEn  DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([estado])
 }
 
