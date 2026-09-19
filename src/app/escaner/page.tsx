@@ -15,6 +15,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { onRealtimeEvent, realtime, getRealtimeUrl } from '@/services/realtime';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 
 // ─── Tipos mínimos de las APIs nativas que no están en los tipos del DOM ───
 type DeteccionCodigo = { rawValue: string; format: string };
@@ -48,6 +49,7 @@ export default function EscanerPage() {
   const [manual, setManual] = useState('');
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const lectorRef = useRef<{ stop: () => void } | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const detectorRef = useRef<DetectorCodigos | null>(null);
   const wakeLockRef = useRef<WakeLockLike | null>(null);
@@ -82,34 +84,28 @@ export default function EscanerPage() {
 
   // ─── Cámara ───
   const detenerCamara = useCallback(() => {
+    try { lectorRef.current?.stop(); } catch { /* ignorar */ }
+    lectorRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setCamaraActiva(false);
   }, []);
 
   const iniciarCamara = useCallback(async () => {
-    const Ctor = (window as unknown as { BarcodeDetector?: CtorDetector }).BarcodeDetector;
-    if (!Ctor || !navigator.mediaDevices?.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       setSoportaCamara(false);
-      setAviso('Este navegador no trae lector de cámara. Usa el campo manual o Chrome en Android.');
+      setAviso('Este dispositivo no permite la cámara. Usa el campo manual.');
       return;
     }
     try {
-      const formats = Ctor.getSupportedFormats ? await Ctor.getSupportedFormats() : FORMATOS;
-      const disponibles = FORMATOS.filter((f) => !formats?.length || formats.includes(f));
-      detectorRef.current = new Ctor({ formats: disponibles.length ? disponibles : undefined });
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
+      const reader = new BrowserMultiFormatReader();
+      const controls = await reader.decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
+        const texto = result?.getText?.();
+        if (texto) enviarCodigo(texto);
       });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => undefined);
-      }
+      lectorRef.current = controls;
       setCamaraActiva(true);
-      setAviso(disponibles.includes('ean_13') ? null : 'Tu navegador no reporta formatos EAN/UPC; prueba el campo manual.');
+      setAviso(null);
 
       // La pantalla no debe apagarse mientras se cobra.
       const wl = (navigator as unknown as { wakeLock?: { request: (t: string) => Promise<WakeLockLike> } }).wakeLock;
@@ -118,26 +114,17 @@ export default function EscanerPage() {
       setSoportaCamara(false);
       setAviso(
         (err as Error)?.name === 'NotAllowedError'
-          ? 'Permiso de cámara denegado. Habilítalo en el navegador y recarga.'
+          ? 'Permiso de cámara denegado. Habilítalo y recarga.'
           : 'No se pudo abrir la cámara. Usa el campo manual.'
       );
     }
-  }, []);
+  }, [enviarCodigo]);
 
-  // ─── Bucle de lectura continua (solo en fase escaneando) ───
+  // ─── Cámara de lectura continua (solo en fase escaneando) ───
   useEffect(() => {
     if (fase !== 'escaneando' || !soportaCamara) return;
     let vivo = true;
     iniciarCamara();
-    const id = setInterval(async () => {
-      const detector = detectorRef.current;
-      const video = videoRef.current;
-      if (!vivo || !detector || !video || video.readyState < 2) return;
-      try {
-        const lecturas = await detector.detect(video);
-        for (const l of lecturas) if (l?.rawValue) enviarCodigo(l.rawValue);
-      } catch { /* frame ilegible: se reintenta en el siguiente tick */ }
-    }, MS_ENTRE_LECTURAS);
 
     const alVolver = async () => {
       if (document.visibilityState !== 'visible' || !vivo) return;
@@ -149,7 +136,6 @@ export default function EscanerPage() {
 
     return () => {
       vivo = false;
-      clearInterval(id);
       document.removeEventListener('visibilitychange', alVolver);
       detenerCamara();
     };

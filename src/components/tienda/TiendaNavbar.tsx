@@ -25,6 +25,7 @@ import {
 import SlidingPillTabBar, { type SlidingTabItem } from '@/components/ui/SlidingPillTabBar';
 import { realtime } from '@/services/realtime';
 import { notify } from '@/lib/notify';
+import CamaraEscaneo from './CamaraEscaneo';
 
 export type TiendaModulo =
   | 'kds'
@@ -76,6 +77,7 @@ export function TiendaNavbar({
 }: TiendaNavbarProps) {
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [camaraAbierta, setCamaraAbierta] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export function TiendaNavbar({
 
   /* QR de conexión: en celular abre la CÁMARA para escanear el QR del POS;
      en PC/tablet abre el modal con el QR grande (sin recargar nunca). */
-  const tocarQr = async () => {
+  const tocarQr = () => {
     const esApp = !!(window as any).Capacitor?.isNativePlatform?.();
     const esMovil = esApp || (window.innerWidth <= 768 && (navigator.maxTouchPoints > 0 || 'ontouchstart' in window));
     if (!esMovil) {
@@ -178,47 +180,37 @@ export function TiendaNavbar({
       }
       return;
     }
-    try {
-      const { BarcodeScanner } = await import('@capacitor-community/barcode-scanner');
-      if (esApp) {
-        const perm = await BarcodeScanner.checkPermission({ force: true }).catch(() => null);
-        if (perm && !(perm as any).granted) {
-          notify.error('Permiso de cámara denegado. Actívalo en los ajustes de la app.');
-          return;
-        }
-        try { await BarcodeScanner.prepare?.(); } catch { /* seguir */ }
+    setCamaraAbierta(true);
+  };
+
+  const procesarQrCelular = async (crudo: string) => {
+    setCamaraAbierta(false);
+    const contenido = String(crudo ?? '').trim();
+    if (!contenido) return;
+    const esApp = !!(window as any).Capacitor?.isNativePlatform?.();
+    // Token de vinculación (JWT) → vincular cuenta una sola vez (WhatsApp Web).
+    if (/^[A-Za-z0-9._-]{40,}$/.test(contenido)) {
+      const r = await fetch('/api/qr-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: contenido }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) {
+        notify.error(d.error || 'No se pudo vincular con la caja.');
+      } else {
+        localStorage.setItem('qr_pos_vinculado', '1');
+        window.location.href = esApp ? '/escaner.html' : '/escaner';
       }
-      const resultado: any = await BarcodeScanner.startScan();
-      if (resultado?.hasContent && resultado.content) {
-        const contenido = String(resultado.content).trim();
-        // Token de vinculación (JWT) → vincular cuenta una sola vez (WhatsApp Web).
-        if (/^[A-Za-z0-9._-]{40,}$/.test(contenido)) {
-          const r = await fetch('/api/qr-sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: contenido }),
-          });
-          const d = await r.json().catch(() => ({}));
-          if (!r.ok || !d.ok) {
-            notify.error(d.error || 'No se pudo vincular con la caja.');
-          } else {
-            localStorage.setItem('qr_pos_vinculado', '1');
-            window.location.href = esApp ? '/escaner.html' : '/escaner';
-          }
-        } else {
-          const m = contenido.match(/(?:escaner\?pin=|pin[=:])(\d{6})/i);
-          if (m?.[1]) {
-            realtime.escanerUnir(m[1]);
-            window.location.href = esApp ? `/escaner.html?pin=${m[1]}` : `/escaner?pin=${m[1]}`;
-          } else {
-            notify.error('Ese QR no es del POS. Escanea el código que muestra la caja.');
-          }
-        }
-      }
-      try { await BarcodeScanner.stopScan?.(); } catch { /* ignorar */ }
-    } catch {
-      window.location.href = esApp ? '/escaner.html' : '/escaner';
+      return;
     }
+    const m = contenido.match(/(?:escaner\?pin=|pin[=:])(\d{6})/i);
+    if (m?.[1]) {
+      realtime.escanerUnir(m[1]);
+      window.location.href = esApp ? `/escaner.html?pin=${m[1]}` : `/escaner?pin=${m[1]}`;
+      return;
+    }
+    notify.error('Ese QR no es del POS. Escanea el código que muestra la caja.');
   };
   const isAbierta = tiendaEstado === 'activo';
 
@@ -568,6 +560,11 @@ export function TiendaNavbar({
           </>
         )}
       </AnimatePresence>
+
+      {/* Cámara de escaneo (QR de vinculación en el celular) */}
+      {camaraAbierta && (
+        <CamaraEscaneo onCodigo={procesarQrCelular} onCerrar={() => setCamaraAbierta(false)} titulo="Escanear QR de la caja" />
+      )}
     </div>
   );
 }

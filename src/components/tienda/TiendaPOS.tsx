@@ -61,6 +61,7 @@ interface FacturaDatos {
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import QRCode from 'qrcode';
+import CamaraEscaneo from './CamaraEscaneo';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
@@ -90,6 +91,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   const [escanerAbierto, setEscanerAbierto] = useState(false);
   const [escanerPin, setEscanerPin] = useState('');
   const [escanerQr, setEscanerQr] = useState<string | null>(null);
+  const [camaraAbierta, setCamaraAbierta] = useState(false);
   const [lectorConectado, setLectorConectado] = useState(false);
   const [ultimosEscaneos, setUltimosEscaneos] = useState<
     { codigo: string; estado: 'ok' | 'sin-producto' | 'ambiguo'; detalle: string; hora: string }[]
@@ -220,31 +222,9 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     [manejarCodigo]
   );
 
-  const escanearConCamara = useCallback(async () => {
-    try {
-      const [{ BarcodeScanner }, { Capacitor }] = await Promise.all([
-        import('@capacitor-community/barcode-scanner'),
-        import('@capacitor/core'),
-      ]);
-      if (Capacitor.isNativePlatform?.()) {
-        const perm = await BarcodeScanner.checkPermission({ force: true }).catch(() => null);
-        if (perm && !(perm as any).granted) {
-          notify.error('Permiso de cámara denegado. Actívalo en los ajustes de la app.');
-          return;
-        }
-        try { await BarcodeScanner.prepare?.(); } catch { /* seguir */ }
-      }
-      const resultado: any = await BarcodeScanner.startScan();
-      if (resultado?.hasContent && resultado.content) {
-        procesarCodigoEscaneado(resultado.content);
-      }
-      try { await BarcodeScanner.stopScan?.(); } catch { /* ignorar */ }
-    } catch (e: any) {
-      notify.error('No se pudo abrir la cámara. Ingresa el código manualmente.');
-      const manual = window.prompt('Código de barras / QR (manual):');
-      if (manual?.trim()) procesarCodigoEscaneado(manual.trim());
-    }
-  }, [procesarCodigoEscaneado]);
+  const escanearConCamara = useCallback(() => {
+    setCamaraAbierta(true);
+  }, []);
 
   // Pistolas lectoras físicas
   useEffect(() => {
@@ -983,6 +963,18 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       />
 
       {/* ─── Modal Escáner Inalámbrico (PIN Celular) ─── */}
+      {/* Cámara de escaneo (botón Escanear) */}
+      {camaraAbierta && (
+        <CamaraEscaneo
+          onCodigo={(c) => {
+            setCamaraAbierta(false);
+            procesarCodigoEscaneado(c);
+          }}
+          onCerrar={() => setCamaraAbierta(false)}
+          titulo="Escanear producto o QR"
+        />
+      )}
+
       {escanerAbierto && (
         <div
           onClick={cerrarEscaner}
