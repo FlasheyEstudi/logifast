@@ -74,7 +74,7 @@ const PALETA = ['#0A84FF', '#30D158', '#FF9F0A', '#BF5AF2', '#FF453A', '#64D2FF'
 const money = (n: number) => `C$ ${n.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const metodoLegible = (m: string) =>
-  ({ efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', fiado: 'Fiado', devolucion: 'Devoluciones' }[m] || m);
+  ({ efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', devolucion: 'Devoluciones' }[m] || m);
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

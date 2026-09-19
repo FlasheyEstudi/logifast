@@ -77,7 +77,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   // Datos Cliente / Pago POS
   const [clienteNombre, setClienteNombre] = useState('Cliente General');
   const [clienteRuc, setClienteRuc] = useState('');
-  const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia' | 'fiado'>('efectivo');
+  const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
   const [descuento, setDescuento] = useState('0');
   const [montoRecibido, setMontoRecibido] = useState('');
   const [procesando, setProcesando] = useState(false);
@@ -529,7 +529,6 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               <option value="efectivo" className="bg-[var(--surface)] text-[var(--text)]">Efectivo (Córdobas / Dólares)</option>
               <option value="tarjeta" className="bg-[var(--surface)] text-[var(--text)]">Tarjeta Débito / Crédito</option>
               <option value="transferencia" className="bg-[var(--surface)] text-[var(--text)]">Transferencia Bancaria</option>
-              <option value="fiado" className="bg-[var(--surface)] text-[var(--text)]">Crédito / Cuenta por Cobrar</option>
             </select>
           </div>
 
